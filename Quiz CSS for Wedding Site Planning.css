@@ -1,0 +1,153 @@
+/* ============================================================
+   小測驗 — 場景背景（粉色茶几・與抽小卡共用）
+============================================================ */
+.scene-bg[data-bg="gallery"]{background-image:url('../images/scene-cards.jpg');background-position:center;}
+
+/* ============================================================
+   小測驗
+============================================================ */
+.quiz-card{max-width:580px;margin:0 auto;}
+
+/* 進度點 */
+.q-progress{display:flex;gap:6px;justify-content:center;margin-bottom:14px;}
+.q-dot{width:30px;height:6px;border-radius:3px;background:var(--primary-soft);transition:.3s;}
+.q-dot.done{background:var(--primary-deep);}
+
+/* 分類徽章（簡單題 / 小困難題 / 困難題 / 開放題） */
+.q-cat-row{text-align:center;margin-bottom:12px;}
+.q-category{display:inline-block;padding:6px 16px;border-radius:999px;
+  font-family:var(--font-display);font-weight:700;font-size:13px;
+  letter-spacing:.32em;color:var(--primary-deep);
+  background:linear-gradient(120deg,var(--primary-soft),var(--bg-blob2));
+  border:1px solid var(--gold-soft);
+  box-shadow:0 4px 10px var(--shadow);}
+.q-category.is-new{animation:catEnter .9s cubic-bezier(.2,.9,.3,1.2);}
+@keyframes catEnter{
+  0%  {transform:scale(.4) translateY(-6px);opacity:0;letter-spacing:.6em;}
+  60% {transform:scale(1.08) translateY(0);opacity:1;letter-spacing:.32em;}
+  100%{transform:scale(1) translateY(0);opacity:1;}
+}
+
+/* 題型徽章 */
+.q-type-row{text-align:center;margin-bottom:14px;}
+.q-type{display:inline-block;font-family:var(--font-display);font-weight:700;
+  font-size:11px;letter-spacing:.15em;text-transform:uppercase;
+  padding:5px 13px;border-radius:999px;}
+.q-type.single{background:var(--primary-soft);color:var(--primary-deep);}
+.q-type.multi {background:var(--sun);color:#a8854a;}
+.q-type.open  {background:#fff;color:var(--primary-deep);border:1px dashed var(--primary);}
+
+/* 題目 */
+.q-text{font-weight:700;font-size:19px;text-align:center;margin-bottom:20px;line-height:1.5;}
+.q-num{font-family:var(--font-display);color:var(--primary-deep);}
+
+/* 選項 */
+.q-options{display:grid;gap:12px;}
+/* 多選：自動多欄（適合 8+ 個選項） */
+.q-options.multi{grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:10px;}
+.q-options.multi .q-opt{padding:11px 14px;font-size:14px;text-align:center;}
+
+.q-opt{padding:15px 18px;border-radius:14px;border:2px solid var(--line);background:#fff;cursor:pointer;
+  font-size:15px;font-family:var(--font-body);color:var(--ink);transition:.2s;text-align:left;}
+.q-opt:hover{border-color:var(--primary);background:var(--primary-soft);}
+.q-opt.sel{border-color:var(--primary-deep);background:var(--primary-soft);
+  color:var(--primary-deep);font-weight:700;
+  box-shadow:0 4px 12px var(--shadow);}
+.q-opt.correct{border-color:#5cc98c;background:#e7f8ee;color:#2e7d4a;}
+.q-opt.wrong  {border-color:#ff8aa3;background:#ffe7ec;color:#b53049;}
+
+/* 多選送出按鈕 */
+.q-submit{display:block;margin:18px auto 0;}
+
+/* 開放題 */
+.q-open{margin-top:6px;}
+.q-open-textarea{width:100%;min-height:130px;resize:vertical;
+  padding:14px 16px;border:2px solid var(--line);border-radius:14px;
+  font-family:var(--font-body);font-size:15px;line-height:1.7;color:var(--ink);
+  background:#fff;outline:none;transition:.2s;box-sizing:border-box;}
+.q-open-textarea:focus{border-color:var(--primary);
+  box-shadow:0 0 0 4px var(--primary-soft);}
+.q-open-foot{font-size:12px;color:var(--ink-soft);margin-top:8px;text-align:center;letter-spacing:.04em;}
+.q-open-btns{display:flex;gap:10px;justify-content:center;margin-top:18px;}
+.q-open-btns .btn{margin:0;}
+.q-open-btns .btn.small{padding:11px 22px;}
+.q-submit:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+
+/* 結算頁 */
+.q-result{text-align:center;}
+.q-result .big{font-family:var(--font-display);font-size:54px;font-weight:700;color:var(--primary-deep);}
+.q-result .msg{font-size:17px;margin:8px 0 18px;font-weight:700;}
+.q-result .btn{margin:0 auto;}
+
+/* ============================================================
+   與 Momo 的契合度
+============================================================ */
+.compat-section-title{margin-top:34px;}
+.compat-card{padding:24px;max-width:580px;margin:0 auto;}
+.compat-intro{text-align:center;color:var(--ink);font-size:14px;margin-bottom:22px;line-height:1.7;}
+.compat-intro small{color:var(--ink-soft);font-size:12px;}
+
+/* 問題 */
+.compat-q{margin-bottom:22px;padding-bottom:18px;border-bottom:1px dashed var(--line);}
+.compat-q:last-of-type{border-bottom:none;padding-bottom:0;}
+.compat-q-title{font-family:var(--font-display);font-weight:700;font-size:17px;
+  margin-bottom:6px;display:flex;align-items:center;gap:8px;color:var(--ink);}
+.compat-q-title .em{font-size:22px;}
+.compat-q-text{color:var(--ink-soft);font-size:13.5px;margin-bottom:12px;line-height:1.6;}
+
+.compat-opts{display:flex;flex-direction:column;gap:8px;}
+.compat-opt{padding:12px 14px;border-radius:12px;border:2px solid var(--line);
+  background:#fff;cursor:pointer;font-size:14px;color:var(--ink);
+  transition:.2s;text-align:left;display:flex;gap:10px;align-items:flex-start;
+  font-family:var(--font-body);width:100%;line-height:1.6;}
+.compat-opt:hover{border-color:var(--primary);background:var(--primary-soft);}
+.compat-opt.sel{border-color:var(--primary-deep);background:var(--primary-soft);font-weight:600;
+  box-shadow:0 4px 12px var(--shadow);}
+.compat-opt .ltr{font-family:var(--font-display);font-weight:700;color:var(--primary-deep);
+  min-width:18px;flex-shrink:0;}
+
+.compat-submit{display:block;margin:24px auto 0;max-width:240px;}
+.compat-submit:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:0 6px 14px var(--shadow);}
+
+/* ---------- 結果 ---------- */
+.compat-result-head{text-align:center;margin-bottom:24px;padding-bottom:18px;
+  border-bottom:1px solid var(--line);}
+.compat-score{font-family:var(--font-display);font-size:54px;font-weight:700;
+  color:var(--primary-deep);line-height:1;}
+.compat-score small{font-size:24px;color:var(--ink-soft);font-weight:500;margin:0 4px;}
+.compat-score-hint{font-size:13px;color:var(--ink-soft);margin-top:6px;font-weight:600;}
+.compat-total-hint{font-size:12px;color:var(--ink-soft);margin-top:8px;}
+.compat-total-hint b{color:var(--primary-deep);font-family:var(--font-display);}
+
+.compat-chart-q{margin-bottom:24px;}
+.compat-chart-q:last-of-type{margin-bottom:6px;}
+.compat-chart-title{font-family:var(--font-display);font-weight:700;font-size:15px;
+  margin-bottom:4px;display:flex;align-items:center;gap:6px;color:var(--ink);}
+.compat-chart-title .em{font-size:18px;}
+.compat-chart-q-text{color:var(--ink-soft);font-size:12px;margin-bottom:10px;line-height:1.5;}
+
+/* 長條圖 */
+.compat-bars{display:flex;flex-direction:column;gap:6px;}
+.compat-bar-row{display:grid;grid-template-columns:22px 1fr 36px;gap:8px;
+  align-items:center;font-size:13px;}
+.compat-bar-letter{font-family:var(--font-display);font-weight:700;color:var(--ink-soft);text-align:center;}
+.compat-bar-track{position:relative;height:30px;background:var(--bg2);
+  border-radius:8px;overflow:hidden;}
+.compat-bar-fill{position:absolute;top:0;left:0;bottom:0;
+  background:linear-gradient(90deg,var(--primary-soft),var(--primary));
+  border-radius:8px;transition:width .8s cubic-bezier(.2,.7,.3,1);}
+.compat-bar-count{font-family:var(--font-display);font-weight:700;color:var(--ink);
+  text-align:right;}
+
+/* 長條一律紫色漸層；用戶與 Momo 的位置改用浮在長條上的標籤標註，不再變色 */
+
+/* 浮在長條上的標籤（你 / Momo / 同框）— 一律白底紫字 */
+.compat-bar-badges{position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  display:flex;gap:5px;pointer-events:none;}
+.compat-bar-badges .badge{font-family:var(--font-body);font-size:10px;font-weight:700;
+  padding:2px 8px;border-radius:999px;white-space:nowrap;
+  background:#fff;color:var(--primary-deep);
+  border:1px solid var(--primary-soft);
+  box-shadow:0 2px 6px rgba(120,90,150,.18);}
+
+.compat-reset{display:block;margin:18px auto 0;max-width:200px;}

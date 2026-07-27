@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ethan & Momo 婚禮｜我們結婚了 ♡</title>
+<!-- 名字/日期/地點：改 js/config.js（或直接改本頁文字） -->
+<meta name="description" content="Ethan & Momo 的婚禮邀請・一起見證我們的大喜之日">
+<meta property="og:title" content="Ethan & Momo 婚禮｜我們結婚了 ♡">
+<meta property="og:description" content="點場景出發，一起見證我們的幸福時刻">
+<meta property="og:type" content="website">
+
+<!-- 字體 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/common.css">
+<link rel="stylesheet" href="css/index.css">
+</head>
+<body data-theme="champagne">
+
+<div class="bg-decor"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<canvas id="fx"></canvas>
+
+<!-- ============ 入場：填名字 + 抽 icon ============ -->
+<div class="overlay" id="gate">
+  <div class="gate-card">
+    <div class="ribbon">✦ WE'RE GETTING MARRIED ✦</div>
+    <h1>Ethan &amp; Momo</h1>
+    <div class="sub">2026.10.10・在進場前，先報上名來～</div>
+    <div class="icon-pick" id="iconPick">💍</div>
+    <div class="icon-hint">這是你的專屬 icon・<b id="rerollIcon">換一個</b></div>
+    <div class="field"><input id="nameInput" type="text" maxlength="12" placeholder="輸入你的名字"></div>
+    <button class="btn" id="enterBtn">進場觀禮 →</button>
+
+    <div class="gate-sep"><span>或</span></div>
+
+    <button class="btn btn-google" id="googleBtn" type="button">
+      <svg viewBox="0 0 18 18" aria-hidden="true">
+        <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.17-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.61z"/>
+        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.33A9 9 0 0 0 9 18z"/>
+        <path fill="#FBBC05" d="M3.96 10.71A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.17.28-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.04l3-2.33z"/>
+        <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 9 0 9 9 0 0 0 .96 4.96l3 2.33C4.67 5.16 6.66 3.58 9 3.58z"/>
+      </svg>
+      <span>用 Google 帳號登入</span>
+    </button>
+  </div>
+</div>
+
+<!-- ============ 倒數 ============ -->
+<div class="overlay" id="countdown">
+  <div class="count-num" id="countNum">5</div>
+  <div class="count-label">即將揭幕…</div>
+</div>
+
+<!-- ============ 布幕 ============ -->
+<div class="overlay" id="curtain">
+  <div class="curtain-top"></div>
+  <div class="curtain-panel left"></div>
+  <div class="curtain-panel right"></div>
+</div>
+
+<!-- ============ 主畫面：婚禮大廳 ============ -->
+<div id="app">
+  <section class="panel lobby" data-panel="lobby">
+    <div class="lobby-wrap">
+      <div class="lobby-hero">
+        <div class="photo-stage">
+          <img class="bg-blur" src="images/lobby-blur.jpg" alt="" aria-hidden="true">
+          <img class="bg"      src="images/lobby.jpg"      alt="Ethan & Momo 婚禮大廳">
+
+          <!-- 🍰 左轉 → 甜點桌 -->
+          <a class="hot" href="cake.html" style="left:3%;top:46%;width:32%;height:26%;border-radius:14px;">
+            <span class="ring"></span><span class="beacon"></span>
+            <span class="pin"><span class="chip">🍰 甜點桌</span><span class="dir">←</span></span>
+          </a>
+
+          <!-- 📸 直走 → 戀愛時光 -->
+          <a class="hot" href="exhibition.html" style="left:34%;top:26%;width:32%;height:30%;border-radius:50% 50% 8px 8px;">
+            <span class="ring"></span><span class="beacon"></span>
+            <span class="pin"><span class="chip">📸 戀愛時光</span><span class="dir">↑</span></span>
+          </a>
+
+          <!-- 💌 右轉 → 祝福牆 -->
+          <a class="hot" href="wall.html" style="left:64%;top:44%;width:33%;height:26%;border-radius:14px;">
+            <span class="ring"></span><span class="beacon"></span>
+            <span class="pin"><span class="chip">💌 祝福牆</span><span class="dir">→</span></span>
+          </a>
+        </div>
+
+        <!-- 下緣漂浮標題 -->
+        <div class="lobby-title">
+          <div class="hashtags">
+            <span class="tag">#EthanMomo2026</span>
+            <span class="tag">#我們結婚了</span>
+          </div>
+          <h1>We're getting married!</h1>
+          <div class="cn">💍 點場景出發，一起見證我們的幸福 💍</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+
+<!-- 浮動控制：主題 + BGM -->
+<div class="floating">
+  <div class="theme-pop" id="themePop">
+    <div class="theme-dot t-champagne" data-theme="champagne" title="香檳金"></div>
+    <div class="theme-dot t-blush"   data-theme="blush"   title="霧玫瑰"></div>
+    <div class="theme-dot t-sage"      data-theme="sage"      title="鼠尾草綠"></div>
+    <div class="theme-dot t-dusk"   data-theme="dusk"   title="霧霾藍"></div>
+  </div>
+  <button class="fab" id="themeFab" title="換主題色">🎨</button>
+  <button class="fab" id="bgmFab"   title="婚禮進行曲">🔇</button>
+</div>
+
+<script type="module" src="js/firebase-init.js"></script>
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+<script src="js/index.js"></script>
+</body>
+</html>

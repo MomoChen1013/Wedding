@@ -1,0 +1,115 @@
+/* ============================================================
+   蛋糕櫃頁面 — 場景背景
+============================================================ */
+.scene-bg[data-bg="cake"]{background-image:url('../images/scene-cake.jpg');background-position:center;}
+
+/* ============================================================
+   蛋糕台（儀式中使用）
+============================================================ */
+.cake-stage{display:flex;flex-direction:column;align-items:center;gap:12px;}
+.cake-plate{position:relative;width:220px;padding-top:30px;}
+.slice{width:180px;height:160px;margin:0 auto;border-radius:18px;overflow:hidden;position:relative;
+  background:linear-gradient(135deg,var(--primary-soft),var(--bg-blob2));
+  display:flex;align-items:center;justify-content:center;box-shadow:0 14px 26px var(--shadow),inset 0 0 0 4px #fff;}
+.slice img{width:100%;height:100%;object-fit:cover;}
+.slice .slice-ph{font-size:60px;opacity:.6;}
+.plate-base{width:210px;height:22px;margin:-6px auto 0;border-radius:50%;background:var(--accent);
+  box-shadow:0 10px 16px var(--shadow);opacity:.85;}
+.candle{position:absolute;top:4px;left:50%;transform:translateX(-50%);width:9px;height:42px;border-radius:3px;z-index:3;
+  background:repeating-linear-gradient(45deg,#ff9ec4 0 5px,#fff 5px 10px);box-shadow:0 2px 4px rgba(0,0,0,.1);}
+.flame{position:absolute;top:-18px;left:50%;transform:translateX(-50%);width:15px;height:22px;cursor:pointer;z-index:4;
+  border-radius:50% 50% 50% 50%/60% 60% 40% 40%;
+  background:radial-gradient(circle at 50% 70%,#fff6b0,#ffb13d 60%,#ff7a00);filter:drop-shadow(0 0 10px #ffb13d);
+  animation:flicker .25s ease-in-out infinite alternate;transform-origin:bottom center;}
+@keyframes flicker{from{transform:translateX(-50%) scale(1) rotate(-3deg)}to{transform:translateX(-50%) scale(1.12) rotate(3deg)}}
+.flame.out{display:none;}
+.cake-name{font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--primary-deep);}
+.cake-picker{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;max-width:430px;}
+.cake-chip{font-family:var(--font-body);font-size:12.5px;padding:7px 12px;border-radius:999px;cursor:pointer;
+  background:var(--bg2);color:var(--ink-soft);border:1.5px solid transparent;transition:.2s;display:flex;align-items:center;gap:5px;}
+.cake-chip:hover{transform:translateY(-2px);}
+.cake-chip.sel{background:var(--primary-soft);color:var(--primary-deep);border-color:var(--primary);font-weight:700;}
+.wish-line{font-family:var(--font-hand);font-size:26px;color:var(--primary-deep);min-height:30px;text-align:center;}
+
+/* ============================================================
+   收集桶（Matter.js 物理）
+============================================================ */
+.cake-bucket{margin-bottom:18px;}
+.cake-bucket .section-title{margin:0 0 12px;}
+.bucket-lid{position:relative;z-index:2;height:18px;
+  border-radius:22px 22px 6px 6px;
+  background:linear-gradient(180deg,#fff 30%,var(--primary-soft));
+  box-shadow:0 4px 10px var(--shadow);margin-bottom:-6px;}
+.bucket-body{position:relative;width:100%;height:380px;overflow:hidden;
+  border:2px solid #fff;border-radius:0 0 26px 26px;
+  background:linear-gradient(180deg,rgba(255,255,255,.55) 0%,var(--primary-soft) 55%,var(--bg-blob2));
+  box-shadow:inset 0 10px 18px rgba(255,255,255,.6),
+             inset 0 -10px 16px rgba(0,0,0,.05),
+             0 10px 22px var(--shadow);}
+.bucket-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  color:var(--ink-soft);font-size:13px;text-align:center;padding:0 20px;pointer-events:none;}
+.bucket-body.has-items .bucket-empty{display:none;}
+.bucket-tip{text-align:center;color:var(--ink-soft);font-size:12px;margin-top:10px;}
+
+/* 物理桶子裡的蛋糕（DOM 位置由 Matter.js 更新） */
+.bk-item{position:absolute;left:0;top:0;width:54px;height:54px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:30px;line-height:1;
+  overflow:hidden;
+  background:linear-gradient(135deg,#ffffff,var(--primary-soft));
+  border:2px solid #fff;box-shadow:0 4px 10px var(--shadow);
+  cursor:pointer;user-select:none;will-change:transform;
+  animation:bkPop .35s cubic-bezier(.18,1.4,.4,1);}
+.bk-item img{width:100%;height:100%;object-fit:cover;border-radius:50%;
+  display:block;pointer-events:none;-webkit-user-drag:none;}
+.bk-item:hover{filter:brightness(1.05);}
+@keyframes bkPop{from{transform:scale(.5);opacity:0}to{opacity:1}}
+
+/* 浮出名字泡泡 */
+.bk-tip{position:fixed;z-index:920;background:rgba(60,45,80,.92);color:#fff;
+  font-family:var(--font-body);font-size:12px;padding:7px 14px;border-radius:14px;
+  pointer-events:none;white-space:nowrap;box-shadow:0 6px 14px rgba(0,0,0,.25);
+  transform:translate(-50%,-100%);opacity:0;transition:opacity .18s ease;}
+.bk-tip.show{opacity:1;}
+.bk-tip::after{content:'';position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:rgba(60,45,80,.92);}
+.bk-tip .ic{margin-right:4px;}
+
+/* ============================================================
+   慶祝儀式舞台
+============================================================ */
+.ritual-card{display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center;padding:32px 26px;}
+
+/* 進度點 */
+.step-dots{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin-bottom:6px;}
+.step-dot{position:relative;width:38px;height:38px;border-radius:50%;
+  background:var(--primary-soft);color:var(--primary-deep);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-weight:700;font-size:15px;
+  transition:transform .25s ease, background .25s ease, color .25s ease, box-shadow .25s ease;}
+.step-dot.active{background:linear-gradient(100deg,var(--primary-deep),var(--secondary));color:#fff;
+  box-shadow:0 6px 16px var(--shadow);transform:scale(1.18);}
+.step-dot.done{background:var(--primary-deep);color:#fff;}
+.step-dot .d-lb{position:absolute;top:42px;left:50%;transform:translateX(-50%);
+  font-family:var(--font-body);font-weight:500;font-size:11px;color:var(--ink-soft);white-space:nowrap;}
+.step-dot.active .d-lb{color:var(--primary-deep);font-weight:700;}
+
+/* 共用蛋糕台容器 */
+.ritual-plate{display:flex;flex-direction:column;align-items:center;gap:10px;margin:22px 0 6px;}
+.cake-plate-static{user-select:none;}
+
+/* 每步的內容區（淡入） */
+.step-pane{display:none;flex-direction:column;align-items:center;gap:12px;width:100%;animation:stepIn .4s ease;}
+.step-pane.active{display:flex;}
+@keyframes stepIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.step-pane h3{font-family:var(--font-display);font-weight:700;font-size:22px;color:var(--ink);}
+.step-pane .step-hint{font-size:13px;color:var(--ink-soft);max-width:360px;line-height:1.6;}
+.step-pane .btn{max-width:240px;}
+.step-pane .done-emoji{font-size:54px;animation:bkPop .55s cubic-bezier(.18,1.4,.4,1);}
+
+/* 飛進桶子的蛋糕 */
+.fly-cake{position:fixed;z-index:850;font-size:60px;line-height:1;pointer-events:none;
+  width:60px;height:60px;display:flex;align-items:center;justify-content:center;
+  transition:transform .85s cubic-bezier(.5,.2,.3,1), opacity .8s ease;
+  filter:drop-shadow(0 8px 14px var(--shadow));will-change:transform;}
+.fly-cake img{width:100%;height:100%;object-fit:cover;border-radius:50%;
+  border:2px solid #fff;display:block;}

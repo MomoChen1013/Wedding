@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📸 戀愛時光｜Ethan & Momo 婚禮</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/common.css">
+<link rel="stylesheet" href="css/exhibition.css">
+</head>
+<body data-theme="champagne">
+
+<div class="bg-decor"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<canvas id="fx"></canvas>
+
+<div class="scene-bg" data-bg="gallery"></div>
+
+<div class="me-mini" id="meMini"><span class="ic">💍</span><span class="nm">朋友</span></div>
+
+<!-- 頂部全頁進度條 -->
+<div class="tl-topbar" id="tlTopbar"></div>
+
+<section class="panel page-fade" data-panel="exhibition">
+
+  <!-- 入口封面 -->
+  <div class="scene-hero">
+    <div class="sh-title">📸 Our Story</div>
+    <div class="sh-sub">沿著時間線・走過我們的戀愛旅程</div>
+    <div class="scroll-cue"><span>向下滾動・走過時光</span><span class="arrow">↓</span></div>
+  </div>
+
+  <!-- 橫向時間軸 -->
+  <section class="tl-sec" id="tlSec">
+    <div class="tl-pin">
+      <div class="tl-year-back" id="tlYearBack">2021</div>
+      <div class="tl-head">
+        <div class="tl-eyebrow">手指上下滑來看展覽</div>
+        <h2>Our Love Timeline ♡</h2>
+      </div>
+
+      <div class="tl-track" id="tlTrack">
+        <div class="tl-rail"></div>
+        <!-- 節點由 js/exhibition.js 動態建立 -->
+      </div>
+
+      <div class="tl-progress" id="tlDots"></div>
+    </div>
+  </section>
+
+  <!-- 後續區塊 -->
+  <div class="scene-body">
+    <footer>made with ♡ for Ethan & Momo・#EthanMomo2026</footer>
+  </div>
+</section>
+
+<!-- lightbox -->
+<div class="lb" id="lb">
+  <div class="lb-card">
+    <button class="lb-close" id="lbClose">✕</button>
+    <div class="ph" id="lbPh">📷</div>
+    <div class="lb-body">
+      <div class="lb-date" id="lbDate">2024.03</div>
+      <div class="t" id="lbT">標題</div>
+      <p class="lb-desc" id="lbDesc"></p>
+    </div>
+  </div>
+</div>
+
+<a class="back-lobby show" href="index.html">回到大廳</a>
+<a class="turn-nav" id="turnLeft"  href="cake.html"><span class="tn-arrow">←</span><span class="tn-label">🎂蛋糕櫃</span></a>
+<a class="turn-nav" id="turnRight" href="draw.html"><span class="tn-arrow">→</span><span class="tn-label">🃏抽小卡</span></a>
+
+<div class="floating">
+  <div class="theme-pop" id="themePop">
+    <div class="theme-dot t-champagne" data-theme="champagne" title="香檳金"></div>
+    <div class="theme-dot t-blush"   data-theme="blush"   title="霧玫瑰"></div>
+    <div class="theme-dot t-sage"      data-theme="sage"      title="鼠尾草綠"></div>
+    <div class="theme-dot t-dusk"   data-theme="dusk"   title="霧霾藍"></div>
+  </div>
+  <button class="fab" id="themeFab" title="換主題色">🎨</button>
+  <button class="fab" id="bgmFab"   title="婚禮進行曲">🔇</button>
+</div>
+
+<script type="module" src="js/firebase-init.js"></script>
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+<script src="js/exhibition.js"></script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+/* ============================================================
+   抽小卡 — 場景背景（粉色茶几・專屬抽卡 + 測驗用）
+============================================================ */
+.scene-bg[data-bg="gallery"]{background-image:url('../images/scene-cards.jpg');background-position:center;}
+
+/* ============================================================
+   抽卡（全息收藏卡質感）
+============================================================ */
+.gacha-wrap{display:flex;flex-direction:column;align-items:center;gap:20px;}
+.deck{perspective:1200px;}
+.photocard{width:200px;height:300px;border-radius:16px;position:relative;cursor:pointer;
+  transform-style:preserve-3d;transition:transform .7s cubic-bezier(.3,1,.4,1);box-shadow:0 18px 40px var(--shadow);}
+.photocard .face{position:absolute;inset:0;border-radius:16px;backface-visibility:hidden;overflow:hidden;border:5px solid #fff;}
+.photocard .back{background:
+    repeating-linear-gradient(135deg,var(--primary) 0 12px,var(--primary-deep) 12px 24px);
+  display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--font-display);font-size:60px;}
+.photocard .front{transform:rotateY(180deg);display:flex;align-items:flex-end;justify-content:center;}
+.photocard.flipped{transform:rotateY(180deg);}
+.card-art{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:64px;}
+.card-art img{width:100%;height:100%;object-fit:cover;}
+.card-meta{position:relative;z-index:3;width:100%;padding:12px;text-align:center;color:#fff;
+  background:linear-gradient(transparent,rgba(0,0,0,.45));}
+.card-meta .rk{font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:.1em;}
+.card-meta .nm{font-size:12px;opacity:.9;}
+/* 全息光膜 */
+.holo{position:absolute;inset:0;z-index:2;mix-blend-mode:color-dodge;opacity:.0;border-radius:12px;
+  background:
+    linear-gradient(115deg,transparent 30%,rgba(255,255,255,.7) 45%,transparent 55%),
+    conic-gradient(from 0deg,#ff6ec4,#7873f5,#4ade80,#fcd34d,#ff6ec4);
+  background-size:200% 200%,180% 180%;transition:opacity .4s;animation:holoMove 4s linear infinite;}
+.photocard.shine .holo{opacity:.55;}
+@keyframes holoMove{0%{background-position:0 0,0 0}100%{background-position:200% 0,180% 0}}
+.rarity-N .back,.rarity-N .holo{filter:none;}
+.collection{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:560px;}
+.mini-card{width:62px;height:92px;border-radius:8px;border:2px solid #fff;box-shadow:0 6px 14px var(--shadow);
+  display:flex;align-items:center;justify-content:center;font-size:26px;position:relative;overflow:hidden;animation:pop .3s ease;
+  cursor:default;}
+.mini-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:6px;
+  pointer-events:none;-webkit-user-drag:none;}
+.mini-card.has-img{background:#fff;}
+.mini-card .mh{position:absolute;inset:0;mix-blend-mode:color-dodge;opacity:.4;
+  background:conic-gradient(from 0deg,#ff6ec4,#7873f5,#4ade80,#fcd34d,#ff6ec4);background-size:160% 160%;animation:holoMove 4s linear infinite;}
+.draw-info{font-size:13px;color:var(--ink-soft);text-align:center;}
+
+/* 大卡下方的說明小紙條 */
+.card-desc{max-width:280px;margin:4px auto 0;text-align:center;
+  font-family:var(--font-body);font-size:13.5px;line-height:1.6;color:var(--ink);
+  background:rgba(255,255,255,.85);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  padding:10px 16px;border-radius:14px;min-height:0;
+  box-shadow:0 4px 12px var(--shadow);border:1px solid #fff;
+  opacity:0;transform:translateY(-6px);transition:opacity .35s ease, transform .35s ease;}
+.card-desc.show{opacity:1;transform:none;}
+.card-desc:empty{display:none;}

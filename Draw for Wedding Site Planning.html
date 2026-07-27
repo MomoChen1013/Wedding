@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎴 囍卡｜Ethan & Momo 婚禮</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/common.css">
+<link rel="stylesheet" href="css/draw.css">
+</head>
+<body data-theme="champagne">
+
+<div class="bg-decor"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<canvas id="fx"></canvas>
+
+<div class="scene-bg" data-bg="gallery"></div>
+
+<div class="me-mini" id="meMini"><span class="ic">💍</span><span class="nm">朋友</span></div>
+
+<section class="panel page-fade" data-panel="draw">
+  <div class="scene-hero">
+    <div class="sh-title">🎴 Love Cards</div>
+    <div class="sh-sub">點卡片翻開・收藏婚禮限定小卡</div>
+    <div class="scroll-cue"><span>向下探索</span><span class="arrow">↓</span></div>
+  </div>
+
+  <div class="scene-body">
+ <div class="cardbox">
+ <div class="section-title"><span class="em">🎴</span> 抽婚禮小卡 <small>收藏你的限定卡</small></div>
+   
+      <div class="gacha-wrap">
+        <div class="deck">
+          <div class="photocard" id="photocard">
+            <div class="face back">♡</div>
+            <div class="face front">
+              <div class="card-art" id="cardArt">🎀</div>
+              <div class="holo"></div>
+              <div class="card-meta">
+                <div class="rk" id="cardRk">★ R</div>
+                <div class="nm" id="cardNm">婚禮小卡</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-desc" id="cardDesc"></div>
+        <button class="btn small" id="drawBtn">✦ 抽一張婚禮小卡</button>
+        <div class="draw-info">你的收藏（<span id="collCount">0</span> 張）</div>
+        <div class="collection" id="collection"></div>
+      </div>
+    </div>
+    <footer>made with ♡ for Ethan & Momo・#EthanMomo2026</footer>
+  </div>
+</section>
+
+<a class="back-lobby show" href="index.html">回到大廳</a>
+<a class="turn-nav show" id="turnLeft"  href="exhibition.html"><span class="tn-arrow">←</span><span class="tn-label">📸展覽</span></a>
+<a class="turn-nav show" id="turnRight" href="quiz.html"><span class="tn-arrow">→</span><span class="tn-label">💗小測驗</span></a>
+
+
+<div class="floating">
+  <div class="theme-pop" id="themePop">
+    <div class="theme-dot t-champagne" data-theme="champagne" title="香檳金"></div>
+    <div class="theme-dot t-blush"   data-theme="blush"   title="霧玫瑰"></div>
+    <div class="theme-dot t-sage"      data-theme="sage"      title="鼠尾草綠"></div>
+    <div class="theme-dot t-dusk"   data-theme="dusk"   title="霧霾藍"></div>
+  </div>
+  <button class="fab" id="themeFab" title="換主題色">🎨</button>
+  <button class="fab" id="bgmFab"   title="婚禮進行曲">🔇</button>
+</div>
+
+<script type="module" src="js/firebase-init.js"></script>
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+<script src="js/draw.js"></script>
+</body>
+</html>
