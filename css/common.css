@@ -1,20 +1,10 @@
 /* ============================================================
-   字體（輕熟高級排版）
-   Playfair Display → 英文標題（從 Google Fonts CDN）
-   GenJyuuGothic   → 中文 UI（圓角思源黑體；自行下載放 fonts/）
-   Noto Sans TC    → GenJyuuGothic 缺字時的後備（Google Fonts CDN）
-   setofont    → 手寫感（祝福卡、拍立得、信件；OFL 可商用）
+   字體（全部使用線上字體 · Google Fonts CDN，無需自備字型檔）
+   Playfair Display → 英文標題
+   Noto Sans TC     → 中文 UI / 內文
+   LXGW WenKai TC   → 手寫楷書感（祝福卡、拍立得、信件）
+   ※ 字型由各頁 <head> 的 Google Fonts <link> 載入
 ============================================================ */
-@font-face{
-  font-family:'setofont';
-  src:url('../fonts/setofont.ttf') format('ttf');
-  font-display:swap;
-}
-@font-face{
-  font-family:'GenJyuuGothic';
-  src:url('../fonts/GenJyuuGothic-Regular.woff2') format('woff2');
-  font-weight:300 900; font-display:swap;
-}
 
 /* ============================================================
    主題色票（右下角可即時切換）
@@ -27,9 +17,9 @@
   --radius:14px;
   --radius-sm:10px;
   --gold:#c9a86a; --gold-deep:#a8854a; --gold-soft:#e7d3a6;
-  --font-display:'Playfair Display','GenJyuuGothic','Noto Sans TC',serif;
-  --font-body:'GenJyuuGothic','Noto Sans TC',sans-serif;
-  --font-hand:'setofont','Noto Sans TC',cursive;
+  --font-display:'Playfair Display','Noto Sans TC',serif;
+  --font-body:'Noto Sans TC',sans-serif;
+  --font-hand:'LXGW WenKai TC','Noto Sans TC',cursive;
 }
 /* 香檳金（預設・經典優雅） */
 body[data-theme="champagne"]{

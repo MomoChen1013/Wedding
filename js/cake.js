@@ -40,7 +40,7 @@ const cakeNameEl = document.getElementById('cakeName');
 function applyCake(c){
   chosen = c;
   slicePhoto.innerHTML = c.img
-    ? `<img src="${c.img}" alt="${escapeHtml(c.name)}">`
+    ? `<img src="${c.img}" alt="${escapeHtml(c.name)}" onerror="this.outerHTML='<span class=&quot;slice-ph&quot;>${c.emoji}</span>'">`
     : `<span class="slice-ph">${c.emoji}</span>`;
   cakeNameEl.textContent = c.name;
 }
@@ -156,7 +156,7 @@ function flyToBucket(){
     const fly = document.createElement('div');
     fly.className = 'fly-cake';
     if(chosen.img){
-      fly.innerHTML = `<img src="${chosen.img}" alt="" draggable="false">`;
+      fly.innerHTML = `<img src="${chosen.img}" alt="" draggable="false" onerror="this.outerHTML='${chosen.emoji}'">`;
     } else {
       fly.textContent = chosen.emoji;
     }
@@ -255,7 +255,7 @@ function addCakeBody(payload){
   const el = document.createElement('div');
   el.className = 'bk-item';
   if(payload.img){
-    el.innerHTML = `<img src="${payload.img}" alt="" draggable="false">`;
+    el.innerHTML = `<img src="${payload.img}" alt="" draggable="false" onerror="this.outerHTML='${payload.emoji || '🍰'}'">`;
   } else {
     el.textContent = payload.emoji || '🍰';
   }
