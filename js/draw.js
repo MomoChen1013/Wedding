@@ -116,7 +116,7 @@ function appendMini(pick){
   const mc = document.createElement('div');
   mc.className = 'mini-card' + (isImage(pick.art) ? ' has-img' : '');
   if(isImage(pick.art)){
-    mc.innerHTML = `<img src="${pick.art}" alt="" draggable="false">`;
+    mc.innerHTML = `<img src="${pick.art}" alt="" draggable="false" onerror="this.parentNode.classList.remove('has-img');this.parentNode.style.background='linear-gradient(135deg,var(--primary-soft),var(--bg-blob2))';this.outerHTML='🎀'">`;
   } else {
     mc.style.background = `linear-gradient(135deg,var(--primary-soft),var(--bg-blob2))`;
     mc.innerHTML = pick.art;
@@ -154,7 +154,7 @@ document.getElementById('drawBtn').addEventListener('click', ()=>{
   setTimeout(()=>{
     const art = document.getElementById('cardArt');
     art.innerHTML = isImage(pick.art)
-      ? `<img src="${pick.art}" alt="${escapeHtml(pick.name)}" draggable="false">`
+      ? `<img src="${pick.art}" alt="${escapeHtml(pick.name)}" draggable="false" onerror="this.outerHTML='🎀'">`
       : pick.art;
     document.getElementById('cardRk').textContent = RANK[pick.rarity];
     document.getElementById('cardNm').textContent = pick.name;

@@ -89,3 +89,6 @@ if(LS.get('user', null)){
   app.style.display='block';
   app.classList.add('app-show');
 }
+
+/* 大廳迷你日期倒數（資料來自 config.js 的 WED.dateISO） */
+startCountdown(document.getElementById('lobbyCd'), (window.WED && window.WED.dateISO), 'inline');

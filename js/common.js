@@ -36,7 +36,7 @@ const LS = {
    ・資料變動時 dispatch 'data:<key>'，畫面可監聽重渲染
 ============================================================ */
 const DataStore = {
-  _wishes:[], _letters:[], _hearts:0, _collected:[], _cakes:[], _compat:[],
+  _wishes:[], _letters:[], _hearts:0, _collected:[], _cakes:[], _compat:[], _rsvps:[],
   _subscribed:false,
 
   init(){
@@ -65,6 +65,7 @@ const DataStore = {
     sub('letters', () => query(collection(db, 'letters'), orderBy('time', 'asc')));
     sub('cakes',   () => query(collection(db, 'cakes'),   orderBy('time', 'asc')));
     sub('compat',  () => query(collection(db, 'compat'),  orderBy('time', 'asc')));
+    sub('rsvps',   () => query(collection(db, 'rsvps'),   orderBy('time', 'asc')));
 
     /* 抽卡收藏：per-uid，只訂閱自己的卡
        （不加 orderBy 以免要建立複合索引；排序在 getCollected() 由前端做） */
@@ -105,6 +106,11 @@ const DataStore = {
     const { db, collection, addDoc } = window.fb;
     return addDoc(collection(db, 'compat'), { answers, time: Date.now() });
   },
+  async addRSVP(r){
+    const { db, auth, collection, addDoc } = window.fb;
+    const uid = auth.currentUser ? auth.currentUser.uid : null;
+    return addDoc(collection(db, 'rsvps'), { ...r, uid, time: r.time || Date.now() });
+  },
   async addHeart(){
     const { db, doc, runTransaction } = window.fb;
     const ref = doc(db, 'meta', 'hearts');
@@ -134,6 +140,15 @@ const DataStore = {
   getCakes()      { return this._cakes; },
   /* compat 早期是「直接陣列」，現在統一包成 {answers:[...]}，取出時還原 */
   getCompat()     { return this._compat.map(c => c.answers || c); },
+  /* RSVP 出席回覆（新人可看完整名單） */
+  getRSVPs()      { return this._rsvps.slice().sort((a,b)=>(a.time||0)-(b.time||0)); },
+  getRSVPCount()  { return this._rsvps.length; },
+  /* 「將出席」的總人數（依每筆的 headcount 加總；沒填視為 1 位） */
+  getAttendingCount(){
+    return this._rsvps
+      .filter(r => r.attending === 'yes')
+      .reduce((sum, r) => sum + (Number(r.headcount) || 1), 0);
+  },
 };
 
 /* 等 firebase-init.js 載入完成才啟動 */
@@ -307,6 +322,47 @@ function isOwnerVisitor(){
 function timeStr(ts){
   const d=new Date(ts);
   return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+/* ============================================================
+   日期倒數：把到 iso 的剩餘時間即時渲染進 el
+   mode='grid'   → 天/時/分/秒 大方格（資訊卡用）
+   mode='inline' → 「倒數 N 天 hh:mm:ss」一行（大廳用）
+   回傳 timer id，需要時可 clearInterval
+============================================================ */
+function startCountdown(el, iso, mode){
+  if(!el || !iso) return null;
+  mode = mode || 'grid';
+  const target = new Date(iso).getTime();
+  if(isNaN(target)) return null;
+  const pad = n => String(n).padStart(2,'0');
+  const render = ()=>{
+    const diff = target - Date.now();
+    if(diff <= 0){
+      el.classList.add('cd-done');
+      el.innerHTML = mode==='inline'
+        ? `<span class="cd-msg">💍 我們結婚囉！</span>`
+        : `<div class="cd-msg">💍 大喜之日・我們結婚囉！</div>`;
+      return false;
+    }
+    const d = Math.floor(diff/86400000);
+    const h = Math.floor(diff%86400000/3600000);
+    const m = Math.floor(diff%3600000/60000);
+    const s = Math.floor(diff%60000/1000);
+    if(mode==='inline'){
+      el.innerHTML = `倒數 <b>${d}</b> 天 <b>${pad(h)}:${pad(m)}:${pad(s)}</b>`;
+    } else {
+      el.innerHTML =
+        `<div class="cd-unit"><span class="cd-num">${d}</span><span class="cd-lab">天</span></div>`+
+        `<div class="cd-unit"><span class="cd-num">${pad(h)}</span><span class="cd-lab">時</span></div>`+
+        `<div class="cd-unit"><span class="cd-num">${pad(m)}</span><span class="cd-lab">分</span></div>`+
+        `<div class="cd-unit"><span class="cd-num">${pad(s)}</span><span class="cd-lab">秒</span></div>`;
+    }
+    return true;
+  };
+  render();
+  const timer = setInterval(()=>{ if(!render()) clearInterval(timer); }, 1000);
+  return timer;
 }
 function renderInbox(){
   const list=document.getElementById('inboxList');

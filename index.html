@@ -13,7 +13,7 @@
 <!-- 字體 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="css/common.css">
 <link rel="stylesheet" href="css/index.css">
@@ -67,8 +67,8 @@
     <div class="lobby-wrap">
       <div class="lobby-hero">
         <div class="photo-stage">
-          <img class="bg-blur" src="images/lobby-blur.jpg" alt="" aria-hidden="true">
-          <img class="bg"      src="images/lobby.jpg"      alt="Ethan & Momo 婚禮大廳">
+          <img class="bg-blur" src="images/lobby-blur.jpg" alt="" aria-hidden="true" onerror="this.style.display='none'">
+          <img class="bg"      src="images/lobby.jpg"      alt="Ethan & Momo 婚禮大廳" onerror="this.style.display='none'">
 
           <!-- 🍰 左轉 → 甜點桌 -->
           <a class="hot" href="cake.html" style="left:3%;top:46%;width:32%;height:26%;border-radius:14px;">
@@ -97,6 +97,11 @@
           </div>
           <h1>We're getting married!</h1>
           <div class="cn">💍 點場景出發，一起見證我們的幸福 💍</div>
+          <div class="lobby-countdown" id="lobbyCd"></div>
+          <div class="lobby-entry">
+            <a class="entry-btn" href="info.html">💒 婚禮資訊</a>
+            <a class="entry-btn primary" href="rsvp.html">✍️ 出席回覆</a>
+          </div>
         </div>
       </div>
     </div>

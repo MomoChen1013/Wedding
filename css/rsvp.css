@@ -1,0 +1,86 @@
+/* ============================================================
+   rsvp.css — 出席回覆
+============================================================ */
+
+/* 本頁沒有場景照，替 hero 加柔和深色漸層，讓白色標題清楚 */
+.scene-hero{ background:linear-gradient(165deg,rgba(168,133,74,.30),rgba(91,74,110,.34)); }
+
+/* ---- 統計列 ---- */
+.rsvp-counter{
+  display:flex; align-items:center; gap:14px; margin:20px 0 6px;
+  background:rgba(255,255,255,.62); -webkit-backdrop-filter:blur(18px); backdrop-filter:blur(18px);
+  border:1.5px solid #fff; border-radius:var(--radius); padding:14px 18px; box-shadow:0 10px 26px var(--shadow);
+}
+.rsvp-counter .rc-em{ font-size:30px; }
+.rc-line{ color:var(--ink); font-size:15px; }
+.rc-line b{ color:var(--primary-deep); font-size:19px; }
+.rc-hint{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+
+/* ---- 表單欄位 ---- */
+.rf-label{ display:block; font-weight:700; color:var(--ink); font-size:14px; margin:18px 0 8px; }
+.rf-label small{ font-weight:400; color:var(--ink-soft); }
+.field{ position:relative; }
+.field input, .field textarea{
+  width:100%; padding:14px 16px; border:2px solid var(--line); border-radius:14px;
+  font-family:var(--font-body); font-size:16px; color:var(--ink); background:#fff; outline:none; transition:.2s;
+}
+.field textarea{ min-height:88px; resize:vertical; line-height:1.6; }
+.field input:focus, .field textarea:focus{ border-color:var(--primary); box-shadow:0 0 0 4px var(--primary-soft); }
+
+/* ---- 選項 chip ---- */
+.choice-row{ display:flex; gap:10px; flex-wrap:wrap; }
+.choice{
+  flex:1 1 auto; min-width:96px; padding:14px 12px; border-radius:14px; cursor:pointer;
+  border:2px solid var(--line); background:#fff; color:var(--ink);
+  font-family:var(--font-body); font-size:15px; font-weight:500; transition:.18s;
+}
+.choice.sm{ padding:11px 10px; font-size:14px; min-width:80px; }
+.choice:hover{ border-color:var(--primary); transform:translateY(-1px); }
+.choice.on{
+  border-color:var(--primary); background:var(--primary-soft); color:var(--primary-deep); font-weight:700;
+  box-shadow:0 8px 20px var(--shadow);
+}
+
+/* ---- 出席細節 ---- */
+.rf-detail{ margin-top:4px; padding-top:6px; }
+
+/* ---- 人數 stepper ---- */
+.stepper{ display:flex; align-items:center; gap:14px; }
+.st-btn{
+  width:44px; height:44px; border-radius:12px; border:2px solid var(--primary); background:#fff;
+  color:var(--primary-deep); font-size:24px; line-height:1; cursor:pointer; transition:.15s;
+}
+.st-btn:hover{ background:var(--primary-soft); }
+.st-btn:active{ transform:scale(.92); }
+.st-num{ font-family:var(--font-display); font-weight:700; font-size:26px; color:var(--ink); min-width:36px; text-align:center; font-variant-numeric:tabular-nums; }
+.st-unit{ color:var(--ink-soft); font-size:15px; }
+
+/* ---- 錯誤訊息 ---- */
+.rf-err{ min-height:20px; color:#c26e82; font-size:13px; margin:14px 0 8px; text-align:center; }
+
+/* 送出鈕（沿用 .btn 全寬） */
+#submitBtn{ margin-top:2px; }
+
+/* ---- 感謝畫面 ---- */
+.thanks-card{ text-align:center; }
+.thanks-card .tk-em{ font-size:44px; }
+.thanks-card h3{ font-family:var(--font-display); font-weight:700; font-size:23px; color:var(--ink); margin:8px 0 6px; }
+.thanks-card p{ color:var(--ink-soft); font-size:15px; line-height:1.7; margin-bottom:18px; }
+.thanks-card .btn{ display:inline-block; width:auto; }
+
+/* ---- 新人專屬名單 ---- */
+.ol-summary{ font-size:14px; color:var(--ink); background:var(--primary-soft); border-radius:12px; padding:12px 14px; line-height:1.9; }
+.ol-summary b{ color:var(--primary-deep); }
+.ol-items{ margin-top:14px; display:flex; flex-direction:column; gap:10px; }
+.ol-item{ border:1.5px solid var(--line); border-radius:14px; padding:12px 14px; background:#fff; border-left-width:5px; }
+.ol-item.ol-yes{ border-left-color:#9aae86; }
+.ol-item.ol-no{ border-left-color:#d98fa0; }
+.ol-item.ol-maybe{ border-left-color:var(--gold); }
+.ol-head{ display:flex; align-items:center; gap:8px; }
+.ol-ic{ width:26px; height:26px; line-height:26px; text-align:center; border-radius:50%; background:var(--primary-soft); font-size:14px; }
+.ol-name{ font-weight:700; color:var(--ink); }
+.ol-badge{ margin-left:auto; font-size:12px; color:var(--ink-soft); }
+.ol-meta{ font-size:13px; color:var(--ink-soft); margin-top:6px; }
+.ol-time{ opacity:.8; }
+.ol-note{ margin-top:8px; font-family:var(--font-hand); font-size:15px; color:var(--ink); background:var(--bg2); border-radius:10px; padding:8px 12px; }
+.ol-empty{ color:var(--ink-soft); font-size:14px; text-align:center; padding:14px 0; }

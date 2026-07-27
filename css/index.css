@@ -90,8 +90,25 @@
   text-shadow:0 2px 12px rgba(91,74,110,.6);}
 .lobby-title .user-badge{margin-top:14px;background:rgba(255,255,255,.92);}
 
+/* 大廳迷你倒數 */
+.lobby-countdown{margin-top:14px;display:inline-block;font-family:var(--font-display);font-weight:600;
+  font-size:clamp(13px,3.4vw,16px);color:#fff;letter-spacing:.05em;padding:8px 16px;border-radius:999px;
+  background:rgba(255,255,255,.16);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.4);text-shadow:0 2px 10px rgba(91,74,110,.5);}
+.lobby-countdown b{font-size:1.15em;color:#fff;}
+.lobby-countdown:empty{display:none;}
+
+/* 大廳入口按鈕（婚禮資訊 / RSVP） */
+.lobby-entry{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px;}
+.entry-btn{font-family:var(--font-display);font-weight:600;font-size:15px;text-decoration:none;
+  padding:12px 22px;border-radius:999px;background:rgba(255,255,255,.94);color:var(--primary-deep);
+  box-shadow:0 8px 22px var(--shadow);border:1px solid var(--gold-soft);transition:.2s;}
+.entry-btn:hover{transform:translateY(-2px);box-shadow:0 14px 30px var(--shadow);}
+.entry-btn.primary{background:linear-gradient(100deg,var(--primary),var(--secondary));color:#fff;border:none;}
+
 /* 照片舞台 */
-.photo-stage{position:fixed;inset:0;width:100%;height:100%;overflow:hidden;background:var(--primary-soft);z-index:0;}
+.photo-stage{position:fixed;inset:0;width:100%;height:100%;overflow:hidden;z-index:0;
+  background:linear-gradient(155deg,var(--bg2),var(--primary-soft) 55%,var(--secondary));}
 .photo-stage img.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block;}
 .photo-stage .bg-blur{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
   filter:blur(28px) brightness(1.04);transform:scale(1.12);z-index:-1;}
