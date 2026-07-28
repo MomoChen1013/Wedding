@@ -7,7 +7,7 @@
          art:    '/images/card-01.png',  // ① 圖片或 emoji
          name:   '日常 Momo',            // ② 卡名（顯示在卡片下方）
          rarity: 'R',                   // ③ 等級：SSR / SR / R / N
-         desc:   '咖啡與書的下午 ☕',     // ④ 說明（選填）
+         desc:   '咖啡與書的下午',       // ④ 說明（選填）
        },
      ・刪除 = 把整行刪掉
      ・順序、總張數隨便調，程式會自動處理
@@ -15,14 +15,14 @@
    ▸ art 寫什麼？
      ・自己上傳的圖：'/images/card-01.png'（檔案放 images/ 資料夾下）
      ・外部網址：    'https://example.com/photo.jpg'
-     ・想用 emoji ：  '🎀'
+     ・想用符號：    '✦'
      程式會自動分辨：含「/」或副檔名（.png .jpg .webp 等）→ 當圖片
                    其他 → 當 emoji 顯示
 
    ▸ 等級（rarity）會影響什麼？
-     ・SSR ＝ ✦✦ SSR：卡面有彩虹光膜 + 抽到時放煙火 🎆
-     ・SR  ＝ ✦ SR ：卡面有彩虹光膜 + 抽到時放煙火 🎆
-     ・R   ＝ ★ R  ：一般卡（沒光膜、沒煙火）
+     ・SSR ＝ SSR：卡面有彩虹光膜 + 抽到時放煙火
+     ・SR  ＝ SR ：卡面有彩虹光膜 + 抽到時放煙火
+     ・R   ＝ R  ：一般卡（沒光膜、沒煙火）
      ・N   ＝ N    ：一般卡
      ・目前每張卡的抽中機率相同
        想做「越稀有越難抽」？把高稀有卡少放幾張、N 卡多放幾張即可
@@ -43,7 +43,7 @@ if(!requireUser()) { /* requireUser 已導向首頁 */ }
    換成你們的婚紗照 / 生活照：把 art 換成 images/ 內的新圖、name/desc 改成你們的故事即可 */
 const CARDS = [
   {art:'/images/cards-01.png', name:'看劇前的Mo', rarity:'N', desc:'大愛CMusical'},
-  {art:'/images/cards-02.png', name:'覺得自己可愛的Mo', rarity:'N', desc:'是拍貼機✨'},
+  {art:'/images/cards-02.png', name:'覺得自己可愛的Mo', rarity:'N', desc:'是拍貼機'},
   {art:'/images/cards-03.png', name:'神射手Momo', rarity:'N', desc:'百發百中'},
   {art:'/images/cards-04.png', name:'攝影師Momo', rarity:'N'},
   {art:'/images/cards-05.png', name:'春系Momo', rarity:'N'},
@@ -78,7 +78,7 @@ const CARDS = [
   {art:'/images/cards-34.png', name:'油菜花田裡的Momo', rarity:'N'},
   {art:'/images/cards-36.png', name:'吃不下Momo', rarity:'R', desc:'這一盤我可以吃一天'},
   {art:'/images/cards-35.png', name:'主持人Momo', rarity:'SR', desc:'一群人我就敢這樣綁'},
-  {art:'/images/cards-37.png', name:'橘子園裡的Momo', rarity:'N', desc:'天氣超好✨'},
+  {art:'/images/cards-37.png', name:'橘子園裡的Momo', rarity:'N', desc:'天氣超好'},
   {art:'/images/cards-38.png', name:'滑冰的Momo', rarity:'N', desc:'超難'},
   {art:'/images/cards-39.png', name:'黑道大姐Momo', rarity:'N'},
   {art:'/images/cards-40.png', name:'白馬上的Momo', rarity:'N'},
@@ -111,7 +111,7 @@ const CARDS = [
   });
 })();
 
-const RANK = {SSR:'✦✦ SSR', SR:'✦ SR', R:'★ R', N:'N'};
+const RANK = {SSR:'SSR', SR:'SR', R:'R', N:'N'};
 
 /* 判斷 art 是圖片路徑還是 emoji
    含 / 反斜線 或 副檔名 → 圖片；否則當 emoji */
@@ -131,10 +131,9 @@ function appendMini(pick){
   const mc = document.createElement('div');
   mc.className = 'mini-card' + (isImage(pick.art) ? ' has-img' : '');
   if(isImage(pick.art)){
-    mc.innerHTML = `<img src="${pick.art}" alt="" draggable="false" onerror="this.parentNode.classList.remove('has-img');this.parentNode.style.background='linear-gradient(135deg,var(--primary-soft),var(--bg-blob2))';this.outerHTML='🎀'">`;
+    mc.innerHTML = `<img src="${pick.art}" alt="" draggable="false" onerror="this.parentNode.classList.remove('has-img');this.outerHTML='${DEFAULT_ICON}'">`;
   } else {
-    mc.style.background = `linear-gradient(135deg,var(--primary-soft),var(--bg-blob2))`;
-    mc.innerHTML = pick.art;
+    mc.innerHTML = escapeHtml(pick.art);
   }
   if(pick.rarity === 'SSR' || pick.rarity === 'SR'){
     mc.insertAdjacentHTML('beforeend', '<div class="mh"></div>');
@@ -169,8 +168,8 @@ document.getElementById('drawBtn').addEventListener('click', ()=>{
   setTimeout(()=>{
     const art = document.getElementById('cardArt');
     art.innerHTML = isImage(pick.art)
-      ? `<img src="${pick.art}" alt="${escapeHtml(pick.name)}" draggable="false" onerror="this.outerHTML='🎀'">`
-      : pick.art;
+      ? `<img src="${pick.art}" alt="${escapeHtml(pick.name)}" draggable="false" onerror="this.outerHTML='${DEFAULT_ICON}'">`
+      : escapeHtml(pick.art);
     document.getElementById('cardRk').textContent = RANK[pick.rarity];
     document.getElementById('cardNm').textContent = pick.name;
 

@@ -3,34 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>✍️ 出席回覆 (RSVP)｜{{couple}} 婚禮</title>
+<title>出席回覆｜{{couple}} 婚禮</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="/css/common.css">
 <link rel="stylesheet" href="/css/rsvp.css">
 </head>
 <body data-theme="champagne" data-page="rsvp">
 
-<div class="bg-decor"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<div class="bg-decor"></div>
 <canvas id="fx"></canvas>
-
-<div class="me-mini" id="meMini"><span class="ic">💍</span><span class="nm">朋友</span></div>
 
 <section class="panel page-fade" data-panel="rsvp">
   <div class="scene-hero">
-    <div class="sh-title">✍️ RSVP</div>
+    <div class="sh-title">出席回覆</div>
     <div class="sh-sub">請告訴我們你能不能來・讓我們預留位置</div>
-    <div class="scroll-cue"><span>向下回覆</span><span class="arrow">↓</span></div>
+    <div class="scroll-cue"><span>Scroll</span><span class="arrow"></span></div>
   </div>
 
   <div class="scene-body">
 
     <!-- 統計 -->
     <div class="rsvp-counter">
-      <span class="rc-em">💌</span>
       <div>
         <div class="rc-line">已收到 <b id="rsvpCount">0</b> 份回覆・預計 <b id="attendCount">0</b> 位出席</div>
         <div class="rc-hint">每位賓客回覆一次就好，之後可再修改</div>
@@ -39,16 +36,16 @@
 
     <!-- 表單 -->
     <div class="cardbox" id="formCard">
-      <div class="section-title"><span class="em">✍️</span> 你的出席回覆</div>
+      <div class="section-title">你的出席回覆</div>
 
       <label class="rf-label">怎麼稱呼你？</label>
       <div class="field"><input id="rName" type="text" maxlength="20" placeholder="輸入你的名字"></div>
 
       <label class="rf-label">能來參加嗎？</label>
       <div class="choice-row" id="attendRow">
-        <button type="button" class="choice" data-val="yes">🎉 我會出席</button>
-        <button type="button" class="choice" data-val="no">😢 不克出席</button>
-        <button type="button" class="choice" data-val="maybe">🤔 還不確定</button>
+        <button type="button" class="choice" data-val="yes">我會出席</button>
+        <button type="button" class="choice" data-val="no">不克出席</button>
+        <button type="button" class="choice" data-val="maybe">還不確定</button>
       </div>
 
       <!-- 出席才要填的細節 -->
@@ -63,9 +60,9 @@
 
         <label class="rf-label">餐點需求</label>
         <div class="choice-row" id="mealRow">
-          <button type="button" class="choice sm" data-val="meat">🍖 葷食</button>
-          <button type="button" class="choice sm" data-val="veg">🥗 素食</button>
-          <button type="button" class="choice sm" data-val="none">🚫 不用餐</button>
+          <button type="button" class="choice sm" data-val="meat">葷食</button>
+          <button type="button" class="choice sm" data-val="veg">素食</button>
+          <button type="button" class="choice sm" data-val="none">不用餐</button>
         </div>
       </div>
 
@@ -73,42 +70,26 @@
       <div class="field"><textarea id="rNote" maxlength="200" placeholder="給 {{couple}} 的悄悄話…"></textarea></div>
 
       <div class="rf-err" id="rErr">&nbsp;</div>
-      <button class="btn" id="submitBtn">送出回覆 ♡</button>
+      <button class="btn" id="submitBtn">送出回覆</button>
     </div>
 
     <!-- 送出後的感謝畫面 -->
     <div class="cardbox thanks-card" id="thanksCard" hidden>
-      <div class="tk-em">🎉</div>
-      <h3 id="tkTitle">收到你的回覆囉！</h3>
-      <p id="tkMsg">謝謝你，我們超期待與你相見 ♡</p>
+      <h3 id="tkTitle">收到你的回覆囉</h3>
+      <p id="tkMsg">謝謝你，我們超期待與你相見</p>
       <button class="btn ghost small" id="editBtn">修改我的回覆</button>
     </div>
 
     <!-- 新人專屬：完整名單（網址加 #couple 才出現） -->
     <div class="cardbox owner-list" id="ownerList" hidden>
-      <div class="section-title"><span class="em">🔐</span> 出席名單 <small>只有新人看得到</small></div>
+      <div class="section-title">出席名單 <small>只有新人看得到</small></div>
       <div class="ol-summary" id="olSummary"></div>
       <div class="ol-items" id="olItems"></div>
     </div>
 
-    <footer>made with ♡ for {{couple}}・{{hashtag}}</footer>
+    <footer>made for {{couple}}・{{hashtag}}</footer>
   </div>
 </section>
-
-<a class="back-lobby show" href="index.html">回到大廳</a>
-<a class="turn-nav show" id="turnLeft"  href="info.html"><span class="tn-arrow">←</span><span class="tn-label">💒婚禮資訊</span></a>
-<a class="turn-nav show" id="turnRight" href="wall.html"><span class="tn-arrow">→</span><span class="tn-label">💌祝福牆</span></a>
-
-<div class="floating">
-  <div class="theme-pop" id="themePop">
-    <div class="theme-dot t-champagne" data-theme="champagne" title="香檳金"></div>
-    <div class="theme-dot t-blush"   data-theme="blush"   title="霧玫瑰"></div>
-    <div class="theme-dot t-sage"      data-theme="sage"      title="鼠尾草綠"></div>
-    <div class="theme-dot t-dusk"   data-theme="dusk"   title="霧霾藍"></div>
-  </div>
-  <button class="fab" id="themeFab" title="換主題色">🎨</button>
-  <button class="fab" id="bgmFab"   title="婚禮進行曲">🔇</button>
-</div>
 
 <!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與本頁 JS -->
 <script type="module" src="/js/site-context.js"></script>

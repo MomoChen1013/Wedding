@@ -11,7 +11,6 @@ const pwGate   = document.getElementById('pwGate');
 const pwErr    = document.getElementById('pwErr');
 const loginBtn = document.getElementById('ownerLoginBtn');
 const ibPage   = document.getElementById('inboxPage');
-const backBtn  = document.getElementById('backLobby');
 const lockBtn  = document.getElementById('ibLock');
 
 function showError(msg){
@@ -31,7 +30,7 @@ function openInbox(){
   if(!ibPage.hidden) return;
   pwGate.style.display = 'none';
   ibPage.hidden = false;
-  backBtn.classList.add('show');
+  setNavVisible(true);
   DataStore.subscribeLetters();
   renderInbox();
   setTimeout(()=>window.scrollTo({top:0, behavior:'instant'}), 0);
@@ -39,7 +38,7 @@ function openInbox(){
 
 function closeInbox(){
   ibPage.hidden = true;
-  backBtn.classList.remove('show');
+  setNavVisible(false);
   pwGate.style.display = '';
 }
 
@@ -109,16 +108,15 @@ function renderInbox(){
   if(!letters.length){
     list.innerHTML = `
       <div class="ib-empty">
-        <span class="em">📭</span>
         目前還沒有人投信進來<br>
-        等賓客們從祝福牆寫信給你們，這裡就會出現囉～
+        等賓客們從祝福牆寫信給你們，這裡就會出現囉
       </div>`;
     return;
   }
   list.innerHTML = letters.map(l => `
     <div class="ib-letter">
       <div class="ib-head">
-        <span class="ib-ic">${l.icon || '💌'}</span>
+        <span class="ib-ic">${escapeHtml(l.icon || DEFAULT_ICON)}</span>
         <span class="ib-name">${escapeHtml(l.name || '朋友')}</span>
         <span class="ib-time">${timeStr(l.time || Date.now())}</span>
       </div>

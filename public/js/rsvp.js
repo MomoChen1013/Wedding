@@ -56,7 +56,7 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
   if(!name){ showErr('請先填上你的名字～'); rName.focus(); return; }
   if(!attending){ showErr('請選擇能不能出席唷'); return; }
   if(attending === 'yes' && !document.querySelector('#mealRow .choice.on')){
-    showErr('出席的話，順手選一下餐點需求 🍽️'); return;
+    showErr('出席的話，順手選一下餐點需求'); return;
   }
 
   /* 三選一的 yes / no / maybe 要落成 Firestore 的欄位：
@@ -64,7 +64,7 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
      未定另外用 tentative 標記，資訊才不會遺失 */
   const payload = {
     name,
-    icon:        (me_user && me_user.icon) || '🎀',
+    icon:        (me_user && me_user.icon) || DEFAULT_ICON,
     attending:   attending === 'yes',
     tentative:   attending === 'maybe',
     guestCount:  attending === 'yes' ? headcount : 1,
@@ -81,7 +81,7 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
   }catch(e){
     console.warn('[rsvp] 送出失敗', e);
     btn.disabled = false;
-    showErr('送出時發生問題，請稍後再試 🙏');
+    showErr('送出時發生問題，請稍後再試');
     return;
   }
   btn.disabled = false;
@@ -100,9 +100,9 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
 /* ---------- 感謝畫面 ---------- */
 function showThanks(p){
   const msgByAttend = {
-    yes:   { t:'太好了，收到你的回覆！',  m:`我們幫你（和另外 ${Math.max(0,(p.headcount||1)-1)} 位）留好位置，超期待相見 ♡` },
-    no:    { t:'收到你的回覆了',           m:'雖然這次無法相聚，還是謝謝你的祝福，會想念你的 🤍' },
-    maybe: { t:'收到～先幫你記著',          m:'等你確定了，隨時回來把回覆更新成出席就好 ♡' },
+    yes:   { t:'太好了，收到你的回覆',  m:`我們幫你（和另外 ${Math.max(0,(p.headcount||1)-1)} 位）留好位置，超期待相見` },
+    no:    { t:'收到你的回覆了',        m:'雖然這次無法相聚，還是謝謝你的祝福，會想念你的' },
+    maybe: { t:'先幫你記著',            m:'等你確定了，隨時回來把回覆更新成出席就好' },
   };
   const info = msgByAttend[p.attending] || msgByAttend.maybe;
   document.getElementById('tkTitle').textContent = info.t;

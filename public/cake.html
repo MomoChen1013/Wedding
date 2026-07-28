@@ -3,66 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🍰 甜點桌｜{{couple}} 婚禮</title>
+<title>集氣送祝褔｜{{couple}} 婚禮</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="/css/common.css">
 <link rel="stylesheet" href="/css/cake.css">
-
-<!--
-  =============================================================
-   Firebase（接 Firestore 後，把整段註解拿掉、填入你的 config 即可）
-   啟用後，按下「收進桶子」會同時寫進 Firestore 的 cakes collection
-   讀取也會優先用 Firestore，沒設定就 fallback 到 localStorage
-  =============================================================
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <script>
-    firebase.initializeApp({
-      apiKey:            "你的 API key",
-      authDomain:        "your-project.firebaseapp.com",
-      projectId:         "your-project-id",
-      storageBucket:     "your-project.appspot.com",
-      messagingSenderId: "...",
-      appId:             "...",
-    });
-    window.fsDb = firebase.firestore();
-  </script>
--->
 </head>
 <body data-theme="champagne" data-page="cake">
 
-<div class="bg-decor"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<div class="bg-decor"></div>
 <canvas id="fx"></canvas>
 
 <div class="scene-bg" data-bg="cake"></div>
 
-<div class="me-mini" id="meMini"><span class="ic">💍</span><span class="nm">朋友</span></div>
-
 <section class="panel page-fade" data-panel="cake">
   <div class="scene-hero">
-    <div class="sh-title">🍰 Sweet Table</div>
+    <div class="sh-title">集氣送祝褔</div>
     <div class="sh-sub">挑一份甜點・獻上你對新人的祝福</div>
-    <div class="scroll-cue"><span>向下開始</span><span class="arrow">↓</span></div>
+    <div class="scroll-cue"><span>Scroll</span><span class="arrow"></span></div>
   </div>
 
   <div class="scene-body">
 
     <!-- ===== 上方：收集桶（Matter.js 物理） ===== -->
     <div class="cardbox cake-bucket">
-      <div class="section-title">
-        <span class="em">🍰</span> 甜點祝福箱<br>
-        <small>已收到 <b id="bucketCount">0</b> 份甜點</small>
-      </div>
+      <div class="section-title">甜點祝福箱 <small>已收到 <b id="bucketCount">0</b> 份甜點</small></div>
       <div class="bucket-lid"></div>
       <div class="bucket-body" id="bucketBody">
-        <div class="bucket-empty">甜點桌是空的，第一個送上祝福的就是你！</div>
+        <div class="bucket-empty">甜點桌是空的，第一個送上祝福的就是你</div>
       </div>
-      <p class="bucket-tip">💡 點甜點，看看是誰送的</p>
+      <p class="bucket-tip">點甜點，看看是誰送的</p>
     </div>
+
+    <div class="divider-div"></div>
 
     <!-- ===== 下方：慶祝儀式舞台 ===== -->
     <div class="cardbox ritual-card">
@@ -71,7 +47,7 @@
         <div class="cake-plate cake-plate-static">
           <div class="flame out" id="flame" title="點我吹熄、許願"></div>
           <div class="candle"></div>
-          <div class="slice" id="slicePhoto"><span class="slice-ph">🍰</span></div>
+          <div class="slice" id="slicePhoto"><span class="slice-ph"></span></div>
           <div class="plate-base"></div>
         </div>
         <div class="cake-name" id="cakeName">香草千層蛋糕</div>
@@ -82,60 +58,41 @@
       <div class="step-pane active" data-step="idle">
         <h3>準備好獻上祝福了嗎？</h3>
         <p class="step-hint">依序：選甜點 → 點蠟燭 → 放煙火 → 送上桌</p>
-        <button class="btn" id="startBtn">🎉 開始慶祝</button>
+        <button class="btn" id="startBtn">開始集氣</button>
       </div>
 
       <div class="step-pane" data-step="pick">
-        <h3>① 挑一份甜點送新人</h3>
+        <h3>一・挑一份甜點送新人</h3>
         <p class="step-hint">點下方選項挑你想送的甜點</p>
         <div class="cake-picker" id="cakePicker"></div>
-        <button class="btn small" id="toBlowBtn">下一步：點蠟燭 →</button>
+        <button class="btn small" id="toBlowBtn">下一步：點蠟燭</button>
       </div>
 
       <div class="step-pane" data-step="blow">
-        <h3>② 點火苗吹熄蠟燭</h3>
-        <p class="step-hint">點蠟燭上的小火苗，為新人獻上祝福 🕯️</p>
+        <h3>二・點火苗吹熄蠟燭</h3>
+        <p class="step-hint">點蠟燭上的小火苗，為新人獻上祝福</p>
       </div>
 
       <div class="step-pane" data-step="party">
-        <h3>③ 慶祝煙火 ✨</h3>
+        <h3>三・慶祝煙火</h3>
         <p class="step-hint">煙火金箔灑落中…</p>
       </div>
 
       <div class="step-pane" data-step="drop">
-        <h3>④ 甜點送上桌中…</h3>
-        <p class="step-hint">記下「<b id="senderPreview">朋友</b>」送了這份甜點 🎁</p>
+        <h3>四・甜點送上桌中…</h3>
+        <p class="step-hint">記下「<b id="senderPreview">朋友</b>」送了這份甜點</p>
       </div>
 
       <div class="step-pane" data-step="done">
-        <div class="done-emoji">🎉</div>
-        <h3>甜點送出！</h3>
+        <h3>甜點送出</h3>
         <p class="step-hint">新人之後會看到「<b id="senderName">朋友</b>」送了一份「<b id="senderCake">甜點</b>」</p>
-        <button class="btn ghost small" id="againBtn">再送一份 ♡</button>
+        <button class="btn ghost small" id="againBtn">再送一份</button>
       </div>
     </div>
 
-    <footer>made with ♡ for {{couple}}・{{hashtag}}</footer>
+    <footer>made for {{couple}}・{{hashtag}}</footer>
   </div>
 </section>
-
-<!-- 回大廳 / 左右轉 -->
-<a class="back-lobby show" href="index.html">回到大廳</a>
-<a class="turn-nav show" id="turnLeft"  href="wall.html"><span class="tn-arrow">←</span><span class="tn-label">💌祝福牆</span></a>
-<a class="turn-nav show" id="turnRight" href="exhibition.html"><span class="tn-arrow">→</span><span class="tn-label">📸展覽區</span></a>
-
-
-<!-- 浮動控制 -->
-<div class="floating">
-  <div class="theme-pop" id="themePop">
-    <div class="theme-dot t-champagne" data-theme="champagne" title="香檳金"></div>
-    <div class="theme-dot t-blush"   data-theme="blush"   title="霧玫瑰"></div>
-    <div class="theme-dot t-sage"      data-theme="sage"      title="鼠尾草綠"></div>
-    <div class="theme-dot t-dusk"   data-theme="dusk"   title="霧霾藍"></div>
-  </div>
-  <button class="fab" id="themeFab" title="換主題色">🎨</button>
-  <button class="fab" id="bgmFab"   title="婚禮進行曲">🔇</button>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js"></script>
 

@@ -8,20 +8,36 @@
 
 | 網址 | 內容 |
 |---|---|
-| `/w/{slug}/` | 大廳（入場 gate + 場景導覽）**一定有** |
-| `/w/{slug}/info` | 婚禮資訊 |
+| `/w/{slug}/` | 首頁（入場 gate + 婚禮資訊 + 卡片連結）**一定有** |
 | `/w/{slug}/rsvp` | 出席回覆 |
 | `/w/{slug}/wall` | 祝福牆 |
-| `/w/{slug}/cake` | 甜點桌 |
-| `/w/{slug}/draw` | 囍卡抽卡 |
-| `/w/{slug}/exhibition` | 戀愛時光 |
-| `/w/{slug}/quiz` | 新人小測驗 |
+| `/w/{slug}/cake` | 集氣送祝褔（甜點桌） |
+| `/w/{slug}/draw` | 抽卡 |
+| `/w/{slug}/exhibition` | 我們的故事 |
+| `/w/{slug}/quiz` | 看你多了解我們 |
 | `/w/{slug}/inbox` | 悄悄話信箱 |
 | `/w/{slug}/invitation` | 單頁式邀請函（獨立版型） |
 | `/s/{code}` | 短連結 |
 
-除了大廳以外，每一頁都可以個別開關。關掉的頁面：大廳不會出現入口，
-直接輸入網址也會被導回大廳。
+除了首頁以外，每一頁都可以個別開關。關掉的頁面：首頁與導覽列不會出現入口，
+直接輸入網址也會被導回首頁。
+
+> 婚禮資訊原本是獨立的 `/w/{slug}/info`，現在已經併進首頁。
+> 舊網址由 Hosting 的 301 轉址導回首頁，先前發出去的連結不會壞掉。
+
+---
+
+## 版面與風格
+
+- **導覽列**：每一頁最上方都有，依序是「新人名稱（首頁）、祝福、故事、測驗、抽卡、集氣、User」。
+  由 `js/common.js` 統一注入，站台沒開的頁面不會出現在列上。
+- **首頁**：固定背景（一張圖或一段影片，滾動時不動）→ 置中開場（`h1` + `.cn`）→
+  婚禮資訊卡 → 當日流程 → Dress Code → 日期倒數 → RSVP → 五張卡片連結（兩欄）。
+- **每頁的 `.scene-hero`** 固定 50vh。
+- **風格**：極簡線條。全站單一字族 **Noto Serif TC**（Google Fonts CDN），
+  無陰影、無 emoji，靠 1px 線條與留白分層。
+- **BGM**：艾爾加〈愛的禮讚 Salut d'Amour〉，用 Web Audio 合成，不需額外音檔。
+  想換曲子改 `js/common.js` 的 `_MELODY` 即可。
 
 ---
 
@@ -37,7 +53,7 @@
 ├─ firestore.indexes.json
 ├─ public/
 │   ├─ index.html             # 大廳
-│   ├─ info.html  rsvp.html  wall.html  cake.html
+│   ├─ rsvp.html  wall.html  cake.html
 │   ├─ draw.html  exhibition.html  quiz.html  inbox.html
 │   ├─ invitation.html        # 單頁式邀請函（獨立版型，自成一格）
 │   ├─ shortlink.html         # 短連結轉址頁
@@ -47,7 +63,7 @@
 │   └─ js/
 │       ├─ site-context.js    # ★ 每頁唯一進入點：解析 slug、載設定、注入其他 JS
 │       ├─ common.js          # 資料層 DataStore、導覽、特效、樣板文字
-│       └─ index.js info.js rsvp.js …   # 各頁邏輯
+│       └─ index.js rsvp.js …           # 各頁邏輯
 ├─ scripts/
 │   ├─ create-site.js         # 建立客戶站台（slug transaction）
 │   ├─ export-rsvps.js        # 匯出某站台的 RSVP 成 CSV
@@ -97,7 +113,7 @@ sites/{siteId}
   photos(string[]), hashtags(string[])
   dressCode, giftNote
   rsvpDeadline(timestamp), rsvpEnabled(bool)
-  pages(map)            # 每個頁面開關，如 { info:true, cake:false, … }
+  pages(map)            # 每個頁面開關，如 { wall:true, cake:false, … }
   ownerEmails(string[]) # 新人的 Google 信箱；決定誰讀得到悄悄話信箱
   createdAt, updatedAt
 
@@ -182,7 +198,7 @@ node scripts/create-site.js \
    siteId : gSUcido0TA8v4tlNhYbN
    slug   : chen-lin-0315
    網址   : https://minato.3udesign.website/w/chen-lin-0315
-   已開頁面 : 大廳（固定）、info、rsvp、wall
+   已開頁面 : 首頁（固定）、rsvp、wall
 ```
 
 ### 完整參數
@@ -210,21 +226,21 @@ node scripts/create-site.js \
 | `--status` | | `draft`／`published`／`archived`，**預設 `draft`** |
 | `--rsvp-deadline` | | RSVP 截止日 `YYYY-MM-DD`，預設同婚禮日期 |
 | `--rsvp-enabled` | | `true`／`false`，預設 `true` |
-| `--pages` | | 逗號分隔，直接指定要開哪些頁。不給則預設 `info,rsvp,wall` |
+| `--pages` | | 逗號分隔，直接指定要開哪些頁。不給則預設 `rsvp,wall` |
 | `--enable` | | 在預設之外加開某頁；**可重複給多次** |
 | `--disable` | | 關掉某頁；**可重複給多次** |
 
 ### 頁面開關
 
-可開關的頁面：`info` `rsvp` `wall` `cake` `draw` `exhibition` `quiz` `inbox` `invitation`
+可開關的頁面：`rsvp` `wall` `cake` `draw` `exhibition` `quiz` `inbox` `invitation`
 （大廳 `lobby` 一定存在，不能關）。
 
 ```bash
 # 全套都要
---pages info,rsvp,wall,cake,draw,exhibition,quiz,inbox,invitation
+--pages rsvp,wall,cake,draw,exhibition,quiz,inbox,invitation
 
 # 只要基本款（不給 --pages 時的預設）
-# → info, rsvp, wall
+# → rsvp, wall
 
 # 預設之外再加抽卡與測驗
 --enable draw --enable quiz
@@ -251,7 +267,8 @@ node scripts/create-site.js \
 ```
 public/assets/{slug}/
 ├─ cover.jpg          封面大圖（單頁邀請函）
-├─ lobby.jpg          大廳背景
+├─ lobby.jpg          首頁固定背景（圖片）
+├─ lobby.mp4          首頁固定背景（影片，選填；放了就優先用影片）
 ├─ lobby-blur.jpg     大廳背景的模糊版（選填）
 ├─ gallery/           照片牆
 │   ├─ 01.jpg
@@ -464,7 +481,7 @@ npm run test:rules
 npm run test:multipage
 ```
 
-會種兩組測試站台（一組全開、一組只開 info），用 Chromium 跑完整流程：
+會種兩組測試站台（一組全開、一組只開 rsvp），用 Chromium 跑完整流程：
 
 ```
 [1]  每個頁面都能正常載入      # 9 頁 × 載入/siteId/無 console 錯誤

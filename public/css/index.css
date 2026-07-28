@@ -1,141 +1,185 @@
 /* ============================================================
+   index.css — 首頁（大廳）
+   ・固定背景（圖片或影片）＋ 置中開場 ＋ 婚禮資訊 ＋ 卡片連結
+   ・極簡線條風格，無陰影、無 emoji
+============================================================ */
+
+/* ============================================================
    入場：填名字 → 抽 icon
 ============================================================ */
-#gate{background:radial-gradient(circle at 50% 30%,var(--bg2),var(--bg1));}
+#gate{background:var(--bg1);}
 .gate-card{
-  width:min(90vw,420px);background:var(--card);border-radius:30px;
-  padding:42px 32px;text-align:center;box-shadow:0 30px 70px var(--shadow);
-  border:2px solid #fff;position:relative;animation:pop .6s cubic-bezier(.18,1.4,.4,1);
+  width:min(90vw,400px);background:#fff;border:1px solid var(--line);
+  border-radius:var(--radius);padding:44px 34px;text-align:center;
+  position:relative;animation:pop .5s ease;
 }
-.gate-card .ribbon{font-family:var(--font-display);font-weight:600;letter-spacing:.08em;
-  color:var(--primary-deep);font-size:14px;}
-.gate-card h1{font-family:var(--font-display);font-size:30px;font-weight:700;margin:6px 0 4px;
-  background:linear-gradient(100deg,var(--primary-deep),var(--secondary));-webkit-background-clip:text;background-clip:text;color:transparent;}
-.gate-card .sub{color:var(--ink-soft);font-size:14px;margin-bottom:26px;}
-.icon-pick{font-size:46px;height:78px;width:78px;line-height:78px;margin:0 auto 8px;border-radius:50%;
-  background:var(--primary-soft);box-shadow:inset 0 0 0 3px #fff,0 8px 20px var(--shadow);
-  transition:transform .3s;}
-.icon-pick.roll{animation:roll .5s ease;}
-@keyframes roll{50%{transform:scale(1.18) rotate(12deg)}}
-.icon-hint{font-size:12px;color:var(--ink-soft);margin-bottom:18px;}
-.icon-hint b{color:var(--primary-deep);cursor:pointer;text-decoration:underline dotted;}
+.gate-card .ribbon{font-family:var(--font-display);font-weight:500;letter-spacing:.34em;
+  color:var(--ink-soft);font-size:10.5px;text-transform:uppercase;}
+.gate-card h1{font-family:var(--font-display);font-size:26px;font-weight:500;
+  margin:14px 0 6px;letter-spacing:.16em;color:var(--ink);}
+.gate-card .sub{color:var(--ink-soft);font-size:13px;margin-bottom:28px;letter-spacing:.08em;}
+.icon-pick{font-size:20px;height:64px;width:64px;line-height:62px;margin:0 auto 10px;
+  border-radius:50%;border:1px solid var(--line);color:var(--primary-deep);
+  cursor:pointer;transition:transform .3s,border-color .2s;}
+.icon-pick:hover{border-color:var(--ink);}
+.icon-pick.roll{animation:roll .4s ease;}
+@keyframes roll{50%{transform:scale(1.12)}}
+.icon-hint{font-size:11.5px;color:var(--ink-soft);margin-bottom:22px;letter-spacing:.08em;}
+.icon-hint b{color:var(--ink);cursor:pointer;font-weight:500;border-bottom:1px solid var(--line);}
 .field{position:relative;margin-bottom:18px;}
-.field input{width:100%;padding:15px 18px;border:2px solid var(--line);border-radius:16px;
-  font-family:var(--font-body);font-size:16px;color:var(--ink);background:#fff;outline:none;transition:.2s;}
-.field input:focus{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft);}
+.field input{width:100%;padding:14px 16px;border:1px solid var(--line);border-radius:var(--radius);
+  font-family:var(--font-body);font-size:15px;color:var(--ink);background:#fff;outline:none;
+  text-align:center;letter-spacing:.1em;transition:.2s;}
+.field input:focus{border-color:var(--ink);}
 
 /* 「或」分隔線 */
-.gate-sep{position:relative;text-align:center;margin:16px 0 12px;
-  font-size:11px;letter-spacing:.4em;color:var(--ink-soft);}
+.gate-sep{position:relative;text-align:center;margin:20px 0 14px;
+  font-size:10.5px;letter-spacing:.4em;color:var(--ink-soft);}
 .gate-sep::before,
-.gate-sep::after{content:'';position:absolute;top:50%;width:calc(50% - 24px);height:1px;
-  background:var(--line);}
+.gate-sep::after{content:'';position:absolute;top:50%;width:calc(50% - 22px);height:1px;background:var(--line);}
 .gate-sep::before{left:0;}
 .gate-sep::after{right:0;}
-.gate-sep span{position:relative;padding:0 2px;background:transparent;}
 
-/* Google 登入按鈕（覆寫 .btn 的漸層） */
-.btn.btn-google{background:#fff;color:#3c4043;
-  border:1.5px solid var(--line);box-shadow:0 6px 16px var(--shadow);
+/* Google 登入按鈕 */
+.btn.btn-google{background:#fff;color:var(--ink);border:1px solid var(--line);
   display:inline-flex;align-items:center;justify-content:center;gap:10px;
-  font-size:15px;letter-spacing:.02em;padding:13px 22px;}
-.btn.btn-google:hover{background:#fafbff;border-color:var(--primary-soft);}
-.btn.btn-google svg{width:18px;height:18px;flex-shrink:0;}
-.btn.btn-google[disabled]{opacity:.55;cursor:wait;}
+  font-size:14px;letter-spacing:.06em;padding:13px 22px;}
+.btn.btn-google:hover{background:#fff;border-color:var(--ink);color:var(--ink);}
+.btn.btn-google svg{width:16px;height:16px;flex-shrink:0;}
+.btn.btn-google[disabled]{opacity:.5;cursor:wait;}
 
 /* ============================================================
-   倒數 5 秒 + 布幕
+   倒數 5 秒 + 開幕
 ============================================================ */
-#countdown{background:rgba(40,28,55,.5);backdrop-filter:blur(6px);flex-direction:column;display:none;}
-.count-num{font-family:var(--font-display);font-weight:700;font-size:min(40vw,260px);color:#fff;
-  text-shadow:0 0 50px var(--primary);animation:countPop .9s ease;}
-@keyframes countPop{0%{transform:scale(.3);opacity:0}40%{transform:scale(1.1);opacity:1}100%{transform:scale(1);opacity:.0}}
-.count-label{color:#fff;font-family:var(--font-display);letter-spacing:.3em;font-size:16px;opacity:.85;}
+#countdown{background:var(--bg1);flex-direction:column;display:none;gap:18px;}
+.count-num{font-family:var(--font-display);font-weight:300;font-size:min(34vw,180px);
+  color:var(--ink);line-height:1;animation:countPop .9s ease;}
+@keyframes countPop{0%{opacity:0}30%{opacity:1}100%{opacity:.15}}
+.count-label{color:var(--ink-soft);letter-spacing:.4em;font-size:11px;text-transform:uppercase;}
 
 #curtain{display:none;background:transparent;pointer-events:none;}
-.curtain-panel{position:absolute;top:0;bottom:0;width:52%;
-  background:
-    repeating-linear-gradient(90deg,var(--primary-deep) 0 26px,var(--primary) 26px 52px);
-  box-shadow:0 0 80px rgba(0,0,0,.3);}
-.curtain-panel::after{content:'';position:absolute;top:0;bottom:0;width:34px;
-  background:linear-gradient(var(--sun),#e9c84a);box-shadow:0 0 20px rgba(0,0,0,.2);}
-.curtain-panel.left{left:0;border-radius:0 18px 18px 0;transition:transform 1.6s cubic-bezier(.7,0,.3,1);}
-.curtain-panel.left::after{right:-4px;border-radius:0 0 8px 0;}
-.curtain-panel.right{right:0;border-radius:18px 0 0 18px;transition:transform 1.6s cubic-bezier(.7,0,.3,1);}
-.curtain-panel.right::after{left:-4px;}
+.curtain-top{display:none;}
+.curtain-panel{position:absolute;top:0;bottom:0;width:51%;background:var(--bg1);
+  border-right:1px solid var(--line);}
+.curtain-panel.left{left:0;transition:transform 1.4s cubic-bezier(.7,0,.3,1);}
+.curtain-panel.right{right:0;border-right:none;border-left:1px solid var(--line);
+  transition:transform 1.4s cubic-bezier(.7,0,.3,1);}
 .curtain-open .curtain-panel.left{transform:translateX(-102%);}
 .curtain-open .curtain-panel.right{transform:translateX(102%);}
-.curtain-top{position:absolute;top:0;left:0;right:0;height:46px;
-  background:repeating-linear-gradient(90deg,var(--sun) 0 30px,#e9c84a 30px 60px);
-  box-shadow:0 6px 16px rgba(0,0,0,.2);z-index:2;}
 
 /* ============================================================
-   大廳：滿版照片 + 下緣漂浮標題
+   開場：置中的新人標題
 ============================================================ */
 #app{display:none;}
 .app-show{animation:fadeUp .8s ease;}
 @keyframes fadeUp{from{opacity:0}to{opacity:1}}
 
-.lobby-wrap{position:relative;}
-.lobby-hero{min-height:100vh;position:relative;display:flex;flex-direction:column;justify-content:flex-end;}
-.lobby-title{position:relative;z-index:3;text-align:center;
-  padding:44px 20px calc(env(safe-area-inset-bottom,0px) + 22px);
-  background:linear-gradient(180deg,transparent,rgba(91,74,110,.4) 50%,rgba(91,74,110,.58));}
-.lobby-title .hashtags{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px;}
-.lobby-title .tag{font-family:var(--font-display);font-weight:500;font-size:13px;padding:7px 15px;border-radius:999px;letter-spacing:.02em;
-  background:rgba(255,255,255,.92);color:var(--primary-deep);box-shadow:0 4px 12px var(--shadow);border:1px solid var(--gold-soft);}
-.lobby-title h1{font-family:var(--font-display);font-weight:700;font-size:clamp(34px,8vw,64px);line-height:1.05;
-  color:#fff;text-shadow:0 3px 20px rgba(91,74,110,.55);letter-spacing:.01em;}
-.lobby-title .cn{font-weight:500;font-size:clamp(14px,3.6vw,20px);color:#fff;margin-top:8px;letter-spacing:.06em;
-  text-shadow:0 2px 12px rgba(91,74,110,.6);}
-.lobby-title .user-badge{margin-top:14px;background:rgba(255,255,255,.92);}
+.lobby-hero{min-height:calc(100vh - var(--nav-h));display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;gap:18px;padding:60px 20px;}
+.lobby-hero .hashtags{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.lobby-hero .tag{font-size:11px;letter-spacing:.24em;color:var(--ink-soft);
+  border:1px solid var(--line);border-radius:999px;padding:5px 14px;}
+.lobby-hero h1{font-family:var(--font-display);font-weight:400;
+  font-size:clamp(30px,7vw,58px);line-height:1.3;letter-spacing:.08em;color:var(--ink);}
+.lobby-hero .cn{font-size:clamp(13px,3.2vw,16px);color:var(--ink-soft);letter-spacing:.22em;}
+.lobby-hero .sh-rule{width:1px;height:52px;background:var(--line);}
 
-/* 大廳迷你倒數 */
-.lobby-countdown{margin-top:14px;display:inline-block;font-family:var(--font-display);font-weight:600;
-  font-size:clamp(13px,3.4vw,16px);color:#fff;letter-spacing:.05em;padding:8px 16px;border-radius:999px;
-  background:rgba(255,255,255,.16);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
-  border:1px solid rgba(255,255,255,.4);text-shadow:0 2px 10px rgba(91,74,110,.5);}
-.lobby-countdown b{font-size:1.15em;color:#fff;}
-.lobby-countdown:empty{display:none;}
+/* ============================================================
+   婚禮資訊（原 info 頁搬過來）
+============================================================ */
+.info-block{padding:56px 0;border-top:1px solid var(--line-soft);}
+.info-block:first-of-type{border-top:none;}
+.block-title{font-family:var(--font-display);font-weight:500;font-size:15px;
+  letter-spacing:.3em;color:var(--ink);margin-bottom:6px;text-transform:uppercase;}
+.block-sub{font-size:12.5px;color:var(--ink-soft);letter-spacing:.1em;margin-bottom:28px;}
 
-/* 大廳入口按鈕（婚禮資訊 / RSVP） */
-.lobby-entry{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px;}
-.entry-btn{font-family:var(--font-display);font-weight:600;font-size:15px;text-decoration:none;
-  padding:12px 22px;border-radius:999px;background:rgba(255,255,255,.94);color:var(--primary-deep);
-  box-shadow:0 8px 22px var(--shadow);border:1px solid var(--gold-soft);transition:.2s;}
-.entry-btn:hover{transform:translateY(-2px);box-shadow:0 14px 30px var(--shadow);}
-.entry-btn.primary{background:linear-gradient(100deg,var(--primary),var(--secondary));color:#fff;border:none;}
+/* ---- 婚禮資訊卡 ---- */
+.info-card{text-align:center;}
+.info-couple{font-family:var(--font-display);font-weight:400;
+  font-size:clamp(24px,6vw,34px);letter-spacing:.14em;color:var(--ink);}
+.info-couple-cn{font-size:15px;color:var(--ink-soft);letter-spacing:.2em;margin:6px 0 30px;}
+.info-couple-cn:empty{margin-bottom:20px;}
+.info-rows{text-align:left;max-width:440px;margin:0 auto;display:flex;flex-direction:column;}
+.info-row{display:grid;grid-template-columns:4.5em 1fr;gap:16px;align-items:baseline;
+  padding:16px 0;border-top:1px solid var(--line-soft);}
+.info-row:first-child{border-top:none;}
+.info-row .ir-ic{display:none;}
+.ir-label{font-size:11.5px;color:var(--ink-soft);letter-spacing:.24em;}
+.ir-val{color:var(--ink);font-size:15px;}
+.ir-sub{font-size:13px;color:var(--ink-soft);margin-top:4px;}
+.info-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:30px;}
+.info-actions .btn{text-decoration:none;text-align:center;}
 
-/* 照片舞台 */
-.photo-stage{position:fixed;inset:0;width:100%;height:100%;overflow:hidden;z-index:0;
-  background:linear-gradient(155deg,var(--bg2),var(--primary-soft) 55%,var(--secondary));}
-.photo-stage img.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block;}
-.photo-stage .bg-blur{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-  filter:blur(28px) brightness(1.04);transform:scale(1.12);z-index:-1;}
-.photo-stage::after{content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(120% 75% at 50% 14%,transparent 52%,rgba(91,74,110,.16));}
+/* ---- 當日流程 ---- */
+.timeline{max-width:520px;margin:0 auto;}
+.tl-item{display:grid;grid-template-columns:5em 1px 1fr;gap:20px;align-items:start;}
+.tl-time{font-size:13px;color:var(--primary-deep);letter-spacing:.1em;text-align:right;padding-top:2px;}
+.tl-dot{position:relative;background:var(--line);}
+.tl-dot::before{content:'';position:absolute;top:7px;left:50%;transform:translate(-50%,-50%);
+  width:5px;height:5px;border-radius:50%;background:var(--ink);}
+.tl-item:first-child .tl-dot{top:7px;}
+.tl-item:last-child .tl-dot{height:7px;}
+.tl-content{padding-bottom:30px;}
+.tl-t{color:var(--ink);font-size:15px;}
+.tl-d{font-size:13px;color:var(--ink-soft);margin-top:4px;line-height:1.9;}
+.tl-empty{color:var(--ink-soft);font-size:14px;text-align:center;padding:10px 0;}
 
-/* 熱區（貼在照片上的點擊區） */
-.hot{position:absolute;cursor:pointer;border:none;background:transparent;padding:0;z-index:2;
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;
-  transition:transform .25s cubic-bezier(.3,1.4,.5,1);text-decoration:none;}
-.hot:hover{transform:translateY(-5px) scale(1.03);}
-.hot:active{transform:scale(.97);}
-.hot .ring{position:absolute;inset:0;border-radius:inherit;border:2.5px solid #fff;
-  box-shadow:0 0 0 3px var(--primary),0 8px 22px rgba(120,90,150,.3);
-  opacity:0;transition:opacity .25s;background:rgba(255,255,255,.12);}
-.hot:hover .ring{opacity:1;}
-.hot .pin{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:3px;
-  transform:translateY(50%);}
-.hot .pin .chip{font-family:var(--font-display);font-weight:700;font-size:13px;color:var(--primary-deep);
-  background:rgba(255,255,255,.95);padding:6px 13px;border-radius:999px;white-space:nowrap;
-  box-shadow:0 6px 16px var(--shadow);border:1px solid var(--gold-soft);}
-.hot .pin .dir{font-size:11px;color:#fff;background:var(--primary-deep);padding:2px 9px;border-radius:999px;
-  box-shadow:0 4px 10px var(--shadow);}
-.hot .beacon{position:absolute;top:14%;left:50%;width:14px;height:14px;border-radius:50%;
-  background:var(--sun);box-shadow:0 0 0 0 var(--sun);transform:translateX(-50%);animation:beaconPulse 2.2s ease-out infinite;}
-@keyframes beaconPulse{0%{box-shadow:0 0 0 0 rgba(252,227,138,.7)}70%{box-shadow:0 0 0 16px rgba(252,227,138,0)}100%{box-shadow:0 0 0 0 rgba(252,227,138,0)}}
-@media(max-width:560px){
-  .hot .pin .chip{font-size:11px;padding:5px 10px;}
-  .hot .pin .dir{font-size:10px;}
+/* ---- Dress code / 禮金 ---- */
+.note-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;max-width:640px;margin:0 auto;}
+.note-item{padding:0 26px;border-left:1px solid var(--line-soft);}
+.note-item:first-child{border-left:none;padding-left:0;}
+.note-item:last-child{padding-right:0;}
+.note-label{font-size:11.5px;letter-spacing:.24em;color:var(--ink-soft);margin-bottom:10px;text-transform:uppercase;}
+.info-note{color:var(--ink);line-height:2;font-size:14.5px;}
+@media(max-width:640px){
+  .note-grid{grid-template-columns:1fr;}
+  .note-item{border-left:none;padding:0;}
+  .note-item + .note-item{margin-top:28px;padding-top:24px;border-top:1px solid var(--line-soft);}
+}
+
+/* ---- 日期倒數 ---- */
+.cd-card{text-align:center;}
+.cd-grid{display:grid;grid-template-columns:repeat(4,1fr);margin:0 auto;max-width:460px;}
+.cd-unit{display:flex;flex-direction:column;gap:8px;padding:20px 6px;
+  border-left:1px solid var(--line-soft);}
+.cd-unit:first-child{border-left:none;}
+.cd-num{font-family:var(--font-display);font-weight:300;font-size:clamp(28px,8vw,44px);
+  line-height:1;color:var(--ink);font-variant-numeric:tabular-nums;}
+.cd-lab{font-size:11px;color:var(--ink-soft);letter-spacing:.3em;}
+.cd-target{margin-top:20px;font-size:12.5px;color:var(--ink-soft);letter-spacing:.14em;}
+.cd-grid.cd-done{display:block;}
+.cd-msg{font-family:var(--font-display);font-weight:400;font-size:clamp(20px,5vw,28px);
+  color:var(--ink);letter-spacing:.16em;padding:18px 0;}
+
+/* ---- RSVP CTA ---- */
+.rsvp-cta{text-align:center;border:1px solid var(--line);padding:44px 26px;background:rgba(255,255,255,.9);}
+.rsvp-cta .rc-em{display:none;}
+.rsvp-cta h3{font-family:var(--font-display);font-weight:400;font-size:20px;
+  color:var(--ink);letter-spacing:.16em;margin-bottom:10px;}
+.rsvp-cta p{color:var(--ink-soft);font-size:13.5px;margin-bottom:26px;letter-spacing:.08em;}
+.rsvp-cta .btn{display:inline-block;width:auto;text-decoration:none;padding:14px 34px;}
+
+/* ============================================================
+   卡片連結（兩欄）
+============================================================ */
+.link-section{padding:56px 0 0;border-top:1px solid var(--line-soft);}
+.link-grid{display:grid;grid-template-columns:1fr 1fr;
+  border-top:1px solid var(--line);border-left:1px solid var(--line);}
+.link-card{position:relative;display:flex;flex-direction:column;gap:10px;
+  padding:34px 26px 30px;text-decoration:none;color:var(--ink);
+  border-right:1px solid var(--line);border-bottom:1px solid var(--line);
+  background:rgba(255,255,255,.9);transition:background .25s,color .25s;}
+.link-card:hover{background:var(--ink);color:#fff;}
+.lc-index{font-family:var(--font-display);font-size:11px;letter-spacing:.3em;color:var(--ink-soft);}
+.link-card:hover .lc-index{color:rgba(255,255,255,.6);}
+.lc-title{font-family:var(--font-display);font-weight:500;font-size:19px;letter-spacing:.14em;line-height:1.5;}
+.lc-sub{font-size:12.5px;color:var(--ink-soft);letter-spacing:.06em;line-height:1.9;}
+.link-card:hover .lc-sub{color:rgba(255,255,255,.72);}
+.lc-go{margin-top:8px;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--ink-soft);}
+.link-card:hover .lc-go{color:rgba(255,255,255,.85);}
+/* 奇數張時，最後一張補滿整列 */
+.link-card:last-child:nth-child(odd){grid-column:1 / -1;}
+@media(max-width:640px){
+  .link-grid{grid-template-columns:1fr;}
+  .link-card:last-child:nth-child(odd){grid-column:auto;}
 }

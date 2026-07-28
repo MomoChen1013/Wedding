@@ -3,36 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{{couple}} 婚禮｜我們結婚了 ♡</title>
-<!-- 名字/日期/地點：改 js/config.js（或直接改本頁文字） -->
+<title>{{couple}} 婚禮｜我們結婚了</title>
 <meta name="description" content="{{couple}} 的婚禮邀請・一起見證我們的大喜之日">
-<meta property="og:title" content="{{couple}} 婚禮｜我們結婚了 ♡">
-<meta property="og:description" content="點場景出發，一起見證我們的幸福時刻">
+<meta property="og:title" content="{{couple}} 婚禮｜我們結婚了">
+<meta property="og:description" content="婚禮資訊、當日流程與各種小遊戲，都在這裡">
 <meta property="og:type" content="website">
 
-<!-- 字體 -->
+<!-- 字體：全站單一字族 Noto Serif TC -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="/css/common.css">
 <link rel="stylesheet" href="/css/index.css">
 </head>
 <body data-theme="champagne" data-page="lobby">
 
-<div class="bg-decor"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<div class="bg-decor"></div>
 <canvas id="fx"></canvas>
+
+<!-- ============ 固定背景：一張圖或一段影片，滾動時不會移動 ============ -->
+<div class="site-bg is-empty" id="siteBg">
+  <video id="siteBgVideo" autoplay muted loop playsinline hidden></video>
+  <img class="bg" id="siteBgImg" src="/images/lobby.jpg" alt="" aria-hidden="true"
+       onerror="this.style.display='none'">
+</div>
 
 <!-- ============ 入場：填名字 + 抽 icon ============ -->
 <div class="overlay" id="gate">
   <div class="gate-card">
-    <div class="ribbon">✦ WE'RE GETTING MARRIED ✦</div>
+    <div class="ribbon">We're getting married</div>
     <h1>{{couple}}</h1>
-    <div class="sub">{{date}}・在進場前，先報上名來～</div>
-    <div class="icon-pick" id="iconPick">💍</div>
-    <div class="icon-hint">這是你的專屬 icon・<b id="rerollIcon">換一個</b></div>
+    <div class="sub">{{date}}・在進場前，先報上名來</div>
+    <div class="icon-pick" id="iconPick">✦</div>
+    <div class="icon-hint">這是你的專屬記號・<b id="rerollIcon">換一個</b></div>
     <div class="field"><input id="nameInput" type="text" maxlength="12" placeholder="輸入你的名字"></div>
-    <button class="btn" id="enterBtn">進場觀禮 →</button>
+    <button class="btn" id="enterBtn">進場觀禮</button>
 
     <div class="gate-sep"><span>或</span></div>
 
@@ -51,74 +57,136 @@
 <!-- ============ 倒數 ============ -->
 <div class="overlay" id="countdown">
   <div class="count-num" id="countNum">5</div>
-  <div class="count-label">即將揭幕…</div>
+  <div class="count-label">即將揭幕</div>
 </div>
 
-<!-- ============ 布幕 ============ -->
+<!-- ============ 開幕 ============ -->
 <div class="overlay" id="curtain">
-  <div class="curtain-top"></div>
   <div class="curtain-panel left"></div>
   <div class="curtain-panel right"></div>
 </div>
 
-<!-- ============ 主畫面：婚禮大廳 ============ -->
+<!-- ============ 主畫面 ============ -->
 <div id="app">
   <section class="panel lobby" data-panel="lobby">
-    <div class="lobby-wrap">
-      <div class="lobby-hero">
-        <div class="photo-stage">
-          <img class="bg-blur" src="/images/lobby-blur.jpg" alt="" aria-hidden="true" onerror="this.style.display='none'">
-          <img class="bg"      src="/images/lobby.jpg"      alt="{{couple}} 婚禮大廳" onerror="this.style.display='none'">
 
-          <!-- 🍰 左轉 → 甜點桌 -->
-          <a class="hot" href="cake.html" style="left:3%;top:46%;width:32%;height:26%;border-radius:14px;">
-            <span class="ring"></span><span class="beacon"></span>
-            <span class="pin"><span class="chip">🍰 甜點桌</span><span class="dir">←</span></span>
-          </a>
-
-          <!-- 📸 直走 → 戀愛時光 -->
-          <a class="hot" href="exhibition.html" style="left:34%;top:26%;width:32%;height:30%;border-radius:50% 50% 8px 8px;">
-            <span class="ring"></span><span class="beacon"></span>
-            <span class="pin"><span class="chip">📸 戀愛時光</span><span class="dir">↑</span></span>
-          </a>
-
-          <!-- 💌 右轉 → 祝福牆 -->
-          <a class="hot" href="wall.html" style="left:64%;top:44%;width:33%;height:26%;border-radius:14px;">
-            <span class="ring"></span><span class="beacon"></span>
-            <span class="pin"><span class="chip">💌 祝福牆</span><span class="dir">→</span></span>
-          </a>
-        </div>
-
-        <!-- 下緣漂浮標題 -->
-        <div class="lobby-title">
-          <div class="hashtags">
-            <span class="tag">{{hashtag}}</span>
-            <span class="tag">#我們結婚了</span>
-          </div>
-          <h1>We're getting married!</h1>
-          <div class="cn">💍 點場景出發，一起見證我們的幸福 💍</div>
-          <div class="lobby-countdown" id="lobbyCd"></div>
-          <div class="lobby-entry">
-            <a class="entry-btn" href="info.html">💒 婚禮資訊</a>
-            <a class="entry-btn primary" href="rsvp.html">✍️ 出席回覆</a>
-          </div>
-        </div>
+    <!-- 開場：畫面正中間 -->
+    <header class="lobby-hero">
+      <div class="hashtags">
+        <span class="tag">{{hashtag}}</span>
+        <span class="tag">#我們結婚了</span>
       </div>
+      <h1>We're getting married!</h1>
+      <div class="cn">點下去出發，一起見證我們的幸福</div>
+      <div class="scroll-cue"><span>Scroll</span><span class="arrow"></span></div>
+    </header>
+
+    <div class="scene-body">
+
+      <!-- ===== 1. 婚禮資訊卡 ===== -->
+      <section class="info-block">
+        <div class="block-title">Wedding Info</div>
+        <div class="block-sub">大喜之日的所有細節，都在這裡</div>
+        <div class="info-card">
+          <div class="info-couple" id="infoCouple">{{couple}}</div>
+          <div class="info-couple-cn" id="infoCoupleCn"></div>
+
+          <div class="info-rows">
+            <div class="info-row"><div class="ir-label">日期</div><div class="ir-body"><div class="ir-val" id="infoDate">—</div></div></div>
+            <div class="info-row"><div class="ir-label">時間</div><div class="ir-body"><div class="ir-val" id="infoTime">—</div></div></div>
+            <div class="info-row"><div class="ir-label">地點</div><div class="ir-body"><div class="ir-val" id="infoVenue">—</div><div class="ir-sub" id="infoAddr"></div></div></div>
+          </div>
+
+          <div class="info-actions">
+            <a class="btn small ghost" id="mapBtn" href="#" target="_blank" rel="noopener">開啟地圖</a>
+            <a class="btn small ghost" id="calBtn" href="#" target="_blank" rel="noopener">加入行事曆</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 2. 當日流程 ===== -->
+      <section class="info-block">
+        <div class="block-title">Schedule</div>
+        <div class="block-sub">當日流程・大約時間，輕鬆來就好</div>
+        <div class="timeline" id="schedule"></div>
+      </section>
+
+      <!-- ===== 3. Dress Code 小提醒 ===== -->
+      <section class="info-block">
+        <div class="block-title">Dress Code</div>
+        <div class="block-sub">出席前的兩個小提醒</div>
+        <div class="note-grid">
+          <div class="note-item">
+            <div class="note-label">Dress Code</div>
+            <p class="info-note" id="dressCode"></p>
+          </div>
+          <div class="note-item">
+            <div class="note-label">關於禮金</div>
+            <p class="info-note" id="giftNote"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 4. 日期倒數 ===== -->
+      <section class="info-block">
+        <div class="block-title">Countdown</div>
+        <div class="block-sub">距離我們的大日子還有</div>
+        <div class="cd-card">
+          <div class="cd-grid" id="cdGrid"></div>
+          <div class="cd-target" id="cdTarget"></div>
+        </div>
+      </section>
+
+      <!-- ===== 5. RSVP ===== -->
+      <section class="info-block">
+        <div class="rsvp-cta">
+          <h3>能來參加我們的婚禮嗎？</h3>
+          <p>花 30 秒回覆出席，讓我們把最好的位置留給你</p>
+          <a class="btn" href="rsvp.html">前往出席回覆</a>
+        </div>
+      </section>
+
+      <!-- ===== 卡片連結 ===== -->
+      <section class="link-section">
+        <div class="block-title">Explore</div>
+        <div class="block-sub">婚禮之外，還有這些可以一起玩</div>
+        <div class="link-grid">
+          <a class="link-card" href="wall.html">
+            <span class="lc-index">01</span>
+            <span class="lc-title">新人祝福牆</span>
+            <span class="lc-sub">寫下想對我們說的話，也讀讀大家的祝福</span>
+            <span class="lc-go">前往</span>
+          </a>
+          <a class="link-card" href="exhibition.html">
+            <span class="lc-index">02</span>
+            <span class="lc-title">我們的故事</span>
+            <span class="lc-sub">沿著時間線，走過我們一路走來的日子</span>
+            <span class="lc-go">前往</span>
+          </a>
+          <a class="link-card" href="quiz.html">
+            <span class="lc-index">03</span>
+            <span class="lc-title">看你多了解我們</span>
+            <span class="lc-sub">一份小測驗，順便看看你和我們有多合拍</span>
+            <span class="lc-go">前往</span>
+          </a>
+          <a class="link-card" href="draw.html">
+            <span class="lc-index">04</span>
+            <span class="lc-title">看你會抽到什麼照片</span>
+            <span class="lc-sub">抽一張婚禮限定小卡，收進你的收藏</span>
+            <span class="lc-go">前往</span>
+          </a>
+          <a class="link-card" href="cake.html">
+            <span class="lc-index">05</span>
+            <span class="lc-title">集氣送祝褔</span>
+            <span class="lc-sub">挑一份甜點放上桌，替我們集氣</span>
+            <span class="lc-go">前往</span>
+          </a>
+        </div>
+      </section>
+
+      <footer>made for {{couple}}・{{hashtag}}</footer>
     </div>
   </section>
-</div>
-
-
-<!-- 浮動控制：主題 + BGM -->
-<div class="floating">
-  <div class="theme-pop" id="themePop">
-    <div class="theme-dot t-champagne" data-theme="champagne" title="香檳金"></div>
-    <div class="theme-dot t-blush"   data-theme="blush"   title="霧玫瑰"></div>
-    <div class="theme-dot t-sage"      data-theme="sage"      title="鼠尾草綠"></div>
-    <div class="theme-dot t-dusk"   data-theme="dusk"   title="霧霾藍"></div>
-  </div>
-  <button class="fab" id="themeFab" title="換主題色">🎨</button>
-  <button class="fab" id="bgmFab"   title="婚禮進行曲">🔇</button>
 </div>
 
 <!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與本頁 JS -->
