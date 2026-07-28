@@ -13,6 +13,7 @@
        lobby.jpg              首頁固定背景（圖片）
        lobby.mp4              首頁固定背景（影片；放了就優先用影片）
        lobby-blur.jpg         大廳背景的模糊版（選填）
+       bgm.mp3                背景音樂（沒放就用內建的音樂盒版愛的禮讚）
        gallery/               照片牆
          01.jpg  02.jpg …
        exhibition/            戀愛時光的展品
@@ -42,6 +43,7 @@ const ASSETS_ROOT = fileURLToPath(new URL('../public/assets/', import.meta.url))
 
 const IMAGE_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif', '.svg']);
 const VIDEO_EXT = new Set(['.mp4', '.webm', '.mov']);
+const AUDIO_EXT = new Set(['.mp3', '.m4a', '.aac', '.ogg', '.wav']);
 
 /* 單張圖片的「特別檔名」→ manifest 的欄位 */
 const SINGLE_FILES = {
@@ -53,6 +55,11 @@ const SINGLE_FILES = {
 /* 單支影片的「特別檔名」→ manifest 的欄位（首頁固定背景用） */
 const SINGLE_VIDEOS = {
   lobby: 'lobbyVideo',
+};
+
+/* 單支音檔的「特別檔名」→ manifest 的欄位（背景音樂） */
+const SINGLE_AUDIO = {
+  bgm: 'bgm',
 };
 
 /* 子資料夾 → manifest 的欄位 */
@@ -69,6 +76,10 @@ function isImage(name) {
 
 function isVideo(name) {
   return VIDEO_EXT.has(extname(name).toLowerCase());
+}
+
+function isAudio(name) {
+  return AUDIO_EXT.has(extname(name).toLowerCase());
 }
 
 /* 依檔名自然排序：01 < 02 < 10（而不是字串排序的 1 < 10 < 2） */
@@ -131,6 +142,13 @@ function buildManifest(slug) {
     if (hit) manifest[field] = `/assets/${slug}/${hit}`;
   }
 
+  /* 背景音樂 */
+  const rootAudio = readdirSync(dir).filter(isAudio);
+  for (const [stem, field] of Object.entries(SINGLE_AUDIO)) {
+    const hit = rootAudio.find((f) => basename(f, extname(f)) === stem);
+    if (hit) manifest[field] = `/assets/${slug}/${hit}`;
+  }
+
   /* 子資料夾 */
   for (const [folder, field] of Object.entries(FOLDERS)) {
     const list = buildList(slug, folder, field);
@@ -144,7 +162,7 @@ function describe(manifest) {
   const bits = [];
   for (const [key, label] of [
     ['cover', '封面'], ['lobby', '首頁背景圖'], ['lobbyVideo', '首頁背景影片'],
-    ['lobbyBlur', '大廳模糊背景'],
+    ['lobbyBlur', '大廳模糊背景'], ['bgm', '背景音樂'],
   ]) {
     if (manifest[key]) bits.push(label);
   }

@@ -388,10 +388,17 @@ function spawnFloat(emoji,x,y){
 }
 
 /* ============================================================
-   BGM：用 Web Audio 合成「愛的禮讚」音樂盒版
-   （艾爾加 Salut d'Amour, Op.12・公共領域曲目，不需額外音檔）
+   BGM
+   ・素材資料夾放了 bgm.mp3 → 播放新人自己的音樂（循環）
+   ・沒放 → 退回用 Web Audio 合成「愛的禮讚」音樂盒版
+     （艾爾加 Salut d'Amour, Op.12・公共領域曲目，不需音檔）
 ============================================================ */
-let audioCtx=null, bgmOn=false, bgmTimer=null;
+let audioCtx=null, bgmOn=false, bgmTimer=null, bgmAudio=null;
+
+/* 這組新人有沒有自己的背景音樂 */
+function bgmSrc(){
+  return (window.SITE && window.SITE.assets && window.SITE.assets.bgm) || '';
+}
 const _NOTE={
   E4:329.63, 'F#4':369.99, 'G#4':415.30, A4:440.00, B4:493.88,
   'C#5':554.37, 'D#5':622.25, E5:659.25, 'F#5':739.99, 'G#5':830.61, A5:880.00, B5:987.77,
@@ -425,12 +432,45 @@ function setBgmFab(on){
   if(!fab) return;
   fab.classList.toggle('is-on', on);
   fab.setAttribute('aria-pressed', String(on));
-  fab.title = on ? '關閉背景音樂' : '播放背景音樂（愛的禮讚）';
+  fab.title = on
+    ? '關閉背景音樂'
+    : (bgmSrc() ? '播放背景音樂' : '播放背景音樂（愛的禮讚）');
   const slash = fab.querySelector('.bgm-slash');
   if(slash) slash.style.display = on ? 'none' : '';
 }
+
 function startBGM(){
   if(bgmOn) return;
+
+  /* 有自己的音檔就播它 */
+  const src = bgmSrc();
+  if(src){
+    if(!bgmAudio){
+      bgmAudio = new Audio(src);
+      bgmAudio.loop = true;
+      bgmAudio.volume = 0.5;
+      /* 檔案壞掉或格式不支援時，退回合成音樂而不是靜悄悄地不動 */
+      bgmAudio.addEventListener('error', ()=>{
+        console.warn('[BGM] 音檔載入失敗，改用內建音樂');
+        bgmAudio = null;
+        if(bgmOn){ bgmOn = false; startSynthBGM(); }
+      }, { once:true });
+    }
+    bgmAudio.play().then(()=>{
+      bgmOn = true;
+      setBgmFab(true);
+    }).catch(()=>{
+      /* 瀏覽器擋掉自動播放：使用者再點一次就會成功 */
+      setBgmFab(false);
+    });
+    return;
+  }
+
+  startSynthBGM();
+}
+
+/* 內建的音樂盒版本，不需要任何音檔 */
+function startSynthBGM(){
   try{ audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return; }
   if(audioCtx.state==='suspended') audioCtx.resume();
   bgmOn=true;
@@ -438,8 +478,11 @@ function startBGM(){
   const loop=()=>{ if(!bgmOn) return; const dur=playMelodyOnce(); bgmTimer=setTimeout(loop,(dur+1.6)*1000); };
   loop();
 }
+
 function stopBGM(){
-  bgmOn=false; clearTimeout(bgmTimer);
+  bgmOn=false;
+  clearTimeout(bgmTimer);
+  if(bgmAudio) bgmAudio.pause();
   setBgmFab(false);
 }
 

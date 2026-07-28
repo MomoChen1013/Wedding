@@ -1,8 +1,9 @@
 {
   "slug": "demo-wedding-2027",
-  "generatedAt": "2026-07-28T07:49:26.513Z",
+  "generatedAt": "2026-07-28T15:41:38.796Z",
   "cover": "/assets/demo-wedding-2027/cover.svg",
   "lobby": "/assets/demo-wedding-2027/lobby.svg",
+  "bgm": "/assets/demo-wedding-2027/bgm.mp3",
   "gallery": [
     {
       "src": "/assets/demo-wedding-2027/gallery/01.svg",

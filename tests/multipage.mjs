@@ -342,6 +342,8 @@ console.log('\n[9] 素材資料夾自動載入');
   ok('manifest 有載入', !!assets && !!assets.cover, JSON.stringify(assets || {}).slice(0, 60));
   ok('照片牆 3 張', assets.gallery && assets.gallery.length === 3,
     String(assets.gallery && assets.gallery.length));
+  ok('背景音樂讀到客戶的音檔',
+    assets.bgm === '/assets/demo-wedding-2027/bgm.mp3', assets.bgm || '(無)');
   ok('大廳背景換成客戶的圖',
     await page.evaluate(() => {
       const bg = document.querySelector('img.bg');
@@ -375,6 +377,24 @@ console.log('\n[9] 素材資料夾自動載入');
   const assets = await page.evaluate(() => window.SITE.assets);
   ok('沒有素材資料夾時 assets 為空物件',
     assets && Object.keys(assets).length === 0, JSON.stringify(assets));
+  await page.close();
+}
+
+/* ---------- 背景音樂 ---------- */
+console.log('\n[9b] 背景音樂');
+{
+  const { page } = await visit(`/w/${ASSET_SLUG}/`);
+  const src = await page.evaluate(() => bgmSrc());
+  ok('bgmSrc() 指向客戶的音檔', src.endsWith('/bgm.mp3'), src || '(無)');
+  await page.close();
+}
+{
+  /* 沒放音檔的站台要退回內建合成音樂，不能整個沒聲音 */
+  const { page } = await visit(`/w/${SLUG}/`);
+  const src = await page.evaluate(() => bgmSrc());
+  ok('沒有音檔時退回內建音樂', src === '', src || '(空)');
+  ok('內建合成音樂的函式存在',
+    await page.evaluate(() => typeof startSynthBGM === 'function'));
   await page.close();
 }
 
