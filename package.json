@@ -13,7 +13,8 @@
     "create-short-link": "node scripts/create-short-link.js",
     "test:multipage": "firebase emulators:exec --only firestore,hosting,auth \"node tests/multipage.mjs\"",
     "test:all": "npm run test:rules && npm run test:e2e && npm run test:multipage",
-    "sync-assets": "node scripts/sync-assets.js"
+    "sync-assets": "node scripts/sync-assets.js",
+    "check-site": "node scripts/check-site.js"
   },
   "repository": {
     "type": "git",

@@ -344,6 +344,38 @@ Firestore 裡有填就用填的，沒填才用素材資料夾。
 
 ---
 
+## 站台打不開？先跑診斷
+
+```bash
+node scripts/check-site.js --slug ginny-one-20260919
+node scripts/check-site.js                    # 不加參數 = 列出全部站台
+```
+
+會一路檢查 `slugs` → `sites` → `status` → `pages` → RSVP → `ownerEmails`，
+把問題直接指出來，並印出所有可用的網址。
+
+### 兩種「找不到」長得不一樣，先分清楚
+
+| 畫面 | 意思 | 怎麼修 |
+|---|---|---|
+| **「404 找不到這個頁面」** | Hosting 層級：請求連 `index.html` 都沒進到 | 網域或部署的問題，見下 |
+| **「找不到這張邀請函」** | 網頁有載入，但 Firestore 查不到這個站台 | 資料問題，跑上面的診斷指令 |
+
+### Hosting 層級的 404
+
+先用 Firebase 的**預設網域**測，把自訂網域的變因排除掉：
+
+```
+https://wedding-22b94.web.app/w/{slug}/
+```
+
+- **預設網域打得開、自訂網域不行** → `minato.3udesign.website` 還沒指到這個專案。
+  到 Firebase Console → Hosting → 新增自訂網域，照指示在網域商加 A／TXT 記錄。
+  新專案是空的，網域不會自己跟過來。
+- **兩個都打不開** → hosting 沒部署成功，重跑 `npx firebase deploy --only hosting`。
+
+---
+
 ## 匯出 RSVP
 
 賓客的回覆**前端讀不到**（Security Rules 擋掉），只能用管理端金鑰匯出：
