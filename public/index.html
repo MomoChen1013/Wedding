@@ -10,6 +10,7 @@
 <meta property="og:type" content="website">
 
 <!-- 字體：全站單一字族 Noto Serif TC -->
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -22,11 +23,11 @@
 <div class="bg-decor"></div>
 <canvas id="fx"></canvas>
 
-<!-- ============ 固定背景：一張圖或一段影片，滾動時不會移動 ============ -->
+<!-- ============ 固定背景：一張圖或一段影片，滾動時不會移動 ============
+     src 由 js/index.js 依素材資料夾填入；沒有素材就不發請求，維持純色底 -->
 <div class="site-bg is-empty" id="siteBg">
   <video id="siteBgVideo" autoplay muted loop playsinline hidden></video>
-  <img class="bg" id="siteBgImg" src="/images/lobby.jpg" alt="" aria-hidden="true"
-       onerror="this.style.display='none'">
+  <img class="bg" id="siteBgImg" alt="" aria-hidden="true" hidden>
 </div>
 
 <!-- ============ 入場：填名字 + 抽 icon ============ -->

@@ -653,6 +653,37 @@ function buildFloating(){
 }
 
 /* ============================================================
+   子場景的背景照
+   ・來源只有這組新人的素材資料夾（public/assets/{slug}/）
+   ・data-bg 決定優先挑哪一類素材，挑不到就往下退
+   ・完全沒有素材時不設圖，畫面維持純色底
+============================================================ */
+const SCENE_BG_SOURCES = {
+  wishes:  ['cover', 'gallery'],
+  gallery: ['gallery', 'cover'],
+  cake:    ['cakes', 'cover', 'gallery'],
+};
+
+function pickSceneBg(kind){
+  const a = (window.SITE && window.SITE.assets) || {};
+  for(const key of (SCENE_BG_SOURCES[kind] || ['cover', 'gallery'])){
+    const v = a[key];
+    if(typeof v === 'string' && v) return v;
+    if(Array.isArray(v) && v.length && v[0].src) return v[0].src;
+  }
+  return (window.WED && window.WED.coverImageUrl) || '';
+}
+
+function applySceneBg(){
+  document.querySelectorAll('.scene-bg').forEach(el => {
+    const src = pickSceneBg(el.dataset.bg);
+    if(!src) return;                    // 沒素材 → 不發請求、不蓋白紗
+    el.style.backgroundImage = `url("${src}")`;
+    requestAnimationFrame(() => el.classList.add('show'));
+  });
+}
+
+/* ============================================================
    共用 UI 綁定（在每頁載入時呼叫一次）
 ============================================================ */
 function bindCommonUI(){
@@ -698,10 +729,9 @@ function bindCommonUI(){
   if(inboxClose) inboxClose.addEventListener('click', ()=>inboxModal.classList.remove('open'));
   if(inboxModal) inboxModal.addEventListener('click', e=>{ if(e.target===inboxModal) inboxModal.classList.remove('open'); });
 
-  /* 顯示場景背景照 */
-  document.querySelectorAll('.scene-bg').forEach(el=>{
-    requestAnimationFrame(()=>el.classList.add('show'));
-  });
+  /* 場景背景照：用這組新人自己的素材
+     ・沒有素材就維持純色底，不去要一張不存在的圖（以免 console 一堆 404） */
+  applySceneBg();
 }
 
 /* 本檔由 site-context.js 動態注入，載入時 DOM 多半已經就緒 */

@@ -8,16 +8,19 @@
 ============================================================ */
 if(!requireUser()) { /* requireUser 已導向首頁 */ }
 
-/* ===== 蛋糕清單（換成自己的照片：把 img 改成圖片網址即可） ===== */
+/* ===== 預設甜點清單 =====
+   這裡刻意不放圖片路徑：站台真正的甜點照片請放 public/assets/{slug}/cakes/，
+   由下面的 applyCakeAssets() 整批取代。沒放素材時就用 emoji 當甜點本體，
+   不會去要一張不存在的圖（避免 console 出現 404）。 */
 const CAKES = [
-  {name:'香草千層蛋糕',   emoji:'🍰', img:'/images/cakes-01.png'},
-  {name:'抹茶戚風蛋糕',   emoji:'🍵', img:'/images/cakes-02.png'},
-  {name:'草莓奶油戚風',   emoji:'🍓', img:'/images/cakes-03.png'},
-  {name:'水果派',         emoji:'🥧', img:'/images/cakes-04.png'},
-  {name:'蘋果派',         emoji:'🍎', img:'/images/cakes-08.png'},
-  {name:'焦糖布蕾',       emoji:'🍮', img:'/images/cakes-07.png'},
-  {name:'蒙布朗',         emoji:'🌰', img:'/images/cakes-06.png'},
-  {name:'伯爵綠葡萄蛋糕', emoji:'🍇', img:'/images/cakes-05.png'},
+  {name:'香草千層蛋糕',   emoji:'🍰'},
+  {name:'抹茶戚風蛋糕',   emoji:'🍵'},
+  {name:'草莓奶油戚風',   emoji:'🍓'},
+  {name:'水果派',         emoji:'🥧'},
+  {name:'蘋果派',         emoji:'🍎'},
+  {name:'焦糖布蕾',       emoji:'🍮'},
+  {name:'蒙布朗',         emoji:'🌰'},
+  {name:'伯爵綠葡萄蛋糕', emoji:'🍇'},
 ];
 
 /* 素材資料夾有 cakes/ 就用客戶自己的甜點，否則沿用上面的預設 */
