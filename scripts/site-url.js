@@ -17,11 +17,11 @@ import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 /* 本專案的正式網域。
-   目前留空 → 自動用 Firebase 的 https://{projectId}.web.app，
-   不必另外設定自訂網域。
+   對應 firebase.json 的 hosting.site（minato-studio-wedding）。
    之後若要換成自己的網域（例如 https://minato.3udesign.website），
-   先到 Firebase Hosting 新增自訂網域，再把它填進這裡。 */
-const PRIMARY_DOMAIN = '';
+   先到 Firebase Hosting 新增自訂網域，再把這裡換掉。
+   留空則自動退回 https://{projectId}.web.app。 */
+const PRIMARY_DOMAIN = 'https://minato-studio-wedding.web.app';
 
 function projectIdFromFirebaserc() {
   const file = fileURLToPath(new URL('../.firebaserc', import.meta.url));
