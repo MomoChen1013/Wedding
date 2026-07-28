@@ -1,0 +1,46 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* RSVP 建立時的欄位與商業規則驗證 */
+    function isValidRsvpCreate(data, siteId) {
+      let site = get(/databases/$(database)/documents/sites/$(siteId));
+      return data.keys().hasOnly(['name', 'attending', 'guestCount', 'dietaryNote', 'message', 'createdAt'])
+        && data.keys().hasAll(['name', 'attending', 'guestCount', 'dietaryNote', 'message', 'createdAt'])
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 40
+        && data.attending is bool
+        && data.guestCount is int && data.guestCount >= 1 && data.guestCount <= 10
+        && data.dietaryNote is string && data.dietaryNote.size() <= 300
+        && data.message is string && data.message.size() <= 300
+        && data.createdAt == request.time
+        && site.data.status == 'published'
+        && site.data.rsvpEnabled == true
+        && request.time <= site.data.rsvpDeadline;
+    }
+
+    /* sites/{siteId}：賓客可讀，寫入一律走管理端 Admin SDK，前端規則全擋 */
+    match /sites/{siteId} {
+      allow read: if true;
+      allow create, update, delete: if false;
+
+      /* sites/{siteId}/rsvps/{rsvpId}：只允許符合規則的新建，其餘全擋 */
+      match /rsvps/{rsvpId} {
+        allow create: if isValidRsvpCreate(request.resource.data, siteId);
+        allow read, update, delete: if false;
+      }
+    }
+
+    /* slugs/{slug}：網址佔位對照表，前端只能讀，寫入走 Admin SDK transaction */
+    match /slugs/{slug} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    /* short/{code}：短連結，前端只能讀，寫入走 Admin SDK transaction */
+    match /short/{code} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

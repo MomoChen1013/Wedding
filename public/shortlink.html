@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>轉址中…</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* 短連結轉址頁：讀 short/{code} 後直接跳轉 */
+:root{
+  --theme:#3D9AD1;
+  --accent:#E8A93C;
+  --ink:#2B2F36;
+  --ink-soft:#5C646F;
+  --paper:#FBFAF8;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100svh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;padding:40px 24px;text-align:center;
+  background:var(--paper);color:var(--ink);
+  font-family:"Noto Sans TC","Zen Kaku Gothic New",sans-serif;
+  font-weight:300;line-height:1.9;letter-spacing:.04em;
+  -webkit-font-smoothing:antialiased;
+}
+.spinner{
+  width:34px;height:34px;border-radius:50%;
+  border:2px solid rgba(61,154,209,.18);border-top-color:var(--theme);
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mark{font-size:2.6rem;line-height:1;color:var(--accent)}
+h1{font-size:1.35rem;font-weight:500;margin:6px 0 0}
+p{color:var(--ink-soft);font-size:.94rem;margin:0;max-width:34ch}
+footer{
+  font-family:"Archivo",sans-serif;font-size:.72rem;letter-spacing:.2em;
+  color:#8A929D;margin-top:34px;
+}
+[hidden]{display:none !important}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+
+<div id="loadingState">
+  <div class="spinner"></div>
+  <p>正在為您轉址…</p>
+</div>
+
+<div id="notFoundState" hidden>
+  <div class="mark">✦</div>
+  <h1>找不到這個短連結</h1>
+  <p>這個連結可能輸入錯誤，或已經失效了。<br>請再確認一次收到的連結 🤍</p>
+  <footer>MINATO STUDIO</footer>
+</div>
+
+<script type="module">
+/* ============================================================
+   1. 從 /s/{code} 解析代號
+   2. 讀 short/{code} 取得 target
+   3. 以 location.replace() 轉址（不留下上一頁記錄）
+============================================================ */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import {
+  getFirestore, doc, getDoc, connectFirestoreEmulator
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCU9_kkUzqiAjouvbf-_d7geeHXup-ltYA",
+  authDomain: "wedding-22b94.firebaseapp.com",
+  projectId: "wedding-22b94",
+  storageBucket: "wedding-22b94.firebasestorage.app",
+  messagingSenderId: "246468418759",
+  appId: "1:246468418759:web:a2340dabefae916ad0b2e2",
+};
+
+const db = getFirestore(initializeApp(firebaseConfig));
+
+if(location.hostname === 'localhost' || location.hostname === '127.0.0.1'){
+  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+}
+
+function showNotFound(){
+  document.getElementById('loadingState').hidden = true;
+  document.getElementById('notFoundState').hidden = false;
+  document.title = '找不到這個短連結';
+}
+
+async function main(){
+  const m = location.pathname.match(/^\/s\/([^/?#]+)/);
+  const code = m ? decodeURIComponent(m[1]).toLowerCase() : null;
+  if(!code || !/^[a-z0-9]{6}$/.test(code)){ showNotFound(); return; }
+
+  try{
+    const snap = await getDoc(doc(db, 'short', code));
+    if(!snap.exists()){ showNotFound(); return; }
+
+    const target = snap.data().target;
+    /* 只接受 http(s)，避免被寫入 javascript: 之類的協定 */
+    if(typeof target !== 'string' || !/^https?:\/\//i.test(target)){
+      showNotFound();
+      return;
+    }
+    location.replace(target);
+  }catch{
+    showNotFound();
+  }
+}
+
+main();
+</script>
+</body>
+</html>
