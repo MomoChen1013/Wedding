@@ -18,14 +18,20 @@ function escapeHtml(s){
 function $(sel, root){ return (root||document).querySelector(sel); }
 function $all(sel, root){ return Array.from((root||document).querySelectorAll(sel)); }
 
-/* ---------- localStorage 包裝 ---------- */
+/* ---------- localStorage 包裝 ----------
+   key 以 siteId 分隔，同一位賓客逛兩組新人的網站時，
+   名字、主題、回覆紀錄不會互相污染 */
 const LS = {
+  _k(key){ return `wed.${(window.SITE && window.SITE.siteId) || 'default'}.${key}`; },
   get(key, def){
-    try{ const v = localStorage.getItem('momo.'+key); return v===null ? def : JSON.parse(v); }
+    try{ const v = localStorage.getItem(this._k(key)); return v===null ? def : JSON.parse(v); }
     catch{ return def; }
   },
   set(key, val){
-    try{ localStorage.setItem('momo.'+key, JSON.stringify(val)); }catch{}
+    try{ localStorage.setItem(this._k(key), JSON.stringify(val)); }catch{}
+  },
+  remove(key){
+    try{ localStorage.removeItem(this._k(key)); }catch{}
   }
 };
 
@@ -39,8 +45,18 @@ const DataStore = {
   _wishes:[], _letters:[], _hearts:0, _collected:[], _cakes:[], _compat:[], _rsvps:[],
   _subscribed:false,
 
+  /* 這組新人的資料都掛在 sites/{siteId} 底下，各站台互不相見 */
+  _col(name){
+    const { db, collection } = window.fb;
+    return collection(db, 'sites', window.SITE.siteId, name);
+  },
+  _doc(...path){
+    const { db, doc } = window.fb;
+    return doc(db, 'sites', window.SITE.siteId, ...path);
+  },
+
   init(){
-    if(!window.fb){ console.warn('[DataStore] window.fb 還沒就緒'); return; }
+    if(!window.fb || !window.SITE){ console.warn('[DataStore] 站台脈絡還沒就緒'); return; }
     const { auth, onAuthStateChanged } = window.fb;
     onAuthStateChanged(auth, user => {
       if(!user || this._subscribed) return;
@@ -50,7 +66,7 @@ const DataStore = {
   },
 
   _subscribe(){
-    const { db, auth, collection, onSnapshot, query, orderBy, where, doc } = window.fb;
+    const { auth, onSnapshot, query, orderBy, where } = window.fb;
     const uid = auth.currentUser && auth.currentUser.uid;
 
     const sub = (key, qFn) => {
@@ -60,38 +76,39 @@ const DataStore = {
       }, err => console.warn('[DataStore] onSnapshot', key, err));
     };
 
-    /* 全站共用（大家都看得到） */
-    sub('wishes',  () => query(collection(db, 'wishes'),  orderBy('time', 'asc')));
-    sub('letters', () => query(collection(db, 'letters'), orderBy('time', 'asc')));
-    sub('cakes',   () => query(collection(db, 'cakes'),   orderBy('time', 'asc')));
-    sub('compat',  () => query(collection(db, 'compat'),  orderBy('time', 'asc')));
-    sub('rsvps',   () => query(collection(db, 'rsvps'),   orderBy('time', 'asc')));
+    /* 本站台共用（賓客都看得到） */
+    sub('wishes',  () => query(this._col('wishes'),  orderBy('time', 'asc')));
+    sub('letters', () => query(this._col('letters'), orderBy('time', 'asc')));
+    sub('cakes',   () => query(this._col('cakes'),   orderBy('time', 'asc')));
+    sub('compat',  () => query(this._col('compat'),  orderBy('time', 'asc')));
 
     /* 抽卡收藏：per-uid，只訂閱自己的卡
        （不加 orderBy 以免要建立複合索引；排序在 getCollected() 由前端做） */
-    sub('collected', () => query(collection(db, 'collected'), where('uid', '==', uid)));
+    sub('collected', () => query(this._col('collected'), where('uid', '==', uid)));
 
-    /* 愛心是單一計數器，存在 meta/hearts */
-    onSnapshot(doc(db, 'meta', 'hearts'), snap => {
+    /* 愛心是單一計數器，存在 sites/{siteId}/meta/hearts */
+    onSnapshot(this._doc('meta', 'hearts'), snap => {
       this._hearts = (snap.data()?.count) || 0;
       document.dispatchEvent(new CustomEvent('data:hearts'));
     }, err => console.warn('[DataStore] onSnapshot hearts', err));
+
+    /* RSVP 依規則不開放前端讀取，這裡不訂閱；名單請用 export-rsvps.js 匯出 */
   },
 
   /* ===== 寫入（async；可不 await） ===== */
   async addWish(w){
-    const { db, collection, addDoc } = window.fb;
-    return addDoc(collection(db, 'wishes'), { ...w, time: w.time || Date.now() });
+    const { addDoc } = window.fb;
+    return addDoc(this._col('wishes'), { ...w, time: w.time || Date.now() });
   },
   async addLetter(l){
-    const { db, collection, addDoc } = window.fb;
-    return addDoc(collection(db, 'letters'), { ...l, time: l.time || Date.now() });
+    const { addDoc } = window.fb;
+    return addDoc(this._col('letters'), { ...l, time: l.time || Date.now() });
   },
   async addCollected(c){
-    const { db, auth, collection, addDoc } = window.fb;
+    const { auth, addDoc } = window.fb;
     const uid = auth.currentUser ? auth.currentUser.uid : null;
     const userName = (typeof me_user !== 'undefined' && me_user) ? me_user.name : '';
-    return addDoc(collection(db, 'collected'), {
+    return addDoc(this._col('collected'), {
       ...c,
       uid,                  // ← 用 Firebase Auth UID 隔離（每位訪客各自獨立）
       userName,             // ← 順便存名字，方便日後查
@@ -99,21 +116,21 @@ const DataStore = {
     });
   },
   async addCake(c){
-    const { db, collection, addDoc } = window.fb;
-    return addDoc(collection(db, 'cakes'), { ...c, time: c.time || Date.now() });
+    const { addDoc } = window.fb;
+    return addDoc(this._col('cakes'), { ...c, time: c.time || Date.now() });
   },
   async addCompat(answers){
-    const { db, collection, addDoc } = window.fb;
-    return addDoc(collection(db, 'compat'), { answers, time: Date.now() });
+    const { addDoc } = window.fb;
+    return addDoc(this._col('compat'), { answers, time: Date.now() });
   },
+  /* RSVP 的欄位由規則嚴格白名單控管，這裡不能再自動塞 time */
   async addRSVP(r){
-    const { db, auth, collection, addDoc } = window.fb;
-    const uid = auth.currentUser ? auth.currentUser.uid : null;
-    return addDoc(collection(db, 'rsvps'), { ...r, uid, time: r.time || Date.now() });
+    const { addDoc } = window.fb;
+    return addDoc(this._col('rsvps'), r);
   },
   async addHeart(){
-    const { db, doc, runTransaction } = window.fb;
-    const ref = doc(db, 'meta', 'hearts');
+    const { db, runTransaction } = window.fb;
+    const ref = this._doc('meta', 'hearts');
     await runTransaction(db, async tx => {
       const cur = (await tx.get(ref)).data()?.count || 0;
       tx.set(ref, { count: cur + 1 });
@@ -121,12 +138,12 @@ const DataStore = {
     return this._hearts + 1;
   },
 
-  /* ===== 新人專用：清空某個 collection（用於重置票數） ===== */
+  /* ===== 新人專用：清空某個子集合（用於重置票數） ===== */
   async wipeCollection(name){
-    const { db, collection, getDocs, deleteDoc, doc } = window.fb;
-    const snap = await getDocs(collection(db, name));
+    const { getDocs, deleteDoc } = window.fb;
+    const snap = await getDocs(this._col(name));
     /* 並行刪除（小資料量 OK；超過幾百筆建議改用 writeBatch） */
-    await Promise.all(snap.docs.map(d => deleteDoc(doc(db, name, d.id))));
+    await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
     return snap.docs.length;
   },
 
@@ -151,9 +168,65 @@ const DataStore = {
   },
 };
 
-/* 等 firebase-init.js 載入完成才啟動 */
-if(window.fb) DataStore.init();
-else window.addEventListener('fb:ready', () => DataStore.init());
+/* site-context.js 已確保 window.fb 與 window.SITE 就緒才載入本檔 */
+DataStore.init();
+
+/* ============================================================
+   站內導覽：把舊有的 xxx.html 連結改寫成 /w/{slug}/xxx
+   ・未啟用的頁面連結會整個移除，大廳不會出現死入口
+============================================================ */
+function sitePath(key){
+  return window.SITE ? window.SITE.pathFor(key) : '/';
+}
+/* ============================================================
+   文字樣板：把 HTML 裡的 {{couple}}、{{date}} 等換成這組新人的資料
+   ・純文字節點與 placeholder／alt／title／content 屬性都會處理
+   ・找不到對應的 key 就換成空字串，畫面不會露出 {{...}}
+============================================================ */
+const TPL_ATTRS = ['placeholder', 'alt', 'title', 'content', 'aria-label'];
+
+function fillTemplates(root){
+  const W = window.WED || {};
+  const val = (key) => {
+    if(key === 'hashtag') return (W.hashtags && W.hashtags[0]) || '';
+    return W[key] != null ? String(W[key]) : '';
+  };
+  const swap = (text) => text.replace(/\{\{(\w+)\}\}/g, (_, k) => val(k));
+
+  const scope = root || document;
+
+  /* 文字節點 */
+  const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT);
+  const hits = [];
+  while(walker.nextNode()){
+    if(walker.currentNode.nodeValue.includes('{{')) hits.push(walker.currentNode);
+  }
+  hits.forEach(n => { n.nodeValue = swap(n.nodeValue); });
+
+  /* 屬性 */
+  scope.querySelectorAll('*').forEach(el => {
+    TPL_ATTRS.forEach(attr => {
+      const v = el.getAttribute && el.getAttribute(attr);
+      if(v && v.includes('{{')) el.setAttribute(attr, swap(v));
+    });
+  });
+}
+
+function rewriteNavLinks(root){
+  const S = window.SITE;
+  if(!S) return;
+  (root || document).querySelectorAll('a[href]').forEach(a => {
+    const href = a.getAttribute('href');
+    const key = S.fileToKey[href];
+    if(!key) return;
+    if(S.isEnabled(key)){
+      a.setAttribute('href', S.pathFor(key));
+    }else{
+      /* 這組新人沒開這個頁面 */
+      a.remove();
+    }
+  });
+}
 
 /* ============================================================
    使用者（名字 + 隨機 icon）
@@ -161,7 +234,7 @@ else window.addEventListener('fb:ready', () => DataStore.init());
 const ICONS = ['💍','🤍','🌷','🕊️','🥂','💐','✨','🌿','🍾','💒','🎀','🌸','💌','🫶','🥰','👰','🤵','💕'];
 let me_user = LS.get('user', null) || { name:'朋友', icon:'🎀' };
 function saveUser(u){ me_user = u; LS.set('user', u); }
-function clearUser(){ me_user = { name:'朋友', icon:'🎀' }; localStorage.removeItem('momo.user'); }
+function clearUser(){ me_user = { name:'朋友', icon:'🎀' }; LS.remove('user'); }
 
 /* 登出：清掉本地 user / session、Firebase 也 signOut，最後回到入場頁
    （firebase-init 會在沒有 user 時自動匿名登入新 uid，等於是一個全新的訪客） */
@@ -174,14 +247,14 @@ async function logout(){
   clearUser();
   try{ sessionStorage.clear(); }catch{}
   /* 清掉 compat 暫存（避免下個 user 看到上一位的答案） */
-  try{ localStorage.removeItem('momo.compatLast'); }catch{}
-  location.href = 'index.html';
+  LS.remove('compatLast');
+  location.href = sitePath('lobby');
 }
 
 /* 子場景：沒登入就丟回大廳 */
 function requireUser(){
   if(!LS.get('user', null)){
-    location.href = 'index.html';
+    location.href = sitePath('lobby');
     return false;
   }
   return true;
@@ -389,6 +462,10 @@ function renderInbox(){
 function bindCommonUI(){
   initFx();
 
+  /* 先套上這組新人的文字，再把站內連結換成 /w/{slug}/xxx */
+  fillTemplates();
+  rewriteNavLinks();
+
   /* 主題切換 */
   const themeFab = document.getElementById('themeFab');
   const themePop = document.getElementById('themePop');
@@ -449,5 +526,9 @@ function bindCommonUI(){
   });
 }
 
-/* DOMContentLoaded 後自動套用 */
-document.addEventListener('DOMContentLoaded', bindCommonUI);
+/* 本檔由 site-context.js 動態注入，載入時 DOM 多半已經就緒 */
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', bindCommonUI);
+}else{
+  bindCommonUI();
+}

@@ -5,19 +5,31 @@
   },
   "hosting": {
     "public": "public",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "assets/e2e/**"
+    ],
+    "cleanUrls": true,
     "rewrites": [
-      {
-        "source": "/w/**",
-        "destination": "/invitation.html"
-      },
-      {
-        "source": "/s/**",
-        "destination": "/shortlink.html"
-      }
+      { "source": "/w/*/info",       "destination": "/info.html" },
+      { "source": "/w/*/rsvp",       "destination": "/rsvp.html" },
+      { "source": "/w/*/wall",       "destination": "/wall.html" },
+      { "source": "/w/*/cake",       "destination": "/cake.html" },
+      { "source": "/w/*/draw",       "destination": "/draw.html" },
+      { "source": "/w/*/exhibition", "destination": "/exhibition.html" },
+      { "source": "/w/*/quiz",       "destination": "/quiz.html" },
+      { "source": "/w/*/inbox",      "destination": "/inbox.html" },
+      { "source": "/w/*/invitation", "destination": "/invitation.html" },
+      { "source": "/w/**",           "destination": "/index.html" },
+      { "source": "/s/**",           "destination": "/shortlink.html" }
     ]
   },
   "emulators": {
+    "auth": {
+      "port": 9099
+    },
     "firestore": {
       "port": 8080
     },

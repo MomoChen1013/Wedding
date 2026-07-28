@@ -10,14 +10,14 @@ if(!requireUser()) { /* requireUser 已導向首頁 */ }
 
 /* ===== 蛋糕清單（換成自己的照片：把 img 改成圖片網址即可） ===== */
 const CAKES = [
-  {name:'香草千層蛋糕',   emoji:'🍰', img:'images/cakes-01.png'},
-  {name:'抹茶戚風蛋糕',   emoji:'🍵', img:'images/cakes-02.png'},
-  {name:'草莓奶油戚風',   emoji:'🍓', img:'images/cakes-03.png'},
-  {name:'水果派',         emoji:'🥧', img:'images/cakes-04.png'},
-  {name:'蘋果派',         emoji:'🍎', img:'images/cakes-08.png'},
-  {name:'焦糖布蕾',       emoji:'🍮', img:'images/cakes-07.png'},
-  {name:'蒙布朗',         emoji:'🌰', img:'images/cakes-06.png'},
-  {name:'伯爵綠葡萄蛋糕', emoji:'🍇', img:'images/cakes-05.png'},
+  {name:'香草千層蛋糕',   emoji:'🍰', img:'/images/cakes-01.png'},
+  {name:'抹茶戚風蛋糕',   emoji:'🍵', img:'/images/cakes-02.png'},
+  {name:'草莓奶油戚風',   emoji:'🍓', img:'/images/cakes-03.png'},
+  {name:'水果派',         emoji:'🥧', img:'/images/cakes-04.png'},
+  {name:'蘋果派',         emoji:'🍎', img:'/images/cakes-08.png'},
+  {name:'焦糖布蕾',       emoji:'🍮', img:'/images/cakes-07.png'},
+  {name:'蒙布朗',         emoji:'🌰', img:'/images/cakes-06.png'},
+  {name:'伯爵綠葡萄蛋糕', emoji:'🍇', img:'/images/cakes-05.png'},
 ];
 const WISHES_TXT = ['新婚快樂，白頭偕老～','願你們永遠幸福 ✦','有情人終成眷屬 ✨','百年好合，永浴愛河 ♡','甜甜蜜蜜，長長久久 🍯'];
 

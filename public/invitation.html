@@ -98,6 +98,18 @@ section{padding:64px 0}
   border:0;border-radius:2px;margin:30px auto 0;
 }
 
+/* ---------- 倒數計時 ---------- */
+.countdown{
+  display:inline-flex;align-items:baseline;gap:8px;
+  margin:22px 0 0;padding:10px 20px;
+  background:rgba(var(--theme-rgb),.07);border-radius:999px;
+  font-size:.9rem;color:var(--ink-soft);
+}
+.countdown b{
+  font-family:"Archivo","Noto Sans TC",sans-serif;
+  font-size:1.45rem;font-weight:500;color:var(--theme);letter-spacing:.02em;
+}
+
 /* ---------- 區塊標題 ---------- */
 .sec-title{
   font-size:.74rem;letter-spacing:.24em;text-transform:uppercase;
@@ -109,6 +121,67 @@ section{padding:64px 0}
   white-space:pre-wrap;font-size:1rem;color:var(--ink-soft);
   text-align:center;margin:0;
 }
+
+/* ---------- 照片牆 ---------- */
+.gallery{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:10px;
+}
+@media(min-width:600px){
+  .gallery{grid-template-columns:repeat(3,1fr);gap:14px}
+}
+.gallery button{
+  padding:0;border:0;background:none;cursor:zoom-in;
+  border-radius:var(--radius-sm);overflow:hidden;
+  box-shadow:var(--shadow);line-height:0;
+  transition:transform .22s,box-shadow .22s;
+}
+.gallery button:hover{transform:translateY(-2px);box-shadow:var(--shadow-lift)}
+.gallery button:focus-visible{outline:2px solid var(--theme);outline-offset:3px}
+.gallery img{width:100%;aspect-ratio:4/5;object-fit:cover}
+
+/* 點圖放大 */
+.lightbox{
+  position:fixed;inset:0;z-index:50;
+  display:flex;align-items:center;justify-content:center;padding:24px;
+  background:rgba(24,27,31,.9);cursor:zoom-out;
+  animation:fade .2s ease;
+}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.lightbox img{
+  max-width:100%;max-height:100%;object-fit:contain;
+  border-radius:var(--radius-sm);
+}
+.lightbox-close{
+  position:absolute;top:16px;right:20px;
+  width:42px;height:42px;border:0;border-radius:50%;
+  background:rgba(255,255,255,.12);color:#fff;font-size:1.3rem;
+  cursor:pointer;line-height:1;
+}
+
+/* ---------- 短說明區塊（dress code／禮金） ---------- */
+.note-text{white-space:pre-wrap;margin:0}
+
+/* ---------- hashtag ---------- */
+.tags{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:8px;
+  margin:0;padding:0;list-style:none;
+}
+.tags li{
+  font-family:"Archivo","Noto Sans TC",sans-serif;
+  font-size:.82rem;letter-spacing:.06em;color:var(--theme);
+  background:rgba(var(--theme-rgb),.08);
+  border-radius:999px;padding:6px 14px;
+}
+
+/* ---------- 加入行事曆 ---------- */
+.cal-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  margin-top:18px;font:inherit;font-size:.9rem;color:var(--theme);
+  background:var(--card);border:1px solid rgba(var(--theme-rgb),.35);
+  border-radius:999px;padding:10px 20px;cursor:pointer;
+  transition:background .18s,border-color .18s;
+}
+.cal-btn:hover{background:rgba(var(--theme-rgb),.07);border-color:var(--theme)}
 
 /* ---------- 資訊卡 ---------- */
 .card{
@@ -241,6 +314,7 @@ footer{
         <span id="groomName"></span><span class="amp">&amp;</span><span id="brideName"></span>
       </h1>
       <p class="hero-date latin" id="heroDate"></p>
+      <p class="countdown" id="countdown" hidden></p>
       <hr class="rule">
     </div>
   </header>
@@ -250,6 +324,14 @@ footer{
     <div class="wrap">
       <h2 class="sec-title latin">Our Story</h2>
       <p class="story" id="story"></p>
+    </div>
+  </section>
+
+  <!-- 照片牆 -->
+  <section id="gallerySection" hidden>
+    <div class="wrap">
+      <h2 class="sec-title latin">Gallery</h2>
+      <div class="gallery" id="gallery"></div>
     </div>
   </section>
 
@@ -270,6 +352,17 @@ footer{
             <a class="map-link" id="mapLink" target="_blank" rel="noopener noreferrer" hidden>查看地圖 →</a>
           </p>
         </div>
+        <div class="info-row" id="dressRow" hidden>
+          <div class="info-label">服裝</div>
+          <p class="info-value note-text" id="dressCode"></p>
+        </div>
+        <div class="info-row" id="giftRow" hidden>
+          <div class="info-label">禮金</div>
+          <p class="info-value note-text" id="giftNote"></p>
+        </div>
+      </div>
+      <div style="text-align:center">
+        <button type="button" class="cal-btn" id="calBtn" hidden>加入行事曆</button>
       </div>
     </div>
   </section>
@@ -345,8 +438,20 @@ footer{
     </div>
   </section>
 
+  <section id="tagSection" hidden style="padding-top:0">
+    <div class="wrap">
+      <ul class="tags" id="hashtags"></ul>
+    </div>
+  </section>
+
   <footer class="latin">MINATO STUDIO</footer>
 </main>
+
+<!-- 照片放大 -->
+<div class="lightbox" id="lightbox" hidden>
+  <button type="button" class="lightbox-close" id="lightboxClose" aria-label="關閉">✕</button>
+  <img id="lightboxImg" alt="">
+</div>
 
 <script type="module">
 /* ============================================================
@@ -373,8 +478,11 @@ const firebaseConfig = {
 
 const db = getFirestore(initializeApp(firebaseConfig));
 
-/* 本機開發時自動連到 Firestore emulator，正式網域不受影響 */
-if(location.hostname === 'localhost' || location.hostname === '127.0.0.1'){
+/* 本機開發時自動連到 Firestore emulator，正式網域不受影響。
+   網址加 ?live=1 可在本機直接讀正式資料庫（方便預覽真實站台） */
+const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const wantsLive = new URLSearchParams(location.search).get('live') === '1';
+if(isLocal && !wantsLive){
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
 }
 
@@ -433,6 +541,126 @@ function formatEventDate(ts, timeZone){
 
 function setText(id, value){ $(id).textContent = value ?? ''; }
 
+/* 只留下真的有值的字串，避免空字串進到畫面 */
+function cleanList(value){
+  return Array.isArray(value)
+    ? value.filter((v) => typeof v === 'string' && v.trim()).map((v) => v.trim())
+    : [];
+}
+
+/* ---------- 倒數計時 ---------- */
+function renderCountdown(eventDate){
+  if(!(eventDate instanceof Timestamp)) return;
+  const box = $('countdown');
+  const target = eventDate.toDate().getTime();
+
+  function tick(){
+    const diff = target - Date.now();
+    if(diff <= 0){
+      box.textContent = '我們結婚了 ♡';
+      return false;
+    }
+    const days = Math.ceil(diff / 86400000);
+    box.innerHTML = `距離婚禮還有 <b>${days}</b> 天`;
+    return true;
+  }
+
+  box.hidden = false;
+  if(tick()){
+    /* 每小時校正一次即可，不需要秒級跳動 */
+    setInterval(tick, 3600000);
+  }
+}
+
+/* ---------- 照片牆 ---------- */
+function renderGallery(photos, couple){
+  const list = cleanList(photos);
+  if(!list.length) return;
+
+  const grid = $('gallery');
+  list.forEach((src, i) => {
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = `${couple} 的婚紗照 ${i + 1}`;
+    img.loading = 'lazy';
+    img.decoding = 'async';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.setAttribute('aria-label', `放大第 ${i + 1} 張照片`);
+    btn.appendChild(img);
+    btn.addEventListener('click', () => openLightbox(src, img.alt));
+
+    /* 載不到的照片就整格移除，不留破圖 */
+    img.addEventListener('error', () => btn.remove(), { once:true });
+    grid.appendChild(btn);
+  });
+
+  $('gallerySection').hidden = false;
+}
+
+function openLightbox(src, alt){
+  const box = $('lightbox');
+  $('lightboxImg').src = src;
+  $('lightboxImg').alt = alt;
+  box.hidden = false;
+  document.body.style.overflow = 'hidden';
+  $('lightboxClose').focus();
+}
+
+function closeLightbox(){
+  $('lightbox').hidden = true;
+  $('lightboxImg').src = '';
+  document.body.style.overflow = '';
+}
+
+$('lightbox').addEventListener('click', closeLightbox);
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape' && !$('lightbox').hidden) closeLightbox();
+});
+
+/* ---------- 加入行事曆（產生 .ics 讓各平台自己開） ---------- */
+function setupCalendar(site){
+  if(!(site.eventDate instanceof Timestamp)) return;
+
+  const start = site.eventDate.toDate();
+  /* 沒設結束時間就抓 3 小時 */
+  const end = site.eventEndDate instanceof Timestamp
+    ? site.eventEndDate.toDate()
+    : new Date(start.getTime() + 3 * 3600000);
+
+  const stamp = (d) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  /* ics 規格要求逗號、分號、反斜線需逃脫，換行寫成 \n */
+  const esc = (s) => String(s || '')
+    .replace(/\\/g, '\\\\').replace(/([,;])/g, '\\$1').replace(/\r?\n/g, '\\n');
+
+  const title = `${site.groomName} & ${site.brideName} 的婚禮`;
+  const location = [site.venueName, site.venueAddress].filter(Boolean).join(' ');
+
+  const ics = [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Minato Studio//Wedding//ZH',
+    'BEGIN:VEVENT',
+    `UID:${site.slug || 'wedding'}-${stamp(start)}@minato`,
+    `DTSTAMP:${stamp(new Date())}`,
+    `DTSTART:${stamp(start)}`,
+    `DTEND:${stamp(end)}`,
+    `SUMMARY:${esc(title)}`,
+    location ? `LOCATION:${esc(location)}` : '',
+    'END:VEVENT', 'END:VCALENDAR',
+  ].filter(Boolean).join('\r\n');
+
+  const btn = $('calBtn');
+  btn.hidden = false;
+  btn.addEventListener('click', () => {
+    const url = URL.createObjectURL(new Blob([ics], { type:'text/calendar;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${site.slug || 'wedding'}.ics`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+}
+
 /* ---------- 渲染邀請函 ---------- */
 function render(site){
   /* 主題色注入 */
@@ -485,6 +713,31 @@ function render(site){
     $('storySection').hidden = false;
     setText('story', site.story);
   }
+
+  /* Dress code 與禮金說明 */
+  if(site.dressCode){
+    $('dressRow').hidden = false;
+    setText('dressCode', site.dressCode);
+  }
+  if(site.giftNote){
+    $('giftRow').hidden = false;
+    setText('giftNote', site.giftNote);
+  }
+
+  /* hashtag */
+  const tags = cleanList(site.hashtags);
+  if(tags.length){
+    $('tagSection').hidden = false;
+    tags.forEach((tag) => {
+      const li = document.createElement('li');
+      li.textContent = tag.startsWith('#') ? tag : `#${tag}`;
+      $('hashtags').appendChild(li);
+    });
+  }
+
+  renderCountdown(site.eventDate);
+  renderGallery(site.photos, `${groom} & ${bride}`);
+  setupCalendar(site);
 }
 
 /* ---------- RSVP ---------- */
@@ -620,6 +873,8 @@ async function main(){
     site = siteSnap.data();
     /* 只有已發布的站台才對外顯示 */
     if(site.status !== 'published'){ showNotFound(); return; }
+    /* 這組新人若沒開啟單頁邀請函，就當作不存在 */
+    if(site.pages && site.pages.invitation === false){ showNotFound(); return; }
   }catch{
     /* 連線失敗也走同一個友善畫面，不在 console 噴錯 */
     showNotFound();

@@ -5,13 +5,14 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "test:rules": "firebase emulators:exec --only firestore \"vitest run tests/rules.test.mjs\"",
     "test:e2e": "firebase emulators:exec --only firestore,hosting \"node tests/e2e.mjs\"",
-    "emulators": "firebase emulators:start --only firestore,hosting",
+    "emulators": "firebase emulators:start --only firestore,hosting,auth",
     "create-site": "node scripts/create-site.js",
     "export-rsvps": "node scripts/export-rsvps.js",
-    "create-short-link": "node scripts/create-short-link.js"
+    "create-short-link": "node scripts/create-short-link.js",
+    "test:multipage": "firebase emulators:exec --only firestore,hosting,auth \"node tests/multipage.mjs\"",
+    "test:all": "npm run test:rules && npm run test:e2e && npm run test:multipage"
   },
   "repository": {
     "type": "git",
@@ -24,6 +25,7 @@
     "@firebase/rules-unit-testing": "^5.0.1",
     "firebase": "^12.16.0",
     "firebase-tools": "^15.24.0",
+    "matter-js": "^0.20.0",
     "playwright": "^1.62.0",
     "vitest": "^4.1.10"
   },

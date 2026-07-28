@@ -45,6 +45,11 @@ const SEED = {
     venueAddress: '台北市中山區中山北路二段39巷3號',
     venueMapUrl: '', themeColor: '#3D9AD1', coverImageUrl: '',
     story: '我們在一場朋友的婚禮上第一次見面，\n那天他把最後一塊蛋糕讓給了我。\n\n七年後，換我們請大家吃蛋糕了。',
+    photos: ['/assets/e2e/a.svg', '/assets/e2e/b.svg', '/assets/e2e/c.svg'],
+    hashtags: ['#陳林2027', '我們結婚了'],
+    dressCode: '溫柔大地色系・香檳金／裸粉／霧綠',
+    giftNote: '您願意撥空前來，就是給我們最好的禮物 ♡',
+    eventEndDate: AdminTimestamp.fromDate(new Date('2027-03-15T07:00:00Z')),
     rsvpDeadline: future(60), rsvpEnabled: true, ownerEmail: '',
   },
   'wu-yang-1220': {
@@ -53,6 +58,7 @@ const SEED = {
     eventDate: TOKYO_EVENING, timezone: 'Asia/Tokyo',
     venueName: '目黒雅叙園', venueAddress: '東京都目黒区下目黒1-8-1',
     venueMapUrl: '', themeColor: '#B5838D', coverImageUrl: '', story: '',
+    photos: [], hashtags: [], dressCode: '', giftNote: '',
     rsvpDeadline: future(120), rsvpEnabled: true, ownerEmail: '',
   },
   'draft-site-test': {
@@ -93,7 +99,7 @@ async function seed() {
   }
   /* 短連結：一筆正常、一筆帶惡意協定 */
   await adb.collection('short').doc('ab23cd').set({
-    target: `${BASE}/w/chen-lin-0315`, createdAt: AdminTimestamp.now(), hits: 0,
+    target: `${BASE}/w/chen-lin-0315/invitation`, createdAt: AdminTimestamp.now(), hits: 0,
   });
   await adb.collection('short').doc('evil99').set({
     target: 'javascript:alert(1)', createdAt: AdminTimestamp.now(), hits: 0,
@@ -157,9 +163,9 @@ function ok(label, cond, extra = '') {
 }
 
 /* ---------- 站台 A ---------- */
-console.log('\n[1] /w/chen-lin-0315');
+console.log('\n[1] /w/chen-lin-0315/invitation');
 {
-  const { page, consoleErrors } = await visit('/w/chen-lin-0315');
+  const { page, consoleErrors } = await visit('/w/chen-lin-0315/invitation');
   const t = await page.title();
   const groom = await page.textContent('#groomName');
   const bride = await page.textContent('#brideName');
@@ -181,14 +187,43 @@ console.log('\n[1] /w/chen-lin-0315');
   ok('故事保留換行', story.includes('\n'));
   ok('RSVP 表單顯示', formVisible);
   ok('未顯示 404', notFoundHidden);
+
+  /* 新增內容區塊 */
+  ok('倒數計時顯示', (await page.textContent('#countdown')).includes('距離婚禮還有'),
+    await page.textContent('#countdown'));
+  ok('照片牆顯示 3 張', await page.locator('#gallery button').count() === 3,
+    String(await page.locator('#gallery button').count()));
+  ok('Dress code 顯示',
+    (await page.textContent('#dressCode')).includes('香檳金'));
+  ok('禮金說明顯示',
+    (await page.textContent('#giftNote')).includes('最好的禮物'));
+  const tags = await page.locator('#hashtags li').allTextContents();
+  ok('hashtag 顯示且自動補 #',
+    tags.join(',') === '#陳林2027,#我們結婚了', tags.join(','));
+  ok('加入行事曆按鈕顯示', await page.isVisible('#calBtn'));
+
   ok('無 console 錯誤', consoleErrors.length === 0, consoleErrors.join(' | '));
   await page.close();
 }
 
-/* ---------- 站台 B（主題色與內容須互不干擾） ---------- */
-console.log('\n[2] /w/wu-yang-1220');
+/* ---------- 照片放大 ---------- */
+console.log('\n[1b] 照片放大');
 {
-  const { page, consoleErrors } = await visit('/w/wu-yang-1220');
+  const { page } = await visit('/w/chen-lin-0315/invitation');
+  ok('lightbox 預設關閉', !(await page.isVisible('#lightbox')));
+  await page.locator('#gallery button').first().click();
+  await page.waitForSelector('#lightbox', { state: 'visible', timeout: 5000 });
+  ok('點圖後開啟 lightbox', await page.isVisible('#lightbox'));
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('#lightbox', { state: 'hidden', timeout: 5000 });
+  ok('按 Esc 可關閉', !(await page.isVisible('#lightbox')));
+  await page.close();
+}
+
+/* ---------- 站台 B（主題色與內容須互不干擾） ---------- */
+console.log('\n[2] /w/wu-yang-1220/invitation');
+{
+  const { page, consoleErrors } = await visit('/w/wu-yang-1220/invitation');
   const groom = await page.textContent('#groomName');
   const bride = await page.textContent('#brideName');
   const theme = await page.evaluate(() =>
@@ -203,14 +238,18 @@ console.log('\n[2] /w/wu-yang-1220');
   ok('主題色實際套用到按鈕', submitBg === 'rgb(181, 131, 141)', submitBg);
   ok('日期以東京時區顯示', detailDate === '2027.12.20（一）18:30', detailDate);
   ok('無 story 時區塊隱藏', storyHidden);
+  ok('無照片時照片牆隱藏', !(await page.isVisible('#gallerySection')));
+  ok('無 dress code 時該列隱藏', !(await page.isVisible('#dressRow')));
+  ok('無禮金說明時該列隱藏', !(await page.isVisible('#giftRow')));
+  ok('無 hashtag 時區塊隱藏', !(await page.isVisible('#tagSection')));
   ok('無 console 錯誤', consoleErrors.length === 0, consoleErrors.join(' | '));
   await page.close();
 }
 
 /* ---------- 不存在的 slug ---------- */
-console.log('\n[3] /w/does-not-exist');
+console.log('\n[3] /w/does-not-exist/invitation');
 {
-  const { page, consoleErrors } = await visit('/w/does-not-exist');
+  const { page, consoleErrors } = await visit('/w/does-not-exist/invitation');
   const nf = await page.isVisible('#notFoundState');
   const contentHidden = !(await page.isVisible('#content'));
   const loadingHidden = !(await page.isVisible('#loadingState'));
@@ -227,7 +266,7 @@ console.log('\n[3] /w/does-not-exist');
 /* ---------- draft 站台不應對外顯示 ---------- */
 console.log('\n[4] draft 站台');
 {
-  const { page } = await visit('/w/draft-site-test');
+  const { page } = await visit('/w/draft-site-test/invitation');
   ok('draft 顯示 404', await page.isVisible('#notFoundState'));
   await page.close();
 }
@@ -235,14 +274,14 @@ console.log('\n[4] draft 站台');
 /* ---------- 已過截止日 / 關閉回覆 ---------- */
 console.log('\n[4b] RSVP 截止與關閉');
 {
-  const { page } = await visit('/w/past-deadline');
+  const { page } = await visit('/w/past-deadline/invitation');
   ok('過期站台隱藏表單', !(await page.isVisible('#rsvpForm')));
   ok('過期站台顯示截止說明',
     (await page.textContent('#rsvpClosed')).includes('截止'));
   await page.close();
 }
 {
-  const { page } = await visit('/w/rsvp-off');
+  const { page } = await visit('/w/rsvp-off/invitation');
   ok('關閉回覆時隱藏表單', !(await page.isVisible('#rsvpForm')));
   ok('關閉回覆時顯示說明',
     (await page.textContent('#rsvpClosed')).includes('尚未開放'));
@@ -252,7 +291,7 @@ console.log('\n[4b] RSVP 截止與關閉');
 /* ---------- RSVP 實際送出 ---------- */
 console.log('\n[5] RSVP 送出流程');
 {
-  const { page, consoleErrors } = await visit('/w/chen-lin-0315');
+  const { page, consoleErrors } = await visit('/w/chen-lin-0315/invitation');
   await page.fill('#fName', '王小明');
   await page.click('label.choice:has(input[value="yes"])');
   await page.click('#plusBtn');
@@ -278,7 +317,7 @@ console.log('\n[5] RSVP 送出流程');
 /* ---------- honeypot ---------- */
 console.log('\n[6] honeypot 擋機器人');
 {
-  const { page } = await visit('/w/chen-lin-0315');
+  const { page } = await visit('/w/chen-lin-0315/invitation');
   await page.fill('#fName', '機器人');
   await page.click('label.choice:has(input[value="yes"])');
   await page.evaluate(() => { document.getElementById('fWebsite').value = 'http://spam.example'; });
@@ -311,8 +350,8 @@ console.log('\n[8] 短連結 /s/{code}');
 {
   const page = await newPage();
   await page.goto(BASE + '/s/ab23cd', { waitUntil: 'domcontentloaded' });
-  await page.waitForURL('**/w/chen-lin-0315', { timeout: 15000 });
-  ok('正確轉址到邀請函', page.url().endsWith('/w/chen-lin-0315'), page.url());
+  await page.waitForURL('**/w/chen-lin-0315/invitation', { timeout: 15000 });
+  ok('正確轉址到邀請函', page.url().endsWith('/w/chen-lin-0315/invitation'), page.url());
   await page.waitForSelector('#content', { state: 'visible', timeout: 15000 });
   ok('轉址後邀請函正常顯示',
     (await page.textContent('#groomName')) === '陳彥廷');
@@ -338,7 +377,7 @@ console.log('\n[8] 短連結 /s/{code}');
 console.log('\n[7] 手機版 RWD（375px）');
 {
   const page = await newPage({ viewport: { width: 375, height: 812 } });
-  await page.goto(BASE + '/w/chen-lin-0315', { waitUntil: 'domcontentloaded' });
+  await page.goto(BASE + '/w/chen-lin-0315/invitation', { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('#content', { state: 'visible', timeout: 15000 });
   const overflow = await page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -350,7 +389,7 @@ console.log('\n[7] 手機版 RWD（375px）');
 /* ---------- 桌機截圖 ---------- */
 {
   const page = await newPage({ viewport: { width: 1280, height: 900 } });
-  await page.goto(BASE + '/w/chen-lin-0315', { waitUntil: 'domcontentloaded' });
+  await page.goto(BASE + '/w/chen-lin-0315/invitation', { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('#content', { state: 'visible', timeout: 15000 });
   await page.screenshot({ path: '/tmp/desktop.png', fullPage: true });
   await page.close();
