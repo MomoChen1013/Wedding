@@ -208,7 +208,7 @@ node scripts/create-site.js \
 ✅ 站台建立成功！
    siteId : gSUcido0TA8v4tlNhYbN
    slug   : chen-lin-0315
-   網址   : https://wedding-22b94.web.app/w/chen-lin-0315/
+   網址   : https://minato.3udesign.website/w/chen-lin-0315/
    已開頁面 : 首頁（固定）、rsvp、wall
 ```
 

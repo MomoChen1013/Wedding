@@ -4,16 +4,20 @@
    優先序：
      1. 指令參數 --base
      2. 環境變數 WEDDING_BASE_URL
-     3. .firebaserc 裡的專案 ID → https://{projectId}.web.app
-     4. 最後才退回 https://localhost:5000
+     3. 下面的 PRIMARY_DOMAIN（本專案的正式網域）
+     4. .firebaserc 裡的專案 ID → https://{projectId}.web.app
+     5. 最後才退回本機
 
-   之所以不寫死網域：專案預設就有 {projectId}.web.app 可以直接用，
-   要換成自訂網域時只要設一次 WEDDING_BASE_URL，
-   不必回頭改每一支腳本。
+   ▸ 換網域時只要改 PRIMARY_DOMAIN 這一行，
+     所有腳本印出來的網址就會跟著變。
+     設成空字串則自動改用 Firebase 的 {projectId}.web.app。
 ============================================================ */
 
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+
+/* 本專案的正式網域（需先在 Firebase Hosting 新增自訂網域） */
+const PRIMARY_DOMAIN = 'https://minato.3udesign.website';
 
 function projectIdFromFirebaserc() {
   const file = fileURLToPath(new URL('../.firebaserc', import.meta.url));
@@ -30,6 +34,7 @@ function projectIdFromFirebaserc() {
 export function resolveBaseUrl(explicit) {
   const pick = explicit
     || process.env.WEDDING_BASE_URL
+    || PRIMARY_DOMAIN
     || (() => {
       const id = projectIdFromFirebaserc();
       return id ? `https://${id}.web.app` : null;
