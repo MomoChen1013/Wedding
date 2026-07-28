@@ -253,3 +253,107 @@ describe('short/{code}', () => {
     await assertFails(setDoc(doc(db, 'short/ab12cd'), { target: 'https://evil.example' }));
   });
 });
+
+/* ============================================================
+   多頁面功能的子集合規則
+============================================================ */
+describe('多頁面子集合', () => {
+  function wish(overrides = {}) {
+    return { name:'王小明', icon:'🎀', text:'祝你們幸福', time: Date.now(), ...overrides };
+  }
+
+  it('祝福牆：可新增、可讀取，但不可修改刪除', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(addDoc(collection(db, `sites/${SITE_ID}/wishes`), wish()));
+    await assertSucceeds(getDocs(collection(db, `sites/${SITE_ID}/wishes`)));
+
+    let id;
+    await testEnv.withSecurityRulesDisabled(async (c) => {
+      const r = await addDoc(collection(c.firestore(), `sites/${SITE_ID}/wishes`), wish());
+      id = r.id;
+    });
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}/wishes/${id}`), { text:'改掉' }));
+    await assertFails(deleteDoc(doc(db, `sites/${SITE_ID}/wishes/${id}`)));
+  });
+
+  it('祝福牆：夾帶額外欄位會被拒', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(
+      addDoc(collection(db, `sites/${SITE_ID}/wishes`), wish({ isAdmin:true })));
+  });
+
+  it('祝福牆：內容超過 300 字會被拒', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(
+      addDoc(collection(db, `sites/${SITE_ID}/wishes`), wish({ text:'祝'.repeat(301) })));
+  });
+
+  it('祝福牆：未發布的站台不可寫入', async () => {
+    await seedSite(SITE_ID, { status:'draft' });
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/wishes`), wish()));
+  });
+
+  it('祝福牆：站台關閉該頁面時不可寫入', async () => {
+    await seedSite(SITE_ID, { pages: { wall:false, cake:true, draw:true, quiz:true } });
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/wishes`), wish()));
+  });
+
+  it('甜點桌：欄位正確才可寫入', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    const cake = { name:'王小明', icon:'🎀', cake:'草莓蛋糕', emoji:'🍰', img:'/x.png', time: Date.now() };
+    await assertSucceeds(addDoc(collection(db, `sites/${SITE_ID}/cakes`), cake));
+    await assertFails(
+      addDoc(collection(db, `sites/${SITE_ID}/cakes`), { ...cake, evil:1 }));
+  });
+
+  it('抽卡收藏：只讀得到自己的卡', async () => {
+    const card = {
+      uid:'user-a', userName:'A', art:'/c.png', name:'卡片', rarity:'SSR', time: Date.now(),
+    };
+    await testEnv.withSecurityRulesDisabled(async (c) => {
+      await setDoc(doc(c.firestore(), `sites/${SITE_ID}/collected/card1`), card);
+    });
+    const a = testEnv.authenticatedContext('user-a').firestore();
+    const b = testEnv.authenticatedContext('user-b').firestore();
+    await assertSucceeds(getDoc(doc(a, `sites/${SITE_ID}/collected/card1`)));
+    await assertFails(getDoc(doc(b, `sites/${SITE_ID}/collected/card1`)));
+  });
+
+  it('抽卡收藏：不能冒用別人的 uid', async () => {
+    const a = testEnv.authenticatedContext('user-a').firestore();
+    await assertFails(addDoc(collection(a, `sites/${SITE_ID}/collected`), {
+      uid:'user-b', userName:'A', art:'/c.png', name:'卡', rarity:'N', time: Date.now(),
+    }));
+  });
+
+  it('抽卡收藏：未登入不可寫入', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/collected`), {
+      uid:'x', userName:'A', art:'/c.png', name:'卡', rarity:'N', time: Date.now(),
+    }));
+  });
+
+  it('愛心計數：只能一次加一，不能亂設數字', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    const ref = doc(db, `sites/${SITE_ID}/meta/hearts`);
+    await assertSucceeds(setDoc(ref, { count: 1 }));
+    await assertFails(setDoc(ref, { count: 9999 }));
+    await assertSucceeds(setDoc(ref, { count: 2 }));
+  });
+
+  it('RSVP：帶 icon／tentative／meal 的多頁版表單可寫入', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(addDoc(collection(db, `sites/${SITE_ID}/rsvps`), {
+      ...validRsvpPayload(), icon:'🎀', tentative:false, meal:'veg',
+    }));
+  });
+
+  it('RSVP：tentative 不是 boolean 會被拒', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`), {
+      ...validRsvpPayload(), tentative:'maybe',
+    }));
+  });
+});

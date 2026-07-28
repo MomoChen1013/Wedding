@@ -27,7 +27,9 @@
 | 已知地雷 | Firebase Dynamic Links **已於 2025-08 停止服務**，禁止使用 |
 | 已知地雷 | Firebase Hosting **不支援 wildcard 子網域**（`*.example.com` 做不到） |
 
-`invitation.html` 與 `shortlink.html` 皆為自帶 CSS／JS 的單一檔案，無建置步驟。
+無建置步驟，直接部署到 Hosting。
+`invitation.html` 與 `shortlink.html` 自帶 CSS／JS；
+多頁面站台共用 `css/` 與 `js/`，由 `js/site-context.js` 統一載入。
 
 ---
 
@@ -55,16 +57,29 @@ sites/{siteId}
   giftNote        : string   # 禮金說明，支援換行
   rsvpDeadline    : timestamp
   rsvpEnabled     : boolean
+  pages           : map      # 頁面開關，見第 10 節
+  inboxPassword   : string   # 悄悄話信箱密碼
   createdAt       : timestamp
   updatedAt       : timestamp
 
-  rsvps/{autoId}            # 子集合
+  # 各功能的子集合，站台之間完全隔離
+  rsvps/{autoId}
     name          : string
-    attending     : boolean
+    attending     : boolean  # 只有「會出席」是 true
+    tentative     : boolean  # 選填，true 代表「未定」
     guestCount    : number   # 1–10
+    meal          : string   # 選填，餐點需求
+    icon          : string   # 選填，賓客 emoji
     dietaryNote   : string   # 飲食禁忌，選填
     message       : string   # 給新人的話，選填
     createdAt     : timestamp
+
+  wishes/{autoId}     name, icon, text(≤300), time      # 祝福牆
+  letters/{autoId}    name, icon, text(≤1000), time     # 悄悄話信箱
+  cakes/{autoId}      name, icon, cake, emoji, img, time
+  compat/{autoId}     answers(list ≤50), time           # 新人小測驗
+  collected/{autoId}  uid, userName, art, name, rarity, desc, time
+  meta/hearts         count(int)                        # 愛心計數器
 
 slugs/{slug}                # 網址佔位對照表，文件 ID 就是 slug 本身
   siteId          : string
@@ -137,17 +152,26 @@ node scripts/create-site.js --slug chen-lin-0315 --groom 陳彥廷 --bride 林�
 
 ## 5. 路由與 Hosting 設定
 
-網址採**路徑式**：`https://minato.3udesign.website/w/{slug}`
+網址採**路徑式**：`https://minato.3udesign.website/w/{slug}/{page}`
 
 `firebase.json` rewrite：
 
-- `/w/**` → `/invitation.html`
-- `/s/**` → `/shortlink.html`
+| 來源 | 目的 |
+|---|---|
+| `/w/*/info` `/w/*/rsvp` `/w/*/wall` `/w/*/cake` | 對應的 HTML |
+| `/w/*/draw` `/w/*/exhibition` `/w/*/quiz` `/w/*/inbox` | 對應的 HTML |
+| `/w/*/invitation` | `/invitation.html` |
+| `/w/**`（其餘，含 `/w/{slug}/`） | `/index.html`（大廳） |
+| `/s/**` | `/shortlink.html` |
 
-前端流程：從 `location.pathname` 解析 slug（取 `/w/` 之後的第一段）→
-查 `slugs/{slug}` 取得 siteId → 讀 `sites/{siteId}` → 渲染頁面。
+前端流程由 `js/site-context.js` 統一處理：
+從 `location.pathname` 解析 slug 與頁面代號 → 查 `slugs/{slug}` 取得 siteId →
+讀 `sites/{siteId}` → 檢查 `status` 與 `pages` → 建立 `window.SITE`／`window.WED` →
+才注入 `common.js` 與該頁 JS。
+
 slug 不存在、格式不合法、站台非 `published`、或連線失敗時，
-一律顯示友善的中文 404 畫面，且不在 console 噴錯。
+一律顯示友善的中文找不到畫面，且不在 console 噴錯。
+頁面未啟用時導回大廳。
 
 自訂網域說明見 `README.md`。
 
@@ -250,3 +274,37 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
 # ❌ 建立站台失敗：slug 「dup-test」已經被使用了，請換一個網址代稱
 # exit code 1，且 sites／slugs 各仍只有 1 筆
 ```
+
+---
+
+## 10. 多頁面與頁面開關
+
+每組新人共用同一套 HTML／CSS／JS，差異全部來自 `sites/{siteId}` 的資料。
+
+| 代號 | 網址 | 頁面 | 可關閉 |
+|---|---|---|---|
+| `lobby` | `/w/{slug}/` | 大廳（入場 gate + 場景導覽） | ❌ |
+| `info` | `/w/{slug}/info` | 婚禮資訊 | ✅ |
+| `rsvp` | `/w/{slug}/rsvp` | 出席回覆 | ✅ |
+| `wall` | `/w/{slug}/wall` | 祝福牆 | ✅ |
+| `cake` | `/w/{slug}/cake` | 甜點桌 | ✅ |
+| `draw` | `/w/{slug}/draw` | 囍卡抽卡 | ✅ |
+| `exhibition` | `/w/{slug}/exhibition` | 戀愛時光 | ✅ |
+| `quiz` | `/w/{slug}/quiz` | 新人小測驗 | ✅ |
+| `inbox` | `/w/{slug}/inbox` | 悄悄話信箱 | ✅ |
+| `invitation` | `/w/{slug}/invitation` | 單頁式邀請函（獨立版型） | ✅ |
+
+關閉一個頁面會同時做到三件事，不只是把畫面藏起來：
+
+1. 大廳與各頁的入口連結被移除
+2. 直接輸入網址會被導回大廳
+3. **Security Rules 也會拒絕該功能的寫入**
+
+`pages` 欄位不存在時視為全部開啟，舊資料不會因此壞掉。
+
+### 賓客身分與資料隔離
+
+- 賓客在大廳填名字入場，狀態存在 `localStorage`，
+  key 以 `wed.{siteId}.` 開頭 —— 同一位賓客逛兩組新人的網站不會互相污染
+- 抽卡收藏用 Firebase 匿名登入的 uid 隔離，只讀得到自己的卡
+- 各站台的祝福、信件、蛋糕、測驗票數都在自己的子集合底下，彼此看不到

@@ -26,6 +26,13 @@
      --dress-code     選填，服裝建議
      --gift-note      選填，禮金說明
      --end-time       選填，婚宴結束時間 HH:mm（加入行事曆用），預設開始後 3 小時
+     --pages          選填，逗號分隔的頁面清單，直接指定要開哪些頁
+                       例：--pages info,rsvp,wall,cake
+                       不給則預設開啟 info,rsvp,wall
+                       可用值：info rsvp wall cake draw exhibition quiz inbox invitation
+     --enable         選填，在預設之外「加開」某頁；可重複給多次
+     --disable        選填，關掉某頁；可重複給多次
+     --inbox-password 選填，悄悄話信箱的密碼，預設 1010
      --owner-email    選填，新人聯絡信箱
      --status         選填，draft／published／archived，預設 draft
      --rsvp-deadline  選填，RSVP 截止日 YYYY-MM-DD，預設同婚禮日期
@@ -44,6 +51,15 @@
 import { parseArgs } from 'node:util';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
+
+/* ---------- 可選頁面 ----------
+   key 對應網址 /w/{slug}/{key}，也對應 sites.pages 的欄位名。
+   lobby（大廳）一定存在，不列在這裡。 */
+const OPTIONAL_PAGES = [
+  'info', 'rsvp', 'wall', 'cake', 'draw', 'exhibition', 'quiz', 'inbox', 'invitation',
+];
+/* 沒特別指定時，預設開啟的頁面 */
+const DEFAULT_PAGES = ['info', 'rsvp', 'wall'];
 
 /* ---------- 保留字黑名單 ---------- */
 const RESERVED_SLUGS = new Set(['admin', 'api', 'www', 'app', 'w', 's', 'assets', 'static']);
@@ -72,6 +88,10 @@ function parseCliArgs(argv) {
       'dress-code':  { type: 'string', default: '' },
       'gift-note':   { type: 'string', default: '' },
       'end-time':    { type: 'string' },
+      pages:         { type: 'string' },
+      enable:        { type: 'string', multiple: true },
+      disable:       { type: 'string', multiple: true },
+      'inbox-password': { type: 'string', default: '' },
       status:        { type: 'string', default: 'draft' },
       'rsvp-deadline': { type: 'string' },
       'rsvp-enabled':  { type: 'string', default: 'true' },
@@ -131,6 +151,31 @@ function parseDateTime(dateStr, timeStr, timeZone, label) {
   return new Date(naive.getTime() - (asUtc - naive.getTime()));
 }
 
+/* 決定這組新人要開哪些頁面，回傳 { info:true, rsvp:false, ... } */
+function resolvePages(values) {
+  const known = new Set(OPTIONAL_PAGES);
+  const assertKnown = (key, flag) => {
+    if (!known.has(key)) {
+      throw new Error(`${flag} 「${key}」不是有效的頁面，可用值：${OPTIONAL_PAGES.join('、')}`);
+    }
+  };
+
+  let on;
+  if (values.pages !== undefined) {
+    on = new Set(
+      values.pages.split(',').map((v) => v.trim()).filter(Boolean)
+    );
+    on.forEach((k) => assertKnown(k, '--pages'));
+  } else {
+    on = new Set(DEFAULT_PAGES);
+  }
+
+  (values.enable || []).forEach((k) => { assertKnown(k, '--enable'); on.add(k); });
+  (values.disable || []).forEach((k) => { assertKnown(k, '--disable'); on.delete(k); });
+
+  return Object.fromEntries(OPTIONAL_PAGES.map((k) => [k, on.has(k)]));
+}
+
 function assertValidStatus(status) {
   if (!['draft', 'published', 'archived'].includes(status)) {
     throw new Error('--status 只能是 draft／published／archived 其中之一');
@@ -158,6 +203,7 @@ async function createSite(values) {
     ? parseDateTime(values.date, values['end-time'], timezone, '--date')
     : null;
   const rsvpEnabled = values['rsvp-enabled'] !== 'false';
+  const pages = resolvePages(values);
 
   const db = getFirestore();
   const siteRef = db.collection('sites').doc();
@@ -184,6 +230,8 @@ async function createSite(values) {
     giftNote: values['gift-note'] || '',
     rsvpDeadline: Timestamp.fromDate(rsvpDeadline),
     rsvpEnabled,
+    pages,
+    inboxPassword: values['inbox-password'] || '1010',
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   };
@@ -200,7 +248,7 @@ async function createSite(values) {
     });
   });
 
-  return { siteId: siteRef.id, slug };
+  return { siteId: siteRef.id, slug, pages };
 }
 
 /* ---------- CLI 進入點 ---------- */
@@ -213,12 +261,14 @@ async function main() {
   }
   initializeApp(initOptions);
 
-  const { siteId, slug } = await createSite(values);
+  const { siteId, slug, pages } = await createSite(values);
+  const on = Object.entries(pages).filter(([, v]) => v).map(([k]) => k);
 
   console.log('✅ 站台建立成功！');
   console.log(`   siteId : ${siteId}`);
   console.log(`   slug   : ${slug}`);
   console.log(`   網址   : https://minato.3udesign.website/w/${slug}`);
+  console.log(`   已開頁面 : 大廳（固定）${on.length ? '、' + on.join('、') : ''}`);
 }
 
 main().catch((err) => {

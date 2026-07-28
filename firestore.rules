@@ -3,10 +3,147 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /* RSVP 建立時的欄位與商業規則驗證 */
-    function isValidRsvpCreate(data, siteId) {
-      let site = get(/databases/$(database)/documents/sites/$(siteId));
-      return data.keys().hasOnly(['name', 'attending', 'guestCount', 'dietaryNote', 'message', 'createdAt'])
+    /* ---------- 共用 helper ---------- */
+
+    function site(siteId) {
+      return get(/databases/$(database)/documents/sites/$(siteId)).data;
+    }
+
+    /* 站台必須存在且已發布，未發布的站台一律不能寫入 */
+    function sitePublished(siteId) {
+      return exists(/databases/$(database)/documents/sites/$(siteId))
+        && site(siteId).status == 'published';
+    }
+
+    /* 該站台有沒有開啟這個頁面；沒設定 pages 就視為全開 */
+    function pageOn(siteId, key) {
+      let s = site(siteId);
+      return !('pages' in s) || s.pages[key] == true;
+    }
+
+    function isStr(v, maxLen) {
+      return v is string && v.size() <= maxLen;
+    }
+
+    /* 賓客留下的內容共用的基本欄位：暱稱、icon、時間 */
+    function validAuthor(data) {
+      return isStr(data.name, 40)
+        && isStr(data.icon, 8)
+        && data.time is number;
+    }
+
+    /* ---------- sites ---------- */
+    match /sites/{siteId} {
+      allow read: if true;
+      allow create, update, delete: if false;
+
+      /* 出席回覆：可新增，但誰都不能讀（含新人本人，要走 Admin SDK 匯出） */
+      match /rsvps/{rsvpId} {
+        allow create: if isValidRsvp(request.resource.data, siteId);
+        allow read, update, delete: if false;
+      }
+
+      /* 祝福牆 */
+      match /wishes/{wishId} {
+        allow read: if true;
+        allow create: if pageOn(siteId, 'wall')
+          && sitePublished(siteId)
+          && request.resource.data.keys().hasOnly(['name', 'icon', 'text', 'time'])
+          && validAuthor(request.resource.data)
+          && request.resource.data.text is string
+          && request.resource.data.text.size() >= 1
+          && request.resource.data.text.size() <= 300;
+        allow update, delete: if false;
+      }
+
+      /* 悄悄話信箱
+         ⚠️ read 開放是為了讓 inbox 頁面能運作。
+            這代表任何人只要知道 siteId，就能繞過網頁把全部信件抓下來。
+            若要真正保密，請把 read 改為 false，改用 export 指令查看。 */
+      match /letters/{letterId} {
+        allow read: if true;
+        allow create: if sitePublished(siteId)
+          && request.resource.data.keys().hasOnly(['name', 'icon', 'text', 'time'])
+          && validAuthor(request.resource.data)
+          && request.resource.data.text is string
+          && request.resource.data.text.size() >= 1
+          && request.resource.data.text.size() <= 1000;
+        allow update, delete: if false;
+      }
+
+      /* 甜點桌 */
+      match /cakes/{cakeId} {
+        allow read: if true;
+        allow create: if pageOn(siteId, 'cake')
+          && sitePublished(siteId)
+          && request.resource.data.keys().hasOnly(['name', 'icon', 'cake', 'emoji', 'img', 'time'])
+          && validAuthor(request.resource.data)
+          && isStr(request.resource.data.cake, 60)
+          && isStr(request.resource.data.emoji, 8)
+          && isStr(request.resource.data.img, 300);
+        allow update, delete: if false;
+      }
+
+      /* 新人小測驗：只存答案陣列，不含個資 */
+      match /compat/{compatId} {
+        allow read: if true;
+        allow create: if pageOn(siteId, 'quiz')
+          && sitePublished(siteId)
+          && request.resource.data.keys().hasOnly(['answers', 'time'])
+          && request.resource.data.answers is list
+          && request.resource.data.answers.size() <= 50
+          && request.resource.data.time is number;
+        /* 新人重置票數會刪除整個集合，因此開放 delete */
+        allow delete: if pageOn(siteId, 'quiz') && sitePublished(siteId);
+        allow update: if false;
+      }
+
+      /* 抽卡收藏：每位訪客只看得到自己的卡 */
+      match /collected/{cardId} {
+        allow read: if request.auth != null
+          && resource.data.uid == request.auth.uid;
+        allow create: if pageOn(siteId, 'draw')
+          && sitePublished(siteId)
+          && request.auth != null
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['uid', 'userName', 'art', 'name', 'rarity', 'desc', 'time'])
+          && isStr(request.resource.data.userName, 40)
+          && isStr(request.resource.data.name, 60)
+          && isStr(request.resource.data.art, 300)
+          && isStr(request.resource.data.rarity, 8)
+          && (!('desc' in request.resource.data) || isStr(request.resource.data.desc, 200))
+          && request.resource.data.time is number;
+        allow update, delete: if false;
+      }
+
+      /* 愛心計數器：只有 count 一個欄位，且只能往上加 1 */
+      match /meta/hearts {
+        allow read: if true;
+        allow write: if pageOn(siteId, 'wall')
+          && sitePublished(siteId)
+          && request.resource.data.keys().hasOnly(['count'])
+          && request.resource.data.count is int
+          && request.resource.data.count >= 0
+          && (
+            !exists(/databases/$(database)/documents/sites/$(siteId)/meta/hearts)
+            ? request.resource.data.count == 1
+            : request.resource.data.count == resource.data.count + 1
+          );
+      }
+
+      /* 其他 meta 文件一律不開放 */
+      match /meta/{docId} {
+        allow read: if true;
+        allow write: if false;
+      }
+    }
+
+    /* RSVP 建立時的欄位與商業規則驗證
+       核心欄位必填；icon／tentative／meal 是多頁版表單才用得到的選填欄位。
+       tentative=true 代表「未定」（此時 attending 為 false）。 */
+    function isValidRsvp(data, siteId) {
+      let s = site(siteId);
+      return data.keys().hasOnly(['name', 'attending', 'guestCount', 'dietaryNote', 'message', 'createdAt', 'icon', 'tentative', 'meal'])
         && data.keys().hasAll(['name', 'attending', 'guestCount', 'dietaryNote', 'message', 'createdAt'])
         && data.name is string && data.name.size() >= 1 && data.name.size() <= 40
         && data.attending is bool
@@ -14,30 +151,21 @@ service cloud.firestore {
         && data.dietaryNote is string && data.dietaryNote.size() <= 300
         && data.message is string && data.message.size() <= 300
         && data.createdAt == request.time
-        && site.data.status == 'published'
-        && site.data.rsvpEnabled == true
-        && request.time <= site.data.rsvpDeadline;
+        && (!('icon' in data) || isStr(data.icon, 8))
+        && (!('tentative' in data) || data.tentative is bool)
+        && (!('meal' in data) || isStr(data.meal, 20))
+        && sitePublished(siteId)
+        && s.rsvpEnabled == true
+        && request.time <= s.rsvpDeadline;
     }
 
-    /* sites/{siteId}：賓客可讀，寫入一律走管理端 Admin SDK，前端規則全擋 */
-    match /sites/{siteId} {
-      allow read: if true;
-      allow create, update, delete: if false;
-
-      /* sites/{siteId}/rsvps/{rsvpId}：只允許符合規則的新建，其餘全擋 */
-      match /rsvps/{rsvpId} {
-        allow create: if isValidRsvpCreate(request.resource.data, siteId);
-        allow read, update, delete: if false;
-      }
-    }
-
-    /* slugs/{slug}：網址佔位對照表，前端只能讀，寫入走 Admin SDK transaction */
+    /* slugs：前端要查 slug → siteId，寫入走 Admin SDK */
     match /slugs/{slug} {
       allow read: if true;
       allow write: if false;
     }
 
-    /* short/{code}：短連結，前端只能讀，寫入走 Admin SDK transaction */
+    /* 短連結：前端只能讀，寫入走 Admin SDK */
     match /short/{code} {
       allow read: if true;
       allow write: if false;

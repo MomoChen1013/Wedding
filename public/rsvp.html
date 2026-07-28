@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>✍️ 出席回覆 (RSVP)｜Ethan & Momo 婚禮</title>
+<title>✍️ 出席回覆 (RSVP)｜{{couple}} 婚禮</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="css/common.css">
-<link rel="stylesheet" href="css/rsvp.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/css/rsvp.css">
 </head>
-<body data-theme="champagne">
+<body data-theme="champagne" data-page="rsvp">
 
 <div class="bg-decor"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
 <canvas id="fx"></canvas>
@@ -70,7 +70,7 @@
       </div>
 
       <label class="rf-label">想對新人說的話 <small>（選填）</small></label>
-      <div class="field"><textarea id="rNote" maxlength="200" placeholder="給 Ethan & Momo 的悄悄話…"></textarea></div>
+      <div class="field"><textarea id="rNote" maxlength="200" placeholder="給 {{couple}} 的悄悄話…"></textarea></div>
 
       <div class="rf-err" id="rErr">&nbsp;</div>
       <button class="btn" id="submitBtn">送出回覆 ♡</button>
@@ -91,7 +91,7 @@
       <div class="ol-items" id="olItems"></div>
     </div>
 
-    <footer>made with ♡ for Ethan & Momo・#EthanMomo2026</footer>
+    <footer>made with ♡ for {{couple}}・{{hashtag}}</footer>
   </div>
 </section>
 
@@ -110,9 +110,7 @@
   <button class="fab" id="bgmFab"   title="婚禮進行曲">🔇</button>
 </div>
 
-<script type="module" src="js/firebase-init.js"></script>
-<script src="js/config.js"></script>
-<script src="js/common.js"></script>
-<script src="js/rsvp.js"></script>
+<!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與本頁 JS -->
+<script type="module" src="/js/site-context.js"></script>
 </body>
 </html>

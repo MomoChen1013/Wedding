@@ -59,13 +59,19 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
     showErr('出席的話，順手選一下餐點需求 🍽️'); return;
   }
 
+  /* 三選一的 yes / no / maybe 要落成 Firestore 的欄位：
+     attending 為 boolean（只有 yes 是 true），
+     未定另外用 tentative 標記，資訊才不會遺失 */
   const payload = {
     name,
-    icon:      (me_user && me_user.icon) || '🎀',
-    attending,                                        // yes / no / maybe
-    headcount: attending === 'yes' ? headcount : 0,
-    meal:      attending === 'yes' ? meal : '',
-    note:      rNote.value.trim(),
+    icon:        (me_user && me_user.icon) || '🎀',
+    attending:   attending === 'yes',
+    tentative:   attending === 'maybe',
+    guestCount:  attending === 'yes' ? headcount : 1,
+    meal:        attending === 'yes' ? meal : '',
+    dietaryNote: '',
+    message:     rNote.value.trim().slice(0, 300),
+    createdAt:   window.fb.serverTimestamp(),
   };
 
   const btn = document.getElementById('submitBtn');
@@ -80,12 +86,13 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
   }
   btn.disabled = false;
 
-  /* 記在本機，回訪就顯示「已回覆」 */
-  LS.set('rsvp.mine', payload);
+  /* 記在本機，回訪就顯示「已回覆」（存人看得懂的形式） */
+  const mine = { name, icon: payload.icon, attending, headcount, meal, note: payload.message };
+  LS.set('rsvp.mine', mine);
   /* 名字同步回個人資料 */
   try{ saveUser({ name, icon: payload.icon }); }catch{}
 
-  showThanks(payload);
+  showThanks(mine);
   confettiRain();
   if(attending === 'yes') setTimeout(fireworksBurst, 300);
 });
@@ -132,43 +139,29 @@ document.getElementById('editBtn').addEventListener('click', ()=>{
   showThanks(mine);
 })();
 
-/* ---------- 統計 ---------- */
-function renderCount(){
-  document.getElementById('rsvpCount').textContent   = DataStore.getRSVPCount();
-  document.getElementById('attendCount').textContent = DataStore.getAttendingCount();
-}
-document.addEventListener('data:rsvps', renderCount);
-renderCount();
+/* ---------- 統計與名單 ----------
+   出席回覆屬於個人資料，Security Rules 禁止前端讀取，
+   因此這裡不顯示即時統計；名單請用管理端指令匯出：
+     node scripts/export-rsvps.js --slug <slug> --out 名單.csv
+============================================================ */
+(function hideGuestStats(){
+  /* 統計數字讀不到，整塊藏起來比顯示 0 更誠實 */
+  const stats = document.getElementById('rsvpCount');
+  const box = stats && stats.closest('.stat-row, .stats, .rsvp-stats');
+  if(box) box.hidden = true;
+  else if(stats) stats.closest('div')?.setAttribute('hidden', '');
+})();
 
-/* ---------- 新人專屬：完整名單 ---------- */
 const ownerList = document.getElementById('ownerList');
-const ATTEND_LABEL = { yes:'✅ 出席', no:'❌ 不克出席', maybe:'🤔 未定' };
-const MEAL_LABEL   = { meat:'葷食', veg:'素食', none:'不用餐' };
-function renderOwner(){
-  if(!ownerList || !isOwnerVisitor()) return;
+if(ownerList && isOwnerVisitor()){
   ownerList.hidden = false;
-  const all = DataStore.getRSVPs().slice().reverse();
-  const yes = all.filter(r=>r.attending==='yes');
-  const heads = DataStore.getAttendingCount();
-  document.getElementById('olSummary').innerHTML =
-    `共 <b>${all.length}</b> 份回覆　|　出席 <b>${yes.length}</b> 組・<b>${heads}</b> 位　|　`+
-    `不克出席 <b>${all.filter(r=>r.attending==='no').length}</b>　|　未定 <b>${all.filter(r=>r.attending==='maybe').length}</b>`;
-
-  document.getElementById('olItems').innerHTML = all.length
-    ? all.map(r=>`
-        <div class="ol-item ol-${r.attending||'maybe'}">
-          <div class="ol-head">
-            <span class="ol-ic">${r.icon||'🎀'}</span>
-            <span class="ol-name">${escapeHtml(r.name||'朋友')}</span>
-            <span class="ol-badge">${ATTEND_LABEL[r.attending]||''}</span>
-          </div>
-          <div class="ol-meta">
-            ${r.attending==='yes' ? `👥 ${r.headcount||1} 位・🍽️ ${MEAL_LABEL[r.meal]||'—'}　` : ''}
-            <span class="ol-time">${timeStr(r.time||Date.now())}</span>
-          </div>
-          ${r.note ? `<div class="ol-note">${escapeHtml(r.note)}</div>` : ''}
-        </div>`).join('')
-    : `<div class="ol-empty">還沒有人回覆，等賓客們填完就會出現在這裡 💭</div>`;
+  const summary = document.getElementById('olSummary');
+  const items = document.getElementById('olItems');
+  if(summary) summary.textContent = '出席名單不會顯示在網頁上';
+  if(items){
+    items.innerHTML =
+      `<div class="ol-empty">為了保護賓客隱私，回覆內容只有你用管理金鑰才讀得到。<br>` +
+      `請在專案目錄執行：<br><br>` +
+      `<code>node scripts/export-rsvps.js --slug ${escapeHtml(window.SITE.slug)} --out 名單.csv</code></div>`;
+  }
 }
-document.addEventListener('data:rsvps', renderOwner);
-renderOwner();

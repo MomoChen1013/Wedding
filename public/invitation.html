@@ -873,6 +873,8 @@ async function main(){
     site = siteSnap.data();
     /* 只有已發布的站台才對外顯示 */
     if(site.status !== 'published'){ showNotFound(); return; }
+    /* 這組新人若沒開啟單頁邀請函，就當作不存在 */
+    if(site.pages && site.pages.invitation === false){ showNotFound(); return; }
   }catch{
     /* 連線失敗也走同一個友善畫面，不在 console 噴錯 */
     showNotFound();

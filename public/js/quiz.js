@@ -294,7 +294,7 @@ renderQuiz();
    與 Momo 的契合度（5 題 + 長條圖）
 ============================================================ */
 const MOMO_COMPAT_ANSWERS = COMPAT.map(c => c.momoAnswer);
-const SESSION_COMPAT_KEY  = 'momo.compatSubmitted';
+const SESSION_COMPAT_KEY  = `wed.${window.SITE.siteId}.compatSubmitted`;
 let compatPicks = new Array(COMPAT.length).fill(null);
 /* 本次 session 剛送出、但 Firestore 還沒回 onSnapshot 時，
    先把自己的答案疊進長條圖，避免「你的格 0 票、Momo 的格 0 票」的空圖。
@@ -470,7 +470,7 @@ function renderCompatChart(card){
       try{
         const n = await DataStore.wipeCollection('compat');
         sessionStorage.removeItem(SESSION_COMPAT_KEY);
-        localStorage.removeItem('momo.compatLast');
+        LS.remove('compatLast');
         compatPicks = new Array(COMPAT.length).fill(null);
         compatJustSubmitted = false;
         alert(`已清空 ${n} 筆契合度作答 ✨`);

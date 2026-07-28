@@ -11,10 +11,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="css/common.css">
-<link rel="stylesheet" href="css/inbox.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/css/inbox.css">
 </head>
-<body data-theme="champagne">
+<body data-theme="champagne" data-page="inbox">
 
 <div class="bg-decor"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
 <canvas id="fx"></canvas>
@@ -53,7 +53,7 @@
 
     <div class="inbox-page-list" id="ibList"></div>
 
-    <footer>made with ♡ for Ethan & Momo・#EthanMomo2026</footer>
+    <footer>made with ♡ for {{couple}}・{{hashtag}}</footer>
   </div>
 </section>
 
@@ -71,9 +71,7 @@
   <button class="fab" id="bgmFab"   title="婚禮進行曲">🔇</button>
 </div>
 
-<script type="module" src="js/firebase-init.js"></script>
-<script src="js/config.js"></script>
-<script src="js/common.js"></script>
-<script src="js/inbox.js"></script>
+<!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與本頁 JS -->
+<script type="module" src="/js/site-context.js"></script>
 </body>
 </html>
