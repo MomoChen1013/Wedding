@@ -316,7 +316,15 @@ public/assets/{slug}/
 ### 背景音樂
 
 把音檔命名成 **`bgm.mp3`**（或上表其他音訊格式）放進站台資料夾，
-跑 `npm run sync-assets` 後右下角的音符按鈕就會播它，並自動循環。
+**跑一次 `npm run sync-assets`**，再 deploy，右下角的音符按鈕就會播它並自動循環。
+
+> ⚠️ **只把檔案丟進資料夾是不夠的。**
+> 網頁讀的是 `manifest.json`，沒跑 `sync-assets` 就不會更新，
+> 畫面上會繼續播內建的音樂。順序是：
+> **放檔案 → `npm run sync-assets` → `npx firebase deploy --only hosting`**
+
+檔名不分大小寫（`BGM.MP3` 也認得）。如果檔名沒對上，
+`sync-assets` 會直接把「這些檔案不會被使用」列出來，不會安靜地忽略。
 
 - **沒放音檔的站台**會用內建的合成音樂——艾爾加〈愛的禮讚〉音樂盒版，
   這是程式即時合成的，repo 裡沒有音檔，也不會有授權問題。

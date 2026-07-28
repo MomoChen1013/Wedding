@@ -125,30 +125,37 @@ function buildList(slug, folder, key) {
   });
 }
 
+/* 檔名比對不分大小寫：BGM.mp3、Cover.JPG 都認得 */
+function findByStem(files, stem) {
+  return files.find((f) => basename(f, extname(f)).toLowerCase() === stem.toLowerCase());
+}
+
 function buildManifest(slug) {
   const dir = join(ASSETS_ROOT, slug);
   const manifest = { slug, generatedAt: new Date().toISOString() };
+  const used = new Set();
 
-  /* 單張圖片 */
-  const rootFiles = readdirSync(dir).filter(isImage);
-  for (const [stem, field] of Object.entries(SINGLE_FILES)) {
-    const hit = rootFiles.find((f) => basename(f, extname(f)) === stem);
-    if (hit) manifest[field] = `/assets/${slug}/${hit}`;
-  }
+  const take = (files, map) => {
+    for (const [stem, field] of Object.entries(map)) {
+      const hit = findByStem(files, stem);
+      if (hit) {
+        manifest[field] = `/assets/${slug}/${hit}`;
+        used.add(hit);
+      }
+    }
+  };
 
-  /* 單支影片（首頁固定背景） */
+  const rootFiles  = readdirSync(dir).filter(isImage);
   const rootVideos = readdirSync(dir).filter(isVideo);
-  for (const [stem, field] of Object.entries(SINGLE_VIDEOS)) {
-    const hit = rootVideos.find((f) => basename(f, extname(f)) === stem);
-    if (hit) manifest[field] = `/assets/${slug}/${hit}`;
-  }
+  const rootAudio  = readdirSync(dir).filter(isAudio);
 
-  /* 背景音樂 */
-  const rootAudio = readdirSync(dir).filter(isAudio);
-  for (const [stem, field] of Object.entries(SINGLE_AUDIO)) {
-    const hit = rootAudio.find((f) => basename(f, extname(f)) === stem);
-    if (hit) manifest[field] = `/assets/${slug}/${hit}`;
-  }
+  take(rootFiles,  SINGLE_FILES);    /* 封面、大廳背景 */
+  take(rootVideos, SINGLE_VIDEOS);   /* 首頁背景影片 */
+  take(rootAudio,  SINGLE_AUDIO);    /* 背景音樂 */
+
+  /* 檔名沒對上的素材會被忽略，這是最容易踩的坑，明確講出來 */
+  manifest._ignored = [...rootFiles, ...rootVideos, ...rootAudio]
+    .filter((f) => !used.has(f));
 
   /* 子資料夾 */
   for (const [folder, field] of Object.entries(FOLDERS)) {
@@ -279,6 +286,9 @@ function main() {
 
   for (const slug of slugs) {
     const manifest = buildManifest(slug);
+    const ignored = manifest._ignored || [];
+    delete manifest._ignored;
+
     writeFileSync(
       join(ASSETS_ROOT, slug, 'manifest.json'),
       `${JSON.stringify(manifest, null, 2)}\n`,
@@ -286,6 +296,12 @@ function main() {
     );
     console.log(`✅ ${slug}`);
     console.log(`   ${describe(manifest)}`);
+
+    if (ignored.length) {
+      console.log(`   ⚠️ 這些檔案的檔名沒對上，不會被使用：${ignored.join('、')}`);
+      console.log('      放在這一層的檔案必須命名為 cover / lobby / lobby-blur / bgm，');
+      console.log('      其他圖片請放進 gallery／exhibition／cards／cakes 子資料夾。');
+    }
   }
 
   console.log('');
