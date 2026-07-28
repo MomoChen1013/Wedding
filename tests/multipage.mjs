@@ -47,18 +47,26 @@ const SEED = {
     dressCode:'溫柔大地色系', giftNote:'您願意撥空前來就是最好的禮物 ♡',
     hashtags:['#GinnyOne2026'],
     pages: allOn,
-    inboxPassword:'1010',
+    ownerEmails:['couple@example.com'],
     /* 固定日期，斷言才不會隨執行日期漂移：台北 2026-09-19 12:00 */
     eventDate: TS.fromDate(new Date('2026-09-19T04:00:00Z')),
   },
   /* 只開最少頁面的站台，用來驗證開關真的有效 */
+  /* 有素材資料夾的站台，驗證 manifest 自動載入 */
+  'demo-wedding-2027': {
+    groomName:'示範', brideName:'站台',
+    themeColor:'#7A9E7E',
+    venueName:'示範會館', venueAddress:'台北市',
+    story:'', dressCode:'', giftNote:'', hashtags:[],
+    pages: allOn, ownerEmails:[],
+  },
   'minimal-site-2027': {
     groomName:'小明', brideName:'小美',
     themeColor:'#B5838D',
     venueName:'圓山大飯店', venueAddress:'台北市士林區中山北路四段1號',
     story:'', dressCode:'', giftNote:'', hashtags:[],
     pages: Object.fromEntries(ALL_PAGES.map((k) => [k, k === 'info'])),
-    inboxPassword:'1010',
+    ownerEmails:[],
   },
 };
 
@@ -165,6 +173,8 @@ async function visit(path, { waitForBody = true, guest = true } = {}){
 }
 
 const SLUG = 'ginny-one-20260919';
+/* 素材測試用的站台，slug 對應 public/assets/demo-wedding-2027/ */
+const ASSET_SLUG = 'demo-wedding-2027';
 
 /* ---------- 每一頁都要載得起來 ---------- */
 console.log('\n[1] 每個頁面都能正常載入');
@@ -316,6 +326,91 @@ console.log('\n[7] 不存在的 slug');
   await page.goto(`${BASE}/w/no-such-site/`, { waitUntil:'domcontentloaded' });
   await page.waitForSelector('[data-fatal]', { timeout: 20000 }).catch(() => {});
   ok('顯示中文找不到畫面', (await page.innerText('body')).includes('找不到這張邀請函'));
+  await page.close();
+}
+
+/* ---------- 素材自動抓取 ---------- */
+console.log('\n[9] 素材資料夾自動載入');
+{
+  const { page } = await visit(`/w/${ASSET_SLUG}/`);
+  const assets = await page.evaluate(() => window.SITE.assets);
+  ok('manifest 有載入', !!assets && !!assets.cover, JSON.stringify(assets || {}).slice(0, 60));
+  ok('照片牆 3 張', assets.gallery && assets.gallery.length === 3,
+    String(assets.gallery && assets.gallery.length));
+  ok('大廳背景換成客戶的圖',
+    await page.evaluate(() => {
+      const bg = document.querySelector('img.bg');
+      return !!bg && bg.getAttribute('src').includes('/assets/');
+    }));
+  await page.close();
+}
+{
+  const { page } = await visit(`/w/${ASSET_SLUG}/cake`);
+  const cakes = await page.evaluate(() => CAKES.map((c) => c.name));
+  ok('甜點桌用客戶的甜點', cakes.join('、') === '草莓千層、抹茶生乳捲', cakes.join('、'));
+  await page.close();
+}
+{
+  const { page } = await visit(`/w/${ASSET_SLUG}/draw`);
+  const cards = await page.evaluate(() => CARDS.map((c) => `${c.name}(${c.rarity})`));
+  ok('囍卡用客戶的卡片',
+    cards.join('、') === '戀愛中的新娘(SSR)、認真工作的新郎(N)', cards.join('、'));
+  await page.close();
+}
+{
+  const { page } = await visit(`/w/${ASSET_SLUG}/exhibition`);
+  const items = await page.evaluate(() => ITEMS.map((i) => `${i.year}:${i.title}`));
+  ok('戀愛時光用客戶的展品',
+    items.join('、') === '2019:第一次見面、2023:求婚那天', items.join('、'));
+  await page.close();
+}
+{
+  /* 沒放素材的站台要沿用預設，不能整個空掉 */
+  const { page } = await visit('/w/minimal-site-2027/');
+  const assets = await page.evaluate(() => window.SITE.assets);
+  ok('沒有素材資料夾時 assets 為空物件',
+    assets && Object.keys(assets).length === 0, JSON.stringify(assets));
+  await page.close();
+}
+
+/* ---------- 悄悄話信箱：只有新人讀得到 ---------- */
+console.log('\n[10] 信箱權限');
+{
+  /* 賓客寫得進去 */
+  const { page } = await visit(`/w/${SLUG}/wall`);
+  await page.evaluate(() =>
+    DataStore.addLetter({ name:'測試賓客', icon:'💌', text:'偷偷跟你們說…' }));
+  await page.waitForTimeout(1500);
+  const snap = await adb.collection('sites').doc(siteIds[SLUG]).collection('letters').get();
+  ok('賓客寫得進信箱', snap.size === 1, `${snap.size} 筆`);
+  await page.close();
+}
+{
+  /* 但賓客讀不到：直接用未登入的前端 SDK 嘗試讀取應該被規則擋下 */
+  const { page } = await visit(`/w/${SLUG}/inbox`);
+  const denied = await page.evaluate(async () => {
+    const { getDocs, collection, db } = window.fb;
+    try{
+      await getDocs(collection(db, 'sites', window.SITE.siteId, 'letters'));
+      return false;      // 讀到了 → 規則沒擋住
+    }catch(e){
+      return e.code === 'permission-denied';
+    }
+  });
+  ok('賓客讀不到信件內容（規則擋下）', denied);
+  ok('信箱頁面停在登入畫面', await page.isVisible('#pwGate'));
+  ok('信件內容沒有出現在畫面上',
+    !(await page.innerText('body')).includes('偷偷跟你們說'));
+  await page.close();
+}
+{
+  /* 公開的信件數量仍看得到，祝福牆才不會永遠顯示 0 */
+  const { page } = await visit(`/w/${SLUG}/wall`);
+  await page.waitForFunction(
+    () => Number(document.getElementById('letterCount').textContent) > 0,
+    null, { timeout: 10000 }).catch(() => {});
+  const count = await page.textContent('#letterCount');
+  ok('祝福牆看得到信件數量（但看不到內容）', count === '1', count);
   await page.close();
 }
 

@@ -25,6 +25,17 @@ service cloud.firestore {
       return v is string && v.size() <= maxLen;
     }
 
+    /* 是不是這組新人本人：用已驗證的 Google 信箱比對站台的白名單。
+       信箱由 Firebase Auth 簽發，前端偽造不了，才是真正的保護。 */
+    function isSiteOwner(siteId) {
+      let s = site(siteId);
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && 'ownerEmails' in s
+        && s.ownerEmails is list
+        && request.auth.token.email in s.ownerEmails;
+    }
+
     /* 賓客留下的內容共用的基本欄位：暱稱、icon、時間 */
     function validAuthor(data) {
       return isStr(data.name, 40)
@@ -56,12 +67,10 @@ service cloud.firestore {
         allow update, delete: if false;
       }
 
-      /* 悄悄話信箱
-         ⚠️ read 開放是為了讓 inbox 頁面能運作。
-            這代表任何人只要知道 siteId，就能繞過網頁把全部信件抓下來。
-            若要真正保密，請把 read 改為 false，改用 export 指令查看。 */
+      /* 悄悄話信箱：只有站台 ownerEmails 名單內、且信箱已驗證的
+         Google 帳號讀得到。賓客寫得進去、讀不出來。 */
       match /letters/{letterId} {
-        allow read: if true;
+        allow read: if isSiteOwner(siteId);
         allow create: if sitePublished(siteId)
           && request.resource.data.keys().hasOnly(['name', 'icon', 'text', 'time'])
           && validAuthor(request.resource.data)
@@ -126,6 +135,21 @@ service cloud.firestore {
           && request.resource.data.count >= 0
           && (
             !exists(/databases/$(database)/documents/sites/$(siteId)/meta/hearts)
+            ? request.resource.data.count == 1
+            : request.resource.data.count == resource.data.count + 1
+          );
+      }
+
+      /* 信件數量：賓客讀不到信件內容，但看得到「已有幾封信」。
+         同樣只能一次加一，避免被亂設數字。 */
+      match /meta/letterCount {
+        allow read: if true;
+        allow write: if sitePublished(siteId)
+          && request.resource.data.keys().hasOnly(['count'])
+          && request.resource.data.count is int
+          && request.resource.data.count >= 0
+          && (
+            !exists(/databases/$(database)/documents/sites/$(siteId)/meta/letterCount)
             ? request.resource.data.count == 1
             : request.resource.data.count == resource.data.count + 1
           );

@@ -98,7 +98,7 @@ sites/{siteId}
   dressCode, giftNote
   rsvpDeadline(timestamp), rsvpEnabled(bool)
   pages(map)            # 每個頁面開關，如 { info:true, cake:false, … }
-  inboxPassword(string) # 悄悄話信箱的密碼
+  ownerEmails(string[]) # 新人的 Google 信箱；決定誰讀得到悄悄話信箱
   createdAt, updatedAt
 
   # ↓ 各功能的資料都掛在這組新人底下，站台之間完全看不到彼此
@@ -110,6 +110,7 @@ sites/{siteId}
   compat/{autoId}      answers[], time                 # 新人小測驗
   collected/{autoId}   uid, userName, art, name, rarity, desc, time
   meta/hearts          count                           # 愛心計數器
+  meta/letterCount     count                           # 公開的信件數量
 
 slugs/{slug}                # 文件 ID 就是 slug 本身
   siteId, createdAt
@@ -205,14 +206,13 @@ node scripts/create-site.js \
 | `--dress-code` | | 服裝建議 |
 | `--gift-note` | | 禮金說明 |
 | `--end-time` | | 婚宴結束時間 `HH:mm`（加入行事曆用），預設開始後 3 小時 |
-| `--owner-email` | | 新人聯絡信箱 |
+| `--owner-email` | | 新人的 Google 信箱，**信箱頁面要靠它登入**；可重複給多次 |
 | `--status` | | `draft`／`published`／`archived`，**預設 `draft`** |
 | `--rsvp-deadline` | | RSVP 截止日 `YYYY-MM-DD`，預設同婚禮日期 |
 | `--rsvp-enabled` | | `true`／`false`，預設 `true` |
 | `--pages` | | 逗號分隔，直接指定要開哪些頁。不給則預設 `info,rsvp,wall` |
 | `--enable` | | 在預設之外加開某頁；**可重複給多次** |
 | `--disable` | | 關掉某頁；**可重複給多次** |
-| `--inbox-password` | | 悄悄話信箱密碼，預設 `1010` |
 
 ### 頁面開關
 
@@ -239,41 +239,140 @@ node scripts/create-site.js \
 > **注意**：預設是 `draft`，賓客會看到 404。
 > 內容確認好之後，到 Firebase Console 把 `status` 改成 `published` 才會對外公開。
 
-### 照片怎麼放
+---
 
-把圖片放進 `public/assets/{slug}/`，例如：
+## 素材（照片）怎麼放
+
+**用站台的 slug 當資料夾名稱，把圖丟進去，跑一個指令就好**，
+不必一張一張填網址。
+
+### 1. 建立資料夾、放圖
 
 ```
-public/assets/chen-lin-0315/cover.jpg
-public/assets/chen-lin-0315/01.jpg
-public/assets/chen-lin-0315/02.jpg
+public/assets/{slug}/
+├─ cover.jpg          封面大圖（單頁邀請函）
+├─ lobby.jpg          大廳背景
+├─ lobby-blur.jpg     大廳背景的模糊版（選填）
+├─ gallery/           照片牆
+│   ├─ 01.jpg
+│   ├─ 02.jpg
+│   └─ 03.jpg
+├─ exhibition/        戀愛時光的展品
+│   ├─ 01.jpg
+│   └─ meta.json      （選填）每張的年份／標題／說明
+├─ cards/             囍卡
+│   ├─ 01.png
+│   └─ meta.json      （選填）卡片名稱／稀有度／描述
+└─ cakes/             甜點桌
+    ├─ 01.png
+    └─ meta.json      （選填）甜點名稱／emoji
 ```
 
-然後用**根目錄開頭的路徑**指定（不要用完整網址）：
+**檔名排序就是顯示順序**，建議用 `01`、`02`、`03` 這種前綴。
+支援 `.jpg` `.jpeg` `.png` `.webp` `.gif` `.avif` `.svg`。
+
+### 2. 跑掃描指令
 
 ```bash
-node scripts/create-site.js \
-  --slug chen-lin-0315 --groom 陳彥廷 --bride 林佳蓉 --date 2027-03-15 \
-  --cover /assets/chen-lin-0315/cover.jpg \
-  --photo /assets/chen-lin-0315/01.jpg \
-  --photo /assets/chen-lin-0315/02.jpg \
-  --hashtag 陳林2027 --hashtag 我們結婚了 \
-  --dress-code "溫柔大地色系・香檳金／裸粉／霧綠" \
-  --gift-note "您願意撥空前來，就是給我們最好的禮物 ♡" \
-  --status published
+npm run sync-assets                        # 掃描全部站台
+npm run sync-assets -- --slug chen-lin-0315   # 只掃一組
 ```
 
-換圖或加圖之後要重新部署才會生效：
+會在每個資料夾產生 `manifest.json`，並印出掃到什麼：
+
+```
+✅ chen-lin-0315
+   封面、大廳背景、照片牆 12 張、戀愛時光 8 張、囍卡 20 張、甜點桌 6 張
+```
+
+### 3. 部署
 
 ```bash
 npx firebase deploy --only hosting
 ```
+
+網頁載入時會自動抓 `manifest.json`，把封面、大廳背景、照片牆、
+展品、囍卡、甜點全部換成這組新人的素材。
+**沒放素材的站台會沿用內建的預設圖，不會壞掉。**
+
+### meta.json：幫圖片加文字說明
+
+放在子資料夾裡，用**檔名（可含或不含副檔名）當 key**：
+
+`public/assets/{slug}/exhibition/meta.json`
+```json
+{
+  "01": { "year": "2019", "title": "第一次見面", "desc": "朋友的聚會上", "act": "第一幕" },
+  "02": { "year": "2023", "title": "求婚那天", "desc": "在海邊", "act": "第二幕" }
+}
+```
+
+`public/assets/{slug}/cards/meta.json`
+```json
+{
+  "01": { "name": "戀愛中的新娘", "rarity": "SSR", "desc": "笑起來有酒窩" },
+  "02": { "name": "認真工作的新郎", "rarity": "N" }
+}
+```
+
+`public/assets/{slug}/cakes/meta.json`
+```json
+{
+  "01": { "name": "草莓千層", "emoji": "🍓" },
+  "02": { "name": "抹茶生乳捲", "emoji": "🍵" }
+}
+```
+
+沒寫 `meta.json` 也能用，只是名稱會變成「囍卡 1」「甜點 2」這種預設值。
+
+### 範例資料夾
+
+`public/assets/demo-wedding-2027/` 是一份可以直接照抄的範例
+（含三種 `meta.json`）。它被列在 `firebase.json` 的 `ignore` 裡，
+**不會被部署上線**，只是留在 repo 當參考。
+
+### 也可以手動指定
+
+`--cover` 與 `--photo` 仍然有效，而且**優先於資料夾掃描的結果**——
+Firestore 裡有填就用填的，沒填才用素材資料夾。
 
 建議事先壓到寬度 1600px 以內、單張 300KB 左右；照片牆是 4:5 直式裁切。
 
 ### 保留字
 
 以下 slug 不能使用：`admin`、`api`、`www`、`app`、`w`、`s`、`assets`、`static`
+
+---
+
+## 站台打不開？先跑診斷
+
+```bash
+node scripts/check-site.js --slug ginny-one-20260919
+node scripts/check-site.js                    # 不加參數 = 列出全部站台
+```
+
+會一路檢查 `slugs` → `sites` → `status` → `pages` → RSVP → `ownerEmails`，
+把問題直接指出來，並印出所有可用的網址。
+
+### 兩種「找不到」長得不一樣，先分清楚
+
+| 畫面 | 意思 | 怎麼修 |
+|---|---|---|
+| **「404 找不到這個頁面」** | Hosting 層級：請求連 `index.html` 都沒進到 | 網域或部署的問題，見下 |
+| **「找不到這張邀請函」** | 網頁有載入，但 Firestore 查不到這個站台 | 資料問題，跑上面的診斷指令 |
+
+### Hosting 層級的 404
+
+先用 Firebase 的**預設網域**測，把自訂網域的變因排除掉：
+
+```
+https://wedding-22b94.web.app/w/{slug}/
+```
+
+- **預設網域打得開、自訂網域不行** → `minato.3udesign.website` 還沒指到這個專案。
+  到 Firebase Console → Hosting → 新增自訂網域，照指示在網域商加 A／TXT 記錄。
+  新專案是空的，網域不會自己跟過來。
+- **兩個都打不開** → hosting 沒部署成功，重跑 `npx firebase deploy --only hosting`。
 
 ---
 
@@ -377,6 +476,8 @@ npm run test:multipage
 [6]  未定回覆                  # maybe → attending:false + tentative:true
 [7]  不存在的 slug             # 中文找不到畫面
 [8]  手機版無水平捲動
+[9]  素材資料夾自動載入      # manifest、大廳背景、甜點、囍卡、展品
+[10] 信箱權限                # 賓客寫得進、讀不到；數量看得到
 ```
 
 ### 單頁邀請函測試
@@ -446,23 +547,41 @@ http://127.0.0.1:5000/w/你的slug/cake?live=1
 | `sites/{siteId}` | ✅ | ❌ | ❌ | ❌ |
 | `sites/{siteId}/rsvps` | ❌ | ✅（需通過驗證） | ❌ | ❌ |
 | `sites/{siteId}/wishes` | ✅ | ✅（需通過驗證） | ❌ | ❌ |
-| `sites/{siteId}/letters` | ⚠️ ✅ | ✅（需通過驗證） | ❌ | ❌ |
+| `sites/{siteId}/letters` | 只有 `ownerEmails` 名單內的已驗證 Google 帳號 | ✅（需通過驗證） | ❌ | ❌ |
 | `sites/{siteId}/cakes` | ✅ | ✅（需通過驗證） | ❌ | ❌ |
 | `sites/{siteId}/compat` | ✅ | ✅（需通過驗證） | ❌ | ✅（新人重置票數） |
 | `sites/{siteId}/collected` | 只能讀自己的 | ✅（需登入且 uid 相符） | ❌ | ❌ |
 | `sites/{siteId}/meta/hearts` | ✅ | 只能一次 +1 | | |
+| `sites/{siteId}/meta/letterCount` | ✅ | 只能一次 +1 | | |
 | `slugs/{slug}` | ✅ | ❌ | ❌ | ❌ |
 | `short/{code}` | ✅ | ❌ | ❌ | ❌ |
 
 所有寫入都會再檢查：**站台必須是 `published`**，且**該頁面必須是開啟的**。
 關掉的頁面連 API 都寫不進去，不只是畫面藏起來而已。
 
-> ### ⚠️ 悄悄話信箱不是真的私密
-> `letters` 開放 read 是為了讓 `inbox` 頁面能運作。
-> 這代表**任何人只要知道 siteId，就能繞過網頁把全部悄悄話抓下來**。
-> 這是沿用既有設計的既有風險。若要真正保密，把 `firestore.rules` 裡
-> `letters` 的 `allow read` 改成 `false`，改用管理端匯出查看
-> （`inbox` 頁面屆時會失去功能）。
+### 悄悄話信箱：用 Google 帳號保護
+
+`letters` 的讀取由規則檢查 **Google 帳號的已驗證信箱**是否在
+`sites.ownerEmails` 名單內。這是伺服器端驗證，前端偽造不了。
+
+```bash
+node scripts/create-site.js --slug chen-lin-0315 … \
+  --owner-email groom@gmail.com \
+  --owner-email bride@gmail.com
+```
+
+新人到 `/w/{slug}/inbox` 按「用 Google 帳號登入」，
+名單內的帳號才進得去；其他人（含賓客）連 API 都讀不到。
+
+- 賓客**寫得進去、讀不出來**
+- 祝福牆上的「已有 N 封信」用另一個公開計數器 `meta/letterCount`，
+  只看得到數量、看不到內容
+- 沒設定 `--owner-email` 的站台，信箱頁面會直接說「還沒設定新人的 Google 信箱」
+
+> **為什麼不用密碼？**
+> Firestore 的讀取請求不帶 payload，規則無法驗證「使用者輸入的密碼」。
+> 密碼門只能擋住畫面，資料仍可透過 API 取得，等於沒有保護。
+> 要真的保密就必須用 Auth 身分，所以這裡改成 Google 登入。
 
 RSVP 建立時必須全數通過：
 

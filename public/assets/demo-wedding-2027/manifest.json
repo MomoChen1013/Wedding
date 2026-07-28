@@ -1,0 +1,67 @@
+{
+  "slug": "demo-wedding-2027",
+  "generatedAt": "2026-07-28T07:49:26.513Z",
+  "cover": "/assets/demo-wedding-2027/cover.svg",
+  "lobby": "/assets/demo-wedding-2027/lobby.svg",
+  "gallery": [
+    {
+      "src": "/assets/demo-wedding-2027/gallery/01.svg",
+      "order": 1
+    },
+    {
+      "src": "/assets/demo-wedding-2027/gallery/02.svg",
+      "order": 2
+    },
+    {
+      "src": "/assets/demo-wedding-2027/gallery/03.svg",
+      "order": 3
+    }
+  ],
+  "exhibition": [
+    {
+      "src": "/assets/demo-wedding-2027/exhibition/01.svg",
+      "order": 1,
+      "year": "2019",
+      "title": "第一次見面",
+      "desc": "朋友的聚會上",
+      "act": "第一幕"
+    },
+    {
+      "src": "/assets/demo-wedding-2027/exhibition/02.svg",
+      "order": 2,
+      "year": "2023",
+      "title": "求婚那天",
+      "desc": "在海邊",
+      "act": "第二幕"
+    }
+  ],
+  "cards": [
+    {
+      "src": "/assets/demo-wedding-2027/cards/01.svg",
+      "order": 1,
+      "name": "戀愛中的新娘",
+      "rarity": "SSR",
+      "desc": "笑起來有酒窩"
+    },
+    {
+      "src": "/assets/demo-wedding-2027/cards/02.svg",
+      "order": 2,
+      "name": "認真工作的新郎",
+      "rarity": "N"
+    }
+  ],
+  "cakes": [
+    {
+      "src": "/assets/demo-wedding-2027/cakes/01.svg",
+      "order": 1,
+      "name": "草莓千層",
+      "emoji": "🍓"
+    },
+    {
+      "src": "/assets/demo-wedding-2027/cakes/02.svg",
+      "order": 2,
+      "name": "抹茶生乳捲",
+      "emoji": "🍵"
+    }
+  ]
+}

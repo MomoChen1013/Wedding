@@ -19,6 +19,20 @@ const CAKES = [
   {name:'蒙布朗',         emoji:'🌰', img:'/images/cakes-06.png'},
   {name:'伯爵綠葡萄蛋糕', emoji:'🍇', img:'/images/cakes-05.png'},
 ];
+
+/* 素材資料夾有 cakes/ 就用客戶自己的甜點，否則沿用上面的預設 */
+(function applyCakeAssets(){
+  const list = (window.SITE && window.SITE.assets && window.SITE.assets.cakes) || [];
+  if(!list.length) return;
+  CAKES.length = 0;
+  list.forEach((item, i) => {
+    CAKES.push({
+      name:  item.name  || `甜點 ${i + 1}`,
+      emoji: item.emoji || '🍰',
+      img:   item.src,
+    });
+  });
+})();
 const WISHES_TXT = ['新婚快樂，白頭偕老～','願你們永遠幸福 ✦','有情人終成眷屬 ✨','百年好合，永浴愛河 ♡','甜甜蜜蜜，長長久久 🍯'];
 
 let chosen = CAKES[0];

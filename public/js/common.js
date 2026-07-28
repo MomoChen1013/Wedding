@@ -43,6 +43,7 @@ const LS = {
 ============================================================ */
 const DataStore = {
   _wishes:[], _letters:[], _hearts:0, _collected:[], _cakes:[], _compat:[], _rsvps:[],
+  _letterCount:0,
   _subscribed:false,
 
   /* 這組新人的資料都掛在 sites/{siteId} 底下，各站台互不相見 */
@@ -78,7 +79,6 @@ const DataStore = {
 
     /* 本站台共用（賓客都看得到） */
     sub('wishes',  () => query(this._col('wishes'),  orderBy('time', 'asc')));
-    sub('letters', () => query(this._col('letters'), orderBy('time', 'asc')));
     sub('cakes',   () => query(this._col('cakes'),   orderBy('time', 'asc')));
     sub('compat',  () => query(this._col('compat'),  orderBy('time', 'asc')));
 
@@ -92,7 +92,34 @@ const DataStore = {
       document.dispatchEvent(new CustomEvent('data:hearts'));
     }, err => console.warn('[DataStore] onSnapshot hearts', err));
 
+    /* 信件數量：內容讀不到，但數量是公開的，祝福牆才顯示得出「已有幾封信」 */
+    onSnapshot(this._doc('meta', 'letterCount'), snap => {
+      this._letterCount = (snap.data()?.count) || 0;
+      document.dispatchEvent(new CustomEvent('data:letters'));
+    }, err => console.warn('[DataStore] onSnapshot letterCount', err));
+
+    /* 悄悄話信箱依規則只有站台擁有者讀得到，等登入成功再訂閱 */
     /* RSVP 依規則不開放前端讀取，這裡不訂閱；名單請用 export-rsvps.js 匯出 */
+  },
+
+  /* 新人以 Google 登入後才呼叫，開始接收信件 */
+  _lettersSubscribed: false,
+  subscribeLetters(){
+    if(this._lettersSubscribed) return;
+    const { onSnapshot, query, orderBy } = window.fb;
+    this._lettersSubscribed = true;
+    onSnapshot(
+      query(this._col('letters'), orderBy('time', 'asc')),
+      snap => {
+        this._letters = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+        document.dispatchEvent(new CustomEvent('data:letters'));
+      },
+      err => {
+        this._lettersSubscribed = false;
+        console.warn('[DataStore] 讀取信箱失敗', err.code);
+        document.dispatchEvent(new CustomEvent('data:letters:denied'));
+      },
+    );
   },
 
   /* ===== 寫入（async；可不 await） ===== */
@@ -102,7 +129,18 @@ const DataStore = {
   },
   async addLetter(l){
     const { addDoc } = window.fb;
-    return addDoc(this._col('letters'), { ...l, time: l.time || Date.now() });
+    const ref = await addDoc(this._col('letters'), { ...l, time: l.time || Date.now() });
+    /* 數量另外記在公開的計數器；失敗只會少算，不影響信件本身 */
+    this._bumpLetterCount().catch(() => {});
+    return ref;
+  },
+  async _bumpLetterCount(){
+    const { db, runTransaction } = window.fb;
+    const ref = this._doc('meta', 'letterCount');
+    await runTransaction(db, async tx => {
+      const cur = (await tx.get(ref)).data()?.count || 0;
+      tx.set(ref, { count: cur + 1 });
+    });
   },
   async addCollected(c){
     const { auth, addDoc } = window.fb;
@@ -150,7 +188,10 @@ const DataStore = {
   /* ===== 讀取（同步回本地快取） ===== */
   getWishes()     { return this._wishes; },
   getLetters()    { return this._letters; },
-  getLetterCount(){ return this._letters.length; },
+  /* 新人登入後用實際筆數，賓客看公開的計數器 */
+  getLetterCount(){
+    return this._lettersSubscribed ? this._letters.length : this._letterCount;
+  },
   getHearts()     { return this._hearts; },
   /* 抽卡收藏按時間排序（snapshot 沒帶 orderBy，所以在這裡排） */
   getCollected()  { return this._collected.slice().sort((a,b)=>(a.time||0)-(b.time||0)); },
@@ -386,6 +427,32 @@ function stopBGM(){
 }
 
 /* ============================================================
+   站台擁有者（新人本人）
+   ・以 Google 帳號登入，信箱要在 sites.ownerEmails 白名單內
+   ・這是規則層真正認得的身分，不是畫面上的遮罩
+============================================================ */
+function ownerEmails(){
+  const list = window.SITE && window.SITE.data && window.SITE.data.ownerEmails;
+  return Array.isArray(list) ? list.map(e => String(e).toLowerCase()) : [];
+}
+
+/* 目前登入的帳號是不是這組新人 */
+function isSiteOwner(){
+  const user = window.fb && window.fb.auth && window.fb.auth.currentUser;
+  if(!user || !user.email || !user.emailVerified) return false;
+  return ownerEmails().includes(user.email.toLowerCase());
+}
+
+/* 跳出 Google 登入視窗，回傳登入後的 email（失敗回 null） */
+async function signInAsOwner(){
+  const { auth, signInWithPopup, GoogleAuthProvider } = window.fb;
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  const cred = await signInWithPopup(auth, provider);
+  return cred.user && cred.user.email;
+}
+
+/* ============================================================
    新人專屬信箱：網址加 WED.ownerKey（預設 #couple）才出現
 ============================================================ */
 const OWNER_KEY = (window.WED && window.WED.ownerKey) || '#couple';
@@ -487,7 +554,12 @@ function bindCommonUI(){
   const inboxModal= document.getElementById('inboxModal');
   const inboxClose= document.getElementById('inboxClose');
   const ownerCount= document.getElementById('ownerCount');
-  if(ownerCount) ownerCount.textContent = DataStore.getLetterCount();
+  /* 賓客沒有讀取信件的權限，數量只有新人登入後才會有 */
+  if(ownerCount){
+    const paint = () => { ownerCount.textContent = DataStore.getLetterCount(); };
+    paint();
+    document.addEventListener('data:letters', paint);
+  }
   if(ownerFab && isOwnerVisitor()) ownerFab.classList.add('show');
   if(ownerFab) ownerFab.addEventListener('click', ()=>{ renderInbox(); inboxModal.classList.add('open'); });
   if(inboxClose) inboxClose.addEventListener('click', ()=>inboxModal.classList.remove('open'));

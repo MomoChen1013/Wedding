@@ -191,6 +191,20 @@ function tzOffsetString(date, timeZone) {
   return `${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`;
 }
 
+/* ---------- 站台素材 ----------
+   public/assets/{slug}/manifest.json 由 scripts/sync-assets.js 產生。
+   沒有這個檔案（還沒放素材）就回傳空物件，頁面照樣能跑。 */
+async function loadAssets(slug) {
+  try {
+    const res = await fetch(`/assets/${slug}/manifest.json`, { cache: 'no-cache' });
+    if (!res.ok) return {};
+    const data = await res.json();
+    return data && typeof data === 'object' ? data : {};
+  } catch {
+    return {};
+  }
+}
+
 /* ---------- 依序載入 script ---------- */
 function loadScript(src) {
   return new Promise((resolve, reject) => {
@@ -244,10 +258,19 @@ async function boot() {
     return;
   }
 
+  const assets = await loadAssets(loc.slug);
+
+  /* Firestore 沒填的話，就用素材資料夾裡掃到的檔案 */
+  if (!site.coverImageUrl && assets.cover) site.coverImageUrl = assets.cover;
+  if ((!Array.isArray(site.photos) || !site.photos.length) && assets.gallery) {
+    site.photos = assets.gallery.map((p) => p.src);
+  }
+
   /* 對外公開的站台脈絡，各頁 JS 都靠這個 */
   window.SITE = {
     siteId,
     slug: loc.slug,
+    assets,
     page: pageKey,
     data: site,
     pages: PAGES,

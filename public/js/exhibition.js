@@ -88,6 +88,25 @@ const ITEMS = [
     desc:'這裡留下一張空白照片——下一張，等你一起入鏡。'},
 ];
 
+/* 素材資料夾有 exhibition/ 就用客戶自己的展品，否則沿用上面的預設 */
+(function applyExhibitionAssets(){
+  const list = (window.SITE && window.SITE.assets && window.SITE.assets.exhibition) || [];
+  if(!list.length) return;
+  ITEMS.length = 0;
+  list.forEach((item, i) => {
+    ITEMS.push({
+      n:     i + 1,
+      type:  'photo',
+      src:   item.src,
+      year:  item.year  || '',
+      when:  item.when  || '',
+      title: item.title || '',
+      desc:  item.desc  || '',
+      act:   item.act   || '',
+    });
+  });
+})();
+
 /* 依編號排序 */
 ITEMS.sort((a,b)=> a.n - b.n);
 
