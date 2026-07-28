@@ -30,7 +30,8 @@ let currentIcon = ICONS[Math.floor(Math.random()*ICONS.length)];
   if(!box) return;
 
   const videoSrc = a.lobbyVideo || '';
-  const imgSrc   = a.lobby || W.coverImageUrl || (img && img.getAttribute('src')) || '';
+  /* 只認這組新人真的有的素材；沒有就不設 src，瀏覽器不會去要一張不存在的圖 */
+  const imgSrc   = a.lobby || a.cover || W.coverImageUrl || '';
 
   if(videoSrc && vid){
     vid.src = videoSrc;
@@ -48,6 +49,7 @@ let currentIcon = ICONS[Math.floor(Math.random()*ICONS.length)];
 
   if(vid) vid.remove();
   if(img && imgSrc){
+    img.hidden = false;
     img.src = imgSrc;
     img.addEventListener('load',  ()=> box.classList.remove('is-empty'), { once:true });
     img.addEventListener('error', ()=>{ img.remove(); box.classList.add('is-empty'); }, { once:true });

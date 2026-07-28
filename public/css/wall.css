@@ -1,9 +1,4 @@
 /* ============================================================
-   祝福牆 — 場景背景
-============================================================ */
-.scene-bg[data-bg="wishes"]{background-image:url('../images/scene-wishes.jpg');background-position:center;}
-
-/* ============================================================
    簽到祝福留言牆
 ============================================================ */
 .wish-form textarea{width:100%;padding:14px 16px;border:1px solid var(--line);border-radius:var(--radius);

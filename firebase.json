@@ -22,6 +22,10 @@
     ],
     "rewrites": [
       {
+        "source": "/assets/*/manifest.json",
+        "destination": "/assets/empty-manifest.json"
+      },
+      {
         "source": "/w/*/rsvp",
         "destination": "/rsvp.html"
       },
