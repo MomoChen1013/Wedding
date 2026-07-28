@@ -168,6 +168,17 @@ short/{code}                # 6 碼短連結
 
 ## 部署
 
+> ### ⚠️ 合併到 main 不會更新網站
+> Git 的 merge 只是把程式碼合進分支，**網站不會自己更新**。
+> 每次改完都要重新部署，順序是：
+>
+> ```
+> merge → git pull → npx firebase deploy
+> ```
+>
+> 只改 Firestore 裡的資料（例如 `status`、`pages`）則**不需要**部署，
+> 重整網頁就生效。
+
 ```bash
 # 部署安全規則（改完 firestore.rules 一定要跑）
 npx firebase deploy --only firestore:rules
@@ -197,7 +208,7 @@ node scripts/create-site.js \
 ✅ 站台建立成功！
    siteId : gSUcido0TA8v4tlNhYbN
    slug   : chen-lin-0315
-   網址   : https://minato.3udesign.website/w/chen-lin-0315
+   網址   : https://wedding-22b94.web.app/w/chen-lin-0315/
    已開頁面 : 首頁（固定）、rsvp、wall
 ```
 

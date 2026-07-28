@@ -40,6 +40,8 @@
      --rsvp-enabled   選填，true／false，預設 true
      --project        選填，覆寫 Firebase 專案 ID（預設用 GOOGLE_CLOUD_PROJECT
                        或 service account key 內的 project_id）
+     --base           選填，印出來的網址前綴；預設用 .firebaserc 的專案組成
+                       https://{projectId}.web.app，也可用 WEDDING_BASE_URL 設定
 
    連線方式：
      1) 正式環境：需先設定 GOOGLE_APPLICATION_CREDENTIALS 指向
@@ -52,6 +54,7 @@
 import { parseArgs } from 'node:util';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
+import { resolveBaseUrl } from './site-url.js';
 
 /* ---------- 可選頁面 ----------
    key 對應網址 /w/{slug}/{key}，也對應 sites.pages 的欄位名。
@@ -96,6 +99,7 @@ function parseCliArgs(argv) {
       'rsvp-deadline': { type: 'string' },
       'rsvp-enabled':  { type: 'string', default: 'true' },
       project:       { type: 'string' },
+      base:          { type: 'string' },
     },
   });
   return values;
@@ -276,7 +280,7 @@ async function main() {
   console.log('✅ 站台建立成功！');
   console.log(`   siteId : ${siteId}`);
   console.log(`   slug   : ${slug}`);
-  console.log(`   網址   : https://minato.3udesign.website/w/${slug}`);
+  console.log(`   網址   : ${resolveBaseUrl(values.base)}/w/${slug}/`);
   console.log(`   已開頁面 : 大廳（固定）${on.length ? '、' + on.join('、') : ''}`);
   if (owners.length) {
     console.log(`   信箱可讀 : ${owners.join('、')}`);

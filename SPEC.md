@@ -153,7 +153,10 @@ node scripts/create-site.js --slug chen-lin-0315 --groom 陳彥廷 --bride 林�
 
 ## 5. 路由與 Hosting 設定
 
-網址採**路徑式**：`https://minato.3udesign.website/w/{slug}/{page}`
+網址採**路徑式**：`https://{專案網域}/w/{slug}/{page}`
+預設用 Firebase 的 `https://{projectId}.web.app`；
+腳本印出的網址前綴由 `scripts/site-url.js` 決定，
+可用 `WEDDING_BASE_URL` 覆寫，不必改程式。
 
 `firebase.json` rewrite：
 

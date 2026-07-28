@@ -20,15 +20,14 @@
 import { parseArgs } from 'node:util';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-
-const BASE = 'https://minato.3udesign.website';
+import { resolveBaseUrl } from './site-url.js';
 
 function parseCliArgs(argv) {
   const { values } = parseArgs({
     args: argv,
     options: {
       slug:    { type: 'string' },
-      base:    { type: 'string', default: BASE },
+      base:    { type: 'string' },
       project: { type: 'string' },
     },
   });
@@ -133,7 +132,7 @@ async function checkOne(db, slug, base) {
   }
 
   /* 8. 網址 */
-  const root = base.replace(/\/+$/, '');
+  const root = resolveBaseUrl(base);
   console.log('');
   console.log('網址：');
   console.log(`   大廳 : ${root}/w/${slug}/`);

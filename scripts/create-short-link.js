@@ -11,7 +11,8 @@
      --slug     指定要縮的站台 slug，會自動組成邀請函完整網址
      --target   直接指定完整目標網址（與 --slug 擇一）
      --code     選填，指定 6 碼代號；不給則隨機產生
-     --base     選填，站台網域，預設 https://minato.3udesign.website
+     --base     選填，站台網域；預設用 .firebaserc 的專案組成
+                https://{projectId}.web.app，也可用 WEDDING_BASE_URL 設定
      --project  選填，覆寫 Firebase 專案 ID
 
    連線方式與 create-site.js 相同（Admin SDK ／ emulator）。
@@ -21,8 +22,7 @@ import { parseArgs } from 'node:util';
 import { randomInt } from 'node:crypto';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-
-const DEFAULT_BASE = 'https://minato.3udesign.website';
+import { resolveBaseUrl } from './site-url.js';
 
 /* 去掉容易看錯的字元（0/o/O、1/l/I），避免口頭或手抄時出錯 */
 const CODE_ALPHABET = 'abcdefghijkmnpqrstuvwxyz23456789';
@@ -37,7 +37,7 @@ function parseCliArgs(argv) {
       slug:    { type: 'string' },
       target:  { type: 'string' },
       code:    { type: 'string' },
-      base:    { type: 'string', default: DEFAULT_BASE },
+      base:    { type: 'string' },
       project: { type: 'string' },
     },
   });
@@ -64,7 +64,7 @@ function resolveTarget(values) {
     if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(values.slug)) {
       throw new Error('--slug 格式不合法，只允許小寫英數與連字號');
     }
-    return `${values.base.replace(/\/+$/, '')}/w/${values.slug}`;
+    return `${resolveBaseUrl(values.base)}/w/${values.slug}/`;
   }
   throw new Error('請用 --slug 或 --target 指定要縮的網址');
 }
@@ -116,7 +116,7 @@ async function main() {
   initializeApp(initOptions);
 
   const code = await createShortLink(target, values.code);
-  const base = values.base.replace(/\/+$/, '');
+  const base = resolveBaseUrl(values.base);
 
   console.log('✅ 短連結建立成功！');
   console.log(`   短網址 : ${base}/s/${code}`);
