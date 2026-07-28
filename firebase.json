@@ -13,6 +13,17 @@
       "assets/demo-wedding-2027/**"
     ],
     "cleanUrls": true,
+    "headers": [
+      {
+        "source": "**/*.@(html|js|css|json)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      }
+    ],
     "redirects": [
       {
         "source": "/w/:slug/info",
