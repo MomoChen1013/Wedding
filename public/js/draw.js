@@ -96,6 +96,21 @@ const CARDS = [
   {art:'/images/cards-52.png', name:'馬祖的Momo', rarity:'N'}
 ];
 
+/* 素材資料夾有 cards/ 就用客戶自己的卡圖，否則沿用上面的預設 */
+(function applyCardAssets(){
+  const list = (window.SITE && window.SITE.assets && window.SITE.assets.cards) || [];
+  if(!list.length) return;
+  CARDS.length = 0;
+  list.forEach((item, i) => {
+    CARDS.push({
+      art:    item.src,
+      name:   item.name   || `囍卡 ${i + 1}`,
+      rarity: item.rarity || 'N',
+      desc:   item.desc   || '',
+    });
+  });
+})();
+
 const RANK = {SSR:'✦✦ SSR', SR:'✦ SR', R:'★ R', N:'N'};
 
 /* 判斷 art 是圖片路徑還是 emoji

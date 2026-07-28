@@ -32,8 +32,9 @@
                        可用值：info rsvp wall cake draw exhibition quiz inbox invitation
      --enable         選填，在預設之外「加開」某頁；可重複給多次
      --disable        選填，關掉某頁；可重複給多次
-     --inbox-password 選填，悄悄話信箱的密碼，預設 1010
-     --owner-email    選填，新人聯絡信箱
+     --owner-email    新人的 Google 信箱；**悄悄話信箱要用它登入才讀得到**
+                       可重複給多次（新郎、新娘各一個）
+                       沒設定的話，信箱頁面等於沒人能看
      --status         選填，draft／published／archived，預設 draft
      --rsvp-deadline  選填，RSVP 截止日 YYYY-MM-DD，預設同婚禮日期
      --rsvp-enabled   選填，true／false，預設 true
@@ -82,7 +83,7 @@ function parseCliArgs(argv) {
       'theme-color': { type: 'string', default: '#3D9AD1' },
       cover:         { type: 'string', default: '' },
       story:         { type: 'string', default: '' },
-      'owner-email': { type: 'string', default: '' },
+      'owner-email': { type: 'string', multiple: true },
       photo:         { type: 'string', multiple: true },
       hashtag:       { type: 'string', multiple: true },
       'dress-code':  { type: 'string', default: '' },
@@ -91,7 +92,6 @@ function parseCliArgs(argv) {
       pages:         { type: 'string' },
       enable:        { type: 'string', multiple: true },
       disable:       { type: 'string', multiple: true },
-      'inbox-password': { type: 'string', default: '' },
       status:        { type: 'string', default: 'draft' },
       'rsvp-deadline': { type: 'string' },
       'rsvp-enabled':  { type: 'string', default: 'true' },
@@ -205,13 +205,23 @@ async function createSite(values) {
   const rsvpEnabled = values['rsvp-enabled'] !== 'false';
   const pages = resolvePages(values);
 
+  /* 新人的 Google 信箱：規則會拿它比對，決定誰讀得到悄悄話信箱 */
+  const ownerEmails = (values['owner-email'] || [])
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  ownerEmails.forEach((e) => {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
+      throw new Error(`--owner-email 「${e}」看起來不是有效的信箱`);
+    }
+  });
+
   const db = getFirestore();
   const siteRef = db.collection('sites').doc();
   const slugRef = db.collection('slugs').doc(slug);
 
   const siteData = {
     slug,
-    ownerEmail: values['owner-email'] || '',
+    ownerEmails,
     status: values.status,
     groomName,
     brideName,
@@ -231,7 +241,6 @@ async function createSite(values) {
     rsvpDeadline: Timestamp.fromDate(rsvpDeadline),
     rsvpEnabled,
     pages,
-    inboxPassword: values['inbox-password'] || '1010',
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   };
@@ -248,7 +257,7 @@ async function createSite(values) {
     });
   });
 
-  return { siteId: siteRef.id, slug, pages };
+  return { siteId: siteRef.id, slug, pages, owners: ownerEmails };
 }
 
 /* ---------- CLI 進入點 ---------- */
@@ -261,7 +270,7 @@ async function main() {
   }
   initializeApp(initOptions);
 
-  const { siteId, slug, pages } = await createSite(values);
+  const { siteId, slug, pages, owners } = await createSite(values);
   const on = Object.entries(pages).filter(([, v]) => v).map(([k]) => k);
 
   console.log('✅ 站台建立成功！');
@@ -269,6 +278,11 @@ async function main() {
   console.log(`   slug   : ${slug}`);
   console.log(`   網址   : https://minato.3udesign.website/w/${slug}`);
   console.log(`   已開頁面 : 大廳（固定）${on.length ? '、' + on.join('、') : ''}`);
+  if (owners.length) {
+    console.log(`   信箱可讀 : ${owners.join('、')}`);
+  } else {
+    console.log('   ⚠️ 沒設定 --owner-email，悄悄話信箱將沒有人讀得到');
+  }
 }
 
 main().catch((err) => {

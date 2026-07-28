@@ -58,7 +58,7 @@ sites/{siteId}
   rsvpDeadline    : timestamp
   rsvpEnabled     : boolean
   pages           : map      # 頁面開關，見第 10 節
-  inboxPassword   : string   # 悄悄話信箱密碼
+  ownerEmails     : string[] # 新人的 Google 信箱；規則據此決定誰讀得到信箱
   createdAt       : timestamp
   updatedAt       : timestamp
 
@@ -80,6 +80,7 @@ sites/{siteId}
   compat/{autoId}     answers(list ≤50), time           # 新人小測驗
   collected/{autoId}  uid, userName, art, name, rarity, desc, time
   meta/hearts         count(int)                        # 愛心計數器
+  meta/letterCount    count(int)                        # 公開的信件數量
 
 slugs/{slug}                # 網址佔位對照表，文件 ID 就是 slug 本身
   siteId          : string
@@ -308,3 +309,51 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
   key 以 `wed.{siteId}.` 開頭 —— 同一位賓客逛兩組新人的網站不會互相污染
 - 抽卡收藏用 Firebase 匿名登入的 uid 隔離，只讀得到自己的卡
 - 各站台的祝福、信件、蛋糕、測驗票數都在自己的子集合底下，彼此看不到
+
+---
+
+## 11. 站台素材
+
+每組新人的圖片放在 `public/assets/{slug}/`，資料夾名稱就是 slug。
+`scripts/sync-assets.js` 掃描後產生 `manifest.json`，網頁載入時自動套用。
+
+| 位置 | 用途 |
+|---|---|
+| `cover.*` | 封面大圖（單頁邀請函） |
+| `lobby.*` / `lobby-blur.*` | 大廳背景與其模糊版 |
+| `gallery/` | 照片牆 |
+| `exhibition/` | 戀愛時光的展品 |
+| `cards/` | 囍卡 |
+| `cakes/` | 甜點桌 |
+
+- 檔名排序即顯示順序（建議 `01`、`02`…）
+- 各子資料夾可放選填的 `meta.json`，用檔名當 key 補上標題／年份／稀有度等文字
+- 沒放素材的站台沿用內建預設，不會壞掉
+- Firestore 的 `coverImageUrl`／`photos` 有填時優先於資料夾掃描結果
+
+**為什麼需要掃描步驟**：瀏覽器無法列出伺服器上的目錄，
+所以由建置端掃一次寫成 manifest，前端再讀 manifest。
+不引入建置工具，也不需要 Cloud Functions。
+
+---
+
+## 12. 悄悄話信箱的權限
+
+`letters` 的讀取由規則檢查 Google 帳號的**已驗證信箱**是否在
+`sites.ownerEmails` 名單內：
+
+```
+allow read: if request.auth != null
+  && request.auth.token.email_verified == true
+  && request.auth.token.email in site(siteId).ownerEmails;
+```
+
+- 賓客寫得進去、讀不出來（連 API 都拿不到）
+- 新人在 `/w/{slug}/inbox` 用 Google 登入即可查看
+- 祝福牆的「已有 N 封信」改用公開計數器 `meta/letterCount`，
+  只暴露數量、不暴露內容
+
+**為什麼不用密碼**：Firestore 的讀取請求不帶 payload，
+規則沒有辦法驗證使用者輸入的密碼。密碼門只能遮住畫面，
+資料仍可透過 API 直接取得，等於沒有保護。
+真正的保護必須綁在 Auth 簽發的身分上。

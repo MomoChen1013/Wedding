@@ -90,5 +90,14 @@ if(LS.get('user', null)){
   app.classList.add('app-show');
 }
 
-/* 大廳迷你日期倒數（資料來自 config.js 的 WED.dateISO） */
+/* 大廳背景：素材資料夾有 lobby.jpg 就換掉預設圖 */
+(function applyLobbyArt(){
+  const a = (window.SITE && window.SITE.assets) || {};
+  const bg = document.querySelector('img.bg');
+  const blur = document.querySelector('img.bg-blur');
+  if(bg && a.lobby) bg.src = a.lobby;
+  if(blur && (a.lobbyBlur || a.lobby)) blur.src = a.lobbyBlur || a.lobby;
+})();
+
+/* 大廳迷你日期倒數（資料來自站台設定的 dateISO） */
 startCountdown(document.getElementById('lobbyCd'), (window.WED && window.WED.dateISO), 'inline');

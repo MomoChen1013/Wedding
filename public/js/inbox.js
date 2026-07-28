@@ -1,68 +1,95 @@
 /* ============================================================
-   inbox.js — 隱藏的悄悄話信箱頁（新人專屬）
-   - 密碼門：預設讀 js/config.js 的 WED.password（純前端門檻，不是高強度保護）
-   - 解鎖狀態存 sessionStorage：同個分頁重整不必再輸入
-   - 關閉分頁就會失效，下次重新進入需要再次輸入
+   inbox.js — 悄悄話信箱（新人專屬）
+   ------------------------------------------------------------
+   ・門檻是 Google 登入，不是密碼。
+     Security Rules 只讓 sites.ownerEmails 名單內、且信箱已驗證的
+     帳號讀取 letters；賓客寫得進去、讀不出來。
+   ・因此這裡沒有「解鎖畫面」這種純前端遮罩，
+     沒權限的人就算改了 DOM 也拿不到任何資料。
 ============================================================ */
-const PASSWORD = (window.WED && window.WED.password) || '1010';
-const SESSION_KEY = 'wed.inboxUnlocked';
-
 const pwGate   = document.getElementById('pwGate');
-const pwInput  = document.getElementById('pwInput');
 const pwErr    = document.getElementById('pwErr');
-const pwBtn    = document.getElementById('pwBtn');
+const loginBtn = document.getElementById('ownerLoginBtn');
 const ibPage   = document.getElementById('inboxPage');
 const backBtn  = document.getElementById('backLobby');
 const lockBtn  = document.getElementById('ibLock');
 
-/* ---------- 解鎖 / 上鎖 ---------- */
-function unlock(){
+function showError(msg){
+  pwErr.textContent = msg;
+  const card = document.querySelector('#pwGate .gate-card');
+  if(card){
+    card.animate(
+      [{transform:'translateX(0)'},{transform:'translateX(-8px)'},
+       {transform:'translateX(8px)'},{transform:'translateX(0)'}],
+      {duration:300}
+    );
+  }
+}
+
+/* ---------- 開啟 / 關閉信箱 ---------- */
+function openInbox(){
+  if(!ibPage.hidden) return;
   pwGate.style.display = 'none';
   ibPage.hidden = false;
   backBtn.classList.add('show');
-  sessionStorage.setItem(SESSION_KEY, '1');
+  DataStore.subscribeLetters();
   renderInbox();
   setTimeout(()=>window.scrollTo({top:0, behavior:'instant'}), 0);
 }
-function lock(){
-  sessionStorage.removeItem(SESSION_KEY);
+
+function closeInbox(){
   ibPage.hidden = true;
   backBtn.classList.remove('show');
-  pwInput.value = '';
-  pwErr.innerHTML = '&nbsp;';
   pwGate.style.display = '';
-  setTimeout(()=>pwInput.focus(), 60);
 }
-function tryUnlock(){
-  if(pwInput.value.trim() === PASSWORD){
-    unlock();
-    return;
+
+/* ---------- 登入 ---------- */
+loginBtn.addEventListener('click', async ()=>{
+  pwErr.innerHTML = '&nbsp;';
+  loginBtn.disabled = true;
+  try{
+    const email = await signInAsOwner();
+    if(isSiteOwner()){
+      openInbox();
+    }else{
+      showError(`${email || '這個帳號'} 不是這場婚禮的新人帳號`);
+    }
+  }catch(e){
+    if(e && e.code === 'auth/popup-closed-by-user'){
+      pwErr.innerHTML = '&nbsp;';
+    }else{
+      showError('登入沒有成功，請再試一次');
+    }
   }
-  pwErr.textContent = '密碼錯誤 ⨯';
-  pwInput.value = '';
-  pwInput.focus();
-  const card = document.querySelector('#pwGate .gate-card');
-  card.animate(
-    [{transform:'translateX(0)'},{transform:'translateX(-8px)'},
-     {transform:'translateX(8px)'},{transform:'translateX(0)'}],
-    {duration:300}
-  );
+  loginBtn.disabled = false;
+});
+
+/* 上鎖：登出回到匿名訪客身分 */
+lockBtn.addEventListener('click', async ()=>{
+  try{ await window.fb.signOut(window.fb.auth); }catch{}
+  location.reload();
+});
+
+/* 這個站台還沒設定新人信箱時，講清楚而不是讓人一直按登入 */
+if(!ownerEmails().length){
+  loginBtn.disabled = true;
+  pwErr.textContent = '這個站台還沒設定新人的 Google 信箱';
+}else{
+  /* 已經是登入狀態就直接進信箱 */
+  window.fb.onAuthStateChanged(window.fb.auth, ()=>{
+    if(isSiteOwner()) openInbox();
+  });
 }
 
-pwBtn.addEventListener('click', tryUnlock);
-pwInput.addEventListener('keydown', e=>{ if(e.key === 'Enter') tryUnlock(); });
-lockBtn.addEventListener('click', lock);
+/* 規則拒絕讀取（例如信箱不在名單內）→ 退回登入畫面 */
+document.addEventListener('data:letters:denied', ()=>{
+  closeInbox();
+  showError('這個帳號沒有讀取信件的權限');
+});
 
-/* 同個 session 已解鎖 → 直接放行 */
-if(sessionStorage.getItem(SESSION_KEY) === '1'){
-  unlock();
-} else {
-  setTimeout(()=>pwInput.focus(), 100);
-}
-
-/* 解鎖狀態下，遠端有新信進來自動重畫 */
+/* 有新信進來自動重畫 */
 document.addEventListener('data:letters', ()=>{
-  if(sessionStorage.getItem(SESSION_KEY) === '1') renderInbox();
+  if(!ibPage.hidden) renderInbox();
 });
 
 /* ---------- 信箱渲染 ---------- */

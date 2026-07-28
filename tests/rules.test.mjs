@@ -357,3 +357,94 @@ describe('多頁面子集合', () => {
     }));
   });
 });
+
+/* ============================================================
+   悄悄話信箱：只有站台 ownerEmails 名單內的帳號讀得到
+============================================================ */
+describe('letters 的擁有者權限', () => {
+  const OWNER = 'couple@example.com';
+
+  function letter(overrides = {}) {
+    return { name:'王小明', icon:'💌', text:'偷偷跟你們說…', time: Date.now(), ...overrides };
+  }
+
+  async function seedLetter() {
+    await testEnv.withSecurityRulesDisabled(async (c) => {
+      await addDoc(collection(c.firestore(), `sites/${SITE_ID}/letters`), letter());
+    });
+  }
+
+  beforeEach(async () => {
+    await seedSite(SITE_ID, { ownerEmails: [OWNER] });
+    await seedLetter();
+  });
+
+  it('賓客可以寫信', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(addDoc(collection(db, `sites/${SITE_ID}/letters`), letter()));
+  });
+
+  it('未登入的賓客讀不到信件', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(getDocs(collection(db, `sites/${SITE_ID}/letters`)));
+  });
+
+  it('登入但不在名單內的帳號讀不到信件', async () => {
+    const db = testEnv
+      .authenticatedContext('someone', { email:'stranger@example.com', email_verified: true })
+      .firestore();
+    await assertFails(getDocs(collection(db, `sites/${SITE_ID}/letters`)));
+  });
+
+  it('名單內但信箱未驗證，也讀不到', async () => {
+    const db = testEnv
+      .authenticatedContext('couple', { email: OWNER, email_verified: false })
+      .firestore();
+    await assertFails(getDocs(collection(db, `sites/${SITE_ID}/letters`)));
+  });
+
+  it('名單內且信箱已驗證，讀得到信件', async () => {
+    const db = testEnv
+      .authenticatedContext('couple', { email: OWNER, email_verified: true })
+      .firestore();
+    await assertSucceeds(getDocs(collection(db, `sites/${SITE_ID}/letters`)));
+  });
+
+  it('站台沒設定 ownerEmails 時，誰都讀不到', async () => {
+    await seedSite(SITE_ID);
+    const db = testEnv
+      .authenticatedContext('couple', { email: OWNER, email_verified: true })
+      .firestore();
+    await assertFails(getDocs(collection(db, `sites/${SITE_ID}/letters`)));
+  });
+
+  it('別的站台的擁有者讀不到這個站台的信件', async () => {
+    await seedSite('other-site', { ownerEmails: ['other@example.com'] });
+    const db = testEnv
+      .authenticatedContext('other', { email:'other@example.com', email_verified: true })
+      .firestore();
+    await assertFails(getDocs(collection(db, `sites/${SITE_ID}/letters`)));
+  });
+
+  it('擁有者也不能改或刪信件', async () => {
+    let id;
+    await testEnv.withSecurityRulesDisabled(async (c) => {
+      const r = await addDoc(collection(c.firestore(), `sites/${SITE_ID}/letters`), letter());
+      id = r.id;
+    });
+    const db = testEnv
+      .authenticatedContext('couple', { email: OWNER, email_verified: true })
+      .firestore();
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}/letters/${id}`), { text:'改掉' }));
+    await assertFails(deleteDoc(doc(db, `sites/${SITE_ID}/letters/${id}`)));
+  });
+
+  it('信件數量是公開的，但只能一次加一', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    const ref = doc(db, `sites/${SITE_ID}/meta/letterCount`);
+    await assertSucceeds(getDoc(ref));
+    await assertSucceeds(setDoc(ref, { count: 1 }));
+    await assertFails(setDoc(ref, { count: 500 }));
+    await assertSucceeds(setDoc(ref, { count: 2 }));
+  });
+});
