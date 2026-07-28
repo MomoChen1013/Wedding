@@ -20,6 +20,12 @@
      --theme-color    選填，主題色 hex，預設 #3D9AD1
      --cover          選填，封面圖片網址
      --story          選填，兩人的故事
+     --photo          選填，照片牆的圖片網址；可重複給多次，順序即顯示順序
+                       例：--photo /assets/chen-lin/1.jpg --photo /assets/chen-lin/2.jpg
+     --hashtag        選填，婚禮 hashtag；可重複給多次
+     --dress-code     選填，服裝建議
+     --gift-note      選填，禮金說明
+     --end-time       選填，婚宴結束時間 HH:mm（加入行事曆用），預設開始後 3 小時
      --owner-email    選填，新人聯絡信箱
      --status         選填，draft／published／archived，預設 draft
      --rsvp-deadline  選填，RSVP 截止日 YYYY-MM-DD，預設同婚禮日期
@@ -61,6 +67,11 @@ function parseCliArgs(argv) {
       cover:         { type: 'string', default: '' },
       story:         { type: 'string', default: '' },
       'owner-email': { type: 'string', default: '' },
+      photo:         { type: 'string', multiple: true },
+      hashtag:       { type: 'string', multiple: true },
+      'dress-code':  { type: 'string', default: '' },
+      'gift-note':   { type: 'string', default: '' },
+      'end-time':    { type: 'string' },
       status:        { type: 'string', default: 'draft' },
       'rsvp-deadline': { type: 'string' },
       'rsvp-enabled':  { type: 'string', default: 'true' },
@@ -143,6 +154,9 @@ async function createSite(values) {
   const rsvpDeadline = values['rsvp-deadline']
     ? parseDateTime(values['rsvp-deadline'], '23:59', timezone, '--rsvp-deadline')
     : eventDate;
+  const eventEndDate = values['end-time']
+    ? parseDateTime(values.date, values['end-time'], timezone, '--date')
+    : null;
   const rsvpEnabled = values['rsvp-enabled'] !== 'false';
 
   const db = getFirestore();
@@ -156,6 +170,7 @@ async function createSite(values) {
     groomName,
     brideName,
     eventDate: Timestamp.fromDate(eventDate),
+    eventEndDate: eventEndDate ? Timestamp.fromDate(eventEndDate) : null,
     timezone,
     venueName: values.venue || '',
     venueAddress: values.address || '',
@@ -163,6 +178,10 @@ async function createSite(values) {
     themeColor: values['theme-color'] || '#3D9AD1',
     coverImageUrl: values.cover || '',
     story: values.story || '',
+    photos: values.photo || [],
+    hashtags: values.hashtag || [],
+    dressCode: values['dress-code'] || '',
+    giftNote: values['gift-note'] || '',
     rsvpDeadline: Timestamp.fromDate(rsvpDeadline),
     rsvpEnabled,
     createdAt: FieldValue.serverTimestamp(),

@@ -45,6 +45,11 @@ const SEED = {
     venueAddress: '台北市中山區中山北路二段39巷3號',
     venueMapUrl: '', themeColor: '#3D9AD1', coverImageUrl: '',
     story: '我們在一場朋友的婚禮上第一次見面，\n那天他把最後一塊蛋糕讓給了我。\n\n七年後，換我們請大家吃蛋糕了。',
+    photos: ['/assets/e2e/a.svg', '/assets/e2e/b.svg', '/assets/e2e/c.svg'],
+    hashtags: ['#陳林2027', '我們結婚了'],
+    dressCode: '溫柔大地色系・香檳金／裸粉／霧綠',
+    giftNote: '您願意撥空前來，就是給我們最好的禮物 ♡',
+    eventEndDate: AdminTimestamp.fromDate(new Date('2027-03-15T07:00:00Z')),
     rsvpDeadline: future(60), rsvpEnabled: true, ownerEmail: '',
   },
   'wu-yang-1220': {
@@ -53,6 +58,7 @@ const SEED = {
     eventDate: TOKYO_EVENING, timezone: 'Asia/Tokyo',
     venueName: '目黒雅叙園', venueAddress: '東京都目黒区下目黒1-8-1',
     venueMapUrl: '', themeColor: '#B5838D', coverImageUrl: '', story: '',
+    photos: [], hashtags: [], dressCode: '', giftNote: '',
     rsvpDeadline: future(120), rsvpEnabled: true, ownerEmail: '',
   },
   'draft-site-test': {
@@ -181,7 +187,36 @@ console.log('\n[1] /w/chen-lin-0315');
   ok('故事保留換行', story.includes('\n'));
   ok('RSVP 表單顯示', formVisible);
   ok('未顯示 404', notFoundHidden);
+
+  /* 新增內容區塊 */
+  ok('倒數計時顯示', (await page.textContent('#countdown')).includes('距離婚禮還有'),
+    await page.textContent('#countdown'));
+  ok('照片牆顯示 3 張', await page.locator('#gallery button').count() === 3,
+    String(await page.locator('#gallery button').count()));
+  ok('Dress code 顯示',
+    (await page.textContent('#dressCode')).includes('香檳金'));
+  ok('禮金說明顯示',
+    (await page.textContent('#giftNote')).includes('最好的禮物'));
+  const tags = await page.locator('#hashtags li').allTextContents();
+  ok('hashtag 顯示且自動補 #',
+    tags.join(',') === '#陳林2027,#我們結婚了', tags.join(','));
+  ok('加入行事曆按鈕顯示', await page.isVisible('#calBtn'));
+
   ok('無 console 錯誤', consoleErrors.length === 0, consoleErrors.join(' | '));
+  await page.close();
+}
+
+/* ---------- 照片放大 ---------- */
+console.log('\n[1b] 照片放大');
+{
+  const { page } = await visit('/w/chen-lin-0315');
+  ok('lightbox 預設關閉', !(await page.isVisible('#lightbox')));
+  await page.locator('#gallery button').first().click();
+  await page.waitForSelector('#lightbox', { state: 'visible', timeout: 5000 });
+  ok('點圖後開啟 lightbox', await page.isVisible('#lightbox'));
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('#lightbox', { state: 'hidden', timeout: 5000 });
+  ok('按 Esc 可關閉', !(await page.isVisible('#lightbox')));
   await page.close();
 }
 
@@ -203,6 +238,10 @@ console.log('\n[2] /w/wu-yang-1220');
   ok('主題色實際套用到按鈕', submitBg === 'rgb(181, 131, 141)', submitBg);
   ok('日期以東京時區顯示', detailDate === '2027.12.20（一）18:30', detailDate);
   ok('無 story 時區塊隱藏', storyHidden);
+  ok('無照片時照片牆隱藏', !(await page.isVisible('#gallerySection')));
+  ok('無 dress code 時該列隱藏', !(await page.isVisible('#dressRow')));
+  ok('無禮金說明時該列隱藏', !(await page.isVisible('#giftRow')));
+  ok('無 hashtag 時區塊隱藏', !(await page.isVisible('#tagSection')));
   ok('無 console 錯誤', consoleErrors.length === 0, consoleErrors.join(' | '));
   await page.close();
 }

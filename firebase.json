@@ -5,7 +5,12 @@
   },
   "hosting": {
     "public": "public",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "assets/e2e/**"
+    ],
     "rewrites": [
       {
         "source": "/w/**",

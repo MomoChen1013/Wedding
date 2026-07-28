@@ -49,9 +49,12 @@
 sites/{siteId}
   slug, ownerEmail, status(draft|published|archived)
   groomName, brideName
-  eventDate(timestamp), timezone(IANA，預設 Asia/Taipei)
+  eventDate(timestamp), eventEndDate(timestamp|null)
+  timezone(IANA，預設 Asia/Taipei)
   venueName, venueAddress, venueMapUrl
   themeColor(hex), coverImageUrl, story
+  photos(string[]), hashtags(string[])
+  dressCode, giftNote
   rsvpDeadline(timestamp), rsvpEnabled(bool)
   createdAt, updatedAt
 
@@ -147,6 +150,11 @@ node scripts/create-site.js \
 | `--theme-color` | | 主題色 hex，預設 `#3D9AD1` |
 | `--cover` | | 封面圖片網址 |
 | `--story` | | 兩人的故事，支援換行 |
+| `--photo` | | 照片牆圖片；**可重複給多次**，順序即顯示順序 |
+| `--hashtag` | | 婚禮 hashtag；**可重複給多次**，沒寫 `#` 會自動補 |
+| `--dress-code` | | 服裝建議 |
+| `--gift-note` | | 禮金說明 |
+| `--end-time` | | 婚宴結束時間 `HH:mm`（加入行事曆用），預設開始後 3 小時 |
 | `--owner-email` | | 新人聯絡信箱 |
 | `--status` | | `draft`／`published`／`archived`，**預設 `draft`** |
 | `--rsvp-deadline` | | RSVP 截止日 `YYYY-MM-DD`，預設同婚禮日期 |
@@ -154,6 +162,38 @@ node scripts/create-site.js \
 
 > **注意**：預設是 `draft`，賓客會看到 404。
 > 內容確認好之後，到 Firebase Console 把 `status` 改成 `published` 才會對外公開。
+
+### 照片怎麼放
+
+把圖片放進 `public/assets/{slug}/`，例如：
+
+```
+public/assets/chen-lin-0315/cover.jpg
+public/assets/chen-lin-0315/01.jpg
+public/assets/chen-lin-0315/02.jpg
+```
+
+然後用**根目錄開頭的路徑**指定（不要用完整網址）：
+
+```bash
+node scripts/create-site.js \
+  --slug chen-lin-0315 --groom 陳彥廷 --bride 林佳蓉 --date 2027-03-15 \
+  --cover /assets/chen-lin-0315/cover.jpg \
+  --photo /assets/chen-lin-0315/01.jpg \
+  --photo /assets/chen-lin-0315/02.jpg \
+  --hashtag 陳林2027 --hashtag 我們結婚了 \
+  --dress-code "溫柔大地色系・香檳金／裸粉／霧綠" \
+  --gift-note "您願意撥空前來，就是給我們最好的禮物 ♡" \
+  --status published
+```
+
+換圖或加圖之後要重新部署才會生效：
+
+```bash
+npx firebase deploy --only hosting
+```
+
+建議事先壓到寬度 1600px 以內、單張 300KB 左右；照片牆是 4:5 直式裁切。
 
 ### 保留字
 
@@ -252,15 +292,16 @@ npm run test:e2e
 會自動寫入測試資料並用 Chromium 跑完整流程，預期全部 ✅：
 
 ```
-[1] /w/chen-lin-0315        # 內容、主題色、日期時區、故事換行、表單
-[2] /w/wu-yang-1220         # 另一組 slug，主題色與內容互不干擾
-[3] /w/does-not-exist       # 中文 404 畫面，非白畫面且無 console 錯誤
-[4] draft 站台               # 未發布顯示 404
+[1]  /w/chen-lin-0315       # 內容、主題色、時區、倒數、照片牆、hashtag、行事曆
+[1b] 照片放大               # 點圖開啟、Esc 關閉
+[2]  /w/wu-yang-1220        # 另一組 slug，主題色與內容互不干擾、空欄位區塊隱藏
+[3]  /w/does-not-exist      # 中文 404 畫面，非白畫面且無 console 錯誤
+[4]  draft 站台             # 未發布顯示 404
 [4b] RSVP 截止與關閉
-[5] RSVP 送出流程            # 不跳頁、成功狀態、寫入欄位正確
-[6] honeypot 擋機器人        # 畫面顯示成功但確認未寫入 Firestore
-[8] 短連結 /s/{code}         # 正常轉址、不存在代號、javascript: 協定被擋
-[7] 手機版 RWD（375px）      # 無水平捲動
+[5]  RSVP 送出流程          # 不跳頁、成功狀態、寫入欄位正確
+[6]  honeypot 擋機器人      # 畫面顯示成功但確認未寫入 Firestore
+[8]  短連結 /s/{code}       # 正常轉址、不存在代號、javascript: 協定被擋
+[7]  手機版 RWD（375px）    # 無水平捲動
 ```
 
 ### 本機預覽
@@ -269,15 +310,27 @@ npm run test:e2e
 npm run emulators
 ```
 
-開 <http://127.0.0.1:5000/w/{slug}>。
-頁面偵測到 `localhost`／`127.0.0.1` 會自動連 Firestore emulator，
-不會碰到正式資料。要先用 emulator 建站台：
+頁面偵測到 `localhost`／`127.0.0.1` 時，**預設會連本機的 Firestore emulator**，
+不會碰到正式資料。有兩種用法：
+
+**A. 用 emulator 的假資料試版型**
 
 ```bash
 FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
   node scripts/create-site.js --slug test-site --groom 測 --bride 試 \
   --date 2027-01-01 --status published
 ```
+
+開 <http://127.0.0.1:5000/w/test-site>
+
+**B. 預覽正式資料庫裡真實的站台** —— 網址加上 `?live=1`
+
+```
+http://127.0.0.1:5000/w/你的slug?live=1
+```
+
+沒加 `?live=1` 的話會去讀空的 emulator，你會看到 404 而不是站台內容。
+改完模板要上線就跑 `npx firebase deploy --only hosting`。
 
 ---
 

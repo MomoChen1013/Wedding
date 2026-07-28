@@ -41,6 +41,7 @@ sites/{siteId}
   groomName       : string
   brideName       : string
   eventDate       : timestamp
+  eventEndDate    : timestamp | null   # 婚宴結束時間，加入行事曆用；null 則抓開始後 3 小時
   timezone        : string   # IANA 時區，如 "Asia/Taipei"（見下方說明）
   venueName       : string
   venueAddress    : string
@@ -48,6 +49,10 @@ sites/{siteId}
   themeColor      : string   # hex，如 "#3D9AD1"
   coverImageUrl   : string
   story           : string   # 兩人的故事，支援換行
+  photos          : string[] # 照片牆，陣列順序即顯示順序
+  hashtags        : string[] # 婚禮 hashtag，前面沒有 # 會自動補上
+  dressCode       : string   # 服裝建議，支援換行
+  giftNote        : string   # 禮金說明，支援換行
   rsvpDeadline    : timestamp
   rsvpEnabled     : boolean
   createdAt       : timestamp
@@ -203,6 +208,17 @@ slug 不存在、格式不合法、站台非 `published`、或連線失敗時，
 - 全站 RWD，手機優先
 - RSVP 表單送出後不跳頁，以 async 寫入 Firestore 並顯示成功狀態
 - 表單有 honeypot 隱藏欄位擋機器人（觸發時畫面照樣顯示成功，但不寫入）
+
+頁面區塊順序：
+封面（含倒數計時）→ 兩人的故事 → 照片牆 → 婚禮資訊（日期／地點／服裝／禮金
+＋加入行事曆）→ RSVP → hashtag → footer。
+**每個區塊在對應欄位是空的時候會整段隱藏**，不會留下空標題。
+
+- 倒數計時：顯示距離婚禮剩餘天數，婚禮當天過後改顯示「我們結婚了 ♡」
+- 照片牆：響應式格狀排列（手機 2 欄／桌機 3 欄），點圖可放大，
+  支援 Esc 關閉；載不到的圖會整格移除不留破圖
+- 加入行事曆：前端產生 `.ics` 檔下載，iOS／Android／桌機通用，
+  不依賴任何第三方服務
 
 ---
 
