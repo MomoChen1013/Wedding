@@ -82,7 +82,7 @@ const SEED = {
 };
 
 async function seed() {
-  for (const col of ['sites', 'slugs']) {
+  for (const col of ['sites', 'slugs', 'short']) {
     const snap = await adb.collection(col).get();
     await Promise.all(snap.docs.map((d) => adb.recursiveDelete(d.ref)));
   }
@@ -91,6 +91,13 @@ async function seed() {
     await ref.set({ ...data, createdAt: AdminTimestamp.now(), updatedAt: AdminTimestamp.now() });
     await adb.collection('slugs').doc(slug).set({ siteId: ref.id, createdAt: AdminTimestamp.now() });
   }
+  /* 短連結：一筆正常、一筆帶惡意協定 */
+  await adb.collection('short').doc('ab23cd').set({
+    target: `${BASE}/w/chen-lin-0315`, createdAt: AdminTimestamp.now(), hits: 0,
+  });
+  await adb.collection('short').doc('evil99').set({
+    target: 'javascript:alert(1)', createdAt: AdminTimestamp.now(), hits: 0,
+  });
 }
 
 await seed();
@@ -297,6 +304,34 @@ console.log('\n[6] honeypot 擋機器人');
     Object.keys(saved).sort().join(',') ===
     'attending,createdAt,dietaryNote,guestCount,message,name',
     Object.keys(saved).sort().join(','));
+}
+
+/* ---------- 短連結 ---------- */
+console.log('\n[8] 短連結 /s/{code}');
+{
+  const page = await newPage();
+  await page.goto(BASE + '/s/ab23cd', { waitUntil: 'domcontentloaded' });
+  await page.waitForURL('**/w/chen-lin-0315', { timeout: 15000 });
+  ok('正確轉址到邀請函', page.url().endsWith('/w/chen-lin-0315'), page.url());
+  await page.waitForSelector('#content', { state: 'visible', timeout: 15000 });
+  ok('轉址後邀請函正常顯示',
+    (await page.textContent('#groomName')) === '陳彥廷');
+  await page.close();
+}
+{
+  const page = await newPage();
+  await page.goto(BASE + '/s/zzzzzz', { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('#notFoundState', { state: 'visible', timeout: 15000 });
+  ok('不存在的代號顯示 404', await page.isVisible('#notFoundState'));
+  await page.close();
+}
+{
+  const page = await newPage();
+  await page.goto(BASE + '/s/evil99', { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('#notFoundState', { state: 'visible', timeout: 15000 });
+  ok('javascript: 協定被擋下', await page.isVisible('#notFoundState'));
+  ok('未離開轉址頁', page.url().includes('/s/evil99'), page.url());
+  await page.close();
 }
 
 /* ---------- 手機版 RWD ---------- */

@@ -9,7 +9,9 @@
     "test:rules": "firebase emulators:exec --only firestore \"vitest run tests/rules.test.mjs\"",
     "test:e2e": "firebase emulators:exec --only firestore,hosting \"node tests/e2e.mjs\"",
     "emulators": "firebase emulators:start --only firestore,hosting",
-    "create-site": "node scripts/create-site.js"
+    "create-site": "node scripts/create-site.js",
+    "export-rsvps": "node scripts/export-rsvps.js",
+    "create-short-link": "node scripts/create-short-link.js"
   },
   "repository": {
     "type": "git",
