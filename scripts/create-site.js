@@ -12,7 +12,8 @@
      --bride          必填，新娘姓名
      --date           必填，婚禮日期 YYYY-MM-DD
      --time           選填，婚禮時間 HH:mm，預設 12:00
-     --tz             選填，時區位移，預設 +08:00（台灣）
+     --timezone       選填，婚禮所在時區（IANA），預設 Asia/Taipei
+                       邀請函一律以這個時區顯示時間，海外賓客才不會看錯
      --venue          選填，場地名稱
      --address        選填，場地地址
      --map-url        選填，Google Maps 連結
@@ -52,7 +53,7 @@ function parseCliArgs(argv) {
       bride:         { type: 'string' },
       date:          { type: 'string' },
       time:          { type: 'string', default: '12:00' },
-      tz:            { type: 'string', default: '+08:00' },
+      timezone:      { type: 'string', default: 'Asia/Taipei' },
       venue:         { type: 'string', default: '' },
       address:       { type: 'string', default: '' },
       'map-url':     { type: 'string', default: '' },
@@ -85,13 +86,38 @@ function assertValidSlug(slug) {
   }
 }
 
-function parseDateTime(dateStr, timeStr, tz, label) {
-  const isoLike = `${dateStr}T${timeStr}:00${tz}`;
-  const d = new Date(isoLike);
-  if (Number.isNaN(d.getTime())) {
+/* 把「某時區的牆上時間」轉成正確的 UTC 瞬間（可處理日光節約時間） */
+function parseDateTime(dateStr, timeStr, timeZone, label) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
     throw new Error(`${label} 格式錯誤，請用 YYYY-MM-DD（目前收到 "${dateStr}"）`);
   }
-  return d;
+  if (!/^\d{2}:\d{2}$/.test(timeStr)) {
+    throw new Error(`時間格式錯誤，請用 HH:mm（目前收到 "${timeStr}"）`);
+  }
+
+  const naive = new Date(`${dateStr}T${timeStr}:00Z`);
+  if (Number.isNaN(naive.getTime())) {
+    throw new Error(`${label} 不是有效的日期（目前收到 "${dateStr}"）`);
+  }
+
+  let parts;
+  try {
+    parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone, hour12: false,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    }).formatToParts(naive);
+  } catch {
+    throw new Error(`--timezone 「${timeZone}」不是有效的時區，例如 Asia/Taipei、Asia/Tokyo`);
+  }
+
+  const get = (type) => Number(parts.find((p) => p.type === type).value);
+  const asUtc = Date.UTC(
+    get('year'), get('month') - 1, get('day'),
+    get('hour') % 24, get('minute'), get('second'),
+  );
+  /* naive 被當成該時區的時間後多出來的位移，扣掉才是真正的 UTC 瞬間 */
+  return new Date(naive.getTime() - (asUtc - naive.getTime()));
 }
 
 function assertValidStatus(status) {
@@ -112,9 +138,10 @@ async function createSite(values) {
   if (!values.date) throw new Error('請用 --date 指定婚禮日期（YYYY-MM-DD）');
   assertValidStatus(values.status);
 
-  const eventDate = parseDateTime(values.date, values.time, values.tz, '--date');
+  const timezone = values.timezone;
+  const eventDate = parseDateTime(values.date, values.time, timezone, '--date');
   const rsvpDeadline = values['rsvp-deadline']
-    ? parseDateTime(values['rsvp-deadline'], '23:59', values.tz, '--rsvp-deadline')
+    ? parseDateTime(values['rsvp-deadline'], '23:59', timezone, '--rsvp-deadline')
     : eventDate;
   const rsvpEnabled = values['rsvp-enabled'] !== 'false';
 
@@ -129,6 +156,7 @@ async function createSite(values) {
     groomName,
     brideName,
     eventDate: Timestamp.fromDate(eventDate),
+    timezone,
     venueName: values.venue || '',
     venueAddress: values.address || '',
     venueMapUrl: values['map-url'] || '',
