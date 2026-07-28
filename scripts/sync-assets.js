@@ -3,8 +3,9 @@
    sync-assets.js — 掃描各站台的素材資料夾，產生 manifest.json
    ------------------------------------------------------------
    用法：
-     node scripts/sync-assets.js              # 掃描全部站台
+     node scripts/sync-assets.js                          # 掃描全部站台
      node scripts/sync-assets.js --slug ginny-one-20260919
+     node scripts/sync-assets.js --init --slug 新的slug    # 建立空的資料夾骨架
 
    資料夾長這樣（資料夾名稱＝站台的 slug）：
 
@@ -35,7 +36,7 @@
 ============================================================ */
 
 import { parseArgs } from 'node:util';
-import { readdirSync, existsSync, statSync, writeFileSync, readFileSync } from 'node:fs';
+import { readdirSync, existsSync, statSync, writeFileSync, readFileSync, mkdirSync } from 'node:fs';
 import { join, extname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -175,11 +176,81 @@ function describe(manifest) {
   return bits.length ? bits.join('、') : '（資料夾是空的）';
 }
 
+/* 建立一份空的資料夾骨架，讓客戶的圖直接丟進來就好 */
+function initFolder(slug) {
+  const dir = join(ASSETS_ROOT, slug);
+  if (existsSync(dir)) {
+    console.log(`ℹ️  public/assets/${slug}/ 已經存在，只補上缺少的子資料夾。`);
+  }
+  mkdirSync(dir, { recursive: true });
+
+  for (const folder of Object.keys(FOLDERS)) {
+    const sub = join(dir, folder);
+    mkdirSync(sub, { recursive: true });
+    /* git 不會追蹤空資料夾，放個佔位檔；部署時會被 ignore 掉 */
+    const keep = join(sub, '.gitkeep');
+    if (!existsSync(keep)) writeFileSync(keep, '', 'utf8');
+  }
+
+  const readme = join(dir, 'README.md');
+  if (!existsSync(readme)) {
+    writeFileSync(readme, `# ${slug} 的素材
+
+把檔案放進來之後，在專案根目錄執行：
+
+    npm run sync-assets -- --slug ${slug}
+    npx firebase deploy --only hosting
+
+## 放這一層（檔名要一模一樣，副檔名不拘）
+
+| 檔名 | 用途 |
+|---|---|
+| \`cover.jpg\` | 單頁邀請函的封面大圖 |
+| \`lobby.jpg\` | 首頁固定背景（圖片） |
+| \`lobby.mp4\` | 首頁固定背景（影片，放了就優先用影片） |
+| \`bgm.mp3\` | 背景音樂，沒放就用內建的音樂盒版 |
+
+## 放進子資料夾（檔名排序＝顯示順序，建議 01、02、03）
+
+| 資料夾 | 用途 |
+|---|---|
+| \`gallery/\` | 照片牆 |
+| \`exhibition/\` | 戀愛時光的展品 |
+| \`cards/\` | 囍卡 |
+| \`cakes/\` | 甜點桌 |
+
+子資料夾可以放選填的 \`meta.json\` 補上文字，用檔名當 key：
+
+\`\`\`json
+{ "01": { "year": "2019", "title": "第一次見面", "desc": "朋友的聚會上" } }
+\`\`\`
+
+沒放的部分會用內建預設，不會壞掉。
+`, 'utf8');
+  }
+
+  console.log(`✅ 已建立 public/assets/${slug}/`);
+  console.log('   gallery/  exhibition/  cards/  cakes/');
+  console.log('   放好檔案後再跑一次（不加 --init）產生清單。');
+}
+
 function main() {
   const { values } = parseArgs({
     args: process.argv.slice(2),
-    options: { slug: { type: 'string' } },
+    options: {
+      slug: { type: 'string' },
+      init: { type: 'boolean', default: false },
+    },
   });
+
+  if (values.init) {
+    if (!values.slug) {
+      console.error('❌ --init 需要搭配 --slug 指定站台代稱');
+      process.exit(1);
+    }
+    initFolder(values.slug);
+    return;
+  }
 
   if (!existsSync(ASSETS_ROOT)) {
     console.error(`❌ 找不到素材資料夾：${ASSETS_ROOT}`);

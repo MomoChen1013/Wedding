@@ -11,7 +11,8 @@
       "**/.*",
       "**/node_modules/**",
       "assets/e2e/**",
-      "assets/demo-wedding-2027/**"
+      "assets/demo-wedding-2027/**",
+      "assets/*/README.md"
     ],
     "cleanUrls": true,
     "headers": [

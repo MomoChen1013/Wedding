@@ -273,7 +273,16 @@ node scripts/create-site.js \
 **用站台的 slug 當資料夾名稱，把圖丟進去，跑一個指令就好**，
 不必一張一張填網址。
 
-### 1. 建立資料夾、放圖
+### 1. 建立資料夾骨架
+
+```bash
+npm run sync-assets -- --init --slug ginny-one-20260919
+```
+
+會建好 `gallery/` `exhibition/` `cards/` `cakes/` 四個子資料夾，
+外加一份說明用的 `README.md`（不會被部署上線）。
+
+### 2. 放圖
 
 ```
 public/assets/{slug}/
@@ -318,7 +327,7 @@ public/assets/{slug}/
 > 商業用途的婚禮網站播放流行歌是需要授權的，
 > 建議用免版稅音樂或公共領域曲目。
 
-### 2. 跑掃描指令
+### 3. 跑掃描指令
 
 ```bash
 npm run sync-assets                        # 掃描全部站台
@@ -332,7 +341,7 @@ npm run sync-assets -- --slug chen-lin-0315   # 只掃一組
    封面、大廳背景、照片牆 12 張、戀愛時光 8 張、囍卡 20 張、甜點桌 6 張
 ```
 
-### 3. 部署
+### 4. 部署
 
 ```bash
 npx firebase deploy --only hosting
