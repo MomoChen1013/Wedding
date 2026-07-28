@@ -21,7 +21,7 @@ if(!requireUser()) { /* requireUser 已導向首頁 */ }
 ============================================================ */
 const COMPAT = [
   {
-    emoji:'💰', title:'金錢觀',
+    title:'金錢觀',
     self:      '對你來說，錢最大的意義是？',
     aboutMomo: '你覺得對 Momo 來說，錢最大的意義是？',
     opts:[
@@ -33,7 +33,7 @@ const COMPAT = [
     momoAnswer: 3,
   },
   {
-    emoji:'🌱', title:'人生觀',
+    title:'人生觀',
     self:      '你覺得「過得好的一生」最重要的是？',
     aboutMomo: '你覺得對 Momo 來說，「過得好的一生」最重要的是？',
     opts:[
@@ -45,7 +45,7 @@ const COMPAT = [
     momoAnswer: 0,
   },
   {
-    emoji:'💗', title:'戀愛觀',
+    title:'戀愛觀',
     self:      '一段感情裡你最看重的是？',
     aboutMomo: '你覺得對 Momo 來說，一段感情裡最看重的是？',
     opts:[
@@ -57,7 +57,7 @@ const COMPAT = [
     momoAnswer: 1,
   },
   {
-    emoji:'🏠', title:'家庭觀',
+    title:'家庭觀',
     self:      '你心中理想的家庭是？',
     aboutMomo: '你覺得對 Momo 來說，理想的家庭是？',
     opts:[
@@ -69,7 +69,7 @@ const COMPAT = [
     momoAnswer: 3,
   },
   {
-    emoji:'💼', title:'職場觀',
+    title:'職場觀',
     self:      '工作中最讓你有動力的是？',
     aboutMomo: '你覺得對 Momo 來說，工作中最有動力的是？',
     opts:[
@@ -132,11 +132,11 @@ const QUIZ = [
    結算文案：依正確率顯示不同訊息（從高到低判斷）
 ============================================================ */
 const QUIZ_MSG = [
-  {min:1.0,  text:'你是新人的頭號粉絲！💛'},
-  {min:0.8,  text:'根本是新人本人吧 ✨'},
-  {min:0.6,  text:'超級了解這對新人～ ♡'},
-  {min:0.3,  text:'還不錯，再多認識一點吧！'},
-  {min:0,    text:'沒關係，今天開始更認識這對新人 ♡'},
+  {min:1.0,  text:'你是新人的頭號粉絲'},
+  {min:0.8,  text:'根本是新人本人吧'},
+  {min:0.6,  text:'超級了解這對新人'},
+  {min:0.3,  text:'還不錯，再多認識一點吧'},
+  {min:0,    text:'沒關係，今天開始更認識這對新人'},
 ];
 
 /* ============================================================
@@ -198,7 +198,7 @@ function renderOpenQ(item, cat, dots){
   quizCard.innerHTML = `
     ${cat}
     <div class="q-progress">${dots}</div>
-    <div class="q-type-row"><span class="q-type open">開放題・寄到新人信箱 💌</span></div>
+    <div class="q-type-row"><span class="q-type open">開放題・寄到新人信箱</span></div>
     <div class="q-text"><span class="q-num">Q${qi+1}.</span> ${escapeHtml(item.q)}</div>
     <div class="q-open">
       <textarea id="qOpenText" class="q-open-textarea" maxlength="500"
@@ -207,7 +207,7 @@ function renderOpenQ(item, cat, dots){
     </div>
     <div class="q-open-btns">
       <button class="btn ghost small q-open-skip" id="qOpenSkip">跳過</button>
-      <button class="btn small q-submit" id="qOpenSubmit" disabled>送出 💌</button>
+      <button class="btn small q-submit" id="qOpenSubmit" disabled>送出</button>
     </div>
   `;
 
@@ -227,7 +227,7 @@ function renderOpenQ(item, cat, dots){
         icon: me_user.icon,
         text: `【測驗開放題】${item.q}\n\n${text}`,
       });
-      spawnFloat('💌', innerWidth/2, innerHeight*0.7);
+      spawnFloat(DEFAULT_ICON, innerWidth/2, innerHeight*0.7);
     }catch(e){
       console.warn('開放題寄信失敗', e);
     }
@@ -335,13 +335,10 @@ function renderCompat(){
 
 function renderCompatForm(card){
   card.innerHTML = `
-    <p class="compat-intro">與新人的契合度，看看你的價值觀和新人多接近 <br>✦<br>
-      </p>
+    <p class="compat-intro">與新人的契合度，看看你的價值觀和新人多接近</p>
     ${COMPAT.map((c, qi) => `
       <div class="compat-q" data-qi="${qi}">
-        <div class="compat-q-title">
-          <span class="em">${c.emoji}</span> ${escapeHtml(c.title)}
-        </div>
+        <div class="compat-q-title">${escapeHtml(c.title)}</div>
         <div class="compat-q-text">${escapeHtml(c.self)}</div>
         <div class="compat-opts">
           ${c.opts.map((opt, oi) => `
@@ -353,7 +350,7 @@ function renderCompatForm(card){
         </div>
       </div>
     `).join('')}
-    <button class="btn compat-submit" id="compatSubmit" disabled>送出 → 看結果</button>
+    <button class="btn compat-submit" id="compatSubmit" disabled>送出，看結果</button>
   `;
 
   card.querySelectorAll('.compat-opt').forEach(btn=>{
@@ -407,9 +404,9 @@ function renderCompatChart(card){
       else if(isYou)      cls = 'you';
       else if(isMomo)     cls = 'momo';
       const badges =
-        (isYou && isMomo) ? '<span class="badge match">⭐ 你+新人</span>' :
+        (isYou && isMomo) ? '<span class="badge match">你＋新人</span>' :
         isYou             ? '<span class="badge you">你</span>' :
-        isMomo            ? '<span class="badge momo">⭐ 新人</span>' : '';
+        isMomo            ? '<span class="badge momo">新人</span>' : '';
 
       return `
         <div class="compat-bar-row ${cls}" title="${escapeHtml(opt)}">
@@ -425,9 +422,7 @@ function renderCompatChart(card){
 
     return `
       <div class="compat-chart-q">
-        <div class="compat-chart-title">
-          <span class="em">${c.emoji}</span> ${escapeHtml(c.title)}
-        </div>
+        <div class="compat-chart-title">${escapeHtml(c.title)}</div>
         <div class="compat-chart-q-text">${escapeHtml(c.self)}</div>
         <div class="compat-bars">${bars}</div>
       </div>
@@ -436,13 +431,13 @@ function renderCompatChart(card){
 
   /* 新人專屬：清空所有票數的按鈕（網址加 WED.ownerKey 才出現） */
   const wipeBtn = (typeof isOwnerVisitor === 'function' && isOwnerVisitor())
-    ? `<button class="btn ghost small compat-wipe" id="compatWipe">🗑 清空所有票數（新人專用）</button>`
+    ? `<button class="btn ghost small compat-wipe" id="compatWipe">清空所有票數（新人專用）</button>`
     : '';
 
   card.innerHTML = `
     <div class="compat-result-head">
       <div class="compat-score">${matches} <small>／</small> ${COMPAT.length}</div>
-      <div class="compat-score-hint">與新人的答案一致 ✨</div>
+      <div class="compat-score-hint">與新人的答案一致</div>
       <div class="compat-total-hint">目前 <b>${total}</b> 人完成這個調查</div>
     </div>
     ${chartHtml}
@@ -473,41 +468,19 @@ function renderCompatChart(card){
         LS.remove('compatLast');
         compatPicks = new Array(COMPAT.length).fill(null);
         compatJustSubmitted = false;
-        alert(`已清空 ${n} 筆契合度作答 ✨`);
+        alert(`已清空 ${n} 筆契合度作答`);
         renderCompatForm(card);
       }catch(e){
         console.error('[wipeCompat]', e);
         alert('清空失敗：' + (e.message || e) + '\n（檢查 Firestore Rules 是否允許新人刪除）');
         wipeEl.disabled = false;
-        wipeEl.textContent = '🗑 清空所有票數（新人專用）';
+        wipeEl.textContent = '清空所有票數（新人專用）';
       }
     });
   }
 }
 
 renderCompat();
-
-/* ============================================================
-   左右轉箭頭：作答中不顯示，捲到契合度或結算才出現
-   （quizCard 在視窗內 + 還沒做完主測驗 → 藏；其他狀況 → 顯示）
-============================================================ */
-const turnNavEls = document.querySelectorAll('.turn-nav');
-function updateTurnNav(){
-  if(!turnNavEls.length) return;
-  const r = quizCard.getBoundingClientRect();
-  const quizInView = r.bottom > 80 && r.top < window.innerHeight * 0.6;
-  const stillAnswering = qi < QUIZ.length;
-  const show = !(stillAnswering && quizInView);
-  turnNavEls.forEach(el => el.classList.toggle('show', show));
-}
-addEventListener('scroll', updateTurnNav, {passive:true});
-addEventListener('resize', updateTurnNav);
-/* 每次 renderQuiz/renderQuizResult 切換完也要更新一次 */
-const _origRenderQuiz       = renderQuiz;
-const _origRenderQuizResult = renderQuizResult;
-renderQuiz       = function(){ _origRenderQuiz();       updateTurnNav(); };
-renderQuizResult = function(){ _origRenderQuizResult(); updateTurnNav(); };
-updateTurnNav();
 
 /* Firestore 端資料變動時，若我剛送的那筆已經進來就清掉樂觀 flag，
    並且如果目前顯示的是長條圖就重畫 */

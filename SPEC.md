@@ -159,7 +159,7 @@ node scripts/create-site.js --slug chen-lin-0315 --groom 陳彥廷 --bride 林�
 
 | 來源 | 目的 |
 |---|---|
-| `/w/*/info` `/w/*/rsvp` `/w/*/wall` `/w/*/cake` | 對應的 HTML |
+| `/w/*/rsvp` `/w/*/wall` `/w/*/cake` | 對應的 HTML |
 | `/w/*/draw` `/w/*/exhibition` `/w/*/quiz` `/w/*/inbox` | 對應的 HTML |
 | `/w/*/invitation` | `/invitation.html` |
 | `/w/**`（其餘，含 `/w/{slug}/`） | `/index.html`（大廳） |
@@ -285,7 +285,6 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
 | 代號 | 網址 | 頁面 | 可關閉 |
 |---|---|---|---|
 | `lobby` | `/w/{slug}/` | 大廳（入場 gate + 場景導覽） | ❌ |
-| `info` | `/w/{slug}/info` | 婚禮資訊 | ✅ |
 | `rsvp` | `/w/{slug}/rsvp` | 出席回覆 | ✅ |
 | `wall` | `/w/{slug}/wall` | 祝福牆 | ✅ |
 | `cake` | `/w/{slug}/cake` | 甜點桌 | ✅ |

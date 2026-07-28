@@ -27,9 +27,9 @@
      --gift-note      選填，禮金說明
      --end-time       選填，婚宴結束時間 HH:mm（加入行事曆用），預設開始後 3 小時
      --pages          選填，逗號分隔的頁面清單，直接指定要開哪些頁
-                       例：--pages info,rsvp,wall,cake
-                       不給則預設開啟 info,rsvp,wall
-                       可用值：info rsvp wall cake draw exhibition quiz inbox invitation
+                       例：--pages rsvp,wall,cake
+                       不給則預設開啟 rsvp,wall
+                       可用值：rsvp wall cake draw exhibition quiz inbox invitation
      --enable         選填，在預設之外「加開」某頁；可重複給多次
      --disable        選填，關掉某頁；可重複給多次
      --owner-email    新人的 Google 信箱；**悄悄話信箱要用它登入才讀得到**
@@ -57,10 +57,10 @@ import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
    key 對應網址 /w/{slug}/{key}，也對應 sites.pages 的欄位名。
    lobby（大廳）一定存在，不列在這裡。 */
 const OPTIONAL_PAGES = [
-  'info', 'rsvp', 'wall', 'cake', 'draw', 'exhibition', 'quiz', 'inbox', 'invitation',
+  'rsvp', 'wall', 'cake', 'draw', 'exhibition', 'quiz', 'inbox', 'invitation',
 ];
 /* 沒特別指定時，預設開啟的頁面 */
-const DEFAULT_PAGES = ['info', 'rsvp', 'wall'];
+const DEFAULT_PAGES = ['rsvp', 'wall'];
 
 /* ---------- 保留字黑名單 ---------- */
 const RESERVED_SLUGS = new Set(['admin', 'api', 'www', 'app', 'w', 's', 'assets', 'static']);
@@ -151,7 +151,7 @@ function parseDateTime(dateStr, timeStr, timeZone, label) {
   return new Date(naive.getTime() - (asUtc - naive.getTime()));
 }
 
-/* 決定這組新人要開哪些頁面，回傳 { info:true, rsvp:false, ... } */
+/* 決定這組新人要開哪些頁面，回傳 { rsvp:true, wall:false, ... } */
 function resolvePages(values) {
   const known = new Set(OPTIONAL_PAGES);
   const assertKnown = (key, flag) => {

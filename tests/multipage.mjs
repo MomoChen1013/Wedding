@@ -33,7 +33,7 @@ const adb = adminFirestore();
 const DAY = 86400000;
 const future = (d) => TS.fromMillis(Date.now() + d * DAY);
 
-const ALL_PAGES = ['info','rsvp','wall','cake','draw','exhibition','quiz','inbox','invitation'];
+const ALL_PAGES = ['rsvp','wall','cake','draw','exhibition','quiz','inbox','invitation'];
 const allOn = Object.fromEntries(ALL_PAGES.map((k) => [k, true]));
 
 const SEED = {
@@ -65,7 +65,7 @@ const SEED = {
     themeColor:'#B5838D',
     venueName:'圓山大飯店', venueAddress:'台北市士林區中山北路四段1號',
     story:'', dressCode:'', giftNote:'', hashtags:[],
-    pages: Object.fromEntries(ALL_PAGES.map((k) => [k, k === 'info'])),
+    pages: Object.fromEntries(ALL_PAGES.map((k) => [k, k === 'rsvp'])),
     ownerEmails:[],
   },
 };
@@ -116,7 +116,7 @@ async function newPage(opts = {}, { guest = true } = {}){
     await page.addInitScript((ids) => {
       for(const id of ids){
         localStorage.setItem(`wed.${id}.user`,
-          JSON.stringify({ name:'測試賓客', icon:'🎀' }));
+          JSON.stringify({ name:'測試賓客', icon:'\u2726' }));
       }
     }, Object.values(siteIds));
   }
@@ -178,7 +178,7 @@ const ASSET_SLUG = 'demo-wedding-2027';
 
 /* ---------- 每一頁都要載得起來 ---------- */
 console.log('\n[1] 每個頁面都能正常載入');
-for(const key of ['', 'info', 'rsvp', 'wall', 'cake', 'draw', 'exhibition', 'quiz', 'inbox']){
+for(const key of ['', 'rsvp', 'wall', 'cake', 'draw', 'exhibition', 'quiz', 'inbox']){
   const path = `/w/${SLUG}/${key}`;
   const { page, errors } = await visit(path);
   const hasSite = await page.evaluate(() => !!window.SITE);
@@ -221,11 +221,16 @@ console.log('\n[2b] 新人名字有套進畫面');
   await page.close();
 }
 {
-  const { page } = await visit(`/w/${SLUG}/info`);
+  /* 婚禮資訊已經併進首頁，不再有獨立的 info 頁 */
+  const { page } = await visit(`/w/${SLUG}/`);
   const text = await page.innerText('body');
-  ok('婚禮資訊頁顯示新人與場地',
+  ok('首頁顯示新人與場地',
     text.includes('Ginny & One') && text.includes('台北國賓大飯店'),
     text.slice(0, 80).replace(/\n/g, ' '));
+  ok('首頁有五張卡片連結',
+    (await page.locator('.link-card').count()) === 5,
+    String(await page.locator('.link-card').count()));
+  ok('每頁都有頂部導覽列', await page.isVisible('#siteNav'));
   await page.close();
 }
 {
@@ -241,10 +246,10 @@ console.log('\n[3] 頁面開關');
   const { page } = await visit('/w/minimal-site-2027/');
   const links = await page.evaluate(() =>
     Array.from(document.querySelectorAll('a[href^="/w/"]')).map((a) => a.getAttribute('href')));
-  ok('未啟用的入口不出現在大廳',
-    !links.some((h) => /\/(wall|cake|draw|exhibition|quiz|inbox|rsvp)$/.test(h)),
+  ok('未啟用的入口不出現在首頁',
+    !links.some((h) => /\/(wall|cake|draw|exhibition|quiz|inbox)$/.test(h)),
     links.join(', '));
-  ok('已啟用的 info 入口仍在', links.some((h) => h.endsWith('/info')), links.join(', '));
+  ok('已啟用的 rsvp 入口仍在', links.some((h) => h.endsWith('/rsvp')), links.join(', '));
   await page.close();
 }
 {
@@ -261,7 +266,7 @@ console.log('\n[3] 頁面開關');
 console.log('\n[4] 祝福牆寫入隔離');
 {
   const { page, errors } = await visit(`/w/${SLUG}/wall`);
-  await page.evaluate(() => DataStore.addWish({ name:'測試賓客', icon:'🎀', text:'祝你們幸福！' }));
+  await page.evaluate(() => DataStore.addWish({ name:'測試賓客', icon:'\u2726', text:'祝你們幸福！' }));
   await page.waitForTimeout(1500);
 
   const mine = await adb.collection('sites').doc(siteIds[SLUG]).collection('wishes').get();
@@ -379,7 +384,7 @@ console.log('\n[10] 信箱權限');
   /* 賓客寫得進去 */
   const { page } = await visit(`/w/${SLUG}/wall`);
   await page.evaluate(() =>
-    DataStore.addLetter({ name:'測試賓客', icon:'💌', text:'偷偷跟你們說…' }));
+    DataStore.addLetter({ name:'測試賓客', icon:'\u2726', text:'偷偷跟你們說…' }));
   await page.waitForTimeout(1500);
   const snap = await adb.collection('sites').doc(siteIds[SLUG]).collection('letters').get();
   ok('賓客寫得進信箱', snap.size === 1, `${snap.size} 筆`);
@@ -416,7 +421,7 @@ console.log('\n[10] 信箱權限');
 
 /* ---------- 手機版 ---------- */
 console.log('\n[8] 手機版無水平捲動');
-for(const key of ['', 'info', 'wall', 'rsvp']){
+for(const key of ['', 'wall', 'rsvp', 'quiz']){
   const page = await newPage({ viewport:{ width:375, height:812 } });
   await page.goto(`${BASE}/w/${SLUG}/${key}`, { waitUntil:'domcontentloaded' });
   await page.waitForFunction(

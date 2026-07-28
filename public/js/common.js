@@ -1,13 +1,13 @@
 /* ============================================================
    婚禮網站 — 共用 JS
    提供：
-     - DataStore（localStorage 持久化）
-     - me_user（名字 + icon）
+     - DataStore（Firestore 讀寫 + 本地快取）
+     - me_user（名字 + 記號）
+     - 頂部導覽列（每頁共用，由本檔注入）
      - 主題切換
-     - 特效（煙火 / 彩帶 / 鞭炮 / 金箔 / 飄浮 emoji）
-     - BGM（婚禮進行曲・華格納〈婚禮合唱〉音樂盒版）
+     - 特效（煙火 / 彩帶 / 金箔 / 飄浮記號）
+     - BGM（艾爾加〈愛的禮讚 Salut d'Amour〉音樂盒版）
      - 新人專屬信箱（網址加 WED.ownerKey 才出現）
-     - 子場景的回大廳 / 左右轉導覽自動套用
      - escapeHtml 等小工具
 ============================================================ */
 
@@ -270,12 +270,14 @@ function rewriteNavLinks(root){
 }
 
 /* ============================================================
-   使用者（名字 + 隨機 icon）
+   使用者（名字 + 隨機記號）
+   ・極簡風格：不用 emoji，改用單色的幾何線條符號
 ============================================================ */
-const ICONS = ['💍','🤍','🌷','🕊️','🥂','💐','✨','🌿','🍾','💒','🎀','🌸','💌','🫶','🥰','👰','🤵','💕'];
-let me_user = LS.get('user', null) || { name:'朋友', icon:'🎀' };
+const ICONS = ['✦','✧','◇','◈','○','◎','△','▽','□','◻','✕','＋','∞','♢','⬦','❖'];
+const DEFAULT_ICON = '✦';
+let me_user = LS.get('user', null) || { name:'朋友', icon:DEFAULT_ICON };
 function saveUser(u){ me_user = u; LS.set('user', u); }
-function clearUser(){ me_user = { name:'朋友', icon:'🎀' }; LS.remove('user'); }
+function clearUser(){ me_user = { name:'朋友', icon:DEFAULT_ICON }; LS.remove('user'); }
 
 /* 登出：清掉本地 user / session、Firebase 也 signOut，最後回到入場頁
    （firebase-init 會在沒有 user 時自動匿名登入新 uid，等於是一個全新的訪客） */
@@ -386,16 +388,22 @@ function spawnFloat(emoji,x,y){
 }
 
 /* ============================================================
-   BGM：用 Web Audio 合成「婚禮進行曲」音樂盒版
-   （華格納〈婚禮合唱〉Here Comes the Bride）
+   BGM：用 Web Audio 合成「愛的禮讚」音樂盒版
+   （艾爾加 Salut d'Amour, Op.12・公共領域曲目，不需額外音檔）
 ============================================================ */
 let audioCtx=null, bgmOn=false, bgmTimer=null;
-const _NOTE={E4:329.63,F4:349.23,G4:392.00,A4:440.00,B4:493.88,C5:523.25,D5:587.33,E5:659.25,F5:698.46,G5:783.99};
+const _NOTE={
+  E4:329.63, 'F#4':369.99, 'G#4':415.30, A4:440.00, B4:493.88,
+  'C#5':554.37, 'D#5':622.25, E5:659.25, 'F#5':739.99, 'G#5':830.61, A5:880.00, B5:987.77,
+};
 const _MELODY=[
-  ['G4',.5],['C5',1.5],['C5',.5],['C5',1],       // Here comes the bride
-  ['G4',.5],['A4',1],  ['C5',.5],['B4',1.5],     // all dressed in white
-  ['G4',.5],['C5',1.5],['C5',.5],['E5',1],       // sweetly the bride
-  ['D5',.5],['C5',1],  ['B4',.5],['C5',2.5],     // comes down the aisle
+  ['B4',.5],
+  ['E5',1.5],['D#5',.5],['E5',1],  ['F#5',.5],['E5',.5],
+  ['D#5',1.5],['B4',.5],['C#5',1], ['B4',1],
+  ['A4',1.5],['B4',.5],['C#5',1],  ['B4',.5],['A4',.5],
+  ['G#4',1.5],['E4',.5],['F#4',1], ['G#4',1],
+  ['A4',1],['B4',1],['C#5',1],['D#5',1],
+  ['E5',3],
 ];
 function playNote(freq,start,dur){
   const o=audioCtx.createOscillator(), g=audioCtx.createGain();
@@ -403,27 +411,36 @@ function playNote(freq,start,dur){
   o.connect(g); g.connect(audioCtx.destination);
   const t=audioCtx.currentTime+start;
   g.gain.setValueAtTime(0,t);
-  g.gain.linearRampToValueAtTime(.18,t+.02);
-  g.gain.exponentialRampToValueAtTime(.001,t+dur*0.9);
+  g.gain.linearRampToValueAtTime(.16,t+.03);
+  g.gain.exponentialRampToValueAtTime(.001,t+dur*0.92);
   o.start(t); o.stop(t+dur);
 }
 function playMelodyOnce(){
-  const beat=.42; let t=0;
+  const beat=.5; let t=0;
   _MELODY.forEach(([n,d])=>{ playNote(_NOTE[n],t,d*beat); t+=d*beat; });
   return t;
+}
+function setBgmFab(on){
+  const fab=document.getElementById('bgmFab');
+  if(!fab) return;
+  fab.classList.toggle('is-on', on);
+  fab.setAttribute('aria-pressed', String(on));
+  fab.title = on ? '關閉背景音樂' : '播放背景音樂（愛的禮讚）';
+  const slash = fab.querySelector('.bgm-slash');
+  if(slash) slash.style.display = on ? 'none' : '';
 }
 function startBGM(){
   if(bgmOn) return;
   try{ audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return; }
   if(audioCtx.state==='suspended') audioCtx.resume();
   bgmOn=true;
-  const fab=document.getElementById('bgmFab'); if(fab) fab.textContent='🎵';
-  const loop=()=>{ if(!bgmOn) return; const dur=playMelodyOnce(); bgmTimer=setTimeout(loop,(dur+1.2)*1000); };
+  setBgmFab(true);
+  const loop=()=>{ if(!bgmOn) return; const dur=playMelodyOnce(); bgmTimer=setTimeout(loop,(dur+1.6)*1000); };
   loop();
 }
 function stopBGM(){
   bgmOn=false; clearTimeout(bgmTimer);
-  const fab=document.getElementById('bgmFab'); if(fab) fab.textContent='🔇';
+  setBgmFab(false);
 }
 
 /* ============================================================
@@ -481,8 +498,8 @@ function startCountdown(el, iso, mode){
     if(diff <= 0){
       el.classList.add('cd-done');
       el.innerHTML = mode==='inline'
-        ? `<span class="cd-msg">💍 我們結婚囉！</span>`
-        : `<div class="cd-msg">💍 大喜之日・我們結婚囉！</div>`;
+        ? `<span class="cd-msg">我們結婚囉</span>`
+        : `<div class="cd-msg">大喜之日・我們結婚囉</div>`;
       return false;
     }
     const d = Math.floor(diff/86400000);
@@ -509,18 +526,130 @@ function renderInbox(){
   if(!list) return;
   const letters=DataStore.getLetters().slice().reverse();
   if(!letters.length){
-    list.innerHTML=`<div class="inbox-empty">目前還沒有信件 💭<br>等賓客們投信進來，這裡就會出現囉～<br><br>（接上 Firebase 後，大家寄的悄悄話會自動收進這個信箱）</div>`;
+    list.innerHTML=`<div class="inbox-empty">目前還沒有信件<br>等賓客們投信進來，這裡就會出現囉</div>`;
     return;
   }
   list.innerHTML=letters.map(l=>`
     <div class="letter-item">
       <div class="li-head">
-        <span class="li-ic">${l.icon||'💌'}</span>
+        <span class="li-ic">${escapeHtml(l.icon||DEFAULT_ICON)}</span>
         <span class="li-name">${escapeHtml(l.name||'朋友')}</span>
         <span class="li-time">${timeStr(l.time||Date.now())}</span>
       </div>
       <div class="li-body">${escapeHtml(l.text||'')}</div>
     </div>`).join('');
+}
+
+/* ============================================================
+   頂部導覽列（每一頁共用，由這裡注入，各頁 HTML 不用重複寫）
+   顯示順序：新人名稱(lobby) → 祝福(wall) → 故事(exhibition)
+             → 測驗(quiz) → 抽卡(draw) → 集氣(cake) → User
+   ・站台沒開的頁面不會出現在列上
+============================================================ */
+const NAV_ITEMS = [
+  { key:'wall',       label:'祝福' },
+  { key:'exhibition', label:'故事' },
+  { key:'quiz',       label:'測驗' },
+  { key:'draw',       label:'抽卡' },
+  { key:'cake',       label:'集氣' },
+];
+
+/* 入場前（大廳的 gate、信箱的登入畫面）先不顯示導覽列 */
+function setNavVisible(on){
+  const nav = document.getElementById('siteNav');
+  if(nav) nav.hidden = !on;
+  document.body.classList.toggle('nav-off', !on);
+}
+
+function buildSiteNav(){
+  const S = window.SITE;
+  if(!S || document.getElementById('siteNav')) return;
+
+  const couple = (window.WED && window.WED.couple) || '婚禮';
+  const links = NAV_ITEMS
+    .filter(it => S.isEnabled(it.key))
+    .map(it => `<a class="nav-link${it.key === S.page ? ' current' : ''}" `
+              + `href="${S.pathFor(it.key)}">${escapeHtml(it.label)}</a>`)
+    .join('');
+
+  const nav = document.createElement('header');
+  nav.className = 'site-nav';
+  nav.id = 'siteNav';
+  nav.innerHTML = `
+    <nav class="nav-inner">
+      <a class="nav-brand" href="${S.pathFor('lobby')}">${escapeHtml(couple)}</a>
+      <div class="nav-links">${links}</div>
+      <div class="nav-user">
+        <button class="nav-user-btn" id="navUserBtn" type="button" aria-haspopup="true" aria-expanded="false">
+          <span class="nav-user-ic" id="navUserIc"></span>
+          <span class="nav-user-nm" id="navUserNm"></span>
+        </button>
+        <div class="nav-user-pop" id="navUserPop">
+          <button type="button" data-act="logout">登出（換一位賓客）</button>
+        </div>
+      </div>
+    </nav>`;
+  document.body.insertBefore(nav, document.body.firstChild);
+
+  syncNavUser();
+
+  const btn = document.getElementById('navUserBtn');
+  const pop = document.getElementById('navUserPop');
+  btn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const open = pop.classList.toggle('open');
+    btn.setAttribute('aria-expanded', String(open));
+  });
+  document.addEventListener('click', (e)=>{
+    if(!e.target.closest('.nav-user')){
+      pop.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+  });
+  pop.querySelector('[data-act="logout"]').addEventListener('click', logout);
+
+  /* 還沒進場就先藏起來，index.js / inbox.js 進場後再叫出來 */
+  const gate = document.getElementById('gate') || document.getElementById('pwGate');
+  setNavVisible(!(gate && gate.style.display !== 'none'));
+}
+
+/* 名字或記號變動後重新畫一次導覽列上的 User */
+function syncNavUser(){
+  const ic = document.getElementById('navUserIc');
+  const nm = document.getElementById('navUserNm');
+  if(ic) ic.textContent = me_user.icon || DEFAULT_ICON;
+  if(nm) nm.textContent = me_user.name || '朋友';
+}
+
+/* ============================================================
+   浮動控制（主題 / BGM）— 同樣由這裡注入，線條圖示、無 emoji
+============================================================ */
+const THEME_DOTS = [
+  ['champagne','香檳金'], ['blush','霧玫瑰'], ['sage','鼠尾草綠'], ['dusk','霧霾藍'],
+];
+function buildFloating(){
+  if(document.querySelector('.floating')) return;
+  const box = document.createElement('div');
+  box.className = 'floating';
+  box.innerHTML = `
+    <div class="theme-pop" id="themePop">
+      ${THEME_DOTS.map(([k,t]) =>
+        `<div class="theme-dot t-${k}" data-theme="${k}" title="${t}"></div>`).join('')}
+    </div>
+    <button class="fab" id="themeFab" type="button" title="換主題色" aria-label="換主題色">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17"/>
+      </svg>
+    </button>
+    <button class="fab" id="bgmFab" type="button" title="播放背景音樂（愛的禮讚）"
+            aria-label="背景音樂" aria-pressed="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 17.5V5.5l10-2v12"/>
+        <circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/>
+        <path class="bgm-slash" d="M3.5 20.5 20.5 3.5"/>
+      </svg>
+    </button>`;
+  document.body.appendChild(box);
 }
 
 /* ============================================================
@@ -532,6 +661,10 @@ function bindCommonUI(){
   /* 先套上這組新人的文字，再把站內連結換成 /w/{slug}/xxx */
   fillTemplates();
   rewriteNavLinks();
+
+  /* 每頁共用的導覽列與浮動控制 */
+  buildSiteNav();
+  buildFloating();
 
   /* 主題切換 */
   const themeFab = document.getElementById('themeFab');
@@ -564,33 +697,6 @@ function bindCommonUI(){
   if(ownerFab) ownerFab.addEventListener('click', ()=>{ renderInbox(); inboxModal.classList.add('open'); });
   if(inboxClose) inboxClose.addEventListener('click', ()=>inboxModal.classList.remove('open'));
   if(inboxModal) inboxModal.addEventListener('click', e=>{ if(e.target===inboxModal) inboxModal.classList.remove('open'); });
-
-  /* 子場景：右上小頭像（點開有登出選單；lobby 沒有 #meMini 就跳過） */
-  const meMini = document.getElementById('meMini');
-  if(meMini){
-    meMini.querySelector('.ic').textContent = me_user.icon || '🎀';
-    meMini.querySelector('.nm').textContent = me_user.name || '朋友';
-
-    /* 點頭像 → toggle 下拉選單 */
-    meMini.classList.add('clickable');
-    const pop = document.createElement('div');
-    pop.className = 'me-pop';
-    pop.innerHTML = `
-      <button class="me-pop-item" data-act="logout">🚪 登出（換一位賓客）</button>
-    `;
-    meMini.appendChild(pop);
-
-    meMini.addEventListener('click', e=>{
-      if(e.target.closest('.me-pop')) return;   // 點選單本身不 toggle
-      pop.classList.toggle('open');
-    });
-    /* 點頁面其他地方收起 */
-    document.addEventListener('click', e=>{
-      if(!meMini.contains(e.target)) pop.classList.remove('open');
-    });
-    /* 登出 */
-    pop.querySelector('[data-act="logout"]').addEventListener('click', logout);
-  }
 
   /* 顯示場景背景照 */
   document.querySelectorAll('.scene-bg').forEach(el=>{

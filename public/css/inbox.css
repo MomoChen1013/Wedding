@@ -2,67 +2,59 @@
    隱藏信箱頁 — 場景背景（沿用祝福區的照片）
 ============================================================ */
 .scene-bg[data-bg="wishes"]{background-image:url('../images/scene-wishes.jpg');background-position:center;}
-body{background:linear-gradient(160deg,var(--bg1),var(--bg2));}
 
 /* ============================================================
-   密碼門
+   登入門
 ============================================================ */
-#pwGate{background:radial-gradient(circle at 50% 30%,var(--bg2),var(--bg1));}
+#pwGate{background:var(--bg1);}
 .gate-card{
-  width:min(90vw,420px);background:var(--card);border-radius:30px;
-  padding:42px 32px;text-align:center;box-shadow:0 30px 70px var(--shadow);
-  border:2px solid #fff;position:relative;animation:pop .6s cubic-bezier(.18,1.4,.4,1);
+  width:min(90vw,400px);background:#fff;border:1px solid var(--line);
+  border-radius:var(--radius);padding:44px 34px;text-align:center;
+  position:relative;animation:pop .5s ease;
 }
-.gate-card .ribbon{font-family:var(--font-display);font-weight:600;letter-spacing:.18em;
-  color:var(--primary-deep);font-size:13px;margin-bottom:2px;}
-.gate-card h1{font-family:var(--font-display);font-size:30px;font-weight:700;margin:6px 0 4px;
-  background:linear-gradient(100deg,var(--primary-deep),var(--secondary));
-  -webkit-background-clip:text;background-clip:text;color:transparent;}
-.gate-card .sub{color:var(--ink-soft);font-size:14px;margin-bottom:24px;line-height:1.7;}
-.field{position:relative;margin-bottom:6px;}
-.field input{width:100%;padding:15px 18px;border:2px solid var(--line);border-radius:16px;
-  font-family:var(--font-body);font-size:18px;color:var(--ink);background:#fff;outline:none;
-  text-align:center;letter-spacing:.4em;transition:.2s;}
-.field input:focus{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft);}
-.pw-err{min-height:20px;color:#d34a6a;font-size:13px;font-weight:600;margin:8px 0 4px;
+.gate-card .ribbon{font-family:var(--font-display);font-weight:500;letter-spacing:.34em;
+  color:var(--ink-soft);font-size:10.5px;text-transform:uppercase;}
+.gate-card h1{font-family:var(--font-display);font-size:24px;font-weight:500;
+  margin:14px 0 6px;letter-spacing:.2em;color:var(--ink);}
+.gate-card .sub{color:var(--ink-soft);font-size:13px;margin-bottom:24px;line-height:1.9;}
+.btn.btn-google{background:#fff;color:var(--ink);border:1px solid var(--line);
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  font-size:14px;letter-spacing:.06em;padding:13px 22px;}
+.btn.btn-google:hover{background:#fff;border-color:var(--ink);color:var(--ink);}
+.btn.btn-google[disabled]{opacity:.5;cursor:not-allowed;}
+.pw-err{min-height:20px;color:#a4677a;font-size:12.5px;margin:12px 0 4px;
   letter-spacing:.05em;text-align:center;}
 
 /* ============================================================
    信箱本體
 ============================================================ */
-.inbox-hero .sh-title{filter:drop-shadow(0 4px 12px rgba(91,74,110,.5));}
+.ib-counter{display:flex;align-items:center;gap:14px;margin:0 0 8px;padding:22px 0;
+  border-bottom:1px solid var(--line);}
+.ib-counter-em{display:none;}
+.ib-counter-num{font-family:var(--font-display);font-weight:400;font-size:16px;color:var(--ink);letter-spacing:.12em;}
+.ib-counter-num b{font-size:24px;font-weight:400;margin-right:6px;}
+.ib-counter-hint{font-size:12px;color:var(--ink-soft);margin-top:4px;letter-spacing:.08em;}
+.ib-lock{margin-left:auto;border:1px solid var(--line);background:transparent;color:var(--ink-soft);
+  width:38px;height:38px;border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:.2s;}
+.ib-lock:hover{border-color:var(--ink);color:var(--ink);}
+.ib-lock svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.2;
+  stroke-linecap:round;stroke-linejoin:round;}
 
-.ib-counter{display:flex;align-items:center;gap:14px;margin:18px 0 22px;padding:18px 22px;
-  background:rgba(255,255,255,.7);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
-  border-radius:18px;box-shadow:0 8px 22px var(--shadow);border:1px solid #fff;}
-.ib-counter-em{font-size:30px;}
-.ib-counter-num{font-family:var(--font-display);font-weight:600;font-size:18px;color:var(--ink);}
-.ib-counter-num b{font-size:24px;color:var(--primary-deep);margin-right:4px;}
-.ib-counter-hint{font-size:12px;color:var(--ink-soft);margin-top:2px;}
-.ib-lock{margin-left:auto;border:none;background:var(--primary-soft);color:var(--primary-deep);
-  width:40px;height:40px;border-radius:50%;cursor:pointer;font-size:18px;
-  box-shadow:0 4px 10px var(--shadow);transition:transform .2s;}
-.ib-lock:hover{transform:scale(1.08);}
+.inbox-page-list{display:flex;flex-direction:column;}
 
-.inbox-page-list{display:flex;flex-direction:column;gap:18px;}
+.ib-letter{position:relative;padding:26px 2px;border-bottom:1px solid var(--line-soft);
+  animation:ibSlide .35s ease;}
+@keyframes ibSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
-.ib-letter{position:relative;border-radius:18px;padding:24px 24px 22px;
-  background:repeating-linear-gradient(#fffdf8,#fffdf8 32px,var(--primary-soft) 32px,var(--primary-soft) 33px);
-  box-shadow:0 10px 24px var(--shadow);border:1.5px solid #fff;animation:ibSlide .4s ease;}
-.ib-letter::before{content:'';position:absolute;top:-8px;left:24px;width:54px;height:14px;border-radius:3px;
-  background:var(--gold-soft);box-shadow:0 2px 5px rgba(0,0,0,.12);}
-.ib-letter::after{content:'';position:absolute;inset:6px;border-radius:14px;
-  border:0.5px solid var(--gold-soft);opacity:.5;pointer-events:none;}
-@keyframes ibSlide{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-
-.ib-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
-.ib-ic{width:38px;height:38px;line-height:38px;text-align:center;border-radius:50%;
-  background:var(--primary-soft);font-size:20px;border:2px solid #fff;}
-.ib-name{font-family:var(--font-body);font-weight:700;font-size:16px;color:var(--ink);}
-.ib-time{font-family:var(--font-body);font-size:12px;color:var(--ink-soft);margin-left:auto;}
-.ib-body{font-family:var(--font-hand);font-size:24px;line-height:36px;color:#5b4a3e;
+.ib-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.ib-ic{width:30px;height:30px;line-height:28px;text-align:center;border-radius:50%;
+  border:1px solid var(--line);font-size:13px;color:var(--primary-deep);}
+.ib-name{font-weight:600;font-size:14px;color:var(--ink);letter-spacing:.1em;}
+.ib-time{font-size:11.5px;color:var(--ink-soft);margin-left:auto;}
+.ib-body{font-size:15.5px;line-height:2.1;color:var(--ink);
   white-space:pre-wrap;word-break:break-word;}
 
-.ib-empty{text-align:center;color:var(--ink-soft);font-size:14px;padding:60px 22px;line-height:1.9;
-  background:var(--card);border-radius:18px;border:1.5px solid #fff;box-shadow:0 8px 20px var(--shadow);}
-.ib-empty .em{font-size:48px;display:block;margin-bottom:14px;}
+.ib-empty{text-align:center;color:var(--ink-soft);font-size:14px;padding:70px 22px;line-height:2;
+  border:1px solid var(--line);}
+.ib-empty .em{display:none;}

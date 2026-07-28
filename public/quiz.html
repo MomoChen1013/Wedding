@@ -3,57 +3,40 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>💗 新人小測驗｜{{couple}} 婚禮</title>
+<title>測驗｜{{couple}} 婚禮</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="/css/common.css">
 <link rel="stylesheet" href="/css/quiz.css">
 </head>
 <body data-theme="champagne" data-page="quiz">
 
-<div class="bg-decor"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<div class="bg-decor"></div>
 <canvas id="fx"></canvas>
 
 <div class="scene-bg" data-bg="gallery"></div>
 
-<div class="me-mini" id="meMini"><span class="ic">💍</span><span class="nm">朋友</span></div>
-
 <section class="panel page-fade" data-panel="quiz">
   <div class="scene-hero">
-    <div class="sh-title">💗 Newlywed Quiz</div>
+    <div class="sh-title">看你多了解我們</div>
     <div class="sh-sub">你有多了解這對新人？</div>
-    <div class="scroll-cue"><span>向下探索</span><span class="arrow">↓</span></div>
+    <div class="scroll-cue"><span>Scroll</span><span class="arrow"></span></div>
   </div>
 
   <div class="scene-body">
     <div class="cardbox quiz-card" id="quizCard"></div>
 
-   <div class="divider-div"></div>
+    <div class="divider-div"></div>
+
     <!-- 與新人的契合度 -->
     <div class="cardbox compat-card" id="compatCard"></div>
 
-    <footer>made with ♡ for {{couple}}・{{hashtag}}</footer>
+    <footer>made for {{couple}}・{{hashtag}}</footer>
   </div>
 </section>
-
-<a class="back-lobby show" href="index.html">回到大廳</a>
-<a class="turn-nav" id="turnLeft"  href="draw.html"><span class="tn-arrow">←</span><span class="tn-label">🃏抽小卡</span></a>
-<a class="turn-nav" id="turnRight" href="wall.html"><span class="tn-arrow">→</span><span class="tn-label">💌祝福牆</span></a>
-
-
-<div class="floating">
-  <div class="theme-pop" id="themePop">
-    <div class="theme-dot t-champagne" data-theme="champagne" title="香檳金"></div>
-    <div class="theme-dot t-blush"   data-theme="blush"   title="霧玫瑰"></div>
-    <div class="theme-dot t-sage"      data-theme="sage"      title="鼠尾草綠"></div>
-    <div class="theme-dot t-dusk"   data-theme="dusk"   title="霧霾藍"></div>
-  </div>
-  <button class="fab" id="themeFab" title="換主題色">🎨</button>
-  <button class="fab" id="bgmFab"   title="婚禮進行曲">🔇</button>
-</div>
 
 <!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與本頁 JS -->
 <script type="module" src="/js/site-context.js"></script>

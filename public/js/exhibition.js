@@ -115,8 +115,6 @@ const tlSec     = document.getElementById('tlSec');
 const yearBack  = document.getElementById('tlYearBack');
 const topProg   = document.getElementById('tlTopbar');
 const dotsWrap  = document.getElementById('tlDots');
-const turnLeft  = document.getElementById('turnLeft');
-const turnRight = document.getElementById('turnRight');
 
 /* ===== 渲染所有節點（混合 photo 與 act） ===== */
 const photoNodes = [];
@@ -137,7 +135,7 @@ ITEMS.forEach(item=>{
 
   const idx       = photoData.length;
   const isFinale  = item.finale === true;
-  const fallback  = isFinale ? '🤍' : '📷';
+  const fallback  = '';
   const photoHtml = item.src
     ? `<img src="${item.src}" alt="${escapeHtml(item.title)}" loading="lazy" onerror="this.parentNode.classList.add('no-img');this.remove();" data-fallback="${fallback}">`
     : fallback;
@@ -226,11 +224,6 @@ function onScroll(){
   yearBack.textContent = focusItem.year || '';
   yearBack.classList.toggle('hidden', !focusItem.year);
   dots.forEach((d, i)=> d.classList.toggle('on', i === nearest));
-
-  /* 時間軸釘住時隱藏左右轉場箭頭 */
-  const pinned = r.top <= 0 && r.bottom >= window.innerHeight;
-  turnLeft  && turnLeft.classList.toggle('show', !pinned);
-  turnRight && turnRight.classList.toggle('show', !pinned);
 }
 addEventListener('scroll', onScroll, {passive:true});
 onScroll();
@@ -270,8 +263,8 @@ photoNodes.forEach((n, i)=>{
     const item = photoData[i];
     const isFinale = item.finale === true;
     lbPh.innerHTML = item.src
-      ? `<img src="${item.src}" alt="${escapeHtml(item.title)}" onerror="this.parentNode.innerHTML='${isFinale ? '🤍' : '📷'}';">`
-      : (isFinale ? '🤍' : '📷');
+      ? `<img src="${item.src}" alt="${escapeHtml(item.title)}" onerror="this.parentNode.innerHTML='';">`
+      : '';
     lbT.textContent    = item.title;
     lbDate.textContent = item.year
       ? (item.when ? `${item.year}・${item.when}` : item.year)

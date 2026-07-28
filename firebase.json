@@ -13,11 +13,14 @@
       "assets/demo-wedding-2027/**"
     ],
     "cleanUrls": true,
-    "rewrites": [
+    "redirects": [
       {
-        "source": "/w/*/info",
-        "destination": "/info.html"
-      },
+        "source": "/w/:slug/info",
+        "destination": "/w/:slug/",
+        "type": 301
+      }
+    ],
+    "rewrites": [
       {
         "source": "/w/*/rsvp",
         "destination": "/rsvp.html"

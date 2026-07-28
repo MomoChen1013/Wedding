@@ -33,7 +33,7 @@ const CAKES = [
     });
   });
 })();
-const WISHES_TXT = ['新婚快樂，白頭偕老～','願你們永遠幸福 ✦','有情人終成眷屬 ✨','百年好合，永浴愛河 ♡','甜甜蜜蜜，長長久久 🍯'];
+const WISHES_TXT = ['新婚快樂，白頭偕老','願你們永遠幸福','有情人終成眷屬','百年好合，永浴愛河','甜甜蜜蜜，長長久久'];
 
 let chosen = CAKES[0];
 let step   = 'idle';
@@ -63,7 +63,8 @@ const picker = document.getElementById('cakePicker');
 CAKES.forEach((c,i)=>{
   const chip = document.createElement('div');
   chip.className = 'cake-chip' + (i===0 ? ' sel' : '');
-  chip.innerHTML = `${c.emoji} ${c.name}`;
+  /* 按鈕上只放名字（全站按鈕不放 emoji）；emoji 只當作沒有照片時的甜點本體 */
+  chip.textContent = c.name;
   chip.addEventListener('click', ()=>{
     document.querySelectorAll('.cake-chip').forEach(x=>x.classList.remove('sel'));
     chip.classList.add('sel');
@@ -116,7 +117,6 @@ document.getElementById('flame').addEventListener('click', function(){
   this.classList.add('out');
   document.getElementById('wishLine').textContent =
     WISHES_TXT[Math.floor(Math.random()*WISHES_TXT.length)];
-  for(let i=0;i<6;i++) spawnFloat('💨', innerWidth/2, innerHeight/2 - 100);
   setTimeout(runParty, 1100);
 });
 
@@ -244,7 +244,8 @@ function ensureTip(){
 }
 function showTip(el, payload){
   const tip = ensureTip();
-  tip.innerHTML = `<span class="ic">${payload.icon||'🎀'}</span><b>${escapeHtml(payload.name)}</b>・送了 ${payload.emoji||'🍰'} ${escapeHtml(payload.cake)}`;
+  tip.innerHTML = `<span class="ic">${escapeHtml(payload.icon||DEFAULT_ICON)}</span>`
+                + `<b>${escapeHtml(payload.name)}</b>・送了 ${escapeHtml(payload.cake)}`;
   const r = el.getBoundingClientRect();
   tip.style.left = (r.left + r.width/2) + 'px';
   tip.style.top  = (r.top - 10) + 'px';

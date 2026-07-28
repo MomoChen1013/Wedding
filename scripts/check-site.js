@@ -139,7 +139,7 @@ async function checkOne(db, slug, base) {
   console.log(`   大廳 : ${root}/w/${slug}/`);
   const pageKeys = s.pages && typeof s.pages === 'object'
     ? Object.entries(s.pages).filter(([, v]) => v).map(([k]) => k)
-    : ['info', 'rsvp', 'wall', 'cake', 'draw', 'exhibition', 'quiz', 'inbox', 'invitation'];
+    : ['rsvp', 'wall', 'cake', 'draw', 'exhibition', 'quiz', 'inbox', 'invitation'];
   pageKeys.forEach((k) => console.log(`          ${root}/w/${slug}/${k}`));
 
   console.log('');

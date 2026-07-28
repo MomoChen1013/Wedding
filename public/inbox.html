@@ -5,25 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- 隱藏頁面：請勿從其他頁面連結至此 / Do not link here from anywhere -->
 <meta name="robots" content="noindex,nofollow">
-<title>📬 Inbox</title>
+<title>Inbox</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="/css/common.css">
 <link rel="stylesheet" href="/css/inbox.css">
 </head>
 <body data-theme="champagne" data-page="inbox">
 
-<div class="bg-decor"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<div class="bg-decor"></div>
 <canvas id="fx"></canvas>
 
-<!-- ============ 密碼門 ============ -->
+<!-- ============ 登入門 ============ -->
 <div class="overlay" id="pwGate">
   <div class="gate-card">
-    <div class="ribbon">✦ PRIVATE ✦</div>
-    <h1>📬 新人信箱</h1>
+    <div class="ribbon">Private</div>
+    <h1>新人信箱</h1>
     <div class="sub">這是 {{couple}} 專屬的悄悄話信箱<br>請用新人的 Google 帳號登入</div>
     <button class="btn btn-google" id="ownerLoginBtn" type="button">
       <svg viewBox="0 0 18 18" aria-hidden="true" width="18" height="18">
@@ -44,40 +44,30 @@
 <!-- ============ 信箱本體（解鎖後顯示） ============ -->
 <section class="panel page-fade" data-panel="inbox" id="inboxPage" hidden>
   <div class="scene-hero inbox-hero">
-    <div class="sh-title">📬 新人信箱</div>
+    <div class="sh-title">新人信箱</div>
     <div class="sh-sub">賓客們寄給你們的悄悄話，全部都在這裡</div>
-    <div class="scroll-cue"><span>向下展信</span><span class="arrow">↓</span></div>
+    <div class="scroll-cue"><span>Scroll</span><span class="arrow"></span></div>
   </div>
 
   <div class="scene-body">
     <div class="ib-counter">
-      <span class="ib-counter-em">💌</span>
       <div>
         <div class="ib-counter-num"><b id="ibCount">0</b> 封悄悄話</div>
         <div class="ib-counter-hint">賓客寫給新人的悄悄話・只有你們看得到</div>
       </div>
-      <button class="ib-lock" id="ibLock" title="鎖回信箱">🔒</button>
+      <button class="ib-lock" id="ibLock" type="button" title="鎖回信箱" aria-label="鎖回信箱">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="4.5" y="10.5" width="15" height="10"/>
+          <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>
+        </svg>
+      </button>
     </div>
 
     <div class="inbox-page-list" id="ibList"></div>
 
-    <footer>made with ♡ for {{couple}}・{{hashtag}}</footer>
+    <footer>made for {{couple}}・{{hashtag}}</footer>
   </div>
 </section>
-
-<a class="back-lobby" id="backLobby" href="index.html">🏠 回到婚禮現場</a>
-
-<!-- 浮動控制 -->
-<div class="floating">
-  <div class="theme-pop" id="themePop">
-    <div class="theme-dot t-champagne" data-theme="champagne" title="香檳金"></div>
-    <div class="theme-dot t-blush"   data-theme="blush"   title="霧玫瑰"></div>
-    <div class="theme-dot t-sage"      data-theme="sage"      title="鼠尾草綠"></div>
-    <div class="theme-dot t-dusk"   data-theme="dusk"   title="霧霾藍"></div>
-  </div>
-  <button class="fab" id="themeFab" title="換主題色">🎨</button>
-  <button class="fab" id="bgmFab"   title="婚禮進行曲">🔇</button>
-</div>
 
 <!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與本頁 JS -->
 <script type="module" src="/js/site-context.js"></script>

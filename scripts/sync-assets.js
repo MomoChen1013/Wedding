@@ -10,7 +10,8 @@
 
      public/assets/{slug}/
        cover.jpg              封面大圖（單頁邀請函）
-       lobby.jpg              大廳背景
+       lobby.jpg              首頁固定背景（圖片）
+       lobby.mp4              首頁固定背景（影片；放了就優先用影片）
        lobby-blur.jpg         大廳背景的模糊版（選填）
        gallery/               照片牆
          01.jpg  02.jpg …
@@ -40,12 +41,18 @@ import { fileURLToPath } from 'node:url';
 const ASSETS_ROOT = fileURLToPath(new URL('../public/assets/', import.meta.url));
 
 const IMAGE_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif', '.svg']);
+const VIDEO_EXT = new Set(['.mp4', '.webm', '.mov']);
 
 /* 單張圖片的「特別檔名」→ manifest 的欄位 */
 const SINGLE_FILES = {
   cover: 'cover',
   lobby: 'lobby',
   'lobby-blur': 'lobbyBlur',
+};
+
+/* 單支影片的「特別檔名」→ manifest 的欄位（首頁固定背景用） */
+const SINGLE_VIDEOS = {
+  lobby: 'lobbyVideo',
 };
 
 /* 子資料夾 → manifest 的欄位 */
@@ -58,6 +65,10 @@ const FOLDERS = {
 
 function isImage(name) {
   return IMAGE_EXT.has(extname(name).toLowerCase());
+}
+
+function isVideo(name) {
+  return VIDEO_EXT.has(extname(name).toLowerCase());
 }
 
 /* 依檔名自然排序：01 < 02 < 10（而不是字串排序的 1 < 10 < 2） */
@@ -113,6 +124,13 @@ function buildManifest(slug) {
     if (hit) manifest[field] = `/assets/${slug}/${hit}`;
   }
 
+  /* 單支影片（首頁固定背景） */
+  const rootVideos = readdirSync(dir).filter(isVideo);
+  for (const [stem, field] of Object.entries(SINGLE_VIDEOS)) {
+    const hit = rootVideos.find((f) => basename(f, extname(f)) === stem);
+    if (hit) manifest[field] = `/assets/${slug}/${hit}`;
+  }
+
   /* 子資料夾 */
   for (const [folder, field] of Object.entries(FOLDERS)) {
     const list = buildList(slug, folder, field);
@@ -125,7 +143,8 @@ function buildManifest(slug) {
 function describe(manifest) {
   const bits = [];
   for (const [key, label] of [
-    ['cover', '封面'], ['lobby', '大廳背景'], ['lobbyBlur', '大廳模糊背景'],
+    ['cover', '封面'], ['lobby', '首頁背景圖'], ['lobbyVideo', '首頁背景影片'],
+    ['lobbyBlur', '大廳模糊背景'],
   ]) {
     if (manifest[key]) bits.push(label);
   }

@@ -4,13 +4,12 @@
 if(!requireUser()) { /* requireUser 已導向首頁 */ }
 
 /* ---------- 簽到祝福留言牆 ---------- */
-const NOTE_COLORS=['#fff3b0','#ffd6e3','#d6f0fa','#e3ddf9','#d9f7df','#ffe1cf'];
 function renderWishes(){
   const wall=document.getElementById('wishWall'); wall.innerHTML='';
-  DataStore.getWishes().slice().reverse().forEach((w,i)=>{
+  DataStore.getWishes().slice().reverse().forEach(w=>{
     const d=document.createElement('div'); d.className='wish-note';
-    d.style.background=NOTE_COLORS[i%NOTE_COLORS.length];
-    d.innerHTML=`${escapeHtml(w.text)}<div class="by">${w.icon} ${escapeHtml(w.name)}</div>`;
+    d.innerHTML=`${escapeHtml(w.text)}`
+      + `<div class="by">${escapeHtml(w.icon||DEFAULT_ICON)} ${escapeHtml(w.name)}</div>`;
     wall.appendChild(d);
   });
 }
@@ -43,7 +42,7 @@ function submitLetter(){
   DataStore.addLetter({name:me_user.name, icon:me_user.icon, text:t});
   letterText.value='';
   closeLetter();
-  spawnFloat('💌', innerWidth/2, innerHeight*0.7);
+  spawnFloat(DEFAULT_ICON, innerWidth/2, innerHeight*0.7);
   confettiRain();
   /* renderLetterCount 會由 'data:letters' 事件觸發 */
 }

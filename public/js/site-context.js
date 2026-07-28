@@ -45,13 +45,12 @@ const firebaseConfig = {
    optional : false 代表這頁一定存在，不可關閉
 ============================================================ */
 const PAGES = {
-  lobby:      { file:'index.html',      label:'大廳',       optional:false },
-  info:       { file:'info.html',       label:'婚禮資訊',   optional:true  },
+  lobby:      { file:'index.html',      label:'首頁',       optional:false },
   rsvp:       { file:'rsvp.html',       label:'出席回覆',   optional:true  },
   wall:       { file:'wall.html',       label:'祝福牆',     optional:true  },
-  cake:       { file:'cake.html',       label:'甜點桌',     optional:true  },
-  draw:       { file:'draw.html',       label:'囍卡抽卡',   optional:true  },
-  exhibition: { file:'exhibition.html', label:'戀愛時光',   optional:true  },
+  cake:       { file:'cake.html',       label:'集氣送祝福', optional:true  },
+  draw:       { file:'draw.html',       label:'抽卡',       optional:true  },
+  exhibition: { file:'exhibition.html', label:'我們的故事', optional:true  },
   quiz:       { file:'quiz.html',       label:'新人小測驗', optional:true  },
   inbox:      { file:'inbox.html',      label:'悄悄話信箱', optional:true  },
 };
@@ -108,7 +107,7 @@ function showFatal(title, message) {
   document.body.innerHTML = `
     <div data-fatal="1" style="min-height:100svh;display:flex;flex-direction:column;align-items:center;
                 justify-content:center;gap:12px;padding:40px 24px;text-align:center;
-                font-family:'Noto Sans TC',sans-serif;font-weight:300;
+                font-family:'Noto Serif TC',serif;font-weight:300;
                 line-height:1.9;letter-spacing:.04em;color:#2B2F36;background:#FBFAF8">
       <div style="font-size:2.6rem;line-height:1;color:#E8A93C">✦</div>
       <h1 style="font-size:1.35rem;font-weight:500;margin:6px 0 0">${title}</h1>
@@ -220,7 +219,7 @@ function loadScript(src) {
 async function boot() {
   const loc = parseLocation();
   if (!loc) {
-    showFatal('找不到這個頁面', '網址格式不正確，請確認新人給您的連結 🤍');
+    showFatal('找不到這個頁面', '網址格式不正確，請確認新人給您的連結');
     return;
   }
 
@@ -240,7 +239,7 @@ async function boot() {
     site = siteSnap.data();
     if (site.status !== 'published') return notFound();
   } catch {
-    showFatal('暫時無法載入', '網路好像不太穩，請稍後再重新整理一次 🤍');
+    showFatal('暫時無法載入', '網路好像不太穩，請稍後再重新整理一次');
     return;
   }
 
@@ -293,7 +292,7 @@ async function boot() {
     const pageScript = { lobby:'index' }[pageKey] || pageKey;
     await loadScript(`/js/${pageScript}.js`);
   } catch (err) {
-    showFatal('頁面載入失敗', '請重新整理一次，如果一直發生請告訴我們 🤍');
+    showFatal('頁面載入失敗', '請重新整理一次，如果一直發生請告訴我們');
     return;
   }
 
@@ -303,7 +302,7 @@ async function boot() {
 
   function notFound() {
     showFatal('找不到這張邀請函',
-      '這個網址可能輸入錯誤，或是邀請函已經收起來了。<br>請再確認一次新人給您的連結 🤍');
+      '這個網址可能輸入錯誤，或是邀請函已經收起來了。<br>請再確認一次新人給您的連結');
   }
 }
 
