@@ -373,8 +373,11 @@ const firebaseConfig = {
 
 const db = getFirestore(initializeApp(firebaseConfig));
 
-/* 本機開發時自動連到 Firestore emulator，正式網域不受影響 */
-if(location.hostname === 'localhost' || location.hostname === '127.0.0.1'){
+/* 本機開發時自動連到 Firestore emulator，正式網域不受影響。
+   網址加 ?live=1 可在本機直接讀正式資料庫（方便預覽真實站台） */
+const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const wantsLive = new URLSearchParams(location.search).get('live') === '1';
+if(isLocal && !wantsLive){
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
 }
 
