@@ -260,8 +260,35 @@ node scripts/create-site.js \
 --disable wall
 ```
 
-之後要改，到 Firebase Console → Firestore → 該筆 `sites` 文件 → `pages` 欄位
-把對應的 boolean 改掉即可，**不用重新部署**。
+#### 站台建好之後要改開關
+
+用 `set-pages`，不用重新部署，存檔後重新整理網頁就生效：
+
+```bash
+# 先看目前開了哪些（不加開關參數＝純查詢）
+npm run set-pages -- --slug ginny-one-20260919
+
+# 只留抽卡，其他全關（--pages 是整組覆蓋，沒列到的一律關掉）
+npm run set-pages -- --slug ginny-one-20260919 --pages draw
+
+# 在現有設定上加減
+npm run set-pages -- --slug ginny-one-20260919 --disable quiz --enable rsvp
+
+# 先看看會變成什麼樣，不寫入
+npm run set-pages -- --slug ginny-one-20260919 --pages draw --dry-run
+
+# 順便設定悄悄話信箱的可讀帳號（整組覆蓋）
+npm run set-pages -- --slug ginny-one-20260919 \
+  --owner-email groom@gmail.com --owner-email bride@gmail.com
+```
+
+也可以直接去 Firebase Console → Firestore → 該筆 `sites` 文件 → `pages` 欄位
+把對應的 boolean 改掉；`pages` 是一個 **map**，如果文件裡還沒有這個欄位，
+要先「新增欄位 → 名稱 `pages` → 類型 map」再一格一格加 boolean 子欄位。
+手動點很容易打錯字，建議用上面的指令。
+
+> **舊站台沒有 `pages` 欄位＝全部頁面都開啟**（前端與安全規則都這樣處理，
+> 這樣早期建立的站台才不會突然壞掉）。跑一次 `set-pages` 就會寫入明確的開關。
 
 > **注意**：預設是 `draft`，賓客會看到 404。
 > 內容確認好之後，到 Firebase Console 把 `status` 改成 `published` 才會對外公開。

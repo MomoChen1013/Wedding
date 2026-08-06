@@ -14,7 +14,8 @@
     "test:multipage": "firebase emulators:exec --only firestore,hosting,auth \"node tests/multipage.mjs\"",
     "test:all": "npm run test:rules && npm run test:e2e && npm run test:multipage",
     "sync-assets": "node scripts/sync-assets.js",
-    "check-site": "node scripts/check-site.js"
+    "check-site": "node scripts/check-site.js",
+    "set-pages": "node scripts/set-pages.js"
   },
   "repository": {
     "type": "git",

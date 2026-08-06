@@ -55,15 +55,7 @@ import { parseArgs } from 'node:util';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { resolveBaseUrl } from './site-url.js';
-
-/* ---------- 可選頁面 ----------
-   key 對應網址 /w/{slug}/{key}，也對應 sites.pages 的欄位名。
-   lobby（大廳）一定存在，不列在這裡。 */
-const OPTIONAL_PAGES = [
-  'rsvp', 'wall', 'cake', 'draw', 'exhibition', 'quiz', 'inbox', 'invitation',
-];
-/* 沒特別指定時，預設開啟的頁面 */
-const DEFAULT_PAGES = ['rsvp', 'wall'];
+import { OPTIONAL_PAGES, DEFAULT_PAGES, resolvePages } from './site-pages.js';
 
 /* ---------- 保留字黑名單 ---------- */
 const RESERVED_SLUGS = new Set(['admin', 'api', 'www', 'app', 'w', 's', 'assets', 'static']);
@@ -153,31 +145,6 @@ function parseDateTime(dateStr, timeStr, timeZone, label) {
   );
   /* naive 被當成該時區的時間後多出來的位移，扣掉才是真正的 UTC 瞬間 */
   return new Date(naive.getTime() - (asUtc - naive.getTime()));
-}
-
-/* 決定這組新人要開哪些頁面，回傳 { rsvp:true, wall:false, ... } */
-function resolvePages(values) {
-  const known = new Set(OPTIONAL_PAGES);
-  const assertKnown = (key, flag) => {
-    if (!known.has(key)) {
-      throw new Error(`${flag} 「${key}」不是有效的頁面，可用值：${OPTIONAL_PAGES.join('、')}`);
-    }
-  };
-
-  let on;
-  if (values.pages !== undefined) {
-    on = new Set(
-      values.pages.split(',').map((v) => v.trim()).filter(Boolean)
-    );
-    on.forEach((k) => assertKnown(k, '--pages'));
-  } else {
-    on = new Set(DEFAULT_PAGES);
-  }
-
-  (values.enable || []).forEach((k) => { assertKnown(k, '--enable'); on.add(k); });
-  (values.disable || []).forEach((k) => { assertKnown(k, '--disable'); on.delete(k); });
-
-  return Object.fromEntries(OPTIONAL_PAGES.map((k) => [k, on.has(k)]));
 }
 
 function assertValidStatus(status) {
