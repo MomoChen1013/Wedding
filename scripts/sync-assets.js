@@ -132,7 +132,9 @@ function findByStem(files, stem) {
 
 function buildManifest(slug) {
   const dir = join(ASSETS_ROOT, slug);
-  const manifest = { slug, generatedAt: new Date().toISOString() };
+  /* 不放時間戳記：內容沒變時重跑不會產生 git 差異，
+     才不會在 pull 的時候擋路 */
+  const manifest = { slug };
   const used = new Set();
 
   const take = (files, map) => {
