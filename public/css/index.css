@@ -89,8 +89,7 @@
 ============================================================ */
 /* 首頁背景是整張照片，文字直接壓在上面會讀不清楚，
    所以每一塊都給一層半透明白底當閱讀底板 */
-.info-block,
-.link-section{padding:44px 32px;margin-top:20px;
+.info-block{padding:44px 32px;margin-top:20px;
   background:rgba(255,255,255,.7);border:1px solid var(--line-soft);border-radius:var(--radius);
   -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);}
 .info-block:first-of-type{margin-top:0;}
@@ -137,8 +136,7 @@
 .note-label{font-size:14px;letter-spacing:.24em;color:var(--ink-soft);margin-bottom:10px;text-transform:uppercase;}
 .info-note{color:var(--ink);line-height:2;font-size:14.5px;}
 @media(max-width:640px){
-  .info-block,
-  .link-section{padding:32px 20px;}
+  .info-block{padding:32px 20px;}
   .note-grid{grid-template-columns:1fr;}
   .note-item{border-left:none;padding:0;}
   .note-item + .note-item{margin-top:28px;padding-top:24px;border-top:1px solid var(--line-soft);}
@@ -170,7 +168,9 @@
 /* ============================================================
    卡片連結（兩欄）
 ============================================================ */
-/* padding／白底與 .info-block 共用（見上方），這裡只留自己的排版 */
+/* 這一塊刻意不加白底：底下的卡片自己就有底色，
+   讓標題直接透出背景照，和上面幾塊白卡做出區隔 */
+.link-section{padding:56px 0 0;}
 .link-grid{display:grid;grid-template-columns:1fr 1fr;
   border-top:1px solid var(--line);border-left:1px solid var(--line);}
 .link-card{position:relative;display:flex;flex-direction:column;gap:10px;
