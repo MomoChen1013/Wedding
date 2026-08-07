@@ -112,6 +112,7 @@ sites/{siteId}
   themeColor(hex), coverImageUrl, story
   photos(string[]), hashtags(string[])
   dressCode, giftNote
+  schedule(map[])       # 當日流程，每筆 { time, title, desc? }
   rsvpDeadline(timestamp), rsvpEnabled(bool)
   pages(map)            # 每個頁面開關，如 { wall:true, cake:false, … }
   ownerEmails(string[]) # 新人的 Google 信箱；決定誰讀得到悄悄話信箱
@@ -141,6 +142,25 @@ short/{code}                # 6 碼短連結
 **關於 `timezone`**：婚禮時間一律以**婚禮當地時區**顯示。
 若不存這個欄位，海外賓客打開邀請函會看到自己時區換算後的時間（例如台灣的
 12:00 婚宴，日本賓客會看到 13:00）。
+
+**關於 `schedule`**：大廳的當日流程時間軸，長這樣：
+
+```json
+[
+  { "time": "11:30", "title": "入場迎賓", "desc": "簽到、拍照" },
+  { "time": "12:00", "title": "婚宴開始" },
+  { "time": "14:30", "title": "送客" }
+]
+```
+
+`desc` 選填，沒有就不顯示那一行；陣列順序即顯示順序，不會依 `time` 重排；
+整個欄位沒填就顯示「流程稍後公布，敬請期待」。
+
+這個欄位**沒有對應的 CLI 參數**（`create-site.js` 不會寫入），
+要設定或修改就到 Firebase Console 直接編輯 `sites/{siteId}`。
+`dressCode`、`giftNote` 也一樣：`create-site.js` 的 `--dress-code`／`--gift-note`
+只在建站當下有效，站台建好之後要改文案，一律走 Console。
+改完重新整理網頁就生效，不需要重新 deploy。
 
 ---
 
