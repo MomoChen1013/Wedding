@@ -55,6 +55,7 @@ sites/{siteId}
   hashtags        : string[] # 婚禮 hashtag，前面沒有 # 會自動補上
   dressCode       : string   # 服裝建議，支援換行
   giftNote        : string   # 禮金說明，支援換行
+  schedule        : map[]    # 當日流程，陣列順序即顯示順序（見下方說明）
   rsvpDeadline    : timestamp
   rsvpEnabled     : boolean
   pages           : map      # 頁面開關，見第 10 節
@@ -100,6 +101,28 @@ short/{code}                # 短連結
 台灣 12:00 的婚宴，日本賓客會看到 13:00、美西賓客會看到前一天晚上——
 對台日跨境的使用情境是實質錯誤。因此存下婚禮所在時區，
 邀請函一律以**婚禮當地時區**顯示時間。預設 `Asia/Taipei`。
+
+**`schedule`（當日流程）**：大廳的時間軸，陣列裡每一筆是一個 map：
+
+```json
+[
+  { "time": "11:30", "title": "入場迎賓", "desc": "簽到、拍照" },
+  { "time": "12:00", "title": "婚宴開始" },
+  { "time": "14:30", "title": "送客" }
+]
+```
+
+| 欄位 | 說明 |
+|---|---|
+| `time` | 時間文字，不做格式驗證，寫 `11:30` 或 `11:30 起` 都可以 |
+| `title` | 項目名稱 |
+| `desc` | 選填，補充說明；沒有就不顯示那一行 |
+
+陣列順序即顯示順序，不會依 `time` 重新排序。
+整個欄位沒填或是空陣列時，畫面顯示「流程稍後公布，敬請期待」。
+
+`schedule` 目前**沒有對應的 CLI**：`create-site.js` 不會寫入這個欄位，
+要設定就到 Firebase Console 編輯 `sites/{siteId}`。
 
 ---
 
