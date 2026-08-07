@@ -1,4 +1,71 @@
 {
   "slug": "ginny-one-20260919",
-  "bgm": "/assets/ginny-one-20260919/bgm.mp3"
+  "cover": "/assets/ginny-one-20260919/cover.jpg",
+  "lobby": "/assets/ginny-one-20260919/lobby.jpg",
+  "bgm": "/assets/ginny-one-20260919/bgm.mp3",
+  "cards": [
+    {
+      "src": "/assets/ginny-one-20260919/cards/01.jpg",
+      "order": 1,
+      "name": "",
+      "rarity": "N",
+      "desc": ""
+    },
+    {
+      "src": "/assets/ginny-one-20260919/cards/02.jpg",
+      "order": 2,
+      "name": "",
+      "rarity": "N",
+      "desc": ""
+    },
+    {
+      "src": "/assets/ginny-one-20260919/cards/03.jpg",
+      "order": 3,
+      "name": "",
+      "rarity": "N",
+      "desc": ""
+    },
+    {
+      "src": "/assets/ginny-one-20260919/cards/04.jpg",
+      "order": 4,
+      "name": "",
+      "rarity": "N",
+      "desc": ""
+    },
+    {
+      "src": "/assets/ginny-one-20260919/cards/05.jpg",
+      "order": 5,
+      "name": "",
+      "rarity": "N",
+      "desc": ""
+    },
+    {
+      "src": "/assets/ginny-one-20260919/cards/06.jpg",
+      "order": 6,
+      "name": "",
+      "rarity": "N",
+      "desc": ""
+    },
+    {
+      "src": "/assets/ginny-one-20260919/cards/07.jpg",
+      "order": 7,
+      "name": "",
+      "rarity": "N",
+      "desc": ""
+    },
+    {
+      "src": "/assets/ginny-one-20260919/cards/08.jpg",
+      "order": 8,
+      "name": "",
+      "rarity": "N",
+      "desc": ""
+    },
+    {
+      "src": "/assets/ginny-one-20260919/cards/09.jpg",
+      "order": 9,
+      "name": "",
+      "rarity": "N",
+      "desc": ""
+    }
+  ]
 }
