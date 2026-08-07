@@ -1,11 +1,11 @@
 {
-  "01": { "name": "", "rarity": "N", "desc": "" },
-  "02": { "name": "", "rarity": "N", "desc": "" },
-  "03": { "name": "", "rarity": "N", "desc": "" },
-  "04": { "name": "", "rarity": "N", "desc": "" },
-  "05": { "name": "", "rarity": "N", "desc": "" },
-  "06": { "name": "", "rarity": "N", "desc": "" },
-  "07": { "name": "", "rarity": "N", "desc": "" },
-  "08": { "name": "", "rarity": "N", "desc": "" },
-  "09": { "name": "", "rarity": "N", "desc": "" }
+  "01": { "name": "", "rarity": "R", "desc": "" },
+  "02": { "name": "", "rarity": "R", "desc": "" },
+  "03": { "name": "", "rarity": "R", "desc": "" },
+  "04": { "name": "", "rarity": "R", "desc": "" },
+  "05": { "name": "", "rarity": "R", "desc": "" },
+  "06": { "name": "", "rarity": "R", "desc": "" },
+  "07": { "name": "", "rarity": "R", "desc": "" },
+  "08": { "name": "", "rarity": "R", "desc": "" },
+  "09": { "name": "", "rarity": "R", "desc": "" }
 }
