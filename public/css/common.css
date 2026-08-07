@@ -130,7 +130,9 @@ body.nav-off{padding-top:0;}
 @media(max-width:720px){
   :root{--nav-h:52px;}
   .nav-inner{gap:12px;padding:0 12px;}
-  .nav-brand{font-size:13.5px;letter-spacing:.08em;max-width:8em;overflow:hidden;text-overflow:ellipsis;}
+  /* 新人姓名是兩個中文名字加 &，8em 會被切掉，留寬一點；
+     擠到的話 .nav-links 本來就可以橫向捲動 */
+  .nav-brand{font-size:13.5px;letter-spacing:.08em;max-width:13em;overflow:hidden;text-overflow:ellipsis;}
   .nav-links{gap:16px;}
   .nav-link{font-size:12.5px;letter-spacing:.08em;}
   .nav-user-nm{display:none;}

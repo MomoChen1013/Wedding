@@ -227,3 +227,20 @@ setText('giftNote',  W.giftNote  || '您的到來就是最好的禮物');
   const grid = document.querySelector('.link-grid');
   if(grid && !grid.querySelector('.link-card')) grid.closest('.link-section').hidden = true;
 })();
+
+/* ============================================================
+   卡片連結的編號
+   HTML 裡寫死的 01～05 是「全部頁面都開」時的號碼；
+   這組新人關掉的頁面已經被 rewriteNavLinks 移掉，
+   所以剩下幾張就從 01 重編幾號，不會跳號（例：01、04）。
+   只剩一張時編號沒有意義，直接不顯示。
+============================================================ */
+(function renumberLinkCards(){
+  const cards = document.querySelectorAll('.link-grid .link-card');
+  cards.forEach((cardEl, i) => {
+    const idx = cardEl.querySelector('.lc-index');
+    if(!idx) return;
+    if(cards.length < 2) idx.remove();
+    else idx.textContent = String(i + 1).padStart(2, '0');
+  });
+})();
