@@ -3,5 +3,9 @@ firestore-debug.log
 firebase-debug.log
 ui-debug.log
 .firebase/
+
+# Firebase 服務帳戶金鑰，一律不進版控
 serviceAccountKey.json
 *-serviceAccount*.json
+*firebase-adminsdk*.json
+admin.json
