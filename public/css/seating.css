@@ -54,6 +54,22 @@
 .st-mate{border:1px solid var(--line);border-radius:999px;padding:5px 14px;
   font-size:12.5px;letter-spacing:.08em;color:var(--ink);}
 
+/* ---------- 有一封信在等你 ---------- */
+.st-letter{
+  display:flex;align-items:center;gap:12px;
+  margin-top:22px;padding:15px 18px;
+  border:1px solid var(--line);border-radius:var(--radius);
+  text-decoration:none;color:var(--ink);text-align:left;
+  transition:background .25s,color .25s,border-color .25s;
+}
+.st-letter:hover{background:var(--ink);color:#fff;border-color:var(--ink);}
+.st-letter-mark{flex:0 0 auto;font-size:15px;line-height:1;color:var(--primary-deep);}
+.st-letter:hover .st-letter-mark{color:rgba(255,255,255,.85);}
+.st-letter-text{flex:1 1 auto;font-size:13.5px;letter-spacing:.08em;}
+.st-letter-go{flex:0 0 auto;font-size:11px;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--ink-soft);}
+.st-letter:hover .st-letter-go{color:rgba(255,255,255,.85);}
+
 /* ---------- 查無資料 ---------- */
 .st-card-miss{padding:34px 26px;}
 .st-miss-mark{

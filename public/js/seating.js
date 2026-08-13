@@ -23,6 +23,31 @@ let seatingLoaded = false;
 
 DataStore.subscribeSeating();
 
+/* 這場婚禮有開「給你的信」的話，順便查一下有沒有寫給這位賓客的信。
+   賓客查完桌次通常就走了，這裡是最自然的提醒時機。
+   沒開那一頁就完全不訂閱，不做多餘的讀取。 */
+const letterOn = !!(window.SITE && window.SITE.isEnabled('letter'));
+if(letterOn) DataStore.subscribeBlessings();
+
+/* 查到桌次後，附上「有一封信在等你」的入口。
+   帶上 ?name= 讓信件頁直接開信，賓客不用再打一次名字。 */
+function letterNote(name){
+  if(!letterOn) return '';
+  const hit = findBlessing(name, DataStore.getBlessings());
+  if(!hit) return '';
+
+  const href = `${window.SITE.pathFor('letter')}?name=${encodeURIComponent(name)}`;
+  const text = hit.personal
+    ? '新人寫了一封信給你'
+    : '新人寫了一封信給大家';
+  return `
+    <a class="st-letter" href="${escapeHtml(href)}">
+      <span class="st-letter-mark">✉</span>
+      <span class="st-letter-text">${text}</span>
+      <span class="st-letter-go">拆開來看</span>
+    </a>`;
+}
+
 /* ============================================================
    查詢
 ============================================================ */
@@ -82,6 +107,7 @@ function renderResult(list, typed){
             <div class="st-mates-list">${mates.map(n =>
               `<span class="st-mate">${escapeHtml(n)}</span>`).join('')}</div>
           </div>` : ''}
+        ${letterNote(r.name)}
       </div>`;
   }).join('');
 
@@ -117,6 +143,11 @@ document.addEventListener('data:seating', ()=>{
 document.addEventListener('data:seating:denied', ()=>{
   seatingLoaded = true;
   stHint.textContent = '桌次名單暫時讀不到，請看下面的桌次圖';
+});
+
+/* 信件比桌次晚到的話，重畫一次結果卡，把「有一封信」補上去 */
+document.addEventListener('data:blessings', ()=>{
+  if(stInput.value.trim() && stResult.innerHTML) doSearch();
 });
 
 /* 進場前先幫賓客把名字填好，少打一次字 */

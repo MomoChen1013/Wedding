@@ -507,6 +507,63 @@ console.log('\n[11] 桌次查詢');
     realErrors(errors).slice(0, 2).join(' | '));
   await page.close();
 }
+
+/* ---------- 桌次 × 祝福信的串接 ---------- */
+console.log('\n[11b] 查桌次時一併提示有信');
+{
+  const { page } = await visit(`/w/${SLUG}/seating`);
+  await page.waitForFunction(
+    () => DataStore.getSeating().length > 0 && DataStore.getBlessings().length > 0,
+    null, { timeout:10000 });
+
+  /* 有專屬信的賓客 */
+  await page.fill('#stInput', '王小明');
+  await page.click('#stBtn');
+  await page.waitForSelector('.st-letter', { timeout:5000 });
+  const personal = await page.evaluate(() => {
+    const a = document.querySelector('.st-letter');
+    return { text: a.innerText, href: a.getAttribute('href') };
+  });
+  ok('有專屬信時提示「寫給你」',
+    personal.text.includes('新人寫了一封信給你'), personal.text.replace(/\n/g, ' '));
+  ok('連結帶上名字，點過去直接開信',
+    personal.href === `/w/${SLUG}/letter?name=${encodeURIComponent('王小明')}`, personal.href);
+
+  /* 沒有專屬信、但新人設了通用信的賓客 */
+  await page.fill('#stInput', '陳大同');
+  await page.click('#stBtn');
+  await page.waitForSelector('.st-letter', { timeout:5000 });
+  ok('沒有專屬信時提示通用信',
+    (await page.innerText('.st-letter')).includes('新人寫了一封信給大家'),
+    (await page.innerText('.st-letter')).replace(/\n/g, ' '));
+  await page.close();
+}
+{
+  /* 從桌次頁點過來，信件頁要自己打開，不用再打一次名字 */
+  const { page } = await visit(`/w/${SLUG}/letter?name=${encodeURIComponent('王小明')}`);
+  await page.waitForSelector('#wlSheet:not([hidden])', { timeout:10000 });
+  ok('帶 ?name= 進來會自動開信',
+    (await page.innerText('#wlSheet')).includes('謝謝你今天特地趕來'));
+  ok('輸入框已經填好名字',
+    (await page.inputValue('#wlInput')) === '王小明',
+    await page.inputValue('#wlInput'));
+  await page.close();
+}
+{
+  /* 沒開 letter 頁的站台不該出現這個入口，也不該去讀 blessings */
+  await adb.collection('sites').doc(siteIds[SLUG]).update({
+    pages: { ...allOn, letter: false },
+  });
+  const { page } = await visit(`/w/${SLUG}/seating`);
+  await page.waitForFunction(() => DataStore.getSeating().length > 0, null, { timeout:10000 });
+  await page.fill('#stInput', '王小明');
+  await page.click('#stBtn');
+  await page.waitForTimeout(800);
+  ok('關掉信件頁時不顯示信件入口',
+    (await page.locator('.st-letter').count()) === 0);
+  await page.close();
+  await adb.collection('sites').doc(siteIds[SLUG]).update({ pages: allOn });
+}
 {
   /* 賓客不能竄改桌次名單 */
   const { page } = await visit(`/w/${SLUG}/seating`);

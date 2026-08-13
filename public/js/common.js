@@ -28,6 +28,43 @@ function normKey(s){
     .replace(/\s+/g, '');
 }
 
+/* 找出寫給這個名字（或專屬暗號）的祝福信。
+   回傳 { item, personal }：
+     personal:true  → 對到某封信的專屬詞彙
+     personal:false → 沒對到，退回新人設定的「通用信」
+   都沒有就回 null。
+
+   比對規則與桌次查詢一致，由寬到嚴：
+     1. 詞彙完全相同
+     2. 互相包含（取最長的詞彙，越長代表越精準）
+   桌次頁與祝福信頁共用這一份，兩邊的判斷才不會走鐘。 */
+function findBlessing(input, list){
+  const q = normKey(input);
+  const all = Array.isArray(list) ? list : [];
+  const termsOf = (b) =>
+    (Array.isArray(b.terms) ? b.terms : []).map(normKey).filter(Boolean);
+
+  if(!q) return null;
+
+  const personal = all.filter(b => termsOf(b).length);
+
+  const exact = personal.find(b => termsOf(b).includes(q));
+  if(exact) return { item: exact, personal: true };
+
+  let best = null, bestLen = 0;
+  personal.forEach(b => {
+    termsOf(b).forEach(t => {
+      if((t.includes(q) || q.includes(t)) && t.length > bestLen){
+        best = b; bestLen = t.length;
+      }
+    });
+  });
+  if(best) return { item: best, personal: true };
+
+  const def = all.find(b => b.isDefault === true);
+  return def ? { item: def, personal: false } : null;
+}
+
 function $(sel, root){ return (root||document).querySelector(sel); }
 function $all(sel, root){ return Array.from((root||document).querySelectorAll(sel)); }
 

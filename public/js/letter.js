@@ -21,42 +21,7 @@ let blessingsLoaded = false;
 
 DataStore.subscribeBlessings();
 
-/* ============================================================
-   比對
-============================================================ */
-function termsOf(b){
-  return (Array.isArray(b.terms) ? b.terms : [])
-    .map(normKey)
-    .filter(Boolean);
-}
-
-function matchBlessing(input){
-  const q = normKey(input);
-  if(!q) return null;
-
-  const list = DataStore.getBlessings();
-  const personal = list.filter(b => termsOf(b).length);
-
-  /* 1. 詞彙完全相同 */
-  const exact = personal.find(b => termsOf(b).includes(q));
-  if(exact) return exact;
-
-  /* 2. 詞彙包含輸入的字，或輸入的字包含詞彙
-        （「小明」對得到「王小明」，「王小明先生」也對得到「王小明」）
-        取最長的詞彙，越長代表越精準 */
-  let best = null, bestLen = 0;
-  personal.forEach(b => {
-    termsOf(b).forEach(t => {
-      if((t.includes(q) || q.includes(t)) && t.length > bestLen){
-        best = b; bestLen = t.length;
-      }
-    });
-  });
-  if(best) return best;
-
-  /* 3. 通用信 */
-  return list.find(b => b.isDefault === true) || null;
-}
+/* 比對邏輯在 common.js 的 findBlessing()，與桌次頁共用同一份 */
 
 /* ============================================================
    開信
@@ -117,13 +82,13 @@ wlForm.addEventListener('submit', (e)=>{
     showMsg('正在把信拿出來…');
     return;
   }
-  const hit = matchBlessing(typed);
+  const hit = findBlessing(typed, DataStore.getBlessings());
   if(!hit){
     shakeEnvelope();
     showMsg(`還沒有寫給「${typed}」的信，換個寫法或問問新人吧`);
     return;
   }
-  openLetter(hit, typed);
+  openLetter(hit.item, typed);
 });
 
 document.getElementById('wlAgain').addEventListener('click', closeLetter);
@@ -131,15 +96,27 @@ document.getElementById('wlAgain').addEventListener('click', closeLetter);
 /* ============================================================
    資料進來後
 ============================================================ */
+/* 從桌次頁的「有一封信在等你」點過來時會帶 ?name=，
+   直接幫他把信打開，不用再打一次名字 */
+const handoffName = new URLSearchParams(location.search).get('name');
+let handoffDone = false;
+
 document.addEventListener('data:blessings', ()=>{
   blessingsLoaded = true;
   const n = DataStore.getBlessings().length;
   if(!n){
     showMsg('新人還沒開始寫信，晚點再回來看看');
     document.getElementById('wlBtn').disabled = true;
-  }else{
-    document.getElementById('wlBtn').disabled = false;
-    if(wlMsg.textContent.trim() === '正在把信拿出來…') showMsg('');
+    return;
+  }
+  document.getElementById('wlBtn').disabled = false;
+  if(wlMsg.textContent.trim() === '正在把信拿出來…') showMsg('');
+
+  if(handoffName && !handoffDone){
+    handoffDone = true;
+    wlInput.value = handoffName.slice(0, 40);
+    document.getElementById('wlToName').textContent = wlInput.value;
+    wlForm.requestSubmit();
   }
 });
 
