@@ -760,6 +760,201 @@ console.log('\n[14b] 後台看得到出席回覆');
   await page.close();
 }
 
+/* ---------- 後台改大廳文案 ---------- */
+console.log('\n[15] 後台改得動大廳文案');
+{
+  const { page, errors } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+
+  await page.click('.ad-tab[data-tab="lobby"]');
+  ok('表單帶出目前的地點',
+    (await page.inputValue('#adVenueName')) === '台北國賓大飯店・二樓國際廳',
+    await page.inputValue('#adVenueName'));
+
+  await page.fill('#adVenueName', '晶華酒店・三樓宴會廳');
+  await page.fill('#adVenueAddress', '台北市中山區中山北路二段 39 巷 3 號');
+  await page.fill('#adDressCode', '請穿得舒服就好');
+  await page.fill('#adGiftNote', '人到就好，禮金真的不用');
+  await page.click('#adSiteForm button[type="submit"]');
+  await page.waitForTimeout(1500);
+
+  const site = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
+  ok('地點寫回 sites 文件', site.venueName === '晶華酒店・三樓宴會廳', site.venueName);
+  ok('Dress Code 寫回 sites 文件', site.dressCode === '請穿得舒服就好', site.dressCode);
+  ok('沒有動到站台狀態與名單',
+    site.status === 'published' && site.ownerEmails.join() === 'couple@example.com',
+    `${site.status} / ${site.ownerEmails.join()}`);
+
+  /* 當日流程：兩列 */
+  await page.fill('#adSchList .ad-sch-row:nth-child(1) .ad-sch-time', '11:30');
+  await page.fill('#adSchList .ad-sch-row:nth-child(1) .ad-sch-title', '入場迎賓');
+  await page.fill('#adSchList .ad-sch-row:nth-child(1) .ad-sch-desc', '簽到、拍照');
+  await page.click('#adSchAdd');
+  await page.fill('#adSchList .ad-sch-row:nth-child(2) .ad-sch-time', '12:00');
+  await page.fill('#adSchList .ad-sch-row:nth-child(2) .ad-sch-title', '婚宴開始');
+  await page.click('#adSchSave');
+  await page.waitForTimeout(1500);
+
+  const sch = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data().schedule;
+  ok('流程存了兩列', Array.isArray(sch) && sch.length === 2, JSON.stringify(sch));
+  ok('流程欄位正確',
+    sch && sch[0].time === '11:30' && sch[0].title === '入場迎賓' && sch[1].title === '婚宴開始',
+    JSON.stringify(sch));
+
+  ok('大廳分頁無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+{
+  /* 賓客那一側要看得到改完的內容 */
+  const { page } = await visit(`/w/${SLUG}/`);
+  const text = await page.innerText('body');
+  ok('大廳顯示新的地點', text.includes('晶華酒店・三樓宴會廳'));
+  ok('大廳顯示新的 Dress Code', text.includes('請穿得舒服就好'));
+  const tl = await page.innerText('#schedule');
+  ok('大廳時間軸顯示流程', tl.includes('入場迎賓') && tl.includes('婚宴開始'),
+    tl.replace(/\n/g, ' ').slice(0, 60));
+  await page.close();
+}
+
+/* ---------- 後台上傳囍卡（含裁切器） ---------- */
+console.log('\n[16] 後台上傳囍卡與展品');
+
+/* 測試用的小圖：60×90 的單色 PNG，直接餵給 <input type="file"> */
+const TEST_PNG = {
+  name: '海邊的我們.png',
+  mimeType: 'image/png',
+  buffer: Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAADwAAABaCAIAAABrM6JiAAAAaklEQVR4nO3OAQkAIBAAMWOb' +
+    'ySTGMob3MFiArXv2OOv7QDpMWlo6QFpaOkBaWjpAWlo6QFpaOkBaWjpAWlo6QFpaOkBaWjpA' +
+    'Wlo6QFpaOkBaWjpAWlo6QFpaOkBaWjpAWlo6QFpaOmBk+gGDjGJJWqVO2QAAAABJRU5ErkJg' +
+    'gg==', 'base64'),
+};
+
+{
+  const { page, errors } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+
+  /* --- 囍卡 --- */
+  await page.click('.ad-tab[data-tab="cards"]');
+  await page.setInputFiles('#adCardFile', TEST_PNG);
+
+  /* 裁切器會跳出來，確認之後才寫進 Firestore */
+  await page.waitForSelector('.cr-mask', { timeout:10000 });
+  ok('選了照片會跳出裁切器', await page.isVisible('.cr-stage'));
+  const frame = await page.evaluate(() => {
+    const s = document.querySelector('.cr-stage');
+    return { w: s.clientWidth, h: s.clientHeight };
+  });
+  ok('裁切框是直式 2:3',
+    Math.abs(frame.w / frame.h - 2/3) < 0.02, `${frame.w}×${frame.h}`);
+  await page.click('#crOk');
+  await page.waitForSelector('.cr-mask', { state:'detached', timeout:15000 });
+  await page.waitForTimeout(1500);
+
+  const cards = await adb.collection('sites').doc(siteIds[SLUG]).collection('cards').get();
+  ok('囍卡寫進 Firestore', cards.size === 1, `${cards.size} 張`);
+  const card = cards.size ? cards.docs[0].data() : {};
+  ok('存的是 data URL', String(card.img || '').startsWith('data:image/jpeg;base64,'),
+    String(card.img || '').slice(0, 24));
+  ok('圖沒有超過文件上限', String(card.img || '').length <= 950000,
+    `${String(card.img || '').length} 字元`);
+  ok('卡名沿用檔名', card.name === '海邊的我們', card.name);
+  ok('等級預設 N', card.rarity === 'N', card.rarity);
+
+  /* 卡名／等級／說明改完就自動存回去 */
+  await page.fill('.ad-card .ad-card-name', '海邊的我們・改');
+  await page.selectOption('.ad-card .ad-card-rarity', 'SSR');
+  await page.fill('.ad-card .ad-card-desc', '那天風很大');
+  await page.locator('.ad-card .ad-card-desc').blur();
+  await page.waitForTimeout(1500);
+
+  const after = (await adb.collection('sites').doc(siteIds[SLUG])
+    .collection('cards').get()).docs[0].data();
+  ok('卡名改得動', after.name === '海邊的我們・改', after.name);
+  ok('等級改得動', after.rarity === 'SSR', after.rarity);
+  ok('說明改得動', after.desc === '那天風很大', after.desc);
+
+  /* --- 展品與章節 --- */
+  await page.click('.ad-tab[data-tab="exhibits"]');
+  await page.selectOption('#adExhKind', 'act');
+  await page.fill('#adExhTitle', '第一幕');
+  await page.fill('#adExhSub', '我們的相遇');
+  await page.fill('#adExhOrder', '1');
+  await page.click('#adExhForm button[type="submit"]');
+  await page.waitForTimeout(1200);
+
+  await page.selectOption('#adExhKind', 'photo');
+  await page.setInputFiles('#adExhFile', TEST_PNG);
+  await page.waitForSelector('.cr-mask', { timeout:10000 });
+  await page.click('#crOk');
+  await page.waitForSelector('.cr-mask', { state:'detached', timeout:15000 });
+  ok('展品照片有預覽', await page.isVisible('#adExhPrev img'));
+
+  await page.fill('#adExhTitle', '第一次一起旅行');
+  await page.fill('#adExhYear', '2021');
+  await page.fill('#adExhSub', '夏天');
+  await page.fill('#adExhDesc', '那天下著大雨，我們還是走完了整條老街。');
+  await page.fill('#adExhOrder', '2');
+  await page.click('#adExhForm button[type="submit"]');
+  await page.waitForTimeout(1500);
+
+  const exhibits = await adb.collection('sites').doc(siteIds[SLUG])
+    .collection('exhibits').orderBy('order').get();
+  ok('展覽存了兩筆', exhibits.size === 2, `${exhibits.size} 筆`);
+  const [act, photo] = exhibits.docs.map((d) => d.data());
+  ok('第一筆是章節卡', act.kind === 'act' && act.title === '第一幕', JSON.stringify(act));
+  ok('第二筆是展品', photo.kind === 'photo' && photo.title === '第一次一起旅行');
+  ok('展品照片是 data URL',
+    String(photo.img || '').startsWith('data:image/jpeg;base64,'),
+    String(photo.img || '').slice(0, 24));
+
+  ok('囍卡與展覽分頁無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+{
+  /* 賓客那一側：抽卡用新人上傳的卡，收藏只記 cardId */
+  const { page, errors } = await visit(`/w/${SLUG}/draw`);
+  await page.waitForFunction(() => DataStore.getCards().length > 0, null, { timeout:10000 });
+  const cards = await page.evaluate(() => CARDS.map((c) => `${c.name}(${c.rarity})`));
+  ok('抽卡用新人上傳的卡池', cards.join('、') === '海邊的我們・改(SSR)', cards.join('、'));
+
+  await page.click('#drawBtn');
+  await page.waitForTimeout(1800);
+  const collected = await adb.collection('sites').doc(siteIds[SLUG])
+    .collection('collected').get();
+  ok('抽到的卡有收藏起來', collected.size === 1, `${collected.size} 筆`);
+  const rec = collected.size ? collected.docs[0].data() : {};
+  ok('收藏只記 cardId，不塞整段圖', rec.cardId && rec.art === '',
+    `${rec.cardId} / art=${JSON.stringify(rec.art)}`);
+  ok('收藏的小卡看得到圖',
+    await page.evaluate(() => !!document.querySelector('#collection .mini-card img')));
+  ok('抽卡頁無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+{
+  /* 賓客那一側：戀愛時光用新人設定的展品 */
+  const { page, errors } = await visit(`/w/${SLUG}/exhibition`);
+  await page.waitForFunction(() => DataStore.getExhibits().length > 0, null, { timeout:10000 });
+  await page.waitForTimeout(500);
+  const nodes = await page.evaluate(() => ({
+    photos: Array.from(document.querySelectorAll('.tl-node .tl-cap')).map((e) => e.textContent),
+    acts:   Array.from(document.querySelectorAll('.tl-act-div .ac-label')).map((e) => e.textContent),
+    imgs:   document.querySelectorAll('.tl-node .tl-ph img').length,
+  }));
+  ok('時間軸只剩新人設定的展品',
+    nodes.photos.join('、') === '第一次一起旅行', nodes.photos.join('、'));
+  ok('章節分隔卡有出現', nodes.acts.join('、') === '第一幕', nodes.acts.join('、'));
+  ok('展品照片有畫出來', nodes.imgs === 1, String(nodes.imgs));
+  ok('戀愛時光無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+
 /* ---------- 手機版 ---------- */
 console.log('\n[8] 手機版無水平捲動');
 for(const key of ['', 'wall', 'rsvp', 'quiz', 'seating', 'letter']){
@@ -773,6 +968,26 @@ for(const key of ['', 'wall', 'rsvp', 'quiz', 'seating', 'letter']){
   const overflow = await page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth);
   ok(`/${key || 'lobby'} 無水平捲動`, overflow <= 1, `溢出 ${overflow}px`);
+  await page.close();
+}
+
+{
+  /* 後台分頁多，手機上要能橫向滑動，但不能把整頁撐寬 */
+  const page = await newPage({ viewport:{ width:375, height:812 } });
+  await page.goto(`${BASE}/w/${SLUG}/admin`, { waitUntil:'domcontentloaded' });
+  await page.waitForFunction(
+    () => document.documentElement.dataset.siteReady === '1', null, { timeout:20000 });
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  await page.waitForTimeout(600);
+  const overflow = await page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  ok('/admin 無水平捲動', overflow <= 1, `溢出 ${overflow}px`);
+  ok('分頁列可以橫向滑動',
+    await page.evaluate(() => {
+      const el = document.getElementById('adTabs');
+      return el.scrollWidth > el.clientWidth;
+    }));
   await page.close();
 }
 

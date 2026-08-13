@@ -3,6 +3,12 @@
    ・每筆資料依照 n（編號）排序，混入幕別分隔卡
    ・第三幕之後不顯示時間／年份
    ・卡片下方提供美術館式的描述文字
+
+   內容從哪裡來？（由上而下，先找到就用）
+     1. 新人在後台 /w/{slug}/admin「展覽」分頁設定的展品（Firestore `exhibits`）
+     2. 素材資料夾 public/assets/{slug}/exhibition/
+     3. 下方 ITEMS 的內建範例
+
    填資料：在下方 ITEMS 陣列加入 {n, type, year, when, src, title, desc, act}
    　　　　幕別分隔卡：{type:'act', label, subtitle, n}
 ============================================================ */
@@ -118,66 +124,97 @@ const topProg   = document.getElementById('tlTopbar');
 const dotsWrap  = document.getElementById('tlDots');
 
 /* ===== 渲染所有節點（混合 photo 與 act） ===== */
-const photoNodes = [];
-const photoData  = [];
+let photoNodes = [];
+let photoData  = [];
+let dots       = [];
 
-ITEMS.forEach(item=>{
-  if(item.type === 'act'){
-    const div = document.createElement('div');
-    div.className = 'tl-act-div';
-    div.innerHTML = `
-      <div class="ac-label">${escapeHtml(item.label)}</div>
-      <div class="ac-line"></div>
-      <div class="ac-sub">${escapeHtml(item.subtitle)}</div>
+/* 後台設定的展品 → 這支檔案原本的資料格式
+   （kind='act' 是章節分隔卡，sub 在展品是時間補充、在章節是副標） */
+function ownerItems(){
+  return DataStore.getExhibits().map((it, i) => (it.kind === 'act'
+    ? { n: it.order ?? i, type:'act', label: it.title || '', subtitle: it.sub || '' }
+    : { n: it.order ?? i, type:'photo', src: it.img || '',
+        year: it.year || '', when: it.sub || '',
+        title: it.title || '', desc: it.desc || '', act: it.act || '' }));
+}
+
+function renderTimeline(items){
+  /* 只清掉上一輪的節點，軌道那條線是版型的一部分要留著 */
+  track.querySelectorAll('.tl-node, .tl-act-div').forEach(el => el.remove());
+  dotsWrap.innerHTML = '';
+  photoNodes = [];
+  photoData  = [];
+
+  items.forEach(item=>{
+    if(item.type === 'act'){
+      const div = document.createElement('div');
+      div.className = 'tl-act-div';
+      div.innerHTML = `
+        <div class="ac-label">${escapeHtml(item.label || '')}</div>
+        <div class="ac-line"></div>
+        <div class="ac-sub">${escapeHtml(item.subtitle || '')}</div>
+      `;
+      track.appendChild(div);
+      return;
+    }
+
+    const idx       = photoData.length;
+    const isFinale  = item.finale === true;
+    const fallback  = '';
+    const photoHtml = item.src
+      ? `<img src="${item.src}" alt="${escapeHtml(item.title)}" loading="lazy" onerror="this.parentNode.classList.add('no-img');this.remove();" data-fallback="${fallback}">`
+      : fallback;
+
+    /* 卡片下方的時間標籤：沒有時間就整列隱藏 */
+    const eyebrowText = item.year
+      ? (item.when ? `${item.year}・${item.when}` : item.year)
+      : '';
+    const eyebrowHtml = eyebrowText
+      ? `<div class="when">${escapeHtml(eyebrowText)}</div>`
+      : '';
+
+    const node = document.createElement('div');
+    node.className = 'tl-node' + (isFinale ? ' finale' : '') + (item.year ? '' : ' no-year');
+    node.dataset.idx = idx;
+    /* 交錯的微微傾斜（拍立得隨手擺放感） */
+    node.style.setProperty('--tilt', (idx % 2 === 0 ? '-1.4deg' : '1.6deg'));
+    node.innerHTML = `
+      <div class="tl-media">
+        <div class="tl-ph">${photoHtml}</div>
+        <div class="tl-cap">${escapeHtml(item.title)}</div>
+      </div>
+      <div class="tl-meta">
+        ${eyebrowHtml}
+        <p class="desc">${escapeHtml(item.desc || '')}</p>
+      </div>
     `;
-    track.appendChild(div);
-    return;
-  }
+    node.querySelector('.tl-media').addEventListener('click', ()=> openLightbox(idx));
+    track.appendChild(node);
 
-  const idx       = photoData.length;
-  const isFinale  = item.finale === true;
-  const fallback  = '';
-  const photoHtml = item.src
-    ? `<img src="${item.src}" alt="${escapeHtml(item.title)}" loading="lazy" onerror="this.parentNode.classList.add('no-img');this.remove();" data-fallback="${fallback}">`
-    : fallback;
+    photoNodes.push(node);
+    photoData.push(item);
 
-  /* 卡片下方的時間標籤：沒有時間就整列隱藏 */
-  const eyebrowText = item.year
-    ? (item.when ? `${item.year}・${item.when}` : item.year)
-    : '';
-  const eyebrowHtml = eyebrowText
-    ? `<div class="when">${escapeHtml(eyebrowText)}</div>`
-    : '';
+    const d = document.createElement('div');
+    d.className = 'pd' + (photoData.length === 1 ? ' on' : '');
+    dotsWrap.appendChild(d);
+  });
 
-  const node = document.createElement('div');
-  node.className = 'tl-node' + (isFinale ? ' finale' : '') + (item.year ? '' : ' no-year');
-  node.dataset.idx = idx;
-  /* 交錯的微微傾斜（拍立得隨手擺放感） */
-  node.style.setProperty('--tilt', (idx % 2 === 0 ? '-1.4deg' : '1.6deg'));
-  node.innerHTML = `
-    <div class="tl-media">
-      <div class="tl-ph">${photoHtml}</div>
-      <div class="tl-cap">${escapeHtml(item.title)}</div>
-    </div>
-    <div class="tl-meta">
-      ${eyebrowHtml}
-      <p class="desc">${escapeHtml(item.desc || '')}</p>
-    </div>
-  `;
-  track.appendChild(node);
+  dots = [...dotsWrap.children];
 
-  photoNodes.push(node);
-  photoData.push(item);
+  /* ===== 動態高度（節點越多滾得越久） ===== */
+  tlSec.style.height = Math.max(300, 100 + items.length * 70) + 'vh';
 
-  const d = document.createElement('div');
-  d.className = 'pd' + (photoData.length === 1 ? ' on' : '');
-  dotsWrap.appendChild(d);
-});
+  dragOffset = 0;
+  recalc();
+  onScroll();
+}
 
-const dots = [...dotsWrap.children];
-
-/* ===== 動態高度（節點越多滾得越久） ===== */
-tlSec.style.height = Math.max(300, 100 + ITEMS.length * 70) + 'vh';
+/* 後台有設定就整批換掉，沒有就沿用素材資料夾／內建範例 */
+function applyExhibits(){
+  const owner = ownerItems();
+  renderTimeline(owner.length ? owner.slice().sort((a,b)=> a.n - b.n) : ITEMS);
+}
+document.addEventListener('data:exhibits', applyExhibits);
 
 /* ===== 滾動邏輯 ===== */
 let dragOffset = 0;
@@ -186,7 +223,6 @@ let maxShift   = 0;
 function recalc(){
   maxShift = track.scrollWidth - window.innerWidth + window.innerWidth * 0.06;
 }
-recalc();
 addEventListener('resize', ()=>{ recalc(); onScroll(); });
 /* 拍立得寬度跟著照片實際尺寸走，圖片載入完要重算總寬度 */
 track.addEventListener('load', e => {
@@ -200,6 +236,9 @@ function onScroll(){
   const sc = window.scrollY;
   const h  = document.documentElement.scrollHeight - window.innerHeight;
   topProg.style.width = (h > 0 ? sc / h * 100 : 0) + '%';
+
+  /* 一張展品都沒有（新人把內容全刪了）就只更新進度條 */
+  if(!photoData.length) return;
 
   let p = 0;
   if(r.top <= 0 && r.bottom >= window.innerHeight) p = (-r.top) / total;
@@ -227,7 +266,6 @@ function onScroll(){
   dots.forEach((d, i)=> d.classList.toggle('on', i === nearest));
 }
 addEventListener('scroll', onScroll, {passive:true});
-onScroll();
 
 /* ===== 拖曳橫向（只在 sticky 釘住時可動） ===== */
 let dragging = false, startX = 0, startOffset = 0;
@@ -259,21 +297,24 @@ const lbT    = document.getElementById('lbT');
 const lbDate = document.getElementById('lbDate');
 const lbDesc = document.getElementById('lbDesc');
 
-photoNodes.forEach((n, i)=>{
-  n.querySelector('.tl-media').addEventListener('click', ()=>{
-    const item = photoData[i];
-    const isFinale = item.finale === true;
-    lbPh.innerHTML = item.src
-      ? `<img src="${item.src}" alt="${escapeHtml(item.title)}" onerror="this.parentNode.innerHTML='';">`
-      : '';
-    lbT.textContent    = item.title;
-    lbDate.textContent = item.year
-      ? (item.when ? `${item.year}・${item.when}` : item.year)
-      : (item.act || '');
-    if(lbDesc) lbDesc.textContent = item.desc || '';
-    lb.classList.add('open');
-  });
-});
+/* 點展品開大圖：節點是重畫的，所以綁在 renderTimeline() 裡逐張掛上 */
+function openLightbox(idx){
+  const item = photoData[idx];
+  if(!item) return;
+  lbPh.innerHTML = item.src
+    ? `<img src="${item.src}" alt="${escapeHtml(item.title)}" onerror="this.parentNode.innerHTML='';">`
+    : '';
+  lbT.textContent    = item.title;
+  lbDate.textContent = item.year
+    ? (item.when ? `${item.year}・${item.when}` : item.year)
+    : (item.act || '');
+  if(lbDesc) lbDesc.textContent = item.desc || '';
+  lb.classList.add('open');
+}
 document.getElementById('lbClose').onclick = ()=> lb.classList.remove('open');
 lb.addEventListener('click', e=>{ if(e.target === lb) lb.classList.remove('open'); });
 addEventListener('keydown', e=>{ if(e.key === 'Escape') lb.classList.remove('open'); });
+
+/* 先用素材資料夾／內建範例畫一次，後台設定的展品到了再整批換掉 */
+renderTimeline(ITEMS);
+DataStore.subscribeExhibits();

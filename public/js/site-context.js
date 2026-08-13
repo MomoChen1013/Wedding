@@ -21,7 +21,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/fireba
 import {
   getFirestore, collection, addDoc, onSnapshot,
   query, orderBy, where, doc, getDoc, runTransaction, serverTimestamp,
-  getDocs, deleteDoc, setDoc, writeBatch, connectFirestoreEmulator
+  getDocs, deleteDoc, setDoc, updateDoc, writeBatch, connectFirestoreEmulator
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 import {
   getAuth, signInAnonymously, signInWithPopup, signOut,
@@ -82,7 +82,7 @@ if (isLocal && !wantsLive) {
 window.fb = {
   db, auth,
   collection, addDoc, onSnapshot, query, orderBy, where, doc, getDoc,
-  runTransaction, serverTimestamp, getDocs, deleteDoc, setDoc, writeBatch,
+  runTransaction, serverTimestamp, getDocs, deleteDoc, setDoc, updateDoc, writeBatch,
   signInAnonymously, signInWithPopup, signOut,
   GoogleAuthProvider, onAuthStateChanged,
 };

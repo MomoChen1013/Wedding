@@ -234,6 +234,7 @@ const DataStore = {
      重複呼叫是安全的，只會訂閱一次。
   ============================================================ */
   _seating:[], _seatingImages:[], _blessings:[], _explore:[],
+  _cards:[], _exhibits:[],
   _subs:{},
 
   _lazySub(key, colName, orderField){
@@ -260,11 +261,17 @@ const DataStore = {
   },
   subscribeBlessings(){ this._lazySub('blessings', 'blessings', 'time'); },
   subscribeExplore(){   this._lazySub('explore',   'explore',   'order'); },
+  /* 囍卡與展品：新人自己上傳的圖是整段 data URL，資料量大，
+     所以只有抽卡頁、戀愛時光頁與後台才訂閱 */
+  subscribeCards(){    this._lazySub('cards',    'cards',    'order'); },
+  subscribeExhibits(){ this._lazySub('exhibits', 'exhibits', 'order'); },
 
   getSeating()       { return this._seating; },
   getSeatingImages() { return this._seatingImages; },
   getBlessings()     { return this._blessings; },
   getExplore()       { return this._explore; },
+  getCards()         { return this._cards; },
+  getExhibits()      { return this._exhibits; },
 
   /* ===== 新人專用的寫入（規則只認 ownerEmails 名單內的 Google 帳號） =====
      沒有 id 就新增，有 id 就覆寫同一份文件。 */
@@ -280,6 +287,17 @@ const DataStore = {
   async removeDoc(colName, id){
     const { deleteDoc, doc, db } = window.fb;
     await deleteDoc(doc(db, 'sites', window.SITE.siteId, colName, id));
+  },
+
+  /* 站台文件本身的大廳文案（地點、dress code、流程…）。
+     規則只放行白名單內的欄位，其他欄位（status、ownerEmails…）寫不進去。
+     寫完順手更新 window.SITE.data，後台不用重新整理就看得到最新值。 */
+  async saveSiteFields(patch){
+    const { updateDoc, doc, db, serverTimestamp } = window.fb;
+    const data = { ...patch, updatedAt: serverTimestamp() };
+    await updateDoc(doc(db, 'sites', window.SITE.siteId), data);
+    Object.assign(window.SITE.data, patch);
+    return patch;
   },
 
   /* 大量匯入桌次名單：400 筆一批送出（batch 上限 500，留一點餘裕） */

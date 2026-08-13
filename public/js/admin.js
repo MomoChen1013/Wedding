@@ -1,10 +1,13 @@
 /* ============================================================
    admin.js — 新人後台
    ------------------------------------------------------------
-   一個地方管三件事：
-     1. 桌次   — 上傳桌次圖、匯入賓客名單
-     2. 祝福信 — 寫給特定賓客的電子信
-     3. 首頁卡片 — Explore 區的自訂模組（連結型／彈窗型）
+   一個地方管六件事：
+     1. 大廳內容 — 地點、Dress Code、禮金說明、當日流程（寫回 sites 文件）
+     2. 桌次     — 上傳桌次圖、匯入賓客名單
+     3. 祝福信   — 寫給特定賓客的電子信
+     4. 首頁卡片 — Explore 區的自訂模組（連結型／彈窗型）
+     5. 囍卡     — 抽卡頁的卡池：裁切上傳照片、設等級與說明
+     6. 展覽     — 戀愛時光的展品與章節分隔卡
 
    門檻和悄悄話信箱一樣是 Google 登入，不是密碼：
    Security Rules 只讓 sites.ownerEmails 名單內、信箱已驗證的帳號寫入，
@@ -79,11 +82,19 @@ function openAdmin(){
   DataStore.subscribeSeating();
   DataStore.subscribeBlessings();
   DataStore.subscribeExplore();
+  DataStore.subscribeCards();
+  DataStore.subscribeExhibits();
   renderRsvps();
   renderSeatList();
   renderImages();
   renderLetters();
   renderExplore();
+  renderCards();
+  renderExhibits();
+
+  /* 大廳文案不是子集合，是站台文件本身；載入時已經讀進 window.SITE.data */
+  fillSiteForm();
+  renderSchedule(siteSchedule());
 }
 
 loginBtn.addEventListener('click', async ()=>{
@@ -705,6 +716,471 @@ ef.list.addEventListener('click', async (e)=>{
     try{
       await DataStore.removeDoc('explore', delId);
       if(ef.id.value === delId) resetExpForm();
+      toast('已刪除');
+    }catch(err){ writeFailed(err); }
+  }
+});
+
+/* ============================================================
+   4. 大廳內容（寫回 sites/{siteId} 的文案欄位）
+   ------------------------------------------------------------
+   這一頁改的不是子集合，而是站台文件本身。
+   規則只放行白名單內的欄位（地點、dress code、流程…），
+   status／ownerEmails／pages 這些「規則自己拿來判斷的欄位」寫不進去 ——
+   否則等於讓新人自己開後門。
+============================================================ */
+const sf = {
+  form:    document.getElementById('adSiteForm'),
+  venue:   document.getElementById('adVenueName'),
+  addr:    document.getElementById('adVenueAddress'),
+  map:     document.getElementById('adVenueMapUrl'),
+  dress:   document.getElementById('adDressCode'),
+  gift:    document.getElementById('adGiftNote'),
+  story:   document.getElementById('adStory'),
+  tags:    document.getElementById('adHashtags'),
+};
+
+function siteData(){ return (window.SITE && window.SITE.data) || {}; }
+
+function fillSiteForm(){
+  const d = siteData();
+  sf.venue.value = d.venueName    || '';
+  sf.addr.value  = d.venueAddress || '';
+  sf.map.value   = d.venueMapUrl  || '';
+  sf.dress.value = d.dressCode    || '';
+  sf.gift.value  = d.giftNote     || '';
+  sf.story.value = d.story        || '';
+  sf.tags.value  = Array.isArray(d.hashtags) ? d.hashtags.join(', ') : '';
+}
+document.getElementById('adSiteReset').addEventListener('click', fillSiteForm);
+
+sf.form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const map = sf.map.value.trim();
+  if(map && !/^https?:\/\//i.test(map)){
+    toast('地圖連結要以 http:// 或 https:// 開頭，或整格留白', true);
+    sf.map.focus();
+    return;
+  }
+
+  /* hashtag 沒寫 # 就自動補上，大廳才不會出現光禿禿的字 */
+  const hashtags = sf.tags.value
+    .split(/[,，\s]+/).map(s => s.trim()).filter(Boolean).slice(0, 10)
+    .map(s => (s.startsWith('#') ? s : `#${s}`).slice(0, 40));
+
+  try{
+    await DataStore.saveSiteFields({
+      venueName:    sf.venue.value.trim().slice(0, 80),
+      venueAddress: sf.addr.value.trim().slice(0, 200),
+      venueMapUrl:  map.slice(0, 500),
+      dressCode:    sf.dress.value.trim().slice(0, 500),
+      giftNote:     sf.gift.value.trim().slice(0, 500),
+      story:        sf.story.value.trim().slice(0, 2000),
+      hashtags,
+    });
+    fillSiteForm();
+    toast('婚禮資訊已更新，重新整理大廳就看得到');
+  }catch(err){ writeFailed(err); }
+});
+
+/* ---------- 當日流程 ----------
+   一列一個項目，順序就是大廳時間軸的顯示順序（不依時間重排）。 */
+const schListEl = document.getElementById('adSchList');
+
+function siteSchedule(){
+  const s = siteData().schedule;
+  return Array.isArray(s) ? s : [];
+}
+
+function schRowHtml(item){
+  const it = item || {};
+  return `
+    <div class="ad-sch-row">
+      <input class="ad-input ad-sch-time"  type="text" maxlength="20"
+             value="${escapeHtml(it.time || '')}"  placeholder="11:30">
+      <input class="ad-input ad-sch-title" type="text" maxlength="40"
+             value="${escapeHtml(it.title || '')}" placeholder="入場迎賓">
+      <input class="ad-input ad-sch-desc"  type="text" maxlength="80"
+             value="${escapeHtml(it.desc || '')}"  placeholder="說明（選填）">
+      <button class="ad-del" type="button" data-sch-del="1">刪除</button>
+    </div>`;
+}
+
+function renderSchedule(list){
+  schListEl.innerHTML = (list && list.length)
+    ? list.map(schRowHtml).join('')
+    : schRowHtml(null);
+}
+
+document.getElementById('adSchAdd').addEventListener('click', ()=>{
+  schListEl.insertAdjacentHTML('beforeend', schRowHtml(null));
+});
+
+schListEl.addEventListener('click', (e)=>{
+  if(!e.target.dataset.schDel) return;
+  e.target.closest('.ad-sch-row').remove();
+  if(!schListEl.children.length) renderSchedule([]);
+});
+
+document.getElementById('adSchSave').addEventListener('click', async ()=>{
+  /* 整列都空白的就當作沒填，新人不用先刪乾淨才存得起來 */
+  const rows = Array.from(schListEl.querySelectorAll('.ad-sch-row')).map(row => ({
+    time:  row.querySelector('.ad-sch-time').value.trim().slice(0, 20),
+    title: row.querySelector('.ad-sch-title').value.trim().slice(0, 40),
+    desc:  row.querySelector('.ad-sch-desc').value.trim().slice(0, 80),
+  })).filter(r => r.time || r.title || r.desc).slice(0, 40);
+
+  const bad = rows.findIndex(r => !r.title);
+  if(bad >= 0){
+    toast(`第 ${bad + 1} 列還沒填項目名稱`, true);
+    return;
+  }
+
+  try{
+    await DataStore.saveSiteFields({ schedule: rows });
+    renderSchedule(rows);
+    toast(rows.length ? `已儲存 ${rows.length} 個流程項目` : '流程已清空');
+  }catch(err){ writeFailed(err); }
+});
+
+/* ============================================================
+   5. 囍卡（抽卡頁的卡池）
+   ------------------------------------------------------------
+   照片先讓新人自己裁成 2:3（cropper.js），再以 data URL 存進文件，
+   理由與桌次圖相同：Firebase Storage 的規則讀不到 Firestore，
+   沒辦法用 ownerEmails 白名單判斷是不是新人本人。
+============================================================ */
+const CARD_ASPECT   = 2/3;      /* 卡片是直式 2:3 */
+const CARD_OUTWIDTH = 700;      /* 700×1050，手機上顯示寬度約 300px，這個解析度綽綽有餘 */
+/* 抽卡頁會一次載入整個卡池（要隨機抽，沒辦法只載一張），
+   所以每張卡壓得比桌次圖更小 —— 30 張大約 4MB，手機用行動網路也還行。
+   規則的上限仍是 950000，這裡是自我約束。 */
+const CARD_MAX_BYTES = 200000;
+
+const cardListEl  = document.getElementById('adCardList');
+const cardFileEl  = document.getElementById('adCardFile');
+const cardUpload  = document.getElementById('adCardUpload');
+const cardProgEl  = document.getElementById('adCardProgress');
+
+async function uploadCards(files){
+  const list = Array.from(files).filter(f => f.type.startsWith('image/'));
+  if(!list.length){ toast('請選圖片檔', true); return; }
+
+  cardProgEl.hidden = false;
+  let done = 0, skipped = 0, failed = 0;
+  let order = DataStore.getCards().length;
+
+  for(let i = 0; i < list.length; i++){
+    const file = list[i];
+    cardProgEl.textContent = `裁切中… ${i + 1} / ${list.length}`;
+    try{
+      const img = await cropImage(file, {
+        aspect:   CARD_ASPECT,
+        outWidth: CARD_OUTWIDTH,
+        maxBytes: CARD_MAX_BYTES,
+        title:    `裁切囍卡（${i + 1} / ${list.length}）`,
+        hint:     '直式 2:3・拖曳移動、滑桿或滾輪縮放',
+      });
+      if(!img){ skipped++; continue; }     /* 新人自己按了取消 */
+
+      order += 1;
+      await DataStore.saveDoc('cards', null, {
+        img,
+        name:   file.name.replace(/\.[^.]+$/, '').slice(0, 60) || `囍卡 ${order}`,
+        rarity: 'N',
+        desc:   '',
+        order,
+        time:   Date.now(),
+      });
+      done++;
+    }catch(err){
+      failed++;
+      console.warn('[admin] 囍卡上傳失敗', file.name, err);
+    }
+  }
+
+  cardProgEl.hidden = true;
+  cardFileEl.value = '';
+  if(failed) toast(`已加入 ${done} 張，${failed} 張失敗（可能是格式不支援）`, true);
+  else if(done) toast(`已加入 ${done} 張囍卡${skipped ? `（略過 ${skipped} 張）` : ''}`);
+  else if(skipped) toast('沒有加入任何一張');
+}
+
+cardFileEl.addEventListener('change', ()=> uploadCards(cardFileEl.files));
+
+['dragenter','dragover'].forEach(ev =>
+  cardUpload.addEventListener(ev, (e)=>{ e.preventDefault(); cardUpload.classList.add('is-over'); }));
+['dragleave','drop'].forEach(ev =>
+  cardUpload.addEventListener(ev, (e)=>{ e.preventDefault(); cardUpload.classList.remove('is-over'); }));
+cardUpload.addEventListener('drop', (e)=>{
+  if(e.dataTransfer && e.dataTransfer.files.length) uploadCards(e.dataTransfer.files);
+});
+
+const RARITIES = ['SSR', 'SR', 'R', 'N'];
+
+function renderCards(){
+  const list = DataStore.getCards();
+  document.getElementById('adCardCount').textContent = `目前 ${list.length} 張`;
+
+  if(!list.length){
+    cardListEl.innerHTML =
+      `<div class="ad-empty">還沒有囍卡<br>沒上傳的話，抽卡頁會沿用素材資料夾或內建的範例卡</div>`;
+    return;
+  }
+
+  cardListEl.innerHTML = list.map(c => `
+    <figure class="ad-card" data-id="${c.id}">
+      <img src="${escapeHtml(c.img)}" alt="${escapeHtml(c.name || '')}">
+      <figcaption>
+        <input class="ad-input ad-card-name" type="text" maxlength="60"
+               value="${escapeHtml(c.name || '')}" placeholder="卡名">
+        <select class="ad-input ad-card-rarity">
+          ${RARITIES.map(r =>
+            `<option value="${r}"${(c.rarity || 'N') === r ? ' selected' : ''}>${r}</option>`).join('')}
+        </select>
+        <input class="ad-input ad-card-desc" type="text" maxlength="200"
+               value="${escapeHtml(c.desc || '')}" placeholder="說明（選填）">
+        <div class="ad-card-actions">
+          <span class="ad-order">#${c.order ?? 0}</span>
+          <button class="ad-edit" type="button" data-recrop="${c.id}">重新裁切</button>
+          <button class="ad-del"  type="button" data-del-card="${c.id}">刪除</button>
+        </div>
+      </figcaption>
+    </figure>`).join('');
+}
+document.addEventListener('data:cards', renderCards);
+
+/* 卡名／等級／說明改完（離開欄位）就存回去 */
+cardListEl.addEventListener('change', async (e)=>{
+  const box = e.target.closest('.ad-card');
+  if(!box || e.target.matches('input[type="file"]')) return;
+  const item = DataStore.getCards().find(c => c.id === box.dataset.id);
+  if(!item) return;
+
+  const rarity = box.querySelector('.ad-card-rarity').value;
+  try{
+    await DataStore.saveDoc('cards', item.id, {
+      img:    item.img,
+      name:   box.querySelector('.ad-card-name').value.trim().slice(0, 60),
+      rarity: RARITIES.includes(rarity) ? rarity : 'N',
+      desc:   box.querySelector('.ad-card-desc').value.trim().slice(0, 200),
+      order:  item.order || 0,
+      time:   item.time || Date.now(),
+    });
+    toast('已更新');
+  }catch(err){ writeFailed(err); }
+});
+
+cardListEl.addEventListener('click', async (e)=>{
+  const recropId = e.target.dataset.recrop;
+  const delId    = e.target.dataset.delCard;
+
+  if(recropId){
+    const item = DataStore.getCards().find(c => c.id === recropId);
+    if(!item) return;
+    /* 拿現有的圖再裁一次：只能往內縮，但對「當初切歪了」很夠用 */
+    const img = await cropImage(item.img, {
+      aspect:   CARD_ASPECT,
+      outWidth: CARD_OUTWIDTH,
+      maxBytes: CARD_MAX_BYTES,
+      title:    '重新裁切囍卡',
+    });
+    if(!img) return;
+    try{
+      await DataStore.saveDoc('cards', item.id, {
+        img,
+        name:   item.name || '',
+        rarity: RARITIES.includes(item.rarity) ? item.rarity : 'N',
+        desc:   item.desc || '',
+        order:  item.order || 0,
+        time:   item.time || Date.now(),
+      });
+      toast('已重新裁切');
+    }catch(err){ writeFailed(err); }
+    return;
+  }
+
+  if(delId){
+    if(!confirm('確定要刪掉這張囍卡嗎？')) return;
+    try{
+      await DataStore.removeDoc('cards', delId);
+      toast('已刪除');
+    }catch(err){ writeFailed(err); }
+  }
+});
+
+/* ============================================================
+   6. 展覽（戀愛時光）
+   ------------------------------------------------------------
+   兩種型態，用同一個表單填：
+     kind='photo' → 時間軸上的一張展品（照片可留空，只放文字）
+     kind='act'   → 章節分隔卡（title 是章節名、sub 是副標）
+   排序欄位決定先後，章節卡要排在它底下那些展品前面。
+============================================================ */
+const EXH_OUTWIDTH = 900;
+/* 展品也是整頁一次載完，同樣壓小一點（理由見囍卡） */
+const EXH_MAX_BYTES = 250000;
+
+const xf = {
+  form:   document.getElementById('adExhForm'),
+  id:     document.getElementById('adExhId'),
+  img:    document.getElementById('adExhImg'),
+  kind:   document.getElementById('adExhKind'),
+  title:  document.getElementById('adExhTitle'),
+  sub:    document.getElementById('adExhSub'),
+  year:   document.getElementById('adExhYear'),
+  act:    document.getElementById('adExhAct'),
+  desc:   document.getElementById('adExhDesc'),
+  order:  document.getElementById('adExhOrder'),
+  ratio:  document.getElementById('adExhRatio'),
+  file:   document.getElementById('adExhFile'),
+  prev:   document.getElementById('adExhPrev'),
+  descLen:document.getElementById('adExhDescLen'),
+  list:   document.getElementById('adExhList'),
+  photoBoxes: [document.getElementById('adExhPhotoBox'),
+               document.getElementById('adExhPhotoBox2')],
+};
+
+xf.desc.addEventListener('input', ()=>{ xf.descLen.textContent = xf.desc.value.length; });
+
+/* 章節卡只有名稱與副標，照片與年份那幾格就收起來 */
+function syncExhKind(){
+  const isAct = xf.kind.value === 'act';
+  xf.photoBoxes.forEach(box => { box.hidden = isAct; });
+  document.querySelectorAll('[data-kind-label]').forEach(el => {
+    el.hidden = el.dataset.kindLabel !== (isAct ? 'act' : 'photo');
+  });
+}
+xf.kind.addEventListener('change', syncExhKind);
+syncExhKind();
+
+function setExhPreview(dataUrl){
+  xf.img.value = dataUrl || '';
+  xf.prev.innerHTML = dataUrl
+    ? `<img src="${escapeHtml(dataUrl)}" alt="展品照片預覽">`
+    : `<span>還沒有照片</span>`;
+}
+
+document.getElementById('adExhPickBtn').addEventListener('click', ()=> xf.file.click());
+document.getElementById('adExhClearImg').addEventListener('click', ()=> setExhPreview(''));
+
+xf.file.addEventListener('change', async ()=>{
+  const file = xf.file.files && xf.file.files[0];
+  xf.file.value = '';
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ toast('請選圖片檔', true); return; }
+  try{
+    const img = await cropImage(file, {
+      aspect:   Number(xf.ratio.value) || 0.75,
+      outWidth: EXH_OUTWIDTH,
+      maxBytes: EXH_MAX_BYTES,
+      title:    '裁切展品照片',
+    });
+    if(img) setExhPreview(img);
+  }catch(err){
+    console.warn('[admin] 展品裁切失敗', err);
+    toast('這張圖讀不進來，換一張試試', true);
+  }
+});
+
+function resetExhForm(){
+  xf.form.reset();
+  xf.id.value = '';
+  setExhPreview('');
+  xf.descLen.textContent = '0';
+  xf.order.value = String(DataStore.getExhibits().length + 1);
+  syncExhKind();
+}
+document.getElementById('adExhReset').addEventListener('click', resetExhForm);
+
+xf.form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const kind  = xf.kind.value === 'act' ? 'act' : 'photo';
+  const title = xf.title.value.trim();
+
+  if(!title){
+    toast(kind === 'act' ? '章節名稱不能是空的' : '展品標題不能是空的', true);
+    xf.title.focus();
+    return;
+  }
+  if(kind === 'photo' && !xf.img.value && !xf.desc.value.trim()){
+    toast('展品至少要有一張照片或一段描述', true);
+    return;
+  }
+
+  try{
+    await DataStore.saveDoc('exhibits', xf.id.value || null, {
+      kind,
+      img:   kind === 'photo' ? xf.img.value : '',
+      title: title.slice(0, 60),
+      sub:   xf.sub.value.trim().slice(0, 60),
+      desc:  kind === 'photo' ? xf.desc.value.trim().slice(0, 500) : '',
+      year:  kind === 'photo' ? xf.year.value.trim().slice(0, 20) : '',
+      act:   kind === 'photo' ? xf.act.value.trim().slice(0, 40) : '',
+      order: Number(xf.order.value) || 0,
+      time:  Date.now(),
+    });
+    resetExhForm();
+    toast('已儲存');
+  }catch(err){ writeFailed(err); }
+});
+
+function renderExhibits(){
+  const list = DataStore.getExhibits();
+  if(!list.length){
+    xf.list.innerHTML =
+      `<div class="ad-empty">還沒有展品<br>沒設定的話，戀愛時光會沿用素材資料夾或內建的範例</div>`;
+    return;
+  }
+  xf.list.innerHTML = list.map(it => `
+    <div class="ad-item">
+      ${it.kind === 'photo' && it.img
+        ? `<img class="ad-exh-thumb" src="${escapeHtml(it.img)}" alt="">`
+        : ''}
+      <div class="ad-item-main">
+        <span class="ad-item-title">${escapeHtml(it.title || '（沒有標題）')}</span>
+        <span class="ad-tag">${it.kind === 'act' ? '章節' : '展品'}</span>
+        ${it.year ? `<span class="ad-tag">${escapeHtml(it.year)}</span>` : ''}
+        ${it.sub ? `<span class="ad-item-sub">${escapeHtml(it.sub)}</span>` : ''}
+        ${it.desc ? `<span class="ad-item-sub">${escapeHtml(it.desc.slice(0, 60))}${
+          it.desc.length > 60 ? '…' : ''}</span>` : ''}
+      </div>
+      <div class="ad-item-actions">
+        <span class="ad-order">#${it.order ?? 0}</span>
+        <button class="ad-edit" type="button" data-edit-exh="${it.id}">編輯</button>
+        <button class="ad-del"  type="button" data-del-exh="${it.id}">刪除</button>
+      </div>
+    </div>`).join('');
+}
+document.addEventListener('data:exhibits', renderExhibits);
+
+xf.list.addEventListener('click', async (e)=>{
+  const editId = e.target.dataset.editExh;
+  const delId  = e.target.dataset.delExh;
+
+  if(editId){
+    const it = DataStore.getExhibits().find(x => x.id === editId);
+    if(!it) return;
+    xf.id.value    = it.id;
+    xf.kind.value  = it.kind === 'act' ? 'act' : 'photo';
+    xf.title.value = it.title || '';
+    xf.sub.value   = it.sub   || '';
+    xf.year.value  = it.year  || '';
+    xf.act.value   = it.act   || '';
+    xf.desc.value  = it.desc  || '';
+    xf.order.value = String(it.order ?? 0);
+    xf.descLen.textContent = xf.desc.value.length;
+    setExhPreview(it.img || '');
+    syncExhKind();
+    xf.form.scrollIntoView({ behavior:'smooth', block:'start' });
+    return;
+  }
+
+  if(delId){
+    if(!confirm('確定要刪掉這一筆嗎？')) return;
+    try{
+      await DataStore.removeDoc('exhibits', delId);
+      if(xf.id.value === delId) resetExhForm();
       toast('已刪除');
     }catch(err){ writeFailed(err); }
   }

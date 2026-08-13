@@ -62,7 +62,7 @@
 │   ├─ draw.html  exhibition.html  quiz.html  inbox.html
 │   ├─ seating.html           # 我的桌次（婚禮當天查桌次 + 桌次圖）
 │   ├─ letter.html            # 給你的信（新人寫的電子祝福信）
-│   ├─ admin.html             # 新人後台（出席回覆／桌次／祝福信／首頁卡片）
+│   ├─ admin.html             # 新人後台（回覆／大廳文案／桌次／祝福信／卡片／囍卡／展覽）
 │   ├─ invitation.html        # 單頁式邀請函（獨立版型，自成一格）
 │   ├─ shortlink.html         # 短連結轉址頁
 │   ├─ 404.html
@@ -71,6 +71,7 @@
 │   └─ js/
 │       ├─ site-context.js    # ★ 每頁唯一進入點：解析 slug、載設定、注入其他 JS
 │       ├─ common.js          # 資料層 DataStore、導覽、特效、樣板文字
+│       ├─ cropper.js         # 後台專用的照片裁切器（只有 admin.html 載入）
 │       └─ index.js rsvp.js …           # 各頁邏輯
 ├─ scripts/
 │   ├─ create-site.js         # 建立客戶站台（slug transaction）
@@ -134,15 +135,20 @@ sites/{siteId}
   letters/{autoId}     name, icon, text, time          # 悄悄話信箱
   cakes/{autoId}       name, icon, cake, emoji, img, time
   compat/{autoId}      answers[], time                 # 新人小測驗
-  collected/{autoId}   uid, userName, art, name, rarity, desc, time
+  collected/{autoId}   uid, userName, art, name, rarity, desc, cardId, time
+                       # cardId：後台上傳的卡圖太長塞不進 art，改記 id
   meta/hearts          count                           # 愛心計數器
   meta/letterCount     count                           # 公開的信件數量
 
-  # ↓ 這四個集合由新人在 /w/{slug}/admin 自己維護（規則只認 ownerEmails 名單）
+  # ↓ 這六個集合由新人在 /w/{slug}/admin 自己維護（規則只認 ownerEmails 名單）
   seating/{autoId}       name, table, note, time       # 桌次名單
   seatingImages/{autoId} img(data URL), title, order, time   # 桌次圖
   blessings/{autoId}     terms[], title, body, sign, isDefault, time  # 電子祝福信
   explore/{autoId}       title, sub, kind(link|popup), url, body, order, time
+  cards/{autoId}         img(data URL), name, rarity(SSR|SR|R|N), desc, order, time
+                                                       # 囍卡卡池（抽卡頁）
+  exhibits/{autoId}      kind(photo|act), img(data URL), title, sub,
+                         desc, year, act, order, time  # 戀愛時光的展品與章節
 
 slugs/{slug}                # 文件 ID 就是 slug 本身
   siteId, createdAt
@@ -172,10 +178,10 @@ short/{code}                # 6 碼短連結
 整個欄位沒填就顯示「流程稍後公布，敬請期待」。
 
 這個欄位**沒有對應的 CLI 參數**（`create-site.js` 不會寫入），
-要設定或修改就到 Firebase Console 直接編輯 `sites/{siteId}`。
-`dressCode`、`giftNote` 也一樣：`create-site.js` 的 `--dress-code`／`--gift-note`
-只在建站當下有效，站台建好之後要改文案，一律走 Console。
-改完重新整理網頁就生效，不需要重新 deploy。
+但新人可以在後台「大廳內容」分頁自己編（見下面的〈新人後台〉）。
+`dressCode`、`giftNote`、`venueName`、`venueAddress`、`story`、`hashtags` 也一樣 ——
+`create-site.js` 的參數只在建站當下有效，之後要改文案就進後台。
+改完重新整理網頁就生效，不需要重新 deploy，也不用進 Firebase Console。
 
 ---
 
@@ -331,9 +337,9 @@ npm run set-pages -- --slug ginny-one-20260919 \
 
 ---
 
-## 新人後台：桌次、祝福信、首頁自訂卡片
+## 新人後台：大廳文案、桌次、祝福信、卡片、囍卡、展覽
 
-這三個模組的內容**不走 CLI、也不用進 Firebase Console**，
+這些內容**不走 CLI、也不用進 Firebase Console**，
 新人自己在後台就能維護，改完重新整理網頁就生效（不必重新 deploy）。
 
 ```
@@ -348,7 +354,8 @@ npm run set-pages -- --slug ginny-one-20260919 \
   --owner-email groom@gmail.com --owner-email bride@gmail.com
 ```
 
-> 後台目前有四個分頁：**出席回覆**、**桌次**、**祝福信**、**首頁卡片**。
+> 後台目前有七個分頁：**出席回覆**、**大廳內容**、**桌次**、**祝福信**、
+> **首頁卡片**、**囍卡**、**展覽**。手機上分頁列可以左右滑。
 
 > 這個網址不會出現在導覽列，也沒有任何頁面連過去（`noindex`），
 > 但真正的保護是 **Security Rules**：不在名單內的帳號就算打開這一頁、
@@ -481,6 +488,86 @@ public/assets/{slug}/seating/
 
 ---
 
+### 4. 大廳內容（後台「大廳內容」分頁）
+
+大廳（首頁）上的文字，新人自己改：
+
+| 欄位 | 說明 |
+|---|---|
+| 地點名稱 | 資訊卡上的大字 |
+| 地址 | 地點下方的小字，也是「開啟地圖」的預設搜尋字串 |
+| 地圖連結 | 只收 `http(s)://` 開頭；留白就用地址自動開 Google 地圖 |
+| Dress Code | 留白會顯示預設的一句話 |
+| 關於禮金 | 同上 |
+| 兩人的故事 | 用在單頁式邀請函 |
+| 婚禮 hashtag | 逗號分開，最多 10 個；沒寫 `#` 會自動補上 |
+
+**當日流程**在同一頁下半部，一列一個項目（時間／項目／說明）。
+由上到下就是時間軸的顯示順序 —— **不會依時間重新排**，
+所以「11:30 起」這種寫法也沒問題。一列都沒有時，大廳顯示「流程稍後公布」。
+
+> **改不動的欄位**：新人姓名、婚禮日期、頁面開關、出席回覆的開關與截止時間。
+> 這些是 Security Rules 自己拿來判斷的依據（或會影響網址與倒數計時），
+> 規則層只放行文案欄位的 `update`，其他欄位連夾帶都會被整筆拒絕。
+> 要改這些請跑 `npm run set-pages` 或找我們。
+
+---
+
+### 5. 囍卡（後台「囍卡」分頁）
+
+抽卡頁（`/w/{slug}/draw`）的卡池。
+
+選好照片會**先跳出裁切框**：拖曳移動、滾輪／滑桿／兩指縮放，
+框裡看到的就是最後存下來的樣子（卡片是直式 2:3）。
+一次可以選很多張，會一張一張輪流裁切；按「取消」就跳過那一張。
+
+裁好之後每張卡可以改：
+
+| 欄位 | 說明 |
+|---|---|
+| 卡名 | 顯示在卡片下方，預設用檔名 |
+| 等級 | `SSR`／`SR` 抽到時有彩虹光膜與煙火；`R`／`N` 是一般卡 |
+| 說明 | 選填，顯示在大卡下方的小紙條 |
+
+改完離開欄位就自動存檔，不用另外按儲存。想重切構圖就按「重新裁切」。
+
+> **每張卡被抽到的機率相同**。想讓稀有卡難抽，就少放幾張 SSR、多放幾張 N。
+
+> **只要這裡有任何一張卡，抽卡頁就整批用它**，不再讀素材資料夾
+> （全有或全無，不會混在一起）。都沒有時才依序退回
+> `assets/{slug}/cards/` → 內建範例卡。
+
+---
+
+### 6. 展覽（後台「展覽」分頁）
+
+戀愛時光（`/w/{slug}/exhibition`）那條橫向時間軸，兩種東西：
+
+| 型態 | 是什麼 | 要填 |
+|---|---|---|
+| 展品 | 時間軸上的一張拍立得 | 照片（可留空）、標題、年份、時間補充、章節、描述 |
+| 章節分隔卡 | 中間那張「第一幕・我們的相遇」 | 章節名稱、副標 |
+
+兩種都用**排序**決定先後，數字小的排前面 ——
+章節卡的排序要放在它底下那些展品的前面。
+
+照片一樣會跳出裁切框，比例可以選直式 3:4／方形 1:1／橫式 4:3。
+沒有照片的展品也存得起來，可以先把文字寫完之後再補圖。
+
+> 和囍卡一樣：**只要這裡有任何一筆，戀愛時光就整批用它**，
+> 都沒有時才退回 `assets/{slug}/exhibition/` → 內建範例。
+
+> **照片為什麼要存成 data URL**：和桌次圖同一個理由 ——
+> Firebase Storage 的規則讀不到 Firestore，沒辦法用 `ownerEmails`
+> 判斷「是不是新人本人」。存進文件就能沿用同一套身分判斷。
+> 代價是有大小上限，裁切器會自動把畫質與尺寸壓到符合。
+
+> **卡圖與展品壓得比桌次圖更小**（約 150KB／190KB，桌次圖是 900KB）：
+> 抽卡是隨機抽、時間軸是整條滑，兩者都沒辦法「只載一張」——
+> 賓客一進頁面就會把整批圖載下來。所以囍卡建議控制在 30 張以內。
+
+---
+
 ## 素材（照片）怎麼放
 
 **用站台的 slug 當資料夾名稱，把圖丟進去，跑一個指令就好**，
@@ -574,6 +661,10 @@ npx firebase deploy --only hosting
 網頁載入時會自動抓 `manifest.json`，把封面、大廳背景、照片牆、
 展品、囍卡、甜點全部換成這組新人的素材。
 **沒放素材的站台會沿用內建的預設圖，不會壞掉。**
+
+> 囍卡與戀愛時光還有更上面一層：新人在後台上傳的內容會**整批蓋過**
+> 這裡的素材資料夾。素材資料夾適合圖多、想版控的情況；
+> 後台適合新人自己隨時換。兩邊都有時以後台為準。
 
 ### meta.json：幫圖片加文字說明
 
@@ -764,9 +855,15 @@ npm run test:multipage
 [5]  RSVP 寫入                 # attending 為 boolean、guestCount、meal
 [6]  未定回覆                  # maybe → attending:false + tentative:true
 [7]  不存在的 slug             # 中文找不到畫面
-[8]  手機版無水平捲動
-[9]  素材資料夾自動載入      # manifest、大廳背景、甜點、囍卡、展品
-[10] 信箱權限                # 賓客寫得進、讀不到；數量看得到
+[8]  手機版無水平捲動          # 含後台（分頁列可橫向滑動）
+[9]  素材資料夾自動載入        # manifest、大廳背景、甜點、囍卡、展品
+[10] 信箱權限                  # 賓客寫得進、讀不到；數量看得到
+[11] 桌次查詢                  # 名字比對、同桌名單、信件入口
+[12] 電子祝福信                # 專屬詞彙、通用信
+[13] Explore 自訂卡片          # 連結型／彈窗型、編號重編
+[14] 新人後台                  # Google 登入、外人進不去也寫不進去
+[15] 後台改大廳文案            # 地點／Dress Code／流程寫回 sites，大廳同步
+[16] 後台上傳囍卡與展品        # 裁切器、卡池整批取代、收藏只記 cardId
 ```
 
 ### 單頁邀請函測試

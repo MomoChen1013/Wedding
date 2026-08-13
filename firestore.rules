@@ -43,10 +43,36 @@ service cloud.firestore {
         && data.time is number;
     }
 
+    /* 新人在後台可以改的站台欄位：只有大廳看得到的文案。
+       slug／status／ownerEmails／pages／rsvp* 一律不在名單內 ——
+       那些欄位是規則自己的判斷依據，能改的話等於能自己開後門。 */
+    function isValidSiteContentUpdate(siteId) {
+      let d = request.resource.data;
+      return isSiteOwner(siteId)
+        && d.diff(resource.data).affectedKeys().hasOnly([
+             'venueName', 'venueAddress', 'venueMapUrl',
+             'dressCode', 'giftNote', 'story', 'schedule', 'hashtags',
+             'updatedAt',
+           ])
+        && (!('venueName'    in d) || isStr(d.venueName, 80))
+        && (!('venueAddress' in d) || isStr(d.venueAddress, 200))
+        && (!('venueMapUrl'  in d) || (isStr(d.venueMapUrl, 500)
+             && (d.venueMapUrl == '' || d.venueMapUrl.matches('https?://.*'))))
+        && (!('dressCode' in d) || isStr(d.dressCode, 500))
+        && (!('giftNote'  in d) || isStr(d.giftNote, 500))
+        && (!('story'     in d) || isStr(d.story, 2000))
+        /* schedule 的每一筆是 map，規則語言沒辦法逐筆檢查內容，
+           只擋住筆數與型別；真正的長度限制在後台送出前先切好。 */
+        && (!('schedule' in d) || (d.schedule is list && d.schedule.size() <= 40))
+        && (!('hashtags' in d) || (d.hashtags is list && d.hashtags.size() <= 10));
+    }
+
     /* ---------- sites ---------- */
     match /sites/{siteId} {
       allow read: if true;
-      allow create, update, delete: if false;
+      /* 新人只改得動大廳文案，其餘欄位（含站台本身的建立與刪除）走 Admin SDK */
+      allow update: if isValidSiteContentUpdate(siteId);
+      allow create, delete: if false;
 
       /* 出席回覆：任何人都可以新增（需通過驗證），
          但只有新人本人讀得到 —— 和悄悄話信箱同一套身分判斷。
@@ -122,12 +148,15 @@ service cloud.firestore {
           && sitePublished(siteId)
           && request.auth != null
           && request.resource.data.uid == request.auth.uid
-          && request.resource.data.keys().hasOnly(['uid', 'userName', 'art', 'name', 'rarity', 'desc', 'time'])
+          && request.resource.data.keys().hasOnly(['uid', 'userName', 'art', 'name', 'rarity', 'desc', 'cardId', 'time'])
           && isStr(request.resource.data.userName, 40)
           && isStr(request.resource.data.name, 60)
+          /* art 存的是圖片網址或符號，長度有限；新人自己上傳的卡圖是整段
+             data URL，塞不進這裡，所以改存 cardId，畫面再回 cards 取圖。 */
           && isStr(request.resource.data.art, 300)
           && isStr(request.resource.data.rarity, 8)
           && (!('desc' in request.resource.data) || isStr(request.resource.data.desc, 200))
+          && (!('cardId' in request.resource.data) || isStr(request.resource.data.cardId, 60))
           && request.resource.data.time is number;
         allow update, delete: if false;
       }
@@ -229,6 +258,47 @@ service cloud.firestore {
           && (request.resource.data.kind != 'link'
               || request.resource.data.url.matches('https?://.*'))
           && isStr(request.resource.data.body, 2000)
+          && request.resource.data.order is number
+          && request.resource.data.time is number;
+        allow delete: if isSiteOwner(siteId);
+      }
+
+      /* 囍卡：新人在後台裁切上傳自己的照片，順便設等級與說明。
+         和桌次圖同一套做法（data URL 存進文件），原因見 seatingImages。
+         這個集合有東西時，抽卡頁就整批用它，不再讀素材資料夾。 */
+      match /cards/{cardId} {
+        allow read: if true;
+        allow create, update: if isSiteOwner(siteId)
+          && request.resource.data.keys().hasOnly(['img', 'name', 'rarity', 'desc', 'order', 'time'])
+          && request.resource.data.img is string
+          && request.resource.data.img.size() <= 950000
+          && request.resource.data.img.matches('data:image/.*')
+          && isStr(request.resource.data.name, 60)
+          && request.resource.data.rarity in ['SSR', 'SR', 'R', 'N']
+          && isStr(request.resource.data.desc, 200)
+          && request.resource.data.order is number
+          && request.resource.data.time is number;
+        allow delete: if isSiteOwner(siteId);
+      }
+
+      /* 戀愛時光的展品與章節分隔卡。
+         kind='photo' → 一張展品照（img 可以留空，只放文字）
+         kind='act'   → 章節分隔卡，title 是章節名、sub 是副標
+         沒有照片的展品也收，新人可以先寫文字之後再補圖。 */
+      match /exhibits/{exhibitId} {
+        allow read: if true;
+        allow create, update: if isSiteOwner(siteId)
+          && request.resource.data.keys().hasOnly(['kind', 'img', 'title', 'sub', 'desc', 'year', 'act', 'order', 'time'])
+          && request.resource.data.kind in ['photo', 'act']
+          && request.resource.data.img is string
+          && request.resource.data.img.size() <= 950000
+          && (request.resource.data.img == ''
+              || request.resource.data.img.matches('data:image/.*'))
+          && isStr(request.resource.data.title, 60)
+          && isStr(request.resource.data.sub, 60)
+          && isStr(request.resource.data.desc, 500)
+          && isStr(request.resource.data.year, 20)
+          && isStr(request.resource.data.act, 40)
           && request.resource.data.order is number
           && request.resource.data.time is number;
         allow delete: if isSiteOwner(siteId);

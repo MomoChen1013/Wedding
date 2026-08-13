@@ -79,17 +79,22 @@ sites/{siteId}
   letters/{autoId}    name, icon, text(≤1000), time     # 悄悄話信箱
   cakes/{autoId}      name, icon, cake, emoji, img, time
   compat/{autoId}     answers(list ≤50), time           # 新人小測驗
-  collected/{autoId}  uid, userName, art, name, rarity, desc, time
+  collected/{autoId}  uid, userName, art, name, rarity, desc, cardId, time
   meta/hearts         count(int)                        # 愛心計數器
   meta/letterCount    count(int)                        # 公開的信件數量
 
-  # 以下四個由新人在 /w/{slug}/admin 維護，寫入需通過 ownerEmails 白名單
+  # 以下六個由新人在 /w/{slug}/admin 維護，寫入需通過 ownerEmails 白名單
   seating/{autoId}       name, table, note(≤100), time            # 桌次名單
   seatingImages/{autoId} img(data URL ≤950000), title, order, time # 桌次圖
   blessings/{autoId}     terms(list ≤20), title, body(≤2000),
                          sign, isDefault(bool), time              # 電子祝福信
   explore/{autoId}       title, sub, kind('link'|'popup'),
                          url, body(≤2000), order, time            # 首頁自訂卡片
+  cards/{autoId}         img(data URL ≤950000), name(≤60),        # 囍卡卡池
+                         rarity('SSR'|'SR'|'R'|'N'), desc(≤200), order, time
+  exhibits/{autoId}      kind('photo'|'act'), img(data URL ≤950000 或 ''),
+                         title(≤60), sub(≤60), desc(≤500),        # 戀愛時光的展品
+                         year(≤20), act(≤40), order, time         # kind='act' 是章節分隔卡
 
 slugs/{slug}                # 網址佔位對照表，文件 ID 就是 slug 本身
   siteId          : string
@@ -129,8 +134,8 @@ short/{code}                # 短連結
 陣列順序即顯示順序，不會依 `time` 重新排序。
 整個欄位沒填或是空陣列時，畫面顯示「流程稍後公布，敬請期待」。
 
-`schedule` 目前**沒有對應的 CLI**：`create-site.js` 不會寫入這個欄位，
-要設定就到 Firebase Console 編輯 `sites/{siteId}`。
+`schedule` 沒有對應的 CLI（`create-site.js` 不會寫入這個欄位），
+改由新人在後台「大廳內容」分頁自己編（見第 13.4 節）。
 
 ---
 
@@ -140,12 +145,14 @@ short/{code}                # 短連結
 
 | 路徑 | read | create | update | delete |
 |---|---|---|---|---|
-| `sites/{siteId}` | 允許 | 拒絕 | 拒絕 | 拒絕 |
+| `sites/{siteId}` | 允許 | 拒絕 | 新人（限文案欄位） | 拒絕 |
 | `sites/{siteId}/rsvps/{id}` | 新人 | 允許（需通過驗證） | 拒絕 | 拒絕 |
 | `sites/{siteId}/seating/{id}` | 允許 | 新人 | 新人 | 新人 |
 | `sites/{siteId}/seatingImages/{id}` | 允許 | 新人 | 新人 | 新人 |
 | `sites/{siteId}/blessings/{id}` | 允許 | 新人 | 新人 | 新人 |
 | `sites/{siteId}/explore/{id}` | 允許 | 新人 | 新人 | 新人 |
+| `sites/{siteId}/cards/{id}` | 允許 | 新人 | 新人 | 新人 |
+| `sites/{siteId}/exhibits/{id}` | 允許 | 新人 | 新人 | 新人 |
 | `slugs/{slug}` | 允許 | 拒絕 | 拒絕 | 拒絕 |
 | `short/{code}` | 允許 | 拒絕 | 拒絕 | 拒絕 |
 
@@ -155,12 +162,32 @@ short/{code}                # 短連結
 
 | 型態 | 集合 | read | write |
 |---|---|---|---|
-| 賓客要用的內容 | `seating` `seatingImages` `blessings` `explore` | 公開 | 新人 |
+| 賓客要用的內容 | `seating` `seatingImages` `blessings` `explore` `cards` `exhibits` | 公開 | 新人 |
 | 賓客交上來的資料 | `rsvps` `letters` | 新人 | 賓客（create only） |
 
 上面那組 **read 必須公開**，因為比對（桌次查名字、祝福信對暗號）在瀏覽器端做——
 Firestore 的讀取請求不帶條件，規則沒有辦法「只讓對得上的人讀到那一筆」。
 不能被別人看到的內容請放下面那組，它們的 read 綁在 Auth 簽發的身分上。
+
+### 站台文件的 update：只放行文案欄位
+
+`sites/{siteId}` 的 `update` 從全面禁止改成「新人可以改文案」，
+但只認白名單裡的欄位：
+
+```
+venueName venueAddress venueMapUrl dressCode giftNote story schedule hashtags updatedAt
+```
+
+實作用 `request.resource.data.diff(resource.data).affectedKeys().hasOnly([...])`，
+所以夾帶任何一個名單外的欄位（哪怕其他欄位都合法）整筆就被拒。
+
+**為什麼 `status`、`ownerEmails`、`pages`、`rsvpEnabled`、`rsvpDeadline` 不能改**：
+這些欄位是規則自己拿來做判斷的依據。
+放行等於讓新人可以把自己以外的帳號加進白名單、把已截止的 RSVP 重新打開 ——
+規則就不再是邊界了。要改這些欄位一律走 Admin SDK（`set-pages.js`）。
+
+`schedule` 的每一筆是 map，規則語言沒辦法逐筆檢查內容，
+只擋筆數（≤40）與型別；長度上限在後台送出前先切好。
 
 ### RSVP 建立時的驗證條件
 
@@ -279,6 +306,8 @@ slug 不存在、格式不合法、站台非 `published`、或連線失敗時，
 
 `public/` 底下另有既有的 Ethan & Momo 單場客製婚禮站，與本模板獨立並存。
 
+`public/js/cropper.js` 是後台專用的照片裁切器，只有 `admin.html` 會載入它。
+
 ---
 
 ## 8. 邀請函頁面的視覺要求
@@ -394,6 +423,8 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
 - 各子資料夾可放選填的 `meta.json`，用檔名當 key 補上標題／年份／稀有度等文字
 - 沒放素材的站台沿用內建預設，不會壞掉
 - Firestore 的 `coverImageUrl`／`photos` 有填時優先於資料夾掃描結果
+- 囍卡與戀愛時光另外多一層：新人在後台上傳的 `cards`／`exhibits`
+  有東西時，整批蓋過素材資料夾（見第 13.5、13.6 節）
 
 **為什麼需要掃描步驟**：瀏覽器無法列出伺服器上的目錄，
 所以由建置端掃一次寫成 manifest，前端再讀 manifest。
@@ -427,7 +458,7 @@ allow read: if request.auth != null
 ## 13. 新人自己維護的內容（後台 `/w/{slug}/admin`）
 
 前面幾個模組的內容都是建站時由 CLI 寫進去、之後改要走 Console。
-以下三個模組的內容**由新人自己在瀏覽器裡維護**，改完重新整理就生效，
+以下六個模組的內容**由新人自己在瀏覽器裡維護**，改完重新整理就生效，
 不需要 deploy、也不需要我們介入。
 
 進入條件與悄悄話信箱相同：Google 登入 + 信箱在 `sites.ownerEmails` 名單內。
@@ -488,3 +519,54 @@ Firestore 的讀取請求不帶條件，規則無法「只讓對得上的人讀�
 `url` 只收 `http(s)://` 開頭，規則層與前端各擋一次，
 `javascript:` 之類的協定寫不進資料庫、也不會被渲染成連結。
 卡片編號在自訂卡加入後整批重編，不會跳號。
+
+### 13.4 大廳文案（`sites` 文件本身）
+
+地點、Dress Code、禮金說明、兩人的故事、hashtag 與當日流程，
+原本要進 Firebase Console 改，現在在後台「大廳內容」分頁就能編。
+
+寫入的是 `sites/{siteId}` 這份文件，不是子集合 ——
+所以規則是「限定欄位的 update」而不是整份文件開放（見第 3 節）。
+新人姓名、日期、頁面開關**刻意不放進來**：那些會影響網址、倒數計時
+與 RSVP 的判斷條件，仍然由我們用 Admin SDK 改。
+
+當日流程是一列一個項目的表格，順序就是時間軸的順序（不依時間重排）；
+整份存成 `schedule` 陣列，一次覆寫。
+
+### 13.5 囍卡（`cards`）
+
+抽卡頁的卡池。新人上傳自己的照片，設定卡名、等級（SSR／SR／R／N）與說明。
+
+**照片一定會經過裁切器**（`js/cropper.js`）：卡片是直式 2:3，
+手上的照片幾乎不會剛好對上，不裁的話不是被塞歪就是人被切掉。
+裁切框就是最後存下來的範圍（所見即所得），可以拖曳、滾輪／滑桿／兩指縮放，
+確定後輸出 700×1050 的 JPEG data URL。
+
+**為什麼卡圖壓得比桌次圖更小（200000 字元，規則上限仍是 950000）**：
+抽卡是隨機抽，沒辦法只載一張 —— 賓客一進抽卡頁就會把整個卡池載下來。
+30 張大約 4MB，行動網路還撐得住；照桌次圖的 900KB 上限來存就會變成 27MB。
+展品同理，上限抓 250000 字元。
+
+卡池的來源優先序：`cards` 集合 → `assets/{slug}/cards/` → 內建範例卡，
+**全有或全無**，不會混在一起。
+
+**抽卡收藏為什麼多一個 `cardId`**：`collected.art` 的長度上限是 300 字元
+（規則層擋著，避免每抽一張就寫進一份大文件）。
+新人上傳的卡圖是整段 data URL，塞不進去，
+所以收藏只記 `cardId`，畫面再回 `cards` 取圖。
+素材資料夾與內建範例卡沿用原本的 `art`，舊資料不受影響。
+
+### 13.6 展覽（`exhibits`）
+
+戀愛時光那條橫向時間軸的內容，兩種型態：
+
+| `kind` | 畫面 | 欄位 |
+|---|---|---|
+| `photo` | 一張拍立得展品 | `img`（可留空）、`title`、`year`、`sub`（時間補充）、`act`、`desc` |
+| `act` | 章節分隔卡 | `title`（章節名）、`sub`（副標） |
+
+兩種都用 `order` 排先後，章節卡的 `order` 要小於它底下的展品。
+照片同樣走裁切器，比例可選直式 3:4／方形 1:1／橫式 4:3。
+沒有照片的展品也收得下 —— 新人可以先把文字寫完，之後再補圖。
+
+來源優先序與囍卡相同：`exhibits` → `assets/{slug}/exhibition/` → 內建範例。
