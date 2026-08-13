@@ -4,10 +4,24 @@
 if(!requireUser()) { /* requireUser 已導向首頁 */ }
 
 /* ---------- 簽到祝福留言牆 ---------- */
+const WISH_TONES = 6;                       /* 對應 wall.css 的 .wish-note[data-tone] */
+const WISH_TILTS = [-1.1, .8, -.5, 1.2, -.8, .5];
+
+/* 由留言本身算出固定的色票／傾角：重新渲染或多人同時留言都不會跳色 */
+function wishSeed(w, i){
+  const key = String(w.id || (w.time + '' + (w.name || '')) || i);
+  let h = 0;
+  for(let k = 0; k < key.length; k++) h = (h * 31 + key.charCodeAt(k)) >>> 0;
+  return h;
+}
+
 function renderWishes(){
   const wall=document.getElementById('wishWall'); wall.innerHTML='';
-  DataStore.getWishes().slice().reverse().forEach(w=>{
+  DataStore.getWishes().slice().reverse().forEach((w, i)=>{
+    const seed = wishSeed(w, i);
     const d=document.createElement('div'); d.className='wish-note';
+    d.dataset.tone = seed % WISH_TONES;
+    d.style.setProperty('--note-tilt', WISH_TILTS[(seed >> 3) % WISH_TILTS.length] + 'deg');
     d.innerHTML=`${escapeHtml(w.text)}`
       + `<div class="by">${escapeHtml(w.icon||DEFAULT_ICON)} ${escapeHtml(w.name)}</div>`;
     wall.appendChild(d);
