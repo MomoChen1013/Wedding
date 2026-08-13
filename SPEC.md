@@ -78,12 +78,13 @@ sites/{siteId}
   wishes/{autoId}     name, icon, text(≤300), time      # 祝福牆
   letters/{autoId}    name, icon, text(≤1000), time     # 悄悄話信箱
   cakes/{autoId}      name, icon, cake, emoji, img, time
-  compat/{autoId}     answers(list ≤50), time           # 新人小測驗
+  quizVotes/{autoId}  picks(map ≤50), score(int), total(int), time
+                      # 小測驗的作答；picks 是 題目id → 選項索引 list
   collected/{autoId}  uid, userName, art, name, rarity, desc, cardId, time
   meta/hearts         count(int)                        # 愛心計數器
   meta/letterCount    count(int)                        # 公開的信件數量
 
-  # 以下六個由新人在 /w/{slug}/admin 維護，寫入需通過 ownerEmails 白名單
+  # 以下七個由新人在 /w/{slug}/admin 維護，寫入需通過 ownerEmails 白名單
   seating/{autoId}       name, table, note(≤100), time            # 桌次名單
   seatingImages/{autoId} img(data URL ≤950000), title, order, time # 桌次圖
   blessings/{autoId}     terms(list ≤20), title, body(≤2000),
@@ -95,6 +96,10 @@ sites/{siteId}
   exhibits/{autoId}      kind('photo'|'act'), img(data URL ≤950000 或 ''),
                          title(≤60), sub(≤60), desc(≤500),        # 戀愛時光的展品
                          year(≤20), act(≤40), order, time         # kind='act' 是章節分隔卡
+  quiz/{autoId}          type('single'|'multi'), q(≤60),          # 小測驗的題目
+                         opts(list，固定 4 個，每個 ≤40),           # 最多 50 題
+                         answer(list，正確答案的索引；single 只有 1 個),
+                         order, time
 
 slugs/{slug}                # 網址佔位對照表，文件 ID 就是 slug 本身
   siteId          : string
@@ -153,6 +158,8 @@ short/{code}                # 短連結
 | `sites/{siteId}/explore/{id}` | 允許 | 新人 | 新人 | 新人 |
 | `sites/{siteId}/cards/{id}` | 允許 | 新人 | 新人 | 新人 |
 | `sites/{siteId}/exhibits/{id}` | 允許 | 新人 | 新人 | 新人 |
+| `sites/{siteId}/quiz/{id}` | 允許 | 新人 | 新人 | 新人 |
+| `sites/{siteId}/quizVotes/{id}` | 允許 | 允許（需通過驗證） | 拒絕 | 新人（重置票數） |
 | `slugs/{slug}` | 允許 | 拒絕 | 拒絕 | 拒絕 |
 | `short/{code}` | 允許 | 拒絕 | 拒絕 | 拒絕 |
 
@@ -162,8 +169,9 @@ short/{code}                # 短連結
 
 | 型態 | 集合 | read | write |
 |---|---|---|---|
-| 賓客要用的內容 | `seating` `seatingImages` `blessings` `explore` `cards` `exhibits` | 公開 | 新人 |
+| 賓客要用的內容 | `seating` `seatingImages` `blessings` `explore` `cards` `exhibits` `quiz` | 公開 | 新人 |
 | 賓客交上來的資料 | `rsvps` `letters` | 新人 | 賓客（create only） |
+| 賓客的公開投票 | `wishes` `cakes` `quizVotes` | 公開 | 賓客（create only） |
 
 上面那組 **read 必須公開**，因為比對（桌次查名字、祝福信對暗號）在瀏覽器端做——
 Firestore 的讀取請求不帶條件，規則沒有辦法「只讓對得上的人讀到那一筆」。
@@ -458,7 +466,7 @@ allow read: if request.auth != null
 ## 13. 新人自己維護的內容（後台 `/w/{slug}/admin`）
 
 前面幾個模組的內容都是建站時由 CLI 寫進去、之後改要走 Console。
-以下六個模組的內容**由新人自己在瀏覽器裡維護**，改完重新整理就生效，
+以下七個模組的內容**由新人自己在瀏覽器裡維護**，改完重新整理就生效，
 不需要 deploy、也不需要我們介入。
 
 進入條件與悄悄話信箱相同：Google 登入 + 信箱在 `sites.ownerEmails` 名單內。
@@ -570,3 +578,45 @@ Firestore 的讀取請求不帶條件，規則無法「只讓對得上的人讀�
 沒有照片的展品也收得下 —— 新人可以先把文字寫完，之後再補圖。
 
 來源優先序與囍卡相同：`exhibits` → `assets/{slug}/exhibition/` → 內建範例。
+
+### 13.7 測驗（`quiz` ＋ `quizVotes`）
+
+「看你多了解我們」原本是寫死在 `quiz.js` 裡的兩份題庫
+（主測驗 + 契合度長條圖），只有原作那對新人適用。
+現在合併成**一份一頁式測驗**，題目搬進 `quiz` 集合由新人自己出。
+
+| 欄位 | 內容 |
+|---|---|
+| `type` | `single` 單選（賓客選完自動捲到下一題）／`multi` 複選（全對才得分） |
+| `q` | 題目，≤60 字 |
+| `opts` | 固定四個選項，每個 ≤40 字 |
+| `answer` | 正確答案的索引 list；`single` 只有一個元素 |
+| `order` | 題號順序，後台的 ↑ ↓ 會整批重編成 1…n |
+
+上限 50 題（`quizVotes.picks` 也跟著擋在 50 以內）。
+規則語言沒辦法逐一檢查 list 裡每個元素的型別與長度，
+所以「選項幾個字、索引是不是 0–3」由後台送出前切好、擋好；
+規則負責的是欄位白名單、四個選項、單選只能有一個答案這些結構性條件。
+
+**賓客那一側**：整頁排完所有題目 → 全部作答完才送得出去 →
+看到分數與每題的長條圖。長條裡寫的是**選項內容**（選項可能很長，
+外面那一欄放不下），一行寫不完就以「…」收尾，不會溢出長條、
+也不會壓到「你」的標籤。
+
+**只會出現「你」一種標籤**：新人不必自己作答（正確答案在後台就設好了），
+所以不再有原本那個「新人」標籤；正確答案改用長條的顏色與 `✓` 標記。
+
+**作答為什麼用題目 id 當 key**：`picks = { 題目id: [選項索引] }`。
+用題號當 key 的話，新人之後調順序或刪題目，舊票就會對到別題去；
+綁 id 則是「對不到的題目就不顯示」。
+另外 Firestore 的陣列不能再放陣列，複選題的答案也因此必須包在 map 裡
+（`picks is map` 是規則層唯一擋得住的形狀）。
+
+**預設題目**（`js/quiz-defaults.js`，賓客頁與後台共用同一份）有兩個身分：
+新人還沒進後台時是賓客那一頁的退路；新人第一次打開後台「測驗」分頁時，
+這 3 題會被寫進 `quiz` 當起點。整份刪光後不會自動補回來
+（以 `localStorage` 的 `quizSeeded` 記著），清單上有手動載入的按鈕。
+
+**舊資料**：原本的 `compat` 集合已經沒有程式在讀，規則也不再放行 ——
+那些票對應的是寫死的舊題目，併進新題目沒有意義。
+需要清掉的話走 Admin SDK。

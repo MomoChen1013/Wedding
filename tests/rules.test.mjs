@@ -753,6 +753,109 @@ describe('exhibits（展品與章節）', () => {
 });
 
 /* ============================================================
+   測驗：題目由新人出，作答紀錄由賓客送
+============================================================ */
+describe('quiz（測驗的題目與作答）', () => {
+  const OWNER = 'couple@example.com';
+
+  function ownerDb(email = OWNER) {
+    return testEnv
+      .authenticatedContext('couple', { email, email_verified: true })
+      .firestore();
+  }
+
+  function question(overrides = {}) {
+    return {
+      type: 'single',
+      q: '我們是怎麼認識的？',
+      opts: ['朋友介紹', '同學或同事', '在網路上聊起來', '旅行的路上'],
+      answer: [0],
+      order: 1,
+      time: Date.now(),
+      ...overrides,
+    };
+  }
+
+  function vote(overrides = {}) {
+    return { picks: { q1: [0], q2: [1, 3] }, score: 1, total: 2, time: Date.now(), ...overrides };
+  }
+
+  beforeEach(async () => {
+    await seedSite(SITE_ID, { ownerEmails: [OWNER] });
+  });
+
+  it('賓客讀得到題目，但不能自己出題', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(getDocs(collection(db, `sites/${SITE_ID}/quiz`)));
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/quiz`), question()));
+  });
+
+  it('新人可以新增、修改、刪除題目', async () => {
+    const db = ownerDb();
+    const ref = doc(db, `sites/${SITE_ID}/quiz/q1`);
+    await assertSucceeds(setDoc(ref, question()));
+    await assertSucceeds(setDoc(ref, question({ q: '我們在哪裡認識的？', answer: [2] })));
+    await assertSucceeds(deleteDoc(ref));
+  });
+
+  it('複選題可以有多個正確答案，單選題只能有一個', async () => {
+    const db = ownerDb();
+    await assertSucceeds(setDoc(doc(db, `sites/${SITE_ID}/quiz/q2`),
+      question({ type: 'multi', answer: [0, 3] })));
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/quiz/q3`),
+      question({ type: 'single', answer: [0, 3] })));
+  });
+
+  it('選項不是四個、沒有題目、沒有答案都會被拒', async () => {
+    const db = ownerDb();
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/quiz/q4`),
+      question({ opts: ['只有兩個', '選項'] })));
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/quiz/q5`), question({ q: '' })));
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/quiz/q6`), question({ answer: [] })));
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/quiz/q7`), question({ type: 'open' })));
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/quiz/q8`),
+      question({ q: '字'.repeat(61) })));
+  });
+
+  it('不在名單內的登入帳號出不了題', async () => {
+    await assertFails(setDoc(doc(ownerDb('nosy@example.com'), `sites/${SITE_ID}/quiz/q9`),
+      question()));
+  });
+
+  it('賓客送得出作答，票數公開可讀', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(addDoc(collection(db, `sites/${SITE_ID}/quizVotes`), vote()));
+    await assertSucceeds(getDocs(collection(db, `sites/${SITE_ID}/quizVotes`)));
+  });
+
+  it('作答夾帶額外欄位、或分數不是數字會被拒', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/quizVotes`),
+      vote({ name: '王小明' })));
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/quizVotes`),
+      vote({ score: '滿分' })));
+  });
+
+  it('站台關掉測驗頁時，作答寫不進去', async () => {
+    await seedSite(SITE_ID, { ownerEmails: [OWNER], pages: { quiz: false, wall: true } });
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/quizVotes`), vote()));
+  });
+
+  it('作答不能被改；只有新人清得掉', async () => {
+    let id;
+    await testEnv.withSecurityRulesDisabled(async (c) => {
+      const ref = await addDoc(collection(c.firestore(), `sites/${SITE_ID}/quizVotes`), vote());
+      id = ref.id;
+    });
+    const guest = testEnv.unauthenticatedContext().firestore();
+    await assertFails(updateDoc(doc(guest, `sites/${SITE_ID}/quizVotes/${id}`), { score: 99 }));
+    await assertFails(deleteDoc(doc(guest, `sites/${SITE_ID}/quizVotes/${id}`)));
+    await assertSucceeds(deleteDoc(doc(ownerDb(), `sites/${SITE_ID}/quizVotes/${id}`)));
+  });
+});
+
+/* ============================================================
    大廳文案：新人改得動文字，但改不動規則自己要用的欄位
 ============================================================ */
 describe('sites 的大廳文案更新', () => {
