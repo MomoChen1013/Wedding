@@ -63,6 +63,7 @@
     <button class="ad-tab" type="button" data-tab="explore">首頁卡片</button>
     <button class="ad-tab" type="button" data-tab="cards">囍卡</button>
     <button class="ad-tab" type="button" data-tab="exhibits">展覽</button>
+    <button class="ad-tab" type="button" data-tab="quiz">測驗</button>
   </nav>
 
   <!-- 存檔提示 -->
@@ -459,10 +460,120 @@
     </section>
   </div>
 
+  <!-- ============================================================
+       分頁 7：測驗（賓客那一頁的題目與選項）
+  ============================================================ -->
+  <div class="ad-panel" data-panel="quiz">
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">新增題目</h2>
+      <p class="ad-sec-note">
+        這裡出的題目就是賓客在<b>「看你多了解我們」</b>看到的那一份，一頁式：
+        單選題賓客選完會自動跳下一題，複選題<b>全對才得分</b>。
+        每題固定四個選項，勾起來的那個（或那幾個）就是正確答案 ——
+        新人不用自己作答，送出後長條圖上只會出現賓客自己的「你」。
+        最多 50 題，順序用下面清單的 ↑ ↓ 調。
+      </p>
+
+      <form class="ad-form" id="adQuizForm">
+        <input type="hidden" id="adQuizId">
+
+        <label class="ad-label" for="adQuizType">題型</label>
+        <select class="ad-input" id="adQuizType">
+          <option value="single">單選（選完自動跳下一題）</option>
+          <option value="multi">複選（全對才得分）</option>
+        </select>
+
+        <label class="ad-label" for="adQuizQ">題目</label>
+        <input class="ad-input" id="adQuizQ" type="text" maxlength="60"
+               placeholder="我們是怎麼認識的？">
+        <div class="ad-count"><span id="adQuizQLen">0</span> / 60</div>
+
+        <label class="ad-label">四個選項（勾選正確答案）</label>
+        <div class="ad-quiz-opts" id="adQuizOpts">
+          <div class="ad-quiz-opt">
+            <label class="ad-quiz-ans" title="設為正確答案">
+              <input type="radio" name="adQuizAns" data-oi="0">
+              <span class="ad-quiz-ltr">A</span>
+            </label>
+            <input class="ad-input ad-quiz-text" type="text" maxlength="40"
+                   data-oi="0" placeholder="選項 A">
+          </div>
+          <div class="ad-quiz-opt">
+            <label class="ad-quiz-ans" title="設為正確答案">
+              <input type="radio" name="adQuizAns" data-oi="1">
+              <span class="ad-quiz-ltr">B</span>
+            </label>
+            <input class="ad-input ad-quiz-text" type="text" maxlength="40"
+                   data-oi="1" placeholder="選項 B">
+          </div>
+          <div class="ad-quiz-opt">
+            <label class="ad-quiz-ans" title="設為正確答案">
+              <input type="radio" name="adQuizAns" data-oi="2">
+              <span class="ad-quiz-ltr">C</span>
+            </label>
+            <input class="ad-input ad-quiz-text" type="text" maxlength="40"
+                   data-oi="2" placeholder="選項 C">
+          </div>
+          <div class="ad-quiz-opt">
+            <label class="ad-quiz-ans" title="設為正確答案">
+              <input type="radio" name="adQuizAns" data-oi="3">
+              <span class="ad-quiz-ltr">D</span>
+            </label>
+            <input class="ad-input ad-quiz-text" type="text" maxlength="40"
+                   data-oi="3" placeholder="選項 D">
+          </div>
+        </div>
+        <div class="ad-count">一個選項最多 40 字（太長的話賓客看到的長條會以「…」收尾）</div>
+
+        <div class="ad-row">
+          <button class="btn small" type="submit">儲存這一題</button>
+          <button class="btn small ghost" id="adQuizReset" type="button">清空欄位</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">題目清單</h2>
+      <p class="ad-sec-note">
+        由上到下就是賓客看到的題號順序，用 ↑ ↓ 調。
+        改完題目或刪掉題目，賓客重新整理測驗頁就會看到新的題目
+        —— 已經作答過的票會留著，但對不到的題目不會再顯示。
+      </p>
+      <div class="ad-count" id="adQuizCount">目前 0 題</div>
+      <div class="ad-list" id="adQuizList"></div>
+    </section>
+
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">賓客的作答紀錄</h2>
+      <p class="ad-sec-note">
+        長條圖的票數就是從這裡來的。測試完想歸零、或婚禮當天想重新開始統計，
+        就按下面那顆清空 —— 題目不會被動到。
+      </p>
+
+      <div class="ad-stats">
+        <div class="ad-stat">
+          <div class="ad-stat-num" id="adQuizVoteCount">0</div>
+          <div class="ad-stat-lab">作答人數</div>
+        </div>
+        <div class="ad-stat">
+          <div class="ad-stat-num" id="adQuizAvg">—</div>
+          <div class="ad-stat-lab">平均分數</div>
+        </div>
+      </div>
+
+      <div class="ad-row">
+        <button class="btn small ghost" id="adQuizWipe" type="button">清空所有作答紀錄</button>
+      </div>
+    </section>
+  </div>
+
 </section>
 
 <!-- 照片裁切器：只有後台用得到，先載好，admin.js 直接呼叫 cropImage() -->
 <script defer src="/js/cropper.js"></script>
+
+<!-- 測驗的預設題目與欄位上限（與賓客那一頁共用同一份） -->
+<script defer src="/js/quiz-defaults.js"></script>
 
 <!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與本頁 JS -->
 <script type="module" src="/js/site-context.js"></script>

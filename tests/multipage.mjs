@@ -955,6 +955,196 @@ const TEST_PNG = {
   await page.close();
 }
 
+/* ---------- 後台的測驗題目 ---------- */
+console.log('\n[17] 後台出測驗題目');
+
+const quizCol = adb.collection('sites').doc(siteIds[SLUG]).collection('quiz');
+const voteCol = adb.collection('sites').doc(siteIds[SLUG]).collection('quizVotes');
+const LONG_OPT = '這是一個故意寫得非常長的選項內容，長到一行放不完，一定會被收成刪節號';
+
+{
+  /* 先清空題目，才驗得出「第一次打開後台就有 3 題預設題目」 */
+  const old = await quizCol.get();
+  await Promise.all(old.docs.map((d) => d.ref.delete()));
+
+  const { page, errors } = await visit(`/w/${SLUG}/admin`);
+  page.on('dialog', (d) => d.accept());
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  await page.click('.ad-tab[data-tab="quiz"]');
+
+  /* 預設題目 */
+  await page.waitForFunction(() => DataStore.getQuiz().length === 3, null, { timeout:15000 });
+  const seeded = (await quizCol.orderBy('order').get()).docs.map((d) => d.data());
+  ok('第一次打開就寫進 3 題預設題目', seeded.length === 3, `${seeded.length} 題`);
+  ok('預設題目的題號是 1、2、3',
+    seeded.map((q) => q.order).join(',') === '1,2,3', seeded.map((q) => q.order).join(','));
+  ok('每題都是四個選項',
+    seeded.every((q) => Array.isArray(q.opts) && q.opts.length === 4),
+    seeded.map((q) => (q.opts || []).length).join(','));
+  ok('預設題目有單選也有複選',
+    seeded.some((q) => q.type === 'single') && seeded.some((q) => q.type === 'multi'),
+    seeded.map((q) => q.type).join(','));
+
+  /* 新增一題複選 */
+  await page.selectOption('#adQuizType', 'multi');
+  await page.fill('#adQuizQ', '我們的貓最愛做什麼？');
+  await page.fill('.ad-quiz-text[data-oi="0"]', LONG_OPT);
+  await page.fill('.ad-quiz-text[data-oi="1"]', '睡整天');
+  await page.fill('.ad-quiz-text[data-oi="2"]', '討摸');
+  await page.fill('.ad-quiz-text[data-oi="3"]', '看著我們工作');
+  await page.check('.ad-quiz-ans input[data-oi="0"]');
+  await page.check('.ad-quiz-ans input[data-oi="2"]');
+  await page.click('#adQuizForm button[type="submit"]');
+  await page.waitForFunction(() => DataStore.getQuiz().length === 4, null, { timeout:15000 });
+
+  const added = (await quizCol.orderBy('order').get()).docs.map((d) => d.data()).pop();
+  ok('新題目排在最後', added.order === 4, String(added.order));
+  ok('新題目是複選、答案有兩個',
+    added.type === 'multi' && added.answer.join(',') === '0,2',
+    `${added.type} / ${added.answer.join(',')}`);
+  ok('選項內容照原文存下來', added.opts[0] === LONG_OPT, added.opts[0]);
+
+  /* 調順序：把第一題往後移 */
+  const before = (await quizCol.orderBy('order').get()).docs.map((d) => d.id);
+  await page.click('#adQuizList .ad-item:nth-child(1) [data-quiz-down]');
+  await page.waitForTimeout(1800);
+  const after = (await quizCol.orderBy('order').get()).docs.map((d) => d.id);
+  ok('↓ 把第一題換到第二題',
+    after[0] === before[1] && after[1] === before[0], after.slice(0, 2).join(' → '));
+  ok('順序仍然是連號 1…4',
+    (await quizCol.orderBy('order').get()).docs
+      .map((d) => d.data().order).join(',') === '1,2,3,4');
+
+  /* 刪一題 */
+  const delId = after[after.length - 1];
+  await page.click(`#adQuizList [data-del-quiz="${delId}"]`);
+  await page.waitForFunction(() => DataStore.getQuiz().length === 3, null, { timeout:15000 });
+  ok('刪得掉題目', (await quizCol.get()).size === 3, `${(await quizCol.get()).size} 題`);
+
+  ok('測驗分頁無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+
+/* ---------- 賓客那一側的測驗 ---------- */
+console.log('\n[17b] 賓客做測驗');
+{
+  /* 把長選項那題再加回來（上一段把它刪掉了），順便測長字串的截斷 */
+  await quizCol.doc('long-one').set({
+    type:'multi', q:'我們的貓最愛做什麼？',
+    opts:[LONG_OPT, '睡整天', '討摸', '看著我們工作'],
+    answer:[0, 2], order: 4, time: Date.now(),
+  });
+
+  const { page, errors } = await visit(`/w/${SLUG}/quiz`);
+  await page.waitForFunction(() => document.querySelectorAll('.q-block').length === 4,
+    null, { timeout:15000 });
+
+  const questions = (await quizCol.orderBy('order').get()).docs;
+  ok('題目用新人設定的那一份', questions.length === 4, `${questions.length} 題`);
+  ok('題號依 order 排',
+    (await page.evaluate(() =>
+      Array.from(document.querySelectorAll('.q-block .q-text')).map((e) => e.textContent)))
+      .join('|') === questions.map((d) => d.data().q).join('|'));
+
+  /* 單選題選完會自動捲到下一題 */
+  const y0 = await page.evaluate(() => window.scrollY);
+  await page.click('.q-block[data-qi="0"] .q-opt[data-oi="0"]');
+  await page.waitForTimeout(900);
+  const y1 = await page.evaluate(() => window.scrollY);
+  ok('單選選完自動捲到下一題', y1 > y0, `${y0} → ${y1}`);
+  ok('送出鈕在全部作答前是關著的',
+    await page.evaluate(() => document.getElementById('qSubmit').disabled));
+
+  /* 其餘每題都選 A */
+  for(let i = 1; i < 4; i++){
+    await page.click(`.q-block[data-qi="${i}"] .q-opt[data-oi="0"]`);
+    await page.waitForTimeout(400);
+  }
+  ok('全部作答完才打開送出鈕',
+    await page.evaluate(() => !document.getElementById('qSubmit').disabled));
+
+  await page.click('#qSubmit');
+  await page.waitForSelector('.q-result-head', { timeout:10000 });
+  await page.waitForTimeout(1500);
+
+  /* 每題都選 A，只有「正確答案剛好只有 A」的那幾題會得分 */
+  const expectScore = questions
+    .filter((d) => (d.data().answer || []).join(',') === '0').length;
+  const scoreText = await page.textContent('.q-score');
+  ok('分數等於答對的題數',
+    scoreText.replace(/\s/g, '') === `${expectScore}／4`, scoreText.replace(/\s/g, ''));
+
+  const votes = await voteCol.get();
+  ok('作答有寫進 quizVotes', votes.size === 1, `${votes.size} 筆`);
+  const vote = votes.size ? votes.docs[0].data() : {};
+  ok('票以題目 id 為 key',
+    Object.keys(vote.picks || {}).sort().join(',') === questions.map((d) => d.id).sort().join(','),
+    Object.keys(vote.picks || {}).join(','));
+  ok('分數與題數一起存下來',
+    vote.score === expectScore && vote.total === 4, `${vote.score}/${vote.total}`);
+
+  /* 長條圖：只掛「你」的標籤（新人不作答，所以沒有第二種標籤） */
+  const chart = await page.evaluate(() => ({
+    rows:    document.querySelectorAll('.q-bar-row').length,
+    youTags: Array.from(document.querySelectorAll('.q-bar-badge')).map((e) => e.textContent),
+    counts:  Array.from(document.querySelectorAll('.q-bar-row.is-you .q-bar-count'))
+               .map((e) => e.textContent),
+    answers: document.querySelectorAll('.q-bar-row.is-answer').length,
+  }));
+  ok('四題各四條長條', chart.rows === 16, String(chart.rows));
+  ok('標籤只有「你」', chart.youTags.length === 4 && chart.youTags.every((t) => t === '你'),
+    chart.youTags.join(','));
+  /* 只有我一個人作答，所以自己那格剛好一票 —— 樂觀疊圖不能重複計算 */
+  ok('自己選的那格只算一票', chart.counts.every((c) => c === '1'), chart.counts.join(','));
+  ok('正確答案有標記出來', chart.answers >= 4, String(chart.answers));
+
+  /* 選項寫在長條裡，不能溢出長條、也不能壓到「你」 */
+  const overflow = await page.evaluate(() => {
+    const bad = [];
+    document.querySelectorAll('.q-bar-row').forEach((row) => {
+      const label = row.querySelector('.q-bar-label');
+      const track = row.querySelector('.q-bar-track');
+      const badge = row.querySelector('.q-bar-badge');
+      const l = label.getBoundingClientRect();
+      const t = track.getBoundingClientRect();
+      if(l.right > t.right + 1 || l.left < t.left - 1) bad.push(`超出長條：${label.textContent}`);
+      if(badge && l.right > badge.getBoundingClientRect().left + 1){
+        bad.push(`壓到「你」：${label.textContent}`);
+      }
+      if(label.scrollWidth > label.clientWidth + 1 &&
+         getComputedStyle(label).textOverflow !== 'ellipsis'){
+        bad.push(`沒有以「…」收尾：${label.textContent}`);
+      }
+    });
+    return bad;
+  });
+  ok('長選項只在長條裡截斷，不會壓到「你」', overflow.length === 0, overflow.slice(0, 2).join(' | '));
+
+  ok('測驗頁無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+{
+  /* 後台看得到剛剛那筆作答，也清得掉 */
+  const { page } = await visit(`/w/${SLUG}/admin`);
+  page.on('dialog', (d) => d.accept());
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  await page.click('.ad-tab[data-tab="quiz"]');
+  await page.waitForFunction(() => DataStore.getQuizVotes().length === 1, null, { timeout:15000 });
+  ok('後台看得到作答人數',
+    (await page.textContent('#adQuizVoteCount')) === '1',
+    await page.textContent('#adQuizVoteCount'));
+
+  await page.click('#adQuizWipe');
+  await page.waitForTimeout(1800);
+  ok('新人清得掉作答紀錄', (await voteCol.get()).size === 0, `${(await voteCol.get()).size} 筆`);
+  ok('題目沒被一起清掉', (await quizCol.get()).size === 4, `${(await quizCol.get()).size} 題`);
+  await page.close();
+}
+
 /* ---------- 手機版 ---------- */
 console.log('\n[8] 手機版無水平捲動');
 for(const key of ['', 'wall', 'rsvp', 'quiz', 'seating', 'letter']){

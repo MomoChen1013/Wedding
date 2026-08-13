@@ -92,7 +92,7 @@ const LS = {
    ・資料變動時 dispatch 'data:<key>'，畫面可監聽重渲染
 ============================================================ */
 const DataStore = {
-  _wishes:[], _letters:[], _hearts:0, _collected:[], _cakes:[], _compat:[], _rsvps:[],
+  _wishes:[], _letters:[], _hearts:0, _collected:[], _cakes:[], _rsvps:[],
   _letterCount:0,
   _subscribed:false,
 
@@ -130,7 +130,7 @@ const DataStore = {
     /* 本站台共用（賓客都看得到） */
     sub('wishes',  () => query(this._col('wishes'),  orderBy('time', 'asc')));
     sub('cakes',   () => query(this._col('cakes'),   orderBy('time', 'asc')));
-    sub('compat',  () => query(this._col('compat'),  orderBy('time', 'asc')));
+    /* 測驗的題目與作答紀錄只有測驗頁與後台要用，改由 subscribeQuiz() 自己叫 */
 
     /* 抽卡收藏：per-uid，只訂閱自己的卡
        （不加 orderBy 以免要建立複合索引；排序在 getCollected() 由前端做） */
@@ -207,9 +207,18 @@ const DataStore = {
     const { addDoc } = window.fb;
     return addDoc(this._col('cakes'), { ...c, time: c.time || Date.now() });
   },
-  async addCompat(answers){
+  /* 賓客送出的測驗作答。
+     picks 是「題目 id → 選了哪幾個選項」的 map ——
+     用題目 id 而不是題號，新人之後調順序或刪題目，票也不會對到別題去。
+     （Firestore 不接受陣列裡再放陣列，所以外層一定是 map） */
+  async addQuizVote({ picks, score, total }){
     const { addDoc } = window.fb;
-    return addDoc(this._col('compat'), { answers, time: Date.now() });
+    return addDoc(this._col('quizVotes'), {
+      picks,
+      score: Number(score) || 0,
+      total: Number(total) || 0,
+      time: Date.now(),
+    });
   },
   /* RSVP 的欄位由規則嚴格白名單控管，這裡不能再自動塞 time */
   async addRSVP(r){
@@ -234,7 +243,7 @@ const DataStore = {
      重複呼叫是安全的，只會訂閱一次。
   ============================================================ */
   _seating:[], _seatingImages:[], _blessings:[], _explore:[],
-  _cards:[], _exhibits:[],
+  _cards:[], _exhibits:[], _quiz:[], _quizVotes:[],
   _subs:{},
 
   _lazySub(key, colName, orderField){
@@ -265,6 +274,9 @@ const DataStore = {
      所以只有抽卡頁、戀愛時光頁與後台才訂閱 */
   subscribeCards(){    this._lazySub('cards',    'cards',    'order'); },
   subscribeExhibits(){ this._lazySub('exhibits', 'exhibits', 'order'); },
+  /* 測驗：題目由新人維護（order 決定題號），作答紀錄是賓客送上來的票 */
+  subscribeQuiz(){      this._lazySub('quiz',      'quiz',      'order'); },
+  subscribeQuizVotes(){ this._lazySub('quizVotes', 'quizVotes', 'time'); },
 
   getSeating()       { return this._seating; },
   getSeatingImages() { return this._seatingImages; },
@@ -272,6 +284,8 @@ const DataStore = {
   getExplore()       { return this._explore; },
   getCards()         { return this._cards; },
   getExhibits()      { return this._exhibits; },
+  getQuiz()          { return this._quiz; },
+  getQuizVotes()     { return this._quizVotes; },
 
   /* ===== 新人專用的寫入（規則只認 ownerEmails 名單內的 Google 帳號） =====
      沒有 id 就新增，有 id 就覆寫同一份文件。 */
@@ -336,8 +350,6 @@ const DataStore = {
   /* 抽卡收藏按時間排序（snapshot 沒帶 orderBy，所以在這裡排） */
   getCollected()  { return this._collected.slice().sort((a,b)=>(a.time||0)-(b.time||0)); },
   getCakes()      { return this._cakes; },
-  /* compat 早期是「直接陣列」，現在統一包成 {answers:[...]}，取出時還原 */
-  getCompat()     { return this._compat.map(c => c.answers || c); },
   /* ===== RSVP 出席回覆 =====
      規則只讓 ownerEmails 名單內的帳號讀，所以不放進 _subscribe()，
      由新人後台登入成功後才呼叫。
@@ -458,8 +470,8 @@ async function logout(){
   }catch(e){ console.warn('[logout] signOut failed', e); }
   clearUser();
   try{ sessionStorage.clear(); }catch{}
-  /* 清掉 compat 暫存（避免下個 user 看到上一位的答案） */
-  LS.remove('compatLast');
+  /* 清掉測驗暫存（避免下個 user 看到上一位的答案） */
+  LS.remove('quizLast');
   location.href = sitePath('lobby');
 }
 

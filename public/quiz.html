@@ -23,21 +23,20 @@
 <section class="panel page-fade" data-panel="quiz">
   <div class="scene-hero">
     <div class="sh-title">看你多了解我們</div>
-    <div class="sh-sub">你有多了解這對新人？</div>
+    <div class="sh-sub">一份小測驗，題目由新人親自出</div>
     <div class="scroll-cue"><span>Scroll</span><span class="arrow"></span></div>
   </div>
 
   <div class="scene-body">
+    <!-- 整頁式測驗：所有題目 → 送出 → 分數與長條圖，都在這張卡裡 -->
     <div class="cardbox quiz-card" id="quizCard"></div>
-
-    <div class="divider-div"></div>
-
-    <!-- 與新人的契合度 -->
-    <div class="cardbox compat-card" id="compatCard"></div>
 
     <footer>made for {{couple}}・{{hashtag}}</footer>
   </div>
 </section>
+
+<!-- 預設題目與欄位上限：新人還沒在後台出題時，測驗頁先用這一份 -->
+<script defer src="/js/quiz-defaults.js"></script>
 
 <!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與本頁 JS -->
 <script type="module" src="/js/site-context.js"></script>

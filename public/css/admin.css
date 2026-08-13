@@ -232,6 +232,26 @@ select.ad-input{appearance:none;cursor:pointer;
   border:1px solid var(--line);border-radius:4px;background:var(--bg2);}
 
 /* ============================================================
+   測驗
+   ・一列一個選項：左邊是「這是正確答案」的勾勾，右邊是選項內容
+============================================================ */
+.ad-quiz-opts{display:flex;flex-direction:column;gap:9px;}
+.ad-quiz-opt{display:flex;align-items:center;gap:10px;}
+.ad-quiz-opt .ad-input{flex:1 1 auto;min-width:0;padding:9px 12px;font-size:14px;}
+.ad-quiz-ans{display:flex;align-items:center;gap:6px;flex:0 0 auto;cursor:pointer;}
+.ad-quiz-ans input{accent-color:var(--primary-deep);cursor:pointer;}
+.ad-quiz-ltr{font-family:var(--font-display);font-size:13px;letter-spacing:.1em;
+  color:var(--ink-soft);min-width:11px;}
+.ad-quiz-ans input:checked + .ad-quiz-ltr{color:var(--primary-deep);}
+
+/* 題目順序的 ↑ ↓ */
+.ad-move{background:none;border:1px solid var(--line);border-radius:4px;cursor:pointer;
+  width:24px;height:24px;line-height:1;padding:0;color:var(--ink-soft);
+  font-family:var(--font-body);font-size:12px;transition:.2s;}
+.ad-move:hover:not(:disabled){border-color:var(--ink);color:var(--ink);}
+.ad-move:disabled{opacity:.3;cursor:not-allowed;}
+
+/* ============================================================
    照片裁切器（cropper.js 動態插入）
 ============================================================ */
 .cr-mask{position:fixed;inset:0;z-index:1400;background:rgba(43,47,54,.72);

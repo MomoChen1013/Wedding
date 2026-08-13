@@ -126,18 +126,48 @@ service cloud.firestore {
         allow update, delete: if false;
       }
 
-      /* 新人小測驗：只存答案陣列，不含個資 */
-      match /compat/{compatId} {
+      /* 新人小測驗的題目：新人在後台出題，賓客只讀得到。
+         固定四個選項，answer 是正確答案的索引陣列（單選只有一個）。
+         規則語言沒辦法逐一檢查 list 裡每個元素的型別與長度，
+         所以「選項幾個字、索引是不是 0–3」在後台送出前先切好、擋好。 */
+      match /quiz/{questionId} {
+        allow read: if true;
+        allow create, update: if isSiteOwner(siteId)
+          && request.resource.data.keys().hasOnly(['type', 'q', 'opts', 'answer', 'order', 'time'])
+          && request.resource.data.type in ['single', 'multi']
+          && isStr(request.resource.data.q, 60)
+          && request.resource.data.q.size() >= 1
+          && request.resource.data.opts is list
+          && request.resource.data.opts.size() == 4
+          && request.resource.data.answer is list
+          && request.resource.data.answer.size() >= 1
+          && request.resource.data.answer.size() <= 4
+          && (request.resource.data.type == 'multi'
+              || request.resource.data.answer.size() == 1)
+          && request.resource.data.order is number
+          && request.resource.data.time is number;
+        allow delete: if isSiteOwner(siteId);
+      }
+
+      /* 測驗的作答紀錄：賓客送上來的票，不含個資。
+         picks 是「題目 id → 選了哪幾個選項」的 map ——
+         Firestore 的陣列不能再放陣列，所以外層一定是 map。 */
+      match /quizVotes/{voteId} {
         allow read: if true;
         allow create: if pageOn(siteId, 'quiz')
           && sitePublished(siteId)
-          && request.resource.data.keys().hasOnly(['answers', 'time'])
-          && request.resource.data.answers is list
-          && request.resource.data.answers.size() <= 50
+          && request.resource.data.keys().hasOnly(['picks', 'score', 'total', 'time'])
+          && request.resource.data.picks is map
+          && request.resource.data.picks.size() <= 50
+          && request.resource.data.score is int
+          && request.resource.data.score >= 0
+          && request.resource.data.total is int
+          && request.resource.data.total >= 0
+          && request.resource.data.total <= 50
           && request.resource.data.time is number;
-        /* 新人重置票數會刪除整個集合，因此開放 delete */
-        allow delete: if pageOn(siteId, 'quiz') && sitePublished(siteId);
+        /* 票是賓客送出的紀錄，不可修改；新人可以在後台整批清空重新統計 */
         allow update: if false;
+        allow delete: if isSiteOwner(siteId);
       }
 
       /* 抽卡收藏：每位訪客只看得到自己的卡 */

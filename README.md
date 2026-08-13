@@ -14,7 +14,7 @@
 | `/w/{slug}/cake` | 集氣送祝褔（甜點桌） |
 | `/w/{slug}/draw` | 抽卡 |
 | `/w/{slug}/exhibition` | 我們的故事 |
-| `/w/{slug}/quiz` | 看你多了解我們 |
+| `/w/{slug}/quiz` | 看你多了解我們（題目由新人在後台出） |
 | `/w/{slug}/inbox` | 悄悄話信箱 |
 | `/w/{slug}/seating` | 我的桌次（當天輸入名字查桌次 + 桌次圖） |
 | `/w/{slug}/letter` | 給你的信（新人寫的電子祝福信） |
@@ -62,7 +62,7 @@
 │   ├─ draw.html  exhibition.html  quiz.html  inbox.html
 │   ├─ seating.html           # 我的桌次（婚禮當天查桌次 + 桌次圖）
 │   ├─ letter.html            # 給你的信（新人寫的電子祝福信）
-│   ├─ admin.html             # 新人後台（回覆／大廳文案／桌次／祝福信／卡片／囍卡／展覽）
+│   ├─ admin.html             # 新人後台（回覆／大廳文案／桌次／祝福信／卡片／囍卡／展覽／測驗）
 │   ├─ invitation.html        # 單頁式邀請函（獨立版型，自成一格）
 │   ├─ shortlink.html         # 短連結轉址頁
 │   ├─ 404.html
@@ -72,6 +72,7 @@
 │       ├─ site-context.js    # ★ 每頁唯一進入點：解析 slug、載設定、注入其他 JS
 │       ├─ common.js          # 資料層 DataStore、導覽、特效、樣板文字
 │       ├─ cropper.js         # 後台專用的照片裁切器（只有 admin.html 載入）
+│       ├─ quiz-defaults.js   # 測驗的預設題目與上限（quiz.html 與 admin.html 共用）
 │       └─ index.js rsvp.js …           # 各頁邏輯
 ├─ scripts/
 │   ├─ create-site.js         # 建立客戶站台（slug transaction）
@@ -134,13 +135,14 @@ sites/{siteId}
   wishes/{autoId}      name, icon, text, time          # 祝福牆
   letters/{autoId}     name, icon, text, time          # 悄悄話信箱
   cakes/{autoId}       name, icon, cake, emoji, img, time
-  compat/{autoId}      answers[], time                 # 新人小測驗
+  quizVotes/{autoId}   picks(map 題目id→選項索引[]), score, total, time
+                       # 小測驗的作答；key 用題目 id，新人調順序也不會對錯題
   collected/{autoId}   uid, userName, art, name, rarity, desc, cardId, time
                        # cardId：後台上傳的卡圖太長塞不進 art，改記 id
   meta/hearts          count                           # 愛心計數器
   meta/letterCount     count                           # 公開的信件數量
 
-  # ↓ 這六個集合由新人在 /w/{slug}/admin 自己維護（規則只認 ownerEmails 名單）
+  # ↓ 這七個集合由新人在 /w/{slug}/admin 自己維護（規則只認 ownerEmails 名單）
   seating/{autoId}       name, table, note, time       # 桌次名單
   seatingImages/{autoId} img(data URL), title, order, time   # 桌次圖
   blessings/{autoId}     terms[], title, body, sign, isDefault, time  # 電子祝福信
@@ -149,6 +151,8 @@ sites/{siteId}
                                                        # 囍卡卡池（抽卡頁）
   exhibits/{autoId}      kind(photo|act), img(data URL), title, sub,
                          desc, year, act, order, time  # 戀愛時光的展品與章節
+  quiz/{autoId}          type(single|multi), q, opts[4], answer[],
+                         order, time                   # 小測驗的題目（最多 50 題）
 
 slugs/{slug}                # 文件 ID 就是 slug 本身
   siteId, createdAt
@@ -337,7 +341,7 @@ npm run set-pages -- --slug ginny-one-20260919 \
 
 ---
 
-## 新人後台：大廳文案、桌次、祝福信、卡片、囍卡、展覽
+## 新人後台：大廳文案、桌次、祝福信、卡片、囍卡、展覽、測驗
 
 這些內容**不走 CLI、也不用進 Firebase Console**，
 新人自己在後台就能維護，改完重新整理網頁就生效（不必重新 deploy）。
@@ -354,8 +358,8 @@ npm run set-pages -- --slug ginny-one-20260919 \
   --owner-email groom@gmail.com --owner-email bride@gmail.com
 ```
 
-> 後台目前有七個分頁：**出席回覆**、**大廳內容**、**桌次**、**祝福信**、
-> **首頁卡片**、**囍卡**、**展覽**。手機上分頁列可以左右滑。
+> 後台目前有八個分頁：**出席回覆**、**大廳內容**、**桌次**、**祝福信**、
+> **首頁卡片**、**囍卡**、**展覽**、**測驗**。手機上分頁列可以左右滑。
 
 > 這個網址不會出現在導覽列，也沒有任何頁面連過去（`noindex`），
 > 但真正的保護是 **Security Rules**：不在名單內的帳號就算打開這一頁、
@@ -565,6 +569,45 @@ public/assets/{slug}/seating/
 > **卡圖與展品壓得比桌次圖更小**（約 150KB／190KB，桌次圖是 900KB）：
 > 抽卡是隨機抽、時間軸是整條滑，兩者都沒辦法「只載一張」——
 > 賓客一進頁面就會把整批圖載下來。所以囍卡建議控制在 30 張以內。
+
+---
+
+### 7. 測驗（後台「測驗」分頁）
+
+「看你多了解我們」（`/w/{slug}/quiz`）的題目。整份測驗是**一頁式**：
+賓客一次看到所有題目，單選題選完會自動捲到下一題，
+全部作答完才送得出去，送出後看到自己的**分數**與每題的長條圖。
+
+每一題要填的東西：
+
+| 欄位 | 說明 |
+|---|---|
+| 題型 | **單選**（選完自動跳下一題）／**複選**（全對才得分） |
+| 題目 | 最多 60 字 |
+| 四個選項 | 固定四個，每個最多 40 字 |
+| 正確答案 | 在選項左邊勾起來；單選一個、複選可以勾好幾個 |
+
+順序用清單上的 **↑ ↓** 調，數字會自動重編成 1…n。**最多 50 題**，
+刪掉一題就能再加一題。
+
+> **新人不用自己作答**。正確答案在這裡就設好了，
+> 所以長條圖上只會有賓客自己的「**你**」，不會出現第二種標籤。
+> 選項太長時，長條裡的文字會以「…」收尾，不會溢出長條也不會壓到「你」。
+
+> **一開始就有 3 題預設題目**：第一次打開這個分頁時，
+> 系統會把 `js/quiz-defaults.js` 裡的 3 題寫進這場婚禮自己的 `quiz` 集合，
+> 直接改就好。整份刪光之後不會再自動補回來（同一個瀏覽器內），
+> 想要的話按清單上的「載入預設題目來改」。
+> 新人還沒進後台時，賓客那一頁也是先看到同一份預設題目。
+
+「賓客的作答紀錄」區塊看得到作答人數與平均分數，
+按「清空所有作答紀錄」只會刪票（`quizVotes`），題目不會被動到 ——
+測試完歸零、或婚禮當天重新統計都用它。
+
+> **票為什麼用「題目 id」當 key**：作答存成
+> `picks = { 題目id: [選項索引] }`。用題號的話，新人之後調順序或刪題目，
+> 舊票就會對到別題去；綁 id 則是「對不到的題目就不顯示」，不會算錯。
+> （Firestore 的陣列不能再放陣列，複選題也因此必須包在 map 裡。）
 
 ---
 
@@ -935,7 +978,8 @@ http://127.0.0.1:5000/w/你的slug/cake?live=1
 | `sites/{siteId}/wishes` | ✅ | ✅（需通過驗證） | ❌ | ❌ |
 | `sites/{siteId}/letters` | 只有 `ownerEmails` 名單內的已驗證 Google 帳號 | ✅（需通過驗證） | ❌ | ❌ |
 | `sites/{siteId}/cakes` | ✅ | ✅（需通過驗證） | ❌ | ❌ |
-| `sites/{siteId}/compat` | ✅ | ✅（需通過驗證） | ❌ | ✅（新人重置票數） |
+| `sites/{siteId}/quiz` | ✅ | 只有新人 | 只有新人 | 只有新人 |
+| `sites/{siteId}/quizVotes` | ✅ | ✅（需通過驗證） | ❌ | 只有新人（重置票數） |
 | `sites/{siteId}/collected` | 只能讀自己的 | ✅（需登入且 uid 相符） | ❌ | ❌ |
 | `sites/{siteId}/meta/hearts` | ✅ | 只能一次 +1 | | |
 | `sites/{siteId}/meta/letterCount` | ✅ | 只能一次 +1 | | |
