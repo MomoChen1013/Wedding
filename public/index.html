@@ -151,43 +151,66 @@
       <section class="link-section">
         <div class="block-title">Explore</div>
         <div class="block-sub">婚禮之外，還有這些可以一起玩</div>
-        <div class="link-grid">
-          <a class="link-card" href="wall.html">
+        <div class="link-grid" id="linkGrid">
+          <a class="link-card" href="seating.html">
             <span class="lc-index">01</span>
+            <span class="lc-title">找到你的桌次</span>
+            <span class="lc-sub">輸入名字，馬上知道今天坐在哪一桌</span>
+            <span class="lc-go">前往</span>
+          </a>
+          <a class="link-card" href="wall.html">
+            <span class="lc-index">02</span>
             <span class="lc-title">新人祝福牆</span>
             <span class="lc-sub">寫下想對我們說的話，也讀讀大家的祝福</span>
             <span class="lc-go">前往</span>
           </a>
+          <a class="link-card" href="letter.html">
+            <span class="lc-index">03</span>
+            <span class="lc-title">給你的一封信</span>
+            <span class="lc-sub">我們寫了信給你，輸入名字就能拆開來看</span>
+            <span class="lc-go">前往</span>
+          </a>
           <a class="link-card" href="exhibition.html">
-            <span class="lc-index">02</span>
+            <span class="lc-index">04</span>
             <span class="lc-title">我們的故事</span>
             <span class="lc-sub">沿著時間線，走過我們一路走來的日子</span>
             <span class="lc-go">前往</span>
           </a>
           <a class="link-card" href="quiz.html">
-            <span class="lc-index">03</span>
+            <span class="lc-index">05</span>
             <span class="lc-title">看你多了解我們</span>
             <span class="lc-sub">一份小測驗，順便看看你和我們有多合拍</span>
             <span class="lc-go">前往</span>
           </a>
           <a class="link-card" href="draw.html">
-            <span class="lc-index">04</span>
+            <span class="lc-index">06</span>
             <span class="lc-title">看你會抽到什麼照片</span>
             <span class="lc-sub">抽一張婚禮限定小卡，收進你的收藏</span>
             <span class="lc-go">前往</span>
           </a>
           <a class="link-card" href="cake.html">
-            <span class="lc-index">05</span>
+            <span class="lc-index">07</span>
             <span class="lc-title">集氣送祝褔</span>
             <span class="lc-sub">挑一份甜點放上桌，替我們集氣</span>
             <span class="lc-go">前往</span>
           </a>
+          <!-- 新人自訂的卡片（文字＋連結／文字＋popup）由 js/index.js 補在這後面 -->
         </div>
       </section>
 
       <footer>made for {{couple}}・小港製作所 設計製作</footer>
     </div>
   </section>
+</div>
+
+<!-- ===== 自訂卡片的彈窗（kind='popup' 用） ===== -->
+<div class="lc-modal" id="lcModal">
+  <div class="lc-modal-card" role="dialog" aria-modal="true" aria-labelledby="lcModalTitle">
+    <button class="lc-modal-close" id="lcModalClose" type="button" aria-label="關閉">✕</button>
+    <h3 class="lc-modal-title" id="lcModalTitle"></h3>
+    <div class="lc-modal-sub" id="lcModalSub"></div>
+    <div class="lc-modal-body" id="lcModalBody"></div>
+  </div>
 </div>
 
 <!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與本頁 JS -->

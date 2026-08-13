@@ -67,6 +67,18 @@
         "destination": "/inbox.html"
       },
       {
+        "source": "/w/*/seating",
+        "destination": "/seating.html"
+      },
+      {
+        "source": "/w/*/letter",
+        "destination": "/letter.html"
+      },
+      {
+        "source": "/w/*/admin",
+        "destination": "/admin.html"
+      },
+      {
         "source": "/w/*/invitation",
         "destination": "/invitation.html"
       },

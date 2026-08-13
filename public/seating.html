@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的桌次｜{{couple}} 婚禮</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/css/seating.css">
+</head>
+<body data-theme="champagne" data-page="seating">
+
+<div class="bg-decor"></div>
+<canvas id="fx"></canvas>
+
+<div class="scene-bg" data-bg="gallery"></div>
+
+<section class="panel page-fade" data-panel="seating">
+
+  <div class="scene-hero">
+    <div class="sh-title">我的桌次</div>
+    <div class="sh-sub">輸入你的名字・幫你找到今天的位子</div>
+    <div class="scroll-cue"><span>Scroll</span><span class="arrow"></span></div>
+  </div>
+
+  <div class="scene-body">
+
+    <!-- ===== 1. 查詢 ===== -->
+    <section class="st-search">
+      <div class="section-title">Find Your Seat <small>輸入名字，馬上知道坐哪一桌</small></div>
+
+      <form class="st-form" id="stForm" autocomplete="off">
+        <input class="st-input" id="stInput" type="text" maxlength="40"
+               placeholder="輸入你的名字" aria-label="輸入你的名字">
+        <button class="btn small" id="stBtn" type="submit">查詢</button>
+      </form>
+      <div class="st-hint" id="stHint">輸入邀請卡上的名字就可以了・大小寫、空白都沒關係</div>
+
+      <!-- 查詢結果由 js/seating.js 填入 -->
+      <div class="st-result" id="stResult" aria-live="polite"></div>
+    </section>
+
+    <!-- ===== 2. 桌次圖 ===== -->
+    <section class="st-charts" id="stCharts" hidden>
+      <div class="section-title">Seating Chart <small>點圖可以放大看</small></div>
+      <div class="st-chart-grid" id="stChartGrid"></div>
+    </section>
+
+    <footer>made for {{couple}}・{{hashtag}}</footer>
+  </div>
+</section>
+
+<!-- ===== 桌次圖放大檢視（可拖曳、可縮放） ===== -->
+<div class="st-lb" id="stLb" hidden>
+  <button class="st-lb-close" id="stLbClose" type="button" aria-label="關閉">✕</button>
+  <div class="st-lb-title" id="stLbTitle"></div>
+  <div class="st-lb-stage" id="stLbStage">
+    <img id="stLbImg" alt="">
+  </div>
+  <div class="st-lb-tip">點圖可放大／縮小・放大後可拖曳移動</div>
+</div>
+
+<!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與本頁 JS -->
+<script type="module" src="/js/site-context.js"></script>
+</body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- 新人專用後台：不從其他頁面連結過來 / Do not link here from anywhere -->
+<meta name="robots" content="noindex,nofollow">
+<title>新人後台</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/css/admin.css">
+</head>
+<body data-theme="champagne" data-page="admin">
+
+<div class="bg-decor"></div>
+
+<!-- ============ 登入門 ============ -->
+<div class="overlay" id="pwGate">
+  <div class="gate-card">
+    <div class="ribbon">Private</div>
+    <h1>新人後台</h1>
+    <div class="sub">桌次、祝福信、首頁自訂卡片都在這裡設定<br>請用新人的 Google 帳號登入</div>
+    <button class="btn btn-google" id="ownerLoginBtn" type="button">
+      <svg viewBox="0 0 18 18" aria-hidden="true" width="18" height="18">
+        <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/>
+        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/>
+        <path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33z"/>
+        <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.58C13.46.9 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/>
+      </svg>
+      用 Google 帳號登入
+    </button>
+    <div class="pw-err" id="pwErr">&nbsp;</div>
+    <div class="sub" style="margin-top:14px;font-size:.82rem;opacity:.7">
+      只有 ownerEmails 名單內的帳號能修改內容
+    </div>
+  </div>
+</div>
+
+<!-- ============ 後台本體 ============ -->
+<section class="panel page-fade ad-page" id="adPage" hidden>
+
+  <header class="ad-top">
+    <div>
+      <div class="ad-top-title">新人後台</div>
+      <div class="ad-top-sub" id="adWho"></div>
+    </div>
+    <div class="ad-top-actions">
+      <a class="btn small ghost" id="adViewBtn" href="/">看網站</a>
+      <button class="btn small ghost" id="adLock" type="button">登出</button>
+    </div>
+  </header>
+
+  <nav class="ad-tabs" id="adTabs">
+    <button class="ad-tab is-on" type="button" data-tab="rsvp">出席回覆</button>
+    <button class="ad-tab" type="button" data-tab="seating">桌次</button>
+    <button class="ad-tab" type="button" data-tab="letters">祝福信</button>
+    <button class="ad-tab" type="button" data-tab="explore">首頁卡片</button>
+  </nav>
+
+  <!-- 存檔提示 -->
+  <div class="ad-toast" id="adToast" hidden></div>
+
+  <!-- ============================================================
+       分頁 0：出席回覆
+  ============================================================ -->
+  <div class="ad-panel is-on" data-panel="rsvp">
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">出席統計</h2>
+
+      <div class="ad-stats">
+        <div class="ad-stat">
+          <div class="ad-stat-num" id="adRsvpHead">0</div>
+          <div class="ad-stat-lab">確定出席人數</div>
+        </div>
+        <div class="ad-stat">
+          <div class="ad-stat-num" id="adRsvpYes">0</div>
+          <div class="ad-stat-lab">回覆會來</div>
+        </div>
+        <div class="ad-stat">
+          <div class="ad-stat-num" id="adRsvpMaybe">0</div>
+          <div class="ad-stat-lab">還沒決定</div>
+        </div>
+        <div class="ad-stat">
+          <div class="ad-stat-num" id="adRsvpNo">0</div>
+          <div class="ad-stat-lab">不克出席</div>
+        </div>
+      </div>
+
+      <p class="ad-sec-note">
+        「確定出席人數」是把每筆回覆的人數加總，其餘三個是<b>回覆筆數</b>。
+        回覆是賓客送出的紀錄，後台只能看與匯出，不能修改。
+      </p>
+    </section>
+
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">回覆名單</h2>
+
+      <div class="ad-row">
+        <button class="btn small ghost" id="adRsvpExport" type="button">匯出 CSV</button>
+      </div>
+
+      <div class="ad-list-head">
+        <div class="ad-chips" id="adRsvpChips">
+          <button class="ad-chip is-on" type="button" data-filter="all">全部</button>
+          <button class="ad-chip" type="button" data-filter="yes">會來</button>
+          <button class="ad-chip" type="button" data-filter="maybe">未定</button>
+          <button class="ad-chip" type="button" data-filter="no">不克出席</button>
+        </div>
+        <input class="ad-filter" id="adRsvpFilter" type="text" placeholder="搜尋名字或留言…">
+      </div>
+
+      <div class="ad-list" id="adRsvpList"></div>
+    </section>
+  </div>
+
+  <!-- ============================================================
+       分頁 1：桌次
+  ============================================================ -->
+  <div class="ad-panel" data-panel="seating">
+
+    <!-- 1-1 桌次圖 -->
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">桌次圖</h2>
+      <p class="ad-sec-note">
+        可以一次選好幾張。圖片會在上傳前自動縮到適合手機看的大小，
+        存進這場婚禮自己的資料庫，不會影響其他新人。
+      </p>
+
+      <label class="ad-upload" id="adUploadBox">
+        <input type="file" id="adFile" accept="image/*" multiple hidden>
+        <span class="ad-upload-mark">＋</span>
+        <span class="ad-upload-text">點這裡選圖片，或把圖片拖進來</span>
+        <span class="ad-upload-hint">JPG／PNG／WebP・一張最多約 900KB（會自動壓縮）</span>
+      </label>
+      <div class="ad-progress" id="adProgress" hidden></div>
+
+      <div class="ad-imgs" id="adImgs"></div>
+    </section>
+
+    <!-- 1-2 桌次名單 -->
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">桌次名單</h2>
+      <p class="ad-sec-note">
+        一行一位賓客，用逗號分開：<b>姓名, 桌次, 備註</b>（備註可以不寫）。
+        Excel 複製過來的逗號或 Tab 分隔都認得。
+      </p>
+
+      <textarea class="ad-textarea" id="adSeatBulk" rows="7"
+        placeholder="王小明, 第 3 桌&#10;林美美, 第 3 桌, 素食&#10;陳大同, 主桌"></textarea>
+      <div class="ad-row">
+        <button class="btn small" id="adSeatImport" type="button">匯入名單</button>
+        <button class="btn small ghost" id="adSeatClear" type="button">清空整份名單</button>
+      </div>
+
+      <div class="ad-list-head">
+        <span id="adSeatCount">目前 0 位</span>
+        <input class="ad-filter" id="adSeatFilter" type="text" placeholder="在名單裡找…">
+      </div>
+      <div class="ad-list" id="adSeatList"></div>
+    </section>
+  </div>
+
+  <!-- ============================================================
+       分頁 2：祝福信
+  ============================================================ -->
+  <div class="ad-panel" data-panel="letters">
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">寫一封信</h2>
+      <p class="ad-sec-note">
+        「專屬詞彙」是賓客要輸入的通關密語，可以是名字、綽號、或只有你們懂的暗號，
+        用逗號分開可以寫好幾個。詞彙寫得太短容易被別人誤中，建議至少兩個字。
+      </p>
+
+      <form class="ad-form" id="adLetterForm">
+        <input type="hidden" id="adLetterId">
+
+        <label class="ad-label" for="adLetterTerms">專屬詞彙</label>
+        <input class="ad-input" id="adLetterTerms" type="text" maxlength="200"
+               placeholder="王小明, 小明, 大學室友">
+
+        <label class="ad-label" for="adLetterTitle">信的標題</label>
+        <input class="ad-input" id="adLetterTitle" type="text" maxlength="60"
+               placeholder="給小明的一封信">
+
+        <label class="ad-label" for="adLetterBody">信的內容</label>
+        <textarea class="ad-textarea" id="adLetterBody" rows="9" maxlength="2000"
+                  placeholder="小明：&#10;&#10;謝謝你今天特地趕來…"></textarea>
+        <div class="ad-count"><span id="adLetterLen">0</span> / 2000</div>
+
+        <label class="ad-label" for="adLetterSign">署名</label>
+        <input class="ad-input" id="adLetterSign" type="text" maxlength="60"
+               placeholder="留白的話就用新人的名字">
+
+        <label class="ad-check">
+          <input type="checkbox" id="adLetterDefault">
+          <span>設為通用信（沒對到任何詞彙的賓客，就領到這一封）</span>
+        </label>
+
+        <div class="ad-row">
+          <button class="btn small" type="submit">儲存這封信</button>
+          <button class="btn small ghost" id="adLetterReset" type="button">清空欄位</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">已經寫好的信</h2>
+      <div class="ad-list" id="adLetterList"></div>
+    </section>
+  </div>
+
+  <!-- ============================================================
+       分頁 3：首頁自訂卡片
+  ============================================================ -->
+  <div class="ad-panel" data-panel="explore">
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">新增一張卡片</h2>
+      <p class="ad-sec-note">
+        會出現在首頁 Explore 區、內建卡片的後面。
+        選「開啟連結」就是點了跳到你給的網址；選「跳出說明」則是點了在原地展開一段文字。
+      </p>
+
+      <form class="ad-form" id="adExpForm">
+        <input type="hidden" id="adExpId">
+
+        <label class="ad-label" for="adExpTitle">卡片標題</label>
+        <input class="ad-input" id="adExpTitle" type="text" maxlength="40"
+               placeholder="婚禮當天的接駁車">
+
+        <label class="ad-label" for="adExpSub">一句話說明</label>
+        <input class="ad-input" id="adExpSub" type="text" maxlength="120"
+               placeholder="幾點在哪裡上車，這裡先講清楚">
+
+        <label class="ad-label" for="adExpKind">點了之後</label>
+        <select class="ad-input" id="adExpKind">
+          <option value="popup">跳出說明（文字＋popup）</option>
+          <option value="link">開啟連結（文字＋連結）</option>
+        </select>
+
+        <div id="adExpUrlBox" hidden>
+          <label class="ad-label" for="adExpUrl">連結網址</label>
+          <input class="ad-input" id="adExpUrl" type="url" maxlength="500"
+                 placeholder="https://...">
+        </div>
+
+        <div id="adExpBodyBox">
+          <label class="ad-label" for="adExpBody">彈窗內文</label>
+          <textarea class="ad-textarea" id="adExpBody" rows="7" maxlength="2000"
+                    placeholder="早上 10:30 在台北車站東三門集合，車程約 40 分鐘…"></textarea>
+        </div>
+
+        <label class="ad-label" for="adExpOrder">排序（數字小的排前面）</label>
+        <input class="ad-input ad-input-sm" id="adExpOrder" type="number" value="1" min="0" step="1">
+
+        <div class="ad-row">
+          <button class="btn small" type="submit">儲存這張卡片</button>
+          <button class="btn small ghost" id="adExpReset" type="button">清空欄位</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">已經加上的卡片</h2>
+      <div class="ad-list" id="adExpList"></div>
+    </section>
+  </div>
+
+</section>
+
+<!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與本頁 JS -->
+<script type="module" src="/js/site-context.js"></script>
+</body>
+</html>

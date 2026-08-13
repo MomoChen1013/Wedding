@@ -15,6 +15,56 @@
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+/* 名字／關鍵詞比對用的正規化。
+   賓客打字很隨性：「  王小明 」「Ｗang」「wang ming」都該找得到同一個人。
+   ・去掉頭尾與中間的空白
+   ・全形英數轉半形（手機中文鍵盤很容易打出全形）
+   ・英文一律小寫 */
+function normKey(s){
+  return String(s == null ? '' : s)
+    .replace(/[！-～]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+    .replace(/　/g, ' ')
+    .toLowerCase()
+    .replace(/\s+/g, '');
+}
+
+/* 找出寫給這個名字（或專屬暗號）的祝福信。
+   回傳 { item, personal }：
+     personal:true  → 對到某封信的專屬詞彙
+     personal:false → 沒對到，退回新人設定的「通用信」
+   都沒有就回 null。
+
+   比對規則與桌次查詢一致，由寬到嚴：
+     1. 詞彙完全相同
+     2. 互相包含（取最長的詞彙，越長代表越精準）
+   桌次頁與祝福信頁共用這一份，兩邊的判斷才不會走鐘。 */
+function findBlessing(input, list){
+  const q = normKey(input);
+  const all = Array.isArray(list) ? list : [];
+  const termsOf = (b) =>
+    (Array.isArray(b.terms) ? b.terms : []).map(normKey).filter(Boolean);
+
+  if(!q) return null;
+
+  const personal = all.filter(b => termsOf(b).length);
+
+  const exact = personal.find(b => termsOf(b).includes(q));
+  if(exact) return { item: exact, personal: true };
+
+  let best = null, bestLen = 0;
+  personal.forEach(b => {
+    termsOf(b).forEach(t => {
+      if((t.includes(q) || q.includes(t)) && t.length > bestLen){
+        best = b; bestLen = t.length;
+      }
+    });
+  });
+  if(best) return { item: best, personal: true };
+
+  const def = all.find(b => b.isDefault === true);
+  return def ? { item: def, personal: false } : null;
+}
+
 function $(sel, root){ return (root||document).querySelector(sel); }
 function $all(sel, root){ return Array.from((root||document).querySelectorAll(sel)); }
 
@@ -176,6 +226,78 @@ const DataStore = {
     return this._hearts + 1;
   },
 
+  /* ============================================================
+     桌次 / 祝福信 / Explore 自訂卡片
+     ------------------------------------------------------------
+     這三組資料不是每頁都要用（桌次圖還是整包 data URL），
+     所以不放進 _subscribe() 一律訂閱，而是各頁自己叫用。
+     重複呼叫是安全的，只會訂閱一次。
+  ============================================================ */
+  _seating:[], _seatingImages:[], _blessings:[], _explore:[],
+  _subs:{},
+
+  _lazySub(key, colName, orderField){
+    if(this._subs[key]) return;
+    this._subs[key] = true;
+    const { onSnapshot, query, orderBy } = window.fb;
+    const q = orderField
+      ? query(this._col(colName), orderBy(orderField, 'asc'))
+      : this._col(colName);
+    onSnapshot(q, snap => {
+      this['_'+key] = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+      document.dispatchEvent(new CustomEvent('data:'+key));
+    }, err => {
+      /* 讀不到就當作沒有資料，畫面顯示空狀態而不是壞掉 */
+      this._subs[key] = false;
+      console.warn('[DataStore] onSnapshot', key, err.code || err);
+      document.dispatchEvent(new CustomEvent('data:'+key+':denied'));
+    });
+  },
+
+  subscribeSeating(){
+    this._lazySub('seating', 'seating', 'name');
+    this._lazySub('seatingImages', 'seatingImages', 'order');
+  },
+  subscribeBlessings(){ this._lazySub('blessings', 'blessings', 'time'); },
+  subscribeExplore(){   this._lazySub('explore',   'explore',   'order'); },
+
+  getSeating()       { return this._seating; },
+  getSeatingImages() { return this._seatingImages; },
+  getBlessings()     { return this._blessings; },
+  getExplore()       { return this._explore; },
+
+  /* ===== 新人專用的寫入（規則只認 ownerEmails 名單內的 Google 帳號） =====
+     沒有 id 就新增，有 id 就覆寫同一份文件。 */
+  async saveDoc(colName, id, data){
+    const { addDoc, setDoc, doc, db } = window.fb;
+    if(id){
+      await setDoc(doc(db, 'sites', window.SITE.siteId, colName, id), data);
+      return id;
+    }
+    const ref = await addDoc(this._col(colName), data);
+    return ref.id;
+  },
+  async removeDoc(colName, id){
+    const { deleteDoc, doc, db } = window.fb;
+    await deleteDoc(doc(db, 'sites', window.SITE.siteId, colName, id));
+  },
+
+  /* 大量匯入桌次名單：400 筆一批送出（batch 上限 500，留一點餘裕） */
+  async importSeating(rows){
+    const { writeBatch, doc, db } = window.fb;
+    const col = this._col('seating');
+    for(let i = 0; i < rows.length; i += 400){
+      const batch = writeBatch(db);
+      rows.slice(i, i + 400).forEach(r => {
+        batch.set(doc(col), {
+          name: r.name, table: r.table, note: r.note || '', time: Date.now(),
+        });
+      });
+      await batch.commit();
+    }
+    return rows.length;
+  },
+
   /* ===== 新人專用：清空某個子集合（用於重置票數） ===== */
   async wipeCollection(name){
     const { getDocs, deleteDoc } = window.fb;
@@ -198,14 +320,43 @@ const DataStore = {
   getCakes()      { return this._cakes; },
   /* compat 早期是「直接陣列」，現在統一包成 {answers:[...]}，取出時還原 */
   getCompat()     { return this._compat.map(c => c.answers || c); },
-  /* RSVP 出席回覆（新人可看完整名單） */
-  getRSVPs()      { return this._rsvps.slice().sort((a,b)=>(a.time||0)-(b.time||0)); },
-  getRSVPCount()  { return this._rsvps.length; },
-  /* 「將出席」的總人數（依每筆的 headcount 加總；沒填視為 1 位） */
+  /* ===== RSVP 出席回覆 =====
+     規則只讓 ownerEmails 名單內的帳號讀，所以不放進 _subscribe()，
+     由新人後台登入成功後才呼叫。
+     欄位以 rsvp.js 實際寫入的為準：
+       attending  bool   只有「會出席」是 true
+       tentative  bool   true 代表「未定」
+       guestCount int    出席人數
+       createdAt  Timestamp（伺服器時間） */
+  subscribeRsvps(){
+    this._lazySub('rsvps', 'rsvps', 'createdAt');
+  },
+
+  /* 新的排前面，新人最關心的是剛進來的回覆 */
+  getRSVPs(){
+    return this._rsvps.slice().reverse();
+  },
+  getRSVPCount(){ return this._rsvps.length; },
+
+  /* 每一筆回覆歸成三類，畫面與統計共用同一個判斷 */
+  rsvpStatus(r){
+    if(r.attending === true)  return 'yes';
+    if(r.tentative === true)  return 'maybe';
+    return 'no';
+  },
+
+  /* 「確定出席」的總人數（依每筆 guestCount 加總；沒填視為 1 位） */
   getAttendingCount(){
     return this._rsvps
-      .filter(r => r.attending === 'yes')
-      .reduce((sum, r) => sum + (Number(r.headcount) || 1), 0);
+      .filter(r => this.rsvpStatus(r) === 'yes')
+      .reduce((sum, r) => sum + (Number(r.guestCount) || 1), 0);
+  },
+
+  /* 三類各有幾「筆」回覆（不是人數） */
+  getRsvpTally(){
+    const t = { yes:0, maybe:0, no:0 };
+    this._rsvps.forEach(r => { t[this.rsvpStatus(r)]++; });
+    return t;
   },
 };
 
@@ -585,12 +736,15 @@ function renderInbox(){
 
 /* ============================================================
    頂部導覽列（每一頁共用，由這裡注入，各頁 HTML 不用重複寫）
-   顯示順序：新人名稱(lobby) → 祝福(wall) → 故事(exhibition)
-             → 測驗(quiz) → 抽卡(draw) → 集氣(cake) → User
+   顯示順序：新人名稱(lobby) → 桌次(seating) → 祝福(wall)
+             → 給你的信(letter) → 故事(exhibition) → 測驗(quiz)
+             → 抽卡(draw) → 集氣(cake) → User
    ・站台沒開的頁面不會出現在列上
 ============================================================ */
 const NAV_ITEMS = [
+  { key:'seating',    label:'桌次' },
   { key:'wall',       label:'祝福' },
+  { key:'letter',     label:'給你的信' },
   { key:'exhibition', label:'故事' },
   { key:'quiz',       label:'測驗' },
   { key:'draw',       label:'抽卡' },

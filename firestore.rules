@@ -48,10 +48,17 @@ service cloud.firestore {
       allow read: if true;
       allow create, update, delete: if false;
 
-      /* 出席回覆：可新增，但誰都不能讀（含新人本人，要走 Admin SDK 匯出） */
+      /* 出席回覆：任何人都可以新增（需通過驗證），
+         但只有新人本人讀得到 —— 和悄悄話信箱同一套身分判斷。
+         賓客彼此看不到誰要來、留了什麼話、有什麼飲食禁忌。
+
+         仍然不開放 update／delete：回覆是賓客送出的紀錄，
+         新人可以看、可以匯出，但不該在後台改掉別人寫的內容。
+         真的要刪（測試資料、重複回覆）走 Admin SDK。 */
       match /rsvps/{rsvpId} {
         allow create: if isValidRsvp(request.resource.data, siteId);
-        allow read, update, delete: if false;
+        allow read: if isSiteOwner(siteId);
+        allow update, delete: if false;
       }
 
       /* 祝福牆 */
@@ -153,6 +160,78 @@ service cloud.firestore {
             ? request.resource.data.count == 1
             : request.resource.data.count == resource.data.count + 1
           );
+      }
+
+      /* ---------- 婚禮當天：桌次查詢 ----------
+         名單必須公開讀取，賓客才查得到自己的位子
+         （等同於會場門口那張貼出來的座位表）。
+         寫入只有新人本人（ownerEmails 白名單）做得到。 */
+      match /seating/{seatId} {
+        allow read: if true;
+        allow create, update: if isSiteOwner(siteId)
+          && request.resource.data.keys().hasOnly(['name', 'table', 'note', 'time'])
+          && isStr(request.resource.data.name, 40)
+          && request.resource.data.name.size() >= 1
+          && isStr(request.resource.data.table, 40)
+          && request.resource.data.table.size() >= 1
+          && isStr(request.resource.data.note, 100)
+          && request.resource.data.time is number;
+        allow delete: if isSiteOwner(siteId);
+      }
+
+      /* 桌次圖：新人在後台上傳，前端先縮圖再以 data URL 存進文件。
+         不開 Firebase Storage —— Storage 規則讀不到 Firestore，
+         沒辦法用 ownerEmails 白名單判斷身分。 */
+      match /seatingImages/{imageId} {
+        allow read: if true;
+        allow create, update: if isSiteOwner(siteId)
+          && request.resource.data.keys().hasOnly(['img', 'title', 'order', 'time'])
+          && request.resource.data.img is string
+          && request.resource.data.img.size() <= 950000
+          && request.resource.data.img.matches('data:image/.*')
+          && isStr(request.resource.data.title, 60)
+          && request.resource.data.order is number
+          && request.resource.data.time is number;
+        allow delete: if isSiteOwner(siteId);
+      }
+
+      /* 電子祝福信：新人寫好，賓客用名字或專屬詞彙領取。
+         比對在前端做，所以信件內容是公開可讀的
+         —— 這裡適合寫給某人的祝福，不適合放不能被看到的祕密。
+         欄位取名 terms 而不是 keys，避免和規則語言的 data.keys() 撞名。 */
+      match /blessings/{blessingId} {
+        allow read: if true;
+        allow create, update: if isSiteOwner(siteId)
+          && request.resource.data.keys().hasOnly(['terms', 'title', 'body', 'sign', 'isDefault', 'time'])
+          && request.resource.data.terms is list
+          && request.resource.data.terms.size() <= 20
+          && isStr(request.resource.data.title, 60)
+          && isStr(request.resource.data.body, 2000)
+          && request.resource.data.body.size() >= 1
+          && isStr(request.resource.data.sign, 60)
+          && request.resource.data.isDefault is bool
+          && request.resource.data.time is number;
+        allow delete: if isSiteOwner(siteId);
+      }
+
+      /* 首頁 Explore 區的自訂卡片：新人自己寫這場婚禮規劃了什麼。
+         kind='link'  → 點了開外部連結（只收 http(s)，擋掉 javascript: 之類）
+         kind='popup' → 點了跳出 body 的內文 */
+      match /explore/{itemId} {
+        allow read: if true;
+        allow create, update: if isSiteOwner(siteId)
+          && request.resource.data.keys().hasOnly(['title', 'sub', 'kind', 'url', 'body', 'order', 'time'])
+          && isStr(request.resource.data.title, 40)
+          && request.resource.data.title.size() >= 1
+          && isStr(request.resource.data.sub, 120)
+          && request.resource.data.kind in ['link', 'popup']
+          && isStr(request.resource.data.url, 500)
+          && (request.resource.data.kind != 'link'
+              || request.resource.data.url.matches('https?://.*'))
+          && isStr(request.resource.data.body, 2000)
+          && request.resource.data.order is number
+          && request.resource.data.time is number;
+        allow delete: if isSiteOwner(siteId);
       }
 
       /* 其他 meta 文件一律不開放 */
