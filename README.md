@@ -16,7 +16,10 @@
 | `/w/{slug}/exhibition` | 我們的故事 |
 | `/w/{slug}/quiz` | 看你多了解我們 |
 | `/w/{slug}/inbox` | 悄悄話信箱 |
+| `/w/{slug}/seating` | 我的桌次（當天輸入名字查桌次 + 桌次圖） |
+| `/w/{slug}/letter` | 給你的信（新人寫的電子祝福信） |
 | `/w/{slug}/invitation` | 單頁式邀請函（獨立版型） |
+| `/w/{slug}/admin` | 新人後台（Google 登入）**一定有・不對外連結** |
 | `/s/{code}` | 短連結 |
 
 除了首頁以外，每一頁都可以個別開關。關掉的頁面：首頁與導覽列不會出現入口，
@@ -29,10 +32,12 @@
 
 ## 版面與風格
 
-- **導覽列**：每一頁最上方都有，依序是「新人名稱（首頁）、祝福、故事、測驗、抽卡、集氣、User」。
+- **導覽列**：每一頁最上方都有，依序是「新人名稱（首頁）、桌次、祝福、給你的信、故事、
+  測驗、抽卡、集氣、User」。
   由 `js/common.js` 統一注入，站台沒開的頁面不會出現在列上。
 - **首頁**：固定背景（一張圖或一段影片，滾動時不動）→ 置中開場（`h1` + `.cn`）→
-  婚禮資訊卡 → 當日流程 → Dress Code → 日期倒數 → RSVP → 五張卡片連結（兩欄）。
+  婚禮資訊卡 → 當日流程 → Dress Code → 日期倒數 → RSVP → 卡片連結（兩欄，
+  內建七張＋新人在後台自訂的卡片）。
 - **每頁的 `.scene-hero`** 固定 50vh。
 - **風格**：極簡線條。全站單一字族 **Noto Serif TC**（Google Fonts CDN），
   無陰影、無 emoji，靠 1px 線條與留白分層。
@@ -55,6 +60,9 @@
 │   ├─ index.html             # 大廳
 │   ├─ rsvp.html  wall.html  cake.html
 │   ├─ draw.html  exhibition.html  quiz.html  inbox.html
+│   ├─ seating.html           # 我的桌次（婚禮當天查桌次 + 桌次圖）
+│   ├─ letter.html            # 給你的信（新人寫的電子祝福信）
+│   ├─ admin.html             # 新人後台（桌次／祝福信／首頁自訂卡片）
 │   ├─ invitation.html        # 單頁式邀請函（獨立版型，自成一格）
 │   ├─ shortlink.html         # 短連結轉址頁
 │   ├─ 404.html
@@ -128,6 +136,12 @@ sites/{siteId}
   collected/{autoId}   uid, userName, art, name, rarity, desc, time
   meta/hearts          count                           # 愛心計數器
   meta/letterCount     count                           # 公開的信件數量
+
+  # ↓ 這三組由新人在 /w/{slug}/admin 自己維護（規則只認 ownerEmails 名單）
+  seating/{autoId}       name, table, note, time       # 桌次名單
+  seatingImages/{autoId} img(data URL), title, order, time   # 桌次圖
+  blessings/{autoId}     terms[], title, body, sign, isDefault, time  # 電子祝福信
+  explore/{autoId}       title, sub, kind(link|popup), url, body, order, time
 
 slugs/{slug}                # 文件 ID 就是 slug 本身
   siteId, createdAt
@@ -264,11 +278,12 @@ node scripts/create-site.js \
 ### 頁面開關
 
 可開關的頁面：`rsvp` `wall` `cake` `draw` `exhibition` `quiz` `inbox` `invitation`
-（大廳 `lobby` 一定存在，不能關）。
+`seating` `letter`
+（大廳 `lobby` 與新人後台 `admin` 一定存在，不能關）。
 
 ```bash
 # 全套都要
---pages rsvp,wall,cake,draw,exhibition,quiz,inbox,invitation
+--pages rsvp,wall,cake,draw,exhibition,quiz,inbox,invitation,seating,letter
 
 # 只要基本款（不給 --pages 時的預設）
 # → rsvp, wall
@@ -315,6 +330,129 @@ npm run set-pages -- --slug ginny-one-20260919 \
 
 ---
 
+## 新人後台：桌次、祝福信、首頁自訂卡片
+
+這三個模組的內容**不走 CLI、也不用進 Firebase Console**，
+新人自己在後台就能維護，改完重新整理網頁就生效（不必重新 deploy）。
+
+```
+https://{網域}/w/{slug}/admin
+```
+
+**進得去的條件**：用 **Google 帳號登入**，而且信箱要在 `sites.ownerEmails` 名單內。
+還沒設定的話先跑：
+
+```bash
+npm run set-pages -- --slug ginny-one-20260919 \
+  --owner-email groom@gmail.com --owner-email bride@gmail.com
+```
+
+> 這個網址不會出現在導覽列，也沒有任何頁面連過去（`noindex`），
+> 但真正的保護是 **Security Rules**：不在名單內的帳號就算打開這一頁、
+> 甚至改了畫面上的 HTML，也一個字都寫不進去。
+
+---
+
+### 1. 我的桌次（`/w/{slug}/seating`）
+
+婚禮當天賓客輸入名字就知道自己坐哪一桌，下面再附上桌次圖。
+
+**上傳桌次圖**（後台「桌次」分頁）
+可以一次選多張，或直接把圖拖進虛線框。圖片會在**瀏覽器端先縮圖**
+（最長邊 1800px、轉 JPEG），再存進這場婚禮自己的 Firestore。
+
+> **為什麼不用 Firebase Storage**：Storage 的安全規則讀不到 Firestore，
+> 沒辦法用 `ownerEmails` 白名單判斷「是不是新人本人」。
+> 存成 data URL 就能沿用同一套身分判斷，也不必多設一份規則與 CORS。
+> 代價是單張上限約 900KB（Firestore 文件上限 1MB），縮圖流程會自動處理。
+
+桌次圖也可以走素材資料夾，適合圖比較多、想版控的情況：
+
+```
+public/assets/{slug}/seating/
+  01.jpg  02.jpg …
+  meta.json      # 選填：{ "01": { "title": "一樓宴會廳" } }
+```
+
+放好之後跑 `npm run sync-assets -- --slug {slug}` 再 deploy。
+兩邊的圖會一起顯示，後台上傳的排前面。
+
+**匯入桌次名單**（後台「桌次」分頁）
+一行一位賓客，逗號分開 —— 直接從 Excel 複製貼上就可以
+（逗號、全形逗號、Tab 分隔都認得）：
+
+```
+王小明, 第 3 桌
+林美美, 第 3 桌, 素食
+陳大同, 主桌
+```
+
+| 欄位 | 必填 | 說明 |
+|---|---|---|
+| 姓名 | ✅ | 賓客要輸入的名字 |
+| 桌次 | ✅ | 顯示在結果卡上的大字，寫「第 3 桌」或「玫瑰廳 A5」都可以 |
+| 備註 | | 選填，例如素食、行動不便 |
+
+匯入是**加上去**，不會蓋掉原本的名單；要重來就先按「清空整份名單」。
+
+**比對規則**（由寬到嚴，先找到就用）：
+完全相同 → 名單的名字包含輸入的字（打「小明」找得到「王小明」）→
+輸入的字包含名單的名字（打「王小明先生」也找得到「王小明」）。
+空白、大小寫、全形半形都會先正規化，賓客怎麼打都找得到。
+
+查到之後除了桌號，還會列出**同桌還有誰**，一群朋友一起找位子比較方便。
+
+---
+
+### 2. 給你的信（`/w/{slug}/letter`）
+
+新人寫好一封封信，賓客輸入名字或專屬暗號就能拆開來看。
+畫面是一個信封，輸入正確後封蠟消失、封口掀開、信紙滑出來。
+
+在後台「祝福信」分頁寫：
+
+| 欄位 | 說明 |
+|---|---|
+| 專屬詞彙 | 賓客要輸入的通關密語，用逗號分開可以寫好幾個（名字、綽號、只有你們懂的暗號） |
+| 信的標題 | 顯示在信紙最上面 |
+| 信的內容 | 最多 2000 字，換行會保留 |
+| 署名 | 留白就用新人的名字 |
+| 通用信 | 勾起來的話，沒對到任何詞彙的賓客就領到這一封 |
+
+> **詞彙不要寫太短**：比對允許「互相包含」，所以單字詞很容易被別人誤中。
+> 建議至少兩個字，最保險是直接用全名。
+
+> **信件內容是公開可讀的**。比對在瀏覽器端做，Firestore 的讀取請求
+> 不帶條件，規則沒辦法「只讓對得上的人讀到那一封」。
+> 這裡適合寫給某人的祝福，**不適合放不能被別人看到的祕密**
+> —— 那種內容請用悄悄話信箱（`inbox`），那才是真正只有新人讀得到的。
+
+---
+
+### 3. 首頁 Explore 自訂卡片
+
+首頁 Explore 區原本都是模板功能（祝福牆、抽卡…）。
+新人可以在後台「首頁卡片」分頁補上自己的內容，接在內建卡片後面。
+
+兩種類型：
+
+| 類型 | 點下去會 | 適合 |
+|---|---|---|
+| 文字＋連結（`link`） | 另開分頁到你給的網址 | 直播連結、Google 相簿、共乘表單 |
+| 文字＋popup（`popup`） | 原地跳出一段文字 | 接駁車時間、停車資訊、注意事項 |
+
+| 欄位 | 說明 |
+|---|---|
+| 卡片標題 | 卡片上的大字 |
+| 一句話說明 | 標題下方的小字，選填 |
+| 連結網址 | 只收 `http://` 或 `https://` 開頭（規則層也會擋，`javascript:` 之類寫不進去） |
+| 彈窗內文 | 最多 2000 字，換行會保留 |
+| 排序 | 數字小的排前面 |
+
+卡片左上角的編號會**含自訂卡一起重編**，不會跳號。
+
+---
+
 ## 素材（照片）怎麼放
 
 **用站台的 slug 當資料夾名稱，把圖丟進去，跑一個指令就好**，
@@ -326,7 +464,7 @@ npm run set-pages -- --slug ginny-one-20260919 \
 npm run sync-assets -- --init --slug ginny-one-20260919
 ```
 
-會建好 `gallery/` `exhibition/` `cards/` `cakes/` 四個子資料夾，
+會建好 `gallery/` `exhibition/` `cards/` `cakes/` `seating/` 五個子資料夾，
 外加一份說明用的 `README.md`（不會被部署上線）。
 
 ### 2. 放圖
@@ -347,9 +485,12 @@ public/assets/{slug}/
 ├─ cards/             囍卡
 │   ├─ 01.png
 │   └─ meta.json      （選填）卡片名稱／稀有度／描述
-└─ cakes/             甜點桌
-    ├─ 01.png
-    └─ meta.json      （選填）甜點名稱／emoji
+├─ cakes/             甜點桌
+│   ├─ 01.png
+│   └─ meta.json      （選填）甜點名稱／emoji
+└─ seating/           桌次圖（我的桌次那頁下半部）
+    ├─ 01.jpg
+    └─ meta.json      （選填）每張圖的 title
 ```
 
 **檔名排序就是顯示順序**，建議用 `01`、`02`、`03` 這種前綴。

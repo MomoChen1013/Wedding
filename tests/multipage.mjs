@@ -33,7 +33,8 @@ const adb = adminFirestore();
 const DAY = 86400000;
 const future = (d) => TS.fromMillis(Date.now() + d * DAY);
 
-const ALL_PAGES = ['rsvp','wall','cake','draw','exhibition','quiz','inbox','invitation'];
+const ALL_PAGES = ['rsvp','wall','cake','draw','exhibition','quiz','inbox','invitation',
+  'seating','letter'];
 const allOn = Object.fromEntries(ALL_PAGES.map((k) => [k, true]));
 
 const SEED = {
@@ -92,7 +93,41 @@ async function seed(){
   return ids;
 }
 
+/* 三個新模組的測試資料：桌次名單、祝福信、Explore 自訂卡片。
+   這些平常由新人在 /w/{slug}/admin 建立，測試裡用 Admin SDK 直接寫。 */
+async function seedModules(siteId){
+  const sub = (name) => adb.collection('sites').doc(siteId).collection(name);
+  const now = Date.now();
+
+  await sub('seating').doc('s1').set({ name:'王小明', table:'第 3 桌', note:'素食', time: now });
+  await sub('seating').doc('s2').set({ name:'林美美', table:'第 3 桌', note:'', time: now });
+  await sub('seating').doc('s3').set({ name:'陳大同', table:'主桌',   note:'', time: now });
+
+  await sub('blessings').doc('b1').set({
+    terms:['王小明','小明'], title:'給小明的一封信',
+    body:'謝謝你今天特地趕來，我們真的很開心。',
+    sign:'Ginny & One', isDefault:false, time: now,
+  });
+  await sub('blessings').doc('b2').set({
+    terms:[], title:'給每一位朋友',
+    body:'謝謝你來，這一天因為你更完整。',
+    sign:'Ginny & One', isDefault:true, time: now,
+  });
+
+  await sub('explore').doc('x1').set({
+    title:'接駁車資訊', sub:'幾點在哪裡上車，這裡先講清楚',
+    kind:'popup', url:'', body:'早上 10:30 在台北車站東三門集合。',
+    order:1, time: now,
+  });
+  await sub('explore').doc('x2').set({
+    title:'婚禮直播', sub:'不能到場也能一起參與',
+    kind:'link', url:'https://example.com/live', body:'',
+    order:2, time: now,
+  });
+}
+
 const siteIds = await seed();
+await seedModules(siteIds['ginny-one-20260919']);
 console.log('已寫入測試資料。');
 
 /* ---------- 瀏覽器 ---------- */
@@ -178,7 +213,8 @@ const ASSET_SLUG = 'demo-wedding-2027';
 
 /* ---------- 每一頁都要載得起來 ---------- */
 console.log('\n[1] 每個頁面都能正常載入');
-for(const key of ['', 'rsvp', 'wall', 'cake', 'draw', 'exhibition', 'quiz', 'inbox']){
+for(const key of ['', 'rsvp', 'wall', 'cake', 'draw', 'exhibition', 'quiz', 'inbox',
+                  'seating', 'letter']){
   const path = `/w/${SLUG}/${key}`;
   const { page, errors } = await visit(path);
   const hasSite = await page.evaluate(() => !!window.SITE);
@@ -227,9 +263,11 @@ console.log('\n[2b] 新人名字有套進畫面');
   ok('首頁顯示新人與場地',
     text.includes('Ginny & One') && text.includes('台北國賓大飯店'),
     text.slice(0, 80).replace(/\n/g, ' '));
-  ok('首頁有五張卡片連結',
-    (await page.locator('.link-card').count()) === 5,
-    String(await page.locator('.link-card').count()));
+  /* 內建 7 張（wall/exhibition/quiz/draw/cake/seating/letter 都開著）
+     ＋ 新人自訂的 2 張。自訂卡是非同步讀進來的，等它出現再數 */
+  await page.waitForSelector('.link-card.is-custom', { timeout: 10000 }).catch(() => {});
+  const cardCount = await page.locator('.link-card').count();
+  ok('首頁卡片＝內建 7 張＋自訂 2 張', cardCount === 9, String(cardCount));
   ok('每頁都有頂部導覽列', await page.isVisible('#siteNav'));
   await page.close();
 }
@@ -247,7 +285,7 @@ console.log('\n[3] 頁面開關');
   const links = await page.evaluate(() =>
     Array.from(document.querySelectorAll('a[href^="/w/"]')).map((a) => a.getAttribute('href')));
   ok('未啟用的入口不出現在首頁',
-    !links.some((h) => /\/(wall|cake|draw|exhibition|quiz|inbox)$/.test(h)),
+    !links.some((h) => /\/(wall|cake|draw|exhibition|quiz|inbox|seating|letter)$/.test(h)),
     links.join(', '));
   ok('已啟用的 rsvp 入口仍在', links.some((h) => h.endsWith('/rsvp')), links.join(', '));
   await page.close();
@@ -389,8 +427,9 @@ console.log('\n[9b] 背景音樂');
   await page.close();
 }
 {
-  /* 沒放音檔的站台要退回內建合成音樂，不能整個沒聲音 */
-  const { page } = await visit(`/w/${SLUG}/`);
+  /* 沒放音檔的站台要退回內建合成音樂，不能整個沒聲音。
+     ginny 站台已經有自己的 bgm.mp3，所以這裡要用沒有素材資料夾的站台來驗。 */
+  const { page } = await visit('/w/minimal-site-2027/');
   const src = await page.evaluate(() => bgmSrc());
   ok('沒有音檔時退回內建音樂', src === '', src || '(空)');
   ok('內建合成音樂的函式存在',
@@ -439,9 +478,148 @@ console.log('\n[10] 信箱權限');
   await page.close();
 }
 
+/* ---------- 桌次查詢 ---------- */
+console.log('\n[11] 桌次查詢');
+{
+  const { page, errors } = await visit(`/w/${SLUG}/seating`);
+  await page.waitForFunction(() => DataStore.getSeating().length > 0, null, { timeout:10000 });
+
+  await page.fill('#stInput', '王小明');
+  await page.click('#stBtn');
+  const text = await page.innerText('#stResult');
+  ok('查得到自己的桌次', text.includes('第 3 桌'), text.replace(/\n/g, ' ').slice(0, 60));
+  ok('顯示備註', text.includes('素食'), text.replace(/\n/g, ' ').slice(0, 60));
+  ok('列出同桌的人', text.includes('林美美'), text.replace(/\n/g, ' ').slice(0, 60));
+
+  /* 只打名字（沒有姓）也要找得到 */
+  await page.fill('#stInput', '小明');
+  await page.click('#stBtn');
+  ok('只輸入名字也找得到',
+    (await page.innerText('#stResult')).includes('第 3 桌'));
+
+  /* 查無資料要給友善說明，不是空白 */
+  await page.fill('#stInput', '不存在的人');
+  await page.click('#stBtn');
+  const miss = await page.innerText('#stResult');
+  ok('查無資料有友善提示', miss.includes('找不到'), miss.replace(/\n/g, ' ').slice(0, 40));
+
+  ok('桌次頁無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+{
+  /* 賓客不能竄改桌次名單 */
+  const { page } = await visit(`/w/${SLUG}/seating`);
+  const denied = await page.evaluate(async () => {
+    const { addDoc, collection, db } = window.fb;
+    try{
+      await addDoc(collection(db, 'sites', window.SITE.siteId, 'seating'),
+        { name:'冒充者', table:'主桌', note:'', time: Date.now() });
+      return false;
+    }catch(e){ return e.code === 'permission-denied'; }
+  });
+  ok('賓客改不了桌次名單（規則擋下）', denied);
+  await page.close();
+}
+
+/* ---------- 電子祝福信 ---------- */
+console.log('\n[12] 電子祝福信');
+{
+  const { page, errors } = await visit(`/w/${SLUG}/letter`);
+  await page.waitForFunction(() => DataStore.getBlessings().length > 0, null, { timeout:10000 });
+
+  await page.fill('#wlInput', '小明');
+  await page.click('#wlBtn');
+  await page.waitForSelector('#wlSheet:not([hidden])', { timeout:10000 });
+  const sheet = await page.innerText('#wlSheet');
+  ok('對到專屬詞彙就拿到那封信',
+    sheet.includes('謝謝你今天特地趕來'), sheet.replace(/\n/g, ' ').slice(0, 60));
+  ok('信上有署名', sheet.includes('Ginny & One'), sheet.replace(/\n/g, ' ').slice(0, 80));
+  ok('開信後信封是掀開狀態',
+    await page.evaluate(() => document.getElementById('wlEnvelope').classList.contains('is-open')));
+
+  /* 沒對到任何詞彙 → 領到通用信 */
+  await page.click('#wlAgain');
+  await page.fill('#wlInput', '路過的朋友');
+  await page.click('#wlBtn');
+  await page.waitForSelector('#wlSheet:not([hidden])', { timeout:10000 });
+  ok('沒對到詞彙就給通用信',
+    (await page.innerText('#wlSheet')).includes('這一天因為你更完整'));
+
+  ok('祝福信頁無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+
+/* ---------- Explore 自訂卡片 ---------- */
+console.log('\n[13] Explore 自訂卡片');
+{
+  const { page, errors } = await visit(`/w/${SLUG}/`);
+  await page.waitForSelector('.link-card.is-custom', { timeout:10000 });
+
+  const custom = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('.link-card.is-custom')).map((el) => ({
+      tag: el.tagName,
+      title: el.querySelector('.lc-title').textContent,
+      href: el.getAttribute('href') || '',
+      target: el.getAttribute('target') || '',
+    })));
+
+  ok('兩張自訂卡片都出現', custom.length === 2, String(custom.length));
+  ok('連結型是 <a> 且另開分頁',
+    custom.some((c) => c.tag === 'A' && c.href === 'https://example.com/live' && c.target === '_blank'),
+    JSON.stringify(custom));
+  ok('彈窗型是 <button>',
+    custom.some((c) => c.tag === 'BUTTON' && c.title === '接駁車資訊'),
+    JSON.stringify(custom));
+
+  /* 點彈窗型的卡片要跳出內文 */
+  await page.click('.link-card.is-custom:has-text("接駁車資訊")');
+  await page.waitForSelector('#lcModal.open', { timeout:5000 });
+  const modal = await page.innerText('#lcModal');
+  ok('點卡片跳出 popup 並顯示內文',
+    modal.includes('台北車站東三門'), modal.replace(/\n/g, ' ').slice(0, 60));
+
+  await page.click('#lcModalClose');
+  ok('關得掉 popup',
+    !(await page.evaluate(() => document.getElementById('lcModal').classList.contains('open'))));
+
+  /* 編號要含自訂卡一起重編，不能跳號 */
+  const idx = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('.link-card .lc-index')).map((e) => e.textContent));
+  ok('卡片編號連號到最後一張',
+    idx.join(',') === '01,02,03,04,05,06,07,08,09', idx.join(','));
+
+  ok('首頁無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+
+/* ---------- 新人後台 ---------- */
+console.log('\n[14] 新人後台');
+{
+  const { page } = await visit(`/w/${SLUG}/admin`);
+  ok('後台停在 Google 登入畫面', await page.isVisible('#pwGate'));
+  ok('沒登入時看不到管理介面',
+    await page.evaluate(() => document.getElementById('adPage').hidden));
+
+  /* 未登入的訪客即使改了 DOM 也寫不進去 —— 門檻在規則層 */
+  const denied = await page.evaluate(async () => {
+    try{
+      await DataStore.saveDoc('explore', null, {
+        title:'冒充的卡片', sub:'', kind:'popup', url:'', body:'x',
+        order:99, time: Date.now(),
+      });
+      return false;
+    }catch(e){ return e.code === 'permission-denied'; }
+  });
+  ok('未登入寫不進自訂卡片（規則擋下）', denied);
+  await page.close();
+}
+
 /* ---------- 手機版 ---------- */
 console.log('\n[8] 手機版無水平捲動');
-for(const key of ['', 'wall', 'rsvp', 'quiz']){
+for(const key of ['', 'wall', 'rsvp', 'quiz', 'seating', 'letter']){
   const page = await newPage({ viewport:{ width:375, height:812 } });
   await page.goto(`${BASE}/w/${SLUG}/${key}`, { waitUntil:'domcontentloaded' });
   await page.waitForFunction(

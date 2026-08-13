@@ -217,8 +217,106 @@ setText('dressCode', W.dressCode || '輕鬆舒適就好，一起把畫面拍得�
 setText('giftNote',  W.giftNote  || '您的到來就是最好的禮物');
 
 /* ============================================================
+   Explore：新人自訂的卡片
+   ------------------------------------------------------------
+   內建的五張卡是模板功能，這裡再補上新人自己寫的內容
+   （這場婚禮規劃了什麼、要注意什麼、附上的連結…）。
+
+   兩種類型：
+     kind='link'  → 點了開外部連結（另開分頁）
+     kind='popup' → 點了跳出彈窗顯示 body 的內文
+
+   資料在 sites/{siteId}/explore，由新人後台 /w/{slug}/admin 維護。
+============================================================ */
+const linkGrid = document.getElementById('linkGrid');
+
+/* HTML 裡寫死的五張是模板卡，重新渲染時要保留 */
+const builtinCards = linkGrid
+  ? Array.from(linkGrid.querySelectorAll('.link-card'))
+  : [];
+
+function renderExploreCards(){
+  if(!linkGrid) return;
+
+  /* 只清掉上一輪自訂的，內建的原地不動 */
+  linkGrid.querySelectorAll('.link-card.is-custom').forEach(el => el.remove());
+
+  const items = DataStore.getExplore().filter(it => it.title);
+  items.forEach(it => {
+    const isLink = it.kind === 'link' && /^https?:\/\//i.test(it.url || '');
+    const el = document.createElement(isLink ? 'a' : 'button');
+    el.className = 'link-card is-custom';
+
+    if(isLink){
+      el.href = it.url;
+      el.target = '_blank';
+      el.rel = 'noopener noreferrer';
+    }else{
+      el.type = 'button';
+      el.addEventListener('click', ()=> openExploreModal(it));
+    }
+
+    el.innerHTML =
+      `<span class="lc-index"></span>` +
+      `<span class="lc-title">${escapeHtml(it.title)}</span>` +
+      (it.sub ? `<span class="lc-sub">${escapeHtml(it.sub)}</span>` : '') +
+      `<span class="lc-go">${isLink ? '開啟連結' : '看內容'}</span>`;
+
+    linkGrid.appendChild(el);
+  });
+
+  /* 內建的頁面全關、但新人寫了自訂卡片時，整個區塊要重新露出來 */
+  const section = linkGrid.closest('.link-section');
+  if(section) section.hidden = !(builtinCards.length || items.length);
+
+  renumberLinkCards();
+}
+
+/* ---------- 彈窗 ---------- */
+const lcModal = document.getElementById('lcModal');
+
+function openExploreModal(it){
+  document.getElementById('lcModalTitle').textContent = it.title || '';
+  const sub = document.getElementById('lcModalSub');
+  sub.textContent = it.sub || '';
+  sub.hidden = !it.sub;
+  document.getElementById('lcModalBody').textContent = it.body || '';
+  lcModal.classList.add('open');
+}
+function closeExploreModal(){ lcModal.classList.remove('open'); }
+
+if(lcModal){
+  document.getElementById('lcModalClose').addEventListener('click', closeExploreModal);
+  lcModal.addEventListener('click', (e)=>{ if(e.target === lcModal) closeExploreModal(); });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape') closeExploreModal();
+  });
+}
+
+document.addEventListener('data:explore', renderExploreCards);
+DataStore.subscribeExplore();
+
+/* ============================================================
+   卡片連結的編號
+   HTML 裡寫死的 01～05 是「全部頁面都開」時的號碼；
+   這組新人關掉的頁面已經被 rewriteNavLinks 移掉，
+   自訂卡片則是接在後面，所以每次都從 01 重編一次，
+   不會跳號（例：01、04）。只剩一張時編號沒有意義，直接不顯示。
+============================================================ */
+function renumberLinkCards(){
+  const cards = document.querySelectorAll('.link-grid .link-card');
+  cards.forEach((cardEl, i) => {
+    const idx = cardEl.querySelector('.lc-index');
+    if(!idx) return;
+    if(cards.length < 2) idx.remove();
+    else idx.textContent = String(i + 1).padStart(2, '0');
+  });
+}
+
+/* ============================================================
    收尾：站台沒開的頁面，rewriteNavLinks 已把連結整個移除，
    這裡把只剩空殼的區塊也一起收起來
+   （自訂卡片是非同步讀進來的，到齊後 renderExploreCards 會再判斷一次）
 ============================================================ */
 (function hideEmptySections(){
   const cta = document.querySelector('.rsvp-cta');
@@ -228,19 +326,4 @@ setText('giftNote',  W.giftNote  || '您的到來就是最好的禮物');
   if(grid && !grid.querySelector('.link-card')) grid.closest('.link-section').hidden = true;
 })();
 
-/* ============================================================
-   卡片連結的編號
-   HTML 裡寫死的 01～05 是「全部頁面都開」時的號碼；
-   這組新人關掉的頁面已經被 rewriteNavLinks 移掉，
-   所以剩下幾張就從 01 重編幾號，不會跳號（例：01、04）。
-   只剩一張時編號沒有意義，直接不顯示。
-============================================================ */
-(function renumberLinkCards(){
-  const cards = document.querySelectorAll('.link-grid .link-card');
-  cards.forEach((cardEl, i) => {
-    const idx = cardEl.querySelector('.lc-index');
-    if(!idx) return;
-    if(cards.length < 2) idx.remove();
-    else idx.textContent = String(i + 1).padStart(2, '0');
-  });
-})();
+renumberLinkCards();

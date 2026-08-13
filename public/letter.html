@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>給你的信｜{{couple}} 婚禮</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/css/letter.css">
+</head>
+<body data-theme="champagne" data-page="letter">
+
+<div class="bg-decor"></div>
+<canvas id="fx"></canvas>
+
+<div class="scene-bg" data-bg="gallery"></div>
+
+<section class="panel page-fade" data-panel="letter">
+
+  <div class="scene-hero">
+    <div class="sh-title">給你的信</div>
+    <div class="sh-sub">{{couple}} 寫了一封信・在等你來領</div>
+  </div>
+
+  <div class="scene-body wl-body">
+
+    <!-- ===== 信封（尚未開啟） ===== -->
+    <div class="wl-stage" id="wlStage">
+      <div class="envelope" id="wlEnvelope">
+        <div class="env-back"></div>
+        <div class="env-paper"></div>
+        <div class="env-front"></div>
+        <div class="env-flap"></div>
+        <div class="env-seal" id="wlSeal">
+          <span class="env-seal-mark">&amp;</span>
+        </div>
+        <div class="env-to">
+          <span class="env-to-label">To</span>
+          <span class="env-to-name" id="wlToName">你</span>
+        </div>
+      </div>
+
+      <form class="wl-form" id="wlForm" autocomplete="off">
+        <label class="wl-label" for="wlInput">輸入你的名字，或新人給你的專屬暗號</label>
+        <div class="wl-row">
+          <input class="wl-input" id="wlInput" type="text" maxlength="40"
+                 placeholder="例如：王小明">
+          <button class="btn small" id="wlBtn" type="submit">開信</button>
+        </div>
+        <div class="wl-msg" id="wlMsg" aria-live="polite">&nbsp;</div>
+      </form>
+    </div>
+
+    <!-- ===== 信紙（開啟後） ===== -->
+    <article class="wl-sheet" id="wlSheet" hidden>
+      <div class="wl-sheet-inner">
+        <div class="wl-sheet-head">
+          <span class="wl-sheet-rule"></span>
+          <span class="wl-sheet-mark">✦</span>
+          <span class="wl-sheet-rule"></span>
+        </div>
+        <h2 class="wl-title" id="wlTitle"></h2>
+        <p class="wl-text" id="wlText"></p>
+        <div class="wl-sign">
+          <div class="wl-sign-from">from</div>
+          <div class="wl-sign-name" id="wlSign"></div>
+        </div>
+      </div>
+      <div class="wl-sheet-actions">
+        <button class="btn small ghost" id="wlAgain" type="button">換一個名字再試</button>
+      </div>
+    </article>
+
+    <footer>made for {{couple}}・{{hashtag}}</footer>
+  </div>
+</section>
+
+<!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與本頁 JS -->
+<script type="module" src="/js/site-context.js"></script>
+</body>
+</html>

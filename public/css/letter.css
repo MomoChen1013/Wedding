@@ -1,0 +1,151 @@
+/* ============================================================
+   letter.css — 給你的信
+   ・信封：純 CSS 疊層（背面 → 信紙 → 正面 → 封口 → 火漆），
+     掀蓋用 rotateX，不需要任何圖檔
+   ・信紙：橫線紙 + 內縮邊框，字體沿用全站的 Noto Serif TC
+============================================================ */
+
+.wl-body{max-width:680px;}
+
+/* ============================================================
+   信封
+============================================================ */
+.wl-stage{padding:10px 0 20px;transition:opacity .45s ease,transform .45s ease;}
+.wl-stage.is-sent{opacity:.28;transform:scale(.94);}
+
+.envelope{
+  position:relative;width:min(100%,420px);margin:0 auto;
+  aspect-ratio:1.62 / 1;                 /* 接近實際的西式信封比例 */
+  perspective:1400px;
+}
+
+/* 信封本體：背面（底層） */
+.env-back{position:absolute;inset:0;background:var(--primary-soft);
+  border:1px solid var(--line);border-radius:var(--radius);}
+
+/* 藏在裡面的信紙，掀蓋後會露出一角 */
+.env-paper{
+  position:absolute;left:8%;right:8%;top:14%;height:74%;
+  background:#fff;border:1px solid var(--line-soft);border-radius:1px;
+  transition:transform .55s cubic-bezier(.2,.8,.3,1);
+}
+.envelope.is-open .env-paper{transform:translateY(-16%);}
+
+/* 正面：兩道斜線做出信封的折角 */
+.env-front{
+  position:absolute;inset:0;border:1px solid var(--line);border-radius:var(--radius);
+  background:
+    linear-gradient(to bottom right, transparent 49.6%, var(--line) 49.6%, var(--line) 50.2%, transparent 50.2%),
+    linear-gradient(to bottom left,  transparent 49.6%, var(--line) 49.6%, var(--line) 50.2%, transparent 50.2%),
+    var(--primary-soft);
+  clip-path:polygon(0 32%, 50% 66%, 100% 32%, 100% 100%, 0 100%);
+}
+
+/* 封口：以上緣為軸掀開 */
+.env-flap{
+  position:absolute;left:0;right:0;top:0;height:62%;
+  background:var(--primary-soft);border:1px solid var(--line);
+  border-radius:var(--radius) var(--radius) 0 0;
+  clip-path:polygon(0 0, 100% 0, 50% 100%);
+  transform-origin:top center;
+  transition:transform .6s cubic-bezier(.4,.1,.2,1);
+  z-index:3;
+}
+.envelope.is-open .env-flap{transform:rotateX(-172deg);}
+
+/* 火漆印 */
+.env-seal{
+  position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);
+  width:56px;height:56px;border-radius:50%;z-index:4;
+  background:var(--primary);border:1px solid var(--primary-deep);
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity .35s ease,transform .45s ease;
+}
+.env-seal-mark{font-family:var(--font-display);font-size:22px;color:#fff;
+  line-height:1;letter-spacing:0;}
+.envelope.is-open .env-seal{opacity:0;transform:translate(-50%,-50%) scale(.6);}
+
+/* 收件人 */
+.env-to{
+  position:absolute;left:0;right:0;bottom:13%;z-index:4;text-align:center;
+  display:flex;align-items:baseline;justify-content:center;gap:10px;
+  transition:opacity .35s ease;
+}
+.envelope.is-open .env-to{opacity:0;}
+.env-to-label{font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;
+  color:var(--ink-soft);}
+.env-to-name{font-family:var(--font-display);font-size:19px;letter-spacing:.16em;
+  color:var(--ink);max-width:9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ============================================================
+   輸入區
+============================================================ */
+.wl-form{max-width:420px;margin:30px auto 0;text-align:center;}
+.wl-label{display:block;font-size:12.5px;letter-spacing:.1em;
+  color:var(--ink-soft);margin-bottom:12px;}
+.wl-row{display:flex;gap:10px;}
+.wl-input{
+  flex:1 1 auto;min-width:0;padding:14px 16px;
+  border:1px solid var(--line);border-radius:var(--radius);
+  font-family:var(--font-body);font-size:16px;letter-spacing:.08em;
+  color:var(--ink);background:rgba(255,255,255,.9);outline:none;
+  transition:border-color .2s;
+}
+.wl-input:focus{border-color:var(--ink);}
+.wl-input::placeholder{color:var(--ink-soft);opacity:.7;}
+.wl-row .btn{flex:0 0 auto;}
+.wl-msg{min-height:1.6em;margin-top:12px;font-size:12.5px;
+  letter-spacing:.06em;color:var(--primary-deep);}
+
+/* ============================================================
+   信紙
+============================================================ */
+.wl-sheet{margin-top:34px;opacity:0;transform:translateY(18px);
+  transition:opacity .6s ease,transform .6s ease;}
+.wl-sheet.show{opacity:1;transform:none;}
+.wl-sheet[hidden]{display:none;}
+
+.wl-sheet-inner{
+  background:#fffdf9;border:1px solid var(--line);border-radius:var(--radius);
+  padding:44px 34px 38px;position:relative;
+}
+/* 內縮的第二層細框，像信紙的印刷邊 */
+.wl-sheet-inner::before{
+  content:'';position:absolute;inset:10px;border:1px solid var(--line-soft);
+  pointer-events:none;
+}
+
+.wl-sheet-head{display:flex;align-items:center;justify-content:center;gap:14px;
+  margin-bottom:24px;}
+.wl-sheet-rule{flex:0 0 46px;height:1px;background:var(--line);}
+.wl-sheet-mark{color:var(--primary-deep);font-size:13px;line-height:1;}
+
+.wl-title{
+  font-family:var(--font-display);font-weight:500;
+  font-size:clamp(18px,4.4vw,23px);letter-spacing:.16em;line-height:1.7;
+  color:var(--ink);text-align:center;margin-bottom:28px;
+}
+.wl-text{
+  font-size:15.5px;line-height:2.25;letter-spacing:.05em;color:var(--ink);
+  white-space:pre-wrap;word-break:break-word;
+  /* 橫線紙：用 repeating-linear-gradient 對齊行高 */
+  background-image:repeating-linear-gradient(
+    to bottom, transparent 0, transparent calc(2.25em - 1px),
+    var(--line-soft) calc(2.25em - 1px), var(--line-soft) 2.25em);
+  background-position:0 .35em;
+}
+
+.wl-sign{margin-top:32px;text-align:right;}
+.wl-sign-from{font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;
+  color:var(--ink-soft);}
+.wl-sign-name{font-family:var(--font-display);font-size:17px;letter-spacing:.16em;
+  color:var(--ink);margin-top:6px;}
+
+.wl-sheet-actions{margin-top:20px;text-align:center;}
+
+@media(max-width:560px){
+  .wl-sheet-inner{padding:34px 22px 30px;}
+  .wl-text{font-size:15px;}
+  .env-seal{width:48px;height:48px;}
+  .env-seal-mark{font-size:19px;}
+}

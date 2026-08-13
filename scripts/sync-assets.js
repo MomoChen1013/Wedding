@@ -26,6 +26,9 @@
        cakes/                 甜點桌
          01.png …
          meta.json            選填，甜點名稱／emoji
+       seating/               桌次圖（賓客查桌次那頁下半部）
+         01.jpg …
+         meta.json            選填，每張圖的 title
 
    跑完會在 public/assets/{slug}/manifest.json 產生清單，
    網頁載入時會自動抓，不必手動一張一張填網址。
@@ -69,6 +72,7 @@ const FOLDERS = {
   exhibition: 'exhibition',
   cards: 'cards',
   cakes: 'cakes',
+  seating: 'seating',
 };
 
 function isImage(name) {
@@ -178,7 +182,7 @@ function describe(manifest) {
   }
   for (const [key, label] of [
     ['gallery', '照片牆'], ['exhibition', '戀愛時光'],
-    ['cards', '囍卡'], ['cakes', '甜點桌'],
+    ['cards', '囍卡'], ['cakes', '甜點桌'], ['seating', '桌次圖'],
   ]) {
     if (manifest[key]) bits.push(`${label} ${manifest[key].length} 張`);
   }
@@ -227,6 +231,7 @@ function initFolder(slug) {
 | \`exhibition/\` | 戀愛時光的展品 |
 | \`cards/\` | 囍卡 |
 | \`cakes/\` | 甜點桌 |
+| \`seating/\` | 桌次圖 |
 
 子資料夾可以放選填的 \`meta.json\` 補上文字，用檔名當 key：
 
@@ -289,7 +294,7 @@ npx firebase deploy --only hosting
   }
 
   console.log(`✅ 已建立 public/assets/${slug}/`);
-  console.log('   gallery/  exhibition/  cards/  cakes/');
+  console.log('   gallery/  exhibition/  cards/  cakes/  seating/');
   console.log('   放好檔案後再跑一次（不加 --init）產生清單。');
 }
 
@@ -352,7 +357,7 @@ function main() {
     if (ignored.length) {
       console.log(`   ⚠️ 這些檔案的檔名沒對上，不會被使用：${ignored.join('、')}`);
       console.log('      放在這一層的檔案必須命名為 cover / lobby / lobby-blur / bgm，');
-      console.log('      其他圖片請放進 gallery／exhibition／cards／cakes 子資料夾。');
+      console.log('      其他圖片請放進 gallery／exhibition／cards／cakes／seating 子資料夾。');
     }
   }
 

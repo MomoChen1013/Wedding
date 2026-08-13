@@ -191,3 +191,43 @@
   .link-grid{grid-template-columns:1fr;}
   .link-card:last-child:nth-child(odd){grid-column:auto;}
 }
+
+/* ---------- 新人自訂的卡片 ----------
+   popup 型是 <button>，把瀏覽器預設樣式清掉，
+   看起來要和旁邊的 <a> 卡片一模一樣 */
+.link-card.is-custom{
+  font-family:var(--font-body);text-align:left;width:100%;cursor:pointer;
+  border-top:none;border-left:none;appearance:none;
+}
+/* 自訂卡右下角一個小記號，跟模板功能區分開來 */
+.link-card.is-custom::after{
+  content:'';position:absolute;right:16px;bottom:16px;
+  width:5px;height:5px;border-radius:50%;background:var(--primary);
+  opacity:.55;transition:background .25s;
+}
+.link-card.is-custom:hover::after{background:rgba(255,255,255,.7);}
+
+/* ============================================================
+   自訂卡片的彈窗
+============================================================ */
+.lc-modal{position:fixed;inset:0;z-index:1100;display:none;
+  align-items:center;justify-content:center;padding:20px;
+  background:rgba(47,43,38,.42);}
+.lc-modal.open{display:flex;}
+.lc-modal-card{
+  width:min(94vw,520px);max-height:82vh;overflow-y:auto;
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:38px 30px 32px;position:relative;animation:pop .3s ease;
+}
+.lc-modal-close{position:absolute;top:12px;right:14px;cursor:pointer;
+  background:none;border:none;font-size:15px;line-height:1;color:var(--ink-soft);}
+.lc-modal-close:hover{color:var(--ink);}
+.lc-modal-title{font-family:var(--font-display);font-weight:500;font-size:19px;
+  letter-spacing:.16em;line-height:1.6;color:var(--ink);}
+.lc-modal-sub{margin-top:8px;font-size:12.5px;letter-spacing:.08em;color:var(--ink-soft);}
+.lc-modal-sub[hidden]{display:none;}
+.lc-modal-body{
+  margin-top:20px;padding-top:20px;border-top:1px solid var(--line-soft);
+  font-size:15px;line-height:2.1;letter-spacing:.04em;color:var(--ink);
+  white-space:pre-wrap;word-break:break-word;
+}

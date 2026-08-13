@@ -83,6 +83,14 @@ sites/{siteId}
   meta/hearts         count(int)                        # 愛心計數器
   meta/letterCount    count(int)                        # 公開的信件數量
 
+  # 以下四個由新人在 /w/{slug}/admin 維護，寫入需通過 ownerEmails 白名單
+  seating/{autoId}       name, table, note(≤100), time            # 桌次名單
+  seatingImages/{autoId} img(data URL ≤950000), title, order, time # 桌次圖
+  blessings/{autoId}     terms(list ≤20), title, body(≤2000),
+                         sign, isDefault(bool), time              # 電子祝福信
+  explore/{autoId}       title, sub, kind('link'|'popup'),
+                         url, body(≤2000), order, time            # 首頁自訂卡片
+
 slugs/{slug}                # 網址佔位對照表，文件 ID 就是 slug 本身
   siteId          : string
   createdAt       : timestamp
@@ -134,8 +142,17 @@ short/{code}                # 短連結
 |---|---|---|---|---|
 | `sites/{siteId}` | 允許 | 拒絕 | 拒絕 | 拒絕 |
 | `sites/{siteId}/rsvps/{id}` | 拒絕 | 允許（需通過驗證） | 拒絕 | 拒絕 |
+| `sites/{siteId}/seating/{id}` | 允許 | 新人 | 新人 | 新人 |
+| `sites/{siteId}/seatingImages/{id}` | 允許 | 新人 | 新人 | 新人 |
+| `sites/{siteId}/blessings/{id}` | 允許 | 新人 | 新人 | 新人 |
+| `sites/{siteId}/explore/{id}` | 允許 | 新人 | 新人 | 新人 |
 | `slugs/{slug}` | 允許 | 拒絕 | 拒絕 | 拒絕 |
 | `short/{code}` | 允許 | 拒絕 | 拒絕 | 拒絕 |
+
+「新人」＝ `isSiteOwner(siteId)`：已驗證的 Google 信箱在 `sites.ownerEmails` 名單內。
+這四個集合的 **read 是公開的**，因為比對（桌次查名字、祝福信對暗號）在瀏覽器端做——
+Firestore 的讀取請求不帶條件，規則沒有辦法「只讓對得上的人讀到那一筆」。
+不能被別人看到的內容請放悄悄話信箱（`letters`），那裡的 read 綁在 Auth 身分上。
 
 ### RSVP 建立時的驗證條件
 
@@ -188,6 +205,7 @@ node scripts/create-site.js --slug chen-lin-0315 --groom 陳彥廷 --bride 林�
 |---|---|
 | `/w/*/rsvp` `/w/*/wall` `/w/*/cake` | 對應的 HTML |
 | `/w/*/draw` `/w/*/exhibition` `/w/*/quiz` `/w/*/inbox` | 對應的 HTML |
+| `/w/*/seating` `/w/*/letter` `/w/*/admin` | 對應的 HTML |
 | `/w/*/invitation` | `/invitation.html` |
 | `/w/**`（其餘，含 `/w/{slug}/`） | `/index.html`（大廳） |
 | `/s/**` | `/shortlink.html` |
@@ -319,7 +337,10 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
 | `exhibition` | `/w/{slug}/exhibition` | 戀愛時光 | ✅ |
 | `quiz` | `/w/{slug}/quiz` | 新人小測驗 | ✅ |
 | `inbox` | `/w/{slug}/inbox` | 悄悄話信箱 | ✅ |
+| `seating` | `/w/{slug}/seating` | 我的桌次 | ✅ |
+| `letter` | `/w/{slug}/letter` | 給你的信（電子祝福信） | ✅ |
 | `invitation` | `/w/{slug}/invitation` | 單頁式邀請函（獨立版型） | ✅ |
+| `admin` | `/w/{slug}/admin` | 新人後台 | ❌ |
 
 關閉一個頁面會同時做到三件事，不只是把畫面藏起來：
 
@@ -352,6 +373,7 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
 | `exhibition/` | 戀愛時光的展品 |
 | `cards/` | 囍卡 |
 | `cakes/` | 甜點桌 |
+| `seating/` | 桌次圖（也可以改由新人在後台直接上傳） |
 
 - 檔名排序即顯示順序（建議 `01`、`02`…）
 - 各子資料夾可放選填的 `meta.json`，用檔名當 key 補上標題／年份／稀有度等文字
@@ -384,3 +406,64 @@ allow read: if request.auth != null
 規則沒有辦法驗證使用者輸入的密碼。密碼門只能遮住畫面，
 資料仍可透過 API 直接取得，等於沒有保護。
 真正的保護必須綁在 Auth 簽發的身分上。
+
+---
+
+## 13. 新人自己維護的內容（後台 `/w/{slug}/admin`）
+
+前面幾個模組的內容都是建站時由 CLI 寫進去、之後改要走 Console。
+以下三個模組的內容**由新人自己在瀏覽器裡維護**，改完重新整理就生效，
+不需要 deploy、也不需要我們介入。
+
+進入條件與悄悄話信箱相同：Google 登入 + 信箱在 `sites.ownerEmails` 名單內。
+後台不列在導覽列、不被任何頁面連結、標了 `noindex`，
+但真正的保護是 Security Rules —— 不在名單內的帳號改了 DOM 也寫不進去。
+
+### 13.1 我的桌次（`seating`）
+
+婚禮當天的查詢頁，分成兩塊：
+
+| 區塊 | 資料來源 |
+|---|---|
+| 名字 → 桌次的查詢 | `sites/{siteId}/seating` |
+| 桌次圖（多張、可放大拖曳） | `sites/{siteId}/seatingImages` ＋ `assets/{slug}/seating/` |
+
+**名字比對**由寬到嚴，先找到就用：正規化後完全相同 →
+名單的名字包含輸入的字 → 輸入的字包含名單的名字。
+正規化會去空白、全形轉半形、英文轉小寫（`common.js` 的 `normKey()`），
+所以賓客怎麼打都找得到。查到之後一併列出同桌還有誰。
+
+**桌次圖為什麼存成 data URL**：新人要能在瀏覽器裡直接上傳，
+而 Firebase Storage 的規則**讀不到 Firestore**，
+沒辦法用 `ownerEmails` 白名單判斷身分（除非改用 custom claims，
+那等於引入一套使用者管理，違反第 1 節「不做複雜權限管理系統」）。
+存進 Firestore 文件就能沿用同一個 `isSiteOwner()`，也不必設定 CORS。
+
+代價是單一文件 1MB 的上限。因此上傳前在瀏覽器端縮圖：
+最長邊 1800px → JPEG，畫質由 0.86 逐級往下試，還是超過就再縮一輪，
+上限抓 900000 字元（規則裡是 950000，留一點餘裕）。
+
+### 13.2 給你的信（`letter`）
+
+新人寫好一封封信，每封掛 `terms`（專屬詞彙）；
+賓客輸入任一個詞彙就領到那封信，都對不上時退回 `isDefault` 的通用信。
+畫面是純 CSS 的信封：封蠟淡出、封口 `rotateX` 掀開、信紙推出來。
+
+**信件內容是公開可讀的**，這是刻意的取捨：比對必須在前端做，
+Firestore 的讀取請求不帶條件，規則無法「只讓對得上的人讀到那一封」。
+規格上這裡是「寫給某人的祝福」，不是祕密；
+真正不能被看到的內容走 `letters`（第 12 節）。
+
+### 13.3 首頁 Explore 自訂卡片（`explore`）
+
+首頁 Explore 區原本只有模板功能的入口。
+新人可以再補上自己的內容，接在內建卡片後面，兩種型態：
+
+| `kind` | 行為 | DOM |
+|---|---|---|
+| `link` | 另開分頁到 `url` | `<a target="_blank" rel="noopener noreferrer">` |
+| `popup` | 原地跳出彈窗顯示 `body` | `<button>` + `.lc-modal` |
+
+`url` 只收 `http(s)://` 開頭，規則層與前端各擋一次，
+`javascript:` 之類的協定寫不進資料庫、也不會被渲染成連結。
+卡片編號在自訂卡加入後整批重編，不會跳號。

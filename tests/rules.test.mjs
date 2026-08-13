@@ -448,3 +448,180 @@ describe('letters 的擁有者權限', () => {
     await assertSucceeds(setDoc(ref, { count: 2 }));
   });
 });
+
+/* ============================================================
+   桌次查詢：名單與桌次圖公開可讀，只有新人寫得進去
+============================================================ */
+describe('seating（桌次名單與桌次圖）', () => {
+  const OWNER = 'couple@example.com';
+
+  function ownerDb() {
+    return testEnv
+      .authenticatedContext('couple', { email: OWNER, email_verified: true })
+      .firestore();
+  }
+
+  function seat(overrides = {}) {
+    return { name:'王小明', table:'第 3 桌', note:'', time: Date.now(), ...overrides };
+  }
+
+  beforeEach(async () => {
+    await seedSite(SITE_ID, { ownerEmails: [OWNER] });
+  });
+
+  it('賓客讀得到桌次名單（要能查自己的位子）', async () => {
+    await testEnv.withSecurityRulesDisabled(async (c) => {
+      await addDoc(collection(c.firestore(), `sites/${SITE_ID}/seating`), seat());
+    });
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(getDocs(collection(db, `sites/${SITE_ID}/seating`)));
+  });
+
+  it('賓客不能自己新增或竄改桌次', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/seating`), seat()));
+  });
+
+  it('新人可以新增、修改、刪除桌次', async () => {
+    const db = ownerDb();
+    const ref = doc(db, `sites/${SITE_ID}/seating/s1`);
+    await assertSucceeds(setDoc(ref, seat()));
+    await assertSucceeds(setDoc(ref, seat({ table:'主桌' })));
+    await assertSucceeds(deleteDoc(ref));
+  });
+
+  it('夾帶額外欄位或缺少桌次的資料會被拒', async () => {
+    const db = ownerDb();
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/seating/s2`),
+      seat({ isAdmin: true })));
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/seating/s3`),
+      seat({ table: '' })));
+  });
+
+  it('不在名單內的登入帳號寫不進去', async () => {
+    const db = testEnv
+      .authenticatedContext('nosy', { email:'nosy@example.com', email_verified: true })
+      .firestore();
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/seating/s4`), seat()));
+  });
+
+  it('桌次圖只收 data URL，且有大小上限', async () => {
+    const db = ownerDb();
+    const okImg = { img:'data:image/jpeg;base64,AAAA', title:'一樓', order:1, time: Date.now() };
+    await assertSucceeds(setDoc(doc(db, `sites/${SITE_ID}/seatingImages/i1`), okImg));
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/seatingImages/i2`),
+      { ...okImg, img:'https://evil.example.com/x.jpg' }));
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/seatingImages/i3`),
+      { ...okImg, img: `data:image/jpeg;base64,${'A'.repeat(960000)}` }));
+  });
+});
+
+/* ============================================================
+   電子祝福信：賓客領得到，但只有新人寫得出來
+============================================================ */
+describe('blessings（電子祝福信）', () => {
+  const OWNER = 'couple@example.com';
+
+  function ownerDb() {
+    return testEnv
+      .authenticatedContext('couple', { email: OWNER, email_verified: true })
+      .firestore();
+  }
+
+  function blessing(overrides = {}) {
+    return {
+      terms: ['王小明', '小明'],
+      title: '給小明的信',
+      body: '謝謝你今天特地趕來',
+      sign: '彥廷 & 佳蓉',
+      isDefault: false,
+      time: Date.now(),
+      ...overrides,
+    };
+  }
+
+  beforeEach(async () => {
+    await seedSite(SITE_ID, { ownerEmails: [OWNER] });
+  });
+
+  it('賓客讀得到信（比對在前端做）', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(getDocs(collection(db, `sites/${SITE_ID}/blessings`)));
+  });
+
+  it('賓客不能自己寫信', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/blessings`), blessing()));
+  });
+
+  it('新人可以寫、改、刪信', async () => {
+    const db = ownerDb();
+    const ref = doc(db, `sites/${SITE_ID}/blessings/b1`);
+    await assertSucceeds(setDoc(ref, blessing()));
+    await assertSucceeds(setDoc(ref, blessing({ isDefault: true })));
+    await assertSucceeds(deleteDoc(ref));
+  });
+
+  it('空內文或超長內文會被拒', async () => {
+    const db = ownerDb();
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/blessings/b2`),
+      blessing({ body: '' })));
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/blessings/b3`),
+      blessing({ body: 'ㄅ'.repeat(2001) })));
+  });
+});
+
+/* ============================================================
+   Explore 自訂卡片
+============================================================ */
+describe('explore（首頁自訂卡片）', () => {
+  const OWNER = 'couple@example.com';
+
+  function ownerDb() {
+    return testEnv
+      .authenticatedContext('couple', { email: OWNER, email_verified: true })
+      .firestore();
+  }
+
+  function card(overrides = {}) {
+    return {
+      title: '婚禮當天的接駁車',
+      sub: '幾點在哪裡上車',
+      kind: 'popup',
+      url: '',
+      body: '早上 10:30 在台北車站東三門集合',
+      order: 1,
+      time: Date.now(),
+      ...overrides,
+    };
+  }
+
+  beforeEach(async () => {
+    await seedSite(SITE_ID, { ownerEmails: [OWNER] });
+  });
+
+  it('賓客讀得到卡片，但不能新增', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(getDocs(collection(db, `sites/${SITE_ID}/explore`)));
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/explore`), card()));
+  });
+
+  it('新人可以新增連結型與彈窗型的卡片', async () => {
+    const db = ownerDb();
+    await assertSucceeds(setDoc(doc(db, `sites/${SITE_ID}/explore/e1`), card()));
+    await assertSucceeds(setDoc(doc(db, `sites/${SITE_ID}/explore/e2`),
+      card({ kind:'link', url:'https://example.com/shuttle', body:'' })));
+  });
+
+  it('連結型卡片擋掉非 http(s) 的網址', async () => {
+    const db = ownerDb();
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/explore/e3`),
+      card({ kind:'link', url:'javascript:alert(1)', body:'' })));
+  });
+
+  it('沒有標題或用了未知的 kind 會被拒', async () => {
+    const db = ownerDb();
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/explore/e4`), card({ title:'' })));
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/explore/e5`), card({ kind:'iframe' })));
+  });
+});

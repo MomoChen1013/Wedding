@@ -21,7 +21,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/fireba
 import {
   getFirestore, collection, addDoc, onSnapshot,
   query, orderBy, where, doc, getDoc, runTransaction, serverTimestamp,
-  getDocs, deleteDoc, connectFirestoreEmulator
+  getDocs, deleteDoc, setDoc, writeBatch, connectFirestoreEmulator
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 import {
   getAuth, signInAnonymously, signInWithPopup, signOut,
@@ -53,6 +53,12 @@ const PAGES = {
   exhibition: { file:'exhibition.html', label:'我們的故事', optional:true  },
   quiz:       { file:'quiz.html',       label:'新人小測驗', optional:true  },
   inbox:      { file:'inbox.html',      label:'悄悄話信箱', optional:true  },
+  seating:    { file:'seating.html',    label:'我的桌次',   optional:true  },
+  letter:     { file:'letter.html',     label:'給你的信',   optional:true  },
+  /* 新人後台：不放進導覽列、不對外連結，但永遠開著，
+     這樣新人不必先「打開某一頁」才能進去設定內容。
+     真正的門檻在 Security Rules（ownerEmails 白名單），不是這個開關。 */
+  admin:      { file:'admin.html',      label:'新人後台',   optional:false },
 };
 
 /* 檔名 → 代號，給連結改寫用 */
@@ -76,7 +82,7 @@ if (isLocal && !wantsLive) {
 window.fb = {
   db, auth,
   collection, addDoc, onSnapshot, query, orderBy, where, doc, getDoc,
-  runTransaction, serverTimestamp, getDocs, deleteDoc,
+  runTransaction, serverTimestamp, getDocs, deleteDoc, setDoc, writeBatch,
   signInAnonymously, signInWithPopup, signOut,
   GoogleAuthProvider, onAuthStateChanged,
 };
