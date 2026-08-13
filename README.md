@@ -62,7 +62,7 @@
 │   ├─ draw.html  exhibition.html  quiz.html  inbox.html
 │   ├─ seating.html           # 我的桌次（婚禮當天查桌次 + 桌次圖）
 │   ├─ letter.html            # 給你的信（新人寫的電子祝福信）
-│   ├─ admin.html             # 新人後台（桌次／祝福信／首頁自訂卡片）
+│   ├─ admin.html             # 新人後台（出席回覆／桌次／祝福信／首頁卡片）
 │   ├─ invitation.html        # 單頁式邀請函（獨立版型，自成一格）
 │   ├─ shortlink.html         # 短連結轉址頁
 │   ├─ 404.html
@@ -123,12 +123,13 @@ sites/{siteId}
   schedule(map[])       # 當日流程，每筆 { time, title, desc? }
   rsvpDeadline(timestamp), rsvpEnabled(bool)
   pages(map)            # 每個頁面開關，如 { wall:true, cake:false, … }
-  ownerEmails(string[]) # 新人的 Google 信箱；決定誰讀得到悄悄話信箱
+  ownerEmails(string[]) # 新人的 Google 信箱；決定誰讀得到 RSVP 與悄悄話信箱
   createdAt, updatedAt
 
   # ↓ 各功能的資料都掛在這組新人底下，站台之間完全看不到彼此
   rsvps/{autoId}       name, attending(bool), tentative(bool), guestCount(1–10),
                        meal, dietaryNote, message, icon, createdAt
+                       # 只有新人讀得到；後台可看可匯出，但不能改不能刪
   wishes/{autoId}      name, icon, text, time          # 祝福牆
   letters/{autoId}     name, icon, text, time          # 悄悄話信箱
   cakes/{autoId}       name, icon, cake, emoji, img, time
@@ -137,7 +138,7 @@ sites/{siteId}
   meta/hearts          count                           # 愛心計數器
   meta/letterCount     count                           # 公開的信件數量
 
-  # ↓ 這三組由新人在 /w/{slug}/admin 自己維護（規則只認 ownerEmails 名單）
+  # ↓ 這四個集合由新人在 /w/{slug}/admin 自己維護（規則只認 ownerEmails 名單）
   seating/{autoId}       name, table, note, time       # 桌次名單
   seatingImages/{autoId} img(data URL), title, order, time   # 桌次圖
   blessings/{autoId}     terms[], title, body, sign, isDefault, time  # 電子祝福信
@@ -347,9 +348,30 @@ npm run set-pages -- --slug ginny-one-20260919 \
   --owner-email groom@gmail.com --owner-email bride@gmail.com
 ```
 
+> 後台目前有四個分頁：**出席回覆**、**桌次**、**祝福信**、**首頁卡片**。
+
 > 這個網址不會出現在導覽列，也沒有任何頁面連過去（`noindex`），
 > 但真正的保護是 **Security Rules**：不在名單內的帳號就算打開這一頁、
 > 甚至改了畫面上的 HTML，也一個字都寫不進去。
+
+---
+
+### 0. 出席回覆（後台「出席回覆」分頁）
+
+四個統計數字 ——「確定出席人數」是把每筆回覆的 `guestCount` 加總，
+其餘三個（會來／未定／不克出席）是**回覆筆數**。
+
+名單可以依狀態篩選、用名字或留言內容搜尋，也可以**匯出 CSV**
+（欄位與 `npm run export-rsvps` 一致，含 BOM，Excel 開中文不會亂碼；
+匯出的是「目前篩選出來的那些」，不是全部）。
+
+> **後台只能看與匯出，不能修改。**
+> 規則對 `rsvps` 開放的只有 `read`，`update` 與 `delete` 仍然是 `false` ——
+> 回覆是賓客送出的紀錄，不該在後台被改掉。
+> 真的要刪（測試資料、重複回覆）走 Admin SDK 或 Firebase Console。
+
+> **誰讀得到**：只有 `ownerEmails` 名單內、信箱已驗證的 Google 帳號。
+> 賓客彼此看不到誰要來、留了什麼話、有什麼飲食禁忌。
 
 ---
 
@@ -636,7 +658,16 @@ https://wedding-22b94.web.app/w/{slug}/
 
 ## 匯出 RSVP
 
-賓客的回覆**前端讀不到**（Security Rules 擋掉），只能用管理端金鑰匯出：
+有兩條路，看你手邊有什麼：
+
+| 方式 | 需要什麼 | 適合 |
+|---|---|---|
+| 後台「出席回覆」分頁 | 新人的 Google 帳號 | 平常查看、隨手匯出，新人自己就能做 |
+| `npm run export-rsvps` | 管理端金鑰 | 排程、批次，或新人的帳號還沒設好 |
+
+**賓客彼此永遠讀不到別人的回覆** —— 規則只放行 `ownerEmails` 名單內的帳號。
+
+CLI 走 Admin SDK，以服務帳戶連線會略過 Security Rules，不需要任何登入：
 
 ```bash
 # 印到畫面

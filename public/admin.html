@@ -56,7 +56,8 @@
   </header>
 
   <nav class="ad-tabs" id="adTabs">
-    <button class="ad-tab is-on" type="button" data-tab="seating">桌次</button>
+    <button class="ad-tab is-on" type="button" data-tab="rsvp">出席回覆</button>
+    <button class="ad-tab" type="button" data-tab="seating">桌次</button>
     <button class="ad-tab" type="button" data-tab="letters">祝福信</button>
     <button class="ad-tab" type="button" data-tab="explore">首頁卡片</button>
   </nav>
@@ -65,9 +66,62 @@
   <div class="ad-toast" id="adToast" hidden></div>
 
   <!-- ============================================================
+       分頁 0：出席回覆
+  ============================================================ -->
+  <div class="ad-panel is-on" data-panel="rsvp">
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">出席統計</h2>
+
+      <div class="ad-stats">
+        <div class="ad-stat">
+          <div class="ad-stat-num" id="adRsvpHead">0</div>
+          <div class="ad-stat-lab">確定出席人數</div>
+        </div>
+        <div class="ad-stat">
+          <div class="ad-stat-num" id="adRsvpYes">0</div>
+          <div class="ad-stat-lab">回覆會來</div>
+        </div>
+        <div class="ad-stat">
+          <div class="ad-stat-num" id="adRsvpMaybe">0</div>
+          <div class="ad-stat-lab">還沒決定</div>
+        </div>
+        <div class="ad-stat">
+          <div class="ad-stat-num" id="adRsvpNo">0</div>
+          <div class="ad-stat-lab">不克出席</div>
+        </div>
+      </div>
+
+      <p class="ad-sec-note">
+        「確定出席人數」是把每筆回覆的人數加總，其餘三個是<b>回覆筆數</b>。
+        回覆是賓客送出的紀錄，後台只能看與匯出，不能修改。
+      </p>
+    </section>
+
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">回覆名單</h2>
+
+      <div class="ad-row">
+        <button class="btn small ghost" id="adRsvpExport" type="button">匯出 CSV</button>
+      </div>
+
+      <div class="ad-list-head">
+        <div class="ad-chips" id="adRsvpChips">
+          <button class="ad-chip is-on" type="button" data-filter="all">全部</button>
+          <button class="ad-chip" type="button" data-filter="yes">會來</button>
+          <button class="ad-chip" type="button" data-filter="maybe">未定</button>
+          <button class="ad-chip" type="button" data-filter="no">不克出席</button>
+        </div>
+        <input class="ad-filter" id="adRsvpFilter" type="text" placeholder="搜尋名字或留言…">
+      </div>
+
+      <div class="ad-list" id="adRsvpList"></div>
+    </section>
+  </div>
+
+  <!-- ============================================================
        分頁 1：桌次
   ============================================================ -->
-  <div class="ad-panel is-on" data-panel="seating">
+  <div class="ad-panel" data-panel="seating">
 
     <!-- 1-1 桌次圖 -->
     <section class="ad-sec">

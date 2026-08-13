@@ -48,10 +48,17 @@ service cloud.firestore {
       allow read: if true;
       allow create, update, delete: if false;
 
-      /* 出席回覆：可新增，但誰都不能讀（含新人本人，要走 Admin SDK 匯出） */
+      /* 出席回覆：任何人都可以新增（需通過驗證），
+         但只有新人本人讀得到 —— 和悄悄話信箱同一套身分判斷。
+         賓客彼此看不到誰要來、留了什麼話、有什麼飲食禁忌。
+
+         仍然不開放 update／delete：回覆是賓客送出的紀錄，
+         新人可以看、可以匯出，但不該在後台改掉別人寫的內容。
+         真的要刪（測試資料、重複回覆）走 Admin SDK。 */
       match /rsvps/{rsvpId} {
         allow create: if isValidRsvp(request.resource.data, siteId);
-        allow read, update, delete: if false;
+        allow read: if isSiteOwner(siteId);
+        allow update, delete: if false;
       }
 
       /* 祝福牆 */

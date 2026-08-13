@@ -74,10 +74,12 @@ function openAdmin(){
     `${(window.WED && window.WED.couple) || ''}・${user ? user.email : ''}`;
   document.getElementById('adViewBtn').href = sitePath('lobby');
 
-  /* 訂閱三份資料，畫面隨著資料變動重畫 */
+  /* 訂閱各份資料，畫面隨著資料變動重畫 */
+  DataStore.subscribeRsvps();
   DataStore.subscribeSeating();
   DataStore.subscribeBlessings();
   DataStore.subscribeExplore();
+  renderRsvps();
   renderSeatList();
   renderImages();
   renderLetters();
@@ -128,6 +130,124 @@ document.getElementById('adTabs').addEventListener('click', (e)=>{
   document.querySelectorAll('.ad-panel').forEach(p =>
     p.classList.toggle('is-on', p.dataset.panel === btn.dataset.tab));
   window.scrollTo({ top:0, behavior:'instant' });
+});
+
+/* ============================================================
+   0. 出席回覆
+   ------------------------------------------------------------
+   規則只讓 ownerEmails 名單內的帳號讀得到，賓客彼此看不到。
+   這裡只看與匯出，不提供修改 —— 回覆是賓客送出的紀錄。
+============================================================ */
+const RSVP_LABEL = { yes:'會來', maybe:'未定', no:'不克出席' };
+
+const rsvpListEl   = document.getElementById('adRsvpList');
+const rsvpFilterEl = document.getElementById('adRsvpFilter');
+let rsvpFilter = 'all';
+
+/* createdAt 是 Firestore 的 Timestamp（伺服器時間），不是數字 */
+function rsvpTime(r){
+  const t = r.createdAt;
+  if(t && typeof t.toDate === 'function') return t.toDate().getTime();
+  return 0;
+}
+
+function visibleRsvps(){
+  const q = normKey(rsvpFilterEl.value);
+  return DataStore.getRSVPs().filter(r => {
+    if(rsvpFilter !== 'all' && DataStore.rsvpStatus(r) !== rsvpFilter) return false;
+    if(!q) return true;
+    return normKey(r.name).includes(q) || normKey(r.message).includes(q);
+  });
+}
+
+function renderRsvps(){
+  const tally = DataStore.getRsvpTally();
+  document.getElementById('adRsvpHead').textContent  = DataStore.getAttendingCount();
+  document.getElementById('adRsvpYes').textContent   = tally.yes;
+  document.getElementById('adRsvpMaybe').textContent = tally.maybe;
+  document.getElementById('adRsvpNo').textContent    = tally.no;
+
+  const list = visibleRsvps();
+  if(!list.length){
+    rsvpListEl.innerHTML = `<div class="ad-empty">${
+      DataStore.getRSVPCount() ? '沒有符合的回覆' : '還沒有人回覆出席'}</div>`;
+    return;
+  }
+
+  rsvpListEl.innerHTML = list.map(r => {
+    const st = DataStore.rsvpStatus(r);
+    const bits = [];
+    if(st === 'yes') bits.push(`${Number(r.guestCount) || 1} 位`);
+    if(r.meal) bits.push(`餐點：${r.meal}`);
+    if(r.dietaryNote) bits.push(`飲食：${r.dietaryNote}`);
+    const t = rsvpTime(r);
+
+    return `
+      <div class="ad-item">
+        <div class="ad-item-main">
+          <span class="ad-item-title">${escapeHtml(r.icon || '')} ${escapeHtml(r.name || '（沒有名字）')}</span>
+          <span class="ad-tag ad-tag-${st}">${RSVP_LABEL[st]}</span>
+          ${bits.length ? `<span class="ad-item-sub">${escapeHtml(bits.join('・'))}</span>` : ''}
+          ${r.message ? `<span class="ad-item-sub">「${escapeHtml(r.message)}」</span>` : ''}
+          <span class="ad-item-sub">${t ? fmtTime(t) : '時間未知'}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+document.addEventListener('data:rsvps', renderRsvps);
+rsvpFilterEl.addEventListener('input', renderRsvps);
+
+document.getElementById('adRsvpChips').addEventListener('click', (e)=>{
+  const chip = e.target.closest('.ad-chip');
+  if(!chip) return;
+  rsvpFilter = chip.dataset.filter;
+  document.querySelectorAll('#adRsvpChips .ad-chip')
+    .forEach(c => c.classList.toggle('is-on', c === chip));
+  renderRsvps();
+});
+
+/* 規則拒絕讀取時（例如帳號被移出 ownerEmails）講清楚，不要留一個空名單 */
+document.addEventListener('data:rsvps:denied', ()=>{
+  rsvpListEl.innerHTML =
+    `<div class="ad-empty">沒有讀取出席回覆的權限<br>請確認這個帳號在 ownerEmails 名單內</div>`;
+});
+
+/* ---------- 匯出 CSV ----------
+   欄位與 scripts/export-rsvps.js 對齊，兩邊拿到的檔案格式一致。
+   Excel 打開中文會亂碼，所以加上 BOM。 */
+document.getElementById('adRsvpExport').addEventListener('click', ()=>{
+  const rows = visibleRsvps();
+  if(!rows.length){ toast('目前沒有可以匯出的回覆', true); return; }
+
+  const esc = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+  const header = ['稱呼','是否出席','人數','餐點','飲食禁忌','給新人的話','回覆時間'];
+
+  const body = rows.map(r => {
+    const st = DataStore.rsvpStatus(r);
+    const t  = rsvpTime(r);
+    return [
+      r.name || '',
+      RSVP_LABEL[st],
+      st === 'yes' ? (Number(r.guestCount) || 1) : '',
+      r.meal || '',
+      r.dietaryNote || '',
+      r.message || '',
+      t ? fmtTime(t) : '',
+    ].map(esc).join(',');
+  });
+
+  const csv  = '﻿' + [header.map(esc).join(','), ...body].join('\r\n');
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `rsvps-${window.SITE.slug}-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  toast(`已匯出 ${rows.length} 筆回覆`);
 });
 
 /* ============================================================

@@ -124,10 +124,39 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-img-title:focus{border-bottom-color:var(--line);}
 
 /* ============================================================
+   出席統計
+============================================================ */
+.ad-stats{display:grid;grid-template-columns:repeat(4,1fr);
+  border-top:1px solid var(--line);border-left:1px solid var(--line);}
+@media(max-width:560px){.ad-stats{grid-template-columns:1fr 1fr;}}
+.ad-stat{padding:22px 14px;text-align:center;background:rgba(255,255,255,.9);
+  border-right:1px solid var(--line);border-bottom:1px solid var(--line);}
+.ad-stat-num{font-family:var(--font-display);font-weight:500;
+  font-size:clamp(26px,6vw,34px);line-height:1.2;color:var(--primary-deep);}
+.ad-stat-lab{margin-top:6px;font-size:11.5px;letter-spacing:.12em;color:var(--ink-soft);}
+
+/* 篩選 chip */
+.ad-chips{display:flex;gap:7px;flex-wrap:wrap;}
+.ad-chip{
+  background:transparent;border:1px solid var(--line);border-radius:999px;
+  padding:5px 14px;cursor:pointer;
+  font-family:var(--font-body);font-size:12px;letter-spacing:.08em;
+  color:var(--ink-soft);transition:.2s;
+}
+.ad-chip:hover{border-color:var(--ink);color:var(--ink);}
+.ad-chip.is-on{background:var(--ink);border-color:var(--ink);color:#fff;}
+
+/* 回覆狀態的標籤 */
+.ad-tag-yes{color:var(--primary-deep);border-color:var(--primary);}
+.ad-tag-maybe{color:var(--ink-soft);}
+.ad-tag-no{color:#a4677a;border-color:rgba(164,103,122,.4);}
+
+/* ============================================================
    清單
 ============================================================ */
 .ad-list-head{display:flex;align-items:center;justify-content:space-between;
-  gap:12px;margin:28px 0 10px;font-size:12px;letter-spacing:.1em;color:var(--ink-soft);}
+  gap:12px;margin:28px 0 10px;font-size:12px;letter-spacing:.1em;color:var(--ink-soft);
+  flex-wrap:wrap;}
 .ad-filter{flex:0 1 220px;min-width:0;padding:8px 12px;
   border:1px solid var(--line);border-radius:var(--radius);
   font-family:var(--font-body);font-size:13px;color:var(--ink);

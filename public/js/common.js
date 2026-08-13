@@ -320,14 +320,43 @@ const DataStore = {
   getCakes()      { return this._cakes; },
   /* compat 早期是「直接陣列」，現在統一包成 {answers:[...]}，取出時還原 */
   getCompat()     { return this._compat.map(c => c.answers || c); },
-  /* RSVP 出席回覆（新人可看完整名單） */
-  getRSVPs()      { return this._rsvps.slice().sort((a,b)=>(a.time||0)-(b.time||0)); },
-  getRSVPCount()  { return this._rsvps.length; },
-  /* 「將出席」的總人數（依每筆的 headcount 加總；沒填視為 1 位） */
+  /* ===== RSVP 出席回覆 =====
+     規則只讓 ownerEmails 名單內的帳號讀，所以不放進 _subscribe()，
+     由新人後台登入成功後才呼叫。
+     欄位以 rsvp.js 實際寫入的為準：
+       attending  bool   只有「會出席」是 true
+       tentative  bool   true 代表「未定」
+       guestCount int    出席人數
+       createdAt  Timestamp（伺服器時間） */
+  subscribeRsvps(){
+    this._lazySub('rsvps', 'rsvps', 'createdAt');
+  },
+
+  /* 新的排前面，新人最關心的是剛進來的回覆 */
+  getRSVPs(){
+    return this._rsvps.slice().reverse();
+  },
+  getRSVPCount(){ return this._rsvps.length; },
+
+  /* 每一筆回覆歸成三類，畫面與統計共用同一個判斷 */
+  rsvpStatus(r){
+    if(r.attending === true)  return 'yes';
+    if(r.tentative === true)  return 'maybe';
+    return 'no';
+  },
+
+  /* 「確定出席」的總人數（依每筆 guestCount 加總；沒填視為 1 位） */
   getAttendingCount(){
     return this._rsvps
-      .filter(r => r.attending === 'yes')
-      .reduce((sum, r) => sum + (Number(r.headcount) || 1), 0);
+      .filter(r => this.rsvpStatus(r) === 'yes')
+      .reduce((sum, r) => sum + (Number(r.guestCount) || 1), 0);
+  },
+
+  /* 三類各有幾「筆」回覆（不是人數） */
+  getRsvpTally(){
+    const t = { yes:0, maybe:0, no:0 };
+    this._rsvps.forEach(r => { t[this.rsvpStatus(r)]++; });
+    return t;
   },
 };
 

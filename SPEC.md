@@ -141,7 +141,7 @@ short/{code}                # 短連結
 | 路徑 | read | create | update | delete |
 |---|---|---|---|---|
 | `sites/{siteId}` | 允許 | 拒絕 | 拒絕 | 拒絕 |
-| `sites/{siteId}/rsvps/{id}` | 拒絕 | 允許（需通過驗證） | 拒絕 | 拒絕 |
+| `sites/{siteId}/rsvps/{id}` | 新人 | 允許（需通過驗證） | 拒絕 | 拒絕 |
 | `sites/{siteId}/seating/{id}` | 允許 | 新人 | 新人 | 新人 |
 | `sites/{siteId}/seatingImages/{id}` | 允許 | 新人 | 新人 | 新人 |
 | `sites/{siteId}/blessings/{id}` | 允許 | 新人 | 新人 | 新人 |
@@ -150,9 +150,17 @@ short/{code}                # 短連結
 | `short/{code}` | 允許 | 拒絕 | 拒絕 | 拒絕 |
 
 「新人」＝ `isSiteOwner(siteId)`：已驗證的 Google 信箱在 `sites.ownerEmails` 名單內。
-這四個集合的 **read 是公開的**，因為比對（桌次查名字、祝福信對暗號）在瀏覽器端做——
+
+讀寫權限分成兩種型態，界線就是「這份資料賓客需不需要看到」：
+
+| 型態 | 集合 | read | write |
+|---|---|---|---|
+| 賓客要用的內容 | `seating` `seatingImages` `blessings` `explore` | 公開 | 新人 |
+| 賓客交上來的資料 | `rsvps` `letters` | 新人 | 賓客（create only） |
+
+上面那組 **read 必須公開**，因為比對（桌次查名字、祝福信對暗號）在瀏覽器端做——
 Firestore 的讀取請求不帶條件，規則沒有辦法「只讓對得上的人讀到那一筆」。
-不能被別人看到的內容請放悄悄話信箱（`letters`），那裡的 read 綁在 Auth 身分上。
+不能被別人看到的內容請放下面那組，它們的 read 綁在 Auth 簽發的身分上。
 
 ### RSVP 建立時的驗證條件
 
@@ -167,9 +175,16 @@ Firestore 的讀取請求不帶條件，規則沒有辦法「只讓對得上的�
 - 對應的 `sites/{siteId}` 必須存在、`status == "published"`、`rsvpEnabled == true`
 - 若已過 `rsvpDeadline` 則拒絕寫入
 
-管理端讀取 RSVP 走 **Firebase Admin SDK 或 console**，不透過前端規則開後門。
-Admin SDK 以服務帳戶連線會略過 Security Rules，因此 `scripts/` 底下的腳本
-即使規則寫「一律拒絕寫入」也能正常運作。
+RSVP 的讀取綁在**新人本人的 Google 身分**上（`isSiteOwner()`），
+與悄悄話信箱同一套判斷：賓客寫得進去、彼此讀不到，
+新人在 `/w/{slug}/admin` 登入後看得到完整名單。
+
+**仍然不開放 `update` 與 `delete`**：回覆是賓客送出的紀錄，
+新人可以看、可以匯出，但不該在後台改掉別人寫的內容。
+真的要刪（測試資料、重複回覆）走 Admin SDK。
+
+`npm run export-rsvps` 仍然保留：Admin SDK 以服務帳戶連線會略過 Security Rules，
+不需要任何登入，適合排程或批次作業。
 
 ---
 

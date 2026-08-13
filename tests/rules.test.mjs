@@ -625,3 +625,77 @@ describe('explore（首頁自訂卡片）', () => {
     await assertFails(setDoc(doc(db, `sites/${SITE_ID}/explore/e5`), card({ kind:'iframe' })));
   });
 });
+
+/* ============================================================
+   出席回覆：賓客寫得進去、讀不出來；只有新人讀得到
+============================================================ */
+describe('rsvps 的擁有者權限', () => {
+  const OWNER = 'couple@example.com';
+
+  function ownerDb(email = OWNER) {
+    return testEnv
+      .authenticatedContext('couple', { email, email_verified: true })
+      .firestore();
+  }
+
+  async function seedRsvp() {
+    await testEnv.withSecurityRulesDisabled(async (c) => {
+      await addDoc(
+        collection(c.firestore(), `sites/${SITE_ID}/rsvps`),
+        validRsvpPayload({ createdAt: Timestamp.now() })
+      );
+    });
+  }
+
+  beforeEach(async () => {
+    await seedSite(SITE_ID, { ownerEmails: [OWNER] });
+    await seedRsvp();
+  });
+
+  it('新人讀得到自己站台的出席回覆', async () => {
+    await assertSucceeds(getDocs(collection(ownerDb(), `sites/${SITE_ID}/rsvps`)));
+  });
+
+  it('賓客（匿名）仍然讀不到出席回覆', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(getDocs(collection(db, `sites/${SITE_ID}/rsvps`)));
+  });
+
+  it('不在 ownerEmails 名單內的登入帳號讀不到', async () => {
+    await assertFails(getDocs(collection(ownerDb('nosy@example.com'), `sites/${SITE_ID}/rsvps`)));
+  });
+
+  it('信箱沒有驗證過的帳號讀不到', async () => {
+    const db = testEnv
+      .authenticatedContext('fake', { email: OWNER, email_verified: false })
+      .firestore();
+    await assertFails(getDocs(collection(db, `sites/${SITE_ID}/rsvps`)));
+  });
+
+  it('別的站台的新人讀不到這個站台的回覆', async () => {
+    await seedSite('other-site', { ownerEmails: ['other@example.com'] });
+    const db = testEnv
+      .authenticatedContext('other', { email:'other@example.com', email_verified: true })
+      .firestore();
+    await assertFails(getDocs(collection(db, `sites/${SITE_ID}/rsvps`)));
+  });
+
+  it('新人可以看，但不能改也不能刪回覆', async () => {
+    let rsvpId;
+    await testEnv.withSecurityRulesDisabled(async (c) => {
+      const ref = await addDoc(
+        collection(c.firestore(), `sites/${SITE_ID}/rsvps`),
+        validRsvpPayload({ createdAt: Timestamp.now() })
+      );
+      rsvpId = ref.id;
+    });
+    const db = ownerDb();
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}/rsvps/${rsvpId}`), { attending: false }));
+    await assertFails(deleteDoc(doc(db, `sites/${SITE_ID}/rsvps/${rsvpId}`)));
+  });
+
+  it('站台沒有設定 ownerEmails 時，誰都讀不到', async () => {
+    await seedSite(SITE_ID);      // 不帶 ownerEmails
+    await assertFails(getDocs(collection(ownerDb(), `sites/${SITE_ID}/rsvps`)));
+  });
+});

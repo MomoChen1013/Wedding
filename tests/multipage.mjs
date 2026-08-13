@@ -654,6 +654,21 @@ console.log('\n[13] Explore 自訂卡片');
 
 /* ---------- 新人後台 ---------- */
 console.log('\n[14] 新人後台');
+
+/* 用 Auth emulator 的假 Google 憑證登入成新人。
+   emulator 接受把 claims 直接當成 idToken 傳進 GoogleAuthProvider.credential()，
+   所以測試不需要真的開 Google 登入彈窗。 */
+async function signInAsOwner(page, email){
+  await page.evaluate(async (mail) => {
+    const m = await import('https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js');
+    /* sub 要跟著 email 走：同一個 sub 在 emulator 是同一個帳號，
+       共用的話「換一個信箱登入」其實還是原來那位，測試會假性通過 */
+    const cred = m.GoogleAuthProvider.credential(
+      JSON.stringify({ sub:`uid-${mail}`, email: mail, email_verified: true }));
+    await m.signInWithCredential(window.fb.auth, cred);
+  }, email);
+}
+
 {
   const { page } = await visit(`/w/${SLUG}/admin`);
   ok('後台停在 Google 登入畫面', await page.isVisible('#pwGate'));
@@ -671,6 +686,77 @@ console.log('\n[14] 新人後台');
     }catch(e){ return e.code === 'permission-denied'; }
   });
   ok('未登入寫不進自訂卡片（規則擋下）', denied);
+  await page.close();
+}
+
+/* ---------- 後台的出席回覆名單 ---------- */
+console.log('\n[14b] 後台看得到出席回覆');
+{
+  /* 前面的測試已經從表單送出過回覆，這裡以資料庫的實際內容為準 */
+  const snap = await adb.collection('sites').doc(siteIds[SLUG]).collection('rsvps').get();
+  const rows = snap.docs.map((d) => d.data());
+  const expectHead = rows
+    .filter((r) => r.attending === true)
+    .reduce((s, r) => s + (Number(r.guestCount) || 1), 0);
+
+  const { page, errors } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  ok('新人登入後進得了後台', !(await page.evaluate(
+    () => document.getElementById('adPage').hidden)));
+
+  await page.waitForFunction(
+    (n) => DataStore.getRSVPCount() === n, rows.length, { timeout:15000 });
+
+  ok('後台讀得到全部回覆',
+    Number(await page.textContent('#adRsvpYes'))
+      + Number(await page.textContent('#adRsvpMaybe'))
+      + Number(await page.textContent('#adRsvpNo')) === rows.length,
+    `資料庫 ${rows.length} 筆`);
+  ok('確定出席人數是依 guestCount 加總',
+    Number(await page.textContent('#adRsvpHead')) === expectHead, `應為 ${expectHead}`);
+
+  const listText = await page.innerText('#adRsvpList');
+  ok('名單列出賓客的名字', listText.includes('王小明'), listText.replace(/\n/g, ' ').slice(0, 80));
+
+  /* 篩選：只看「未定」 */
+  await page.click('#adRsvpChips .ad-chip[data-filter="maybe"]');
+  await page.waitForTimeout(200);
+  const maybeCount = await page.locator('#adRsvpList .ad-item').count();
+  const expectMaybe = rows.filter((r) => r.attending !== true && r.tentative === true).length;
+  ok('可以只篩出未定的回覆', maybeCount === expectMaybe, `${maybeCount} / 應為 ${expectMaybe}`);
+
+  await page.click('#adRsvpChips .ad-chip[data-filter="all"]');
+  await page.waitForTimeout(200);
+
+  /* 搜尋 */
+  await page.fill('#adRsvpFilter', '不存在的賓客');
+  await page.waitForTimeout(200);
+  ok('搜尋沒結果時顯示空狀態',
+    (await page.innerText('#adRsvpList')).includes('沒有符合的回覆'));
+  await page.fill('#adRsvpFilter', '');
+
+  ok('後台無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+{
+  /* 不在 ownerEmails 名單內的帳號：登入了也進不去、也讀不到 */
+  const { page } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'nosy@example.com');
+  await page.waitForTimeout(1200);
+  ok('外人登入後仍停在登入畫面',
+    await page.evaluate(() => document.getElementById('adPage').hidden));
+
+  const denied = await page.evaluate(async () => {
+    const { getDocs, collection, db } = window.fb;
+    try{
+      await getDocs(collection(db, 'sites', window.SITE.siteId, 'rsvps'));
+      return false;
+    }catch(e){ return e.code === 'permission-denied'; }
+  });
+  ok('外人讀不到出席回覆（規則擋下）', denied);
   await page.close();
 }
 
