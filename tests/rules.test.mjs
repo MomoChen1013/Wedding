@@ -627,6 +627,204 @@ describe('explore（首頁自訂卡片）', () => {
 });
 
 /* ============================================================
+   囍卡卡池：新人在後台裁切上傳，賓客只讀得到
+============================================================ */
+describe('cards（囍卡卡池）', () => {
+  const OWNER = 'couple@example.com';
+
+  function ownerDb() {
+    return testEnv
+      .authenticatedContext('couple', { email: OWNER, email_verified: true })
+      .firestore();
+  }
+
+  function card(overrides = {}) {
+    return {
+      img: 'data:image/jpeg;base64,AAAA',
+      name: '海邊的我們',
+      rarity: 'SSR',
+      desc: '那天風很大',
+      order: 1,
+      time: Date.now(),
+      ...overrides,
+    };
+  }
+
+  beforeEach(async () => {
+    await seedSite(SITE_ID, { ownerEmails: [OWNER] });
+  });
+
+  it('賓客讀得到卡池，但不能自己上傳', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(getDocs(collection(db, `sites/${SITE_ID}/cards`)));
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/cards`), card()));
+  });
+
+  it('新人可以新增、修改、刪除囍卡', async () => {
+    const db = ownerDb();
+    const ref = doc(db, `sites/${SITE_ID}/cards/c1`);
+    await assertSucceeds(setDoc(ref, card()));
+    await assertSucceeds(setDoc(ref, card({ rarity: 'N', name: '改個名字' })));
+    await assertSucceeds(deleteDoc(ref));
+  });
+
+  it('只收 data URL、擋掉外部網址與過大的圖', async () => {
+    const db = ownerDb();
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/cards/c2`),
+      card({ img: 'https://evil.example.com/x.jpg' })));
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/cards/c3`),
+      card({ img: `data:image/jpeg;base64,${'A'.repeat(960000)}` })));
+  });
+
+  it('未知的等級會被拒', async () => {
+    const db = ownerDb();
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/cards/c4`), card({ rarity: 'UR' })));
+  });
+
+  it('收藏可以只記 cardId（卡圖太長，塞不進 art）', async () => {
+    const db = testEnv.authenticatedContext('guest').firestore();
+    await assertSucceeds(addDoc(collection(db, `sites/${SITE_ID}/collected`), {
+      uid: 'guest', userName: '王小明', art: '', name: '海邊的我們',
+      rarity: 'SSR', desc: '', cardId: 'c1', time: Date.now(),
+    }));
+  });
+});
+
+/* ============================================================
+   展覽：戀愛時光的展品與章節
+============================================================ */
+describe('exhibits（展品與章節）', () => {
+  const OWNER = 'couple@example.com';
+
+  function ownerDb() {
+    return testEnv
+      .authenticatedContext('couple', { email: OWNER, email_verified: true })
+      .firestore();
+  }
+
+  function exhibit(overrides = {}) {
+    return {
+      kind: 'photo',
+      img: 'data:image/jpeg;base64,AAAA',
+      title: '第一次一起旅行',
+      sub: '現在・31 歲',
+      desc: '那天下著大雨',
+      year: '2021',
+      act: '第一幕',
+      order: 3,
+      time: Date.now(),
+      ...overrides,
+    };
+  }
+
+  beforeEach(async () => {
+    await seedSite(SITE_ID, { ownerEmails: [OWNER] });
+  });
+
+  it('賓客讀得到展品，但不能自己新增', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(getDocs(collection(db, `sites/${SITE_ID}/exhibits`)));
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/exhibits`), exhibit()));
+  });
+
+  it('新人可以新增展品與章節卡', async () => {
+    const db = ownerDb();
+    await assertSucceeds(setDoc(doc(db, `sites/${SITE_ID}/exhibits/x1`), exhibit()));
+    await assertSucceeds(setDoc(doc(db, `sites/${SITE_ID}/exhibits/x2`),
+      exhibit({ kind:'act', img:'', desc:'', year:'', act:'',
+                title:'第一幕', sub:'我們的相遇', order: 2 })));
+    await assertSucceeds(deleteDoc(doc(db, `sites/${SITE_ID}/exhibits/x1`)));
+  });
+
+  it('沒有照片的展品也收得下（可以先寫文字再補圖）', async () => {
+    const db = ownerDb();
+    await assertSucceeds(setDoc(doc(db, `sites/${SITE_ID}/exhibits/x3`), exhibit({ img: '' })));
+  });
+
+  it('外部網址、未知型態、超長描述會被拒', async () => {
+    const db = ownerDb();
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/exhibits/x4`),
+      exhibit({ img: 'https://evil.example.com/x.jpg' })));
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/exhibits/x5`),
+      exhibit({ kind: 'video' })));
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/exhibits/x6`),
+      exhibit({ desc: '字'.repeat(501) })));
+  });
+});
+
+/* ============================================================
+   大廳文案：新人改得動文字，但改不動規則自己要用的欄位
+============================================================ */
+describe('sites 的大廳文案更新', () => {
+  const OWNER = 'couple@example.com';
+
+  function ownerDb(email = OWNER) {
+    return testEnv
+      .authenticatedContext('couple', { email, email_verified: true })
+      .firestore();
+  }
+
+  beforeEach(async () => {
+    await seedSite(SITE_ID, { ownerEmails: [OWNER] });
+  });
+
+  it('新人可以改地點、dress code、禮金說明與流程', async () => {
+    const db = ownerDb();
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      venueName: '晶華酒店・三樓宴會廳',
+      venueAddress: '台北市中山區中山北路二段 39 巷 3 號',
+      venueMapUrl: 'https://maps.app.goo.gl/abc',
+      dressCode: '溫柔大地色系',
+      giftNote: '您的到來就是最好的禮物',
+      story: '第一次見面是在朋友的聚會上',
+      schedule: [{ time: '11:30', title: '入場迎賓', desc: '簽到、拍照' }],
+      hashtags: ['#我們結婚了'],
+      updatedAt: Timestamp.now(),
+    }));
+  });
+
+  it('賓客改不動任何欄位', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { dressCode: '隨便穿' }));
+  });
+
+  it('不在 ownerEmails 名單內的帳號改不動', async () => {
+    await assertFails(updateDoc(doc(ownerDb('nosy@example.com'), `sites/${SITE_ID}`),
+      { dressCode: '隨便穿' }));
+  });
+
+  it('白名單以外的欄位一律擋下（狀態、名單、頁面開關、出席截止）', async () => {
+    const db = ownerDb();
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { status: 'archived' }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      ownerEmails: [OWNER, 'attacker@example.com'],
+    }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { pages: { wall: false } }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      rsvpDeadline: Timestamp.fromDate(new Date('2099-01-01')),
+    }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { slug: 'someone-else' }));
+    /* 合法欄位夾帶一個不合法的，也整筆擋下 */
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      dressCode: '正常的文案', status: 'archived',
+    }));
+  });
+
+  it('文案太長或地圖連結不是 http(s) 會被拒', async () => {
+    const db = ownerDb();
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { dressCode: '衣'.repeat(501) }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      venueMapUrl: 'javascript:alert(1)',
+    }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { story: '字'.repeat(2001) }));
+  });
+
+  it('新人仍然不能刪掉整個站台', async () => {
+    await assertFails(deleteDoc(doc(ownerDb(), `sites/${SITE_ID}`)));
+  });
+});
+
+/* ============================================================
    出席回覆：賓客寫得進去、讀不出來；只有新人讀得到
 ============================================================ */
 describe('rsvps 的擁有者權限', () => {

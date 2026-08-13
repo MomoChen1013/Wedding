@@ -40,10 +40,13 @@
   word-break:break-all;}
 .ad-top-actions{display:flex;gap:8px;flex:0 0 auto;}
 
-/* ---------- 分頁 ---------- */
-.ad-tabs{display:flex;gap:0;margin:22px 0 26px;border-bottom:1px solid var(--line);}
+/* ---------- 分頁 ----------
+   分頁多了之後手機放不下，改成可以橫向滑動的一列 */
+.ad-tabs{display:flex;gap:0;margin:22px 0 26px;border-bottom:1px solid var(--line);
+  overflow-x:auto;scrollbar-width:none;}
+.ad-tabs::-webkit-scrollbar{display:none;}
 .ad-tab{
-  flex:1 1 0;background:transparent;border:none;cursor:pointer;
+  flex:1 0 auto;white-space:nowrap;background:transparent;border:none;cursor:pointer;
   font-family:var(--font-body);font-size:13.5px;letter-spacing:.16em;
   color:var(--ink-soft);padding:12px 6px;border-bottom:1px solid transparent;
   margin-bottom:-1px;transition:color .2s,border-color .2s;
@@ -186,6 +189,80 @@ select.ad-input{appearance:none;cursor:pointer;
 
 .ad-empty{padding:30px 6px;text-align:center;font-size:13px;
   letter-spacing:.08em;color:var(--ink-soft);}
+
+/* ============================================================
+   當日流程（一列一個項目）
+============================================================ */
+.ad-sch{display:flex;flex-direction:column;gap:10px;}
+.ad-sch-row{display:grid;grid-template-columns:110px 1fr 1fr auto;gap:8px;align-items:center;}
+.ad-sch-row .ad-input{padding:9px 11px;font-size:13.5px;}
+@media(max-width:560px){
+  .ad-sch-row{grid-template-columns:1fr 1fr;}
+  .ad-sch-row .ad-sch-desc{grid-column:1 / -1;}
+}
+
+/* ============================================================
+   囍卡卡池
+============================================================ */
+.ad-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  gap:14px;margin-top:16px;}
+.ad-card{margin:0;border:1px solid var(--line);border-radius:var(--radius);
+  background:#fff;overflow:hidden;}
+/* 卡片是直式 2:3，縮圖也照著擺，後台看到的就是賓客會看到的構圖 */
+.ad-card img{display:block;width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--bg2);}
+.ad-card figcaption{display:flex;flex-direction:column;gap:7px;padding:10px;
+  border-top:1px solid var(--line-soft);}
+.ad-card .ad-input{padding:7px 9px;font-size:12.5px;line-height:1.6;}
+/* 卡片裡的欄位比較矮，下拉箭頭要跟著往上挪 */
+.ad-card select.ad-input{background-position:calc(100% - 16px) 15px, calc(100% - 11px) 15px;}
+.ad-card-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+
+/* ============================================================
+   展品
+============================================================ */
+.ad-exh-pick{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;}
+.ad-exh-prev{flex:0 0 140px;height:180px;border:1px dashed var(--line);
+  border-radius:var(--radius);background:var(--bg2);
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  font-size:11.5px;letter-spacing:.08em;color:var(--ink-soft);text-align:center;}
+.ad-exh-prev img{width:100%;height:100%;object-fit:cover;}
+.ad-exh-pick-side{flex:1 1 200px;min-width:0;}
+.ad-exh-pick-side .ad-label:first-child{margin-top:0;}
+.ad-exh-thumb{flex:0 0 auto;width:46px;height:46px;object-fit:cover;
+  border:1px solid var(--line);border-radius:4px;background:var(--bg2);}
+
+/* ============================================================
+   照片裁切器（cropper.js 動態插入）
+============================================================ */
+.cr-mask{position:fixed;inset:0;z-index:1400;background:rgba(43,47,54,.72);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  animation:pop .2s ease;}
+.cr-card{width:min(92vw,380px);max-height:92svh;overflow:auto;background:#fff;
+  border:1px solid var(--line);border-radius:var(--radius);padding:22px 20px 18px;}
+.cr-title{font-family:var(--font-display);font-size:14px;font-weight:500;
+  letter-spacing:.18em;color:var(--ink);text-align:center;margin-bottom:14px;}
+/* 這個框就是最後會被存下來的範圍，所見即所得 */
+.cr-stage{position:relative;width:100%;overflow:hidden;background:var(--bg2);
+  border:1px solid var(--line);border-radius:4px;cursor:grab;touch-action:none;
+  user-select:none;}
+.cr-stage:active{cursor:grabbing;}
+.cr-img{position:absolute;top:0;left:0;transform-origin:0 0;max-width:none;
+  pointer-events:none;-webkit-user-drag:none;}
+/* 三分法輔助線，幫忙抓構圖 */
+.cr-grid{position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(to right, transparent 33.33%, rgba(255,255,255,.5) 33.33%,
+      rgba(255,255,255,.5) calc(33.33% + 1px), transparent calc(33.33% + 1px),
+      transparent 66.66%, rgba(255,255,255,.5) 66.66%,
+      rgba(255,255,255,.5) calc(66.66% + 1px), transparent calc(66.66% + 1px)),
+    linear-gradient(to bottom, transparent 33.33%, rgba(255,255,255,.5) 33.33%,
+      rgba(255,255,255,.5) calc(33.33% + 1px), transparent calc(33.33% + 1px),
+      transparent 66.66%, rgba(255,255,255,.5) 66.66%,
+      rgba(255,255,255,.5) calc(66.66% + 1px), transparent calc(66.66% + 1px));}
+.cr-hint{margin-top:10px;font-size:11.5px;letter-spacing:.06em;
+  color:var(--ink-soft);text-align:center;}
+.cr-zoom{width:100%;margin:10px 0 4px;accent-color:var(--primary-deep);}
+.cr-row{display:flex;gap:10px;justify-content:flex-end;margin-top:8px;}
 
 /* ============================================================
    存檔提示

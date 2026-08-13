@@ -12,6 +12,13 @@
      ・刪除 = 把整行刪掉
      ・順序、總張數隨便調，程式會自動處理
 
+   ▸ 卡池從哪裡來？（由上而下，先找到就用）
+     1. 新人在後台 /w/{slug}/admin「囍卡」分頁上傳的卡（Firestore `cards`）
+     2. 素材資料夾 public/assets/{slug}/cards/
+     3. 下方 CARDS 的內建範例卡
+     後台上傳的卡圖是整段 data URL，塞不進收藏紀錄的 art 欄位，
+     所以收藏只存 cardId，畫面再回卡池取圖。
+
    ▸ art 寫什麼？
      ・自己上傳的圖：放 public/assets/{slug}/cards/，程式會自動帶入
      ・外部網址：    'https://example.com/photo.jpg'
@@ -112,6 +119,39 @@ const CARDS = [
   });
 })();
 
+/* 後台上傳的卡（Firestore）優先於上面兩種來源。
+   非同步讀進來，到齊之後整批換掉卡池；換完把已經畫好的收藏重畫一次，
+   因為收藏只存 cardId，要有卡池才找得到圖。 */
+const ASSET_CARDS = CARDS.slice();
+
+function applyOwnerCards(){
+  const list = DataStore.getCards();
+  CARDS.length = 0;
+  if(list.length){
+    list.forEach((c, i) => {
+      CARDS.push({
+        cardId: c.id,
+        art:    c.img,
+        name:   c.name   || `囍卡 ${i + 1}`,
+        rarity: RANK[c.rarity] ? c.rarity : 'N',
+        desc:   c.desc   || '',
+      });
+    });
+  }else{
+    ASSET_CARDS.forEach(c => CARDS.push(c));
+  }
+  redrawCollection();
+}
+
+/* 收藏紀錄裡的一筆 → 拿得到圖的樣子 */
+function cardArtOf(item){
+  if(item.cardId){
+    const hit = DataStore.getCards().find(c => c.id === item.cardId);
+    if(hit) return hit.img;
+  }
+  return item.art || DEFAULT_ICON;
+}
+
 const RANK = {SSR:'SSR', SR:'SR', R:'R', N:'N'};
 
 /* 判斷 art 是圖片路徑還是 emoji
@@ -129,12 +169,13 @@ let drawing = false;
 
 /* ===== 收藏（mini-card） ===== */
 function appendMini(pick){
+  const art = cardArtOf(pick);
   const mc = document.createElement('div');
-  mc.className = 'mini-card' + (isImage(pick.art) ? ' has-img' : '');
-  if(isImage(pick.art)){
-    mc.innerHTML = `<img src="${pick.art}" alt="" draggable="false" onerror="this.parentNode.classList.remove('has-img');this.outerHTML='${DEFAULT_ICON}'">`;
+  mc.className = 'mini-card' + (isImage(art) ? ' has-img' : '');
+  if(isImage(art)){
+    mc.innerHTML = `<img src="${art}" alt="" draggable="false" onerror="this.parentNode.classList.remove('has-img');this.outerHTML='${DEFAULT_ICON}'">`;
   } else {
-    mc.innerHTML = escapeHtml(pick.art);
+    mc.innerHTML = escapeHtml(art);
   }
   if(pick.rarity === 'SSR' || pick.rarity === 'SR'){
     mc.insertAdjacentHTML('beforeend', '<div class="mh"></div>');
@@ -155,7 +196,16 @@ function renderCollection(){
     appendMini(c);
   });
 }
+/* 卡池換了（後台剛上傳完）就整批重畫，收藏才拿得到新的圖 */
+function redrawCollection(){
+  collectedRendered.clear();
+  coll.innerHTML = '';
+  renderCollection();
+}
+
 document.addEventListener('data:collected', renderCollection);
+document.addEventListener('data:cards', applyOwnerCards);
+DataStore.subscribeCards();
 renderCollection();
 
 /* ===== 抽卡 ===== */
@@ -191,7 +241,16 @@ document.getElementById('drawBtn').addEventListener('click', ()=>{
     }
     confettiRain();
 
-    DataStore.addCollected(pick);
+    /* 收藏只留必要欄位（規則有白名單）；後台上傳的卡圖太長，
+       改存 cardId，畫面再回卡池取圖 */
+    const rec = {
+      art:    pick.cardId ? '' : String(pick.art || ''),
+      name:   pick.name || '',
+      rarity: pick.rarity || 'N',
+      desc:   pick.desc || '',
+    };
+    if(pick.cardId) rec.cardId = pick.cardId;
+    DataStore.addCollected(rec);
     /* mini-card 與計數會由 'data:collected' 事件自動更新 */
     drawing = false;
   }, 300);
