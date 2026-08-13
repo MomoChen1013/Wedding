@@ -410,6 +410,22 @@ console.log('\n[9] 素材資料夾自動載入');
   await page.close();
 }
 {
+  /* 沒有素材、後台也還沒設定時，看到的是內建的新人故事範例
+     （這一段要跑在 [12] 後台寫入展品之前，否則會被新人自己的內容蓋掉） */
+  const { page } = await visit(`/w/${SLUG}/exhibition`);
+  const nodes = await page.evaluate(() => ({
+    photos: Array.from(document.querySelectorAll('.tl-node .tl-cap')).map((e) => e.textContent),
+    acts:   Array.from(document.querySelectorAll('.tl-act-div .ac-label')).map((e) => e.textContent),
+  }));
+  ok('內建範例是新人的故事', nodes.photos[0] === '我們結婚了', nodes.photos.slice(0, 2).join('、'));
+  ok('內建範例分成四幕',
+    nodes.acts.join('、') === '第一幕、第二幕、第三幕、第四幕', nodes.acts.join('、'));
+  ok('內建範例最後留一張合影卡',
+    nodes.photos[nodes.photos.length - 1] === '下一張，等你一起入鏡！',
+    nodes.photos[nodes.photos.length - 1]);
+  await page.close();
+}
+{
   /* 沒放素材的站台要沿用預設，不能整個空掉 */
   const { page } = await visit('/w/minimal-site-2027/');
   const assets = await page.evaluate(() => window.SITE.assets);
@@ -423,16 +439,18 @@ console.log('\n[9b] 背景音樂');
 {
   const { page } = await visit(`/w/${ASSET_SLUG}/`);
   const src = await page.evaluate(() => bgmSrc());
-  ok('bgmSrc() 指向客戶的音檔', src.endsWith('/bgm.mp3'), src || '(無)');
+  ok('bgmSrc() 指向客戶的音檔', src === `/assets/${ASSET_SLUG}/bgm.mp3`, src || '(無)');
   await page.close();
 }
 {
-  /* 沒放音檔的站台要退回內建合成音樂，不能整個沒聲音。
-     ginny 站台已經有自己的 bgm.mp3，所以這裡要用沒有素材資料夾的站台來驗。 */
+  /* 沒放音檔的站台要退回內建的預設背景音樂，不能整個沒聲音。
+     有素材資料夾的站台會用自己的 bgm.mp3，所以這裡要用沒有素材資料夾的站台來驗。 */
   const { page } = await visit('/w/minimal-site-2027/');
   const src = await page.evaluate(() => bgmSrc());
-  ok('沒有音檔時退回內建音樂', src === '', src || '(空)');
-  ok('內建合成音樂的函式存在',
+  ok('沒有音檔時用內建的預設背景音樂', src === '/audio/bgm.mp3', src || '(空)');
+  ok('預設音檔真的拿得到',
+    (await page.request.get(`${BASE}/audio/bgm.mp3`)).ok());
+  ok('音檔載不起來時的合成音樂函式還在',
     await page.evaluate(() => typeof startSynthBGM === 'function'));
   await page.close();
 }
