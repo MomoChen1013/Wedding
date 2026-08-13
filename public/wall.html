@@ -29,21 +29,7 @@
 
   <div class="scene-body">
 
-    <!-- 簽到祝福留言牆 -->
-    <div class="cardbox">
-      <div class="section-title">祝福留言牆 <small>大家都看得到</small></div>
-      <div class="wish-form">
-        <textarea id="wishText" placeholder="寫下想對新人說的話…"></textarea>
-        <div style="text-align:right;margin-top:12px">
-          <button class="btn small" id="postWish">貼上祝福</button>
-        </div>
-      </div>
-      <div class="wish-wall" id="wishWall"></div>
-    </div>
-
-    <div class="divider-div"></div>
-
-    <!-- 信箱 -->
+    <!-- 信箱（放在留言牆上方，祝福再多也不會被推到看不見） -->
     <div class="cardbox">
       <div class="section-title" id="mailboxSection">悄悄話信箱 <small>只有新人看得到</small></div>
       <div class="mailbox-wrap">
@@ -56,6 +42,20 @@
         <div class="mailbox-count">已有 <b id="letterCount">0</b> 封信飛進新人的信箱</div>
         <button class="btn small ghost" id="writeLetter">寫一封信</button>
       </div>
+    </div>
+
+    <div class="divider-div"></div>
+
+    <!-- 簽到祝福留言牆 -->
+    <div class="cardbox">
+      <div class="section-title">祝福留言牆 <small>大家都看得到</small></div>
+      <div class="wish-form">
+        <textarea id="wishText" placeholder="寫下想對新人說的話…"></textarea>
+        <div style="text-align:right;margin-top:12px">
+          <button class="btn small" id="postWish">貼上祝福</button>
+        </div>
+      </div>
+      <div class="wish-wall" id="wishWall"></div>
     </div>
 
     <footer>made for {{couple}}・{{hashtag}}</footer>

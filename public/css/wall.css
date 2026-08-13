@@ -7,14 +7,42 @@
 .wish-form textarea:focus{border-color:var(--ink);}
 
 .wish-wall:empty{display:none;}
-.wish-wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0;margin-top:26px;
-  border-top:1px solid var(--line);border-left:1px solid var(--line);}
-.wish-note{padding:22px 20px;position:relative;background:#fff;
-  border-right:1px solid var(--line);border-bottom:1px solid var(--line);
-  font-size:15px;line-height:1.95;color:var(--ink);animation:pop .35s ease;}
+.wish-wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
+  gap:18px;align-items:start;margin-top:30px;padding-top:28px;
+  border-top:1px solid var(--line-soft);}
+
+/* 便利貼：淡淡的色票輪替 + 微微傾斜，彼此留白不再黏成一塊 */
+.wish-note{--note-bg:#fffdf6;--note-edge:rgba(47,43,38,.10);
+  padding:20px 18px 18px;position:relative;isolation:isolate;
+  background:var(--note-bg);border:1px solid var(--note-edge);border-radius:3px;
+  box-shadow:0 1px 2px rgba(47,43,38,.05),0 6px 16px -10px rgba(47,43,38,.28);
+  font-size:15px;line-height:1.95;color:var(--ink);
+  word-break:break-word;overflow-wrap:anywhere;white-space:pre-wrap;
+  transform:rotate(var(--note-tilt,0deg));transform-origin:50% 0;
+  transition:transform .25s ease,box-shadow .25s ease;
+  animation:pop .35s ease;}
+/* 右下角的小摺角 */
+.wish-note::after{content:'';position:absolute;right:0;bottom:0;width:16px;height:16px;
+  background:linear-gradient(135deg,transparent 50%,rgba(47,43,38,.07) 50%);}
+.wish-note:hover{transform:rotate(0deg) translateY(-2px);
+  box-shadow:0 2px 4px rgba(47,43,38,.06),0 12px 24px -12px rgba(47,43,38,.34);}
+
 .wish-note .by{font-size:11.5px;color:var(--ink-soft);letter-spacing:.14em;
-  margin-top:16px;padding-top:12px;border-top:1px solid var(--line-soft);
-  display:flex;align-items:center;gap:6px;}
+  margin-top:16px;padding-top:12px;border-top:1px solid var(--note-edge);
+  display:flex;align-items:center;gap:6px;white-space:normal;}
+
+/* 色票：由 JS 依留言 id 給固定的 data-tone，重畫也不會換色 */
+.wish-note[data-tone="0"]{--note-bg:#fffdf4;--note-edge:rgba(150,124,64,.16);}  /* 米白 */
+.wish-note[data-tone="1"]{--note-bg:#fdf1ee;--note-edge:rgba(168,110,96,.16);}  /* 藕粉 */
+.wish-note[data-tone="2"]{--note-bg:#f0f4ec;--note-edge:rgba(108,133,90,.16);}  /* 鼠尾草 */
+.wish-note[data-tone="3"]{--note-bg:#edf1f6;--note-edge:rgba(92,116,146,.16);}  /* 霧藍 */
+.wish-note[data-tone="4"]{--note-bg:#f8f0f4;--note-edge:rgba(155,106,132,.16);} /* 淡紫粉 */
+.wish-note[data-tone="5"]{--note-bg:#f7f2e8;--note-edge:rgba(150,130,90,.18);}  /* 亞麻 */
+
+@media (prefers-reduced-motion:reduce){
+  .wish-note{transform:none;animation:none;transition:none;}
+  .wish-note:hover{transform:none;}
+}
 
 /* ============================================================
    信箱
