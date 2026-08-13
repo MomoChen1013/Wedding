@@ -6,7 +6,7 @@
      - 頂部導覽列（每頁共用，由本檔注入）
      - 主題切換
      - 特效（煙火 / 彩帶 / 金箔 / 飄浮記號）
-     - BGM（艾爾加〈愛的禮讚 Salut d'Amour〉音樂盒版）
+     - BGM（新人自己的音檔 → 內建預設 /audio/bgm.mp3 → 合成的〈愛的禮讚〉）
      - 新人專屬信箱（網址加 WED.ownerKey 才出現）
      - escapeHtml 等小工具
 ============================================================ */
@@ -557,16 +557,21 @@ function spawnFloat(emoji,x,y){
 }
 
 /* ============================================================
-   BGM
+   BGM（由上而下，先找到就用）
    ・素材資料夾放了 bgm.mp3 → 播放新人自己的音樂（循環）
-   ・沒放 → 退回用 Web Audio 合成「愛的禮讚」音樂盒版
-     （艾爾加 Salut d'Amour, Op.12・公共領域曲目，不需音檔）
+   ・沒放 → 播放內建的預設背景音樂 /audio/bgm.mp3
+   ・連預設音檔都載不起來（離線、格式不支援）→ 最後才退回
+     Web Audio 合成的「愛的禮讚」音樂盒版（艾爾加 Salut d'Amour,
+     Op.12・公共領域曲目，不需音檔）
 ============================================================ */
 let audioCtx=null, bgmOn=false, bgmTimer=null, bgmAudio=null;
 
-/* 這組新人有沒有自己的背景音樂 */
+/* 內建的預設背景音樂：新人沒放自己的音檔時，全站共用這一首 */
+const DEFAULT_BGM = '/audio/bgm.mp3';
+
+/* 這一頁要播的音檔：新人自己的優先，其次是內建預設 */
 function bgmSrc(){
-  return (window.SITE && window.SITE.assets && window.SITE.assets.bgm) || '';
+  return (window.SITE && window.SITE.assets && window.SITE.assets.bgm) || DEFAULT_BGM;
 }
 const _NOTE={
   E4:329.63, 'F#4':369.99, 'G#4':415.30, A4:440.00, B4:493.88,
@@ -601,9 +606,7 @@ function setBgmFab(on){
   if(!fab) return;
   fab.classList.toggle('is-on', on);
   fab.setAttribute('aria-pressed', String(on));
-  fab.title = on
-    ? '關閉背景音樂'
-    : (bgmSrc() ? '播放背景音樂' : '播放背景音樂（愛的禮讚）');
+  fab.title = on ? '關閉背景音樂' : '播放背景音樂';
   const slash = fab.querySelector('.bgm-slash');
   if(slash) slash.style.display = on ? 'none' : '';
 }
@@ -611,7 +614,7 @@ function setBgmFab(on){
 function startBGM(){
   if(bgmOn) return;
 
-  /* 有自己的音檔就播它 */
+  /* 有音檔就播它（新人自己的，或內建的預設背景音樂） */
   const src = bgmSrc();
   if(src){
     if(!bgmAudio){
@@ -620,7 +623,7 @@ function startBGM(){
       bgmAudio.volume = 0.5;
       /* 檔案壞掉或格式不支援時，退回合成音樂而不是靜悄悄地不動 */
       bgmAudio.addEventListener('error', ()=>{
-        console.warn('[BGM] 音檔載入失敗，改用內建音樂');
+        console.warn('[BGM] 音檔載入失敗，改用合成音樂');
         bgmAudio = null;
         if(bgmOn){ bgmOn = false; startSynthBGM(); }
       }, { once:true });
@@ -638,7 +641,7 @@ function startBGM(){
   startSynthBGM();
 }
 
-/* 內建的音樂盒版本，不需要任何音檔 */
+/* 最後一道保險：音檔載不起來時用的音樂盒版本，不需要任何音檔 */
 function startSynthBGM(){
   try{ audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return; }
   if(audioCtx.state==='suspended') audioCtx.resume();
@@ -856,7 +859,7 @@ function buildFloating(){
         <circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17"/>
       </svg>
     </button>
-    <button class="fab" id="bgmFab" type="button" title="播放背景音樂（愛的禮讚）"
+    <button class="fab" id="bgmFab" type="button" title="播放背景音樂"
             aria-label="背景音樂" aria-pressed="false">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M9 17.5V5.5l10-2v12"/>
