@@ -257,8 +257,10 @@ const DataStore = {
 
   subscribeSeating(){
     this._lazySub('seating', 'seating', 'name');
-    this._lazySub('seatingImages', 'seatingImages', 'order');
+    this.subscribeSeatingImages();
   },
+  /* 新人關掉桌次搜尋時，賓客那一頁只需要桌次圖，不必讀整份名單 */
+  subscribeSeatingImages(){ this._lazySub('seatingImages', 'seatingImages', 'order'); },
   subscribeBlessings(){ this._lazySub('blessings', 'blessings', 'time'); },
   subscribeExplore(){   this._lazySub('explore',   'explore',   'order'); },
   /* 囍卡與展品：新人自己上傳的圖是整段 data URL，資料量大，
@@ -395,10 +397,20 @@ function sitePath(key){
 ============================================================ */
 const TPL_ATTRS = ['placeholder', 'alt', 'title', 'content', 'aria-label'];
 
+/* 婚禮 hashtag：新人沒在後台填的話用這兩個當預設，
+   大廳與各頁的 {{hashtag}} 都走這裡，兩邊不會一個有、一個沒有 */
+const DEFAULT_HASHTAGS = ['#我們結婚了', '#Married'];
+
+function hashtagList(){
+  const tags = ((window.WED && window.WED.hashtags) || [])
+    .map(t => String(t).trim()).filter(Boolean);
+  return tags.length ? tags : DEFAULT_HASHTAGS.slice();
+}
+
 function fillTemplates(root){
   const W = window.WED || {};
   const val = (key) => {
-    if(key === 'hashtag') return (W.hashtags && W.hashtags[0]) || '';
+    if(key === 'hashtag') return hashtagList()[0];
     return W[key] != null ? String(W[key]) : '';
   };
   const swap = (text) => text.replace(/\{\{(\w+)\}\}/g, (_, k) => val(k));

@@ -24,14 +24,14 @@
 
   <div class="scene-hero">
     <div class="sh-title">我的桌次</div>
-    <div class="sh-sub">輸入你的名字・幫你找到今天的位子</div>
+    <div class="sh-sub" id="stHeroSub">輸入你的名字・幫你找到今天的位子</div>
     <div class="scroll-cue"><span>Scroll</span><span class="arrow"></span></div>
   </div>
 
   <div class="scene-body">
 
-    <!-- ===== 1. 查詢 ===== -->
-    <section class="st-search">
+    <!-- ===== 1. 查詢（新人可以在後台關掉，關掉時只留下面的桌次圖） ===== -->
+    <section class="st-search" id="stSearch">
       <div class="section-title">Find Your Seat <small>輸入名字，馬上知道坐哪一桌</small></div>
 
       <form class="st-form" id="stForm" autocomplete="off">
@@ -50,6 +50,11 @@
       <div class="section-title">Seating Chart <small>點圖可以放大看</small></div>
       <div class="st-chart-grid" id="stChartGrid"></div>
     </section>
+
+    <!-- 搜尋關著、桌次圖也還沒上傳時的空狀態 -->
+    <div class="st-blank" id="stBlank" hidden>
+      座位表還沒公布，晚點再回來看看，<br>或是問問現場的工作人員也可以。
+    </div>
 
     <footer>made for {{couple}}・{{hashtag}}</footer>
   </div>

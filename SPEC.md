@@ -42,6 +42,7 @@ sites/{siteId}
   status          : string   # "draft" | "published" | "archived"
   groomName       : string
   brideName       : string
+  coupleTitle     : string   # 選填，大廳資訊卡上的稱呼（≤8 字）；留白就用兩人的名字
   eventDate       : timestamp
   eventEndDate    : timestamp | null   # 婚宴結束時間，加入行事曆用；null 則抓開始後 3 小時
   timezone        : string   # IANA 時區，如 "Asia/Taipei"（見下方說明）
@@ -50,14 +51,19 @@ sites/{siteId}
   venueMapUrl     : string
   themeColor      : string   # hex，如 "#3D9AD1"
   coverImageUrl   : string
-  story           : string   # 兩人的故事，支援換行
+  story           : string   # 兩人的故事，支援換行；留白則大廳不出現這一塊
   photos          : string[] # 照片牆，陣列順序即顯示順序
   hashtags        : string[] # 婚禮 hashtag，前面沒有 # 會自動補上
-  dressCode       : string   # 服裝建議，支援換行
-  giftNote        : string   # 禮金說明，支援換行
+                             # 留白則用預設的 #我們結婚了 / #Married
+  dressCode       : string   # 服裝建議，支援換行；留白則大廳不出現
+  giftNote        : string   # 禮金說明，支援換行；留白則大廳不出現
+  transportPublic : string   # 大眾運輸說明，支援換行；留白則大廳不出現
+  transportParking: string   # 停車說明，支援換行；兩格都留白時整塊不出現
   schedule        : map[]    # 當日流程，陣列順序即顯示順序（見下方說明）
   rsvpDeadline    : timestamp
   rsvpEnabled     : boolean
+  seatingSearchEnabled : boolean  # 桌次頁的搜尋開關，沒有這個欄位視為 true；
+                                  # false 時賓客只看得到已上傳的桌次圖
   pages           : map      # 頁面開關，見第 10 節
   ownerEmails     : string[] # 新人的 Google 信箱；規則據此決定誰讀得到信箱
   createdAt       : timestamp
@@ -175,8 +181,13 @@ Firestore 的讀取請求不帶條件，規則沒有辦法「只讓對得上的�
 但只認白名單裡的欄位：
 
 ```
-venueName venueAddress venueMapUrl dressCode giftNote story schedule hashtags updatedAt
+coupleTitle venueName venueAddress venueMapUrl transportPublic transportParking
+dressCode giftNote story schedule hashtags seatingSearchEnabled updatedAt
 ```
+
+`seatingSearchEnabled` 是唯一一個非文案的欄位，放行的理由是它只改變賓客那一頁的
+畫面（要不要出現搜尋欄），規則本身不拿它做任何判斷 —— 桌次名單的讀寫權限
+和有沒有這個開關無關。
 
 實作用 `request.resource.data.diff(resource.data).affectedKeys().hasOnly([...])`，
 所以夾帶任何一個名單外的欄位（哪怕其他欄位都合法）整筆就被拒。
@@ -465,6 +476,22 @@ allow read: if request.auth != null
 後台不列在導覽列、不被任何頁面連結、標了 `noindex`，
 但真正的保護是 Security Rules —— 不在名單內的帳號改了 DOM 也寫不進去。
 
+**分頁跟著 `pages` 走**：這組新人沒開的頁面，後台就不出現那一區的編輯內容
+（`admin.js` 的 `TAB_PAGE`）—— 關掉抽卡卻還讓新人傳囍卡，傳完賓客也看不到。
+對照表如下，沒開的分頁連資料訂閱都省下來：
+
+| 後台分頁 | 需要開的頁面 |
+|---|---|
+| 出席回覆 | `rsvp` |
+| 大廳內容 | 永遠都在（大廳是必開的頁面） |
+| 桌次 | `seating` |
+| 祝福信 | `letter` |
+| 首頁卡片 | 永遠都在（Explore 區屬於大廳） |
+| 囍卡 | `draw` |
+| 展覽 | `exhibition` |
+
+預設開著的那一頁（出席回覆）剛好被關掉時，會自動改開第一個還在的分頁。
+
 ### 13.1 我的桌次（`seating`）
 
 婚禮當天的查詢頁，分成兩塊：
@@ -473,6 +500,12 @@ allow read: if request.auth != null
 |---|---|
 | 名字 → 桌次的查詢 | `sites/{siteId}/seating` |
 | 桌次圖（多張、可放大拖曳） | `sites/{siteId}/seatingImages` ＋ `assets/{slug}/seating/` |
+
+**搜尋可以整個關掉**（後台的 `seatingSearchEnabled` 開關）：
+關掉時前台只留桌次圖，查詢欄整塊收起來，也不再訂閱整份名單 ——
+名單還沒整理好、或本來就打算讓大家自己看圖找位子時用。
+沒有這個欄位的舊站台視為開著，行為不變。
+搜尋關著、桌次圖也還沒上傳時，頁面會顯示一句「座位表還沒公布」而不是一片空白。
 
 **名字比對**由寬到嚴，先找到就用：正規化後完全相同 →
 名單的名字包含輸入的字 → 輸入的字包含名單的名字。
@@ -522,13 +555,27 @@ Firestore 的讀取請求不帶條件，規則無法「只讓對得上的人讀�
 
 ### 13.4 大廳文案（`sites` 文件本身）
 
-地點、Dress Code、禮金說明、兩人的故事、hashtag 與當日流程，
-原本要進 Firebase Console 改，現在在後台「大廳內容」分頁就能編。
+大廳上的稱呼、地點、交通、Dress Code、禮金說明、兩人的故事、hashtag
+與當日流程，原本要進 Firebase Console 改，現在在後台「大廳內容」分頁就能編。
 
 寫入的是 `sites/{siteId}` 這份文件，不是子集合 ——
 所以規則是「限定欄位的 update」而不是整份文件開放（見第 3 節）。
 新人姓名、日期、頁面開關**刻意不放進來**：那些會影響網址、倒數計時
 與 RSVP 的判斷條件，仍然由我們用 Admin SDK 改。
+
+**留白就不出現**：交通、Dress Code、禮金、兩人的故事沒填的話，
+大廳不會出現那一塊（也不會塞我們預想的罐頭文案）。
+兩格的區塊（Dress Code／禮金、大眾運輸／停車）只填一格時，那一格會佔滿整列。
+唯一有預設值的是 hashtag —— 沒填就用 `#我們結婚了`、`#Married`，
+大廳開場才不會空一排。
+
+**大廳上的稱呼**（`coupleTitle`）是資訊卡最上面那行字，留白就用兩人的名字。
+限 8 個字：那行字級很大，再長就會在手機上折行、把整張卡的比例壓掉。
+後台與規則各擋一次，計數用 `[...str].length`（拆成字元陣列）而不是
+`str.length`，emoji 之類的字元才不會被算成兩格 —— 和規則的 `size()` 一致。
+
+**當日流程的捷徑**：資訊卡「時間」那一列底下有一個文字連結，
+點了平滑捲到下面的 Schedule 區塊。沒有任何流程時這個連結不出現。
 
 當日流程是一列一個項目的表格，順序就是時間軸的順序（不依時間重排）；
 整份存成 `schedule` 陣列，一次覆寫。
