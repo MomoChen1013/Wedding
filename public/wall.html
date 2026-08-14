@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>祝福｜{{couple}} 婚禮</title>
+<!-- 社群預覽文字：爬蟲不跑 JS，一律用不帶樣板的通用文案（見 index.html 的說明） -->
+<title>祝福牆｜婚禮邀請函</title>
+<meta name="description" content="留言、寫信，把想說的話送給這對新人">
+<meta property="og:title" content="祝福牆｜婚禮邀請函">
+<meta property="og:description" content="留言、寫信，把想說的話送給這對新人">
+<meta property="og:type" content="website">
 
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,21 +34,7 @@
 
   <div class="scene-body">
 
-    <!-- 簽到祝福留言牆 -->
-    <div class="cardbox">
-      <div class="section-title">祝福留言牆 <small>大家都看得到</small></div>
-      <div class="wish-form">
-        <textarea id="wishText" placeholder="寫下想對新人說的話…"></textarea>
-        <div style="text-align:right;margin-top:12px">
-          <button class="btn small" id="postWish">貼上祝福</button>
-        </div>
-      </div>
-      <div class="wish-wall" id="wishWall"></div>
-    </div>
-
-    <div class="divider-div"></div>
-
-    <!-- 信箱 -->
+    <!-- 信箱（放在留言牆上方，祝福再多也不會被推到看不見） -->
     <div class="cardbox">
       <div class="section-title" id="mailboxSection">悄悄話信箱 <small>只有新人看得到</small></div>
       <div class="mailbox-wrap">
@@ -56,6 +47,20 @@
         <div class="mailbox-count">已有 <b id="letterCount">0</b> 封信飛進新人的信箱</div>
         <button class="btn small ghost" id="writeLetter">寫一封信</button>
       </div>
+    </div>
+
+    <div class="divider-div"></div>
+
+    <!-- 簽到祝福留言牆 -->
+    <div class="cardbox">
+      <div class="section-title">祝福留言牆 <small>大家都看得到</small></div>
+      <div class="wish-form">
+        <textarea id="wishText" placeholder="寫下想對新人說的話…"></textarea>
+        <div style="text-align:right;margin-top:12px">
+          <button class="btn small" id="postWish">貼上祝福</button>
+        </div>
+      </div>
+      <div class="wish-wall" id="wishWall"></div>
     </div>
 
     <footer>made for {{couple}}・{{hashtag}}</footer>

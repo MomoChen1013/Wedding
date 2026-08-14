@@ -14,8 +14,7 @@
 | `/w/{slug}/cake` | 集氣送祝褔（甜點桌） |
 | `/w/{slug}/draw` | 抽卡 |
 | `/w/{slug}/exhibition` | 我們的故事 |
-| `/w/{slug}/quiz` | 看你多了解我們 |
-| `/w/{slug}/inbox` | 悄悄話信箱 |
+| `/w/{slug}/quiz` | 看你多了解我們（題目由新人在後台出） |
 | `/w/{slug}/seating` | 我的桌次（當天輸入名字查桌次 + 桌次圖） |
 | `/w/{slug}/letter` | 給你的信（新人寫的電子祝福信） |
 | `/w/{slug}/invitation` | 單頁式邀請函（獨立版型） |
@@ -27,6 +26,10 @@
 
 > 婚禮資訊原本是獨立的 `/w/{slug}/info`，現在已經併進首頁。
 > 舊網址由 Hosting 的 301 轉址導回首頁，先前發出去的連結不會壞掉。
+>
+> 悄悄話信箱原本是獨立的 `/w/{slug}/inbox`，門檻與後台一樣是 Google 登入，
+> 等於同一個帳號要登入兩次，所以已經併成新人後台的「悄悄話」分頁。
+> 舊網址一進來就會被帶到 `/w/{slug}/admin`。
 
 ---
 
@@ -43,8 +46,9 @@
 - **每頁的 `.scene-hero`** 固定 50vh。
 - **風格**：極簡線條。全站單一字族 **Noto Serif TC**（Google Fonts CDN），
   無陰影、無 emoji，靠 1px 線條與留白分層。
-- **BGM**：艾爾加〈愛的禮讚 Salut d'Amour〉，用 Web Audio 合成，不需額外音檔。
-  想換曲子改 `js/common.js` 的 `_MELODY` 即可。
+- **BGM**：預設播內建的 `public/audio/bgm.mp3`，新人放了自己的音檔就換成他們的。
+  想換全站的預設曲目，直接換掉這個檔案（路徑寫在 `js/common.js` 的 `DEFAULT_BGM`）。
+  音檔真的載不起來時，最後才退回 Web Audio 合成的〈愛的禮讚 Salut d'Amour〉。
 
 ---
 
@@ -61,19 +65,21 @@
 ├─ public/
 │   ├─ index.html             # 大廳
 │   ├─ rsvp.html  wall.html  cake.html
-│   ├─ draw.html  exhibition.html  quiz.html  inbox.html
+│   ├─ draw.html  exhibition.html  quiz.html
 │   ├─ seating.html           # 我的桌次（婚禮當天查桌次 + 桌次圖）
 │   ├─ letter.html            # 給你的信（新人寫的電子祝福信）
-│   ├─ admin.html             # 新人後台（回覆／大廳文案／桌次／祝福信／卡片／囍卡／展覽）
+│   ├─ admin.html             # 新人後台（回覆／悄悄話／大廳文案／桌次／祝福信／卡片／囍卡／展覽／測驗）
 │   ├─ invitation.html        # 單頁式邀請函（獨立版型，自成一格）
 │   ├─ shortlink.html         # 短連結轉址頁
 │   ├─ 404.html
 │   ├─ assets/{slug}/         # 每組新人的照片
+│   ├─ audio/bgm.mp3          # 全站共用的預設背景音樂（新人沒放自己的就播這首）
 │   ├─ css/
 │   └─ js/
 │       ├─ site-context.js    # ★ 每頁唯一進入點：解析 slug、載設定、注入其他 JS
 │       ├─ common.js          # 資料層 DataStore、導覽、特效、樣板文字
 │       ├─ cropper.js         # 後台專用的照片裁切器（只有 admin.html 載入）
+│       ├─ quiz-defaults.js   # 測驗的預設題目與上限（quiz.html 與 admin.html 共用）
 │       └─ index.js rsvp.js …           # 各頁邏輯
 ├─ scripts/
 │   ├─ create-site.js         # 建立客戶站台（slug transaction）
@@ -132,7 +138,7 @@ sites/{siteId}
   rsvpDeadline(timestamp), rsvpEnabled(bool)
   seatingSearchEnabled(bool)   # 桌次頁的搜尋開關，沒這個欄位視為 true
   pages(map)            # 每個頁面開關，如 { wall:true, cake:false, … }
-  ownerEmails(string[]) # 新人的 Google 信箱；決定誰讀得到 RSVP 與悄悄話信箱
+  ownerEmails(string[]) # 新人的 Google 信箱；決定誰進得了後台（RSVP 與悄悄話都靠它）
   createdAt, updatedAt
 
   # ↓ 各功能的資料都掛在這組新人底下，站台之間完全看不到彼此
@@ -140,15 +146,16 @@ sites/{siteId}
                        meal, dietaryNote, message, icon, createdAt
                        # 只有新人讀得到；後台可看可匯出，但不能改不能刪
   wishes/{autoId}      name, icon, text, time          # 祝福牆
-  letters/{autoId}     name, icon, text, time          # 悄悄話信箱
+  letters/{autoId}     name, icon, text, time          # 悄悄話（後台的悄悄話分頁）
   cakes/{autoId}       name, icon, cake, emoji, img, time
-  compat/{autoId}      answers[], time                 # 新人小測驗
+  quizVotes/{autoId}   picks(map 題目id→選項索引[]), score, total, time
+                       # 小測驗的作答；key 用題目 id，新人調順序也不會對錯題
   collected/{autoId}   uid, userName, art, name, rarity, desc, cardId, time
                        # cardId：後台上傳的卡圖太長塞不進 art，改記 id
   meta/hearts          count                           # 愛心計數器
   meta/letterCount     count                           # 公開的信件數量
 
-  # ↓ 這六個集合由新人在 /w/{slug}/admin 自己維護（規則只認 ownerEmails 名單）
+  # ↓ 這七個集合由新人在 /w/{slug}/admin 自己維護（規則只認 ownerEmails 名單）
   seating/{autoId}       name, table, note, time       # 桌次名單
   seatingImages/{autoId} img(data URL), title, order, time   # 桌次圖
   blessings/{autoId}     terms[], title, body, sign, isDefault, time  # 電子祝福信
@@ -157,6 +164,8 @@ sites/{siteId}
                                                        # 囍卡卡池（抽卡頁）
   exhibits/{autoId}      kind(photo|act), img(data URL), title, sub,
                          desc, year, act, order, time  # 戀愛時光的展品與章節
+  quiz/{autoId}          type(single|multi), q, opts[4], answer[],
+                         order, time                   # 小測驗的題目（最多 50 題）
 
 slugs/{slug}                # 文件 ID 就是 slug 本身
   siteId, createdAt
@@ -283,7 +292,7 @@ node scripts/create-site.js \
 | `--dress-code` | | 服裝建議 |
 | `--gift-note` | | 禮金說明 |
 | `--end-time` | | 婚宴結束時間 `HH:mm`（加入行事曆用），預設開始後 3 小時 |
-| `--owner-email` | | 新人的 Google 信箱，**信箱頁面要靠它登入**；可重複給多次 |
+| `--owner-email` | | 新人的 Google 信箱，**新人後台要靠它登入**；可重複給多次 |
 | `--status` | | `draft`／`published`／`archived`，**預設 `draft`** |
 | `--rsvp-deadline` | | RSVP 截止日 `YYYY-MM-DD`，預設同婚禮日期 |
 | `--rsvp-enabled` | | `true`／`false`，預設 `true` |
@@ -293,13 +302,13 @@ node scripts/create-site.js \
 
 ### 頁面開關
 
-可開關的頁面：`rsvp` `wall` `cake` `draw` `exhibition` `quiz` `inbox` `invitation`
+可開關的頁面：`rsvp` `wall` `cake` `draw` `exhibition` `quiz` `invitation`
 `seating` `letter`
 （大廳 `lobby` 與新人後台 `admin` 一定存在，不能關）。
 
 ```bash
 # 全套都要
---pages rsvp,wall,cake,draw,exhibition,quiz,inbox,invitation,seating,letter
+--pages rsvp,wall,cake,draw,exhibition,quiz,invitation,seating,letter
 
 # 只要基本款（不給 --pages 時的預設）
 # → rsvp, wall
@@ -328,7 +337,7 @@ npm run set-pages -- --slug ginny-one-20260919 --disable quiz --enable rsvp
 # 先看看會變成什麼樣，不寫入
 npm run set-pages -- --slug ginny-one-20260919 --pages draw --dry-run
 
-# 順便設定悄悄話信箱的可讀帳號（整組覆蓋）
+# 順便設定新人後台的可用帳號（整組覆蓋）
 npm run set-pages -- --slug ginny-one-20260919 \
   --owner-email groom@gmail.com --owner-email bride@gmail.com
 ```
@@ -346,7 +355,7 @@ npm run set-pages -- --slug ginny-one-20260919 \
 
 ---
 
-## 新人後台：大廳文案、桌次、祝福信、卡片、囍卡、展覽
+## 新人後台：大廳文案、桌次、祝福信、卡片、囍卡、展覽、測驗
 
 這些內容**不走 CLI、也不用進 Firebase Console**，
 新人自己在後台就能維護，改完重新整理網頁就生效（不必重新 deploy）。
@@ -363,8 +372,8 @@ npm run set-pages -- --slug ginny-one-20260919 \
   --owner-email groom@gmail.com --owner-email bride@gmail.com
 ```
 
-> 後台目前有七個分頁：**出席回覆**、**大廳內容**、**桌次**、**祝福信**、
-> **首頁卡片**、**囍卡**、**展覽**。手機上分頁列可以左右滑。
+> 後台目前有九個分頁：**出席回覆**、**悄悄話**、**大廳內容**、**桌次**、
+> **祝福信**、**首頁卡片**、**囍卡**、**展覽**、**測驗**。手機上分頁列可以左右滑。
 >
 > **分頁會跟著這組新人開了哪些頁面**：沒開的頁面就不會出現對應的編輯分頁，
 > 免得辛苦上傳完才發現賓客那邊根本看不到。
@@ -394,6 +403,23 @@ npm run set-pages -- --slug ginny-one-20260919 \
 
 > **誰讀得到**：只有 `ownerEmails` 名單內、信箱已驗證的 Google 帳號。
 > 賓客彼此看不到誰要來、留了什麼話、有什麼飲食禁忌。
+
+---
+
+### 0b. 悄悄話（後台「悄悄話」分頁）
+
+賓客在**祝福牆**點「寫一封信」投進來的悄悄話，全部列在這裡：
+一封一段，看得到記號、名字、時間與內容，新的排在最前面。
+上面兩個數字是**總封數**與**今天收到幾封**，
+名字或內容都可以搜尋，也可以**匯出 CSV**（匯出的是目前搜尋出來的那些）。
+
+> 這一份原本是獨立的 `/w/{slug}/inbox` 頁面，
+> 門檻同樣是新人的 Google 登入 —— 等於同一個帳號要在兩個地方各登入一次，
+> 所以整個併進後台。舊網址（含書籤）會自動導到 `/w/{slug}/admin`。
+
+> **後台只能看與匯出，不能修改。**
+> 規則對 `letters` 只開 `read`（限 `ownerEmails`）與 `create`（賓客投信），
+> `update`／`delete` 都是 `false`。
 
 ---
 
@@ -481,7 +507,7 @@ public/assets/{slug}/seating/
 > **信件內容是公開可讀的**。比對在瀏覽器端做，Firestore 的讀取請求
 > 不帶條件，規則沒辦法「只讓對得上的人讀到那一封」。
 > 這裡適合寫給某人的祝福，**不適合放不能被別人看到的祕密**
-> —— 那種內容請用悄悄話信箱（`inbox`），那才是真正只有新人讀得到的。
+> —— 那種內容請用悄悄話信箱（祝福牆上的信箱，只有新人在後台讀得到）。
 
 ---
 
@@ -597,6 +623,45 @@ public/assets/{slug}/seating/
 
 ---
 
+### 7. 測驗（後台「測驗」分頁）
+
+「看你多了解我們」（`/w/{slug}/quiz`）的題目。整份測驗是**一頁式**：
+賓客一次看到所有題目，單選題選完會自動捲到下一題，
+全部作答完才送得出去，送出後看到自己的**分數**與每題的長條圖。
+
+每一題要填的東西：
+
+| 欄位 | 說明 |
+|---|---|
+| 題型 | **單選**（選完自動跳下一題）／**複選**（全對才得分） |
+| 題目 | 最多 60 字 |
+| 四個選項 | 固定四個，每個最多 40 字 |
+| 正確答案 | 在選項左邊勾起來；單選一個、複選可以勾好幾個 |
+
+順序用清單上的 **↑ ↓** 調，數字會自動重編成 1…n。**最多 50 題**，
+刪掉一題就能再加一題。
+
+> **新人不用自己作答**。正確答案在這裡就設好了，
+> 所以長條圖上只會有賓客自己的「**你**」，不會出現第二種標籤。
+> 選項太長時，長條裡的文字會以「…」收尾，不會溢出長條也不會壓到「你」。
+
+> **一開始就有 3 題預設題目**：第一次打開這個分頁時，
+> 系統會把 `js/quiz-defaults.js` 裡的 3 題寫進這場婚禮自己的 `quiz` 集合，
+> 直接改就好。整份刪光之後不會再自動補回來（同一個瀏覽器內），
+> 想要的話按清單上的「載入預設題目來改」。
+> 新人還沒進後台時，賓客那一頁也是先看到同一份預設題目。
+
+「賓客的作答紀錄」區塊看得到作答人數與平均分數，
+按「清空所有作答紀錄」只會刪票（`quizVotes`），題目不會被動到 ——
+測試完歸零、或婚禮當天重新統計都用它。
+
+> **票為什麼用「題目 id」當 key**：作答存成
+> `picks = { 題目id: [選項索引] }`。用題號的話，新人之後調順序或刪題目，
+> 舊票就會對到別題去；綁 id 則是「對不到的題目就不顯示」，不會算錯。
+> （Firestore 的陣列不能再放陣列，複選題也因此必須包在 map 裡。）
+
+---
+
 ## 素材（照片）怎麼放
 
 **用站台的 slug 當資料夾名稱，把圖丟進去，跑一個指令就好**，
@@ -652,15 +717,16 @@ public/assets/{slug}/
 
 > ⚠️ **只把檔案丟進資料夾是不夠的。**
 > 網頁讀的是 `manifest.json`，沒跑 `sync-assets` 就不會更新，
-> 畫面上會繼續播內建的音樂。順序是：
+> 畫面上會繼續播內建的預設音樂。順序是：
 > **放檔案 → `npm run sync-assets` → `npx firebase deploy --only hosting`**
 
 檔名不分大小寫（`BGM.MP3` 也認得）。如果檔名沒對上，
 `sync-assets` 會直接把「這些檔案不會被使用」列出來，不會安靜地忽略。
 
-- **沒放音檔的站台**會用內建的合成音樂——艾爾加〈愛的禮讚〉音樂盒版，
-  這是程式即時合成的，repo 裡沒有音檔，也不會有授權問題。
-- 音檔載入失敗時會自動退回內建音樂，不會變成沒聲音。
+- **沒放音檔的站台**會用內建的預設背景音樂 `public/audio/bgm.mp3`，
+  全站共用同一首；要換掉整批站台的預設曲目就換這個檔案。
+- 連預設音檔都載不起來時（離線、格式不支援），會再退一層到程式即時合成的
+  艾爾加〈愛的禮讚〉音樂盒版，不會變成沒聲音。
 - 音樂**不會自動播放**，一定要賓客按下按鈕才會響（瀏覽器的規定，擋不掉）。
 
 > ⚠️ **版權**：放自己的音檔前請確認你有權使用。
@@ -886,7 +952,7 @@ npm run test:multipage
 [7]  不存在的 slug             # 中文找不到畫面
 [8]  手機版無水平捲動          # 含後台（分頁列可橫向滑動）
 [9]  素材資料夾自動載入        # manifest、大廳背景、甜點、囍卡、展品
-[10] 信箱權限                  # 賓客寫得進、讀不到；數量看得到
+[10] 信箱權限                  # 賓客寫得進、讀不到；舊網址導到後台；後台讀得到
 [11] 桌次查詢                  # 名字比對、同桌名單、信件入口
 [12] 電子祝福信                # 專屬詞彙、通用信
 [13] Explore 自訂卡片          # 連結型／彈窗型、編號重編
@@ -964,7 +1030,8 @@ http://127.0.0.1:5000/w/你的slug/cake?live=1
 | `sites/{siteId}/wishes` | ✅ | ✅（需通過驗證） | ❌ | ❌ |
 | `sites/{siteId}/letters` | 只有 `ownerEmails` 名單內的已驗證 Google 帳號 | ✅（需通過驗證） | ❌ | ❌ |
 | `sites/{siteId}/cakes` | ✅ | ✅（需通過驗證） | ❌ | ❌ |
-| `sites/{siteId}/compat` | ✅ | ✅（需通過驗證） | ❌ | ✅（新人重置票數） |
+| `sites/{siteId}/quiz` | ✅ | 只有新人 | 只有新人 | 只有新人 |
+| `sites/{siteId}/quizVotes` | ✅ | ✅（需通過驗證） | ❌ | 只有新人（重置票數） |
 | `sites/{siteId}/collected` | 只能讀自己的 | ✅（需登入且 uid 相符） | ❌ | ❌ |
 | `sites/{siteId}/meta/hearts` | ✅ | 只能一次 +1 | | |
 | `sites/{siteId}/meta/letterCount` | ✅ | 只能一次 +1 | | |
@@ -985,13 +1052,13 @@ node scripts/create-site.js --slug chen-lin-0315 … \
   --owner-email bride@gmail.com
 ```
 
-新人到 `/w/{slug}/inbox` 按「用 Google 帳號登入」，
-名單內的帳號才進得去；其他人（含賓客）連 API 都讀不到。
+新人到 `/w/{slug}/admin` 按「用 Google 帳號登入」，
+在「悄悄話」分頁讀信；名單內的帳號才進得去，其他人（含賓客）連 API 都讀不到。
 
 - 賓客**寫得進去、讀不出來**
 - 祝福牆上的「已有 N 封信」用另一個公開計數器 `meta/letterCount`，
   只看得到數量、看不到內容
-- 沒設定 `--owner-email` 的站台，信箱頁面會直接說「還沒設定新人的 Google 信箱」
+- 沒設定 `--owner-email` 的站台，後台會直接說「還沒設定新人的 Google 信箱」
 
 > **為什麼不用密碼？**
 > Firestore 的讀取請求不帶 payload，規則無法驗證「使用者輸入的密碼」。

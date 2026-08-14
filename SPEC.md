@@ -65,7 +65,7 @@ sites/{siteId}
   seatingSearchEnabled : boolean  # 桌次頁的搜尋開關，沒有這個欄位視為 true；
                                   # false 時賓客只看得到已上傳的桌次圖
   pages           : map      # 頁面開關，見第 10 節
-  ownerEmails     : string[] # 新人的 Google 信箱；規則據此決定誰讀得到信箱
+  ownerEmails     : string[] # 新人的 Google 信箱；規則據此決定誰進得了後台
   createdAt       : timestamp
   updatedAt       : timestamp
 
@@ -82,14 +82,15 @@ sites/{siteId}
     createdAt     : timestamp
 
   wishes/{autoId}     name, icon, text(≤300), time      # 祝福牆
-  letters/{autoId}    name, icon, text(≤1000), time     # 悄悄話信箱
+  letters/{autoId}    name, icon, text(≤1000), time     # 悄悄話（後台的悄悄話分頁）
   cakes/{autoId}      name, icon, cake, emoji, img, time
-  compat/{autoId}     answers(list ≤50), time           # 新人小測驗
+  quizVotes/{autoId}  picks(map ≤50), score(int), total(int), time
+                      # 小測驗的作答；picks 是 題目id → 選項索引 list
   collected/{autoId}  uid, userName, art, name, rarity, desc, cardId, time
   meta/hearts         count(int)                        # 愛心計數器
   meta/letterCount    count(int)                        # 公開的信件數量
 
-  # 以下六個由新人在 /w/{slug}/admin 維護，寫入需通過 ownerEmails 白名單
+  # 以下七個由新人在 /w/{slug}/admin 維護，寫入需通過 ownerEmails 白名單
   seating/{autoId}       name, table, note(≤100), time            # 桌次名單
   seatingImages/{autoId} img(data URL ≤950000), title, order, time # 桌次圖
   blessings/{autoId}     terms(list ≤20), title, body(≤2000),
@@ -101,6 +102,10 @@ sites/{siteId}
   exhibits/{autoId}      kind('photo'|'act'), img(data URL ≤950000 或 ''),
                          title(≤60), sub(≤60), desc(≤500),        # 戀愛時光的展品
                          year(≤20), act(≤40), order, time         # kind='act' 是章節分隔卡
+  quiz/{autoId}          type('single'|'multi'), q(≤60),          # 小測驗的題目
+                         opts(list，固定 4 個，每個 ≤40),           # 最多 50 題
+                         answer(list，正確答案的索引；single 只有 1 個),
+                         order, time
 
 slugs/{slug}                # 網址佔位對照表，文件 ID 就是 slug 本身
   siteId          : string
@@ -159,6 +164,8 @@ short/{code}                # 短連結
 | `sites/{siteId}/explore/{id}` | 允許 | 新人 | 新人 | 新人 |
 | `sites/{siteId}/cards/{id}` | 允許 | 新人 | 新人 | 新人 |
 | `sites/{siteId}/exhibits/{id}` | 允許 | 新人 | 新人 | 新人 |
+| `sites/{siteId}/quiz/{id}` | 允許 | 新人 | 新人 | 新人 |
+| `sites/{siteId}/quizVotes/{id}` | 允許 | 允許（需通過驗證） | 拒絕 | 新人（重置票數） |
 | `slugs/{slug}` | 允許 | 拒絕 | 拒絕 | 拒絕 |
 | `short/{code}` | 允許 | 拒絕 | 拒絕 | 拒絕 |
 
@@ -168,8 +175,9 @@ short/{code}                # 短連結
 
 | 型態 | 集合 | read | write |
 |---|---|---|---|
-| 賓客要用的內容 | `seating` `seatingImages` `blessings` `explore` `cards` `exhibits` | 公開 | 新人 |
+| 賓客要用的內容 | `seating` `seatingImages` `blessings` `explore` `cards` `exhibits` `quiz` | 公開 | 新人 |
 | 賓客交上來的資料 | `rsvps` `letters` | 新人 | 賓客（create only） |
+| 賓客的公開投票 | `wishes` `cakes` `quizVotes` | 公開 | 賓客（create only） |
 
 上面那組 **read 必須公開**，因為比對（桌次查名字、祝福信對暗號）在瀏覽器端做——
 Firestore 的讀取請求不帶條件，規則沒有辦法「只讓對得上的人讀到那一筆」。
@@ -214,7 +222,7 @@ dressCode giftNote story schedule hashtags seatingSearchEnabled updatedAt
 - 若已過 `rsvpDeadline` 則拒絕寫入
 
 RSVP 的讀取綁在**新人本人的 Google 身分**上（`isSiteOwner()`），
-與悄悄話信箱同一套判斷：賓客寫得進去、彼此讀不到，
+與悄悄話同一套判斷：賓客寫得進去、彼此讀不到，
 新人在 `/w/{slug}/admin` 登入後看得到完整名單。
 
 **仍然不開放 `update` 與 `delete`**：回覆是賓客送出的紀錄，
@@ -257,7 +265,7 @@ node scripts/create-site.js --slug chen-lin-0315 --groom 陳彥廷 --bride 林�
 | 來源 | 目的 |
 |---|---|
 | `/w/*/rsvp` `/w/*/wall` `/w/*/cake` | 對應的 HTML |
-| `/w/*/draw` `/w/*/exhibition` `/w/*/quiz` `/w/*/inbox` | 對應的 HTML |
+| `/w/*/draw` `/w/*/exhibition` `/w/*/quiz` | 對應的 HTML |
 | `/w/*/seating` `/w/*/letter` `/w/*/admin` | 對應的 HTML |
 | `/w/*/invitation` | `/invitation.html` |
 | `/w/**`（其餘，含 `/w/{slug}/`） | `/index.html`（大廳） |
@@ -391,7 +399,6 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
 | `draw` | `/w/{slug}/draw` | 囍卡抽卡 | ✅ |
 | `exhibition` | `/w/{slug}/exhibition` | 戀愛時光 | ✅ |
 | `quiz` | `/w/{slug}/quiz` | 新人小測驗 | ✅ |
-| `inbox` | `/w/{slug}/inbox` | 悄悄話信箱 | ✅ |
 | `seating` | `/w/{slug}/seating` | 我的桌次 | ✅ |
 | `letter` | `/w/{slug}/letter` | 給你的信（電子祝福信） | ✅ |
 | `invitation` | `/w/{slug}/invitation` | 單頁式邀請函（獨立版型） | ✅ |
@@ -422,7 +429,7 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
 | 位置 | 用途 |
 |---|---|
 | `cover.*` | 封面大圖（單頁邀請函） |
-| `bgm.*` | 背景音樂；沒放則用內建合成的〈愛的禮讚〉音樂盒版 |
+| `bgm.*` | 背景音樂；沒放則用內建預設 `/audio/bgm.mp3`，載不起來才退到合成的〈愛的禮讚〉 |
 | `lobby.*` / `lobby-blur.*` | 大廳背景與其模糊版 |
 | `gallery/` | 照片牆 |
 | `exhibition/` | 戀愛時光的展品 |
@@ -443,7 +450,7 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
 
 ---
 
-## 12. 悄悄話信箱的權限
+## 12. 悄悄話的權限
 
 `letters` 的讀取由規則檢查 Google 帳號的**已驗證信箱**是否在
 `sites.ownerEmails` 名單內：
@@ -455,7 +462,9 @@ allow read: if request.auth != null
 ```
 
 - 賓客寫得進去、讀不出來（連 API 都拿不到）
-- 新人在 `/w/{slug}/inbox` 用 Google 登入即可查看
+- 新人在 `/w/{slug}/admin` 用 Google 登入，在「悄悄話」分頁查看
+  （原本是獨立的 `/w/{slug}/inbox`，門檻與後台相同，已經併進後台；
+   舊網址由 `site-context.js` 導到 `/w/{slug}/admin`）
 - 祝福牆的「已有 N 封信」改用公開計數器 `meta/letterCount`，
   只暴露數量、不暴露內容
 
@@ -464,15 +473,23 @@ allow read: if request.auth != null
 資料仍可透過 API 直接取得，等於沒有保護。
 真正的保護必須綁在 Auth 簽發的身分上。
 
+**後台的「悄悄話」分頁**：新的排前面，一封一段（記號、名字、時間、內容），
+上面兩個數字是總封數與今天收到幾封，名字或內容可搜尋，
+也能匯出 CSV（匯出的是目前搜尋出來的那些）。
+訂閱寫在 `openAdmin()` 裡的 `DataStore.subscribeLetters()` ——
+登入成功之後才訂閱，未登入時連 `onSnapshot` 都不會發出去。
+規則只開 `read`（限 `ownerEmails`）與 `create`（賓客投信），
+`update`／`delete` 都是 `false`，所以後台只能看與匯出。
+
 ---
 
 ## 13. 新人自己維護的內容（後台 `/w/{slug}/admin`）
 
 前面幾個模組的內容都是建站時由 CLI 寫進去、之後改要走 Console。
-以下六個模組的內容**由新人自己在瀏覽器裡維護**，改完重新整理就生效，
+以下的模組**由新人自己在瀏覽器裡維護**，改完重新整理就生效，
 不需要 deploy、也不需要我們介入。
 
-進入條件與悄悄話信箱相同：Google 登入 + 信箱在 `sites.ownerEmails` 名單內。
+進入條件：Google 登入 + 信箱在 `sites.ownerEmails` 名單內（`isSiteOwner()`）。
 後台不列在導覽列、不被任何頁面連結、標了 `noindex`，
 但真正的保護是 Security Rules —— 不在名單內的帳號改了 DOM 也寫不進去。
 
@@ -617,3 +634,45 @@ Firestore 的讀取請求不帶條件，規則無法「只讓對得上的人讀�
 沒有照片的展品也收得下 —— 新人可以先把文字寫完，之後再補圖。
 
 來源優先序與囍卡相同：`exhibits` → `assets/{slug}/exhibition/` → 內建範例。
+
+### 13.7 測驗（`quiz` ＋ `quizVotes`）
+
+「看你多了解我們」原本是寫死在 `quiz.js` 裡的兩份題庫
+（主測驗 + 契合度長條圖），只有原作那對新人適用。
+現在合併成**一份一頁式測驗**，題目搬進 `quiz` 集合由新人自己出。
+
+| 欄位 | 內容 |
+|---|---|
+| `type` | `single` 單選（賓客選完自動捲到下一題）／`multi` 複選（全對才得分） |
+| `q` | 題目，≤60 字 |
+| `opts` | 固定四個選項，每個 ≤40 字 |
+| `answer` | 正確答案的索引 list；`single` 只有一個元素 |
+| `order` | 題號順序，後台的 ↑ ↓ 會整批重編成 1…n |
+
+上限 50 題（`quizVotes.picks` 也跟著擋在 50 以內）。
+規則語言沒辦法逐一檢查 list 裡每個元素的型別與長度，
+所以「選項幾個字、索引是不是 0–3」由後台送出前切好、擋好；
+規則負責的是欄位白名單、四個選項、單選只能有一個答案這些結構性條件。
+
+**賓客那一側**：整頁排完所有題目 → 全部作答完才送得出去 →
+看到分數與每題的長條圖。長條裡寫的是**選項內容**（選項可能很長，
+外面那一欄放不下），一行寫不完就以「…」收尾，不會溢出長條、
+也不會壓到「你」的標籤。
+
+**只會出現「你」一種標籤**：新人不必自己作答（正確答案在後台就設好了），
+所以不再有原本那個「新人」標籤；正確答案改用長條的顏色與 `✓` 標記。
+
+**作答為什麼用題目 id 當 key**：`picks = { 題目id: [選項索引] }`。
+用題號當 key 的話，新人之後調順序或刪題目，舊票就會對到別題去；
+綁 id 則是「對不到的題目就不顯示」。
+另外 Firestore 的陣列不能再放陣列，複選題的答案也因此必須包在 map 裡
+（`picks is map` 是規則層唯一擋得住的形狀）。
+
+**預設題目**（`js/quiz-defaults.js`，賓客頁與後台共用同一份）有兩個身分：
+新人還沒進後台時是賓客那一頁的退路；新人第一次打開後台「測驗」分頁時，
+這 3 題會被寫進 `quiz` 當起點。整份刪光後不會自動補回來
+（以 `localStorage` 的 `quizSeeded` 記著），清單上有手動載入的按鈕。
+
+**舊資料**：原本的 `compat` 集合已經沒有程式在讀，規則也不再放行 ——
+那些票對應的是寫死的舊題目，併進新題目沒有意義。
+需要清掉的話走 Admin SDK。

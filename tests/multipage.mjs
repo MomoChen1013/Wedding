@@ -33,7 +33,7 @@ const adb = adminFirestore();
 const DAY = 86400000;
 const future = (d) => TS.fromMillis(Date.now() + d * DAY);
 
-const ALL_PAGES = ['rsvp','wall','cake','draw','exhibition','quiz','inbox','invitation',
+const ALL_PAGES = ['rsvp','wall','cake','draw','exhibition','quiz','invitation',
   'seating','letter'];
 const allOn = Object.fromEntries(ALL_PAGES.map((k) => [k, true]));
 
@@ -212,9 +212,23 @@ const SLUG = 'ginny-one-20260919';
 /* 素材測試用的站台，slug 對應 public/assets/demo-wedding-2027/ */
 const ASSET_SLUG = 'demo-wedding-2027';
 
+/* 用 Auth emulator 的假 Google 憑證登入成新人。
+   emulator 接受把 claims 直接當成 idToken 傳進 GoogleAuthProvider.credential()，
+   所以測試不需要真的開 Google 登入彈窗。 */
+async function signInAsOwner(page, email){
+  await page.evaluate(async (mail) => {
+    const m = await import('https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js');
+    /* sub 要跟著 email 走：同一個 sub 在 emulator 是同一個帳號，
+       共用的話「換一個信箱登入」其實還是原來那位，測試會假性通過 */
+    const cred = m.GoogleAuthProvider.credential(
+      JSON.stringify({ sub:`uid-${mail}`, email: mail, email_verified: true }));
+    await m.signInWithCredential(window.fb.auth, cred);
+  }, email);
+}
+
 /* ---------- 每一頁都要載得起來 ---------- */
 console.log('\n[1] 每個頁面都能正常載入');
-for(const key of ['', 'rsvp', 'wall', 'cake', 'draw', 'exhibition', 'quiz', 'inbox',
+for(const key of ['', 'rsvp', 'wall', 'cake', 'draw', 'exhibition', 'quiz',
                   'seating', 'letter']){
   const path = `/w/${SLUG}/${key}`;
   const { page, errors } = await visit(path);
@@ -286,7 +300,7 @@ console.log('\n[3] 頁面開關');
   const links = await page.evaluate(() =>
     Array.from(document.querySelectorAll('a[href^="/w/"]')).map((a) => a.getAttribute('href')));
   ok('未啟用的入口不出現在首頁',
-    !links.some((h) => /\/(wall|cake|draw|exhibition|quiz|inbox|seating|letter)$/.test(h)),
+    !links.some((h) => /\/(wall|cake|draw|exhibition|quiz|seating|letter)$/.test(h)),
     links.join(', '));
   ok('已啟用的 rsvp 入口仍在', links.some((h) => h.endsWith('/rsvp')), links.join(', '));
   await page.close();
@@ -411,6 +425,22 @@ console.log('\n[9] 素材資料夾自動載入');
   await page.close();
 }
 {
+  /* 沒有素材、後台也還沒設定時，看到的是內建的新人故事範例
+     （這一段要跑在 [12] 後台寫入展品之前，否則會被新人自己的內容蓋掉） */
+  const { page } = await visit(`/w/${SLUG}/exhibition`);
+  const nodes = await page.evaluate(() => ({
+    photos: Array.from(document.querySelectorAll('.tl-node .tl-cap')).map((e) => e.textContent),
+    acts:   Array.from(document.querySelectorAll('.tl-act-div .ac-label')).map((e) => e.textContent),
+  }));
+  ok('內建範例是新人的故事', nodes.photos[0] === '我們結婚了', nodes.photos.slice(0, 2).join('、'));
+  ok('內建範例分成四幕',
+    nodes.acts.join('、') === '第一幕、第二幕、第三幕、第四幕', nodes.acts.join('、'));
+  ok('內建範例最後留一張合影卡',
+    nodes.photos[nodes.photos.length - 1] === '下一張，等你一起入鏡！',
+    nodes.photos[nodes.photos.length - 1]);
+  await page.close();
+}
+{
   /* 沒放素材的站台要沿用預設，不能整個空掉 */
   const { page } = await visit('/w/minimal-site-2027/');
   const assets = await page.evaluate(() => window.SITE.assets);
@@ -424,21 +454,23 @@ console.log('\n[9b] 背景音樂');
 {
   const { page } = await visit(`/w/${ASSET_SLUG}/`);
   const src = await page.evaluate(() => bgmSrc());
-  ok('bgmSrc() 指向客戶的音檔', src.endsWith('/bgm.mp3'), src || '(無)');
+  ok('bgmSrc() 指向客戶的音檔', src === `/assets/${ASSET_SLUG}/bgm.mp3`, src || '(無)');
   await page.close();
 }
 {
-  /* 沒放音檔的站台要退回內建合成音樂，不能整個沒聲音。
-     ginny 站台已經有自己的 bgm.mp3，所以這裡要用沒有素材資料夾的站台來驗。 */
+  /* 沒放音檔的站台要退回內建的預設背景音樂，不能整個沒聲音。
+     有素材資料夾的站台會用自己的 bgm.mp3，所以這裡要用沒有素材資料夾的站台來驗。 */
   const { page } = await visit('/w/minimal-site-2027/');
   const src = await page.evaluate(() => bgmSrc());
-  ok('沒有音檔時退回內建音樂', src === '', src || '(空)');
-  ok('內建合成音樂的函式存在',
+  ok('沒有音檔時用內建的預設背景音樂', src === '/audio/bgm.mp3', src || '(空)');
+  ok('預設音檔真的拿得到',
+    (await page.request.get(`${BASE}/audio/bgm.mp3`)).ok());
+  ok('音檔載不起來時的合成音樂函式還在',
     await page.evaluate(() => typeof startSynthBGM === 'function'));
   await page.close();
 }
 
-/* ---------- 悄悄話信箱：只有新人讀得到 ---------- */
+/* ---------- 悄悄話信箱：賓客寫得進去、只有新人在後台讀得到 ---------- */
 console.log('\n[10] 信箱權限');
 {
   /* 賓客寫得進去 */
@@ -452,7 +484,7 @@ console.log('\n[10] 信箱權限');
 }
 {
   /* 但賓客讀不到：直接用未登入的前端 SDK 嘗試讀取應該被規則擋下 */
-  const { page } = await visit(`/w/${SLUG}/inbox`);
+  const { page } = await visit(`/w/${SLUG}/wall`);
   const denied = await page.evaluate(async () => {
     const { getDocs, collection, db } = window.fb;
     try{
@@ -463,9 +495,63 @@ console.log('\n[10] 信箱權限');
     }
   });
   ok('賓客讀不到信件內容（規則擋下）', denied);
-  ok('信箱頁面停在登入畫面', await page.isVisible('#pwGate'));
-  ok('信件內容沒有出現在畫面上',
+  ok('信件內容沒有出現在祝福牆上',
     !(await page.innerText('body')).includes('偷偷跟你們說'));
+  await page.close();
+}
+{
+  /* 悄悄話信箱已經併進後台，舊的 /inbox 網址直接帶過去 */
+  const page = await newPage();
+  await page.goto(`${BASE}/w/${SLUG}/inbox`, { waitUntil:'domcontentloaded' });
+  await page.waitForURL(`**/w/${SLUG}/admin`, { timeout: 20000 }).catch(() => {});
+  ok('舊的 /inbox 網址導到新人後台', page.url().endsWith(`/w/${SLUG}/admin`), page.url());
+  ok('後台一樣停在登入畫面', await page.isVisible('#pwGate'));
+  ok('沒登入看不到信件內容',
+    !(await page.innerText('body')).includes('偷偷跟你們說'));
+  await page.close();
+}
+{
+  /* 新人登入後台，「悄悄話」分頁就讀得到 */
+  const { page, errors } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+
+  await page.click('.ad-tab[data-tab="inbox"]');
+  await page.waitForFunction(() => DataStore.getLetters().length === 1, null, { timeout:15000 });
+
+  const listText = await page.innerText('#adInboxList');
+  ok('後台讀得到信件內容', listText.includes('偷偷跟你們說'),
+    listText.replace(/\n/g, ' ').slice(0, 60));
+  ok('信件上有賓客的名字', listText.includes('測試賓客'));
+  ok('封數統計正確', (await page.textContent('#adInboxTotal')) === '1',
+    await page.textContent('#adInboxTotal'));
+
+  await page.fill('#adInboxFilter', '不存在的關鍵字');
+  await page.waitForTimeout(200);
+  ok('搜尋沒結果時顯示空狀態',
+    (await page.innerText('#adInboxList')).includes('沒有符合的悄悄話'));
+  await page.fill('#adInboxFilter', '偷偷');
+  await page.waitForTimeout(200);
+  ok('搜尋找得到內容關鍵字',
+    (await page.innerText('#adInboxList')).includes('偷偷跟你們說'));
+
+  ok('悄悄話分頁無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+{
+  /* 不在 ownerEmails 名單內的帳號，登入了也讀不到信 */
+  const { page } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'nosy@example.com');
+  await page.waitForTimeout(1200);
+  const denied = await page.evaluate(async () => {
+    const { getDocs, collection, db } = window.fb;
+    try{
+      await getDocs(collection(db, 'sites', window.SITE.siteId, 'letters'));
+      return false;
+    }catch(e){ return e.code === 'permission-denied'; }
+  });
+  ok('外人讀不到悄悄話（規則擋下）', denied);
   await page.close();
 }
 {
@@ -655,20 +741,6 @@ console.log('\n[13] Explore 自訂卡片');
 
 /* ---------- 新人後台 ---------- */
 console.log('\n[14] 新人後台');
-
-/* 用 Auth emulator 的假 Google 憑證登入成新人。
-   emulator 接受把 claims 直接當成 idToken 傳進 GoogleAuthProvider.credential()，
-   所以測試不需要真的開 Google 登入彈窗。 */
-async function signInAsOwner(page, email){
-  await page.evaluate(async (mail) => {
-    const m = await import('https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js');
-    /* sub 要跟著 email 走：同一個 sub 在 emulator 是同一個帳號，
-       共用的話「換一個信箱登入」其實還是原來那位，測試會假性通過 */
-    const cred = m.GoogleAuthProvider.credential(
-      JSON.stringify({ sub:`uid-${mail}`, email: mail, email_verified: true }));
-    await m.signInWithCredential(window.fb.auth, cred);
-  }, email);
-}
 
 {
   const { page } = await visit(`/w/${SLUG}/admin`);
@@ -968,7 +1040,7 @@ console.log('\n[17] 後台只顯示有開的頁面');
     Array.from(document.querySelectorAll('.ad-tab'))
       .filter((b) => !b.hidden).map((b) => b.dataset.tab));
   ok('關掉的頁面不出現編輯分頁',
-    shown.join(',') === 'rsvp,lobby,explore', shown.join(','));
+    shown.join(',') === 'rsvp,inbox,lobby,explore', shown.join(','));
   ok('大廳內容永遠在', shown.includes('lobby'));
 
   ok('後台分頁無 console 錯誤', realErrors(errors).length === 0,
@@ -1069,6 +1141,174 @@ console.log('\n[19] 桌次搜尋可以關掉');
     !(await page.evaluate(() => document.getElementById('adSeatListOff').hidden)));
 
   ok('桌次分頁無 console 錯誤', realErrors(errors).length === 0,
+/* ---------- 後台的測驗題目 ---------- */
+console.log('\n[20] 後台出測驗題目');
+
+const quizCol = adb.collection('sites').doc(siteIds[SLUG]).collection('quiz');
+const voteCol = adb.collection('sites').doc(siteIds[SLUG]).collection('quizVotes');
+const LONG_OPT = '這是一個故意寫得非常長的選項內容，長到一行放不完，一定會被收成刪節號';
+
+{
+  /* 先清空題目，才驗得出「第一次打開後台就有 3 題預設題目」 */
+  const old = await quizCol.get();
+  await Promise.all(old.docs.map((d) => d.ref.delete()));
+
+  const { page, errors } = await visit(`/w/${SLUG}/admin`);
+  page.on('dialog', (d) => d.accept());
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  await page.click('.ad-tab[data-tab="quiz"]');
+
+  /* 預設題目 */
+  await page.waitForFunction(() => DataStore.getQuiz().length === 3, null, { timeout:15000 });
+  const seeded = (await quizCol.orderBy('order').get()).docs.map((d) => d.data());
+  ok('第一次打開就寫進 3 題預設題目', seeded.length === 3, `${seeded.length} 題`);
+  ok('預設題目的題號是 1、2、3',
+    seeded.map((q) => q.order).join(',') === '1,2,3', seeded.map((q) => q.order).join(','));
+  ok('每題都是四個選項',
+    seeded.every((q) => Array.isArray(q.opts) && q.opts.length === 4),
+    seeded.map((q) => (q.opts || []).length).join(','));
+  ok('預設題目有單選也有複選',
+    seeded.some((q) => q.type === 'single') && seeded.some((q) => q.type === 'multi'),
+    seeded.map((q) => q.type).join(','));
+
+  /* 新增一題複選 */
+  await page.selectOption('#adQuizType', 'multi');
+  await page.fill('#adQuizQ', '我們的貓最愛做什麼？');
+  await page.fill('.ad-quiz-text[data-oi="0"]', LONG_OPT);
+  await page.fill('.ad-quiz-text[data-oi="1"]', '睡整天');
+  await page.fill('.ad-quiz-text[data-oi="2"]', '討摸');
+  await page.fill('.ad-quiz-text[data-oi="3"]', '看著我們工作');
+  await page.check('.ad-quiz-ans input[data-oi="0"]');
+  await page.check('.ad-quiz-ans input[data-oi="2"]');
+  await page.click('#adQuizForm button[type="submit"]');
+  await page.waitForFunction(() => DataStore.getQuiz().length === 4, null, { timeout:15000 });
+
+  const added = (await quizCol.orderBy('order').get()).docs.map((d) => d.data()).pop();
+  ok('新題目排在最後', added.order === 4, String(added.order));
+  ok('新題目是複選、答案有兩個',
+    added.type === 'multi' && added.answer.join(',') === '0,2',
+    `${added.type} / ${added.answer.join(',')}`);
+  ok('選項內容照原文存下來', added.opts[0] === LONG_OPT, added.opts[0]);
+
+  /* 調順序：把第一題往後移 */
+  const before = (await quizCol.orderBy('order').get()).docs.map((d) => d.id);
+  await page.click('#adQuizList .ad-item:nth-child(1) [data-quiz-down]');
+  await page.waitForTimeout(1800);
+  const after = (await quizCol.orderBy('order').get()).docs.map((d) => d.id);
+  ok('↓ 把第一題換到第二題',
+    after[0] === before[1] && after[1] === before[0], after.slice(0, 2).join(' → '));
+  ok('順序仍然是連號 1…4',
+    (await quizCol.orderBy('order').get()).docs
+      .map((d) => d.data().order).join(',') === '1,2,3,4');
+
+  /* 刪一題 */
+  const delId = after[after.length - 1];
+  await page.click(`#adQuizList [data-del-quiz="${delId}"]`);
+  await page.waitForFunction(() => DataStore.getQuiz().length === 3, null, { timeout:15000 });
+  ok('刪得掉題目', (await quizCol.get()).size === 3, `${(await quizCol.get()).size} 題`);
+
+  ok('測驗分頁無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+
+/* ---------- 賓客那一側的測驗 ---------- */
+console.log('\n[20b] 賓客做測驗');
+{
+  /* 把長選項那題再加回來（上一段把它刪掉了），順便測長字串的截斷 */
+  await quizCol.doc('long-one').set({
+    type:'multi', q:'我們的貓最愛做什麼？',
+    opts:[LONG_OPT, '睡整天', '討摸', '看著我們工作'],
+    answer:[0, 2], order: 4, time: Date.now(),
+  });
+
+  const { page, errors } = await visit(`/w/${SLUG}/quiz`);
+  await page.waitForFunction(() => document.querySelectorAll('.q-block').length === 4,
+    null, { timeout:15000 });
+
+  const questions = (await quizCol.orderBy('order').get()).docs;
+  ok('題目用新人設定的那一份', questions.length === 4, `${questions.length} 題`);
+  ok('題號依 order 排',
+    (await page.evaluate(() =>
+      Array.from(document.querySelectorAll('.q-block .q-text')).map((e) => e.textContent)))
+      .join('|') === questions.map((d) => d.data().q).join('|'));
+
+  /* 單選題選完會自動捲到下一題 */
+  const y0 = await page.evaluate(() => window.scrollY);
+  await page.click('.q-block[data-qi="0"] .q-opt[data-oi="0"]');
+  await page.waitForTimeout(900);
+  const y1 = await page.evaluate(() => window.scrollY);
+  ok('單選選完自動捲到下一題', y1 > y0, `${y0} → ${y1}`);
+  ok('送出鈕在全部作答前是關著的',
+    await page.evaluate(() => document.getElementById('qSubmit').disabled));
+
+  /* 其餘每題都選 A */
+  for(let i = 1; i < 4; i++){
+    await page.click(`.q-block[data-qi="${i}"] .q-opt[data-oi="0"]`);
+    await page.waitForTimeout(400);
+  }
+  ok('全部作答完才打開送出鈕',
+    await page.evaluate(() => !document.getElementById('qSubmit').disabled));
+
+  await page.click('#qSubmit');
+  await page.waitForSelector('.q-result-head', { timeout:10000 });
+  await page.waitForTimeout(1500);
+
+  /* 每題都選 A，只有「正確答案剛好只有 A」的那幾題會得分 */
+  const expectScore = questions
+    .filter((d) => (d.data().answer || []).join(',') === '0').length;
+  const scoreText = await page.textContent('.q-score');
+  ok('分數等於答對的題數',
+    scoreText.replace(/\s/g, '') === `${expectScore}／4`, scoreText.replace(/\s/g, ''));
+
+  const votes = await voteCol.get();
+  ok('作答有寫進 quizVotes', votes.size === 1, `${votes.size} 筆`);
+  const vote = votes.size ? votes.docs[0].data() : {};
+  ok('票以題目 id 為 key',
+    Object.keys(vote.picks || {}).sort().join(',') === questions.map((d) => d.id).sort().join(','),
+    Object.keys(vote.picks || {}).join(','));
+  ok('分數與題數一起存下來',
+    vote.score === expectScore && vote.total === 4, `${vote.score}/${vote.total}`);
+
+  /* 長條圖：只掛「你」的標籤（新人不作答，所以沒有第二種標籤） */
+  const chart = await page.evaluate(() => ({
+    rows:    document.querySelectorAll('.q-bar-row').length,
+    youTags: Array.from(document.querySelectorAll('.q-bar-badge')).map((e) => e.textContent),
+    counts:  Array.from(document.querySelectorAll('.q-bar-row.is-you .q-bar-count'))
+               .map((e) => e.textContent),
+    answers: document.querySelectorAll('.q-bar-row.is-answer').length,
+  }));
+  ok('四題各四條長條', chart.rows === 16, String(chart.rows));
+  ok('標籤只有「你」', chart.youTags.length === 4 && chart.youTags.every((t) => t === '你'),
+    chart.youTags.join(','));
+  /* 只有我一個人作答，所以自己那格剛好一票 —— 樂觀疊圖不能重複計算 */
+  ok('自己選的那格只算一票', chart.counts.every((c) => c === '1'), chart.counts.join(','));
+  ok('正確答案有標記出來', chart.answers >= 4, String(chart.answers));
+
+  /* 選項寫在長條裡，不能溢出長條、也不能壓到「你」 */
+  const overflow = await page.evaluate(() => {
+    const bad = [];
+    document.querySelectorAll('.q-bar-row').forEach((row) => {
+      const label = row.querySelector('.q-bar-label');
+      const track = row.querySelector('.q-bar-track');
+      const badge = row.querySelector('.q-bar-badge');
+      const l = label.getBoundingClientRect();
+      const t = track.getBoundingClientRect();
+      if(l.right > t.right + 1 || l.left < t.left - 1) bad.push(`超出長條：${label.textContent}`);
+      if(badge && l.right > badge.getBoundingClientRect().left + 1){
+        bad.push(`壓到「你」：${label.textContent}`);
+      }
+      if(label.scrollWidth > label.clientWidth + 1 &&
+         getComputedStyle(label).textOverflow !== 'ellipsis'){
+        bad.push(`沒有以「…」收尾：${label.textContent}`);
+      }
+    });
+    return bad;
+  });
+  ok('長選項只在長條裡截斷，不會壓到「你」', overflow.length === 0, overflow.slice(0, 2).join(' | '));
+
+  ok('測驗頁無 console 錯誤', realErrors(errors).length === 0,
     realErrors(errors).slice(0, 2).join(' | '));
   await page.close();
 }
@@ -1088,6 +1328,21 @@ console.log('\n[19] 桌次搜尋可以關掉');
   const { page } = await visit(`/w/${SLUG}/seating`);
   ok('重新打開後搜尋又回來了',
     !(await page.evaluate(() => document.getElementById('stSearch').hidden)));
+  /* 後台看得到剛剛那筆作答，也清得掉 */
+  const { page } = await visit(`/w/${SLUG}/admin`);
+  page.on('dialog', (d) => d.accept());
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  await page.click('.ad-tab[data-tab="quiz"]');
+  await page.waitForFunction(() => DataStore.getQuizVotes().length === 1, null, { timeout:15000 });
+  ok('後台看得到作答人數',
+    (await page.textContent('#adQuizVoteCount')) === '1',
+    await page.textContent('#adQuizVoteCount'));
+
+  await page.click('#adQuizWipe');
+  await page.waitForTimeout(1800);
+  ok('新人清得掉作答紀錄', (await voteCol.get()).size === 0, `${(await voteCol.get()).size} 筆`);
+  ok('題目沒被一起清掉', (await quizCol.get()).size === 4, `${(await quizCol.get()).size} 題`);
   await page.close();
 }
 

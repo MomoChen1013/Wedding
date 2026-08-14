@@ -131,6 +131,7 @@ select.ad-input{appearance:none;cursor:pointer;
 ============================================================ */
 .ad-stats{display:grid;grid-template-columns:repeat(4,1fr);
   border-top:1px solid var(--line);border-left:1px solid var(--line);}
+.ad-stats-2{grid-template-columns:repeat(2,1fr);}
 @media(max-width:560px){.ad-stats{grid-template-columns:1fr 1fr;}}
 .ad-stat{padding:22px 14px;text-align:center;background:rgba(255,255,255,.9);
   border-right:1px solid var(--line);border-bottom:1px solid var(--line);}
@@ -191,6 +192,22 @@ select.ad-input{appearance:none;cursor:pointer;
   letter-spacing:.08em;color:var(--ink-soft);}
 
 /* ============================================================
+   悄悄話
+   ・信件是要「讀」的，不像名單只是掃過去，
+     所以一封一段、行距放寬，不擠成一列
+============================================================ */
+.ad-msgs{border-top:1px solid var(--line-soft);}
+.ad-msg{padding:20px 2px;border-bottom:1px solid var(--line-soft);}
+.ad-msg-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.ad-msg-ic{width:26px;height:26px;line-height:24px;text-align:center;border-radius:50%;
+  border:1px solid var(--line);font-size:12px;color:var(--primary-deep);flex:0 0 auto;}
+.ad-msg-name{font-size:13.5px;letter-spacing:.08em;color:var(--ink);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ad-msg-time{margin-left:auto;flex:0 0 auto;font-size:11.5px;color:var(--ink-soft);}
+.ad-msg-body{font-size:15px;line-height:2;color:var(--ink);
+  white-space:pre-wrap;word-break:break-word;}
+
+/* ============================================================
    當日流程（一列一個項目）
 ============================================================ */
 .ad-sch{display:flex;flex-direction:column;gap:10px;}
@@ -230,6 +247,26 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-exh-pick-side .ad-label:first-child{margin-top:0;}
 .ad-exh-thumb{flex:0 0 auto;width:46px;height:46px;object-fit:cover;
   border:1px solid var(--line);border-radius:4px;background:var(--bg2);}
+
+/* ============================================================
+   測驗
+   ・一列一個選項：左邊是「這是正確答案」的勾勾，右邊是選項內容
+============================================================ */
+.ad-quiz-opts{display:flex;flex-direction:column;gap:9px;}
+.ad-quiz-opt{display:flex;align-items:center;gap:10px;}
+.ad-quiz-opt .ad-input{flex:1 1 auto;min-width:0;padding:9px 12px;font-size:14px;}
+.ad-quiz-ans{display:flex;align-items:center;gap:6px;flex:0 0 auto;cursor:pointer;}
+.ad-quiz-ans input{accent-color:var(--primary-deep);cursor:pointer;}
+.ad-quiz-ltr{font-family:var(--font-display);font-size:13px;letter-spacing:.1em;
+  color:var(--ink-soft);min-width:11px;}
+.ad-quiz-ans input:checked + .ad-quiz-ltr{color:var(--primary-deep);}
+
+/* 題目順序的 ↑ ↓ */
+.ad-move{background:none;border:1px solid var(--line);border-radius:4px;cursor:pointer;
+  width:24px;height:24px;line-height:1;padding:0;color:var(--ink-soft);
+  font-family:var(--font-body);font-size:12px;transition:.2s;}
+.ad-move:hover:not(:disabled){border-color:var(--ink);color:var(--ink);}
+.ad-move:disabled{opacity:.3;cursor:not-allowed;}
 
 /* ============================================================
    照片裁切器（cropper.js 動態插入）

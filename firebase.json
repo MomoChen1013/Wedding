@@ -63,10 +63,6 @@
         "destination": "/quiz.html"
       },
       {
-        "source": "/w/*/inbox",
-        "destination": "/inbox.html"
-      },
-      {
         "source": "/w/*/seating",
         "destination": "/seating.html"
       },

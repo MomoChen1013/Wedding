@@ -29,12 +29,13 @@
      --pages          選填，逗號分隔的頁面清單，直接指定要開哪些頁
                        例：--pages rsvp,wall,cake
                        不給則預設開啟 rsvp,wall
-                       可用值：rsvp wall cake draw exhibition quiz inbox invitation
+                       可用值：rsvp wall cake draw exhibition quiz invitation
      --enable         選填，在預設之外「加開」某頁；可重複給多次
      --disable        選填，關掉某頁；可重複給多次
-     --owner-email    新人的 Google 信箱；**悄悄話信箱要用它登入才讀得到**
+     --owner-email    新人的 Google 信箱；**新人後台要用它登入才進得去**
+                       （出席回覆、悄悄話信箱也都是靠這份名單才讀得到）
                        可重複給多次（新郎、新娘各一個）
-                       沒設定的話，信箱頁面等於沒人能看
+                       沒設定的話，後台等於沒人進得去
      --status         選填，draft／published／archived，預設 draft
      --rsvp-deadline  選填，RSVP 截止日 YYYY-MM-DD，預設同婚禮日期
      --rsvp-enabled   選填，true／false，預設 true
@@ -176,7 +177,7 @@ async function createSite(values) {
   const rsvpEnabled = values['rsvp-enabled'] !== 'false';
   const pages = resolvePages(values);
 
-  /* 新人的 Google 信箱：規則會拿它比對，決定誰讀得到悄悄話信箱 */
+  /* 新人的 Google 信箱：規則會拿它比對，決定誰進得了後台、讀得到悄悄話 */
   const ownerEmails = (values['owner-email'] || [])
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
@@ -250,9 +251,9 @@ async function main() {
   console.log(`   網址   : ${resolveBaseUrl(values.base)}/w/${slug}/`);
   console.log(`   已開頁面 : 大廳（固定）${on.length ? '、' + on.join('、') : ''}`);
   if (owners.length) {
-    console.log(`   信箱可讀 : ${owners.join('、')}`);
+    console.log(`   後台可用 : ${owners.join('、')}`);
   } else {
-    console.log('   ⚠️ 沒設定 --owner-email，悄悄話信箱將沒有人讀得到');
+    console.log('   ⚠️ 沒設定 --owner-email，新人後台將沒有人進得去');
   }
 }
 

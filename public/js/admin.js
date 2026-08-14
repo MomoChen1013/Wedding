@@ -1,17 +1,20 @@
 /* ============================================================
    admin.js — 新人後台
    ------------------------------------------------------------
-   一個地方管六件事：
-     1. 大廳內容 — 地點、Dress Code、禮金說明、當日流程（寫回 sites 文件）
-     2. 桌次     — 上傳桌次圖、匯入賓客名單
-     3. 祝福信   — 寫給特定賓客的電子信
-     4. 首頁卡片 — Explore 區的自訂模組（連結型／彈窗型）
-     5. 囍卡     — 抽卡頁的卡池：裁切上傳照片、設等級與說明
-     6. 展覽     — 戀愛時光的展品與章節分隔卡
+   一個地方管九件事：
+     1. 出席回覆 — 賓客送出的 RSVP：統計、篩選、匯出
+     2. 悄悄話   — 賓客投進信箱的悄悄話（原本的 /inbox 頁已併進這裡）
+     3. 大廳內容 — 地點、Dress Code、禮金說明、當日流程（寫回 sites 文件）
+     4. 桌次     — 上傳桌次圖、匯入賓客名單
+     5. 祝福信   — 寫給特定賓客的電子信
+     6. 首頁卡片 — Explore 區的自訂模組（連結型／彈窗型）
+     7. 囍卡     — 抽卡頁的卡池：裁切上傳照片、設等級與說明
+     8. 展覽     — 戀愛時光的展品與章節分隔卡
+     9. 測驗     — 「看你多了解我們」的題目、選項與正確答案
 
-   門檻和悄悄話信箱一樣是 Google 登入，不是密碼：
-   Security Rules 只讓 sites.ownerEmails 名單內、信箱已驗證的帳號寫入，
-   所以這裡沒有任何「純前端遮罩」——改了 DOM 也寫不進去。
+   門檻是 Google 登入，不是密碼：
+   Security Rules 只讓 sites.ownerEmails 名單內、信箱已驗證的帳號讀寫，
+   所以這裡沒有任何「純前端遮罩」——改了 DOM 也讀不到、寫不進去。
 ============================================================ */
 
 const pwGate   = document.getElementById('pwGate');
@@ -49,6 +52,26 @@ function fmtTime(ts){
   return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
+/* ---------- 匯出 CSV（出席回覆與悄悄話共用） ----------
+   檔名一律是 {名稱}-{slug}-{日期}.csv。
+   Excel 打開中文會亂碼，所以開頭加上 BOM。 */
+function csvCell(v){
+  return `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+}
+
+function downloadCsv(name, header, rows){
+  const csv  = '﻿' + [header, ...rows].map(r => r.map(csvCell).join(',')).join('\r\n');
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `${name}-${window.SITE.slug}-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 /* ============================================================
    登入
 ============================================================ */
@@ -79,7 +102,8 @@ const TAB_PAGE = {
   letters:  'letter',
   explore:  null,
   cards:    'draw',
-  exhibits: 'exhibition',
+  exhibits: 'exhibition
+  quiz:     'quiz',  
 };
 
 function tabEnabled(tab){
@@ -133,6 +157,16 @@ function openAdmin(){
   if(tabEnabled('letters')){ DataStore.subscribeBlessings(); renderLetters(); }
   if(tabEnabled('cards')){ DataStore.subscribeCards(); renderCards(); }
   if(tabEnabled('exhibits')){ DataStore.subscribeExhibits(); renderExhibits(); }
+  if(tabEnabled('quiz')){
+    DataStore.subscribeQuiz();
+    DataStore.subscribeQuizVotes();
+    renderQuiz();
+    renderQuizVotes();
+  }
+  /* 悄悄話與首頁卡片沒有對應的頁面開關，永遠都在：
+     信是從祝福牆投進來的，就算祝福牆之後關掉，收到的信也要看得到 */
+  DataStore.subscribeLetters();
+  renderInbox();
   DataStore.subscribeExplore();
   renderExplore();
 
@@ -273,40 +307,108 @@ document.addEventListener('data:rsvps:denied', ()=>{
 });
 
 /* ---------- 匯出 CSV ----------
-   欄位與 scripts/export-rsvps.js 對齊，兩邊拿到的檔案格式一致。
-   Excel 打開中文會亂碼，所以加上 BOM。 */
+   欄位與 scripts/export-rsvps.js 對齊，兩邊拿到的檔案格式一致 */
 document.getElementById('adRsvpExport').addEventListener('click', ()=>{
   const rows = visibleRsvps();
   if(!rows.length){ toast('目前沒有可以匯出的回覆', true); return; }
 
-  const esc = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
-  const header = ['稱呼','是否出席','人數','餐點','飲食禁忌','給新人的話','回覆時間'];
-
-  const body = rows.map(r => {
-    const st = DataStore.rsvpStatus(r);
-    const t  = rsvpTime(r);
-    return [
-      r.name || '',
-      RSVP_LABEL[st],
-      st === 'yes' ? (Number(r.guestCount) || 1) : '',
-      r.meal || '',
-      r.dietaryNote || '',
-      r.message || '',
-      t ? fmtTime(t) : '',
-    ].map(esc).join(',');
-  });
-
-  const csv  = '﻿' + [header.map(esc).join(','), ...body].join('\r\n');
-  const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url;
-  a.download = `rsvps-${window.SITE.slug}-${new Date().toISOString().slice(0, 10)}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+  downloadCsv(
+    'rsvps',
+    ['稱呼','是否出席','人數','餐點','飲食禁忌','給新人的話','回覆時間'],
+    rows.map(r => {
+      const st = DataStore.rsvpStatus(r);
+      const t  = rsvpTime(r);
+      return [
+        r.name || '',
+        RSVP_LABEL[st],
+        st === 'yes' ? (Number(r.guestCount) || 1) : '',
+        r.meal || '',
+        r.dietaryNote || '',
+        r.message || '',
+        t ? fmtTime(t) : '',
+      ];
+    }),
+  );
   toast(`已匯出 ${rows.length} 筆回覆`);
+});
+
+/* ============================================================
+   0b. 悄悄話信箱
+   ------------------------------------------------------------
+   賓客從祝福牆投進來的信。原本是獨立的 /w/{slug}/inbox 頁面，
+   門檻同樣是 Google 登入，等於後台的一個分頁多開一次登入 ——
+   所以整個併進來，新人只要進後台就看得到。
+
+   規則只讓 ownerEmails 名單內的帳號讀，所以訂閱寫在 openAdmin()：
+   登入成功之後才會開始接收。
+============================================================ */
+const inboxListEl   = document.getElementById('adInboxList');
+const inboxFilterEl = document.getElementById('adInboxFilter');
+
+/* 新的排前面，新人最關心的是剛投進來的那幾封 */
+function allLetters(){
+  return DataStore.getLetters().slice().reverse();
+}
+
+function visibleLetters(){
+  const q = normKey(inboxFilterEl.value);
+  if(!q) return allLetters();
+  return allLetters().filter(l =>
+    normKey(l.name).includes(q) || normKey(l.text).includes(q));
+}
+
+function todayLetterCount(){
+  const start = new Date().setHours(0, 0, 0, 0);
+  return DataStore.getLetters().filter(l => (l.time || 0) >= start).length;
+}
+
+function renderInbox(){
+  const all  = allLetters();
+  const list = visibleLetters();
+
+  document.getElementById('adInboxTotal').textContent = all.length;
+  document.getElementById('adInboxToday').textContent = todayLetterCount();
+  document.getElementById('adInboxCount').textContent =
+    list.length === all.length ? `目前 ${all.length} 封` : `${list.length} / ${all.length} 封`;
+
+  if(!list.length){
+    inboxListEl.innerHTML = `<div class="ad-empty">${
+      all.length
+        ? '沒有符合的悄悄話'
+        : '還沒有人投信進來<br>等賓客從祝福牆寫信給你們，這裡就會出現'}</div>`;
+    return;
+  }
+
+  inboxListEl.innerHTML = list.map(l => `
+    <article class="ad-msg">
+      <div class="ad-msg-head">
+        <span class="ad-msg-ic">${escapeHtml(l.icon || DEFAULT_ICON)}</span>
+        <span class="ad-msg-name">${escapeHtml(l.name || '朋友')}</span>
+        <span class="ad-msg-time">${fmtTime(l.time)}</span>
+      </div>
+      <div class="ad-msg-body">${escapeHtml(l.text || '')}</div>
+    </article>`).join('');
+}
+
+document.addEventListener('data:letters', renderInbox);
+inboxFilterEl.addEventListener('input', renderInbox);
+
+/* 規則拒絕讀取時（例如帳號被移出 ownerEmails）講清楚，不要留一個空信箱 */
+document.addEventListener('data:letters:denied', ()=>{
+  inboxListEl.innerHTML =
+    `<div class="ad-empty">沒有讀取悄悄話的權限<br>請確認這個帳號在 ownerEmails 名單內</div>`;
+});
+
+document.getElementById('adInboxExport').addEventListener('click', ()=>{
+  const rows = visibleLetters();
+  if(!rows.length){ toast('目前沒有可以匯出的悄悄話', true); return; }
+
+  downloadCsv(
+    'letters',
+    ['稱呼','記號','悄悄話','投進來的時間'],
+    rows.map(l => [l.name || '', l.icon || '', l.text || '', fmtTime(l.time)]),
+  );
+  toast(`已匯出 ${rows.length} 封悄悄話`);
 });
 
 /* ============================================================
@@ -1285,4 +1387,251 @@ xf.list.addEventListener('click', async (e)=>{
       toast('已刪除');
     }catch(err){ writeFailed(err); }
   }
+});
+
+/* ============================================================
+   7. 測驗（「看你多了解我們」的題目）
+   ------------------------------------------------------------
+   一題一份文件：type（單選／複選）、q（題目）、opts（固定四個選項）、
+   answer（正確答案的索引陣列）、order（題號順序）。
+   ・題目與上限來自 js/quiz-defaults.js，賓客那一頁共用同一份，
+     兩邊的判斷（幾題、幾個選項、幾個字）才不會走鐘。
+   ・新人第一次打開這個分頁、而題目還是空的時候，
+     會把 QUIZ_DEFAULTS 的 3 題寫進來當起點，之後改／刪／調順序都可以。
+============================================================ */
+const qz = {
+  form:    document.getElementById('adQuizForm'),
+  id:      document.getElementById('adQuizId'),
+  type:    document.getElementById('adQuizType'),
+  q:       document.getElementById('adQuizQ'),
+  qLen:    document.getElementById('adQuizQLen'),
+  list:    document.getElementById('adQuizList'),
+  count:   document.getElementById('adQuizCount'),
+  optEls:  Array.from(document.querySelectorAll('#adQuizOpts .ad-quiz-text')),
+  ansEls:  Array.from(document.querySelectorAll('#adQuizOpts .ad-quiz-ans input')),
+  voteCnt: document.getElementById('adQuizVoteCount'),
+  voteAvg: document.getElementById('adQuizAvg'),
+};
+
+qz.q.addEventListener('input', ()=>{ qz.qLen.textContent = qz.q.value.length; });
+
+/* 單選用 radio、複選用 checkbox —— 同一組欄位換 type 就好 */
+function syncQuizType(){
+  const isMulti = qz.type.value === 'multi';
+  const checked = qz.ansEls.filter(el => el.checked);
+  qz.ansEls.forEach(el => { el.type = isMulti ? 'checkbox' : 'radio'; });
+  /* 從複選切回單選：只留第一個，radio 才不會出現兩個被勾起來 */
+  if(!isMulti && checked.length > 1){
+    checked.slice(1).forEach(el => { el.checked = false; });
+  }
+}
+qz.type.addEventListener('change', syncQuizType);
+syncQuizType();
+
+function quizAnswer(){
+  return qz.ansEls.filter(el => el.checked).map(el => Number(el.dataset.oi));
+}
+
+function resetQuizForm(){
+  qz.form.reset();
+  qz.id.value = '';
+  qz.qLen.textContent = '0';
+  syncQuizType();
+}
+document.getElementById('adQuizReset').addEventListener('click', resetQuizForm);
+
+/* 規則只放行這幾個欄位，寫入一律走這裡組出來的物件 */
+function quizFields(it, order){
+  return {
+    type:   it.type === 'multi' ? 'multi' : 'single',
+    q:      String(it.q || '').slice(0, QUIZ_LIMITS.Q_MAX),
+    opts:   (it.opts || []).slice(0, QUIZ_LIMITS.OPT_COUNT)
+              .map(o => String(o || '').slice(0, QUIZ_LIMITS.OPT_MAX)),
+    answer: (it.answer || []).slice().sort((a, b) => a - b),
+    order:  Number(order ?? it.order) || 0,
+    time:   it.time || Date.now(),
+  };
+}
+
+qz.form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const list = DataStore.getQuiz();
+  const editing = qz.id.value;
+  const type = qz.type.value === 'multi' ? 'multi' : 'single';
+
+  const q = qz.q.value.trim();
+  if(!q){ toast('題目不能是空的', true); qz.q.focus(); return; }
+
+  const opts = qz.optEls.map(el => el.value.trim().slice(0, QUIZ_LIMITS.OPT_MAX));
+  const blank = opts.findIndex(o => !o);
+  if(blank >= 0){
+    toast(`選項 ${String.fromCharCode(65 + blank)} 還沒填，四個選項都要有內容`, true);
+    qz.optEls[blank].focus();
+    return;
+  }
+
+  const answer = quizAnswer();
+  if(!answer.length){ toast('請勾選正確答案', true); return; }
+  if(type === 'single' && answer.length !== 1){
+    toast('單選題只能有一個正確答案', true);
+    return;
+  }
+
+  if(!editing && list.length >= QUIZ_LIMITS.MAX_QUESTIONS){
+    toast(`最多 ${QUIZ_LIMITS.MAX_QUESTIONS} 題，要新增請先刪掉一題`, true);
+    return;
+  }
+
+  const cur   = editing ? list.find(x => x.id === editing) : null;
+  const order = cur ? (cur.order || 0) : (list.length + 1);
+
+  try{
+    await DataStore.saveDoc('quiz', editing || null,
+      quizFields({ type, q, opts, answer, time: cur && cur.time }, order));
+    resetQuizForm();
+    toast(editing ? '題目已更新' : '已新增一題');
+  }catch(err){ writeFailed(err); }
+});
+
+function renderQuiz(){
+  const list = DataStore.getQuiz();
+  qz.count.textContent =
+    `目前 ${list.length} 題（最多 ${QUIZ_LIMITS.MAX_QUESTIONS} 題）`;
+
+  if(!list.length){
+    qz.list.innerHTML = `
+      <div class="ad-empty">
+        還沒有題目<br>
+        賓客那一頁現在用的是 ${QUIZ_DEFAULTS.length} 題預設題目
+        <div class="ad-row" style="justify-content:center">
+          <button class="btn small ghost" id="adQuizSeed" type="button">載入預設題目來改</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  qz.list.innerHTML = list.map((it, i) => {
+    const answer = Array.isArray(it.answer) ? it.answer : [];
+    const opts = (it.opts || []).map((o, oi) =>
+      `${answer.includes(oi) ? '✓ ' : ''}${escapeHtml(o)}`).join('　／　');
+    return `
+      <div class="ad-item">
+        <div class="ad-item-main">
+          <span class="ad-item-title">${i + 1}. ${escapeHtml(it.q || '（沒有題目）')}</span>
+          <span class="ad-tag">${it.type === 'multi' ? '複選' : '單選'}</span>
+          <span class="ad-item-sub">${opts}</span>
+        </div>
+        <div class="ad-item-actions">
+          <button class="ad-move" type="button" data-quiz-up="${it.id}"
+                  title="往前一題" ${i === 0 ? 'disabled' : ''}>↑</button>
+          <button class="ad-move" type="button" data-quiz-down="${it.id}"
+                  title="往後一題" ${i === list.length - 1 ? 'disabled' : ''}>↓</button>
+          <button class="ad-edit" type="button" data-edit-quiz="${it.id}">編輯</button>
+          <button class="ad-del"  type="button" data-del-quiz="${it.id}">刪除</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* 換順序：把陣列裡的兩題對調，再把 order 整批重編成 1…n
+   （只寫真的變了的那幾份，不必整包重寫） */
+async function moveQuiz(id, dir){
+  const list = DataStore.getQuiz().slice();
+  const i = list.findIndex(x => x.id === id);
+  const j = i + dir;
+  if(i < 0 || j < 0 || j >= list.length) return;
+  [list[i], list[j]] = [list[j], list[i]];
+
+  try{
+    await Promise.all(list.map((it, k) =>
+      it.order === k + 1 ? null : DataStore.saveDoc('quiz', it.id, quizFields(it, k + 1))));
+    toast('順序已更新');
+  }catch(err){ writeFailed(err); }
+}
+
+/* 第一次打開、題目還空著 → 把預設題目寫進來當起點。
+   quizSeeded 記在 localStorage（以 siteId 分隔）：
+   新人自己把題目全刪掉之後，不會又被我們補回來。 */
+let quizSeeding = false;
+async function seedQuiz(force){
+  if(quizSeeding) return;
+  if(DataStore.getQuiz().length) return;
+  if(!force && LS.get('quizSeeded', false)) return;
+  quizSeeding = true;
+  try{
+    /* 一次全部送出，新人馬上關掉分頁也不會只寫進一半 */
+    await Promise.all(QUIZ_DEFAULTS.map((d, i) =>
+      DataStore.saveDoc('quiz', null, quizFields(d, i + 1))));
+    LS.set('quizSeeded', true);
+    toast(`已載入 ${QUIZ_DEFAULTS.length} 題預設題目，可以直接改`);
+  }catch(err){
+    writeFailed(err);
+  }
+  quizSeeding = false;
+}
+
+document.addEventListener('data:quiz', ()=>{
+  renderQuiz();
+  seedQuiz(false);
+});
+
+qz.list.addEventListener('click', async (e)=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  const d = btn.dataset;
+
+  if(btn.id === 'adQuizSeed'){ seedQuiz(true); return; }
+  if(d.quizUp)   { moveQuiz(d.quizUp, -1);  return; }
+  if(d.quizDown) { moveQuiz(d.quizDown, 1); return; }
+
+  if(d.editQuiz){
+    const it = DataStore.getQuiz().find(x => x.id === d.editQuiz);
+    if(!it) return;
+    qz.id.value   = it.id;
+    qz.type.value = it.type === 'multi' ? 'multi' : 'single';
+    qz.q.value    = it.q || '';
+    qz.qLen.textContent = qz.q.value.length;
+    syncQuizType();
+    const answer = Array.isArray(it.answer) ? it.answer : [];
+    qz.optEls.forEach((el, oi) => { el.value = (it.opts || [])[oi] || ''; });
+    qz.ansEls.forEach((el, oi) => { el.checked = answer.includes(oi); });
+    qz.form.scrollIntoView({ behavior:'smooth', block:'start' });
+    return;
+  }
+
+  if(d.delQuiz){
+    if(!confirm('確定要刪掉這一題嗎？')) return;
+    try{
+      await DataStore.removeDoc('quiz', d.delQuiz);
+      if(qz.id.value === d.delQuiz) resetQuizForm();
+      toast('已刪除');
+    }catch(err){ writeFailed(err); }
+  }
+});
+
+/* ---------- 賓客的作答紀錄 ---------- */
+function renderQuizVotes(){
+  const votes = DataStore.getQuizVotes();
+  qz.voteCnt.textContent = votes.length;
+
+  const scored = votes.filter(v => Number(v.total) > 0);
+  if(!scored.length){
+    qz.voteAvg.textContent = '—';
+    return;
+  }
+  const avg   = scored.reduce((s, v) => s + (Number(v.score) || 0), 0) / scored.length;
+  /* 題數中途改過的話，以最多人作答的那個題數當分母 */
+  const total = scored[scored.length - 1].total;
+  qz.voteAvg.textContent = `${avg.toFixed(1)} / ${total}`;
+}
+document.addEventListener('data:quizVotes', renderQuizVotes);
+
+document.getElementById('adQuizWipe').addEventListener('click', async ()=>{
+  const n = DataStore.getQuizVotes().length;
+  if(!n){ toast('目前還沒有人作答'); return; }
+  if(!confirm(`確定要清空 ${n} 筆作答紀錄嗎？（題目不會被刪掉，但票數回不來）`)) return;
+  try{
+    const removed = await DataStore.wipeCollection('quizVotes');
+    toast(`已清空 ${removed} 筆作答紀錄`);
+  }catch(err){ writeFailed(err); }
 });

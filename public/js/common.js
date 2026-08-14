@@ -6,8 +6,8 @@
      - 頂部導覽列（每頁共用，由本檔注入）
      - 主題切換
      - 特效（煙火 / 彩帶 / 金箔 / 飄浮記號）
-     - BGM（艾爾加〈愛的禮讚 Salut d'Amour〉音樂盒版）
-     - 新人專屬信箱（網址加 WED.ownerKey 才出現）
+     - BGM（新人自己的音檔 → 內建預設 /audio/bgm.mp3 → 合成的〈愛的禮讚〉）
+     - 新人專屬區塊（網址加 WED.ownerKey 才出現）
      - escapeHtml 等小工具
 ============================================================ */
 
@@ -92,7 +92,7 @@ const LS = {
    ・資料變動時 dispatch 'data:<key>'，畫面可監聽重渲染
 ============================================================ */
 const DataStore = {
-  _wishes:[], _letters:[], _hearts:0, _collected:[], _cakes:[], _compat:[], _rsvps:[],
+  _wishes:[], _letters:[], _hearts:0, _collected:[], _cakes:[], _rsvps:[],
   _letterCount:0,
   _subscribed:false,
 
@@ -130,7 +130,7 @@ const DataStore = {
     /* 本站台共用（賓客都看得到） */
     sub('wishes',  () => query(this._col('wishes'),  orderBy('time', 'asc')));
     sub('cakes',   () => query(this._col('cakes'),   orderBy('time', 'asc')));
-    sub('compat',  () => query(this._col('compat'),  orderBy('time', 'asc')));
+    /* 測驗的題目與作答紀錄只有測驗頁與後台要用，改由 subscribeQuiz() 自己叫 */
 
     /* 抽卡收藏：per-uid，只訂閱自己的卡
        （不加 orderBy 以免要建立複合索引；排序在 getCollected() 由前端做） */
@@ -148,11 +148,12 @@ const DataStore = {
       document.dispatchEvent(new CustomEvent('data:letters'));
     }, err => console.warn('[DataStore] onSnapshot letterCount', err));
 
-    /* 悄悄話信箱依規則只有站台擁有者讀得到，等登入成功再訂閱 */
+    /* 悄悄話信箱依規則只有站台擁有者讀得到，
+       等新人在後台用 Google 登入之後才由 subscribeLetters() 訂閱 */
     /* RSVP 依規則不開放前端讀取，這裡不訂閱；名單請用 export-rsvps.js 匯出 */
   },
 
-  /* 新人以 Google 登入後才呼叫，開始接收信件 */
+  /* 新人在後台以 Google 登入後才呼叫，開始接收信件 */
   _lettersSubscribed: false,
   subscribeLetters(){
     if(this._lettersSubscribed) return;
@@ -207,9 +208,18 @@ const DataStore = {
     const { addDoc } = window.fb;
     return addDoc(this._col('cakes'), { ...c, time: c.time || Date.now() });
   },
-  async addCompat(answers){
+  /* 賓客送出的測驗作答。
+     picks 是「題目 id → 選了哪幾個選項」的 map ——
+     用題目 id 而不是題號，新人之後調順序或刪題目，票也不會對到別題去。
+     （Firestore 不接受陣列裡再放陣列，所以外層一定是 map） */
+  async addQuizVote({ picks, score, total }){
     const { addDoc } = window.fb;
-    return addDoc(this._col('compat'), { answers, time: Date.now() });
+    return addDoc(this._col('quizVotes'), {
+      picks,
+      score: Number(score) || 0,
+      total: Number(total) || 0,
+      time: Date.now(),
+    });
   },
   /* RSVP 的欄位由規則嚴格白名單控管，這裡不能再自動塞 time */
   async addRSVP(r){
@@ -234,7 +244,7 @@ const DataStore = {
      重複呼叫是安全的，只會訂閱一次。
   ============================================================ */
   _seating:[], _seatingImages:[], _blessings:[], _explore:[],
-  _cards:[], _exhibits:[],
+  _cards:[], _exhibits:[], _quiz:[], _quizVotes:[],
   _subs:{},
 
   _lazySub(key, colName, orderField){
@@ -267,6 +277,9 @@ const DataStore = {
      所以只有抽卡頁、戀愛時光頁與後台才訂閱 */
   subscribeCards(){    this._lazySub('cards',    'cards',    'order'); },
   subscribeExhibits(){ this._lazySub('exhibits', 'exhibits', 'order'); },
+  /* 測驗：題目由新人維護（order 決定題號），作答紀錄是賓客送上來的票 */
+  subscribeQuiz(){      this._lazySub('quiz',      'quiz',      'order'); },
+  subscribeQuizVotes(){ this._lazySub('quizVotes', 'quizVotes', 'time'); },
 
   getSeating()       { return this._seating; },
   getSeatingImages() { return this._seatingImages; },
@@ -274,6 +287,8 @@ const DataStore = {
   getExplore()       { return this._explore; },
   getCards()         { return this._cards; },
   getExhibits()      { return this._exhibits; },
+  getQuiz()          { return this._quiz; },
+  getQuizVotes()     { return this._quizVotes; },
 
   /* ===== 新人專用的寫入（規則只認 ownerEmails 名單內的 Google 帳號） =====
      沒有 id 就新增，有 id 就覆寫同一份文件。 */
@@ -338,8 +353,6 @@ const DataStore = {
   /* 抽卡收藏按時間排序（snapshot 沒帶 orderBy，所以在這裡排） */
   getCollected()  { return this._collected.slice().sort((a,b)=>(a.time||0)-(b.time||0)); },
   getCakes()      { return this._cakes; },
-  /* compat 早期是「直接陣列」，現在統一包成 {answers:[...]}，取出時還原 */
-  getCompat()     { return this._compat.map(c => c.answers || c); },
   /* ===== RSVP 出席回覆 =====
      規則只讓 ownerEmails 名單內的帳號讀，所以不放進 _subscribe()，
      由新人後台登入成功後才呼叫。
@@ -470,8 +483,8 @@ async function logout(){
   }catch(e){ console.warn('[logout] signOut failed', e); }
   clearUser();
   try{ sessionStorage.clear(); }catch{}
-  /* 清掉 compat 暫存（避免下個 user 看到上一位的答案） */
-  LS.remove('compatLast');
+  /* 清掉測驗暫存（避免下個 user 看到上一位的答案） */
+  LS.remove('quizLast');
   location.href = sitePath('lobby');
 }
 
@@ -569,16 +582,21 @@ function spawnFloat(emoji,x,y){
 }
 
 /* ============================================================
-   BGM
+   BGM（由上而下，先找到就用）
    ・素材資料夾放了 bgm.mp3 → 播放新人自己的音樂（循環）
-   ・沒放 → 退回用 Web Audio 合成「愛的禮讚」音樂盒版
-     （艾爾加 Salut d'Amour, Op.12・公共領域曲目，不需音檔）
+   ・沒放 → 播放內建的預設背景音樂 /audio/bgm.mp3
+   ・連預設音檔都載不起來（離線、格式不支援）→ 最後才退回
+     Web Audio 合成的「愛的禮讚」音樂盒版（艾爾加 Salut d'Amour,
+     Op.12・公共領域曲目，不需音檔）
 ============================================================ */
 let audioCtx=null, bgmOn=false, bgmTimer=null, bgmAudio=null;
 
-/* 這組新人有沒有自己的背景音樂 */
+/* 內建的預設背景音樂：新人沒放自己的音檔時，全站共用這一首 */
+const DEFAULT_BGM = '/audio/bgm.mp3';
+
+/* 這一頁要播的音檔：新人自己的優先，其次是內建預設 */
 function bgmSrc(){
-  return (window.SITE && window.SITE.assets && window.SITE.assets.bgm) || '';
+  return (window.SITE && window.SITE.assets && window.SITE.assets.bgm) || DEFAULT_BGM;
 }
 const _NOTE={
   E4:329.63, 'F#4':369.99, 'G#4':415.30, A4:440.00, B4:493.88,
@@ -613,9 +631,7 @@ function setBgmFab(on){
   if(!fab) return;
   fab.classList.toggle('is-on', on);
   fab.setAttribute('aria-pressed', String(on));
-  fab.title = on
-    ? '關閉背景音樂'
-    : (bgmSrc() ? '播放背景音樂' : '播放背景音樂（愛的禮讚）');
+  fab.title = on ? '關閉背景音樂' : '播放背景音樂';
   const slash = fab.querySelector('.bgm-slash');
   if(slash) slash.style.display = on ? 'none' : '';
 }
@@ -623,7 +639,7 @@ function setBgmFab(on){
 function startBGM(){
   if(bgmOn) return;
 
-  /* 有自己的音檔就播它 */
+  /* 有音檔就播它（新人自己的，或內建的預設背景音樂） */
   const src = bgmSrc();
   if(src){
     if(!bgmAudio){
@@ -632,7 +648,7 @@ function startBGM(){
       bgmAudio.volume = 0.5;
       /* 檔案壞掉或格式不支援時，退回合成音樂而不是靜悄悄地不動 */
       bgmAudio.addEventListener('error', ()=>{
-        console.warn('[BGM] 音檔載入失敗，改用內建音樂');
+        console.warn('[BGM] 音檔載入失敗，改用合成音樂');
         bgmAudio = null;
         if(bgmOn){ bgmOn = false; startSynthBGM(); }
       }, { once:true });
@@ -650,7 +666,7 @@ function startBGM(){
   startSynthBGM();
 }
 
-/* 內建的音樂盒版本，不需要任何音檔 */
+/* 最後一道保險：音檔載不起來時用的音樂盒版本，不需要任何音檔 */
 function startSynthBGM(){
   try{ audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return; }
   if(audioCtx.state==='suspended') audioCtx.resume();
@@ -694,15 +710,12 @@ async function signInAsOwner(){
 }
 
 /* ============================================================
-   新人專屬信箱：網址加 WED.ownerKey（預設 #couple）才出現
+   新人專屬區塊：網址加 WED.ownerKey（預設 #couple）才出現
+   ・只是把畫面上的東西叫出來，不是權限；真正讀得到什麼由規則決定
 ============================================================ */
 const OWNER_KEY = (window.WED && window.WED.ownerKey) || '#couple';
 function isOwnerVisitor(){
   return location.hash === OWNER_KEY || /[?&]owner/.test(location.search);
-}
-function timeStr(ts){
-  const d=new Date(ts);
-  return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
 /* ============================================================
@@ -745,25 +758,6 @@ function startCountdown(el, iso, mode){
   const timer = setInterval(()=>{ if(!render()) clearInterval(timer); }, 1000);
   return timer;
 }
-function renderInbox(){
-  const list=document.getElementById('inboxList');
-  if(!list) return;
-  const letters=DataStore.getLetters().slice().reverse();
-  if(!letters.length){
-    list.innerHTML=`<div class="inbox-empty">目前還沒有信件<br>等賓客們投信進來，這裡就會出現囉</div>`;
-    return;
-  }
-  list.innerHTML=letters.map(l=>`
-    <div class="letter-item">
-      <div class="li-head">
-        <span class="li-ic">${escapeHtml(l.icon||DEFAULT_ICON)}</span>
-        <span class="li-name">${escapeHtml(l.name||'朋友')}</span>
-        <span class="li-time">${timeStr(l.time||Date.now())}</span>
-      </div>
-      <div class="li-body">${escapeHtml(l.text||'')}</div>
-    </div>`).join('');
-}
-
 /* ============================================================
    頂部導覽列（每一頁共用，由這裡注入，各頁 HTML 不用重複寫）
    顯示順序：新人名稱(lobby) → 桌次(seating) → 祝福(wall)
@@ -835,7 +829,7 @@ function buildSiteNav(){
   });
   pop.querySelector('[data-act="logout"]').addEventListener('click', logout);
 
-  /* 還沒進場就先藏起來，index.js / inbox.js 進場後再叫出來 */
+  /* 還沒進場就先藏起來，index.js / admin.js 進場後再叫出來 */
   const gate = document.getElementById('gate') || document.getElementById('pwGate');
   setNavVisible(!(gate && gate.style.display !== 'none'));
 }
@@ -868,7 +862,7 @@ function buildFloating(){
         <circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17"/>
       </svg>
     </button>
-    <button class="fab" id="bgmFab" type="button" title="播放背景音樂（愛的禮讚）"
+    <button class="fab" id="bgmFab" type="button" title="播放背景音樂"
             aria-label="背景音樂" aria-pressed="false">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M9 17.5V5.5l10-2v12"/>
@@ -939,22 +933,6 @@ function bindCommonUI(){
   if(bgmFab){
     bgmFab.addEventListener('click', ()=>{ bgmOn ? stopBGM() : startBGM(); });
   }
-
-  /* 新人信箱 */
-  const ownerFab  = document.getElementById('ownerFab');
-  const inboxModal= document.getElementById('inboxModal');
-  const inboxClose= document.getElementById('inboxClose');
-  const ownerCount= document.getElementById('ownerCount');
-  /* 賓客沒有讀取信件的權限，數量只有新人登入後才會有 */
-  if(ownerCount){
-    const paint = () => { ownerCount.textContent = DataStore.getLetterCount(); };
-    paint();
-    document.addEventListener('data:letters', paint);
-  }
-  if(ownerFab && isOwnerVisitor()) ownerFab.classList.add('show');
-  if(ownerFab) ownerFab.addEventListener('click', ()=>{ renderInbox(); inboxModal.classList.add('open'); });
-  if(inboxClose) inboxClose.addEventListener('click', ()=>inboxModal.classList.remove('open'));
-  if(inboxModal) inboxModal.addEventListener('click', e=>{ if(e.target===inboxModal) inboxModal.classList.remove('open'); });
 
   /* 場景背景照：用這組新人自己的素材
      ・沒有素材就維持純色底，不去要一張不存在的圖（以免 console 一堆 404） */

@@ -11,7 +11,7 @@
      ・sites/{siteId} 存不存在
      ・status 是不是 published（draft 會被當成不存在）
      ・pages 開了哪些頁
-     ・ownerEmails 有沒有設（沒設的話悄悄話信箱沒人讀得到）
+     ・ownerEmails 有沒有設（沒設的話新人後台沒人進得去）
      ・rsvpDeadline 是不是已經過了
 
    連線方式與 create-site.js 相同（Admin SDK ／ emulator）。
@@ -21,6 +21,7 @@ import { parseArgs } from 'node:util';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { resolveBaseUrl } from './site-url.js';
+import { OPTIONAL_PAGES } from './site-pages.js';
 
 function parseCliArgs(argv) {
   const { values } = parseArgs({
@@ -105,10 +106,14 @@ async function checkOne(db, slug, base) {
   if (!s.pages || typeof s.pages !== 'object') {
     console.log('ℹ️  沒有 pages 欄位 → 視為「全部頁面都開」');
   } else {
-    const on = Object.entries(s.pages).filter(([, v]) => v).map(([k]) => k);
-    const off = Object.entries(s.pages).filter(([, v]) => !v).map(([k]) => k);
+    /* 只看還存在的頁面：舊站台可能留著已經下架的代號（例如併進後台的 inbox） */
+    const known = Object.entries(s.pages).filter(([k]) => OPTIONAL_PAGES.includes(k));
+    const on  = known.filter(([, v]) => v).map(([k]) => k);
+    const off = known.filter(([, v]) => !v).map(([k]) => k);
+    const gone = Object.keys(s.pages).filter((k) => !OPTIONAL_PAGES.includes(k));
     console.log(`   已開頁面 : 大廳（固定）${on.length ? '、' + on.join('、') : ''}`);
     if (off.length) console.log(`   已關頁面 : ${off.join('、')}`);
+    if (gone.length) console.log(`ℹ️  已下架的代號（留著不影響）: ${gone.join('、')}`);
   }
 
   /* 6. RSVP */
@@ -122,12 +127,12 @@ async function checkOne(db, slug, base) {
     console.log(`✅ RSVP 開放中，截止 ${fmtDate(s.rsvpDeadline)}`);
   }
 
-  /* 7. 悄悄話信箱 */
+  /* 7. 新人後台的可用帳號 */
   const owners = Array.isArray(s.ownerEmails) ? s.ownerEmails : [];
   if (owners.length) {
-    console.log(`✅ 信箱可讀帳號 : ${owners.join('、')}`);
+    console.log(`✅ 後台可用帳號 : ${owners.join('、')}`);
   } else {
-    console.log('⚠️  沒有設定 ownerEmails → 悄悄話信箱沒有人讀得到');
+    console.log('⚠️  沒有設定 ownerEmails → 新人後台沒有人進得去（出席回覆與悄悄話也讀不到）');
     problems.push('未設定 ownerEmails');
   }
 
@@ -137,8 +142,8 @@ async function checkOne(db, slug, base) {
   console.log('網址：');
   console.log(`   大廳 : ${root}/w/${slug}/`);
   const pageKeys = s.pages && typeof s.pages === 'object'
-    ? Object.entries(s.pages).filter(([, v]) => v).map(([k]) => k)
-    : ['rsvp', 'wall', 'cake', 'draw', 'exhibition', 'quiz', 'inbox', 'invitation'];
+    ? OPTIONAL_PAGES.filter((k) => s.pages[k])
+    : OPTIONAL_PAGES;
   pageKeys.forEach((k) => console.log(`          ${root}/w/${slug}/${k}`));
 
   console.log('');

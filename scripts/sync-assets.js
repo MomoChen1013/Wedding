@@ -14,7 +14,7 @@
        lobby.jpg              首頁固定背景（圖片）
        lobby.mp4              首頁固定背景（影片；放了就優先用影片）
        lobby-blur.jpg         大廳背景的模糊版（選填）
-       bgm.mp3                背景音樂（沒放就用內建的音樂盒版愛的禮讚）
+       bgm.mp3                背景音樂（沒放就用內建預設 public/audio/bgm.mp3）
        gallery/               照片牆
          01.jpg  02.jpg …
        exhibition/            戀愛時光的展品
@@ -221,7 +221,7 @@ function initFolder(slug) {
 | \`cover.jpg\` | 單頁邀請函的封面大圖 |
 | \`lobby.jpg\` | 首頁固定背景（圖片） |
 | \`lobby.mp4\` | 首頁固定背景（影片，放了就優先用影片） |
-| \`bgm.mp3\` | 背景音樂，沒放就用內建的音樂盒版 |
+| \`bgm.mp3\` | 背景音樂，沒放就用內建的預設背景音樂 |
 
 ## 放進子資料夾（檔名排序＝顯示順序，建議 01、02、03）
 

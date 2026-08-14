@@ -16,7 +16,7 @@
      # 只想看目前設定，不要改
      node scripts/set-pages.js --slug ginny-one-20260919 --dry-run
 
-     # 順便補上悄悄話信箱的可讀帳號（整組覆蓋，可重複給）
+     # 順便補上新人後台的可用帳號（整組覆蓋，可重複給）
      node scripts/set-pages.js --slug ginny-one-20260919 \
        --owner-email groom@gmail.com --owner-email bride@gmail.com
 
@@ -25,7 +25,7 @@
      --pages         逗號分隔的完整清單，沒列到的一律關掉
      --enable        加開某頁；可重複給多次
      --disable       關掉某頁；可重複給多次
-     --owner-email   重設信箱可讀帳號；可重複給多次
+     --owner-email   重設後台可用帳號；可重複給多次
      --dry-run       只印出結果，不寫入資料庫
      --project       覆寫 Firebase 專案 ID
 
@@ -138,13 +138,13 @@ async function main() {
 
   if (owners) {
     console.log('');
-    console.log(`   信箱可讀 : ${owners.length ? owners.join('、') : '（清空，將沒有人讀得到）'}`);
+    console.log(`   後台可用 : ${owners.length ? owners.join('、') : '（清空，將沒有人進得去）'}`);
     if (Array.isArray(site.ownerEmails) && site.ownerEmails.length) {
       console.log(`   （原本   : ${site.ownerEmails.join('、')}）`);
     }
   } else if (!Array.isArray(site.ownerEmails) || !site.ownerEmails.length) {
     console.log('');
-    console.log('⚠️ 這個站台沒有 ownerEmails，悄悄話信箱目前沒有人讀得到。');
+    console.log('⚠️ 這個站台沒有 ownerEmails，新人後台目前沒有人進得去。');
     console.log('   要修的話加上 --owner-email 新人的Gmail');
   }
 
