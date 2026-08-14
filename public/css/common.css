@@ -197,7 +197,7 @@ body.nav-off{padding-top:0;}
 @media(max-width:760px){.grid2{grid-template-columns:1fr;}}
 
 /* ============================================================
-   悄悄話信件彈窗 + 新人信箱
+   悄悄話信件彈窗（祝福牆用；信件內容只有新人在後台讀得到）
 ============================================================ */
 .letter-modal{position:fixed;inset:0;z-index:1100;display:none;align-items:center;justify-content:center;
   background:rgba(47,43,38,.4);padding:20px;}
@@ -216,18 +216,6 @@ body.nav-off{padding-top:0;}
 .letter-close{position:absolute;top:12px;right:14px;cursor:pointer;font-size:16px;
   color:var(--ink-soft);background:none;border:none;z-index:3;line-height:1;}
 .wax-seal{display:none;}
-
-.owner-fab{display:none;}
-.inbox-card{width:min(94vw,560px);max-height:84vh;display:flex;flex-direction:column;}
-.inbox-list{overflow-y:auto;margin-top:6px;display:flex;flex-direction:column;gap:0;padding:2px;}
-.inbox-empty{text-align:center;color:var(--ink-soft);font-size:14px;padding:40px 10px;line-height:2;}
-.letter-item{border-bottom:1px solid var(--line-soft);padding:20px 2px;}
-.letter-item .li-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
-.letter-item .li-ic{width:26px;height:26px;line-height:24px;text-align:center;border-radius:50%;
-  border:1px solid var(--line);font-size:12px;color:var(--primary-deep);}
-.letter-item .li-name{font-weight:600;font-size:13.5px;color:var(--ink);letter-spacing:.08em;}
-.letter-item .li-time{font-size:11.5px;color:var(--ink-soft);margin-left:auto;}
-.letter-item .li-body{font-size:15px;line-height:2;color:var(--ink);white-space:pre-wrap;word-break:break-word;}
 
 /* ============================================================
    浮動控制：主題 + BGM（由 js/common.js 注入）

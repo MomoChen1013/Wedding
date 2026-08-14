@@ -7,7 +7,7 @@
      - 主題切換
      - 特效（煙火 / 彩帶 / 金箔 / 飄浮記號）
      - BGM（新人自己的音檔 → 內建預設 /audio/bgm.mp3 → 合成的〈愛的禮讚〉）
-     - 新人專屬信箱（網址加 WED.ownerKey 才出現）
+     - 新人專屬區塊（網址加 WED.ownerKey 才出現）
      - escapeHtml 等小工具
 ============================================================ */
 
@@ -148,11 +148,12 @@ const DataStore = {
       document.dispatchEvent(new CustomEvent('data:letters'));
     }, err => console.warn('[DataStore] onSnapshot letterCount', err));
 
-    /* 悄悄話信箱依規則只有站台擁有者讀得到，等登入成功再訂閱 */
+    /* 悄悄話信箱依規則只有站台擁有者讀得到，
+       等新人在後台用 Google 登入之後才由 subscribeLetters() 訂閱 */
     /* RSVP 依規則不開放前端讀取，這裡不訂閱；名單請用 export-rsvps.js 匯出 */
   },
 
-  /* 新人以 Google 登入後才呼叫，開始接收信件 */
+  /* 新人在後台以 Google 登入後才呼叫，開始接收信件 */
   _lettersSubscribed: false,
   subscribeLetters(){
     if(this._lettersSubscribed) return;
@@ -697,15 +698,12 @@ async function signInAsOwner(){
 }
 
 /* ============================================================
-   新人專屬信箱：網址加 WED.ownerKey（預設 #couple）才出現
+   新人專屬區塊：網址加 WED.ownerKey（預設 #couple）才出現
+   ・只是把畫面上的東西叫出來，不是權限；真正讀得到什麼由規則決定
 ============================================================ */
 const OWNER_KEY = (window.WED && window.WED.ownerKey) || '#couple';
 function isOwnerVisitor(){
   return location.hash === OWNER_KEY || /[?&]owner/.test(location.search);
-}
-function timeStr(ts){
-  const d=new Date(ts);
-  return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
 /* ============================================================
@@ -748,25 +746,6 @@ function startCountdown(el, iso, mode){
   const timer = setInterval(()=>{ if(!render()) clearInterval(timer); }, 1000);
   return timer;
 }
-function renderInbox(){
-  const list=document.getElementById('inboxList');
-  if(!list) return;
-  const letters=DataStore.getLetters().slice().reverse();
-  if(!letters.length){
-    list.innerHTML=`<div class="inbox-empty">目前還沒有信件<br>等賓客們投信進來，這裡就會出現囉</div>`;
-    return;
-  }
-  list.innerHTML=letters.map(l=>`
-    <div class="letter-item">
-      <div class="li-head">
-        <span class="li-ic">${escapeHtml(l.icon||DEFAULT_ICON)}</span>
-        <span class="li-name">${escapeHtml(l.name||'朋友')}</span>
-        <span class="li-time">${timeStr(l.time||Date.now())}</span>
-      </div>
-      <div class="li-body">${escapeHtml(l.text||'')}</div>
-    </div>`).join('');
-}
-
 /* ============================================================
    頂部導覽列（每一頁共用，由這裡注入，各頁 HTML 不用重複寫）
    顯示順序：新人名稱(lobby) → 桌次(seating) → 祝福(wall)
@@ -838,7 +817,7 @@ function buildSiteNav(){
   });
   pop.querySelector('[data-act="logout"]').addEventListener('click', logout);
 
-  /* 還沒進場就先藏起來，index.js / inbox.js 進場後再叫出來 */
+  /* 還沒進場就先藏起來，index.js / admin.js 進場後再叫出來 */
   const gate = document.getElementById('gate') || document.getElementById('pwGate');
   setNavVisible(!(gate && gate.style.display !== 'none'));
 }
@@ -942,22 +921,6 @@ function bindCommonUI(){
   if(bgmFab){
     bgmFab.addEventListener('click', ()=>{ bgmOn ? stopBGM() : startBGM(); });
   }
-
-  /* 新人信箱 */
-  const ownerFab  = document.getElementById('ownerFab');
-  const inboxModal= document.getElementById('inboxModal');
-  const inboxClose= document.getElementById('inboxClose');
-  const ownerCount= document.getElementById('ownerCount');
-  /* 賓客沒有讀取信件的權限，數量只有新人登入後才會有 */
-  if(ownerCount){
-    const paint = () => { ownerCount.textContent = DataStore.getLetterCount(); };
-    paint();
-    document.addEventListener('data:letters', paint);
-  }
-  if(ownerFab && isOwnerVisitor()) ownerFab.classList.add('show');
-  if(ownerFab) ownerFab.addEventListener('click', ()=>{ renderInbox(); inboxModal.classList.add('open'); });
-  if(inboxClose) inboxClose.addEventListener('click', ()=>inboxModal.classList.remove('open'));
-  if(inboxModal) inboxModal.addEventListener('click', e=>{ if(e.target===inboxModal) inboxModal.classList.remove('open'); });
 
   /* 場景背景照：用這組新人自己的素材
      ・沒有素材就維持純色底，不去要一張不存在的圖（以免 console 一堆 404） */

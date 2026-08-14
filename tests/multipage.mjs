@@ -33,7 +33,7 @@ const adb = adminFirestore();
 const DAY = 86400000;
 const future = (d) => TS.fromMillis(Date.now() + d * DAY);
 
-const ALL_PAGES = ['rsvp','wall','cake','draw','exhibition','quiz','inbox','invitation',
+const ALL_PAGES = ['rsvp','wall','cake','draw','exhibition','quiz','invitation',
   'seating','letter'];
 const allOn = Object.fromEntries(ALL_PAGES.map((k) => [k, true]));
 
@@ -211,9 +211,23 @@ const SLUG = 'ginny-one-20260919';
 /* 素材測試用的站台，slug 對應 public/assets/demo-wedding-2027/ */
 const ASSET_SLUG = 'demo-wedding-2027';
 
+/* 用 Auth emulator 的假 Google 憑證登入成新人。
+   emulator 接受把 claims 直接當成 idToken 傳進 GoogleAuthProvider.credential()，
+   所以測試不需要真的開 Google 登入彈窗。 */
+async function signInAsOwner(page, email){
+  await page.evaluate(async (mail) => {
+    const m = await import('https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js');
+    /* sub 要跟著 email 走：同一個 sub 在 emulator 是同一個帳號，
+       共用的話「換一個信箱登入」其實還是原來那位，測試會假性通過 */
+    const cred = m.GoogleAuthProvider.credential(
+      JSON.stringify({ sub:`uid-${mail}`, email: mail, email_verified: true }));
+    await m.signInWithCredential(window.fb.auth, cred);
+  }, email);
+}
+
 /* ---------- 每一頁都要載得起來 ---------- */
 console.log('\n[1] 每個頁面都能正常載入');
-for(const key of ['', 'rsvp', 'wall', 'cake', 'draw', 'exhibition', 'quiz', 'inbox',
+for(const key of ['', 'rsvp', 'wall', 'cake', 'draw', 'exhibition', 'quiz',
                   'seating', 'letter']){
   const path = `/w/${SLUG}/${key}`;
   const { page, errors } = await visit(path);
@@ -285,7 +299,7 @@ console.log('\n[3] 頁面開關');
   const links = await page.evaluate(() =>
     Array.from(document.querySelectorAll('a[href^="/w/"]')).map((a) => a.getAttribute('href')));
   ok('未啟用的入口不出現在首頁',
-    !links.some((h) => /\/(wall|cake|draw|exhibition|quiz|inbox|seating|letter)$/.test(h)),
+    !links.some((h) => /\/(wall|cake|draw|exhibition|quiz|seating|letter)$/.test(h)),
     links.join(', '));
   ok('已啟用的 rsvp 入口仍在', links.some((h) => h.endsWith('/rsvp')), links.join(', '));
   await page.close();
@@ -455,7 +469,7 @@ console.log('\n[9b] 背景音樂');
   await page.close();
 }
 
-/* ---------- 悄悄話信箱：只有新人讀得到 ---------- */
+/* ---------- 悄悄話信箱：賓客寫得進去、只有新人在後台讀得到 ---------- */
 console.log('\n[10] 信箱權限');
 {
   /* 賓客寫得進去 */
@@ -469,7 +483,7 @@ console.log('\n[10] 信箱權限');
 }
 {
   /* 但賓客讀不到：直接用未登入的前端 SDK 嘗試讀取應該被規則擋下 */
-  const { page } = await visit(`/w/${SLUG}/inbox`);
+  const { page } = await visit(`/w/${SLUG}/wall`);
   const denied = await page.evaluate(async () => {
     const { getDocs, collection, db } = window.fb;
     try{
@@ -480,9 +494,63 @@ console.log('\n[10] 信箱權限');
     }
   });
   ok('賓客讀不到信件內容（規則擋下）', denied);
-  ok('信箱頁面停在登入畫面', await page.isVisible('#pwGate'));
-  ok('信件內容沒有出現在畫面上',
+  ok('信件內容沒有出現在祝福牆上',
     !(await page.innerText('body')).includes('偷偷跟你們說'));
+  await page.close();
+}
+{
+  /* 悄悄話信箱已經併進後台，舊的 /inbox 網址直接帶過去 */
+  const page = await newPage();
+  await page.goto(`${BASE}/w/${SLUG}/inbox`, { waitUntil:'domcontentloaded' });
+  await page.waitForURL(`**/w/${SLUG}/admin`, { timeout: 20000 }).catch(() => {});
+  ok('舊的 /inbox 網址導到新人後台', page.url().endsWith(`/w/${SLUG}/admin`), page.url());
+  ok('後台一樣停在登入畫面', await page.isVisible('#pwGate'));
+  ok('沒登入看不到信件內容',
+    !(await page.innerText('body')).includes('偷偷跟你們說'));
+  await page.close();
+}
+{
+  /* 新人登入後台，「悄悄話」分頁就讀得到 */
+  const { page, errors } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+
+  await page.click('.ad-tab[data-tab="inbox"]');
+  await page.waitForFunction(() => DataStore.getLetters().length === 1, null, { timeout:15000 });
+
+  const listText = await page.innerText('#adInboxList');
+  ok('後台讀得到信件內容', listText.includes('偷偷跟你們說'),
+    listText.replace(/\n/g, ' ').slice(0, 60));
+  ok('信件上有賓客的名字', listText.includes('測試賓客'));
+  ok('封數統計正確', (await page.textContent('#adInboxTotal')) === '1',
+    await page.textContent('#adInboxTotal'));
+
+  await page.fill('#adInboxFilter', '不存在的關鍵字');
+  await page.waitForTimeout(200);
+  ok('搜尋沒結果時顯示空狀態',
+    (await page.innerText('#adInboxList')).includes('沒有符合的悄悄話'));
+  await page.fill('#adInboxFilter', '偷偷');
+  await page.waitForTimeout(200);
+  ok('搜尋找得到內容關鍵字',
+    (await page.innerText('#adInboxList')).includes('偷偷跟你們說'));
+
+  ok('悄悄話分頁無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+{
+  /* 不在 ownerEmails 名單內的帳號，登入了也讀不到信 */
+  const { page } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'nosy@example.com');
+  await page.waitForTimeout(1200);
+  const denied = await page.evaluate(async () => {
+    const { getDocs, collection, db } = window.fb;
+    try{
+      await getDocs(collection(db, 'sites', window.SITE.siteId, 'letters'));
+      return false;
+    }catch(e){ return e.code === 'permission-denied'; }
+  });
+  ok('外人讀不到悄悄話（規則擋下）', denied);
   await page.close();
 }
 {
@@ -672,20 +740,6 @@ console.log('\n[13] Explore 自訂卡片');
 
 /* ---------- 新人後台 ---------- */
 console.log('\n[14] 新人後台');
-
-/* 用 Auth emulator 的假 Google 憑證登入成新人。
-   emulator 接受把 claims 直接當成 idToken 傳進 GoogleAuthProvider.credential()，
-   所以測試不需要真的開 Google 登入彈窗。 */
-async function signInAsOwner(page, email){
-  await page.evaluate(async (mail) => {
-    const m = await import('https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js');
-    /* sub 要跟著 email 走：同一個 sub 在 emulator 是同一個帳號，
-       共用的話「換一個信箱登入」其實還是原來那位，測試會假性通過 */
-    const cred = m.GoogleAuthProvider.credential(
-      JSON.stringify({ sub:`uid-${mail}`, email: mail, email_verified: true }));
-    await m.signInWithCredential(window.fb.auth, cred);
-  }, email);
-}
 
 {
   const { page } = await visit(`/w/${SLUG}/admin`);

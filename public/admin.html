@@ -24,7 +24,7 @@
   <div class="gate-card">
     <div class="ribbon">Private</div>
     <h1>新人後台</h1>
-    <div class="sub">大廳文案、桌次、祝福信、囍卡、展覽都在這裡設定<br>請用新人的 Google 帳號登入</div>
+    <div class="sub">出席回覆、悄悄話信箱、大廳文案、桌次、囍卡、展覽都在這裡<br>請用新人的 Google 帳號登入</div>
     <button class="btn btn-google" id="ownerLoginBtn" type="button">
       <svg viewBox="0 0 18 18" aria-hidden="true" width="18" height="18">
         <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/>
@@ -57,6 +57,7 @@
 
   <nav class="ad-tabs" id="adTabs">
     <button class="ad-tab is-on" type="button" data-tab="rsvp">出席回覆</button>
+    <button class="ad-tab" type="button" data-tab="inbox">悄悄話</button>
     <button class="ad-tab" type="button" data-tab="lobby">大廳內容</button>
     <button class="ad-tab" type="button" data-tab="seating">桌次</button>
     <button class="ad-tab" type="button" data-tab="letters">祝福信</button>
@@ -123,7 +124,44 @@
   </div>
 
   <!-- ============================================================
-       分頁 1：大廳內容（寫回 sites/{siteId} 的文案欄位）
+       分頁 1：悄悄話信箱
+  ============================================================ -->
+  <div class="ad-panel" data-panel="inbox">
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">悄悄話信箱</h2>
+      <p class="ad-sec-note">
+        賓客從<b>祝福牆</b>投進來的悄悄話都在這裡。
+        規則只讓 ownerEmails 名單內、信箱已驗證的帳號讀得到 ——
+        賓客寫得進去、讀不出來，彼此也看不到。
+        信是賓客送出的紀錄，後台只能看與匯出，不能修改。
+      </p>
+
+      <div class="ad-stats ad-stats-2">
+        <div class="ad-stat">
+          <div class="ad-stat-num" id="adInboxTotal">0</div>
+          <div class="ad-stat-lab">收到的悄悄話</div>
+        </div>
+        <div class="ad-stat">
+          <div class="ad-stat-num" id="adInboxToday">0</div>
+          <div class="ad-stat-lab">今天收到</div>
+        </div>
+      </div>
+
+      <div class="ad-row">
+        <button class="btn small ghost" id="adInboxExport" type="button">匯出 CSV</button>
+      </div>
+
+      <div class="ad-list-head">
+        <span id="adInboxCount">目前 0 封</span>
+        <input class="ad-filter" id="adInboxFilter" type="text" placeholder="搜尋名字或內容…">
+      </div>
+
+      <div class="ad-msgs" id="adInboxList"></div>
+    </section>
+  </div>
+
+  <!-- ============================================================
+       分頁 2：大廳內容（寫回 sites/{siteId} 的文案欄位）
   ============================================================ -->
   <div class="ad-panel" data-panel="lobby">
     <section class="ad-sec">
@@ -187,7 +225,7 @@
   </div>
 
   <!-- ============================================================
-       分頁 2：桌次
+       分頁 3：桌次
   ============================================================ -->
   <div class="ad-panel" data-panel="seating">
 
@@ -234,7 +272,7 @@
   </div>
 
   <!-- ============================================================
-       分頁 3：祝福信
+       分頁 4：祝福信
   ============================================================ -->
   <div class="ad-panel" data-panel="letters">
     <section class="ad-sec">
@@ -283,7 +321,7 @@
   </div>
 
   <!-- ============================================================
-       分頁 4：首頁自訂卡片
+       分頁 5：首頁自訂卡片
   ============================================================ -->
   <div class="ad-panel" data-panel="explore">
     <section class="ad-sec">
@@ -339,7 +377,7 @@
   </div>
 
   <!-- ============================================================
-       分頁 5：囍卡（抽卡頁的卡池）
+       分頁 6：囍卡（抽卡頁的卡池）
   ============================================================ -->
   <div class="ad-panel" data-panel="cards">
     <section class="ad-sec">
@@ -373,7 +411,7 @@
   </div>
 
   <!-- ============================================================
-       分頁 6：展覽（戀愛時光的展品與章節）
+       分頁 7：展覽（戀愛時光的展品與章節）
   ============================================================ -->
   <div class="ad-panel" data-panel="exhibits">
     <section class="ad-sec">
@@ -461,7 +499,7 @@
   </div>
 
   <!-- ============================================================
-       分頁 7：測驗（賓客那一頁的題目與選項）
+       分頁 8：測驗（賓客那一頁的題目與選項）
   ============================================================ -->
   <div class="ad-panel" data-panel="quiz">
     <section class="ad-sec">
