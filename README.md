@@ -39,8 +39,10 @@
   測驗、抽卡、集氣、User」。
   由 `js/common.js` 統一注入，站台沒開的頁面不會出現在列上。
 - **首頁**：固定背景（一張圖或一段影片，滾動時不動）→ 置中開場（`h1` + `.cn`）→
-  婚禮資訊卡 → 當日流程 → Dress Code → 日期倒數 → RSVP → 卡片連結（兩欄，
-  內建七張＋新人在後台自訂的卡片）。
+  婚禮資訊卡 → 當日流程 → Dress Code → 交通資訊 → 兩人的故事 → 日期倒數 →
+  RSVP → 卡片連結（兩欄，內建七張＋新人在後台自訂的卡片）。
+  **Dress Code、交通資訊、兩人的故事沒填的話那一塊就不出現**，
+  不會留下一個空標題（見〈新人後台〉的「大廳內容」）。
 - **每頁的 `.scene-hero`** 固定 50vh。
 - **風格**：極簡線條。全站單一字族 **Noto Serif TC**（Google Fonts CDN），
   無陰影、無 emoji，靠 1px 線條與留白分層。
@@ -113,6 +115,9 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 可用 token：`couple`、`coupleCn`、`groom`、`bride`、`date`、`weekday`、`time`、
 `venue`、`address`、`dressCode`、`giftNote`、`story`、`hashtag`。
 
+`{{hashtag}}` 取新人填的第一個 hashtag；一個都沒填時用預設的 `#我們結婚了`
+（大廳開場那一排則是 `#我們結婚了`、`#Married` 兩個）。
+
 ---
 
 ## 資料模型
@@ -121,14 +126,17 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 sites/{siteId}
   slug, ownerEmail, status(draft|published|archived)
   groomName, brideName
+  coupleTitle           # 選填，大廳資訊卡上的稱呼（≤8 字），留白就用兩人的名字
   eventDate(timestamp), eventEndDate(timestamp|null)
   timezone(IANA，預設 Asia/Taipei)
   venueName, venueAddress, venueMapUrl
+  transportPublic, transportParking   # 交通資訊，留白則大廳不出現這一塊
   themeColor(hex), coverImageUrl, story
   photos(string[]), hashtags(string[])
   dressCode, giftNote
   schedule(map[])       # 當日流程，每筆 { time, title, desc? }
   rsvpDeadline(timestamp), rsvpEnabled(bool)
+  seatingSearchEnabled(bool)   # 桌次頁的搜尋開關，沒這個欄位視為 true
   pages(map)            # 每個頁面開關，如 { wall:true, cake:false, … }
   ownerEmails(string[]) # 新人的 Google 信箱；決定誰進得了後台（RSVP 與悄悄話都靠它）
   createdAt, updatedAt
@@ -188,7 +196,8 @@ short/{code}                # 6 碼短連結
 
 這個欄位**沒有對應的 CLI 參數**（`create-site.js` 不會寫入），
 但新人可以在後台「大廳內容」分頁自己編（見下面的〈新人後台〉）。
-`dressCode`、`giftNote`、`venueName`、`venueAddress`、`story`、`hashtags` 也一樣 ——
+`coupleTitle`、`dressCode`、`giftNote`、`venueName`、`venueAddress`、
+`transportPublic`、`transportParking`、`story`、`hashtags` 也一樣 ——
 `create-site.js` 的參數只在建站當下有效，之後要改文案就進後台。
 改完重新整理網頁就生效，不需要重新 deploy，也不用進 Firebase Console。
 
@@ -365,6 +374,12 @@ npm run set-pages -- --slug ginny-one-20260919 \
 
 > 後台目前有九個分頁：**出席回覆**、**悄悄話**、**大廳內容**、**桌次**、
 > **祝福信**、**首頁卡片**、**囍卡**、**展覽**、**測驗**。手機上分頁列可以左右滑。
+>
+> **分頁會跟著這組新人開了哪些頁面**：沒開的頁面就不會出現對應的編輯分頁，
+> 免得辛苦上傳完才發現賓客那邊根本看不到。
+> 出席回覆↔`rsvp`、桌次↔`seating`、祝福信↔`letter`、囍卡↔`draw`、
+> 展覽↔`exhibition`；「大廳內容」與「首頁卡片」屬於大廳，永遠都在。
+> 要打開某個頁面請跑 `npm run set-pages`（見上面〈頁面開關〉）。
 
 > 這個網址不會出現在導覽列，也沒有任何頁面連過去（`noindex`），
 > 但真正的保護是 **Security Rules**：不在名單內的帳號就算打開這一頁、
@@ -411,6 +426,12 @@ npm run set-pages -- --slug ginny-one-20260919 \
 ### 1. 我的桌次（`/w/{slug}/seating`）
 
 婚禮當天賓客輸入名字就知道自己坐哪一桌，下面再附上桌次圖。
+
+**搜尋要不要開**（後台「桌次」分頁最上面）
+預設是開著的。關掉之後，賓客那一頁**只會出現你上傳的桌次圖**，沒有輸入名字的欄位 ——
+名單還沒整理好、或本來就打算讓大家自己看圖找位子時很適合。
+關掉時名單還留著（也還能繼續匯入），之後再打開就會生效。
+搜尋關著、圖也還沒上傳的話，賓客會看到一句「座位表還沒公布」而不是一片空白。
 
 **上傳桌次圖**（後台「桌次」分頁）
 可以一次選多張，或直接把圖拖進虛線框。圖片會在**瀏覽器端先縮圖**
@@ -520,17 +541,25 @@ public/assets/{slug}/seating/
 
 | 欄位 | 說明 |
 |---|---|
+| 大廳上的稱呼 | 資訊卡最上面那行字，**最多 8 個字**；留白就用兩位的名字 |
 | 地點名稱 | 資訊卡上的大字 |
 | 地址 | 地點下方的小字，也是「開啟地圖」的預設搜尋字串 |
 | 地圖連結 | 只收 `http(s)://` 開頭；留白就用地址自動開 Google 地圖 |
-| Dress Code | 留白會顯示預設的一句話 |
+| 交通・大眾運輸 | 捷運、公車、接駁怎麼搭；**留白則大廳不出現** |
+| 交通・停車資訊 | 停車場在哪、能不能折抵；**留白則大廳不出現** |
+| Dress Code | **留白則大廳不出現**（不會再塞一句預設文案） |
 | 關於禮金 | 同上 |
-| 兩人的故事 | 用在單頁式邀請函 |
-| 婚禮 hashtag | 逗號分開，最多 10 個；沒寫 `#` 會自動補上 |
+| 兩人的故事 | 大廳的 Our Story 區塊，也用在單頁式邀請函；**留白則大廳不出現** |
+| 婚禮 hashtag | 逗號分開，最多 10 個；沒寫 `#` 會自動補上。**沒填就用 `#我們結婚了`、`#Married`** |
+
+> 交通與 Dress Code 這兩塊都是左右兩格，只填一格時那一格會佔滿整列，
+> 不會留半邊空白。
 
 **當日流程**在同一頁下半部，一列一個項目（時間／項目／說明）。
 由上到下就是時間軸的顯示順序 —— **不會依時間重新排**，
 所以「11:30 起」這種寫法也沒問題。一列都沒有時，大廳顯示「流程稍後公布」。
+有填流程時，大廳資訊卡的「時間」那一列底下會多一個文字連結，
+點了直接捲到當日流程。
 
 > **改不動的欄位**：新人姓名、婚禮日期、頁面開關、出席回覆的開關與截止時間。
 > 這些是 Security Rules 自己拿來判斷的依據（或會影響網址與倒數計時），

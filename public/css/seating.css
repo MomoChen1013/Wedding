@@ -85,6 +85,11 @@
    桌次圖
 ============================================================ */
 .st-charts{margin-top:60px;}
+/* 搜尋關著、桌次圖也還沒上傳時的空狀態 */
+.st-blank{margin-top:60px;padding:40px 20px;text-align:center;line-height:2.1;
+  font-size:13.5px;letter-spacing:.08em;color:var(--ink-soft);
+  background:rgba(255,255,255,.7);border:1px solid var(--line-soft);
+  border-radius:var(--radius);}
 .st-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 @media(max-width:560px){.st-chart-grid{grid-template-columns:1fr;}}
 

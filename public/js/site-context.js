@@ -159,6 +159,8 @@ function buildWed(site) {
     bride, brideCn: bride,
     couple: groom && bride ? `${groom} & ${bride}` : (groom || bride),
     coupleCn: groom && bride ? `${groom} ♡ ${bride}` : (groom || bride),
+    /* 新人自己寫的稱呼（後台限 8 個字），沒填就沿用上面的 couple */
+    coupleTitle: site.coupleTitle || '',
 
     date: ev ? `${parts.year}.${parts.month}.${parts.day}` : '',
     dateISO: ev ? `${parts.year}-${parts.month}-${parts.day}T${hour}:${parts.minute}:00${isoOffset}` : '',
@@ -175,6 +177,10 @@ function buildWed(site) {
     dressCode: site.dressCode || '',
     schedule: Array.isArray(site.schedule) ? site.schedule : [],
     giftNote: site.giftNote || '',
+    transportPublic: site.transportPublic || '',
+    transportParking: site.transportParking || '',
+    /* 沒設定過就視為開著，舊站台的桌次搜尋不會突然消失 */
+    seatingSearch: site.seatingSearchEnabled !== false,
     story: site.story || '',
     coverImageUrl: site.coverImageUrl || '',
     photos: Array.isArray(site.photos) ? site.photos : [],
