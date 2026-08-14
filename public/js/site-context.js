@@ -52,13 +52,19 @@ const PAGES = {
   draw:       { file:'draw.html',       label:'抽卡',       optional:true  },
   exhibition: { file:'exhibition.html', label:'我們的故事', optional:true  },
   quiz:       { file:'quiz.html',       label:'新人小測驗', optional:true  },
-  inbox:      { file:'inbox.html',      label:'悄悄話信箱', optional:true  },
   seating:    { file:'seating.html',    label:'我的桌次',   optional:true  },
   letter:     { file:'letter.html',     label:'給你的信',   optional:true  },
   /* 新人後台：不放進導覽列、不對外連結，但永遠開著，
      這樣新人不必先「打開某一頁」才能進去設定內容。
      真正的門檻在 Security Rules（ownerEmails 白名單），不是這個開關。 */
   admin:      { file:'admin.html',      label:'新人後台',   optional:false },
+};
+
+/* 已經搬家的舊網址 → 現在的頁面。
+   悄悄話信箱本來是獨立一頁、要新人自己再登入一次，
+   現在是後台的一個分頁，舊連結（或書籤）直接帶過去。 */
+const MOVED_PAGES = {
+  inbox: 'admin',
 };
 
 /* 檔名 → 代號，給連結改寫用 */
@@ -174,7 +180,6 @@ function buildWed(site) {
     photos: Array.isArray(site.photos) ? site.photos : [],
     hashtags: Array.isArray(site.hashtags) ? site.hashtags : [],
 
-    password: site.inboxPassword || '1010',
     ownerKey: '#couple',
   };
 }
@@ -226,6 +231,12 @@ async function boot() {
   const loc = parseLocation();
   if (!loc) {
     showFatal('找不到這個頁面', '網址格式不正確，請確認新人給您的連結');
+    return;
+  }
+
+  /* 搬家的舊網址：先導過去，不用等站台設定讀完 */
+  if (MOVED_PAGES[loc.page]) {
+    location.replace(`/w/${loc.slug}/${MOVED_PAGES[loc.page]}`);
     return;
   }
 

@@ -59,7 +59,7 @@ sites/{siteId}
   rsvpDeadline    : timestamp
   rsvpEnabled     : boolean
   pages           : map      # 頁面開關，見第 10 節
-  ownerEmails     : string[] # 新人的 Google 信箱；規則據此決定誰讀得到信箱
+  ownerEmails     : string[] # 新人的 Google 信箱；規則據此決定誰進得了後台
   createdAt       : timestamp
   updatedAt       : timestamp
 
@@ -76,7 +76,7 @@ sites/{siteId}
     createdAt     : timestamp
 
   wishes/{autoId}     name, icon, text(≤300), time      # 祝福牆
-  letters/{autoId}    name, icon, text(≤1000), time     # 悄悄話信箱
+  letters/{autoId}    name, icon, text(≤1000), time     # 悄悄話（後台的悄悄話分頁）
   cakes/{autoId}      name, icon, cake, emoji, img, time
   quizVotes/{autoId}  picks(map ≤50), score(int), total(int), time
                       # 小測驗的作答；picks 是 題目id → 選項索引 list
@@ -211,7 +211,7 @@ venueName venueAddress venueMapUrl dressCode giftNote story schedule hashtags up
 - 若已過 `rsvpDeadline` 則拒絕寫入
 
 RSVP 的讀取綁在**新人本人的 Google 身分**上（`isSiteOwner()`），
-與悄悄話信箱同一套判斷：賓客寫得進去、彼此讀不到，
+與悄悄話同一套判斷：賓客寫得進去、彼此讀不到，
 新人在 `/w/{slug}/admin` 登入後看得到完整名單。
 
 **仍然不開放 `update` 與 `delete`**：回覆是賓客送出的紀錄，
@@ -254,7 +254,7 @@ node scripts/create-site.js --slug chen-lin-0315 --groom 陳彥廷 --bride 林�
 | 來源 | 目的 |
 |---|---|
 | `/w/*/rsvp` `/w/*/wall` `/w/*/cake` | 對應的 HTML |
-| `/w/*/draw` `/w/*/exhibition` `/w/*/quiz` `/w/*/inbox` | 對應的 HTML |
+| `/w/*/draw` `/w/*/exhibition` `/w/*/quiz` | 對應的 HTML |
 | `/w/*/seating` `/w/*/letter` `/w/*/admin` | 對應的 HTML |
 | `/w/*/invitation` | `/invitation.html` |
 | `/w/**`（其餘，含 `/w/{slug}/`） | `/index.html`（大廳） |
@@ -388,7 +388,6 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
 | `draw` | `/w/{slug}/draw` | 囍卡抽卡 | ✅ |
 | `exhibition` | `/w/{slug}/exhibition` | 戀愛時光 | ✅ |
 | `quiz` | `/w/{slug}/quiz` | 新人小測驗 | ✅ |
-| `inbox` | `/w/{slug}/inbox` | 悄悄話信箱 | ✅ |
 | `seating` | `/w/{slug}/seating` | 我的桌次 | ✅ |
 | `letter` | `/w/{slug}/letter` | 給你的信（電子祝福信） | ✅ |
 | `invitation` | `/w/{slug}/invitation` | 單頁式邀請函（獨立版型） | ✅ |
@@ -440,7 +439,7 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
 
 ---
 
-## 12. 悄悄話信箱的權限
+## 12. 悄悄話的權限
 
 `letters` 的讀取由規則檢查 Google 帳號的**已驗證信箱**是否在
 `sites.ownerEmails` 名單內：
@@ -452,7 +451,9 @@ allow read: if request.auth != null
 ```
 
 - 賓客寫得進去、讀不出來（連 API 都拿不到）
-- 新人在 `/w/{slug}/inbox` 用 Google 登入即可查看
+- 新人在 `/w/{slug}/admin` 用 Google 登入，在「悄悄話」分頁查看
+  （原本是獨立的 `/w/{slug}/inbox`，門檻與後台相同，已經併進後台；
+   舊網址由 `site-context.js` 導到 `/w/{slug}/admin`）
 - 祝福牆的「已有 N 封信」改用公開計數器 `meta/letterCount`，
   只暴露數量、不暴露內容
 
@@ -461,15 +462,23 @@ allow read: if request.auth != null
 資料仍可透過 API 直接取得，等於沒有保護。
 真正的保護必須綁在 Auth 簽發的身分上。
 
+**後台的「悄悄話」分頁**：新的排前面，一封一段（記號、名字、時間、內容），
+上面兩個數字是總封數與今天收到幾封，名字或內容可搜尋，
+也能匯出 CSV（匯出的是目前搜尋出來的那些）。
+訂閱寫在 `openAdmin()` 裡的 `DataStore.subscribeLetters()` ——
+登入成功之後才訂閱，未登入時連 `onSnapshot` 都不會發出去。
+規則只開 `read`（限 `ownerEmails`）與 `create`（賓客投信），
+`update`／`delete` 都是 `false`，所以後台只能看與匯出。
+
 ---
 
 ## 13. 新人自己維護的內容（後台 `/w/{slug}/admin`）
 
 前面幾個模組的內容都是建站時由 CLI 寫進去、之後改要走 Console。
-以下七個模組的內容**由新人自己在瀏覽器裡維護**，改完重新整理就生效，
+以下的模組**由新人自己在瀏覽器裡維護**，改完重新整理就生效，
 不需要 deploy、也不需要我們介入。
 
-進入條件與悄悄話信箱相同：Google 登入 + 信箱在 `sites.ownerEmails` 名單內。
+進入條件：Google 登入 + 信箱在 `sites.ownerEmails` 名單內（`isSiteOwner()`）。
 後台不列在導覽列、不被任何頁面連結、標了 `noindex`，
 但真正的保護是 Security Rules —— 不在名單內的帳號改了 DOM 也寫不進去。
 

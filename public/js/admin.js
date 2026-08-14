@@ -1,18 +1,20 @@
 /* ============================================================
    admin.js — 新人後台
    ------------------------------------------------------------
-   一個地方管七件事：
-     1. 大廳內容 — 地點、Dress Code、禮金說明、當日流程（寫回 sites 文件）
-     2. 桌次     — 上傳桌次圖、匯入賓客名單
-     3. 祝福信   — 寫給特定賓客的電子信
-     4. 首頁卡片 — Explore 區的自訂模組（連結型／彈窗型）
-     5. 囍卡     — 抽卡頁的卡池：裁切上傳照片、設等級與說明
-     6. 展覽     — 戀愛時光的展品與章節分隔卡
-     7. 測驗     — 「看你多了解我們」的題目、選項與正確答案
+   一個地方管九件事：
+     1. 出席回覆 — 賓客送出的 RSVP：統計、篩選、匯出
+     2. 悄悄話   — 賓客投進信箱的悄悄話（原本的 /inbox 頁已併進這裡）
+     3. 大廳內容 — 地點、Dress Code、禮金說明、當日流程（寫回 sites 文件）
+     4. 桌次     — 上傳桌次圖、匯入賓客名單
+     5. 祝福信   — 寫給特定賓客的電子信
+     6. 首頁卡片 — Explore 區的自訂模組（連結型／彈窗型）
+     7. 囍卡     — 抽卡頁的卡池：裁切上傳照片、設等級與說明
+     8. 展覽     — 戀愛時光的展品與章節分隔卡
+     9. 測驗     — 「看你多了解我們」的題目、選項與正確答案
 
-   門檻和悄悄話信箱一樣是 Google 登入，不是密碼：
-   Security Rules 只讓 sites.ownerEmails 名單內、信箱已驗證的帳號寫入，
-   所以這裡沒有任何「純前端遮罩」——改了 DOM 也寫不進去。
+   門檻是 Google 登入，不是密碼：
+   Security Rules 只讓 sites.ownerEmails 名單內、信箱已驗證的帳號讀寫，
+   所以這裡沒有任何「純前端遮罩」——改了 DOM 也讀不到、寫不進去。
 ============================================================ */
 
 const pwGate   = document.getElementById('pwGate');
@@ -50,6 +52,26 @@ function fmtTime(ts){
   return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
+/* ---------- 匯出 CSV（出席回覆與悄悄話共用） ----------
+   檔名一律是 {名稱}-{slug}-{日期}.csv。
+   Excel 打開中文會亂碼，所以開頭加上 BOM。 */
+function csvCell(v){
+  return `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+}
+
+function downloadCsv(name, header, rows){
+  const csv  = '﻿' + [header, ...rows].map(r => r.map(csvCell).join(',')).join('\r\n');
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `${name}-${window.SITE.slug}-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 /* ============================================================
    登入
 ============================================================ */
@@ -80,6 +102,7 @@ function openAdmin(){
 
   /* 訂閱各份資料，畫面隨著資料變動重畫 */
   DataStore.subscribeRsvps();
+  DataStore.subscribeLetters();
   DataStore.subscribeSeating();
   DataStore.subscribeBlessings();
   DataStore.subscribeExplore();
@@ -88,6 +111,7 @@ function openAdmin(){
   DataStore.subscribeQuiz();
   DataStore.subscribeQuizVotes();
   renderRsvps();
+  renderInbox();
   renderSeatList();
   renderImages();
   renderLetters();
@@ -230,40 +254,108 @@ document.addEventListener('data:rsvps:denied', ()=>{
 });
 
 /* ---------- 匯出 CSV ----------
-   欄位與 scripts/export-rsvps.js 對齊，兩邊拿到的檔案格式一致。
-   Excel 打開中文會亂碼，所以加上 BOM。 */
+   欄位與 scripts/export-rsvps.js 對齊，兩邊拿到的檔案格式一致 */
 document.getElementById('adRsvpExport').addEventListener('click', ()=>{
   const rows = visibleRsvps();
   if(!rows.length){ toast('目前沒有可以匯出的回覆', true); return; }
 
-  const esc = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
-  const header = ['稱呼','是否出席','人數','餐點','飲食禁忌','給新人的話','回覆時間'];
-
-  const body = rows.map(r => {
-    const st = DataStore.rsvpStatus(r);
-    const t  = rsvpTime(r);
-    return [
-      r.name || '',
-      RSVP_LABEL[st],
-      st === 'yes' ? (Number(r.guestCount) || 1) : '',
-      r.meal || '',
-      r.dietaryNote || '',
-      r.message || '',
-      t ? fmtTime(t) : '',
-    ].map(esc).join(',');
-  });
-
-  const csv  = '﻿' + [header.map(esc).join(','), ...body].join('\r\n');
-  const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url;
-  a.download = `rsvps-${window.SITE.slug}-${new Date().toISOString().slice(0, 10)}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+  downloadCsv(
+    'rsvps',
+    ['稱呼','是否出席','人數','餐點','飲食禁忌','給新人的話','回覆時間'],
+    rows.map(r => {
+      const st = DataStore.rsvpStatus(r);
+      const t  = rsvpTime(r);
+      return [
+        r.name || '',
+        RSVP_LABEL[st],
+        st === 'yes' ? (Number(r.guestCount) || 1) : '',
+        r.meal || '',
+        r.dietaryNote || '',
+        r.message || '',
+        t ? fmtTime(t) : '',
+      ];
+    }),
+  );
   toast(`已匯出 ${rows.length} 筆回覆`);
+});
+
+/* ============================================================
+   0b. 悄悄話信箱
+   ------------------------------------------------------------
+   賓客從祝福牆投進來的信。原本是獨立的 /w/{slug}/inbox 頁面，
+   門檻同樣是 Google 登入，等於後台的一個分頁多開一次登入 ——
+   所以整個併進來，新人只要進後台就看得到。
+
+   規則只讓 ownerEmails 名單內的帳號讀，所以訂閱寫在 openAdmin()：
+   登入成功之後才會開始接收。
+============================================================ */
+const inboxListEl   = document.getElementById('adInboxList');
+const inboxFilterEl = document.getElementById('adInboxFilter');
+
+/* 新的排前面，新人最關心的是剛投進來的那幾封 */
+function allLetters(){
+  return DataStore.getLetters().slice().reverse();
+}
+
+function visibleLetters(){
+  const q = normKey(inboxFilterEl.value);
+  if(!q) return allLetters();
+  return allLetters().filter(l =>
+    normKey(l.name).includes(q) || normKey(l.text).includes(q));
+}
+
+function todayLetterCount(){
+  const start = new Date().setHours(0, 0, 0, 0);
+  return DataStore.getLetters().filter(l => (l.time || 0) >= start).length;
+}
+
+function renderInbox(){
+  const all  = allLetters();
+  const list = visibleLetters();
+
+  document.getElementById('adInboxTotal').textContent = all.length;
+  document.getElementById('adInboxToday').textContent = todayLetterCount();
+  document.getElementById('adInboxCount').textContent =
+    list.length === all.length ? `目前 ${all.length} 封` : `${list.length} / ${all.length} 封`;
+
+  if(!list.length){
+    inboxListEl.innerHTML = `<div class="ad-empty">${
+      all.length
+        ? '沒有符合的悄悄話'
+        : '還沒有人投信進來<br>等賓客從祝福牆寫信給你們，這裡就會出現'}</div>`;
+    return;
+  }
+
+  inboxListEl.innerHTML = list.map(l => `
+    <article class="ad-msg">
+      <div class="ad-msg-head">
+        <span class="ad-msg-ic">${escapeHtml(l.icon || DEFAULT_ICON)}</span>
+        <span class="ad-msg-name">${escapeHtml(l.name || '朋友')}</span>
+        <span class="ad-msg-time">${fmtTime(l.time)}</span>
+      </div>
+      <div class="ad-msg-body">${escapeHtml(l.text || '')}</div>
+    </article>`).join('');
+}
+
+document.addEventListener('data:letters', renderInbox);
+inboxFilterEl.addEventListener('input', renderInbox);
+
+/* 規則拒絕讀取時（例如帳號被移出 ownerEmails）講清楚，不要留一個空信箱 */
+document.addEventListener('data:letters:denied', ()=>{
+  inboxListEl.innerHTML =
+    `<div class="ad-empty">沒有讀取悄悄話的權限<br>請確認這個帳號在 ownerEmails 名單內</div>`;
+});
+
+document.getElementById('adInboxExport').addEventListener('click', ()=>{
+  const rows = visibleLetters();
+  if(!rows.length){ toast('目前沒有可以匯出的悄悄話', true); return; }
+
+  downloadCsv(
+    'letters',
+    ['稱呼','記號','悄悄話','投進來的時間'],
+    rows.map(l => [l.name || '', l.icon || '', l.text || '', fmtTime(l.time)]),
+  );
+  toast(`已匯出 ${rows.length} 封悄悄話`);
 });
 
 /* ============================================================
