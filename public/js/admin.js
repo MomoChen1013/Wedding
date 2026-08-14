@@ -102,7 +102,7 @@ const TAB_PAGE = {
   letters:  'letter',
   explore:  null,
   cards:    'draw',
-  exhibits: 'exhibition
+  exhibits: 'exhibition',
   quiz:     'quiz',  
 };
 
