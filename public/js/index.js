@@ -148,9 +148,27 @@ function setText(id, txt){
   if(el) el.textContent = txt || '';
 }
 
-/* ---------- 新人姓名 ---------- */
-setText('infoCouple',   W.couple || '');
+/* 有填就顯示、沒填就整格收起來（回傳有沒有內容） */
+function setOptionalText(id, boxId, txt){
+  const val = (txt || '').trim();
+  setText(id, val);
+  const box = document.getElementById(boxId);
+  if(box) box.hidden = !val;
+  return !!val;
+}
+
+/* ---------- 新人姓名 ----------
+   coupleTitle 是新人自己寫的稱呼（後台限 8 個字），沒填就用兩人的名字 */
+setText('infoCouple',   W.coupleTitle || W.couple || '');
 setText('infoCoupleCn', W.coupleCn || '');
+
+/* ---------- 婚禮 hashtag ----------
+   新人沒填的話用預設的兩個，開場不會空一排 */
+const tagBox = document.getElementById('lobbyTags');
+if(tagBox){
+  tagBox.innerHTML = hashtagList()
+    .map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
+}
 
 /* ---------- 基本資訊 ---------- */
 setText('infoDate',  [W.date, W.weekday].filter(Boolean).join('・'));
@@ -197,6 +215,19 @@ if(calBtn){
 const sch = document.getElementById('schedule');
 if(sch){
   const list = Array.isArray(W.schedule) ? W.schedule : [];
+
+  /* 資訊卡「時間」那一列的捷徑：有流程可看才出現 */
+  const jump = document.getElementById('infoTimeJump');
+  if(jump){
+    jump.hidden = !list.length;
+    jump.addEventListener('click', (e)=>{
+      const target = document.getElementById('scheduleBlock');
+      if(!target) return;
+      e.preventDefault();
+      target.scrollIntoView({ behavior:'smooth', block:'start' });
+    });
+  }
+
   if(!list.length){
     sch.innerHTML = `<div class="tl-empty">流程稍後公布，敬請期待</div>`;
   } else {
@@ -212,9 +243,30 @@ if(sch){
   }
 }
 
-/* ---------- Dress code / 禮金 ---------- */
-setText('dressCode', W.dressCode || '輕鬆舒適就好，一起把畫面拍得漂漂亮亮');
-setText('giftNote',  W.giftNote  || '您的到來就是最好的禮物');
+/* ---------- Dress code / 禮金 / 交通 / 兩人的故事 ----------
+   新人沒寫的就不出現：一格都沒填的話整個區塊也收起來，
+   大廳才不會出現一堆「我們幫你想好的」罐頭文案。 */
+(function renderOptionalBlocks(){
+  /* 兩格只填了一格時，讓它佔滿整列（沒填的那格是 hidden，還在 DOM 裡） */
+  const layoutGrid = (blockId, filled) => {
+    const block = document.getElementById(blockId);
+    if(!block) return;
+    block.hidden = !filled.some(Boolean);
+    const grid = block.querySelector('.note-grid');
+    if(grid) grid.classList.toggle('is-solo', filled.filter(Boolean).length === 1);
+  };
+
+  const dress = setOptionalText('dressCode', 'dressCodeItem', W.dressCode);
+  const gift  = setOptionalText('giftNote',  'giftNoteItem',  W.giftNote);
+  layoutGrid('noteBlock', [dress, gift]);
+
+  const pub  = setOptionalText('transportPublic',  'transportPublicItem',  W.transportPublic);
+  const park = setOptionalText('transportParking', 'transportParkingItem', W.transportParking);
+  layoutGrid('transportBlock', [pub, park]);
+
+  /* 故事只有一段文字，區塊本身就是那一格 */
+  setOptionalText('storyText', 'storyBlock', W.story);
+})();
 
 /* ============================================================
    Explore：新人自訂的卡片

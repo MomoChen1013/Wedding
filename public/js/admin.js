@@ -64,6 +64,48 @@ function showError(msg){
   }
 }
 
+/* ============================================================
+   哪一個分頁對應到哪一個頁面開關
+   ------------------------------------------------------------
+   這組新人沒開的頁面，後台就不該出現那一區的編輯內容 ——
+   關掉「抽卡」卻還在後台傳囍卡，傳完賓客也看不到。
+   值是 null 代表「永遠都在」：大廳與首頁卡片屬於大廳本身，
+   大廳是必開的頁面。
+============================================================ */
+const TAB_PAGE = {
+  rsvp:     'rsvp',
+  lobby:    null,
+  seating:  'seating',
+  letters:  'letter',
+  explore:  null,
+  cards:    'draw',
+  exhibits: 'exhibition',
+};
+
+function tabEnabled(tab){
+  const key = TAB_PAGE[tab];
+  if(!key) return true;
+  return !!(window.SITE && window.SITE.isEnabled(key));
+}
+
+/* 關掉的分頁連按鈕帶內容一起收起來；
+   如果預設開著的那一頁剛好被關掉，就改開第一個還在的分頁 */
+function applyTabVisibility(){
+  const tabs = Array.from(document.querySelectorAll('.ad-tab'));
+  tabs.forEach(btn => {
+    const on = tabEnabled(btn.dataset.tab);
+    btn.hidden = !on;
+    /* .ad-panel 平常就是 display:none，拿掉 is-on 就等於收起來 */
+    const panel = document.querySelector(`.ad-panel[data-panel="${btn.dataset.tab}"]`);
+    if(panel && !on) panel.classList.remove('is-on');
+  });
+
+  const shown = tabs.filter(b => !b.hidden);
+  if(shown.length && !shown.some(b => b.classList.contains('is-on'))){
+    selectTab(shown[0]);
+  }
+}
+
 let opened = false;
 function openAdmin(){
   if(opened) return;
@@ -77,20 +119,22 @@ function openAdmin(){
     `${(window.WED && window.WED.couple) || ''}・${user ? user.email : ''}`;
   document.getElementById('adViewBtn').href = sitePath('lobby');
 
-  /* 訂閱各份資料，畫面隨著資料變動重畫 */
-  DataStore.subscribeRsvps();
-  DataStore.subscribeSeating();
-  DataStore.subscribeBlessings();
+  applyTabVisibility();
+
+  /* 訂閱各份資料，畫面隨著資料變動重畫。
+     沒開的頁面連訂閱都省下來，不做白工的讀取。 */
+  if(tabEnabled('rsvp')){ DataStore.subscribeRsvps(); renderRsvps(); }
+  if(tabEnabled('seating')){
+    DataStore.subscribeSeating();
+    renderSeatList();
+    renderImages();
+    syncSeatSearchUI();
+  }
+  if(tabEnabled('letters')){ DataStore.subscribeBlessings(); renderLetters(); }
+  if(tabEnabled('cards')){ DataStore.subscribeCards(); renderCards(); }
+  if(tabEnabled('exhibits')){ DataStore.subscribeExhibits(); renderExhibits(); }
   DataStore.subscribeExplore();
-  DataStore.subscribeCards();
-  DataStore.subscribeExhibits();
-  renderRsvps();
-  renderSeatList();
-  renderImages();
-  renderLetters();
   renderExplore();
-  renderCards();
-  renderExhibits();
 
   /* 大廳文案不是子集合，是站台文件本身；載入時已經讀進 window.SITE.data */
   fillSiteForm();
@@ -134,12 +178,16 @@ if(!ownerEmails().length){
 /* ============================================================
    分頁切換
 ============================================================ */
-document.getElementById('adTabs').addEventListener('click', (e)=>{
-  const btn = e.target.closest('.ad-tab');
-  if(!btn) return;
+function selectTab(btn){
   document.querySelectorAll('.ad-tab').forEach(b => b.classList.toggle('is-on', b === btn));
   document.querySelectorAll('.ad-panel').forEach(p =>
     p.classList.toggle('is-on', p.dataset.panel === btn.dataset.tab));
+}
+
+document.getElementById('adTabs').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.ad-tab');
+  if(!btn) return;
+  selectTab(btn);
   window.scrollTo({ top:0, behavior:'instant' });
 });
 
@@ -259,6 +307,36 @@ document.getElementById('adRsvpExport').addEventListener('click', ()=>{
   a.remove();
   URL.revokeObjectURL(url);
   toast(`已匯出 ${rows.length} 筆回覆`);
+});
+
+/* ============================================================
+   1-0 桌次搜尋開關
+   ------------------------------------------------------------
+   關掉的話，賓客的桌次頁只剩下新人上傳的桌次圖。
+   沒設定過的舊站台一律視為開著，不會因為多了這個欄位就突然關掉。
+============================================================ */
+const seatSearchEl = document.getElementById('adSeatSearch');
+const seatListOffEl = document.getElementById('adSeatListOff');
+
+function seatSearchOn(){ return siteData().seatingSearchEnabled !== false; }
+
+function syncSeatSearchUI(){
+  const on = seatSearchOn();
+  seatSearchEl.checked = on;
+  seatListOffEl.hidden = on;
+}
+
+seatSearchEl.addEventListener('change', async ()=>{
+  const on = seatSearchEl.checked;
+  try{
+    await DataStore.saveSiteFields({ seatingSearchEnabled: on });
+    syncSeatSearchUI();
+    toast(on ? '已開啟桌次搜尋' : '已關閉桌次搜尋，賓客只會看到桌次圖');
+  }catch(err){
+    /* 存不進去就把開關扳回原本的狀態，畫面不要和資料庫說不一樣的話 */
+    syncSeatSearchUI();
+    writeFailed(err);
+  }
 });
 
 /* ============================================================
@@ -730,23 +808,43 @@ ef.list.addEventListener('click', async (e)=>{
    否則等於讓新人自己開後門。
 ============================================================ */
 const sf = {
-  form:    document.getElementById('adSiteForm'),
-  venue:   document.getElementById('adVenueName'),
-  addr:    document.getElementById('adVenueAddress'),
-  map:     document.getElementById('adVenueMapUrl'),
-  dress:   document.getElementById('adDressCode'),
-  gift:    document.getElementById('adGiftNote'),
-  story:   document.getElementById('adStory'),
-  tags:    document.getElementById('adHashtags'),
+  form:      document.getElementById('adSiteForm'),
+  title:     document.getElementById('adCoupleTitle'),
+  titleLen:  document.getElementById('adCoupleTitleLen'),
+  venue:     document.getElementById('adVenueName'),
+  addr:      document.getElementById('adVenueAddress'),
+  map:       document.getElementById('adVenueMapUrl'),
+  transitPub:  document.getElementById('adTransportPublic'),
+  transitPark: document.getElementById('adTransportParking'),
+  dress:     document.getElementById('adDressCode'),
+  gift:      document.getElementById('adGiftNote'),
+  story:     document.getElementById('adStory'),
+  tags:      document.getElementById('adHashtags'),
 };
 
 function siteData(){ return (window.SITE && window.SITE.data) || {}; }
 
+/* 大廳上的稱呼限 8 個「字」。
+   emoji 之類的字元在 JS 裡佔兩格，用 [...str] 拆成字元陣列才數得準
+   —— 和 Security Rules 的 size() 算法一致。 */
+const COUPLE_TITLE_MAX = 8;
+function clampTitle(s){
+  return [...String(s || '').trim()].slice(0, COUPLE_TITLE_MAX).join('');
+}
+
+sf.title.addEventListener('input', ()=>{
+  sf.titleLen.textContent = [...sf.title.value].length;
+});
+
 function fillSiteForm(){
   const d = siteData();
+  sf.title.value = d.coupleTitle  || '';
+  sf.titleLen.textContent = [...sf.title.value].length;
   sf.venue.value = d.venueName    || '';
   sf.addr.value  = d.venueAddress || '';
   sf.map.value   = d.venueMapUrl  || '';
+  sf.transitPub.value  = d.transportPublic  || '';
+  sf.transitPark.value = d.transportParking || '';
   sf.dress.value = d.dressCode    || '';
   sf.gift.value  = d.giftNote     || '';
   sf.story.value = d.story        || '';
@@ -770,12 +868,15 @@ sf.form.addEventListener('submit', async (e)=>{
 
   try{
     await DataStore.saveSiteFields({
-      venueName:    sf.venue.value.trim().slice(0, 80),
-      venueAddress: sf.addr.value.trim().slice(0, 200),
-      venueMapUrl:  map.slice(0, 500),
-      dressCode:    sf.dress.value.trim().slice(0, 500),
-      giftNote:     sf.gift.value.trim().slice(0, 500),
-      story:        sf.story.value.trim().slice(0, 2000),
+      coupleTitle:      clampTitle(sf.title.value),
+      venueName:        sf.venue.value.trim().slice(0, 80),
+      venueAddress:     sf.addr.value.trim().slice(0, 200),
+      venueMapUrl:      map.slice(0, 500),
+      transportPublic:  sf.transitPub.value.trim().slice(0, 500),
+      transportParking: sf.transitPark.value.trim().slice(0, 500),
+      dressCode:        sf.dress.value.trim().slice(0, 500),
+      giftNote:         sf.gift.value.trim().slice(0, 500),
+      story:            sf.story.value.trim().slice(0, 2000),
       hashtags,
     });
     fillSiteForm();

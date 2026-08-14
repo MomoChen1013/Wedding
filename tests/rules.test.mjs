@@ -768,18 +768,33 @@ describe('sites 的大廳文案更新', () => {
     await seedSite(SITE_ID, { ownerEmails: [OWNER] });
   });
 
-  it('新人可以改地點、dress code、禮金說明與流程', async () => {
+  it('新人可以改地點、交通、dress code、禮金說明與流程', async () => {
     const db = ownerDb();
     await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      coupleTitle: '彥廷與佳蓉',
       venueName: '晶華酒店・三樓宴會廳',
       venueAddress: '台北市中山區中山北路二段 39 巷 3 號',
       venueMapUrl: 'https://maps.app.goo.gl/abc',
+      transportPublic: '捷運中山站 2 號出口步行 5 分鐘',
+      transportParking: '飯店 B2 停車場，用餐折抵 3 小時',
       dressCode: '溫柔大地色系',
       giftNote: '您的到來就是最好的禮物',
       story: '第一次見面是在朋友的聚會上',
       schedule: [{ time: '11:30', title: '入場迎賓', desc: '簽到、拍照' }],
       hashtags: ['#我們結婚了'],
       updatedAt: Timestamp.now(),
+    }));
+  });
+
+  it('新人可以開關桌次搜尋', async () => {
+    const db = ownerDb();
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      seatingSearchEnabled: false,
+      updatedAt: Timestamp.now(),
+    }));
+    /* 只認 boolean，塞字串進去就當作無效 */
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      seatingSearchEnabled: 'off',
     }));
   });
 
@@ -817,6 +832,15 @@ describe('sites 的大廳文案更新', () => {
       venueMapUrl: 'javascript:alert(1)',
     }));
     await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { story: '字'.repeat(2001) }));
+    /* 大廳上的稱呼只給 8 個字 */
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), { coupleTitle: '字'.repeat(8) }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { coupleTitle: '字'.repeat(9) }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      transportPublic: '車'.repeat(501),
+    }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      transportParking: '車'.repeat(501),
+    }));
   });
 
   it('新人仍然不能刪掉整個站台', async () => {

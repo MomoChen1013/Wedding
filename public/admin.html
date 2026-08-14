@@ -128,12 +128,20 @@
     <section class="ad-sec">
       <h2 class="ad-sec-title">婚禮資訊</h2>
       <p class="ad-sec-note">
-        這裡改的是<b>大廳（首頁）</b>上看得到的文字：地點、Dress Code、禮金說明、當日流程。
-        存檔之後重新整理大廳就會看到新內容，不需要我們重新部署。
+        這裡改的是<b>大廳（首頁）</b>上看得到的文字：地點、交通、Dress Code、禮金說明、
+        兩人的故事、當日流程。存檔之後重新整理大廳就會看到新內容，不需要我們重新部署。
+        <b>交通、Dress Code、禮金、兩人的故事留白的話，大廳就不會出現那一塊</b>，
+        不用勉強想文案。婚禮 hashtag 沒填的話，大廳會用預設的
+        <b>#我們結婚了　#Married</b>。
         新人姓名、日期與頁面開關不在這裡 —— 那些會影響網址與出席回覆的判斷，請找我們改。
       </p>
 
       <form class="ad-form" id="adSiteForm">
+        <label class="ad-label" for="adCoupleTitle">大廳上的稱呼（最多 8 個字）</label>
+        <input class="ad-input" id="adCoupleTitle" type="text" maxlength="8"
+               placeholder="留白的話就用兩位的名字">
+        <div class="ad-count"><span id="adCoupleTitleLen">0</span> / 8</div>
+
         <label class="ad-label" for="adVenueName">地點名稱</label>
         <input class="ad-input" id="adVenueName" type="text" maxlength="80"
                placeholder="台北國賓大飯店・二樓國際廳">
@@ -146,6 +154,14 @@
         <input class="ad-input" id="adVenueMapUrl" type="url" maxlength="500"
                placeholder="留白的話就用地址自動開 Google 地圖">
 
+        <label class="ad-label" for="adTransportPublic">交通・大眾運輸</label>
+        <textarea class="ad-textarea" id="adTransportPublic" rows="3" maxlength="500"
+                  placeholder="捷運中山站 2 號出口步行 5 分鐘；公車 218、220 到中山北路口"></textarea>
+
+        <label class="ad-label" for="adTransportParking">交通・停車資訊</label>
+        <textarea class="ad-textarea" id="adTransportParking" rows="3" maxlength="500"
+                  placeholder="飯店 B2 有停車場，用餐可折抵 3 小時；旁邊也有市民路邊停車格"></textarea>
+
         <label class="ad-label" for="adDressCode">Dress Code</label>
         <textarea class="ad-textarea" id="adDressCode" rows="3" maxlength="500"
                   placeholder="溫柔大地色系，穿得舒服最重要"></textarea>
@@ -156,7 +172,7 @@
 
         <label class="ad-label" for="adStory">兩人的故事</label>
         <textarea class="ad-textarea" id="adStory" rows="5" maxlength="2000"
-                  placeholder="第一次見面是在朋友的聚會上…（用在單頁式邀請函）"></textarea>
+                  placeholder="第一次見面是在朋友的聚會上…"></textarea>
 
         <label class="ad-label" for="adHashtags">婚禮 hashtag</label>
         <input class="ad-input" id="adHashtags" type="text" maxlength="200"
@@ -190,6 +206,21 @@
   ============================================================ -->
   <div class="ad-panel" data-panel="seating">
 
+    <!-- 1-0 搜尋開關 -->
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">桌次搜尋</h2>
+      <p class="ad-sec-note">
+        關掉的話，賓客那一頁就<b>只會看到你上傳的桌次圖</b>，沒有輸入名字的欄位 ——
+        名單還沒整理好、或是本來就打算讓大家自己看圖找位子時很適合。
+        改完馬上生效，賓客重新整理就看得到。
+      </p>
+
+      <label class="ad-check">
+        <input type="checkbox" id="adSeatSearch">
+        <span>開啟「輸入名字查桌次」的搜尋功能</span>
+      </label>
+    </section>
+
     <!-- 1-1 桌次圖 -->
     <section class="ad-sec">
       <h2 class="ad-sec-title">桌次圖</h2>
@@ -215,6 +246,10 @@
       <p class="ad-sec-note">
         一行一位賓客，用逗號分開：<b>姓名, 桌次, 備註</b>（備註可以不寫）。
         Excel 複製過來的逗號或 Tab 分隔都認得。
+      </p>
+      <p class="ad-sec-note" id="adSeatListOff" hidden>
+        <b>搜尋功能目前是關的</b>，這份名單賓客那邊看不到 ——
+        可以先存著，之後把搜尋打開就會生效。
       </p>
 
       <textarea class="ad-textarea" id="adSeatBulk" rows="7"

@@ -18,15 +18,21 @@ const stInput  = document.getElementById('stInput');
 const stResult = document.getElementById('stResult');
 const stHint   = document.getElementById('stHint');
 
+/* 新人在後台可以把搜尋整個關掉，這一頁就只剩桌次圖。
+   沒設定過的站台視為開著，舊站台的行為不變。 */
+const searchOn = !!(window.WED && window.WED.seatingSearch);
+
 /* 桌次名單還沒讀回來之前先擋著，避免誤報「查無資料」 */
 let seatingLoaded = false;
 
-DataStore.subscribeSeating();
+/* 關掉搜尋就只讀桌次圖，整份名單賓客那邊用不到，不做多餘的讀取 */
+if(searchOn) DataStore.subscribeSeating();
+else DataStore.subscribeSeatingImages();
 
 /* 這場婚禮有開「給你的信」的話，順便查一下有沒有寫給這位賓客的信。
    賓客查完桌次通常就走了，這裡是最自然的提醒時機。
-   沒開那一頁就完全不訂閱，不做多餘的讀取。 */
-const letterOn = !!(window.SITE && window.SITE.isEnabled('letter'));
+   沒開那一頁（或沒有搜尋結果可以掛）就完全不訂閱。 */
+const letterOn = searchOn && !!(window.SITE && window.SITE.isEnabled('letter'));
 if(letterOn) DataStore.subscribeBlessings();
 
 /* 查到桌次後，附上「有一封信在等你」的入口。
@@ -128,31 +134,37 @@ function doSearch(){
   renderResult(findSeats(typed), typed);
 }
 
-stForm.addEventListener('submit', (e)=>{ e.preventDefault(); doSearch(); });
+if(searchOn){
+  stForm.addEventListener('submit', (e)=>{ e.preventDefault(); doSearch(); });
 
-/* 名單進來後：更新提示文字，若使用者已經打過字就自動重查一次 */
-document.addEventListener('data:seating', ()=>{
-  seatingLoaded = true;
-  const n = DataStore.getSeating().length;
-  stHint.textContent = n
-    ? `輸入邀請卡上的名字就可以了・大小寫、空白都沒關係`
-    : `新人還沒上傳桌次名單，可以先看看下面的桌次圖`;
-  if(stInput.value.trim()) doSearch();
-});
+  /* 名單進來後：更新提示文字，若使用者已經打過字就自動重查一次 */
+  document.addEventListener('data:seating', ()=>{
+    seatingLoaded = true;
+    const n = DataStore.getSeating().length;
+    stHint.textContent = n
+      ? `輸入邀請卡上的名字就可以了・大小寫、空白都沒關係`
+      : `新人還沒上傳桌次名單，可以先看看下面的桌次圖`;
+    if(stInput.value.trim()) doSearch();
+  });
 
-document.addEventListener('data:seating:denied', ()=>{
-  seatingLoaded = true;
-  stHint.textContent = '桌次名單暫時讀不到，請看下面的桌次圖';
-});
+  document.addEventListener('data:seating:denied', ()=>{
+    seatingLoaded = true;
+    stHint.textContent = '桌次名單暫時讀不到，請看下面的桌次圖';
+  });
 
-/* 信件比桌次晚到的話，重畫一次結果卡，把「有一封信」補上去 */
-document.addEventListener('data:blessings', ()=>{
-  if(stInput.value.trim() && stResult.innerHTML) doSearch();
-});
+  /* 信件比桌次晚到的話，重畫一次結果卡，把「有一封信」補上去 */
+  document.addEventListener('data:blessings', ()=>{
+    if(stInput.value.trim() && stResult.innerHTML) doSearch();
+  });
 
-/* 進場前先幫賓客把名字填好，少打一次字 */
-if(me_user && me_user.name && me_user.name !== '朋友'){
-  stInput.value = me_user.name;
+  /* 進場前先幫賓客把名字填好，少打一次字 */
+  if(me_user && me_user.name && me_user.name !== '朋友'){
+    stInput.value = me_user.name;
+  }
+}else{
+  /* 新人關掉搜尋：整個查詢區收起來，這一頁就是一份座位表 */
+  document.getElementById('stSearch').hidden = true;
+  document.getElementById('stHeroSub').textContent = '今天的座位表・找找看你在哪一桌';
 }
 
 /* ============================================================
@@ -178,6 +190,10 @@ function renderCharts(){
     title: it.title || `桌次圖 ${i + 1}`,
   }));
   const all = uploaded.concat(assetCharts()).filter(it => it.img);
+
+  /* 搜尋也關著、圖也還沒上傳的話，整頁會空空的，給一句話交代 */
+  const blank = document.getElementById('stBlank');
+  if(blank) blank.hidden = searchOn || !!all.length;
 
   if(!all.length){
     chartsSec.hidden = true;

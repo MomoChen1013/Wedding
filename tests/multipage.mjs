@@ -67,7 +67,8 @@ const SEED = {
     venueName:'圓山大飯店', venueAddress:'台北市士林區中山北路四段1號',
     story:'', dressCode:'', giftNote:'', hashtags:[],
     pages: Object.fromEntries(ALL_PAGES.map((k) => [k, k === 'rsvp'])),
-    ownerEmails:[],
+    /* 後台分頁要跟著頁面開關收起來，所以這組站台也要能登入後台 */
+    ownerEmails:['couple@example.com'],
   },
 };
 
@@ -952,6 +953,141 @@ const TEST_PNG = {
   ok('展品照片有畫出來', nodes.imgs === 1, String(nodes.imgs));
   ok('戀愛時光無 console 錯誤', realErrors(errors).length === 0,
     realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+
+/* ---------- 後台分頁跟著頁面開關 ---------- */
+console.log('\n[17] 後台只顯示有開的頁面');
+{
+  /* minimal-site 只開了 rsvp：桌次、祝福信、囍卡、展覽的分頁都不該出現 */
+  const { page, errors } = await visit('/w/minimal-site-2027/admin');
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+
+  const shown = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('.ad-tab'))
+      .filter((b) => !b.hidden).map((b) => b.dataset.tab));
+  ok('關掉的頁面不出現編輯分頁',
+    shown.join(',') === 'rsvp,lobby,explore', shown.join(','));
+  ok('大廳內容永遠在', shown.includes('lobby'));
+
+  ok('後台分頁無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+{
+  /* 連預設開著的那一頁都被關掉時，要自動改開第一個還在的分頁 */
+  await adb.collection('sites').doc(siteIds['minimal-site-2027'])
+    .update({ pages: Object.fromEntries(ALL_PAGES.map((k) => [k, false])) });
+
+  const { page } = await visit('/w/minimal-site-2027/admin');
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+
+  const onTab = await page.evaluate(() =>
+    document.querySelector('.ad-tab.is-on')?.dataset.tab);
+  ok('出席回覆關掉時自動改開大廳內容', onTab === 'lobby', String(onTab));
+  ok('出席回覆的內容也收起來',
+    await page.evaluate(() =>
+      !document.querySelector('.ad-panel[data-panel="rsvp"]').classList.contains('is-on')));
+  await page.close();
+
+  /* 還原，後面的測試還要用這組站台 */
+  await adb.collection('sites').doc(siteIds['minimal-site-2027'])
+    .update({ pages: Object.fromEntries(ALL_PAGES.map((k) => [k, k === 'rsvp'])) });
+}
+
+/* ---------- 大廳：沒填的欄位不出現 ---------- */
+console.log('\n[18] 大廳的選填區塊與預設 hashtag');
+{
+  const { page } = await visit('/w/minimal-site-2027/');
+  const state = await page.evaluate(() => ({
+    note:      document.getElementById('noteBlock').hidden,
+    transport: document.getElementById('transportBlock').hidden,
+    story:     document.getElementById('storyBlock').hidden,
+    tags:      Array.from(document.querySelectorAll('#lobbyTags .tag')).map((e) => e.textContent),
+  }));
+  ok('沒填 Dress Code／禮金時整塊不出現', state.note === true);
+  ok('沒填交通資訊時整塊不出現', state.transport === true);
+  ok('沒填兩人的故事時整塊不出現', state.story === true);
+  ok('沒填 hashtag 時用預設的兩個',
+    state.tags.join('') === '#我們結婚了#Married', state.tags.join(' '));
+  await page.close();
+}
+{
+  /* 有填的站台：該出現的要出現，時間那一列也要有跳到流程的捷徑 */
+  await adb.collection('sites').doc(siteIds[SLUG]).update({
+    coupleTitle: '結婚快樂',
+    transportPublic: '捷運中山站 2 號出口步行 5 分鐘',
+    transportParking: '飯店 B2 停車場，用餐折抵 3 小時',
+  });
+
+  const { page } = await visit(`/w/${SLUG}/`);
+  const state = await page.evaluate(() => ({
+    couple:    document.getElementById('infoCouple').textContent,
+    transport: document.getElementById('transportBlock').hidden,
+    park:      document.getElementById('transportParking').textContent,
+    story:     document.getElementById('storyBlock').hidden,
+    note:      document.getElementById('noteBlock').hidden,
+    jump:      document.getElementById('infoTimeJump').hidden,
+    tags:      Array.from(document.querySelectorAll('#lobbyTags .tag')).map((e) => e.textContent),
+  }));
+  ok('大廳稱呼用新人自己寫的', state.couple === '結婚快樂', state.couple);
+  ok('填了交通資訊就出現', state.transport === false);
+  ok('停車資訊顯示出來', state.park.includes('B2'), state.park);
+  ok('填了故事就出現', state.story === false);
+  ok('填了 Dress Code 就出現', state.note === false);
+  ok('有流程時「時間」那列出現捷徑', state.jump === false);
+  ok('有填 hashtag 時用新人自己的',
+    state.tags.join('') === '#GinnyOne2026', state.tags.join(' '));
+
+  /* 點了捷徑會捲到 Schedule */
+  await page.click('#infoTimeJump');
+  await page.waitForTimeout(900);
+  const near = await page.evaluate(() =>
+    Math.abs(document.getElementById('scheduleBlock').getBoundingClientRect().top));
+  ok('點捷徑會捲到當日流程', near < 120, `距離視窗頂端 ${Math.round(near)}px`);
+  await page.close();
+}
+
+/* ---------- 桌次搜尋開關 ---------- */
+console.log('\n[19] 桌次搜尋可以關掉');
+{
+  const { page, errors } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+
+  await page.click('.ad-tab[data-tab="seating"]');
+  ok('搜尋開關預設是開著的', await page.isChecked('#adSeatSearch'));
+
+  await page.uncheck('#adSeatSearch');
+  await page.waitForTimeout(1500);
+  const site = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
+  ok('開關寫回 sites 文件', site.seatingSearchEnabled === false,
+    String(site.seatingSearchEnabled));
+  ok('關掉後提醒名單暫時用不到',
+    !(await page.evaluate(() => document.getElementById('adSeatListOff').hidden)));
+
+  ok('桌次分頁無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+{
+  /* 賓客那一側：只剩桌次圖，沒有搜尋欄 */
+  const { page } = await visit(`/w/${SLUG}/seating`);
+  await page.waitForTimeout(800);
+  ok('關掉後前台看不到搜尋',
+    await page.evaluate(() => document.getElementById('stSearch').hidden));
+  ok('關掉後也不去讀整份名單',
+    await page.evaluate(() => DataStore.getSeating().length === 0));
+  await page.close();
+}
+{
+  /* 再打開，賓客那一側就回到原本的樣子 */
+  await adb.collection('sites').doc(siteIds[SLUG]).update({ seatingSearchEnabled: true });
+  const { page } = await visit(`/w/${SLUG}/seating`);
+  ok('重新打開後搜尋又回來了',
+    !(await page.evaluate(() => document.getElementById('stSearch').hidden)));
   await page.close();
 }
 

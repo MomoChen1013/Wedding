@@ -111,6 +111,11 @@
 .ir-label{font-size:11.5px;color:var(--ink-soft);letter-spacing:.24em;}
 .ir-val{color:var(--ink);font-size:15px;}
 .ir-sub{font-size:13px;color:var(--ink-soft);margin-top:4px;}
+/* 「時間」那一列的捷徑：捲到下面的當日流程 */
+.ir-jump{display:inline-block;margin-top:6px;font-size:12.5px;letter-spacing:.12em;
+  color:var(--primary-deep);text-decoration:none;border-bottom:1px solid var(--line);
+  padding-bottom:2px;transition:color .25s,border-color .25s;}
+.ir-jump:hover{color:var(--ink);border-bottom-color:var(--ink);}
 .info-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:30px;}
 .info-actions .btn{text-decoration:none;text-align:center;}
 
@@ -134,7 +139,16 @@
 .note-item:first-child{border-left:none;padding-left:0;}
 .note-item:last-child{padding-right:0;}
 .note-label{font-size:14px;letter-spacing:.24em;color:var(--ink-soft);margin-bottom:10px;text-transform:uppercase;}
-.info-note{color:var(--ink);line-height:2;font-size:14.5px;}
+.info-note{color:var(--ink);line-height:2;font-size:14.5px;white-space:pre-line;}
+/* 只填了一格時（例如只寫停車、沒寫大眾運輸）就讓那一格佔滿整列。
+   沒填的那格是 [hidden]，還留在 DOM 裡，所以用 class 判斷而不是 :only-child */
+.note-grid.is-solo{grid-template-columns:1fr;}
+.note-grid.is-solo .note-item{border-left:none;padding:0;}
+
+/* ---- 兩人的故事 ---- */
+.story-text{max-width:560px;margin:0 auto;color:var(--ink);
+  line-height:2.2;font-size:14.5px;letter-spacing:.06em;white-space:pre-line;}
+
 @media(max-width:640px){
   .info-block{padding:32px 20px;}
   .note-grid{grid-template-columns:1fr;}
