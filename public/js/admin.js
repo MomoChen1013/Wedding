@@ -361,7 +361,9 @@ function openAdmin(){
   const user = window.fb.auth.currentUser;
   document.getElementById('adWho').textContent =
     `${(window.WED && window.WED.couple) || ''}・${user ? user.email : ''}`;
+  /* 「查看網站」在桌機留在頂列，<900px 搬進抽屜底部（見 CSS），兩顆都要指到同一個網址 */
   document.getElementById('adViewBtn').href = sitePath('lobby');
+  document.getElementById('adViewBtnMobile').href = sitePath('lobby');
 
   applyTabVisibility();
   initRouter();
@@ -416,10 +418,12 @@ loginBtn.addEventListener('click', async ()=>{
   loginBtn.disabled = false;
 });
 
-document.getElementById('adLock').addEventListener('click', async ()=>{
+async function ownerLogout(){
   try{ await window.fb.signOut(window.fb.auth); }catch{}
   location.reload();
-});
+}
+document.getElementById('adLock').addEventListener('click', ownerLogout);
+document.getElementById('adLockMobile').addEventListener('click', ownerLogout);
 
 if(!ownerEmails().length){
   loginBtn.disabled = true;
@@ -1274,6 +1278,8 @@ const sf = {
   venue:     document.getElementById('adVenueName'),
   addr:      document.getElementById('adVenueAddress'),
   map:       document.getElementById('adVenueMapUrl'),
+  eventTime: document.getElementById('adEventTime'),
+  eventTimeOff: document.getElementById('adEventTimeOff'),
   transitPub:  document.getElementById('adTransportPublic'),
   transitPark: document.getElementById('adTransportParking'),
   dress:     document.getElementById('adDressCode'),
@@ -1283,6 +1289,30 @@ const sf = {
 };
 
 function siteData(){ return (window.SITE && window.SITE.data) || {}; }
+
+/* eventDate 存回去之後，window.SITE.data.eventDate 會被就地換成一個
+   一般的 JS Date（不是 Firestore Timestamp），兩種都可能出現，統一轉成 Date */
+function toJsDate(v){
+  if(!v) return null;
+  if(typeof v.toDate === 'function') return v.toDate();
+  if(v instanceof Date) return v;
+  return null;
+}
+
+/* 把「某個時區裡的年月日時分」換算成正確的 UTC 時間點。
+   先假設是 UTC，看它在目標時區實際幾點，再用差值修正一次 ——
+   這樣就不用自己處理日光節約時間之類的偏移細節。 */
+function zonedTimeToDate(y, m, d, hh, mm, tz){
+  const guess = new Date(Date.UTC(y, m - 1, d, hh, mm, 0));
+  const p = {};
+  new Intl.DateTimeFormat('en-US', {
+    timeZone: tz, hour12: false,
+    year:'numeric', month:'2-digit', day:'2-digit',
+    hour:'2-digit', minute:'2-digit', second:'2-digit',
+  }).formatToParts(guess).forEach(x => { p[x.type] = x.value; });
+  const asIfUtc = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute, +p.second);
+  return new Date(guess.getTime() + (guess.getTime() - asIfUtc));
+}
 
 /* 大廳上的稱呼限 8 個「字」。
    emoji 之類的字元在 JS 裡佔兩格，用 [...str] 拆成字元陣列才數得準
@@ -1304,6 +1334,20 @@ function fillSiteForm(){
   sf.venue.value = d.venueName    || '';
   sf.addr.value  = d.venueAddress || '';
   sf.map.value   = d.venueMapUrl  || '';
+
+  const ev = toJsDate(d.eventDate);
+  sf.eventTime.disabled = !ev;
+  sf.eventTimeOff.hidden = !!ev;
+  if(ev){
+    const tp = {};
+    new Intl.DateTimeFormat('en-GB', {
+      timeZone: d.timezone || 'Asia/Taipei', hour12:false, hour:'2-digit', minute:'2-digit',
+    }).formatToParts(ev).forEach(x => { tp[x.type] = x.value; });
+    sf.eventTime.value = `${tp.hour}:${tp.minute}`;
+  }else{
+    sf.eventTime.value = '';
+  }
+
   sf.transitPub.value  = d.transportPublic  || '';
   sf.transitPark.value = d.transportParking || '';
   sf.dress.value = d.dressCode    || '';
@@ -1323,19 +1367,34 @@ sf.form.addEventListener('submit', async (e)=>{
     .split(/[,，\s]+/).map(s => s.trim()).filter(Boolean).slice(0, 10)
     .map(s => (s.startsWith('#') ? s : `#${s}`).slice(0, 40));
 
+  const patch = {
+    coupleTitle:      clampTitle(sf.title.value),
+    venueName:        sf.venue.value.trim().slice(0, 80),
+    venueAddress:     sf.addr.value.trim().slice(0, 200),
+    venueMapUrl:      map.slice(0, 500),
+    transportPublic:  sf.transitPub.value.trim().slice(0, 500),
+    transportParking: sf.transitPark.value.trim().slice(0, 500),
+    dressCode:        sf.dress.value.trim().slice(0, 500),
+    giftNote:         sf.gift.value.trim().slice(0, 500),
+    story:            sf.story.value.trim().slice(0, 2000),
+    hashtags,
+  };
+
+  /* 只換「幾點開始」，日期沿用原本已經定好的那一天 */
+  const d = siteData();
+  const ev = toJsDate(d.eventDate);
+  if(ev && sf.eventTime.value){
+    const tz = d.timezone || 'Asia/Taipei';
+    const dp = {};
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone: tz, year:'numeric', month:'2-digit', day:'2-digit',
+    }).formatToParts(ev).forEach(x => { dp[x.type] = x.value; });
+    const [hh, mm] = sf.eventTime.value.split(':').map(Number);
+    patch.eventDate = zonedTimeToDate(+dp.year, +dp.month, +dp.day, hh, mm, tz);
+  }
+
   try{
-    await DataStore.saveSiteFields({
-      coupleTitle:      clampTitle(sf.title.value),
-      venueName:        sf.venue.value.trim().slice(0, 80),
-      venueAddress:     sf.addr.value.trim().slice(0, 200),
-      venueMapUrl:      map.slice(0, 500),
-      transportPublic:  sf.transitPub.value.trim().slice(0, 500),
-      transportParking: sf.transitPark.value.trim().slice(0, 500),
-      dressCode:        sf.dress.value.trim().slice(0, 500),
-      giftNote:         sf.gift.value.trim().slice(0, 500),
-      story:            sf.story.value.trim().slice(0, 2000),
-      hashtags,
-    });
+    await DataStore.saveSiteFields(patch);
     fillSiteForm();
     toast('婚禮資訊已更新，重新整理大廳就看得到');
   }catch(err){ writeFailed(err); }

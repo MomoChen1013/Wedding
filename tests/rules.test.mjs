@@ -946,6 +946,20 @@ describe('sites 的大廳文案更新', () => {
     }));
   });
 
+  it('新人可以改婚禮開始時間，但要是合法的 Timestamp', async () => {
+    const db = ownerDb();
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      eventDate: Timestamp.fromDate(new Date('2026-03-15T05:30:00Z')),
+    }));
+    /* 塞字串／數字進去（不是 Timestamp）要被擋下 */
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      eventDate: '2026-03-15T05:30:00Z',
+    }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      eventDate: Date.now(),
+    }));
+  });
+
   it('新人仍然不能刪掉整個站台', async () => {
     await assertFails(deleteDoc(doc(ownerDb(), `sites/${SITE_ID}`)));
   });
