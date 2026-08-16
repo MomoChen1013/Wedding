@@ -44,31 +44,38 @@
 <!-- ============ 後台本體 ============ -->
 <section class="panel page-fade ad-page" id="adPage" hidden>
 
-  <header class="ad-top">
-    <div>
-      <div class="ad-top-title">新人後台</div>
-      <div class="ad-top-sub" id="adWho"></div>
+  <!-- 後台自己的導覽列：跟賓客那一份完全分開（common.js 在 data-page="admin" 時不會注入賓客導覽列） -->
+  <header class="ad-bar" id="adBar">
+    <div class="ad-bar-left">
+      <button class="ad-menu-btn" id="adMenuBtn" type="button" aria-label="開啟選單" aria-expanded="false" aria-controls="adSide">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="ad-bar-brand">
+        <div class="ad-bar-title">新人後台</div>
+        <div class="ad-bar-sub" id="adWho"></div>
+      </div>
     </div>
-    <div class="ad-top-actions">
-      <a class="btn small ghost" id="adViewBtn" href="/">看網站</a>
+    <div class="ad-bar-actions">
+      <a class="btn small ghost" id="adViewBtn" href="/">查看網站</a>
       <button class="btn small ghost" id="adLock" type="button">登出</button>
     </div>
   </header>
 
-  <nav class="ad-tabs" id="adTabs">
-    <button class="ad-tab is-on" type="button" data-tab="rsvp">出席回覆</button>
-    <button class="ad-tab" type="button" data-tab="inbox">悄悄話</button>
-    <button class="ad-tab" type="button" data-tab="lobby">大廳內容</button>
-    <button class="ad-tab" type="button" data-tab="seating">桌次</button>
-    <button class="ad-tab" type="button" data-tab="letters">祝福信</button>
-    <button class="ad-tab" type="button" data-tab="explore">首頁卡片</button>
-    <button class="ad-tab" type="button" data-tab="cards">囍卡</button>
-    <button class="ad-tab" type="button" data-tab="exhibits">展覽</button>
-    <button class="ad-tab" type="button" data-tab="quiz">測驗</button>
-  </nav>
+  <div class="ad-layout">
+    <div class="ad-side-backdrop" id="adSideBackdrop" hidden></div>
 
-  <!-- 存檔提示 -->
-  <div class="ad-toast" id="adToast" hidden></div>
+    <nav class="ad-side" id="adSide">
+      <button class="ad-tab is-on" type="button" data-tab="rsvp">出席回覆</button>
+      <button class="ad-tab" type="button" data-tab="inbox">悄悄話</button>
+      <button class="ad-tab" type="button" data-tab="lobby">大廳內容</button>
+      <button class="ad-tab" type="button" data-tab="seating">桌次</button>
+      <button class="ad-tab" type="button" data-tab="letters">祝福信</button>
+      <button class="ad-tab" type="button" data-tab="cards">囍卡</button>
+      <button class="ad-tab" type="button" data-tab="exhibits">展覽</button>
+      <button class="ad-tab" type="button" data-tab="quiz">測驗</button>
+    </nav>
+
+    <main class="ad-main" id="adMain">
 
   <!-- ============================================================
        分頁 0：出席回覆
@@ -164,6 +171,14 @@
        分頁 2：大廳內容（寫回 sites/{siteId} 的文案欄位）
   ============================================================ -->
   <div class="ad-panel" data-panel="lobby">
+
+    <nav class="ad-subtabs" data-subtabs="lobby">
+      <button class="ad-subtab is-on" type="button" data-subtab="info">婚禮資訊</button>
+      <button class="ad-subtab" type="button" data-subtab="schedule">當日流程</button>
+      <button class="ad-subtab" type="button" data-subtab="explore">首頁卡片</button>
+    </nav>
+
+    <div class="ad-subpanel is-on" data-subpanel="info">
     <section class="ad-sec">
       <h2 class="ad-sec-title">婚禮資訊</h2>
       <p class="ad-sec-note">
@@ -223,7 +238,9 @@
         </div>
       </form>
     </section>
+    </div>
 
+    <div class="ad-subpanel" data-subpanel="schedule">
     <section class="ad-sec">
       <h2 class="ad-sec-title">當日流程</h2>
       <p class="ad-sec-note">
@@ -238,6 +255,61 @@
         <button class="btn small" id="adSchSave" type="button">儲存流程</button>
       </div>
     </section>
+    </div>
+
+    <div class="ad-subpanel" data-subpanel="explore">
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">新增一張卡片</h2>
+      <p class="ad-sec-note">
+        會出現在首頁 Explore 區、內建卡片的後面。
+        選「開啟連結」就是點了跳到你給的網址；選「跳出說明」則是點了在原地展開一段文字。
+      </p>
+
+      <form class="ad-form" id="adExpForm">
+        <input type="hidden" id="adExpId">
+
+        <label class="ad-label" for="adExpTitle">卡片標題</label>
+        <input class="ad-input" id="adExpTitle" type="text" maxlength="40"
+               placeholder="婚禮當天的接駁車">
+
+        <label class="ad-label" for="adExpSub">一句話說明</label>
+        <input class="ad-input" id="adExpSub" type="text" maxlength="120"
+               placeholder="幾點在哪裡上車，這裡先講清楚">
+
+        <label class="ad-label" for="adExpKind">點了之後</label>
+        <select class="ad-input" id="adExpKind">
+          <option value="popup">跳出說明（文字＋popup）</option>
+          <option value="link">開啟連結（文字＋連結）</option>
+        </select>
+
+        <div id="adExpUrlBox" hidden>
+          <label class="ad-label" for="adExpUrl">連結網址</label>
+          <input class="ad-input" id="adExpUrl" type="url" maxlength="500"
+                 placeholder="https://...">
+        </div>
+
+        <div id="adExpBodyBox">
+          <label class="ad-label" for="adExpBody">彈窗內文</label>
+          <textarea class="ad-textarea" id="adExpBody" rows="7" maxlength="2000"
+                    placeholder="早上 10:30 在台北車站東三門集合，車程約 40 分鐘…"></textarea>
+        </div>
+
+        <label class="ad-label" for="adExpOrder">排序（數字小的排前面）</label>
+        <input class="ad-input ad-input-sm" id="adExpOrder" type="number" value="1" min="0" step="1">
+
+        <div class="ad-row">
+          <button class="btn small" type="submit">儲存這張卡片</button>
+          <button class="btn small ghost" id="adExpReset" type="button">清空欄位</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">已經加上的卡片</h2>
+      <div class="ad-list" id="adExpList"></div>
+    </section>
+    </div>
+
   </div>
 
   <!-- ============================================================
@@ -356,63 +428,7 @@
   </div>
 
   <!-- ============================================================
-       分頁 5：首頁自訂卡片
-  ============================================================ -->
-  <div class="ad-panel" data-panel="explore">
-    <section class="ad-sec">
-      <h2 class="ad-sec-title">新增一張卡片</h2>
-      <p class="ad-sec-note">
-        會出現在首頁 Explore 區、內建卡片的後面。
-        選「開啟連結」就是點了跳到你給的網址；選「跳出說明」則是點了在原地展開一段文字。
-      </p>
-
-      <form class="ad-form" id="adExpForm">
-        <input type="hidden" id="adExpId">
-
-        <label class="ad-label" for="adExpTitle">卡片標題</label>
-        <input class="ad-input" id="adExpTitle" type="text" maxlength="40"
-               placeholder="婚禮當天的接駁車">
-
-        <label class="ad-label" for="adExpSub">一句話說明</label>
-        <input class="ad-input" id="adExpSub" type="text" maxlength="120"
-               placeholder="幾點在哪裡上車，這裡先講清楚">
-
-        <label class="ad-label" for="adExpKind">點了之後</label>
-        <select class="ad-input" id="adExpKind">
-          <option value="popup">跳出說明（文字＋popup）</option>
-          <option value="link">開啟連結（文字＋連結）</option>
-        </select>
-
-        <div id="adExpUrlBox" hidden>
-          <label class="ad-label" for="adExpUrl">連結網址</label>
-          <input class="ad-input" id="adExpUrl" type="url" maxlength="500"
-                 placeholder="https://...">
-        </div>
-
-        <div id="adExpBodyBox">
-          <label class="ad-label" for="adExpBody">彈窗內文</label>
-          <textarea class="ad-textarea" id="adExpBody" rows="7" maxlength="2000"
-                    placeholder="早上 10:30 在台北車站東三門集合，車程約 40 分鐘…"></textarea>
-        </div>
-
-        <label class="ad-label" for="adExpOrder">排序（數字小的排前面）</label>
-        <input class="ad-input ad-input-sm" id="adExpOrder" type="number" value="1" min="0" step="1">
-
-        <div class="ad-row">
-          <button class="btn small" type="submit">儲存這張卡片</button>
-          <button class="btn small ghost" id="adExpReset" type="button">清空欄位</button>
-        </div>
-      </form>
-    </section>
-
-    <section class="ad-sec">
-      <h2 class="ad-sec-title">已經加上的卡片</h2>
-      <div class="ad-list" id="adExpList"></div>
-    </section>
-  </div>
-
-  <!-- ============================================================
-       分頁 6：囍卡（抽卡頁的卡池）
+       分頁 5：囍卡（抽卡頁的卡池）
   ============================================================ -->
   <div class="ad-panel" data-panel="cards">
     <section class="ad-sec">
@@ -446,7 +462,7 @@
   </div>
 
   <!-- ============================================================
-       分頁 7：展覽（戀愛時光的展品與章節）
+       分頁 6：展覽（戀愛時光的展品與章節）
   ============================================================ -->
   <div class="ad-panel" data-panel="exhibits">
     <section class="ad-sec">
@@ -534,7 +550,7 @@
   </div>
 
   <!-- ============================================================
-       分頁 8：測驗（賓客那一頁的題目與選項）
+       分頁 7：測驗（賓客那一頁的題目與選項）
   ============================================================ -->
   <div class="ad-panel" data-panel="quiz">
     <section class="ad-sec">
@@ -544,7 +560,7 @@
         單選題賓客選完會自動跳下一題，複選題<b>全對才得分</b>。
         每題固定四個選項，勾起來的那個（或那幾個）就是正確答案 ——
         新人不用自己作答，送出後長條圖上只會出現賓客自己的「你」。
-        最多 50 題，順序用下面清單的 ↑ ↓ 調。
+        最多 50 題，順序用下面清單左邊的 ⠿ 拖曳調整。
       </p>
 
       <form class="ad-form" id="adQuizForm">
@@ -608,7 +624,7 @@
     <section class="ad-sec">
       <h2 class="ad-sec-title">題目清單</h2>
       <p class="ad-sec-note">
-        由上到下就是賓客看到的題號順序，用 ↑ ↓ 調。
+        由上到下就是賓客看到的題號順序，拖曳左邊的 ⠿ 就能調整。
         改完題目或刪掉題目，賓客重新整理測驗頁就會看到新的題目
         —— 已經作答過的票會留著，但對不到的題目不會再顯示。
       </p>
@@ -640,7 +656,27 @@
     </section>
   </div>
 
+    </main>
+  </div>
+
 </section>
+
+<!-- 存檔提示：可以同時疊好幾則，各自獨立計時淡出 -->
+<div class="ad-toast-stack" id="adToastStack" aria-live="polite"></div>
+
+<!-- 站內統一的確認視窗：取代原生 confirm()，高風險操作需要打「確認刪除」才能按確定 -->
+<div class="ad-modal-mask" id="adModalMask" hidden>
+  <div class="ad-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="adModalTitle">
+    <div class="ad-modal-title" id="adModalTitle"></div>
+    <div class="ad-modal-msg" id="adModalMsg"></div>
+    <input class="ad-input ad-modal-phrase" id="adModalPhrase" type="text" hidden
+           placeholder="輸入「確認刪除」" autocomplete="off">
+    <div class="ad-modal-actions">
+      <button class="btn small ghost" id="adModalCancel" type="button">取消</button>
+      <button class="btn small" id="adModalConfirm" type="button">確定</button>
+    </div>
+  </div>
+</div>
 
 <!-- 照片裁切器：只有後台用得到，先載好，admin.js 直接呼叫 cropImage() -->
 <script defer src="/js/cropper.js"></script>

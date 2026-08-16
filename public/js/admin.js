@@ -25,15 +25,44 @@ const adPage   = document.getElementById('adPage');
 /* ============================================================
    小工具
 ============================================================ */
-const toastEl = document.getElementById('adToast');
-let toastTimer = null;
 
+/* ---------- Toast（可以同時疊好幾則，各自獨立計時淡出） ---------- */
+const toastStackEl = document.getElementById('adToastStack');
+
+function showToast(msg, opts){
+  opts = opts || {};
+  const el = document.createElement('div');
+  el.className = 'ad-toast' + (opts.isError ? ' is-error' : '');
+  el.innerHTML = `<span class="ad-toast-msg"></span>` +
+    (opts.actionLabel ? `<button type="button" class="ad-toast-action"></button>` : '');
+  el.querySelector('.ad-toast-msg').textContent = msg;
+  toastStackEl.appendChild(el);
+
+  const duration = opts.duration ?? (opts.isError ? 5200 : 2600);
+  let dismissed = false;
+  function dismiss(){
+    if(dismissed) return;
+    dismissed = true;
+    clearTimeout(timer);
+    el.classList.add('is-out');
+    setTimeout(()=> el.remove(), 220);
+  }
+  const timer = setTimeout(dismiss, duration);
+
+  if(opts.actionLabel){
+    const btn = el.querySelector('.ad-toast-action');
+    btn.textContent = opts.actionLabel;
+    btn.addEventListener('click', ()=>{
+      if(opts.onAction) opts.onAction();
+      dismiss();
+    });
+  }
+  return { dismiss };
+}
+
+/* 既有呼叫點都是 toast(msg, isError)，維持相容，不用逐一改 */
 function toast(msg, isError){
-  toastEl.textContent = msg;
-  toastEl.classList.toggle('is-error', !!isError);
-  toastEl.hidden = false;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>{ toastEl.hidden = true; }, isError ? 5200 : 2600);
+  return showToast(msg, { isError: !!isError });
 }
 
 /* 寫入失敗多半是規則擋下來的，講清楚原因比丟 code 有用 */
@@ -73,6 +102,211 @@ function downloadCsv(name, header, rows){
 }
 
 /* ============================================================
+   表單即時驗證
+   ------------------------------------------------------------
+   離開欄位（blur）才第一次驗證；驗出錯之後，改成跟著 input 即時更新 ——
+   使用者一開始打字不會馬上被罵，改到對為止才會立刻看到「對了」。
+============================================================ */
+function setFieldError(el, msg){
+  el.classList.toggle('is-invalid', !!msg);
+  let err = el._adErrEl;
+  if(!err){
+    err = document.createElement('div');
+    err.className = 'ad-field-err';
+    el.insertAdjacentElement('afterend', err);
+    el._adErrEl = err;
+  }
+  err.textContent = msg || '';
+}
+
+function liveValidate(el, validateFn){
+  const run = ()=>{
+    const msg = validateFn(el.value);
+    setFieldError(el, msg);
+    return !msg;
+  };
+  el.addEventListener('blur', run);
+  el.addEventListener('input', ()=>{ if(el.classList.contains('is-invalid')) run(); });
+  el._adValidate = run;
+  return run;
+}
+
+const notBlank = (label) => (v) => v.trim() ? '' : `${label}不能是空的`;
+const urlOrBlank = (v) => (!v.trim() || /^https?:\/\//i.test(v.trim()))
+  ? '' : '請輸入 http:// 或 https:// 開頭的網址';
+
+/* ============================================================
+   分頁筆數（RSVP／桌次名單／悄悄話清單共用）
+============================================================ */
+const PAGE_SIZES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+
+function pagerState(key){
+  return { key, page: 1, size: LS.get(`pageSize.${key}`, 20) };
+}
+
+/* 在 listEl 後面插入／更新分頁列；total 是篩選後的筆數。
+   onChange(state) 在頁碼或每頁筆數變動時呼叫，通常是重新呼叫對應的 renderXxx()。 */
+function renderPager(listEl, state, total, onChange){
+  const pages = Math.max(1, Math.ceil(total / state.size));
+  if(state.page > pages) state.page = pages;
+  if(state.page < 1) state.page = 1;
+
+  let el = listEl._adPagerEl;
+  if(!el){
+    el = document.createElement('div');
+    el.className = 'ad-pager';
+    listEl.insertAdjacentElement('afterend', el);
+    listEl._adPagerEl = el;
+  }
+
+  if(total <= PAGE_SIZES[0] && pages <= 1){
+    el.innerHTML = '';
+    return;
+  }
+
+  el.innerHTML = `
+    <span>共 ${total} 筆・第 ${state.page} / ${pages} 頁</span>
+    <div class="ad-pager-nav">
+      <button class="ad-pager-btn" type="button" data-pg="prev" ${state.page <= 1 ? 'disabled' : ''}>上一頁</button>
+      <button class="ad-pager-btn" type="button" data-pg="next" ${state.page >= pages ? 'disabled' : ''}>下一頁</button>
+      <label class="ad-pager-size">每頁
+        <select>${PAGE_SIZES.map(n => `<option value="${n}"${n === state.size ? ' selected' : ''}>${n}</option>`).join('')}</select>
+      筆</label>
+    </div>`;
+
+  el.querySelector('[data-pg="prev"]').addEventListener('click', ()=>{
+    state.page = Math.max(1, state.page - 1);
+    onChange();
+  });
+  el.querySelector('[data-pg="next"]').addEventListener('click', ()=>{
+    state.page = Math.min(pages, state.page + 1);
+    onChange();
+  });
+  el.querySelector('select').addEventListener('change', (e)=>{
+    state.size = Number(e.target.value) || 20;
+    state.page = 1;
+    LS.set(`pageSize.${state.key}`, state.size);
+    onChange();
+  });
+}
+
+/* ============================================================
+   Loading skeleton
+   ------------------------------------------------------------
+   訂閱剛送出、Firestore 第一筆 snapshot 還沒回來時顯示，
+   跟「真的沒有資料」的空狀態區分開，畫面才不會忽閃忽現。
+============================================================ */
+const loadedOnce = new Set();
+['rsvps', 'letters', 'seating', 'seatingImages', 'blessings', 'explore', 'cards', 'exhibits', 'quiz']
+  .forEach(key => {
+    document.addEventListener(`data:${key}`, ()=> loadedOnce.add(key));
+    document.addEventListener(`data:${key}:denied`, ()=> loadedOnce.add(key));
+  });
+
+function skeletonHtml(rows, widths){
+  widths = widths || ['70%', '40%'];
+  let out = '<div class="ad-skel">';
+  for(let i = 0; i < rows; i++){
+    out += '<div class="ad-skel-row">' +
+      widths.map(w => `<div class="ad-skel-line" style="--w:${w}"></div>`).join('') +
+      '</div>';
+  }
+  return out + '</div>';
+}
+
+/* ============================================================
+   站內統一的確認 Modal（取代原生 confirm()）
+   ------------------------------------------------------------
+   requirePhrase 有值時，輸入框要完全比對才能按確定 —— 用在整批清空這類
+   一旦按下去就回不來的操作；一般的單筆刪除只需要按一下確定。
+============================================================ */
+const modalMaskEl    = document.getElementById('adModalMask');
+const modalCardEl    = modalMaskEl.querySelector('.ad-modal-card');
+const modalTitleEl   = document.getElementById('adModalTitle');
+const modalMsgEl     = document.getElementById('adModalMsg');
+const modalPhraseEl  = document.getElementById('adModalPhrase');
+const modalCancelBtn = document.getElementById('adModalCancel');
+const modalConfirmBtn= document.getElementById('adModalConfirm');
+
+function confirmModal({ title, message, danger, requirePhrase, confirmText, cancelText }){
+  return new Promise(resolve => {
+    modalTitleEl.textContent = title || '確定嗎？';
+    modalMsgEl.textContent = message || '';
+    modalCardEl.classList.toggle('is-danger', !!danger);
+    modalConfirmBtn.textContent = confirmText || '確定';
+    modalCancelBtn.textContent = cancelText || '取消';
+
+    modalPhraseEl.hidden = !requirePhrase;
+    modalPhraseEl.value = '';
+    modalPhraseEl.placeholder = requirePhrase ? `輸入「${requirePhrase}」` : '';
+    modalConfirmBtn.disabled = !!requirePhrase;
+
+    function onPhraseInput(){
+      modalConfirmBtn.disabled = modalPhraseEl.value.trim() !== requirePhrase;
+    }
+    if(requirePhrase) modalPhraseEl.addEventListener('input', onPhraseInput);
+
+    function close(result){
+      modalMaskEl.hidden = true;
+      modalPhraseEl.removeEventListener('input', onPhraseInput);
+      modalConfirmBtn.removeEventListener('click', onConfirm);
+      modalCancelBtn.removeEventListener('click', onCancel);
+      modalMaskEl.removeEventListener('click', onMaskClick);
+      document.removeEventListener('keydown', onKeydown);
+      resolve(result);
+    }
+    function onConfirm(){ if(!modalConfirmBtn.disabled) close(true); }
+    function onCancel(){ close(false); }
+    function onMaskClick(e){ if(e.target === modalMaskEl) close(false); }
+    function onKeydown(e){ if(e.key === 'Escape') close(false); }
+
+    modalConfirmBtn.addEventListener('click', onConfirm);
+    modalCancelBtn.addEventListener('click', onCancel);
+    modalMaskEl.addEventListener('click', onMaskClick);
+    document.addEventListener('keydown', onKeydown);
+
+    modalMaskEl.hidden = false;
+    (requirePhrase ? modalPhraseEl : modalConfirmBtn).focus();
+  });
+}
+
+/* ============================================================
+   單筆刪除：復原 toast（5 秒內可以按「復原」）
+   ------------------------------------------------------------
+   confirm 完先在畫面上藏起來（不是真的刪），5 秒後才真的送出刪除；
+   按「復原」就取消，畫面上的項目原地回來。
+============================================================ */
+const pendingDeletes = {}; // { colName: Set<id> }
+
+function isPendingDelete(col, id){
+  return !!(pendingDeletes[col] && pendingDeletes[col].has(id));
+}
+
+function scheduleUndoDelete(col, id, label, rerender){
+  (pendingDeletes[col] || (pendingDeletes[col] = new Set())).add(id);
+  rerender();
+  const timer = setTimeout(async ()=>{
+    pendingDeletes[col].delete(id);
+    try{
+      await DataStore.removeDoc(col, id);
+    }catch(err){
+      writeFailed(err);
+      rerender();
+    }
+  }, 5000);
+
+  showToast(`${label}已刪除`, {
+    actionLabel: '復原',
+    duration: 5000,
+    onAction(){
+      clearTimeout(timer);
+      pendingDeletes[col].delete(id);
+      rerender();
+    },
+  });
+}
+
+/* ============================================================
    登入
 ============================================================ */
 function showError(msg){
@@ -92,18 +326,16 @@ function showError(msg){
    ------------------------------------------------------------
    這組新人沒開的頁面，後台就不該出現那一區的編輯內容 ——
    關掉「抽卡」卻還在後台傳囍卡，傳完賓客也看不到。
-   值是 null 代表「永遠都在」：大廳與首頁卡片屬於大廳本身，
-   大廳是必開的頁面。
+   值是 null 代表「永遠都在」：大廳是必開的頁面。
 ============================================================ */
 const TAB_PAGE = {
   rsvp:     'rsvp',
   lobby:    null,
   seating:  'seating',
   letters:  'letter',
-  explore:  null,
   cards:    'draw',
   exhibits: 'exhibition',
-  quiz:     'quiz',  
+  quiz:     'quiz',
 };
 
 function tabEnabled(tab){
@@ -112,22 +344,11 @@ function tabEnabled(tab){
   return !!(window.SITE && window.SITE.isEnabled(key));
 }
 
-/* 關掉的分頁連按鈕帶內容一起收起來；
-   如果預設開著的那一頁剛好被關掉，就改開第一個還在的分頁 */
+/* 關掉的分頁連按鈕帶內容一起收起來（面板的顯示交給 activateTab 統一處理） */
 function applyTabVisibility(){
-  const tabs = Array.from(document.querySelectorAll('.ad-tab'));
-  tabs.forEach(btn => {
-    const on = tabEnabled(btn.dataset.tab);
-    btn.hidden = !on;
-    /* .ad-panel 平常就是 display:none，拿掉 is-on 就等於收起來 */
-    const panel = document.querySelector(`.ad-panel[data-panel="${btn.dataset.tab}"]`);
-    if(panel && !on) panel.classList.remove('is-on');
+  document.querySelectorAll('#adSide .ad-tab').forEach(btn => {
+    btn.hidden = !tabEnabled(btn.dataset.tab);
   });
-
-  const shown = tabs.filter(b => !b.hidden);
-  if(shown.length && !shown.some(b => b.classList.contains('is-on'))){
-    selectTab(shown[0]);
-  }
 }
 
 let opened = false;
@@ -136,7 +357,6 @@ function openAdmin(){
   opened = true;
   pwGate.style.display = 'none';
   adPage.hidden = false;
-  setNavVisible(true);
 
   const user = window.fb.auth.currentUser;
   document.getElementById('adWho').textContent =
@@ -144,6 +364,7 @@ function openAdmin(){
   document.getElementById('adViewBtn').href = sitePath('lobby');
 
   applyTabVisibility();
+  initRouter();
 
   /* 訂閱各份資料，畫面隨著資料變動重畫。
      沒開的頁面連訂閱都省下來，不做白工的讀取。 */
@@ -210,20 +431,101 @@ if(!ownerEmails().length){
 }
 
 /* ============================================================
-   分頁切換
+   分頁路由
+   ------------------------------------------------------------
+   網址格式：#tab 或 #tab/subtab（目前只有大廳「lobby」底下有子分頁）。
+   這樣重新整理、分享連結、瀏覽器上一頁都能回到原本開著的那一頁。
 ============================================================ */
-function selectTab(btn){
-  document.querySelectorAll('.ad-tab').forEach(b => b.classList.toggle('is-on', b === btn));
-  document.querySelectorAll('.ad-panel').forEach(p =>
-    p.classList.toggle('is-on', p.dataset.panel === btn.dataset.tab));
+const LOBBY_SUBTABS = ['info', 'schedule', 'explore'];
+
+function parseHash(){
+  const raw = location.hash.replace(/^#/, '');
+  const [tab, subtab] = raw.split('/');
+  return { tab: tab || '', subtab: subtab || '' };
 }
 
-document.getElementById('adTabs').addEventListener('click', (e)=>{
-  const btn = e.target.closest('.ad-tab');
-  if(!btn) return;
-  selectTab(btn);
+function tabButtons(){
+  return Array.from(document.querySelectorAll('#adSide .ad-tab'));
+}
+
+function activateLobbySubtab(subtab){
+  const valid = LOBBY_SUBTABS.includes(subtab) ? subtab : 'info';
+  document.querySelectorAll('.ad-subtabs[data-subtabs="lobby"] .ad-subtab').forEach(b =>
+    b.classList.toggle('is-on', b.dataset.subtab === valid));
+  document.querySelectorAll('.ad-panel[data-panel="lobby"] .ad-subpanel').forEach(p =>
+    p.classList.toggle('is-on', p.dataset.subpanel === valid));
+  return valid;
+}
+
+/* 找不到／被關掉的分頁就退回第一個還在的分頁；網址跟著修正，
+   但用 replaceState 不佔用歷史紀錄，不會讓使用者按「上一頁」卡住。 */
+function activateTab(tab, subtab){
+  const btns = tabButtons();
+  const target = btns.find(b => b.dataset.tab === tab && !b.hidden) || btns.find(b => !b.hidden);
+  if(!target) return;
+
+  btns.forEach(b => b.classList.toggle('is-on', b === target));
+  document.querySelectorAll('.ad-panel').forEach(p =>
+    p.classList.toggle('is-on', p.dataset.panel === target.dataset.tab));
+
+  let wantHash = `#${target.dataset.tab}`;
+  if(target.dataset.tab === 'lobby'){
+    wantHash = `#lobby/${activateLobbySubtab(subtab)}`;
+  }
+
+  closeDrawer();
   window.scrollTo({ top:0, behavior:'instant' });
+
+  if(location.hash !== wantHash) history.replaceState(null, '', wantHash);
+}
+
+function initRouter(){
+  const { tab, subtab } = parseHash();
+  activateTab(tab, subtab);
+}
+
+window.addEventListener('hashchange', ()=>{
+  const { tab, subtab } = parseHash();
+  activateTab(tab, subtab);
 });
+
+document.getElementById('adSide').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.ad-tab');
+  if(!btn || btn.hidden) return;
+  location.hash = btn.dataset.tab === 'lobby' ? 'lobby/info' : btn.dataset.tab;
+});
+
+document.querySelectorAll('.ad-subtabs[data-subtabs="lobby"]').forEach(nav => {
+  nav.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.ad-subtab');
+    if(!btn) return;
+    location.hash = `lobby/${btn.dataset.subtab}`;
+  });
+});
+
+/* ---------- 手機／平板：側欄變抽屜 ---------- */
+const adMenuBtn = document.getElementById('adMenuBtn');
+const adSideEl  = document.getElementById('adSide');
+const adBackdropEl = document.getElementById('adSideBackdrop');
+
+function openDrawer(){
+  adSideEl.classList.add('is-open');
+  adBackdropEl.hidden = false;
+  requestAnimationFrame(()=> adBackdropEl.classList.add('is-on'));
+  adMenuBtn.setAttribute('aria-expanded', 'true');
+}
+function closeDrawer(){
+  if(!adSideEl.classList.contains('is-open')) return;
+  adSideEl.classList.remove('is-open');
+  adBackdropEl.classList.remove('is-on');
+  adMenuBtn.setAttribute('aria-expanded', 'false');
+  setTimeout(()=>{ adBackdropEl.hidden = true; }, 220);
+}
+adMenuBtn.addEventListener('click', ()=>{
+  adSideEl.classList.contains('is-open') ? closeDrawer() : openDrawer();
+});
+adBackdropEl.addEventListener('click', closeDrawer);
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeDrawer(); });
 
 /* ============================================================
    0. 出席回覆
@@ -236,6 +538,7 @@ const RSVP_LABEL = { yes:'會來', maybe:'未定', no:'不克出席' };
 const rsvpListEl   = document.getElementById('adRsvpList');
 const rsvpFilterEl = document.getElementById('adRsvpFilter');
 let rsvpFilter = 'all';
+const rsvpPager = pagerState('rsvp');
 
 /* createdAt 是 Firestore 的 Timestamp（伺服器時間），不是數字 */
 function rsvpTime(r){
@@ -260,12 +563,21 @@ function renderRsvps(){
   document.getElementById('adRsvpMaybe').textContent = tally.maybe;
   document.getElementById('adRsvpNo').textContent    = tally.no;
 
-  const list = visibleRsvps();
-  if(!list.length){
-    rsvpListEl.innerHTML = `<div class="ad-empty">${
-      DataStore.getRSVPCount() ? '沒有符合的回覆' : '還沒有人回覆出席'}</div>`;
+  if(!loadedOnce.has('rsvps')){
+    rsvpListEl.innerHTML = skeletonHtml(4);
     return;
   }
+
+  const all = visibleRsvps();
+  if(!all.length){
+    rsvpListEl.innerHTML = `<div class="ad-empty">${
+      DataStore.getRSVPCount() ? '沒有符合的回覆' : '還沒有人回覆出席'}</div>`;
+    renderPager(rsvpListEl, rsvpPager, 0, renderRsvps);
+    return;
+  }
+
+  renderPager(rsvpListEl, rsvpPager, all.length, renderRsvps);
+  const list = all.slice((rsvpPager.page - 1) * rsvpPager.size, rsvpPager.page * rsvpPager.size);
 
   rsvpListEl.innerHTML = list.map(r => {
     const st = DataStore.rsvpStatus(r);
@@ -289,7 +601,7 @@ function renderRsvps(){
 }
 
 document.addEventListener('data:rsvps', renderRsvps);
-rsvpFilterEl.addEventListener('input', renderRsvps);
+rsvpFilterEl.addEventListener('input', ()=>{ rsvpPager.page = 1; renderRsvps(); });
 
 document.getElementById('adRsvpChips').addEventListener('click', (e)=>{
   const chip = e.target.closest('.ad-chip');
@@ -297,11 +609,13 @@ document.getElementById('adRsvpChips').addEventListener('click', (e)=>{
   rsvpFilter = chip.dataset.filter;
   document.querySelectorAll('#adRsvpChips .ad-chip')
     .forEach(c => c.classList.toggle('is-on', c === chip));
+  rsvpPager.page = 1;
   renderRsvps();
 });
 
 /* 規則拒絕讀取時（例如帳號被移出 ownerEmails）講清楚，不要留一個空名單 */
 document.addEventListener('data:rsvps:denied', ()=>{
+  loadedOnce.add('rsvps');
   rsvpListEl.innerHTML =
     `<div class="ad-empty">沒有讀取出席回覆的權限<br>請確認這個帳號在 ownerEmails 名單內</div>`;
 });
@@ -344,6 +658,7 @@ document.getElementById('adRsvpExport').addEventListener('click', ()=>{
 ============================================================ */
 const inboxListEl   = document.getElementById('adInboxList');
 const inboxFilterEl = document.getElementById('adInboxFilter');
+const inboxPager = pagerState('inbox');
 
 /* 新的排前面，新人最關心的是剛投進來的那幾封 */
 function allLetters(){
@@ -371,15 +686,24 @@ function renderInbox(){
   document.getElementById('adInboxCount').textContent =
     list.length === all.length ? `目前 ${all.length} 封` : `${list.length} / ${all.length} 封`;
 
+  if(!loadedOnce.has('letters')){
+    inboxListEl.innerHTML = skeletonHtml(3, ['50%', '90%']);
+    return;
+  }
+
   if(!list.length){
     inboxListEl.innerHTML = `<div class="ad-empty">${
       all.length
         ? '沒有符合的悄悄話'
         : '還沒有人投信進來<br>等賓客從祝福牆寫信給你們，這裡就會出現'}</div>`;
+    renderPager(inboxListEl, inboxPager, 0, renderInbox);
     return;
   }
 
-  inboxListEl.innerHTML = list.map(l => `
+  renderPager(inboxListEl, inboxPager, list.length, renderInbox);
+  const page = list.slice((inboxPager.page - 1) * inboxPager.size, inboxPager.page * inboxPager.size);
+
+  inboxListEl.innerHTML = page.map(l => `
     <article class="ad-msg">
       <div class="ad-msg-head">
         <span class="ad-msg-ic">${escapeHtml(l.icon || DEFAULT_ICON)}</span>
@@ -391,10 +715,11 @@ function renderInbox(){
 }
 
 document.addEventListener('data:letters', renderInbox);
-inboxFilterEl.addEventListener('input', renderInbox);
+inboxFilterEl.addEventListener('input', ()=>{ inboxPager.page = 1; renderInbox(); });
 
 /* 規則拒絕讀取時（例如帳號被移出 ownerEmails）講清楚，不要留一個空信箱 */
 document.addEventListener('data:letters:denied', ()=>{
+  loadedOnce.add('letters');
   inboxListEl.innerHTML =
     `<div class="ad-empty">沒有讀取悄悄話的權限<br>請確認這個帳號在 ownerEmails 名單內</div>`;
 });
@@ -536,7 +861,11 @@ uploadBox.addEventListener('drop', (e)=>{
 const imgsEl = document.getElementById('adImgs');
 
 function renderImages(){
-  const list = DataStore.getSeatingImages();
+  if(!loadedOnce.has('seatingImages')){
+    imgsEl.innerHTML = skeletonHtml(2, ['100%']);
+    return;
+  }
+  const list = DataStore.getSeatingImages().filter(it => !isPendingDelete('seatingImages', it.id));
   if(!list.length){
     imgsEl.innerHTML = `<div class="ad-empty">還沒有桌次圖</div>`;
     return;
@@ -556,11 +885,9 @@ document.addEventListener('data:seatingImages', renderImages);
 imgsEl.addEventListener('click', async (e)=>{
   const id = e.target.dataset.delImg;
   if(!id) return;
-  if(!confirm('確定要刪掉這張桌次圖嗎？')) return;
-  try{
-    await DataStore.removeDoc('seatingImages', id);
-    toast('已刪除');
-  }catch(err){ writeFailed(err); }
+  const ok = await confirmModal({ title:'刪除桌次圖', message:'確定要刪掉這張桌次圖嗎？' });
+  if(!ok) return;
+  scheduleUndoDelete('seatingImages', id, '桌次圖', renderImages);
 });
 
 /* 標題改完（離開欄位）就存回去 */
@@ -611,7 +938,11 @@ document.getElementById('adSeatImport').addEventListener('click', async ()=>{
     toast('沒有讀到任何一行有效的名單（每行至少要有「姓名, 桌次」）', true);
     return;
   }
-  if(!confirm(`要匯入 ${rows.length} 位賓客嗎？（原本的名單會保留，這次是「加上去」）`)) return;
+  const ok = await confirmModal({
+    title: '匯入名單',
+    message: `要匯入 ${rows.length} 位賓客嗎？（原本的名單會保留，這次是「加上去」）`,
+  });
+  if(!ok) return;
   try{
     await DataStore.importSeating(rows);
     bulkEl.value = '';
@@ -624,7 +955,13 @@ document.getElementById('adSeatImport').addEventListener('click', async ()=>{
 document.getElementById('adSeatClear').addEventListener('click', async ()=>{
   const n = DataStore.getSeating().length;
   if(!n){ toast('名單本來就是空的'); return; }
-  if(!confirm(`確定要清空整份名單嗎？共 ${n} 位，刪掉就回不來了。`)) return;
+  const ok = await confirmModal({
+    title: '清空整份名單',
+    message: `確定要清空整份名單嗎？共 ${n} 位，刪掉就回不來了。`,
+    danger: true,
+    requirePhrase: '確認刪除',
+  });
+  if(!ok) return;
   try{
     await DataStore.wipeCollection('seating');
     toast('名單已清空');
@@ -633,21 +970,33 @@ document.getElementById('adSeatClear').addEventListener('click', async ()=>{
 
 const seatListEl   = document.getElementById('adSeatList');
 const seatFilterEl = document.getElementById('adSeatFilter');
+const seatPager = pagerState('seating');
 
 function renderSeatList(){
-  const all = DataStore.getSeating();
+  if(!loadedOnce.has('seating')){
+    document.getElementById('adSeatCount').textContent = '目前 — 位';
+    seatListEl.innerHTML = skeletonHtml(4);
+    return;
+  }
+
+  const all = DataStore.getSeating().filter(r => !isPendingDelete('seating', r.id));
   document.getElementById('adSeatCount').textContent = `目前 ${all.length} 位`;
 
   const q = normKey(seatFilterEl.value);
-  const list = q
+  const filtered = q
     ? all.filter(r => normKey(r.name).includes(q) || normKey(r.table).includes(q))
     : all;
 
-  if(!list.length){
+  if(!filtered.length){
     seatListEl.innerHTML = `<div class="ad-empty">${
       all.length ? '沒有符合的賓客' : '還沒有名單，用上面的欄位匯入'}</div>`;
+    renderPager(seatListEl, seatPager, 0, renderSeatList);
     return;
   }
+
+  renderPager(seatListEl, seatPager, filtered.length, renderSeatList);
+  const list = filtered.slice((seatPager.page - 1) * seatPager.size, seatPager.page * seatPager.size);
+
   seatListEl.innerHTML = list.map(r => `
     <div class="ad-item">
       <div class="ad-item-main">
@@ -660,15 +1009,14 @@ function renderSeatList(){
 }
 
 document.addEventListener('data:seating', renderSeatList);
-seatFilterEl.addEventListener('input', renderSeatList);
+seatFilterEl.addEventListener('input', ()=>{ seatPager.page = 1; renderSeatList(); });
 
 seatListEl.addEventListener('click', async (e)=>{
   const id = e.target.dataset.delSeat;
   if(!id) return;
-  try{
-    await DataStore.removeDoc('seating', id);
-    toast('已刪除');
-  }catch(err){ writeFailed(err); }
+  const ok = await confirmModal({ title:'刪除賓客', message:'確定要把這位賓客從桌次名單移除嗎？' });
+  if(!ok) return;
+  scheduleUndoDelete('seating', id, '這位賓客', renderSeatList);
 });
 
 /* ============================================================
@@ -687,28 +1035,33 @@ const lf = {
 };
 
 lf.body.addEventListener('input', ()=>{ lf.len.textContent = lf.body.value.length; });
+liveValidate(lf.body, notBlank('信的內容'));
 
 function resetLetterForm(){
   lf.form.reset();
   lf.id.value = '';
   lf.len.textContent = '0';
+  setFieldError(lf.body, '');
+  setFieldError(lf.terms, '');
 }
 document.getElementById('adLetterReset').addEventListener('click', resetLetterForm);
 
 lf.form.addEventListener('submit', async (e)=>{
   e.preventDefault();
   const body = lf.body.value.trim();
-  if(!body){ toast('信的內容不能是空的', true); lf.body.focus(); return; }
+  if(!lf.body._adValidate()){ lf.body.focus(); return; }
 
   const terms = lf.terms.value
     .split(/[,，\n]/).map(s => s.trim()).filter(Boolean).slice(0, 20)
     .map(s => s.slice(0, 40));
 
   if(!terms.length && !lf.isDef.checked){
+    setFieldError(lf.terms, '請填專屬詞彙，或把這封設為通用信');
     toast('請填專屬詞彙，或把這封設為通用信', true);
     lf.terms.focus();
     return;
   }
+  setFieldError(lf.terms, '');
 
   try{
     await DataStore.saveDoc('blessings', lf.id.value || null, {
@@ -725,7 +1078,11 @@ lf.form.addEventListener('submit', async (e)=>{
 });
 
 function renderLetters(){
-  const list = DataStore.getBlessings();
+  if(!loadedOnce.has('blessings')){
+    lf.list.innerHTML = skeletonHtml(3);
+    return;
+  }
+  const list = DataStore.getBlessings().filter(b => !isPendingDelete('blessings', b.id));
   if(!list.length){
     lf.list.innerHTML = `<div class="ad-empty">還沒有寫任何一封信</div>`;
     return;
@@ -769,12 +1126,10 @@ lf.list.addEventListener('click', async (e)=>{
   }
 
   if(delId){
-    if(!confirm('確定要刪掉這封信嗎？')) return;
-    try{
-      await DataStore.removeDoc('blessings', delId);
-      if(lf.id.value === delId) resetLetterForm();
-      toast('已刪除');
-    }catch(err){ writeFailed(err); }
+    const ok = await confirmModal({ title:'刪除祝福信', message:'確定要刪掉這封信嗎？' });
+    if(!ok) return;
+    if(lf.id.value === delId) resetLetterForm();
+    scheduleUndoDelete('blessings', delId, '這封信', renderLetters);
   }
 });
 
@@ -804,33 +1159,34 @@ function syncKindFields(){
 ef.kind.addEventListener('change', syncKindFields);
 syncKindFields();
 
+liveValidate(ef.title, notBlank('卡片標題'));
+liveValidate(ef.url, (v)=>{
+  if(ef.kind.value !== 'link') return '';
+  if(!v.trim()) return '連結網址不能是空的';
+  return urlOrBlank(v);
+});
+liveValidate(ef.body, (v)=> ef.kind.value === 'popup' ? notBlank('彈窗內文')(v) : '');
+
 function resetExpForm(){
   ef.form.reset();
   ef.id.value = '';
   ef.order.value = String(DataStore.getExplore().length + 1);
   syncKindFields();
+  [ef.title, ef.url, ef.body].forEach(el => setFieldError(el, ''));
 }
 document.getElementById('adExpReset').addEventListener('click', resetExpForm);
 
 ef.form.addEventListener('submit', async (e)=>{
   e.preventDefault();
   const title = ef.title.value.trim();
-  if(!title){ toast('卡片標題不能是空的', true); ef.title.focus(); return; }
 
   const kind = ef.kind.value === 'link' ? 'link' : 'popup';
   const url  = ef.url.value.trim();
   const body = ef.body.value.trim();
 
-  if(kind === 'link' && !/^https?:\/\//i.test(url)){
-    toast('連結要以 http:// 或 https:// 開頭', true);
-    ef.url.focus();
-    return;
-  }
-  if(kind === 'popup' && !body){
-    toast('彈窗內文不能是空的', true);
-    ef.body.focus();
-    return;
-  }
+  const checks = [ef.title, kind === 'link' ? ef.url : ef.body];
+  const bad = checks.find(el => !el._adValidate());
+  if(bad){ bad.focus(); return; }
 
   try{
     await DataStore.saveDoc('explore', ef.id.value || null, {
@@ -848,7 +1204,11 @@ ef.form.addEventListener('submit', async (e)=>{
 });
 
 function renderExplore(){
-  const list = DataStore.getExplore();
+  if(!loadedOnce.has('explore')){
+    ef.list.innerHTML = skeletonHtml(2);
+    return;
+  }
+  const list = DataStore.getExplore().filter(it => !isPendingDelete('explore', it.id));
   if(!list.length){
     ef.list.innerHTML = `<div class="ad-empty">還沒有自訂卡片</div>`;
     return;
@@ -892,12 +1252,10 @@ ef.list.addEventListener('click', async (e)=>{
   }
 
   if(delId){
-    if(!confirm('確定要刪掉這張卡片嗎？')) return;
-    try{
-      await DataStore.removeDoc('explore', delId);
-      if(ef.id.value === delId) resetExpForm();
-      toast('已刪除');
-    }catch(err){ writeFailed(err); }
+    const ok = await confirmModal({ title:'刪除卡片', message:'確定要刪掉這張卡片嗎？' });
+    if(!ok) return;
+    if(ef.id.value === delId) resetExpForm();
+    scheduleUndoDelete('explore', delId, '這張卡片', renderExplore);
   }
 });
 
@@ -937,6 +1295,7 @@ function clampTitle(s){
 sf.title.addEventListener('input', ()=>{
   sf.titleLen.textContent = [...sf.title.value].length;
 });
+liveValidate(sf.map, urlOrBlank);
 
 function fillSiteForm(){
   const d = siteData();
@@ -957,11 +1316,7 @@ document.getElementById('adSiteReset').addEventListener('click', fillSiteForm);
 sf.form.addEventListener('submit', async (e)=>{
   e.preventDefault();
   const map = sf.map.value.trim();
-  if(map && !/^https?:\/\//i.test(map)){
-    toast('地圖連結要以 http:// 或 https:// 開頭，或整格留白', true);
-    sf.map.focus();
-    return;
-  }
+  if(!sf.map._adValidate()){ sf.map.focus(); return; }
 
   /* hashtag 沒寫 # 就自動補上，大廳才不會出現光禿禿的字 */
   const hashtags = sf.tags.value
@@ -1122,7 +1477,12 @@ cardUpload.addEventListener('drop', (e)=>{
 const RARITIES = ['SSR', 'SR', 'R', 'N'];
 
 function renderCards(){
-  const list = DataStore.getCards();
+  if(!loadedOnce.has('cards')){
+    document.getElementById('adCardCount').textContent = '目前 — 張';
+    cardListEl.innerHTML = skeletonHtml(2, ['100%']);
+    return;
+  }
+  const list = DataStore.getCards().filter(c => !isPendingDelete('cards', c.id));
   document.getElementById('adCardCount').textContent = `目前 ${list.length} 張`;
 
   if(!list.length){
@@ -1204,11 +1564,9 @@ cardListEl.addEventListener('click', async (e)=>{
   }
 
   if(delId){
-    if(!confirm('確定要刪掉這張囍卡嗎？')) return;
-    try{
-      await DataStore.removeDoc('cards', delId);
-      toast('已刪除');
-    }catch(err){ writeFailed(err); }
+    const ok = await confirmModal({ title:'刪除囍卡', message:'確定要刪掉這張囍卡嗎？' });
+    if(!ok) return;
+    scheduleUndoDelete('cards', delId, '這張囍卡', renderCards);
   }
 });
 
@@ -1257,6 +1615,8 @@ function syncExhKind(){
 xf.kind.addEventListener('change', syncExhKind);
 syncExhKind();
 
+liveValidate(xf.title, (v)=> notBlank(xf.kind.value === 'act' ? '章節名稱' : '展品標題')(v));
+
 function setExhPreview(dataUrl){
   xf.img.value = dataUrl || '';
   xf.prev.innerHTML = dataUrl
@@ -1293,6 +1653,7 @@ function resetExhForm(){
   xf.descLen.textContent = '0';
   xf.order.value = String(DataStore.getExhibits().length + 1);
   syncExhKind();
+  setFieldError(xf.title, '');
 }
 document.getElementById('adExhReset').addEventListener('click', resetExhForm);
 
@@ -1301,11 +1662,7 @@ xf.form.addEventListener('submit', async (e)=>{
   const kind  = xf.kind.value === 'act' ? 'act' : 'photo';
   const title = xf.title.value.trim();
 
-  if(!title){
-    toast(kind === 'act' ? '章節名稱不能是空的' : '展品標題不能是空的', true);
-    xf.title.focus();
-    return;
-  }
+  if(!xf.title._adValidate()){ xf.title.focus(); return; }
   if(kind === 'photo' && !xf.img.value && !xf.desc.value.trim()){
     toast('展品至少要有一張照片或一段描述', true);
     return;
@@ -1329,7 +1686,11 @@ xf.form.addEventListener('submit', async (e)=>{
 });
 
 function renderExhibits(){
-  const list = DataStore.getExhibits();
+  if(!loadedOnce.has('exhibits')){
+    xf.list.innerHTML = skeletonHtml(3);
+    return;
+  }
+  const list = DataStore.getExhibits().filter(it => !isPendingDelete('exhibits', it.id));
   if(!list.length){
     xf.list.innerHTML =
       `<div class="ad-empty">還沒有展品<br>沒設定的話，戀愛時光會沿用素材資料夾或內建的範例</div>`;
@@ -1380,12 +1741,10 @@ xf.list.addEventListener('click', async (e)=>{
   }
 
   if(delId){
-    if(!confirm('確定要刪掉這一筆嗎？')) return;
-    try{
-      await DataStore.removeDoc('exhibits', delId);
-      if(xf.id.value === delId) resetExhForm();
-      toast('已刪除');
-    }catch(err){ writeFailed(err); }
+    const ok = await confirmModal({ title:'刪除展覽內容', message:'確定要刪掉這一筆嗎？' });
+    if(!ok) return;
+    if(xf.id.value === delId) resetExhForm();
+    scheduleUndoDelete('exhibits', delId, '這一筆', renderExhibits);
   }
 });
 
@@ -1414,6 +1773,8 @@ const qz = {
 };
 
 qz.q.addEventListener('input', ()=>{ qz.qLen.textContent = qz.q.value.length; });
+liveValidate(qz.q, notBlank('題目'));
+qz.optEls.forEach((el, oi) => liveValidate(el, notBlank(`選項 ${String.fromCharCode(65 + oi)}`)));
 
 /* 單選用 radio、複選用 checkbox —— 同一組欄位換 type 就好 */
 function syncQuizType(){
@@ -1437,6 +1798,8 @@ function resetQuizForm(){
   qz.id.value = '';
   qz.qLen.textContent = '0';
   syncQuizType();
+  setFieldError(qz.q, '');
+  qz.optEls.forEach(el => setFieldError(el, ''));
 }
 document.getElementById('adQuizReset').addEventListener('click', resetQuizForm);
 
@@ -1460,15 +1823,11 @@ qz.form.addEventListener('submit', async (e)=>{
   const type = qz.type.value === 'multi' ? 'multi' : 'single';
 
   const q = qz.q.value.trim();
-  if(!q){ toast('題目不能是空的', true); qz.q.focus(); return; }
+  if(!qz.q._adValidate()){ qz.q.focus(); return; }
 
   const opts = qz.optEls.map(el => el.value.trim().slice(0, QUIZ_LIMITS.OPT_MAX));
-  const blank = opts.findIndex(o => !o);
-  if(blank >= 0){
-    toast(`選項 ${String.fromCharCode(65 + blank)} 還沒填，四個選項都要有內容`, true);
-    qz.optEls[blank].focus();
-    return;
-  }
+  const badOpt = qz.optEls.find(el => !el._adValidate());
+  if(badOpt){ badOpt.focus(); return; }
 
   const answer = quizAnswer();
   if(!answer.length){ toast('請勾選正確答案', true); return; }
@@ -1494,7 +1853,13 @@ qz.form.addEventListener('submit', async (e)=>{
 });
 
 function renderQuiz(){
-  const list = DataStore.getQuiz();
+  if(!loadedOnce.has('quiz')){
+    qz.count.textContent = '目前 — 題';
+    qz.list.innerHTML = skeletonHtml(3);
+    return;
+  }
+
+  const list = DataStore.getQuiz().filter(it => !isPendingDelete('quiz', it.id));
   qz.count.textContent =
     `目前 ${list.length} 題（最多 ${QUIZ_LIMITS.MAX_QUESTIONS} 題）`;
 
@@ -1515,17 +1880,14 @@ function renderQuiz(){
     const opts = (it.opts || []).map((o, oi) =>
       `${answer.includes(oi) ? '✓ ' : ''}${escapeHtml(o)}`).join('　／　');
     return `
-      <div class="ad-item">
+      <div class="ad-quiz-item" data-id="${it.id}">
+        <button class="ad-drag-handle" type="button" aria-label="拖曳調整順序" title="拖曳調整順序">⠿</button>
         <div class="ad-item-main">
           <span class="ad-item-title">${i + 1}. ${escapeHtml(it.q || '（沒有題目）')}</span>
           <span class="ad-tag">${it.type === 'multi' ? '複選' : '單選'}</span>
           <span class="ad-item-sub">${opts}</span>
         </div>
         <div class="ad-item-actions">
-          <button class="ad-move" type="button" data-quiz-up="${it.id}"
-                  title="往前一題" ${i === 0 ? 'disabled' : ''}>↑</button>
-          <button class="ad-move" type="button" data-quiz-down="${it.id}"
-                  title="往後一題" ${i === list.length - 1 ? 'disabled' : ''}>↓</button>
           <button class="ad-edit" type="button" data-edit-quiz="${it.id}">編輯</button>
           <button class="ad-del"  type="button" data-del-quiz="${it.id}">刪除</button>
         </div>
@@ -1533,21 +1895,82 @@ function renderQuiz(){
   }).join('');
 }
 
-/* 換順序：把陣列裡的兩題對調，再把 order 整批重編成 1…n
-   （只寫真的變了的那幾份，不必整包重寫） */
-async function moveQuiz(id, dir){
-  const list = DataStore.getQuiz().slice();
-  const i = list.findIndex(x => x.id === id);
-  const j = i + dir;
-  if(i < 0 || j < 0 || j >= list.length) return;
-  [list[i], list[j]] = [list[j], list[i]];
-
+/* 把 order 整批重編成 1…n（只寫真的變了的那幾份，不必整包重寫）。
+   拖曳放開時呼叫一次，不是每移動一格就打一次 Firestore。 */
+async function saveQuizOrder(idsInOrder){
+  const list = DataStore.getQuiz();
+  const byId = new Map(list.map(it => [it.id, it]));
   try{
-    await Promise.all(list.map((it, k) =>
-      it.order === k + 1 ? null : DataStore.saveDoc('quiz', it.id, quizFields(it, k + 1))));
+    await Promise.all(idsInOrder.map((id, k) => {
+      const it = byId.get(id);
+      if(!it || it.order === k + 1) return null;
+      return DataStore.saveDoc('quiz', it.id, quizFields(it, k + 1));
+    }));
     toast('順序已更新');
-  }catch(err){ writeFailed(err); }
+  }catch(err){
+    writeFailed(err);
+    renderQuiz();
+  }
 }
+
+/* ---------- 拖曳排序（Pointer Events，滑鼠與觸控通用） ---------- */
+(function setupQuizDrag(){
+  let dragEl = null, startY = 0;
+
+  qz.list.addEventListener('pointerdown', (e)=>{
+    const handle = e.target.closest('.ad-drag-handle');
+    if(!handle) return;
+    dragEl = handle.closest('.ad-quiz-item');
+    if(!dragEl) return;
+    startY = e.clientY;
+    dragEl.classList.add('is-dragging');
+    handle.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+
+  qz.list.addEventListener('pointermove', (e)=>{
+    if(!dragEl) return;
+    dragEl.style.transform = `translateY(${e.clientY - startY}px)`;
+
+    /* 拖過相鄰項目的中點就跟它交換位置。
+       DOM 順序換了之後，dragEl 沒被拖曳時「本來會在哪」也跟著往前／往後挪一列，
+       所以交換的當下要把 startY 補回相同的量，讓 transform 疊上新的位置後
+       視覺上不會跳一下 —— 也因為這樣，才不會在同一個 pointermove 裡
+       因為「沒補償、位置估計爆掉」而一次連環跨過好幾列。 */
+    const siblings = Array.from(qz.list.querySelectorAll('.ad-quiz-item')).filter(el => el !== dragEl);
+    for(const sib of siblings){
+      const dragRect = dragEl.getBoundingClientRect();
+      const dragMid = dragRect.top + dragRect.height / 2;
+      const rect = sib.getBoundingClientRect();
+      const sibMid = rect.top + rect.height / 2;
+      if(dragEl.compareDocumentPosition(sib) & Node.DOCUMENT_POSITION_FOLLOWING && dragMid > sibMid){
+        qz.list.insertBefore(sib, dragEl);
+        startY += rect.height;
+      }else if(dragEl.compareDocumentPosition(sib) & Node.DOCUMENT_POSITION_PRECEDING && dragMid < sibMid){
+        qz.list.insertBefore(dragEl, sib);
+        startY -= rect.height;
+      }
+      dragEl.style.transform = `translateY(${e.clientY - startY}px)`;
+    }
+  });
+
+  function endDrag(e){
+    if(!dragEl) return;
+    const el = dragEl;
+    dragEl = null;
+    el.classList.remove('is-dragging');
+    el.style.transform = '';
+
+    const newOrder = Array.from(qz.list.querySelectorAll('.ad-quiz-item')).map(x => x.dataset.id);
+    const oldOrder = DataStore.getQuiz()
+      .filter(it => !isPendingDelete('quiz', it.id))
+      .map(it => it.id);
+    if(newOrder.join() !== oldOrder.join()) saveQuizOrder(newOrder);
+    else renderQuiz(); // 位置沒變也要把題號（1. 2. 3.…）重畫回原狀
+  }
+  qz.list.addEventListener('pointerup', endDrag);
+  qz.list.addEventListener('pointercancel', endDrag);
+})();
 
 /* 第一次打開、題目還空著 → 把預設題目寫進來當起點。
    quizSeeded 記在 localStorage（以 siteId 分隔）：
@@ -1581,8 +2004,6 @@ qz.list.addEventListener('click', async (e)=>{
   const d = btn.dataset;
 
   if(btn.id === 'adQuizSeed'){ seedQuiz(true); return; }
-  if(d.quizUp)   { moveQuiz(d.quizUp, -1);  return; }
-  if(d.quizDown) { moveQuiz(d.quizDown, 1); return; }
 
   if(d.editQuiz){
     const it = DataStore.getQuiz().find(x => x.id === d.editQuiz);
@@ -1600,12 +2021,10 @@ qz.list.addEventListener('click', async (e)=>{
   }
 
   if(d.delQuiz){
-    if(!confirm('確定要刪掉這一題嗎？')) return;
-    try{
-      await DataStore.removeDoc('quiz', d.delQuiz);
-      if(qz.id.value === d.delQuiz) resetQuizForm();
-      toast('已刪除');
-    }catch(err){ writeFailed(err); }
+    const ok = await confirmModal({ title:'刪除題目', message:'確定要刪掉這一題嗎？' });
+    if(!ok) return;
+    if(qz.id.value === d.delQuiz) resetQuizForm();
+    scheduleUndoDelete('quiz', d.delQuiz, '這一題', renderQuiz);
   }
 });
 
@@ -1629,7 +2048,13 @@ document.addEventListener('data:quizVotes', renderQuizVotes);
 document.getElementById('adQuizWipe').addEventListener('click', async ()=>{
   const n = DataStore.getQuizVotes().length;
   if(!n){ toast('目前還沒有人作答'); return; }
-  if(!confirm(`確定要清空 ${n} 筆作答紀錄嗎？（題目不會被刪掉，但票數回不來）`)) return;
+  const ok = await confirmModal({
+    title: '清空作答紀錄',
+    message: `確定要清空 ${n} 筆作答紀錄嗎？（題目不會被刪掉，但票數回不來）`,
+    danger: true,
+    requirePhrase: '確認刪除',
+  });
+  if(!ok) return;
   try{
     const removed = await DataStore.wipeCollection('quizVotes');
     toast(`已清空 ${removed} 筆作答紀錄`);
