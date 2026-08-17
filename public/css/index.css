@@ -113,8 +113,9 @@
 .ir-sub{font-size:13px;color:var(--ink-soft);margin-top:4px;}
 /* 「時間」那一列的捷徑：捲到下面的當日流程 */
 .ir-jump{display:inline-block;margin-top:6px;font-size:12.5px;letter-spacing:.12em;
-  color:var(--primary-deep);text-decoration:none;border-bottom:1px solid var(--line);
-  padding-bottom:2px;transition:color .25s,border-color .25s;}
+  color:var(--primary-deep);text-decoration:none;border:none;border-bottom:1px solid var(--line);
+  padding:0 0 2px;background:none;cursor:pointer;font-family:var(--font-body);
+  transition:color .25s,border-color .25s;}
 .ir-jump:hover{color:var(--ink);border-bottom-color:var(--ink);}
 .info-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:30px;}
 .info-actions .btn{text-decoration:none;text-align:center;}
@@ -242,6 +243,10 @@
 .lc-modal-sub[hidden]{display:none;}
 .lc-modal-body{
   margin-top:20px;padding-top:20px;border-top:1px solid var(--line-soft);
+}
+.lc-modal-img{display:block;width:100%;max-height:340px;object-fit:cover;
+  border-radius:var(--radius);margin-bottom:16px;background:var(--bg2);}
+.lc-modal-text{
   font-size:15px;line-height:2.1;letter-spacing:.04em;color:var(--ink);
   white-space:pre-wrap;word-break:break-word;
 }

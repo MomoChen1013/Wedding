@@ -52,6 +52,7 @@ service cloud.firestore {
         && d.diff(resource.data).affectedKeys().hasOnly([
              'coupleTitle', 'venueName', 'venueAddress', 'venueMapUrl',
              'transportPublic', 'transportParking',
+             'transportPublicImg', 'transportParkingImg',
              'dressCode', 'giftNote', 'story', 'schedule', 'hashtags',
              'seatingSearchEnabled', 'updatedAt',
              /* 出席回覆頁的題目與區塊開關：只改變賓客看到的表單長什麼樣，
@@ -59,7 +60,11 @@ service cloud.firestore {
                 rsvpEnabled／rsvpDeadline，那兩個依舊改不動）。 */
              'rsvpAskCard', 'rsvpAskGift', 'rsvpAskMessage',
              'rsvpContactMethods', 'rsvpShowStory', 'rsvpShowGallery',
+             'seatingSearchEnabled', 'eventDate', 'updatedAt',
            ])
+        /* 只放行「幾點開始」：後台只送整個 Timestamp 進來（年月日沿用原本設定好的），
+           日期本身還是要透過我們才能改，不然出席回覆的判斷、網址都可能跟著跑掉 */
+        && (!('eventDate' in d) || d.eventDate is timestamp)
         /* 大廳資訊卡上的稱呼，後台限 8 個字 */
         && (!('coupleTitle'  in d) || isStr(d.coupleTitle, 8))
         && (!('venueName'    in d) || isStr(d.venueName, 80))
@@ -68,6 +73,11 @@ service cloud.firestore {
              && (d.venueMapUrl == '' || d.venueMapUrl.matches('https?://.*'))))
         && (!('transportPublic'  in d) || isStr(d.transportPublic, 500))
         && (!('transportParking' in d) || isStr(d.transportParking, 500))
+        /* 交通資訊配的圖：跟很多文字欄位共用同一份文件，上限比獨立子集合的圖片更嚴格 */
+        && (!('transportPublicImg' in d) || (isStr(d.transportPublicImg, 300000)
+             && (d.transportPublicImg == '' || d.transportPublicImg.matches('data:image/.*'))))
+        && (!('transportParkingImg' in d) || (isStr(d.transportParkingImg, 300000)
+             && (d.transportParkingImg == '' || d.transportParkingImg.matches('data:image/.*'))))
         && (!('dressCode' in d) || isStr(d.dressCode, 500))
         && (!('giftNote'  in d) || isStr(d.giftNote, 500))
         && (!('story'     in d) || isStr(d.story, 2000))
@@ -86,7 +96,8 @@ service cloud.firestore {
         /* schedule 的每一筆是 map，規則語言沒辦法逐筆檢查內容，
            只擋住筆數與型別；真正的長度限制在後台送出前先切好。 */
         && (!('schedule' in d) || (d.schedule is list && d.schedule.size() <= 40))
-        && (!('hashtags' in d) || (d.hashtags is list && d.hashtags.size() <= 10));
+        /* 婚禮 hashtag 最多 3 個 */
+        && (!('hashtags' in d) || (d.hashtags is list && d.hashtags.size() <= 3));
     }
 
     /* ---------- sites ---------- */

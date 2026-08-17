@@ -940,7 +940,9 @@ console.log('\n[15] 後台改得動大廳文案');
     site.status === 'published' && site.ownerEmails.join() === 'couple@example.com',
     `${site.status} / ${site.ownerEmails.join()}`);
 
-  /* 當日流程：兩列 */
+  /* 當日流程：現在是大廳內容底下的子分頁，要先切過去 */
+  await page.click('.ad-subtabs[data-subtabs="lobby"] .ad-subtab[data-subtab="schedule"]');
+  await page.waitForSelector('.ad-subpanel[data-subpanel="schedule"].is-on');
   await page.fill('#adSchList .ad-sch-row:nth-child(1) .ad-sch-time', '11:30');
   await page.fill('#adSchList .ad-sch-row:nth-child(1) .ad-sch-title', '入場迎賓');
   await page.fill('#adSchList .ad-sch-row:nth-child(1) .ad-sch-desc', '簽到、拍照');
@@ -1121,7 +1123,7 @@ console.log('\n[17] 後台只顯示有開的頁面');
     Array.from(document.querySelectorAll('.ad-tab'))
       .filter((b) => !b.hidden).map((b) => b.dataset.tab));
   ok('關掉的頁面不出現編輯分頁',
-    shown.join(',') === 'rsvp,inbox,lobby,explore', shown.join(','));
+    shown.join(',') === 'rsvp,inbox,lobby', shown.join(','));
   ok('大廳內容永遠在', shown.includes('lobby'));
 
   ok('後台分頁無 console 錯誤', realErrors(errors).length === 0,
@@ -1270,6 +1272,9 @@ const LONG_OPT = '這是一個故意寫得非常長的選項內容，長到一�
   await page.check('.ad-quiz-ans input[data-oi="2"]');
   await page.click('#adQuizForm button[type="submit"]');
   await page.waitForFunction(() => DataStore.getQuiz().length === 4, null, { timeout:15000 });
+  /* admin SDK 讀到的 emulator 資料偶爾會落後瀏覽器端的 onSnapshot 一拍，
+     這裡跟其他段落一樣多等一下再查，不然讀到的還是寫入前的快照 */
+  await page.waitForTimeout(1000);
 
   const added = (await quizCol.orderBy('order').get()).docs.map((d) => d.data()).pop();
   ok('新題目排在最後', added.order === 4, String(added.order));
@@ -1278,20 +1283,30 @@ const LONG_OPT = '這是一個故意寫得非常長的選項內容，長到一�
     `${added.type} / ${added.answer.join(',')}`);
   ok('選項內容照原文存下來', added.opts[0] === LONG_OPT, added.opts[0]);
 
-  /* 調順序：把第一題往後移 */
+  /* 調順序：拖曳第一題的把手，跨過第二題放開（取代原本的 ↓ 按鈕） */
   const before = (await quizCol.orderBy('order').get()).docs.map((d) => d.id);
-  await page.click('#adQuizList .ad-item:nth-child(1) [data-quiz-down]');
+  const item1 = page.locator('#adQuizList .ad-quiz-item').nth(0);
+  const item2 = page.locator('#adQuizList .ad-quiz-item').nth(1);
+  const handleBox = await item1.locator('.ad-drag-handle').boundingBox();
+  const item2Box   = await item2.boundingBox();
+  await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(
+    handleBox.x + handleBox.width / 2, item2Box.y + item2Box.height + 6, { steps: 10 });
+  await page.mouse.up();
   await page.waitForTimeout(1800);
   const after = (await quizCol.orderBy('order').get()).docs.map((d) => d.id);
-  ok('↓ 把第一題換到第二題',
+  ok('拖曳把第一題換到第二題',
     after[0] === before[1] && after[1] === before[0], after.slice(0, 2).join(' → '));
   ok('順序仍然是連號 1…4',
     (await quizCol.orderBy('order').get()).docs
       .map((d) => d.data().order).join(',') === '1,2,3,4');
 
-  /* 刪一題 */
+  /* 刪一題：點刪除後要在站內的確認 modal 上再按一次確定 */
   const delId = after[after.length - 1];
   await page.click(`#adQuizList [data-del-quiz="${delId}"]`);
+  await page.waitForSelector('#adModalMask:not([hidden])', { timeout:5000 });
+  await page.click('#adModalConfirm');
   await page.waitForFunction(() => DataStore.getQuiz().length === 3, null, { timeout:15000 });
   ok('刪得掉題目', (await quizCol.get()).size === 3, `${(await quizCol.get()).size} 題`);
 
@@ -1412,14 +1427,14 @@ console.log('\n[20b] 賓客做測驗');
 {
   /* 再打開，賓客那一側就回到原本的樣子 */
   await adb.collection('sites').doc(siteIds[SLUG]).update({ seatingSearchEnabled: true });
-  const seatPage = (await visit(`/w/${SLUG}/seating`)).page;
+  const { page: seatPage } = await visit(`/w/${SLUG}/seating`);
   ok('重新打開後搜尋又回來了',
     !(await seatPage.evaluate(() => document.getElementById('stSearch').hidden)));
   await seatPage.close();
 
-  /* 後台看得到剛剛那筆作答，也清得掉 */
+  /* 後台看得到剛剛那筆作答，也清得掉 —— 危險操作現在走站內的確認 modal，
+     整批清空要打「確認刪除」才能按確定，不是原生 confirm() 了 */
   const { page } = await visit(`/w/${SLUG}/admin`);
-  page.on('dialog', (d) => d.accept());
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
   await page.click('.ad-tab[data-tab="quiz"]');
@@ -1429,6 +1444,9 @@ console.log('\n[20b] 賓客做測驗');
     await page.textContent('#adQuizVoteCount'));
 
   await page.click('#adQuizWipe');
+  await page.waitForSelector('#adModalMask:not([hidden])', { timeout:5000 });
+  await page.fill('#adModalPhrase', '確認刪除');
+  await page.click('#adModalConfirm');
   await page.waitForTimeout(1800);
   ok('新人清得掉作答紀錄', (await voteCol.get()).size === 0, `${(await voteCol.get()).size} 筆`);
   ok('題目沒被一起清掉', (await quizCol.get()).size === 4, `${(await quizCol.get()).size} 題`);
@@ -1543,7 +1561,7 @@ for(const key of ['', 'wall', 'invitation', 'quiz', 'seating', 'letter']){
 }
 
 {
-  /* 後台分頁多，手機上要能橫向滑動，但不能把整頁撐寬 */
+  /* 手機上側欄選單收成抽屜，不能把整頁撐寬；漢堡按鈕要點得開、選得到分頁 */
   const page = await newPage({ viewport:{ width:375, height:812 } });
   await page.goto(`${BASE}/w/${SLUG}/admin`, { waitUntil:'domcontentloaded' });
   await page.waitForFunction(
@@ -1554,11 +1572,16 @@ for(const key of ['', 'wall', 'invitation', 'quiz', 'seating', 'letter']){
   const overflow = await page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth);
   ok('/admin 無水平捲動', overflow <= 1, `溢出 ${overflow}px`);
-  ok('分頁列可以橫向滑動',
-    await page.evaluate(() => {
-      const el = document.getElementById('adTabs');
-      return el.scrollWidth > el.clientWidth;
-    }));
+
+  ok('漢堡按鈕在手機上看得到', await page.isVisible('#adMenuBtn'));
+  await page.click('#adMenuBtn');
+  await page.waitForSelector('#adSide.is-open', { timeout:5000 });
+  await page.click('.ad-tab[data-tab="seating"]');
+  await page.waitForFunction(
+    () => document.querySelector('.ad-tab.is-on')?.dataset.tab === 'seating', null, { timeout:5000 });
+  ok('點分頁後抽屜會自動收起來',
+    await page.evaluate(() => !document.getElementById('adSide').classList.contains('is-open')));
+  ok('網址跟著切到 #seating', page.url().endsWith('#seating'));
   await page.close();
 }
 

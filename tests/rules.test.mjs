@@ -1007,6 +1007,37 @@ describe('sites 的大廳文案更新', () => {
     }));
     await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
       rsvpAskCard: false, rsvpDeadline: Timestamp.fromDate(new Date('2099-01-01')),
+    }));       
+  }); 
+
+  it('婚禮 hashtag 最多 3 個', async () => {
+    const db = ownerDb();
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      hashtags: ['#a', '#b', '#c'],
+    }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      hashtags: ['#a', '#b', '#c', '#d'],
+    }));
+  });
+
+
+  it('交通資訊可以各配一張圖，型別跟大小要合法', async () => {
+    const db = ownerDb();
+    const tinyImg = 'data:image/jpeg;base64,' + 'a'.repeat(100);
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      transportPublicImg: tinyImg,
+      transportParkingImg: tinyImg,
+    }));
+    /* 移除圖片：空字串合法 */
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      transportPublicImg: '',
+    }));
+    /* 不是 data:image/... 開頭的一律擋下 */
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      transportPublicImg: 'https://evil.example.com/x.jpg',
+    }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      transportParkingImg: 'data:image/jpeg;base64,' + 'a'.repeat(300001),
     }));
   });
 
@@ -1064,6 +1095,20 @@ describe('sites 的大廳文案更新', () => {
     }));
     await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
       transportParking: '車'.repeat(501),
+    }));
+  });
+
+  it('新人可以改婚禮開始時間，但要是合法的 Timestamp', async () => {
+    const db = ownerDb();
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      eventDate: Timestamp.fromDate(new Date('2026-03-15T05:30:00Z')),
+    }));
+    /* 塞字串／數字進去（不是 Timestamp）要被擋下 */
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      eventDate: '2026-03-15T05:30:00Z',
+    }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      eventDate: Date.now(),
     }));
   });
 
