@@ -184,7 +184,7 @@ function buildWed(site) {
     bride, brideCn: bride,
     couple: groom && bride ? `${groom} & ${bride}` : (groom || bride),
     coupleCn: groom && bride ? `${groom} ♡ ${bride}` : (groom || bride),
-    /* 新人自己寫的稱呼（後台限 8 個字），沒填就沿用上面的 couple */
+    /* 新人自己寫的稱呼（後台限 20 個字），沒填就沿用上面的 couple */
     coupleTitle: site.coupleTitle || '',
 
     date: ev ? `${parts.year}.${parts.month}.${parts.day}` : '',

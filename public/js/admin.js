@@ -1645,10 +1645,10 @@ function zonedTimeToDate(y, m, d, hh, mm, tz){
   return new Date(guess.getTime() + (guess.getTime() - asIfUtc));
 }
 
-/* 大廳上的稱呼限 8 個「字」。
+/* 大廳上的稱呼限 20 個「字」。
    emoji 之類的字元在 JS 裡佔兩格，用 [...str] 拆成字元陣列才數得準
    —— 和 Security Rules 的 size() 算法一致。 */
-const COUPLE_TITLE_MAX = 8;
+const COUPLE_TITLE_MAX = 20;
 function clampTitle(s){
   return [...String(s || '').trim()].slice(0, COUPLE_TITLE_MAX).join('');
 }

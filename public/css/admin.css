@@ -171,6 +171,9 @@ body[data-page="admin"]{padding-top:0;}
 .ad-input::placeholder,.ad-textarea::placeholder{color:var(--ink-soft);opacity:.6;}
 .ad-textarea{resize:vertical;min-height:96px;}
 .ad-input-sm{max-width:130px;}
+/* <input type="time"> 的內容是瀏覽器畫的：12 小時制還多了 AM／PM 與時鐘圖示，
+   130px 會把後面截掉，所以時間欄位自己一個寬度 */
+.ad-input-time{width:100%;max-width:200px;}
 
 /* 即時驗證：欄位旁的錯誤訊息 */
 .ad-input.is-invalid,.ad-textarea.is-invalid{border-color:#a4677a;}

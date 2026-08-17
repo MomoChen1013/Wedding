@@ -1087,9 +1087,9 @@ describe('sites 的大廳文案更新', () => {
       venueMapUrl: 'javascript:alert(1)',
     }));
     await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { story: '字'.repeat(2001) }));
-    /* 大廳上的稱呼只給 8 個字 */
-    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), { coupleTitle: '字'.repeat(8) }));
-    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { coupleTitle: '字'.repeat(9) }));
+    /* 大廳上的稱呼只給 20 個字 */
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), { coupleTitle: '字'.repeat(20) }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { coupleTitle: '字'.repeat(21) }));
     await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
       transportPublic: '車'.repeat(501),
     }));

@@ -158,7 +158,7 @@ function setOptionalText(id, boxId, txt){
 }
 
 /* ---------- 新人姓名 ----------
-   coupleTitle 是新人自己寫的稱呼（後台限 8 個字），沒填就用兩人的名字 */
+   coupleTitle 是新人自己寫的稱呼（後台限 20 個字），沒填就用兩人的名字 */
 setText('infoCouple',   W.coupleTitle || W.couple || '');
 setText('infoCoupleCn', W.coupleCn || '');
 
