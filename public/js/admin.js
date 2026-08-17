@@ -2,15 +2,15 @@
    admin.js — 新人後台
    ------------------------------------------------------------
    一個地方管九件事：
-     1. 出席回覆 — 賓客送出的 RSVP：統計、篩選、匯出
-     2. 悄悄話   — 賓客投進信箱的悄悄話（原本的 /inbox 頁已併進這裡）
-     3. 大廳內容 — 地點、Dress Code、禮金說明、當日流程（寫回 sites 文件）
-     4. 桌次     — 上傳桌次圖、匯入賓客名單
-     5. 祝福信   — 寫給特定賓客的電子信
-     6. 首頁卡片 — Explore 區的自訂模組（連結型／彈窗型）
-     7. 囍卡     — 抽卡頁的卡池：裁切上傳照片、設等級與說明
-     8. 展覽     — 戀愛時光的展品與章節分隔卡
-     9. 測驗     — 「看你多了解我們」的題目、選項與正確答案
+     1. 出席回覆   — 賓客送出的 RSVP：統計、篩選、匯出
+     2. 悄悄話     — 賓客投進信箱的悄悄話（原本的 /inbox 頁已併進這裡）
+     3. 大廳內容   — 地點、Dress Code、禮金說明、當日流程（寫回 sites 文件）
+     4. 桌次       — 上傳桌次圖、匯入賓客名單
+     5. 感謝信     — 寫給特定賓客的電子信
+     6. 首頁卡片   — Explore 區的自訂模組（連結型／彈窗型）
+     7. 婚禮小卡   — 抽卡頁的卡池：裁切上傳照片、設等級與說明
+     8. 新人故事牆 — 戀愛時光的故事與章節分隔卡
+     9. 熟悉測驗   — 「看你多了解我們」的題目、選項與正確答案
 
    門檻是 Google 登入，不是密碼：
    Security Rules 只讓 sites.ownerEmails 名單內、信箱已驗證的帳號讀寫，
@@ -119,14 +119,26 @@ function setFieldError(el, msg){
   err.textContent = msg || '';
 }
 
+/* 表單重置時用：連「動過沒」一起清掉，重開彈窗才是一張乾淨的表單 */
+function clearFieldError(el){
+  el._adTouched = false;
+  setFieldError(el, '');
+}
+
 function liveValidate(el, validateFn){
   const run = ()=>{
     const msg = validateFn(el.value);
     setFieldError(el, msg);
     return !msg;
   };
-  el.addEventListener('blur', run);
-  el.addEventListener('input', ()=>{ if(el.classList.contains('is-invalid')) run(); });
+  /* 沒動過的空欄位不會因為「路過」就變紅：一來剛打開彈窗就被罵很煩，
+     二來錯誤訊息一冒出來會把底下的按鈕往下推，使用者按到一半的那一下就落空了。
+     真的要送出時還是會整份驗一次（submit 各自呼叫 _adValidate）。 */
+  el.addEventListener('blur', ()=>{ if(el._adTouched || el.value.trim()) run(); });
+  el.addEventListener('input', ()=>{
+    el._adTouched = true;
+    if(el.classList.contains('is-invalid')) run();
+  });
   el._adValidate = run;
   return run;
 }
@@ -271,6 +283,22 @@ function confirmModal({ title, message, danger, requirePhrase, confirmText, canc
 }
 
 /* ============================================================
+   表單彈窗（桌次名單、感謝信、故事牆、測驗題目、自訂內容共用）
+   ------------------------------------------------------------
+   點灰底、按 Esc 都等於「取消」。要先問一句再關的彈窗（例如
+   貼了一半的桌次名單）就自己傳 requestClose 進來接手。
+   確認框自己也吃 Esc，兩層一起關掉會很怪，所以它開著的時候不動作。
+============================================================ */
+function registerFormModal(mask, requestClose){
+  const close = requestClose || (()=>{ mask.hidden = true; });
+  mask.addEventListener('click', (e)=>{ if(e.target === mask) close(); });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape' && !mask.hidden && modalMaskEl.hidden) close();
+  });
+  return close;
+}
+
+/* ============================================================
    單筆刪除：復原 toast（5 秒內可以按「復原」）
    ------------------------------------------------------------
    confirm 完先在畫面上藏起來（不是真的刪），5 秒後才真的送出刪除；
@@ -325,7 +353,7 @@ function showError(msg){
    哪一個分頁對應到哪一個頁面開關
    ------------------------------------------------------------
    這組新人沒開的頁面，後台就不該出現那一區的編輯內容 ——
-   關掉「抽卡」卻還在後台傳囍卡，傳完賓客也看不到。
+   關掉「抽卡」卻還在後台傳婚禮小卡，傳完賓客也看不到。
    值是 null 代表「永遠都在」：大廳是必開的頁面。
 ============================================================ */
 const TAB_PAGE = {
@@ -441,10 +469,14 @@ if(!ownerEmails().length){
 /* ============================================================
    分頁路由
    ------------------------------------------------------------
-   網址格式：#tab 或 #tab/subtab（目前只有大廳「lobby」底下有子分頁）。
+   網址格式：#tab 或 #tab/subtab（有橫向子分頁的分頁見 SUBTABS）。
    這樣重新整理、分享連結、瀏覽器上一頁都能回到原本開著的那一頁。
 ============================================================ */
-const LOBBY_SUBTABS = ['info', 'schedule', 'explore'];
+const SUBTABS = {
+  lobby:   ['info', 'schedule', 'explore'],
+  seating: ['map', 'list'],
+  quiz:    ['questions', 'votes'],
+};
 
 function parseHash(){
   const raw = location.hash.replace(/^#/, '');
@@ -456,11 +488,14 @@ function tabButtons(){
   return Array.from(document.querySelectorAll('#adSide .ad-tab'));
 }
 
-function activateLobbySubtab(subtab){
-  const valid = LOBBY_SUBTABS.includes(subtab) ? subtab : 'info';
-  document.querySelectorAll('.ad-subtabs[data-subtabs="lobby"] .ad-subtab').forEach(b =>
+/* 對不上的子分頁一律退回第一個（清單的第一項就是預設） */
+function activateSubtab(tab, subtab){
+  const list = SUBTABS[tab];
+  if(!list) return '';
+  const valid = list.includes(subtab) ? subtab : list[0];
+  document.querySelectorAll(`.ad-subtabs[data-subtabs="${tab}"] .ad-subtab`).forEach(b =>
     b.classList.toggle('is-on', b.dataset.subtab === valid));
-  document.querySelectorAll('.ad-panel[data-panel="lobby"] .ad-subpanel').forEach(p =>
+  document.querySelectorAll(`.ad-panel[data-panel="${tab}"] .ad-subpanel`).forEach(p =>
     p.classList.toggle('is-on', p.dataset.subpanel === valid));
   return valid;
 }
@@ -477,8 +512,8 @@ function activateTab(tab, subtab){
     p.classList.toggle('is-on', p.dataset.panel === target.dataset.tab));
 
   let wantHash = `#${target.dataset.tab}`;
-  if(target.dataset.tab === 'lobby'){
-    wantHash = `#lobby/${activateLobbySubtab(subtab)}`;
+  if(SUBTABS[target.dataset.tab]){
+    wantHash = `#${target.dataset.tab}/${activateSubtab(target.dataset.tab, subtab)}`;
   }
 
   closeDrawer();
@@ -500,14 +535,15 @@ window.addEventListener('hashchange', ()=>{
 document.getElementById('adSide').addEventListener('click', (e)=>{
   const btn = e.target.closest('.ad-tab');
   if(!btn || btn.hidden) return;
-  location.hash = btn.dataset.tab === 'lobby' ? 'lobby/info' : btn.dataset.tab;
+  const tab = btn.dataset.tab;
+  location.hash = SUBTABS[tab] ? `${tab}/${SUBTABS[tab][0]}` : tab;
 });
 
-document.querySelectorAll('.ad-subtabs[data-subtabs="lobby"]').forEach(nav => {
+document.querySelectorAll('.ad-subtabs').forEach(nav => {
   nav.addEventListener('click', (e)=>{
     const btn = e.target.closest('.ad-subtab');
     if(!btn) return;
-    location.hash = `lobby/${btn.dataset.subtab}`;
+    location.hash = `${nav.dataset.subtabs}/${btn.dataset.subtab}`;
   });
 });
 
@@ -892,17 +928,10 @@ function visibleLetters(){
     normKey(l.name).includes(q) || normKey(l.text).includes(q));
 }
 
-function todayLetterCount(){
-  const start = new Date().setHours(0, 0, 0, 0);
-  return DataStore.getLetters().filter(l => (l.time || 0) >= start).length;
-}
-
 function renderInbox(){
   const all  = allLetters();
   const list = visibleLetters();
 
-  document.getElementById('adInboxTotal').textContent = all.length;
-  document.getElementById('adInboxToday').textContent = todayLetterCount();
   document.getElementById('adInboxCount').textContent =
     list.length === all.length ? `目前 ${all.length} 封` : `${list.length} / ${all.length} 封`;
 
@@ -1151,7 +1180,34 @@ function parseSeatRows(text){
   return { rows, bad };
 }
 
+/* ---------- 匯入名單的彈窗 ----------
+   「取消匯入」＝放棄剛剛貼進來的這一份，所以要再問一次才真的關掉。 */
+const seatModalMask = document.getElementById('adSeatModalMask');
 const bulkEl = document.getElementById('adSeatBulk');
+
+function openSeatModal(){
+  seatModalMask.hidden = false;
+  bulkEl.focus();
+}
+
+async function cancelSeatImport(){
+  if(bulkEl.value.trim()){
+    const ok = await confirmModal({
+      title: '取消匯入',
+      message: '要放棄剛剛貼進來的這一份名單嗎？關掉之後內容不會留著。',
+      danger: true,
+      confirmText: '放棄這份名單',
+      cancelText: '繼續編輯',
+    });
+    if(!ok) return;
+  }
+  bulkEl.value = '';
+  seatModalMask.hidden = true;
+}
+
+registerFormModal(seatModalMask, cancelSeatImport);
+document.getElementById('adSeatImportOpen').addEventListener('click', openSeatModal);
+document.getElementById('adSeatCancel').addEventListener('click', cancelSeatImport);
 
 document.getElementById('adSeatImport').addEventListener('click', async ()=>{
   const { rows, bad } = parseSeatRows(bulkEl.value);
@@ -1167,6 +1223,7 @@ document.getElementById('adSeatImport').addEventListener('click', async ()=>{
   try{
     await DataStore.importSeating(rows);
     bulkEl.value = '';
+    seatModalMask.hidden = true;
     toast(bad.length
       ? `已匯入 ${rows.length} 位；第 ${bad.join('、')} 行格式不完整，已略過`
       : `已匯入 ${rows.length} 位`);
@@ -1185,6 +1242,7 @@ document.getElementById('adSeatClear').addEventListener('click', async ()=>{
   if(!ok) return;
   try{
     await DataStore.wipeCollection('seating');
+    seatModalMask.hidden = true;
     toast('名單已清空');
   }catch(err){ writeFailed(err); }
 });
@@ -1209,8 +1267,14 @@ function renderSeatList(){
     : all;
 
   if(!filtered.length){
-    seatListEl.innerHTML = `<div class="ad-empty">${
-      all.length ? '沒有符合的賓客' : '還沒有名單，用上面的欄位匯入'}</div>`;
+    seatListEl.innerHTML = all.length
+      ? `<div class="ad-empty">沒有符合的賓客</div>`
+      : `<div class="ad-empty">
+           還沒有桌次名單
+           <div class="ad-row" style="justify-content:center">
+             <button class="btn small ghost" id="adSeatEmptyImport" type="button">匯入名單</button>
+           </div>
+         </div>`;
     renderPager(seatListEl, seatPager, 0, renderSeatList);
     return;
   }
@@ -1233,6 +1297,7 @@ document.addEventListener('data:seating', renderSeatList);
 seatFilterEl.addEventListener('input', ()=>{ seatPager.page = 1; renderSeatList(); });
 
 seatListEl.addEventListener('click', async (e)=>{
+  if(e.target.id === 'adSeatEmptyImport'){ openSeatModal(); return; }
   const id = e.target.dataset.delSeat;
   if(!id) return;
   const ok = await confirmModal({ title:'刪除賓客', message:'確定要把這位賓客從桌次名單移除嗎？' });
@@ -1241,9 +1306,13 @@ seatListEl.addEventListener('click', async (e)=>{
 });
 
 /* ============================================================
-   2. 祝福信
+   2. 感謝信
+   ------------------------------------------------------------
+   畫面上只看得到已經寫好的信；「寫一封信」與「編輯」都開同一個彈窗。
 ============================================================ */
 const lf = {
+  modalMask:  document.getElementById('adLetterModalMask'),
+  modalTitle: document.getElementById('adLetterModalTitle'),
   form:    document.getElementById('adLetterForm'),
   id:      document.getElementById('adLetterId'),
   terms:   document.getElementById('adLetterTerms'),
@@ -1262,10 +1331,32 @@ function resetLetterForm(){
   lf.form.reset();
   lf.id.value = '';
   lf.len.textContent = '0';
-  setFieldError(lf.body, '');
-  setFieldError(lf.terms, '');
+  clearFieldError(lf.body);
+  clearFieldError(lf.terms);
 }
-document.getElementById('adLetterReset').addEventListener('click', resetLetterForm);
+
+function openLetterModal(b){
+  resetLetterForm();
+  if(b){
+    lf.modalTitle.textContent = '編輯這封信';
+    lf.id.value      = b.id;
+    lf.terms.value   = (b.terms || []).join(', ');
+    lf.title.value   = b.title || '';
+    lf.body.value    = b.body  || '';
+    lf.sign.value    = b.sign  || '';
+    lf.isDef.checked = b.isDefault === true;
+    lf.len.textContent = lf.body.value.length;
+  }else{
+    lf.modalTitle.textContent = '寫一封信';
+  }
+  lf.modalMask.hidden = false;
+  lf.terms.focus();
+}
+function closeLetterModal(){ lf.modalMask.hidden = true; }
+
+registerFormModal(lf.modalMask, closeLetterModal);
+document.getElementById('adLetterAddBtn').addEventListener('click', ()=> openLetterModal(null));
+document.getElementById('adLetterCancelBtn').addEventListener('click', closeLetterModal);
 
 lf.form.addEventListener('submit', async (e)=>{
   e.preventDefault();
@@ -1293,6 +1384,7 @@ lf.form.addEventListener('submit', async (e)=>{
       isDefault: lf.isDef.checked,
       time: Date.now(),
     });
+    closeLetterModal();
     resetLetterForm();
     toast('信已儲存');
   }catch(err){ writeFailed(err); }
@@ -1305,7 +1397,13 @@ function renderLetters(){
   }
   const list = DataStore.getBlessings().filter(b => !isPendingDelete('blessings', b.id));
   if(!list.length){
-    lf.list.innerHTML = `<div class="ad-empty">還沒有寫任何一封信</div>`;
+    lf.list.innerHTML = `
+      <div class="ad-empty">
+        還沒有寫任何一封感謝信
+        <div class="ad-row" style="justify-content:center">
+          <button class="btn small ghost" id="adLetterEmptyAddBtn" type="button">寫一封信</button>
+        </div>
+      </div>`;
     return;
   }
   lf.list.innerHTML = list.map(b => `
@@ -1329,27 +1427,20 @@ function renderLetters(){
 document.addEventListener('data:blessings', renderLetters);
 
 lf.list.addEventListener('click', async (e)=>{
+  if(e.target.id === 'adLetterEmptyAddBtn'){ openLetterModal(null); return; }
   const editId = e.target.dataset.editLetter;
   const delId  = e.target.dataset.delLetter;
 
   if(editId){
     const b = DataStore.getBlessings().find(x => x.id === editId);
-    if(!b) return;
-    lf.id.value    = b.id;
-    lf.terms.value = (b.terms || []).join(', ');
-    lf.title.value = b.title || '';
-    lf.body.value  = b.body || '';
-    lf.sign.value  = b.sign || '';
-    lf.isDef.checked = b.isDefault === true;
-    lf.len.textContent = lf.body.value.length;
-    lf.form.scrollIntoView({ behavior:'smooth', block:'start' });
+    if(b) openLetterModal(b);
     return;
   }
 
   if(delId){
-    const ok = await confirmModal({ title:'刪除祝福信', message:'確定要刪掉這封信嗎？' });
+    const ok = await confirmModal({ title:'刪除感謝信', message:'確定要刪掉這封信嗎？' });
     if(!ok) return;
-    if(lf.id.value === delId) resetLetterForm();
+    if(lf.id.value === delId){ closeLetterModal(); resetLetterForm(); }
     scheduleUndoDelete('blessings', delId, '這封信', renderLetters);
   }
 });
@@ -1397,7 +1488,7 @@ liveValidate(ef.body, (v)=> ef.kind.value === 'popup' ? notBlank('彈出視窗�
 
 function openExpModal(it){
   ef.form.reset();
-  [ef.title, ef.url, ef.body].forEach(el => setFieldError(el, ''));
+  [ef.title, ef.url, ef.body].forEach(clearFieldError);
 
   if(it){
     ef.modalTitle.textContent = '編輯自訂內容';
@@ -1421,12 +1512,9 @@ function openExpModal(it){
 }
 function closeExpModal(){ ef.modalMask.hidden = true; }
 
+registerFormModal(ef.modalMask, closeExpModal);
 document.getElementById('adExpAddBtn').addEventListener('click', ()=> openExpModal(null));
 ef.cancelBtn.addEventListener('click', closeExpModal);
-ef.modalMask.addEventListener('click', (e)=>{ if(e.target === ef.modalMask) closeExpModal(); });
-document.addEventListener('keydown', (e)=>{
-  if(e.key === 'Escape' && !ef.modalMask.hidden) closeExpModal();
-});
 
 ef.deleteBtn.addEventListener('click', async ()=>{
   const id = ef.id.value;
@@ -1758,7 +1846,7 @@ document.getElementById('adSchSave').addEventListener('click', async ()=>{
 });
 
 /* ============================================================
-   5. 囍卡（抽卡頁的卡池）
+   5. 婚禮小卡（抽卡頁的卡池）
    ------------------------------------------------------------
    照片先讓新人自己裁成 2:3（cropper.js），再以 data URL 存進文件，
    理由與桌次圖相同：Firebase Storage 的規則讀不到 Firestore，
@@ -1792,7 +1880,7 @@ async function uploadCards(files){
         aspect:   CARD_ASPECT,
         outWidth: CARD_OUTWIDTH,
         maxBytes: CARD_MAX_BYTES,
-        title:    `裁切囍卡（${i + 1} / ${list.length}）`,
+        title:    `裁切婚禮小卡（${i + 1} / ${list.length}）`,
         hint:     '直式 2:3・拖曳移動、滑桿或滾輪縮放',
       });
       if(!img){ skipped++; continue; }     /* 新人自己按了取消 */
@@ -1800,7 +1888,7 @@ async function uploadCards(files){
       order += 1;
       await DataStore.saveDoc('cards', null, {
         img,
-        name:   file.name.replace(/\.[^.]+$/, '').slice(0, 60) || `囍卡 ${order}`,
+        name:   file.name.replace(/\.[^.]+$/, '').slice(0, 60) || `婚禮小卡 ${order}`,
         rarity: 'N',
         desc:   '',
         order,
@@ -1809,14 +1897,14 @@ async function uploadCards(files){
       done++;
     }catch(err){
       failed++;
-      console.warn('[admin] 囍卡上傳失敗', file.name, err);
+      console.warn('[admin] 婚禮小卡上傳失敗', file.name, err);
     }
   }
 
   cardProgEl.hidden = true;
   cardFileEl.value = '';
   if(failed) toast(`已加入 ${done} 張，${failed} 張失敗（可能是格式不支援）`, true);
-  else if(done) toast(`已加入 ${done} 張囍卡${skipped ? `（略過 ${skipped} 張）` : ''}`);
+  else if(done) toast(`已加入 ${done} 張婚禮小卡${skipped ? `（略過 ${skipped} 張）` : ''}`);
   else if(skipped) toast('沒有加入任何一張');
 }
 
@@ -1843,7 +1931,7 @@ function renderCards(){
 
   if(!list.length){
     cardListEl.innerHTML =
-      `<div class="ad-empty">還沒有囍卡<br>沒上傳的話，抽卡頁會沿用素材資料夾或內建的範例卡</div>`;
+      `<div class="ad-empty">還沒有婚禮小卡<br>沒上傳的話，抽卡頁會沿用素材資料夾或內建的範例卡</div>`;
     return;
   }
 
@@ -1902,7 +1990,7 @@ cardListEl.addEventListener('click', async (e)=>{
       aspect:   CARD_ASPECT,
       outWidth: CARD_OUTWIDTH,
       maxBytes: CARD_MAX_BYTES,
-      title:    '重新裁切囍卡',
+      title:    '重新裁切婚禮小卡',
     });
     if(!img) return;
     try{
@@ -1920,25 +2008,29 @@ cardListEl.addEventListener('click', async (e)=>{
   }
 
   if(delId){
-    const ok = await confirmModal({ title:'刪除囍卡', message:'確定要刪掉這張囍卡嗎？' });
+    const ok = await confirmModal({ title:'刪除婚禮小卡', message:'確定要刪掉這張小卡嗎？' });
     if(!ok) return;
-    scheduleUndoDelete('cards', delId, '這張囍卡', renderCards);
+    scheduleUndoDelete('cards', delId, '這張婚禮小卡', renderCards);
   }
 });
 
 /* ============================================================
-   6. 展覽（戀愛時光）
+   6. 新人故事牆（戀愛時光）
    ------------------------------------------------------------
-   兩種型態，用同一個表單填：
-     kind='photo' → 時間軸上的一張展品（照片可留空，只放文字）
+   兩種型態，用同一個彈窗填：
+     kind='photo' → 時間軸上的一則故事（照片可留空，只放文字）
      kind='act'   → 章節分隔卡（title 是章節名、sub 是副標）
-   排序欄位決定先後，章節卡要排在它底下那些展品前面。
+   排序欄位決定先後，章節卡要排在它底下那些故事前面。
+   新人第一次打開這個分頁、內容還是空的時候，會把 EXHIBIT_DEFAULTS
+   整份寫進來當起點（做法與測驗題目相同），之後改／刪都可以。
 ============================================================ */
 const EXH_OUTWIDTH = 900;
-/* 展品也是整頁一次載完，同樣壓小一點（理由見囍卡） */
+/* 故事牆也是整頁一次載完，同樣壓小一點（理由見婚禮小卡） */
 const EXH_MAX_BYTES = 250000;
 
 const xf = {
+  modalMask:  document.getElementById('adExhModalMask'),
+  modalTitle: document.getElementById('adExhModalTitle'),
   form:   document.getElementById('adExhForm'),
   id:     document.getElementById('adExhId'),
   img:    document.getElementById('adExhImg'),
@@ -1971,12 +2063,12 @@ function syncExhKind(){
 xf.kind.addEventListener('change', syncExhKind);
 syncExhKind();
 
-liveValidate(xf.title, (v)=> notBlank(xf.kind.value === 'act' ? '章節名稱' : '展品標題')(v));
+liveValidate(xf.title, (v)=> notBlank(xf.kind.value === 'act' ? '章節名稱' : '故事標題')(v));
 
 function setExhPreview(dataUrl){
   xf.img.value = dataUrl || '';
   xf.prev.innerHTML = dataUrl
-    ? `<img src="${escapeHtml(dataUrl)}" alt="展品照片預覽">`
+    ? `<img src="${escapeHtml(dataUrl)}" alt="故事照片預覽">`
     : `<span>還沒有照片</span>`;
 }
 
@@ -1993,11 +2085,11 @@ xf.file.addEventListener('change', async ()=>{
       aspect:   Number(xf.ratio.value) || 0.75,
       outWidth: EXH_OUTWIDTH,
       maxBytes: EXH_MAX_BYTES,
-      title:    '裁切展品照片',
+      title:    '裁切故事照片',
     });
     if(img) setExhPreview(img);
   }catch(err){
-    console.warn('[admin] 展品裁切失敗', err);
+    console.warn('[admin] 故事照片裁切失敗', err);
     toast('這張圖讀不進來，換一張試試', true);
   }
 });
@@ -2009,9 +2101,38 @@ function resetExhForm(){
   xf.descLen.textContent = '0';
   xf.order.value = String(DataStore.getExhibits().length + 1);
   syncExhKind();
-  setFieldError(xf.title, '');
+  clearFieldError(xf.title);
 }
-document.getElementById('adExhReset').addEventListener('click', resetExhForm);
+
+/* 開彈窗：新增時用按下的那顆按鈕決定是故事還是章節，編輯時帶原本那一筆 */
+function openExhModal(kind, it){
+  resetExhForm();
+  if(it){
+    xf.modalTitle.textContent = it.kind === 'act' ? '編輯章節' : '編輯故事';
+    xf.id.value    = it.id;
+    xf.kind.value  = it.kind === 'act' ? 'act' : 'photo';
+    xf.title.value = it.title || '';
+    xf.sub.value   = it.sub   || '';
+    xf.year.value  = it.year  || '';
+    xf.act.value   = it.act   || '';
+    xf.desc.value  = it.desc  || '';
+    xf.order.value = String(it.order ?? 0);
+    xf.descLen.textContent = xf.desc.value.length;
+    setExhPreview(it.img || '');
+  }else{
+    xf.modalTitle.textContent = kind === 'act' ? '新增章節' : '新增故事';
+    xf.kind.value = kind === 'act' ? 'act' : 'photo';
+  }
+  syncExhKind();
+  xf.modalMask.hidden = false;
+  xf.title.focus();
+}
+function closeExhModal(){ xf.modalMask.hidden = true; }
+
+registerFormModal(xf.modalMask, closeExhModal);
+document.getElementById('adExhAddPhoto').addEventListener('click', ()=> openExhModal('photo', null));
+document.getElementById('adExhAddAct').addEventListener('click', ()=> openExhModal('act', null));
+document.getElementById('adExhCancelBtn').addEventListener('click', closeExhModal);
 
 xf.form.addEventListener('submit', async (e)=>{
   e.preventDefault();
@@ -2020,7 +2141,7 @@ xf.form.addEventListener('submit', async (e)=>{
 
   if(!xf.title._adValidate()){ xf.title.focus(); return; }
   if(kind === 'photo' && !xf.img.value && !xf.desc.value.trim()){
-    toast('展品至少要有一張照片或一段描述', true);
+    toast('故事至少要有一張照片或一段描述', true);
     return;
   }
 
@@ -2036,6 +2157,7 @@ xf.form.addEventListener('submit', async (e)=>{
       order: Number(xf.order.value) || 0,
       time:  Date.now(),
     });
+    closeExhModal();
     resetExhForm();
     toast('已儲存');
   }catch(err){ writeFailed(err); }
@@ -2048,8 +2170,14 @@ function renderExhibits(){
   }
   const list = DataStore.getExhibits().filter(it => !isPendingDelete('exhibits', it.id));
   if(!list.length){
-    xf.list.innerHTML =
-      `<div class="ad-empty">還沒有展品<br>沒設定的話，戀愛時光會沿用素材資料夾或內建的範例</div>`;
+    xf.list.innerHTML = `
+      <div class="ad-empty">
+        還沒有故事牆內容<br>
+        沒設定的話，戀愛時光會沿用素材資料夾或內建的範例
+        <div class="ad-row" style="justify-content:center">
+          <button class="btn small ghost" id="adExhSeed" type="button">載入預設內容來改</button>
+        </div>
+      </div>`;
     return;
   }
   xf.list.innerHTML = list.map(it => `
@@ -2059,7 +2187,7 @@ function renderExhibits(){
         : ''}
       <div class="ad-item-main">
         <span class="ad-item-title">${escapeHtml(it.title || '（沒有標題）')}</span>
-        <span class="ad-tag">${it.kind === 'act' ? '章節' : '展品'}</span>
+        <span class="ad-tag">${it.kind === 'act' ? '章節' : '故事'}</span>
         ${it.year ? `<span class="ad-tag">${escapeHtml(it.year)}</span>` : ''}
         ${it.sub ? `<span class="ad-item-sub">${escapeHtml(it.sub)}</span>` : ''}
         ${it.desc ? `<span class="ad-item-sub">${escapeHtml(it.desc.slice(0, 60))}${
@@ -2072,40 +2200,70 @@ function renderExhibits(){
       </div>
     </div>`).join('');
 }
-document.addEventListener('data:exhibits', renderExhibits);
+
+/* 規則只放行這幾個欄位，預設內容也走這裡組出來的物件（finale 這類旗標會被丟掉） */
+function exhibitFields(it, order){
+  const kind = it.kind === 'act' ? 'act' : 'photo';
+  return {
+    kind,
+    img:   kind === 'photo' ? String(it.img || '') : '',
+    title: String(it.title || '').slice(0, 60),
+    sub:   String(it.sub   || '').slice(0, 60),
+    desc:  kind === 'photo' ? String(it.desc || '').slice(0, 500) : '',
+    year:  kind === 'photo' ? String(it.year || '').slice(0, 20)  : '',
+    act:   kind === 'photo' ? String(it.act  || '').slice(0, 40)  : '',
+    order: Number(order ?? it.order) || 0,
+    time:  it.time || Date.now(),
+  };
+}
+
+/* 第一次打開、故事牆還空著 → 把預設內容寫進來當起點。
+   exhibitSeeded 記在 localStorage（以 siteId 分隔）：
+   新人自己把內容全刪掉之後，不會又被我們補回來。 */
+let exhSeeding = false;
+async function seedExhibits(force){
+  if(exhSeeding) return;
+  if(DataStore.getExhibits().length) return;
+  if(!force && LS.get('exhibitSeeded', false)) return;
+  exhSeeding = true;
+  try{
+    /* 一次全部送出，新人馬上關掉分頁也不會只寫進一半 */
+    await Promise.all(EXHIBIT_DEFAULTS.map((d, i) =>
+      DataStore.saveDoc('exhibits', null, exhibitFields(d, i + 1))));
+    LS.set('exhibitSeeded', true);
+    toast(`已載入 ${EXHIBIT_DEFAULTS.length} 筆預設內容，可以直接改`);
+  }catch(err){
+    writeFailed(err);
+  }
+  exhSeeding = false;
+}
+
+document.addEventListener('data:exhibits', ()=>{
+  renderExhibits();
+  seedExhibits(false);
+});
 
 xf.list.addEventListener('click', async (e)=>{
+  if(e.target.id === 'adExhSeed'){ seedExhibits(true); return; }
   const editId = e.target.dataset.editExh;
   const delId  = e.target.dataset.delExh;
 
   if(editId){
     const it = DataStore.getExhibits().find(x => x.id === editId);
-    if(!it) return;
-    xf.id.value    = it.id;
-    xf.kind.value  = it.kind === 'act' ? 'act' : 'photo';
-    xf.title.value = it.title || '';
-    xf.sub.value   = it.sub   || '';
-    xf.year.value  = it.year  || '';
-    xf.act.value   = it.act   || '';
-    xf.desc.value  = it.desc  || '';
-    xf.order.value = String(it.order ?? 0);
-    xf.descLen.textContent = xf.desc.value.length;
-    setExhPreview(it.img || '');
-    syncExhKind();
-    xf.form.scrollIntoView({ behavior:'smooth', block:'start' });
+    if(it) openExhModal(it.kind, it);
     return;
   }
 
   if(delId){
-    const ok = await confirmModal({ title:'刪除展覽內容', message:'確定要刪掉這一筆嗎？' });
+    const ok = await confirmModal({ title:'刪除故事牆內容', message:'確定要刪掉這一筆嗎？' });
     if(!ok) return;
-    if(xf.id.value === delId) resetExhForm();
+    if(xf.id.value === delId){ closeExhModal(); resetExhForm(); }
     scheduleUndoDelete('exhibits', delId, '這一筆', renderExhibits);
   }
 });
 
 /* ============================================================
-   7. 測驗（「看你多了解我們」的題目）
+   7. 新人熟悉測驗（「看你多了解我們」的題目）
    ------------------------------------------------------------
    一題一份文件：type（單選／複選）、q（題目）、opts（固定四個選項）、
    answer（正確答案的索引陣列）、order（題號順序）。
@@ -2115,6 +2273,8 @@ xf.list.addEventListener('click', async (e)=>{
      會把 QUIZ_DEFAULTS 的 3 題寫進來當起點，之後改／刪／調順序都可以。
 ============================================================ */
 const qz = {
+  modalMask:  document.getElementById('adQuizModalMask'),
+  modalTitle: document.getElementById('adQuizModalTitle'),
   form:    document.getElementById('adQuizForm'),
   id:      document.getElementById('adQuizId'),
   type:    document.getElementById('adQuizType'),
@@ -2154,10 +2314,39 @@ function resetQuizForm(){
   qz.id.value = '';
   qz.qLen.textContent = '0';
   syncQuizType();
-  setFieldError(qz.q, '');
-  qz.optEls.forEach(el => setFieldError(el, ''));
+  clearFieldError(qz.q);
+  qz.optEls.forEach(clearFieldError);
 }
-document.getElementById('adQuizReset').addEventListener('click', resetQuizForm);
+
+function openQuizModal(it){
+  resetQuizForm();
+  if(it){
+    qz.modalTitle.textContent = '編輯題目';
+    qz.id.value   = it.id;
+    qz.type.value = it.type === 'multi' ? 'multi' : 'single';
+    qz.q.value    = it.q || '';
+    qz.qLen.textContent = qz.q.value.length;
+    syncQuizType();
+    const answer = Array.isArray(it.answer) ? it.answer : [];
+    qz.optEls.forEach((el, oi) => { el.value = (it.opts || [])[oi] || ''; });
+    qz.ansEls.forEach((el, oi) => { el.checked = answer.includes(oi); });
+  }else{
+    qz.modalTitle.textContent = '新增題目';
+  }
+  qz.modalMask.hidden = false;
+  qz.q.focus();
+}
+function closeQuizModal(){ qz.modalMask.hidden = true; }
+
+registerFormModal(qz.modalMask, closeQuizModal);
+document.getElementById('adQuizAddBtn').addEventListener('click', ()=>{
+  if(DataStore.getQuiz().length >= QUIZ_LIMITS.MAX_QUESTIONS){
+    toast(`最多 ${QUIZ_LIMITS.MAX_QUESTIONS} 題，要新增請先刪掉一題`, true);
+    return;
+  }
+  openQuizModal(null);
+});
+document.getElementById('adQuizCancelBtn').addEventListener('click', closeQuizModal);
 
 /* 規則只放行這幾個欄位，寫入一律走這裡組出來的物件 */
 function quizFields(it, order){
@@ -2203,6 +2392,7 @@ qz.form.addEventListener('submit', async (e)=>{
   try{
     await DataStore.saveDoc('quiz', editing || null,
       quizFields({ type, q, opts, answer, time: cur && cur.time }, order));
+    closeQuizModal();
     resetQuizForm();
     toast(editing ? '題目已更新' : '已新增一題');
   }catch(err){ writeFailed(err); }
@@ -2363,23 +2553,14 @@ qz.list.addEventListener('click', async (e)=>{
 
   if(d.editQuiz){
     const it = DataStore.getQuiz().find(x => x.id === d.editQuiz);
-    if(!it) return;
-    qz.id.value   = it.id;
-    qz.type.value = it.type === 'multi' ? 'multi' : 'single';
-    qz.q.value    = it.q || '';
-    qz.qLen.textContent = qz.q.value.length;
-    syncQuizType();
-    const answer = Array.isArray(it.answer) ? it.answer : [];
-    qz.optEls.forEach((el, oi) => { el.value = (it.opts || [])[oi] || ''; });
-    qz.ansEls.forEach((el, oi) => { el.checked = answer.includes(oi); });
-    qz.form.scrollIntoView({ behavior:'smooth', block:'start' });
+    if(it) openQuizModal(it);
     return;
   }
 
   if(d.delQuiz){
     const ok = await confirmModal({ title:'刪除題目', message:'確定要刪掉這一題嗎？' });
     if(!ok) return;
-    if(qz.id.value === d.delQuiz) resetQuizForm();
+    if(qz.id.value === d.delQuiz){ closeQuizModal(); resetQuizForm(); }
     scheduleUndoDelete('quiz', d.delQuiz, '這一題', renderQuiz);
   }
 });
