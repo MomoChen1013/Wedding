@@ -59,8 +59,8 @@ service cloud.firestore {
         /* 只放行「幾點開始」：後台只送整個 Timestamp 進來（年月日沿用原本設定好的），
            日期本身還是要透過我們才能改，不然出席回覆的判斷、網址都可能跟著跑掉 */
         && (!('eventDate' in d) || d.eventDate is timestamp)
-        /* 大廳資訊卡上的稱呼，後台限 8 個字 */
-        && (!('coupleTitle'  in d) || isStr(d.coupleTitle, 8))
+        /* 大廳資訊卡上的稱呼，後台限 20 個字 */
+        && (!('coupleTitle'  in d) || isStr(d.coupleTitle, 20))
         && (!('venueName'    in d) || isStr(d.venueName, 80))
         && (!('venueAddress' in d) || isStr(d.venueAddress, 200))
         && (!('venueMapUrl'  in d) || (isStr(d.venueMapUrl, 500)

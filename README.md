@@ -127,7 +127,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 sites/{siteId}
   slug, ownerEmail, status(draft|published|archived)
   groomName, brideName
-  coupleTitle           # 選填，大廳資訊卡上的稱呼（≤8 字），留白就用兩人的名字
+  coupleTitle           # 選填，大廳資訊卡上的稱呼（≤20 字），留白就用兩人的名字
   eventDate(timestamp), eventEndDate(timestamp|null)
   timezone(IANA，預設 Asia/Taipei)
   venueName, venueAddress, venueMapUrl
@@ -540,13 +540,13 @@ public/assets/{slug}/seating/
 
 ---
 
-### 4. 大廳內容（後台「大廳內容」分頁）
+### 4. 婚禮資訊（後台「婚禮資訊」分頁）
 
 大廳（首頁）上的文字，新人自己改：
 
 | 欄位 | 說明 |
 |---|---|
-| 大廳上的稱呼 | 資訊卡最上面那行字，**最多 8 個字**；留白就用兩位的名字 |
+| 標題 | 資訊卡最上面那行字，**最多 20 個字**；留白就用兩位的名字 |
 | 地點名稱 | 資訊卡上的大字 |
 | 地址 | 地點下方的小字，也是「開啟地圖」的預設搜尋字串 |
 | 地圖連結 | 只收 `http(s)://` 開頭；留白就用地址自動開 Google 地圖 |

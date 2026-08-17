@@ -42,7 +42,7 @@ sites/{siteId}
   status          : string   # "draft" | "published" | "archived"
   groomName       : string
   brideName       : string
-  coupleTitle     : string   # 選填，大廳資訊卡上的稱呼（≤8 字）；留白就用兩人的名字
+  coupleTitle     : string   # 選填，大廳資訊卡上的稱呼（≤20 字）；留白就用兩人的名字
   eventDate       : timestamp
   eventEndDate    : timestamp | null   # 婚宴結束時間，加入行事曆用；null 則抓開始後 3 小時
   timezone        : string   # IANA 時區，如 "Asia/Taipei"（見下方說明）
@@ -600,8 +600,9 @@ Firestore 的讀取請求不帶條件，規則無法「只讓對得上的人讀�
 唯一有預設值的是 hashtag —— 沒填就用 `#我們結婚了`、`#Married`，
 大廳開場才不會空一排。
 
-**大廳上的稱呼**（`coupleTitle`）是資訊卡最上面那行字，留白就用兩人的名字。
-限 8 個字：那行字級很大，再長就會在手機上折行、把整張卡的比例壓掉。
+**大廳上的稱呼**（`coupleTitle`）是資訊卡最上面那行字（後台叫「標題」），
+留白就用兩人的名字。限 20 個字：那行字級很大，再長就會在手機上折成好幾行、
+把整張卡的比例壓掉。
 後台與規則各擋一次，計數用 `[...str].length`（拆成字元陣列）而不是
 `str.length`，emoji 之類的字元才不會被算成兩格 —— 和規則的 `size()` 一致。
 
