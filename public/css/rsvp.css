@@ -72,13 +72,30 @@
 
 .rf-hint{margin-top:10px;font-size:12px;letter-spacing:.06em;color:var(--ink-soft);}
 
+/* ---- 聯絡方式：一種一列，左邊窄標籤、右邊輸入框 ---- */
+.rf-contacts{display:flex;flex-direction:column;gap:10px;}
+.rf-contact{display:flex;align-items:center;gap:14px;}
+.rf-contact-name{flex:0 0 72px;font-size:12.5px;letter-spacing:.14em;color:var(--ink-soft);}
+.rf-contact .field{flex:1 1 auto;min-width:0;}
+@media(max-width:420px){
+  .rf-contact{flex-direction:column;align-items:stretch;gap:6px;}
+  .rf-contact-name{flex:none;}
+}
+
 /* ---- 勾選框 ---- */
 .rf-check{display:flex;align-items:center;gap:10px;cursor:pointer;
   font-size:14px;letter-spacing:.06em;color:var(--ink);
   border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;background:#fff;
   transition:border-color .2s;}
+.rf-check[hidden]{display:none;}
 .rf-check:hover{border-color:var(--ink);}
 .rf-check input{width:16px;height:16px;flex:0 0 16px;accent-color:var(--primary-deep);cursor:pointer;}
+/* 「同上」比一般勾選框輕一階：它是捷徑，不是一道題目 */
+.rf-check-sm{padding:10px 14px;font-size:13px;color:var(--ink-soft);margin-bottom:10px;}
+.rf-check-sm:hover{color:var(--ink);}
+
+/* 被「同上」帶進來的欄位：看得到內容，但改不動（要改就取消勾選） */
+.field input.is-locked{background:var(--bg2);color:var(--ink-soft);cursor:not-allowed;}
 
 /* ---- 郵寄地址：郵遞區號窄、地址寬 ----
    display:grid 會蓋掉 [hidden] 預設的 display:none，所以要再收一次 */

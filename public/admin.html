@@ -113,6 +113,46 @@
 
       <div class="ad-list" id="adRsvpList"></div>
     </section>
+
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">表單與頁面設定</h2>
+      <p class="ad-sec-note">
+        這裡決定<b>邀請函</b>那一頁要問賓客什麼、要放哪些內容。
+        存檔之後賓客重新整理就看得到，<b>已經送出的回覆不受影響</b>。
+        關掉的題目在名單與匯出的 CSV 裡會留白，不會消失。
+      </p>
+
+      <form class="ad-form" id="adRsvpForm">
+        <label class="ad-label">要問的題目</label>
+        <label class="ad-check"><input type="checkbox" id="adAskCard"><span>喜帖發送方式</span></label>
+        <label class="ad-check"><input type="checkbox" id="adAskGift"><span>喜餅領取方式</span></label>
+        <label class="ad-check"><input type="checkbox" id="adAskMessage"><span>想對新人說的話</span></label>
+        <div class="ad-hint">
+          稱呼、出席與否、與新人的關係、出席人數、餐點、兒童座椅與其他備註是固定題目，不能關。
+        </div>
+
+        <label class="ad-label">聯絡方式（可複選）</label>
+        <label class="ad-check"><input type="checkbox" id="adContactPhone"><span>電話號碼</span></label>
+        <label class="ad-check"><input type="checkbox" id="adContactLine"><span>LINE ID</span></label>
+        <label class="ad-check"><input type="checkbox" id="adContactEmail"><span>Email</span></label>
+        <div class="ad-hint">
+          勾了幾種，賓客就要<b>至少填其中一種</b>。三種都不勾就整題不問。
+          有勾 Email 時，賓客選「需要電子喜帖」可以直接勾「同上」帶入同一個信箱。
+        </div>
+
+        <label class="ad-label">頁面上要放的區塊</label>
+        <label class="ad-check"><input type="checkbox" id="adShowStory"><span>兩人的故事</span></label>
+        <label class="ad-check"><input type="checkbox" id="adShowGallery"><span>照片集</span></label>
+        <div class="ad-hint">
+          內容本身在「大廳內容」分頁與素材資料夾裡；這裡只決定邀請函那一頁要不要放。
+        </div>
+
+        <div class="ad-row">
+          <button class="btn small" type="submit">儲存表單設定</button>
+          <button class="btn small ghost" id="adRsvpFormReset" type="button">還原成目前的設定</button>
+        </div>
+      </form>
+    </section>
   </div>
 
   <!-- ============================================================

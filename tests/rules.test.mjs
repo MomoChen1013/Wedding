@@ -369,6 +369,9 @@ describe('rsvps 的完整表單欄位', () => {
       icon: '✦',
       tentative: false,
       relation: 'groom',
+      contactPhone: '0912345678',
+      contactLine: 'guest-line',
+      contactEmail: 'guest@example.com',
       mealMeat: 1,
       mealVeg: 1,
       childSeat: 1,
@@ -376,6 +379,7 @@ describe('rsvps 的完整表單欄位', () => {
       cardDelivery: 'mail',
       cardZip: '104',
       cardAddress: '台北市中山區南京東路一段 1 號',
+      cardEmail: '',
       giftDelivery: 'pickup',
       giftZip: '',
       giftAddress: '',
@@ -425,6 +429,16 @@ describe('rsvps 的完整表單欄位', () => {
       fullRsvp({ giftZip: '1'.repeat(11) })));
     await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
       fullRsvp({ note: '備'.repeat(301) })));
+  });
+
+  it('聯絡方式有長度上限', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      fullRsvp({ contactPhone: '0'.repeat(31) })));
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      fullRsvp({ contactEmail: `${'a'.repeat(115)}@example.com` })));
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      fullRsvp({ cardEmail: `${'a'.repeat(115)}@example.com` })));
   });
 
   it('夾帶白名單以外的欄位仍然整筆被拒', async () => {
@@ -962,6 +976,37 @@ describe('sites 的大廳文案更新', () => {
       schedule: [{ time: '11:30', title: '入場迎賓', desc: '簽到、拍照' }],
       hashtags: ['#我們結婚了'],
       updatedAt: Timestamp.now(),
+    }));
+  });
+
+  it('新人可以開關出席回覆的題目與區塊', async () => {
+    const db = ownerDb();
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      rsvpAskCard: false,
+      rsvpAskGift: true,
+      rsvpAskMessage: false,
+      rsvpShowStory: true,
+      rsvpShowGallery: false,
+      rsvpContactMethods: ['phone', 'email'],
+      updatedAt: Timestamp.now(),
+    }));
+    /* 只認 boolean 與 list，型別不對就整筆擋下 */
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { rsvpAskCard: 'off' }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      rsvpContactMethods: 'phone',
+    }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      rsvpContactMethods: ['a', 'b', 'c', 'd'],
+    }));
+  });
+
+  it('題目開關放行，但出席回覆的開關與截止時間仍然改不動', async () => {
+    const db = ownerDb();
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      rsvpAskCard: false, rsvpEnabled: false,
+    }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      rsvpAskCard: false, rsvpDeadline: Timestamp.fromDate(new Date('2099-01-01')),
     }));
   });
 

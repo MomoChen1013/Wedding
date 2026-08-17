@@ -1,26 +1,28 @@
 /* ============================================================
-   rsvp-form.js — 出席回覆表單（單頁邀請函與出席回覆頁共用）
+   rsvp-form.js — 出席回覆表單
    ------------------------------------------------------------
-   為什麼要共用一份：
-     /w/{slug}/invitation 與 /w/{slug}/rsvp 兩頁都在收出席回覆，
-     兩邊寫進同一個 rsvps 子集合，後台也只有一份儀表板。
-     題目各寫一份的話，一邊改了另一邊就對不上，
-     後台會拿到兩種形狀的資料。
+   出席回覆只有一頁（/w/{slug}/invitation），但表單獨立成一支檔案：
+   HTML 只放一個 <div id="rsvpFormHost">，其餘由這裡產生。
+   題目會依新人在後台的設定增減，寫死在 HTML 裡就做不到。
 
-   這支檔案是「一般 script」（不是 module），由各頁 HTML 直接載入，
+   這支檔案是「一般 script」（不是 module），由頁面 HTML 直接載入，
    載入當下只定義函式，等頁面 JS 呼叫 RSVPForm.mount() 才動到畫面 ——
    因為 window.SITE / DataStore 要等 site-context.js 準備好才有。
 
-   題目與選項的文字集中在 common.js 的 RSVP_OPTIONS，
-   後台儀表板讀的是同一份，圖表的標籤才不會和表單對不起來。
+   選項的文字集中在 common.js 的 RSVP_OPTIONS，
+   後台儀表板讀的是同一份，圖表標籤才不會和表單對不起來。
+   哪些題目要問則由 common.js 的 rsvpConfig() 決定。
 ============================================================ */
 (function () {
   /* 郵遞區號：台灣 3 碼或 3+2 碼，這裡放寬到 3–6 位數字 */
   const ZIP_RE = /^\d{3,6}$/;
+  /* Email 只做基本形狀檢查：擋掉明顯打錯的，不做 RFC 等級的驗證
+     （太嚴格會誤擋真實信箱，真正的驗證只有寄一封信才做得到） */
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   const MAX = {
     name: 40, diet: 300, message: 300, note: 300, address: 200, zip: 10,
-    guest: 10, child: 10,
+    phone: 30, line: 60, email: 120, guest: 10, child: 10,
   };
 
   function opts(key) {
@@ -53,6 +55,15 @@
     </div>`;
   }
 
+  /* 「同上」勾選框：勾了就把上面填過的值帶下來，欄位轉成唯讀
+     （不是隱藏 —— 賓客要看得到自己帶了什麼下來） */
+  function sameAs(id, label) {
+    return `<label class="rf-check rf-check-sm" id="${id}Wrap" hidden>
+      <input type="checkbox" id="${id}">
+      <span>${esc(label)}</span>
+    </label>`;
+  }
+
   /* 郵寄地址：郵遞區號 + 地址，兩個欄位一組 */
   function addressBox(id, zipId, addrId) {
     return `<div class="rf-addr" id="${id}" hidden>
@@ -67,7 +78,72 @@
     </div>`;
   }
 
-  function formHtml() {
+  /* 聯絡方式：新人選了哪幾種就問哪幾種，賓客至少要填一種 */
+  const CONTACT_FIELDS = {
+    phone: { id: 'rPhone', type: 'tel',   max: MAX.phone, ac: 'tel',
+             placeholder: '0912-345-678' },
+    line:  { id: 'rLine',  type: 'text',  max: MAX.line,  ac: 'off',
+             placeholder: 'LINE ID' },
+    email: { id: 'rEmail', type: 'email', max: MAX.email, ac: 'email',
+             placeholder: 'name@example.com' },
+  };
+
+  function contactBlock(contacts) {
+    if (!contacts.length) return '';
+    const rows = contacts.map((key) => {
+      const f = CONTACT_FIELDS[key];
+      const label = opts('contact').find(([k]) => k === key)?.[1] || key;
+      return `<div class="rf-contact">
+        <span class="rf-contact-name">${esc(label)}</span>
+        <div class="field">
+          <input type="${f.type}" id="${f.id}" maxlength="${f.max}"
+                 autocomplete="${f.ac}" placeholder="${esc(f.placeholder)}">
+        </div>
+      </div>`;
+    }).join('');
+
+    return `
+    <label class="rf-label">聯絡方式<i class="rf-req">至少填一種</i></label>
+    <div class="rf-contacts">${rows}</div>
+    <div class="rf-hint">婚禮前有事要通知你時，我們會用這裡的資料聯絡</div>`;
+  }
+
+  function formHtml(cfg) {
+    const hasEmail = cfg.contacts.includes('email');
+
+    /* 喜帖：紙本要問怎麼給、郵寄要問地址；電子要問寄到哪個 Email */
+    const cardBlock = !cfg.askCard ? '' : `
+    <label class="rf-label">喜帖發送方式<i class="rf-req">必填</i></label>
+    ${choiceRow('cardRow', 'card', 'sm')}
+    <div class="rf-sub" id="cardPaperBox" hidden>
+      <label class="rf-label rf-label-sub">紙本喜帖要怎麼給你？</label>
+      ${choiceRow('cardDeliveryRow', 'cardDelivery', 'sm')}
+      ${addressBox('cardAddrBox', 'rCardZip', 'rCardAddr')}
+    </div>
+    <div class="rf-sub" id="cardDigitalBox" hidden>
+      <label class="rf-label rf-label-sub" for="rCardEmail">電子喜帖要寄到哪個 Email？</label>
+      ${hasEmail ? sameAs('cardEmailSame', '同上（與聯絡方式的 Email 相同）') : ''}
+      <div class="field">
+        <input type="email" id="rCardEmail" maxlength="${MAX.email}"
+               autocomplete="email" placeholder="name@example.com">
+      </div>
+    </div>`;
+
+    /* 喜餅：郵寄要問地址，可以直接沿用喜帖的地址 */
+    const giftBlock = !cfg.askGift ? '' : `
+    <label class="rf-label">喜餅領取方式<i class="rf-req">必填</i></label>
+    ${choiceRow('giftRow', 'gift', 'sm')}
+    <div class="rf-sub" id="giftMailBox" hidden>
+      ${cfg.askCard ? sameAs('giftAddrSame', '同上（與喜帖的郵寄地址相同）') : ''}
+      ${addressBox('giftAddrBox', 'rGiftZip', 'rGiftAddr')}
+    </div>`;
+
+    const messageBlock = !cfg.askMessage ? '' : `
+    <label class="rf-label" for="rNote">想對新人說的話 <small>（選填）</small></label>
+    <div class="field">
+      <textarea id="rNote" maxlength="${MAX.message}" placeholder="給 {{couple}} 的悄悄話…"></textarea>
+    </div>`;
+
     return `
 <div class="cardbox rf-card" id="formCard">
   <div class="section-title">你的出席回覆</div>
@@ -84,6 +160,8 @@
 
     <label class="rf-label">與新人的關係<i class="rf-req">必填</i></label>
     ${choiceRow('relationRow', 'relation', 'sm')}
+
+    ${contactBlock(cfg.contacts)}
 
     <!-- 以下只有「熱情出席」才要填 -->
     <div class="rf-detail" id="detailBox" hidden>
@@ -119,24 +197,9 @@
                placeholder="例：不吃牛、海鮮過敏、孕婦餐">
       </div>
     </div>
-
-    <label class="rf-label">喜帖發送方式<i class="rf-req">必填</i></label>
-    ${choiceRow('cardRow', 'card', 'sm')}
-    <div class="rf-sub" id="cardPaperBox" hidden>
-      <label class="rf-label rf-label-sub">紙本喜帖要怎麼給你？</label>
-      ${choiceRow('cardDeliveryRow', 'cardDelivery', 'sm')}
-      ${addressBox('cardAddrBox', 'rCardZip', 'rCardAddr')}
-    </div>
-
-    <label class="rf-label">喜餅領取方式<i class="rf-req">必填</i></label>
-    ${choiceRow('giftRow', 'gift', 'sm')}
-    ${addressBox('giftAddrBox', 'rGiftZip', 'rGiftAddr')}
-
-    <label class="rf-label" for="rNote">想對新人說的話 <small>（選填）</small></label>
-    <div class="field">
-      <textarea id="rNote" maxlength="${MAX.message}" placeholder="給 {{couple}} 的悄悄話…"></textarea>
-    </div>
-
+${cardBlock}
+${giftBlock}
+${messageBlock}
     <label class="rf-label" for="rMemo">其他備註 <small>（選填）</small></label>
     <div class="field">
       <textarea id="rMemo" maxlength="${MAX.note}" placeholder="還有什麼想讓我們知道的嗎？"></textarea>
@@ -179,11 +242,12 @@
   }
 
   function mount(options) {
-    const cfg = options || {};
-    const host = typeof cfg.host === 'string' ? document.getElementById(cfg.host) : cfg.host;
+    const opt = options || {};
+    const host = typeof opt.host === 'string' ? document.getElementById(opt.host) : opt.host;
     if (!host) return null;
 
-    host.innerHTML = formHtml();
+    const cfg = rsvpConfig();
+    host.innerHTML = formHtml(cfg);
     if (typeof fillTemplates === 'function') fillTemplates(host);
 
     const $ = (id) => document.getElementById(id);
@@ -277,17 +341,68 @@
       syncCounts();
     });
 
+    /* ---------- 「同上」：把上面填過的值帶下來 ----------
+       ・勾起來時目標欄位轉成唯讀，跟著來源即時更新
+       ・來源是空的就不出現這個選項（沒東西可以帶） */
+    function wireSameAs(boxId, sources, targets) {
+      const box = $(boxId);
+      if (!box) return null;
+      const wrap = $(boxId + 'Wrap');
+      const srcEls = sources.map($).filter(Boolean);
+      const tgtEls = targets.map($).filter(Boolean);
+
+      const apply = () => {
+        if (!box.checked) return;
+        tgtEls.forEach((el, i) => { el.value = srcEls[i] ? srcEls[i].value : ''; });
+      };
+      const refresh = () => {
+        /* 來源全空時把選項收起來，順手取消勾選 */
+        const hasSource = srcEls.some((el) => el.value.trim() !== '');
+        wrap.hidden = !hasSource;
+        if (!hasSource && box.checked) { box.checked = false; setReadonly(false); }
+        apply();
+      };
+      const setReadonly = (ro) => {
+        tgtEls.forEach((el) => {
+          el.readOnly = ro;
+          el.classList.toggle('is-locked', ro);
+        });
+      };
+
+      box.addEventListener('change', () => {
+        setReadonly(box.checked);
+        apply();
+        clearErr();
+      });
+      srcEls.forEach((el) => el.addEventListener('input', refresh));
+      return refresh;
+    }
+
+    /* 喜帖：電子喜帖的 Email ← 聯絡方式的 Email */
+    const refreshCardEmailSame = wireSameAs('cardEmailSame', ['rEmail'], ['rCardEmail']);
+    /* 喜餅：郵寄地址 ← 喜帖的郵寄地址 */
+    const refreshGiftAddrSame = wireSameAs(
+      'giftAddrSame', ['rCardZip', 'rCardAddr'], ['rGiftZip', 'rGiftAddr']);
+
     /* ---------- 條件顯示 ---------- */
     function syncAttend() {
       $('detailBox').hidden = state.attending !== 'yes';
     }
     function syncCard() {
+      if (!cfg.askCard) return;
       const paper = state.card === 'paper';
       $('cardPaperBox').hidden = !paper;
       $('cardAddrBox').hidden = !(paper && state.cardDelivery === 'mail');
+      $('cardDigitalBox').hidden = state.card !== 'digital';
+      if (refreshCardEmailSame) refreshCardEmailSame();
+      /* 喜帖不是紙本郵寄時，喜餅就沒有地址可以「同上」 */
+      if (refreshGiftAddrSame) refreshGiftAddrSame();
     }
     function syncGift() {
+      if (!cfg.askGift) return;
+      $('giftMailBox').hidden = state.gift !== 'mail';
       $('giftAddrBox').hidden = state.gift !== 'mail';
+      if (refreshGiftAddrSame) refreshGiftAddrSame();
     }
 
     wireRow('attendRow', (v) => { state.attending = v; syncAttend(); });
@@ -297,6 +412,8 @@
     wireRow('giftRow', (v) => { state.gift = v; syncGift(); });
 
     syncCounts();
+    if (refreshCardEmailSame) refreshCardEmailSame();
+    if (refreshGiftAddrSame) refreshGiftAddrSame();
 
     /* ---------- 錯誤訊息 ---------- */
     function clearErr() { errEl.innerHTML = '&nbsp;'; }
@@ -309,30 +426,49 @@
     }
 
     /* ---------- 送出 ---------- */
+    const val = (id) => { const el = $(id); return el ? el.value.trim() : ''; };
+
     function validate() {
-      const name = $('rName').value.trim();
-      if (!name) return showErr('請先填上你的名字～', 'rName');
+      if (!val('rName')) return showErr('請先填上你的名字～', 'rName');
       if (!state.attending) return showErr('請選擇能不能出席唷');
       if (!state.relation) return showErr('請選一下你與新人的關係');
-      if (!state.card) return showErr('請選擇喜帖的發送方式');
-      if (state.card === 'paper') {
-        if (!state.cardDelivery) return showErr('紙本喜帖要自行領取還是郵寄呢？');
-        if (state.cardDelivery === 'mail') {
-          if (!ZIP_RE.test($('rCardZip').value.trim())) {
-            return showErr('喜帖郵寄的郵遞區號請填 3–6 位數字', 'rCardZip');
+
+      /* 聯絡方式：至少一種，填了就要像那麼一回事 */
+      if (cfg.contacts.length) {
+        const filled = cfg.contacts.filter((k) => val(CONTACT_FIELDS[k].id));
+        if (!filled.length) {
+          return showErr('請至少留一種聯絡方式', CONTACT_FIELDS[cfg.contacts[0]].id);
+        }
+        if (val('rEmail') && !EMAIL_RE.test(val('rEmail'))) {
+          return showErr('Email 的格式看起來怪怪的，再確認一下', 'rEmail');
+        }
+      }
+
+      if (cfg.askCard) {
+        if (!state.card) return showErr('請選擇喜帖的發送方式');
+        if (state.card === 'paper') {
+          if (!state.cardDelivery) return showErr('紙本喜帖要自行領取還是郵寄呢？');
+          if (state.cardDelivery === 'mail') {
+            if (!ZIP_RE.test(val('rCardZip'))) {
+              return showErr('喜帖郵寄的郵遞區號請填 3–6 位數字', 'rCardZip');
+            }
+            if (!val('rCardAddr')) return showErr('請填寫喜帖的郵寄地址', 'rCardAddr');
           }
-          if (!$('rCardAddr').value.trim()) {
-            return showErr('請填寫喜帖的郵寄地址', 'rCardAddr');
+        }
+        if (state.card === 'digital') {
+          if (!EMAIL_RE.test(val('rCardEmail'))) {
+            return showErr('請填寫電子喜帖要寄到的 Email', 'rCardEmail');
           }
         }
       }
-      if (!state.gift) return showErr('請選擇喜餅的領取方式');
-      if (state.gift === 'mail') {
-        if (!ZIP_RE.test($('rGiftZip').value.trim())) {
-          return showErr('喜餅郵寄的郵遞區號請填 3–6 位數字', 'rGiftZip');
-        }
-        if (!$('rGiftAddr').value.trim()) {
-          return showErr('請填寫喜餅的郵寄地址', 'rGiftAddr');
+
+      if (cfg.askGift) {
+        if (!state.gift) return showErr('請選擇喜餅的領取方式');
+        if (state.gift === 'mail') {
+          if (!ZIP_RE.test(val('rGiftZip'))) {
+            return showErr('喜餅郵寄的郵遞區號請填 3–6 位數字', 'rGiftZip');
+          }
+          if (!val('rGiftAddr')) return showErr('請填寫喜餅的郵寄地址', 'rGiftAddr');
         }
       }
       return true;
@@ -341,30 +477,39 @@
     /* 欄位必須與 firestore.rules 的白名單完全一致，多一個就整筆被拒 */
     function buildPayload() {
       const going = state.attending === 'yes';
-      const paperMail = state.card === 'paper' && state.cardDelivery === 'mail';
-      const giftMail = state.gift === 'mail';
+      const paperMail = cfg.askCard && state.card === 'paper' && state.cardDelivery === 'mail';
+      const giftMail = cfg.askGift && state.gift === 'mail';
       const user = (typeof me_user !== 'undefined' && me_user) || {};
+      /* 新人沒問的那幾種一律存空字串，不留上一版填過的殘值 */
+      const contact = (key) => (cfg.contacts.includes(key)
+        ? val(CONTACT_FIELDS[key].id).slice(0, CONTACT_FIELDS[key].max)
+        : '');
 
       return {
-        name: $('rName').value.trim().slice(0, MAX.name),
+        name: val('rName').slice(0, MAX.name),
         icon: user.icon || (typeof DEFAULT_ICON !== 'undefined' ? DEFAULT_ICON : '✦'),
         attending: going,
         tentative: state.attending === 'maybe',
         guestCount: going ? state.head : 1,
         relation: state.relation || '',
+        contactPhone: contact('phone'),
+        contactLine: contact('line'),
+        contactEmail: contact('email'),
         mealMeat: going ? state.head - state.veg : 0,
         mealVeg: going ? state.veg : 0,
         childSeat: going ? state.childSeat : 0,
-        dietaryNote: going ? $('rDiet').value.trim().slice(0, MAX.diet) : '',
-        cardType: state.card,
-        cardDelivery: state.card === 'paper' ? state.cardDelivery : '',
-        cardZip: paperMail ? $('rCardZip').value.trim().slice(0, MAX.zip) : '',
-        cardAddress: paperMail ? $('rCardAddr').value.trim().slice(0, MAX.address) : '',
-        giftDelivery: state.gift,
-        giftZip: giftMail ? $('rGiftZip').value.trim().slice(0, MAX.zip) : '',
-        giftAddress: giftMail ? $('rGiftAddr').value.trim().slice(0, MAX.address) : '',
-        message: $('rNote').value.trim().slice(0, MAX.message),
-        note: $('rMemo').value.trim().slice(0, MAX.note),
+        dietaryNote: going ? val('rDiet').slice(0, MAX.diet) : '',
+        cardType: cfg.askCard ? state.card : '',
+        cardDelivery: cfg.askCard && state.card === 'paper' ? state.cardDelivery : '',
+        cardZip: paperMail ? val('rCardZip').slice(0, MAX.zip) : '',
+        cardAddress: paperMail ? val('rCardAddr').slice(0, MAX.address) : '',
+        cardEmail: cfg.askCard && state.card === 'digital'
+          ? val('rCardEmail').slice(0, MAX.email) : '',
+        giftDelivery: cfg.askGift ? state.gift : '',
+        giftZip: giftMail ? val('rGiftZip').slice(0, MAX.zip) : '',
+        giftAddress: giftMail ? val('rGiftAddr').slice(0, MAX.address) : '',
+        message: cfg.askMessage ? val('rNote').slice(0, MAX.message) : '',
+        note: val('rMemo').slice(0, MAX.note),
         createdAt: window.fb.serverTimestamp(),
       };
     }
@@ -378,7 +523,7 @@
 
       const payload = buildPayload();
       /* honeypot 有值代表是機器人：畫面照樣顯示成功，但不寫進資料庫 */
-      const isBot = $('rWebsite').value.trim() !== '';
+      const isBot = val('rWebsite') !== '';
 
       submitBtn.disabled = true;
       submitBtn.textContent = '送出中…';
@@ -400,6 +545,9 @@
         icon: payload.icon,
         attending: state.attending,
         relation: state.relation,
+        phone: payload.contactPhone,
+        line: payload.contactLine,
+        email: payload.contactEmail,
         headcount: payload.guestCount,
         veg: payload.mealVeg,
         childSeat: payload.childSeat,
@@ -408,6 +556,7 @@
         cardDelivery: state.cardDelivery,
         cardZip: payload.cardZip,
         cardAddress: payload.cardAddress,
+        cardEmail: payload.cardEmail,
         gift: state.gift,
         giftZip: payload.giftZip,
         giftAddress: payload.giftAddress,
@@ -418,7 +567,7 @@
       try { if (typeof saveUser === 'function') saveUser({ name: payload.name, icon: payload.icon }); } catch { }
 
       showThanks(mine);
-      if (typeof cfg.onDone === 'function') cfg.onDone(mine);
+      if (typeof opt.onDone === 'function') opt.onDone(mine);
     });
 
     /* ---------- 感謝畫面 ---------- */
@@ -451,25 +600,31 @@
     });
 
     /* ---------- 回訪：帶出上一次的回覆 ---------- */
+    function setVal(id, value) { const el = $(id); if (el) el.value = value || ''; }
+
     function restore() {
       let mine = null;
       try { mine = LS.get('rsvp.mine', null); } catch { mine = null; }
 
-      /* 沒回覆過，就先把大廳填的名字帶進來 */
+      /* 沒回覆過，就先把大廳填的名字帶進來（沒進過大廳就是空的） */
       if (!mine) {
         const user = (typeof me_user !== 'undefined' && me_user) || {};
-        if (user.name && user.name !== '朋友') $('rName').value = user.name;
+        if (user.name && user.name !== '朋友') setVal('rName', user.name);
         return;
       }
 
-      $('rName').value = mine.name || '';
-      $('rNote').value = mine.note || '';
-      $('rMemo').value = mine.memo || '';
-      $('rDiet').value = mine.diet || '';
-      $('rCardZip').value = mine.cardZip || '';
-      $('rCardAddr').value = mine.cardAddress || '';
-      $('rGiftZip').value = mine.giftZip || '';
-      $('rGiftAddr').value = mine.giftAddress || '';
+      setVal('rName', mine.name);
+      setVal('rPhone', mine.phone);
+      setVal('rLine', mine.line);
+      setVal('rEmail', mine.email);
+      setVal('rNote', mine.note);
+      setVal('rMemo', mine.memo);
+      setVal('rDiet', mine.diet);
+      setVal('rCardZip', mine.cardZip);
+      setVal('rCardAddr', mine.cardAddress);
+      setVal('rCardEmail', mine.cardEmail);
+      setVal('rGiftZip', mine.giftZip);
+      setVal('rGiftAddr', mine.giftAddress);
 
       state.attending = mine.attending || null;
       state.relation = mine.relation || null;
@@ -496,7 +651,7 @@
     }
     restore();
 
-    return { closed: false, state };
+    return { closed: false, state, config: cfg };
   }
 
   window.RSVPForm = { mount, closedReason };

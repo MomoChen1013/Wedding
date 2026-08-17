@@ -20,14 +20,14 @@
 <link rel="stylesheet" href="/css/rsvp.css">
 <link rel="stylesheet" href="/css/invitation.css">
 </head>
-<body data-theme="champagne" data-page="invitation">
+<body data-theme="champagne" data-page="rsvp">
 
 <div class="bg-decor"></div>
 <canvas id="fx"></canvas>
 
 <div class="scene-bg" data-bg="gallery"></div>
 
-<section class="panel page-fade" data-panel="invitation">
+<section class="panel page-fade" data-panel="rsvp">
 
   <!-- ============ 封面 ============ -->
   <header class="scene-hero inv-hero">
@@ -94,7 +94,7 @@
     <section class="inv-block" id="rsvpBlock">
       <div class="section-title">R.S.V.P. <small>出席回覆</small></div>
       <p class="inv-lead">花一分鐘告訴我們你的安排，讓我們把每個細節都準備好</p>
-      <!-- 表單由 js/rsvp-form.js 產生，與 /w/{slug}/rsvp 共用同一份 -->
+      <!-- 題目由 js/rsvp-form.js 依新人在後台的設定產生 -->
       <div id="rsvpFormHost"></div>
     </section>
 
@@ -113,7 +113,7 @@
   <img id="lightboxImg" alt="">
 </div>
 
-<!-- 出席回覆表單（兩頁共用）：先定義好，等 site-context 載完頁面 JS 才會用到 -->
+<!-- 出席回覆表單：先定義好，等 site-context 載完頁面 JS 才會呼叫 -->
 <script src="/js/rsvp-form.js"></script>
 <!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與本頁 JS -->
 <script type="module" src="/js/site-context.js"></script>

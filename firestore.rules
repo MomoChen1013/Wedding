@@ -54,6 +54,11 @@ service cloud.firestore {
              'transportPublic', 'transportParking',
              'dressCode', 'giftNote', 'story', 'schedule', 'hashtags',
              'seatingSearchEnabled', 'updatedAt',
+             /* 出席回覆頁的題目與區塊開關：只改變賓客看到的表單長什麼樣，
+                規則本身不拿它們做任何判斷（能不能寫回覆仍然只看
+                rsvpEnabled／rsvpDeadline，那兩個依舊改不動）。 */
+             'rsvpAskCard', 'rsvpAskGift', 'rsvpAskMessage',
+             'rsvpContactMethods', 'rsvpShowStory', 'rsvpShowGallery',
            ])
         /* 大廳資訊卡上的稱呼，後台限 8 個字 */
         && (!('coupleTitle'  in d) || isStr(d.coupleTitle, 8))
@@ -68,6 +73,16 @@ service cloud.firestore {
         && (!('story'     in d) || isStr(d.story, 2000))
         /* 桌次搜尋的開關：只影響賓客那一頁的畫面，不是規則的判斷依據 */
         && (!('seatingSearchEnabled' in d) || d.seatingSearchEnabled is bool)
+        /* 出席回覆的題目開關，同理 */
+        && (!('rsvpAskCard'    in d) || d.rsvpAskCard is bool)
+        && (!('rsvpAskGift'    in d) || d.rsvpAskGift is bool)
+        && (!('rsvpAskMessage' in d) || d.rsvpAskMessage is bool)
+        && (!('rsvpShowStory'   in d) || d.rsvpShowStory is bool)
+        && (!('rsvpShowGallery' in d) || d.rsvpShowGallery is bool)
+        /* 要問哪幾種聯絡方式；最多就那三種，規則語言檢查不了每個元素的值，
+           只擋筆數與型別，內容在後台送出前先切好 */
+        && (!('rsvpContactMethods' in d)
+            || (d.rsvpContactMethods is list && d.rsvpContactMethods.size() <= 3))
         /* schedule 的每一筆是 map，規則語言沒辦法逐筆檢查內容，
            只擋住筆數與型別；真正的長度限制在後台送出前先切好。 */
         && (!('schedule' in d) || (d.schedule is list && d.schedule.size() <= 40))
@@ -379,7 +394,8 @@ service cloud.firestore {
       return data.keys().hasOnly([
              'name', 'attending', 'guestCount', 'dietaryNote', 'message', 'createdAt',
              'icon', 'tentative', 'meal', 'relation', 'mealMeat', 'mealVeg', 'childSeat',
-             'cardType', 'cardDelivery', 'cardZip', 'cardAddress',
+             'contactPhone', 'contactLine', 'contactEmail',
+             'cardType', 'cardDelivery', 'cardZip', 'cardAddress', 'cardEmail',
              'giftDelivery', 'giftZip', 'giftAddress', 'note',
            ])
         && data.keys().hasAll(['name', 'attending', 'guestCount', 'dietaryNote', 'message', 'createdAt'])
@@ -397,10 +413,14 @@ service cloud.firestore {
         && (!('mealMeat' in data) || isCount(data.mealMeat))
         && (!('mealVeg' in data) || isCount(data.mealVeg))
         && (!('childSeat' in data) || isCount(data.childSeat))
+        && (!('contactPhone' in data) || isStr(data.contactPhone, 30))
+        && (!('contactLine' in data) || isStr(data.contactLine, 60))
+        && (!('contactEmail' in data) || isStr(data.contactEmail, 120))
         && (!('cardType' in data) || data.cardType in ['paper', 'digital', 'none', ''])
         && (!('cardDelivery' in data) || data.cardDelivery in ['pickup', 'mail', ''])
         && (!('cardZip' in data) || isStr(data.cardZip, 10))
         && (!('cardAddress' in data) || isStr(data.cardAddress, 200))
+        && (!('cardEmail' in data) || isStr(data.cardEmail, 120))
         && (!('giftDelivery' in data) || data.giftDelivery in ['pickup', 'mail', ''])
         && (!('giftZip' in data) || isStr(data.giftZip, 10))
         && (!('giftAddress' in data) || isStr(data.giftAddress, 200))

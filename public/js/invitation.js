@@ -1,14 +1,20 @@
 /* ============================================================
-   invitation.js — 單頁式邀請函（/w/{slug}/invitation）
+   invitation.js — 出席回覆（/w/{slug}/invitation）
    ------------------------------------------------------------
+   婚禮資訊與出席回覆表單收在同一頁。原本 /rsvp 與 /invitation
+   是兩頁、兩份表單、寫進同一個子集合，等於同一件事做兩次，
+   所以合併成這一頁；舊網址 /rsvp 由 Hosting 301 導過來。
+
    ・版型與其他頁面共用 css/common.css，只多一份 css/invitation.css
-   ・出席回覆用 js/rsvp-form.js，和 /w/{slug}/rsvp 是同一份表單
-   ・這一頁是對外分享的入口，刻意不呼叫 requireUser()：
-     賓客直接點連結進來就看得到，不必先去大廳報到
-   ・每個區塊在對應欄位是空的時候整段隱藏，不留空標題
+   ・表單題目由 js/rsvp-form.js 依新人在後台的設定產生
+   ・**刻意不呼叫 requireUser()**：這一頁是對外分享的連結，
+     賓客點進來就該看得到表單，不必先回大廳看入場動畫、填名字報到
+   ・每個區塊在對應欄位是空的、或新人在後台關掉時，整段隱藏
 ============================================================ */
 
 const W = window.WED || {};
+/* 新人在後台開關的項目（沒設定過一律視為開著） */
+const CFG = rsvpConfig();
 
 /* ---------- 封面照 ---------- */
 (function renderCover(){
@@ -73,7 +79,8 @@ const W = window.WED || {};
   }
 })();
 
-/* ---------- 服裝／禮金／兩人的故事（留白就不出現） ---------- */
+/* ---------- 服裝／禮金／兩人的故事 ----------
+   留白就不出現；兩人的故事另外可以由新人在後台整塊關掉 */
 (function renderNotes(){
   const show = (rowId, textId, value) => {
     if(!value) return;
@@ -83,14 +90,15 @@ const W = window.WED || {};
   show('dressRow',    'dressCode', W.dressCode);
   show('giftNoteRow', 'giftNote', W.giftNote);
 
-  if(W.story){
+  if(W.story && CFG.showStory){
     document.getElementById('storyBlock').hidden = false;
     document.getElementById('storyText').textContent = W.story;
   }
 })();
 
-/* ---------- 照片牆 ---------- */
+/* ---------- 照片集（新人可以在後台整塊關掉） ---------- */
 (function renderGallery(){
+  if(!CFG.showGallery) return;
   const photos = (Array.isArray(W.photos) ? W.photos : [])
     .filter(p => typeof p === 'string' && p.trim());
   if(!photos.length) return;
@@ -193,7 +201,7 @@ document.addEventListener('keydown', (e) => {
   });
 })();
 
-/* ---------- 出席回覆（與 /w/{slug}/rsvp 共用同一份表單） ---------- */
+/* ---------- 出席回覆表單 ---------- */
 RSVPForm.mount({
   host: 'rsvpFormHost',
   onDone(mine){

@@ -147,7 +147,11 @@ function openAdmin(){
 
   /* 訂閱各份資料，畫面隨著資料變動重畫。
      沒開的頁面連訂閱都省下來，不做白工的讀取。 */
-  if(tabEnabled('rsvp')){ DataStore.subscribeRsvps(); renderRsvps(); }
+  if(tabEnabled('rsvp')){
+    DataStore.subscribeRsvps();
+    fillRsvpFormSettings();
+    renderRsvps();
+  }
   if(tabEnabled('seating')){
     DataStore.subscribeSeating();
     renderSeatList();
@@ -330,14 +334,17 @@ function donutCard(chart){
 
 function renderRsvpCharts(){
   const c = DataStore.getRsvpCharts();
+  const cfg = rsvpConfig();
   const cards = [
     { ...c.attend, title:'出席',     hint:'依回覆筆數' },
     { ...c.meal,   title:'飲食',     hint:'依出席人數' },
     { ...c.child,  title:'兒童座椅',
       hint: c.child.seats ? `共需 ${c.child.seats} 張` : '依回覆筆數' },
-    { ...c.card,   title:'喜帖',     hint:'依回覆筆數' },
-    { ...c.gift,   title:'喜餅',     hint:'依回覆筆數' },
-  ];
+    /* 新人關掉的題目就不畫圖 —— 一張全是「未填」的圖沒有任何資訊，
+       只會讓人以為賓客都跳過不答 */
+    cfg.askCard ? { ...c.card, title:'喜帖', hint:'依回覆筆數' } : null,
+    cfg.askGift ? { ...c.gift, title:'喜餅', hint:'依回覆筆數' } : null,
+  ].filter(Boolean);
   rsvpChartsEl.innerHTML = cards.map(donutCard).join('');
 }
 
@@ -367,6 +374,11 @@ function renderRsvps(){
     /* 一筆回覆的重點濃縮成一行，細節（留言、備註、地址）另起一行 */
     const bits = [];
     if(r.relation) bits.push(rsvpLabel('relation', r.relation));
+    const contacts = [
+      r.contactPhone && `電話 ${r.contactPhone}`,
+      r.contactLine && `LINE ${r.contactLine}`,
+      r.contactEmail && `Email ${r.contactEmail}`,
+    ].filter(Boolean);
     if(st === 'yes'){
       bits.push(`${Number(r.guestCount) || 1} 位`);
       const meat = Number(r.mealMeat) || 0;
@@ -384,6 +396,7 @@ function renderRsvps(){
     if(r.giftDelivery) bits.push(`喜餅：${rsvpLabel('gift', r.giftDelivery)}`);
 
     const addrs = [];
+    if(r.cardEmail) addrs.push(`喜帖寄：${r.cardEmail}`);
     if(r.cardAddress) addrs.push(`喜帖寄：${r.cardZip || ''} ${r.cardAddress}`);
     if(r.giftAddress) addrs.push(`喜餅寄：${r.giftZip || ''} ${r.giftAddress}`);
 
@@ -393,6 +406,7 @@ function renderRsvps(){
           <span class="ad-item-title">${escapeHtml(r.icon || '')} ${escapeHtml(r.name || '（沒有名字）')}</span>
           <span class="ad-tag ad-tag-${st}">${RSVP_LABEL[st]}</span>
           ${bits.length ? `<span class="ad-item-sub">${escapeHtml(bits.join('・'))}</span>` : ''}
+          ${contacts.length ? `<span class="ad-item-sub">${escapeHtml(contacts.join('　'))}</span>` : ''}
           ${addrs.length ? `<span class="ad-item-sub">${escapeHtml(addrs.join('　'))}</span>` : ''}
           ${r.message ? `<span class="ad-item-sub">「${escapeHtml(r.message)}」</span>` : ''}
           ${r.note ? `<span class="ad-item-sub">備註：${escapeHtml(r.note)}</span>` : ''}
@@ -433,8 +447,8 @@ document.getElementById('adRsvpExport').addEventListener('click', ()=>{
 
   downloadCsv(
     'rsvps',
-    ['稱呼','是否出席','與新人關係','人數','葷食','素食','兒童座椅',
-     '飲食習慣','喜帖','喜帖領取','喜帖郵遞區號','喜帖地址',
+    ['稱呼','是否出席','與新人關係','電話','LINE','Email','人數','葷食','素食','兒童座椅',
+     '飲食習慣','喜帖','喜帖領取','喜帖郵遞區號','喜帖地址','喜帖 Email',
      '喜餅','喜餅郵遞區號','喜餅地址','給新人的話','其他備註','回覆時間'],
     rows.map(r => {
       const st = DataStore.rsvpStatus(r);
@@ -444,6 +458,9 @@ document.getElementById('adRsvpExport').addEventListener('click', ()=>{
         r.name || '',
         RSVP_LABEL[st],
         rsvpLabel('relation', r.relation),
+        r.contactPhone || '',
+        r.contactLine || '',
+        r.contactEmail || '',
         going ? (Number(r.guestCount) || 1) : '',
         going ? (Number(r.mealMeat) || 0) : '',
         going ? (Number(r.mealVeg)  || 0) : '',
@@ -453,6 +470,7 @@ document.getElementById('adRsvpExport').addEventListener('click', ()=>{
         r.cardType === 'paper' ? rsvpLabel('cardDelivery', r.cardDelivery) : '',
         r.cardZip || '',
         r.cardAddress || '',
+        r.cardEmail || '',
         rsvpLabel('gift', r.giftDelivery),
         r.giftZip || '',
         r.giftAddress || '',
@@ -463,6 +481,70 @@ document.getElementById('adRsvpExport').addEventListener('click', ()=>{
     }),
   );
   toast(`已匯出 ${rows.length} 筆回覆`);
+});
+
+/* ============================================================
+   0a. 表單與頁面設定
+   ------------------------------------------------------------
+   決定邀請函那一頁要問什麼、要放什麼。寫回 sites 文件的幾個布林值
+   （規則的白名單有放行 —— 它們只改變畫面，不是規則的判斷依據；
+   rsvpEnabled／rsvpDeadline 那兩個仍然改不動）。
+
+   一律「沒設定過就視為開著」，和 common.js 的 rsvpConfig() 同一套判斷 ——
+   舊站台不會因為少了這幾個欄位就整塊消失。
+============================================================ */
+const RSVP_FORM_TOGGLES = {
+  adAskCard:      'rsvpAskCard',
+  adAskGift:      'rsvpAskGift',
+  adAskMessage:   'rsvpAskMessage',
+  adShowStory:    'rsvpShowStory',
+  adShowGallery:  'rsvpShowGallery',
+};
+const RSVP_CONTACT_BOXES = {
+  adContactPhone: 'phone',
+  adContactLine:  'line',
+  adContactEmail: 'email',
+};
+
+function fillRsvpFormSettings(){
+  const cfg = rsvpConfig();
+  const on = {
+    adAskCard: cfg.askCard, adAskGift: cfg.askGift, adAskMessage: cfg.askMessage,
+    adShowStory: cfg.showStory, adShowGallery: cfg.showGallery,
+  };
+  Object.keys(RSVP_FORM_TOGGLES).forEach(id => {
+    document.getElementById(id).checked = on[id];
+  });
+  Object.entries(RSVP_CONTACT_BOXES).forEach(([id, key]) => {
+    document.getElementById(id).checked = cfg.contacts.includes(key);
+  });
+}
+
+document.getElementById('adRsvpFormReset')
+  .addEventListener('click', fillRsvpFormSettings);
+
+document.getElementById('adRsvpForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const patch = {};
+  Object.entries(RSVP_FORM_TOGGLES).forEach(([id, field]) => {
+    patch[field] = document.getElementById(id).checked;
+  });
+  /* 順序固定照 RSVP_OPTIONS.contact 走，賓客看到的欄位順序才不會跟著勾選順序跑 */
+  patch.rsvpContactMethods = Object.entries(RSVP_CONTACT_BOXES)
+    .filter(([id]) => document.getElementById(id).checked)
+    .map(([, key]) => key);
+
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  try{
+    await DataStore.saveSiteFields(patch);
+    toast('表單設定已更新');
+    /* 圖表跟著題目開關增減，存完就重畫 */
+    renderRsvps();
+  }catch(err){
+    writeFailed(err);
+  }
+  btn.disabled = false;
 });
 
 /* ============================================================

@@ -33,7 +33,8 @@ const adb = adminFirestore();
 const DAY = 86400000;
 const future = (d) => TS.fromMillis(Date.now() + d * DAY);
 
-const ALL_PAGES = ['rsvp','wall','cake','draw','exhibition','quiz','invitation',
+/* invitation 已經併進 rsvp：網址是 /invitation，開關代號仍然是 rsvp */
+const ALL_PAGES = ['rsvp','wall','cake','draw','exhibition','quiz',
   'seating','letter'];
 const allOn = Object.fromEntries(ALL_PAGES.map((k) => [k, true]));
 
@@ -228,8 +229,8 @@ async function signInAsOwner(page, email){
 
 /* ---------- 每一頁都要載得起來 ---------- */
 console.log('\n[1] 每個頁面都能正常載入');
-for(const key of ['', 'rsvp', 'wall', 'cake', 'draw', 'exhibition', 'quiz',
-                  'seating', 'letter', 'invitation']){
+for(const key of ['', 'invitation', 'wall', 'cake', 'draw', 'exhibition', 'quiz',
+                  'seating', 'letter']){
   const path = `/w/${SLUG}/${key}`;
   const { page, errors } = await visit(path);
   const hasSite = await page.evaluate(() => !!window.SITE);
@@ -302,7 +303,8 @@ console.log('\n[3] 頁面開關');
   ok('未啟用的入口不出現在首頁',
     !links.some((h) => /\/(wall|cake|draw|exhibition|quiz|seating|letter)$/.test(h)),
     links.join(', '));
-  ok('已啟用的 rsvp 入口仍在', links.some((h) => h.endsWith('/rsvp')), links.join(', '));
+  ok('已啟用的出席回覆入口仍在（網址是 /invitation）',
+    links.some((h) => h.endsWith('/invitation')), links.join(', '));
   await page.close();
 }
 {
@@ -337,10 +339,11 @@ console.log('\n[4] 祝福牆寫入隔離');
    表單由 js/rsvp-form.js 產生，與單頁邀請函共用同一份題目 */
 console.log('\n[5] RSVP 寫入');
 {
-  const { page } = await visit(`/w/${SLUG}/rsvp`);
+  const { page } = await visit(`/w/${SLUG}/invitation`);
   await page.fill('#rName', '王小明');
   await page.click('#attendRow .choice[data-val="yes"]');
   await page.click('#relationRow .choice[data-val="bride"]');
+  await page.fill('#rPhone', '0912345678');
   await page.click('#headPlus');            // 2 位
   await page.click('#vegPlus');             // 其中 1 位素食
   await page.check('#childSeatOn');         // 需要 1 張兒童椅
@@ -371,6 +374,7 @@ console.log('\n[5] RSVP 寫入');
     ok('喜餅現場領取時不留地址',
       d.giftDelivery === 'pickup' && d.giftAddress === '', d.giftDelivery);
     ok('其他備註有存下來', d.note === '停車位需要一個', d.note);
+    ok('聯絡電話有存下來', d.contactPhone === '0912345678', d.contactPhone);
     ok('tentative 為 false', d.tentative === false, String(d.tentative));
     ok('createdAt 由伺服器寫入', d.createdAt && typeof d.createdAt.toDate === 'function');
   }
@@ -380,13 +384,14 @@ console.log('\n[5] RSVP 寫入');
 /* ---------- 視情況而定（maybe）也要能存 ---------- */
 console.log('\n[6] 視情況而定的回覆');
 {
-  const { page } = await visit(`/w/${SLUG}/rsvp`);
+  const { page } = await visit(`/w/${SLUG}/invitation`);
   await page.evaluate(() => LS.remove('rsvp.mine'));
   await page.reload({ waitUntil:'domcontentloaded' });
   await page.waitForFunction(() => !!document.getElementById('rsvpForm'), null, { timeout:20000 });
   await page.fill('#rName', '張三');
   await page.click('#attendRow .choice[data-val="maybe"]');
   await page.click('#relationRow .choice[data-val="other"]');
+  await page.fill('#rEmail', 'zhang@example.com');
   await page.click('#cardRow .choice[data-val="none"]');
   await page.click('#giftRow .choice[data-val="pickup"]');
   await page.click('#submitBtn');
@@ -407,7 +412,7 @@ console.log('\n[6] 視情況而定的回覆');
 /* ---------- 必填的題目沒填完就送不出去 ---------- */
 console.log('\n[6b] 表單驗證');
 {
-  const { page } = await visit(`/w/${SLUG}/rsvp`);
+  const { page } = await visit(`/w/${SLUG}/invitation`);
   await page.evaluate(() => LS.remove('rsvp.mine'));
   await page.reload({ waitUntil:'domcontentloaded' });
   await page.waitForFunction(() => !!document.getElementById('rsvpForm'), null, { timeout:20000 });
@@ -423,6 +428,12 @@ console.log('\n[6b] 表單驗證');
     (await page.innerText('#rErr')).includes('關係'), await page.innerText('#rErr'));
 
   await page.click('#relationRow .choice[data-val="groom"]');
+  await page.click('#submitBtn');            // 還沒留聯絡方式
+  await page.waitForTimeout(400);
+  ok('沒留聯絡方式會被擋下',
+    (await page.innerText('#rErr')).includes('聯絡方式'), await page.innerText('#rErr'));
+
+  await page.fill('#rLine', 'lisi-line');
   await page.click('#submitBtn');            // 還沒選喜帖
   await page.waitForTimeout(400);
   ok('沒選喜帖會被擋下',
@@ -1424,9 +1435,100 @@ console.log('\n[20b] 賓客做測驗');
   await page.close();
 }
 
+/* ---------- 後台的表單設定 ---------- */
+console.log('\n[14c] 後台開關表單題目');
+{
+  const { page, errors } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+
+  ok('題目預設全部開著',
+    (await page.isChecked('#adAskCard')) && (await page.isChecked('#adAskGift'))
+      && (await page.isChecked('#adAskMessage')));
+  ok('聯絡方式預設三種都問',
+    (await page.isChecked('#adContactPhone')) && (await page.isChecked('#adContactLine'))
+      && (await page.isChecked('#adContactEmail')));
+
+  /* 關掉喜餅與留言，聯絡方式只留 Email，照片集也收起來 */
+  await page.uncheck('#adAskGift');
+  await page.uncheck('#adAskMessage');
+  await page.uncheck('#adContactPhone');
+  await page.uncheck('#adContactLine');
+  await page.uncheck('#adShowGallery');
+  await page.click('#adRsvpForm button[type="submit"]');
+  await page.waitForTimeout(1500);
+
+  const site = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
+  ok('開關寫回 sites 文件',
+    site.rsvpAskCard === true && site.rsvpAskGift === false
+      && site.rsvpAskMessage === false && site.rsvpShowGallery === false,
+    JSON.stringify({ card:site.rsvpAskCard, gift:site.rsvpAskGift,
+                     msg:site.rsvpAskMessage, gallery:site.rsvpShowGallery }));
+  ok('聯絡方式只留 Email',
+    (site.rsvpContactMethods || []).join(',') === 'email',
+    (site.rsvpContactMethods || []).join(','));
+  ok('沒有動到出席回覆的開關與截止時間',
+    site.rsvpEnabled === true && !!site.rsvpDeadline);
+
+  /* 關掉的題目不再畫成環狀圖 */
+  await page.waitForTimeout(300);
+  const titles = await page.locator('#adRsvpCharts .ad-donut-title').allInnerTexts();
+  ok('關掉的題目不出現在儀表板',
+    titles.map((t) => t.split('\n')[0].trim()).join(',') === '出席,飲食,兒童座椅,喜帖',
+    titles.map((t) => t.split('\n')[0].trim()).join(','));
+
+  ok('表單設定無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+{
+  /* 賓客那一側：關掉的題目真的不見了，聯絡方式只剩 Email */
+  const { page } = await visit(`/w/${SLUG}/invitation`);
+  await page.evaluate(() => LS.remove('rsvp.mine'));
+  await page.reload({ waitUntil:'domcontentloaded' });
+  await page.waitForFunction(() => !!document.getElementById('rsvpForm'), null, { timeout:20000 });
+
+  ok('喜帖還在', (await page.locator('#cardRow').count()) === 1);
+  ok('喜餅整題不見了', (await page.locator('#giftRow').count()) === 0);
+  ok('想對新人說的話不見了', (await page.locator('#rNote').count()) === 0);
+  ok('其他備註仍然在', (await page.locator('#rMemo').count()) === 1);
+  ok('聯絡方式只剩 Email',
+    (await page.locator('.rf-contact-name').allTextContents()).join('／') === 'Email',
+    (await page.locator('.rf-contact-name').allTextContents()).join('／'));
+  ok('照片集整塊收起來', !(await page.isVisible('#galleryBlock')));
+  ok('兩人的故事還在', await page.isVisible('#storyBlock'));
+
+  /* 關掉的題目不會擋住送出 */
+  await page.fill('#rName', '設定測試');
+  await page.click('#attendRow .choice[data-val="no"]');
+  await page.click('#relationRow .choice[data-val="other"]');
+  await page.fill('#rEmail', 'setting@example.com');
+  await page.click('#cardRow .choice[data-val="none"]');
+  await page.click('#submitBtn');
+  await page.waitForSelector('#thanksCard:visible', { timeout:8000 });
+
+  const snap = await adb.collection('sites').doc(siteIds[SLUG]).collection('rsvps').get();
+  const row = snap.docs.map((d) => d.data()).find((d) => d.name === '設定測試');
+  ok('關掉題目後仍然送得出去', !!row);
+  ok('關掉的題目存成空字串',
+    row && row.giftDelivery === '' && row.message === '',
+    row ? `${JSON.stringify(row.giftDelivery)}/${JSON.stringify(row.message)}` : '');
+  ok('Email 有存下來', row && row.contactEmail === 'setting@example.com',
+    row && row.contactEmail);
+  await page.close();
+}
+{
+  /* 改回全開，後面的測試才不受影響 */
+  await adb.collection('sites').doc(siteIds[SLUG]).update({
+    rsvpAskCard: true, rsvpAskGift: true, rsvpAskMessage: true,
+    rsvpShowStory: true, rsvpShowGallery: true,
+    rsvpContactMethods: ['phone', 'line', 'email'],
+  });
+}
+
 /* ---------- 手機版 ---------- */
 console.log('\n[8] 手機版無水平捲動');
-for(const key of ['', 'wall', 'rsvp', 'quiz', 'seating', 'letter', 'invitation']){
+for(const key of ['', 'wall', 'invitation', 'quiz', 'seating', 'letter']){
   const page = await newPage({ viewport:{ width:375, height:812 } });
   await page.goto(`${BASE}/w/${SLUG}/${key}`, { waitUntil:'domcontentloaded' });
   await page.waitForFunction(

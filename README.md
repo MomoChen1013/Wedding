@@ -9,7 +9,6 @@
 | 網址 | 內容 |
 |---|---|
 | `/w/{slug}/` | 首頁（入場 gate + 婚禮資訊 + 卡片連結）**一定有** |
-| `/w/{slug}/rsvp` | 出席回覆 |
 | `/w/{slug}/wall` | 祝福牆 |
 | `/w/{slug}/cake` | 集氣送祝褔（甜點桌） |
 | `/w/{slug}/draw` | 抽卡 |
@@ -17,7 +16,7 @@
 | `/w/{slug}/quiz` | 看你多了解我們（題目由新人在後台出） |
 | `/w/{slug}/seating` | 我的桌次（當天輸入名字查桌次 + 桌次圖） |
 | `/w/{slug}/letter` | 給你的信（新人寫的電子祝福信） |
-| `/w/{slug}/invitation` | 單頁式邀請函（婚禮資訊＋出席回覆收在一頁） |
+| `/w/{slug}/invitation` | 出席回覆（婚禮資訊＋表單收在同一頁） |
 | `/w/{slug}/admin` | 新人後台（Google 登入）**一定有・不對外連結** |
 | `/s/{code}` | 短連結 |
 
@@ -30,27 +29,37 @@
 > 悄悄話信箱原本是獨立的 `/w/{slug}/inbox`，門檻與後台一樣是 Google 登入，
 > 等於同一個帳號要登入兩次，所以已經併成新人後台的「悄悄話」分頁。
 > 舊網址一進來就會被帶到 `/w/{slug}/admin`。
+>
+> 出席回覆原本有兩頁：`/w/{slug}/rsvp` 與 `/w/{slug}/invitation`。
+> 兩頁問的是同一件事、寫進同一個 `rsvps` 子集合，所以已經合併成一頁。
+> 網址留下 **`/invitation`**（對外分享的是這個連結），
+> 舊的 `/rsvp` 由 Hosting 301 導過去；`sites.pages` 的開關代號仍然是
+> **`rsvp`**（規則、後台分頁、`set-pages` CLI 都靠它，改 key 會讓既有設定失效）。
 
 ---
 
 ## 版面與風格
 
-- **導覽列**：每一頁最上方都有，依序是「新人名稱（首頁）、桌次、祝福、給你的信、故事、
-  測驗、抽卡、集氣、User」。
-  由 `js/common.js` 統一注入，站台沒開的頁面不會出現在列上。
+- **導覽列**：每一頁最上方都有，依序是「新人名稱（首頁）、出席回覆、桌次、祝福、
+  給你的信、故事、測驗、抽卡、集氣、User」。
+  由 `js/common.js` 統一注入，站台沒開的頁面不會出現在列上；
+  還沒在大廳報到過的訪客不會出現最後那塊 User。
 - **首頁**：固定背景（一張圖或一段影片，滾動時不動）→ 置中開場（`h1` + `.cn`）→
   婚禮資訊卡 → 當日流程 → Dress Code → 交通資訊 → 兩人的故事 → 日期倒數 →
   RSVP → 卡片連結（兩欄，內建七張＋新人在後台自訂的卡片）。
   **Dress Code、交通資訊、兩人的故事沒填的話那一塊就不出現**，
   不會留下一個空標題（見〈新人後台〉的「大廳內容」）。
 - **每頁的 `.scene-hero`** 固定 50vh。
-- **單頁邀請函**（`/w/{slug}/invitation`）走的是同一套版型 ——
+- **出席回覆**（`/w/{slug}/invitation`）走的是同一套版型 ——
   同樣的導覽列、`.scene-hero`、`.section-title`、`.cardbox` 與主題色票，
   只多一份放專屬元件（封面照、資訊列、照片牆、放大檢視）的 `css/invitation.css`。
   它原本自帶一整套 CSS／JS，和其他頁長得完全不一樣，現在已經收斂進來。
-  出席回覆表單也和 `/w/{slug}/rsvp` 共用 `js/rsvp-form.js` 同一份題目。
   > 代價是 `themeColor`（每站一個主色）不再套用在這一頁 ——
   > 其他頁面本來就只吃 `data-theme` 的四組色票，要一致就得放掉它。
+  >
+  > 這一頁**不需要先在大廳報到**（沒有 `requireUser()`）：它是對外分享的連結，
+  > 賓客點進來就該看得到表單，不必先看入場動畫、填名字。
+  > 沒報到過的訪客，導覽列上也不會出現「朋友 ▾／登出」那一塊。
 - **風格**：極簡線條。全站單一字族 **Noto Serif TC**（Google Fonts CDN），
   無陰影、無 emoji，靠 1px 線條與留白分層。
 - **BGM**：預設播內建的 `public/audio/bgm.mp3`，新人放了自己的音檔就換成他們的。
@@ -71,12 +80,12 @@
 ├─ firestore.indexes.json
 ├─ public/
 │   ├─ index.html             # 大廳
-│   ├─ rsvp.html  wall.html  cake.html
+│   ├─ wall.html  cake.html
 │   ├─ draw.html  exhibition.html  quiz.html
 │   ├─ seating.html           # 我的桌次（婚禮當天查桌次 + 桌次圖）
 │   ├─ letter.html            # 給你的信（新人寫的電子祝福信）
 │   ├─ admin.html             # 新人後台（回覆／悄悄話／大廳文案／桌次／祝福信／卡片／囍卡／展覽／測驗）
-│   ├─ invitation.html        # 單頁式邀請函（版型與其他頁共用）
+│   ├─ invitation.html        # 出席回覆（婚禮資訊＋表單，網址 /w/{slug}/invitation）
 │   ├─ shortlink.html         # 短連結轉址頁
 │   ├─ 404.html
 │   ├─ assets/{slug}/         # 每組新人的照片
@@ -87,15 +96,15 @@
 │       ├─ common.js          # 資料層 DataStore、導覽、特效、樣板文字
 │       ├─ cropper.js         # 後台專用的照片裁切器（只有 admin.html 載入）
 │       ├─ quiz-defaults.js   # 測驗的預設題目與上限（quiz.html 與 admin.html 共用）
-│       ├─ rsvp-form.js       # 出席回覆表單（rsvp.html 與 invitation.html 共用同一份）
-│       └─ index.js rsvp.js …           # 各頁邏輯
+│       ├─ rsvp-form.js       # 出席回覆表單（題目依後台設定增減）
+│       └─ index.js invitation.js …     # 各頁邏輯
 ├─ scripts/
 │   ├─ create-site.js         # 建立客戶站台（slug transaction）
 │   ├─ export-rsvps.js        # 匯出某站台的 RSVP 成 CSV
 │   └─ create-short-link.js
 └─ tests/
     ├─ rules.test.mjs         # Security Rules 測試
-    ├─ e2e.mjs                # 單頁邀請函的瀏覽器測試
+    ├─ e2e.mjs                # 出席回覆那一頁的瀏覽器測試
     └─ multipage.mjs          # 多頁面站台的瀏覽器測試
 ```
 
@@ -145,6 +154,10 @@ sites/{siteId}
   schedule(map[])       # 當日流程，每筆 { time, title, desc? }
   rsvpDeadline(timestamp), rsvpEnabled(bool)
   seatingSearchEnabled(bool)   # 桌次頁的搜尋開關，沒這個欄位視為 true
+  rsvpAskCard / rsvpAskGift / rsvpAskMessage(bool)   # 出席回覆要問哪些題目
+  rsvpContactMethods(string[])  # 要問哪幾種聯絡方式（phone/line/email）
+  rsvpShowStory / rsvpShowGallery(bool)              # 那一頁要不要放這兩塊
+                               # 以上六個沒設定過一律視為「開著」，舊站台不受影響
   pages(map)            # 每個頁面開關，如 { wall:true, cake:false, … }
   ownerEmails(string[]) # 新人的 Google 信箱；決定誰進得了後台（RSVP 與悄悄話都靠它）
   createdAt, updatedAt
@@ -152,10 +165,12 @@ sites/{siteId}
   # ↓ 各功能的資料都掛在這組新人底下，站台之間完全看不到彼此
   rsvps/{autoId}       name, attending(bool), tentative(bool), guestCount(1–10),
                        relation('groom'|'bride'|'both'|'other'),
+                       contactPhone, contactLine, contactEmail,   # 至少填一種
                        mealMeat(0–10), mealVeg(0–10),   # 相加＝guestCount
                        childSeat(0–10), dietaryNote,
                        cardType('paper'|'digital'|'none'),
                        cardDelivery('pickup'|'mail'), cardZip, cardAddress,
+                       cardEmail,                                  # 電子喜帖寄到哪
                        giftDelivery('pickup'|'mail'), giftZip, giftAddress,
                        message, note, icon, createdAt
                        # 只有新人讀得到；後台可看可匯出，但不能改不能刪
@@ -317,13 +332,13 @@ node scripts/create-site.js \
 
 ### 頁面開關
 
-可開關的頁面：`rsvp` `wall` `cake` `draw` `exhibition` `quiz` `invitation`
+可開關的頁面：`rsvp` `wall` `cake` `draw` `exhibition` `quiz`
 `seating` `letter`
 （大廳 `lobby` 與新人後台 `admin` 一定存在，不能關）。
 
 ```bash
 # 全套都要
---pages rsvp,wall,cake,draw,exhibition,quiz,invitation,seating,letter
+--pages rsvp,wall,cake,draw,exhibition,quiz,seating,letter
 
 # 只要基本款（不給 --pages 時的預設）
 # → rsvp, wall
@@ -428,6 +443,24 @@ npm run set-pages -- --slug ginny-one-20260919 \
 名單可以依狀態篩選、用名字／留言／備註搜尋，也可以**匯出 CSV**
 （欄位與 `npm run export-rsvps` 一致，含 BOM，Excel 開中文不會亂碼；
 匯出的是「目前篩選出來的那些」，不是全部）。
+
+最底下是**表單與頁面設定** —— 決定 `/w/{slug}/invitation` 那一頁要問什麼、放什麼：
+
+| 設定 | 內容 |
+|---|---|
+| 要問的題目 | 喜帖發送方式／喜餅領取方式／想對新人說的話，可以個別關掉 |
+| 聯絡方式 | 電話號碼／LINE ID／Email，**可複選**；勾了幾種，賓客就要至少填其中一種 |
+| 頁面區塊 | 兩人的故事／照片集，可以個別關掉 |
+
+稱呼、出席與否、與新人的關係、出席人數、餐點分配、兒童座椅與其他備註是固定題目。
+
+**沒設定過一律視為開著**，舊站台不會因為少了這幾個欄位就整塊消失。
+關掉的題目在名單與 CSV 裡留白，已經送出的回覆不受影響；
+儀表板上那一題的環狀圖也會跟著收起來（一張全是「未填」的圖沒有任何資訊）。
+
+**兩個「同上」的捷徑**：勾了 Email 當聯絡方式時，賓客選「需要電子喜帖」可以直接
+勾「同上」帶入同一個信箱；喜帖選了郵寄之後，喜餅那一題也會出現「同上」帶入同一個地址。
+帶進來的欄位會轉成唯讀（看得到、改不動），要改就把勾勾取消。
 
 > **後台只能看與匯出，不能修改。**
 > 規則對 `rsvps` 開放的只有 `read`，`update` 與 `delete` 仍然是 `false` ——
@@ -910,8 +943,9 @@ CSV 帶 UTF-8 BOM，Excel 直接打開不會亂碼；時間以婚禮當地時區
 欄位依序是：
 
 ```
-稱呼、是否出席、與新人關係、人數、葷食、素食、兒童座椅、飲食習慣、
-喜帖、喜帖領取、喜帖郵遞區號、喜帖地址、
+稱呼、是否出席、與新人關係、電話、LINE、Email、
+人數、葷食、素食、兒童座椅、飲食習慣、
+喜帖、喜帖領取、喜帖郵遞區號、喜帖地址、喜帖 Email、
 喜餅、喜餅郵遞區號、喜餅地址、給新人的話、其他備註、回覆時間
 ```
 
@@ -1001,6 +1035,7 @@ npm run test:multipage
 [12] 電子祝福信                # 專屬詞彙、通用信
 [13] Explore 自訂卡片          # 連結型／彈窗型、編號重編
 [14] 新人後台                  # Google 登入、外人進不去也寫不進去
+[14c] 後台開關表單題目         # 關掉的題目賓客那邊真的不見、儀表板也少一張圖
 [15] 後台改大廳文案            # 地點／Dress Code／流程寫回 sites，大廳同步
 [16] 後台上傳囍卡與展品        # 裁切器、卡池整批取代、收藏只記 cardId
 ```
@@ -1016,7 +1051,8 @@ npm run test:e2e
 ```
 [1]  /w/{slug}/invitation   # 內容、時區、倒數、照片牆、hashtag、行事曆
                             # 以及「與其他頁共用版型」：導覽列、浮動控制、common.css
-[1a] 出席回覆的題目         # 三個出席選項、關係／喜帖／喜餅、條件欄位、葷素連動
+[1a] 出席回覆的題目         # 三個出席選項、關係／聯絡方式／喜帖／喜餅、
+                            # 條件欄位、葷素連動、兩個「同上」捷徑
 [1b] 照片放大               # 點圖開啟、Esc 關閉
 [2]  /w/wu-yang-1220        # 另一組 slug，內容互不干擾、空欄位區塊隱藏
 [3]  /w/does-not-exist      # 中文找不到畫面，非白畫面且無 console 錯誤
@@ -1025,6 +1061,7 @@ npm run test:e2e
 [5]  RSVP 送出流程          # 不跳頁、成功狀態、寫入欄位正確
 [6]  honeypot 擋機器人      # 畫面顯示成功但確認未寫入 Firestore，並逐一驗證新欄位
 [8]  短連結 /s/{code}       # 正常轉址、不存在代號、javascript: 協定被擋
+[9]  舊的 /rsvp 網址        # 301 導到 /invitation，導過去之後表單正常
 [7]  手機版 RWD（375px）    # 無水平捲動
 ```
 
@@ -1123,6 +1160,7 @@ RSVP 建立時必須全數通過：
 - `relation`／`cardType`／`cardDelivery`／`giftDelivery` 只收列舉值
 - `mealMeat`／`mealVeg`／`childSeat` 為 int，0–10
 - `cardZip`／`giftZip` ≤ 10 字，`cardAddress`／`giftAddress` ≤ 200 字
+- `contactPhone` ≤ 30 字、`contactLine` ≤ 60 字、`contactEmail`／`cardEmail` ≤ 120 字
 - `createdAt` 必須等於 `request.time`（防止偽造時間）
 - 對應的 `sites/{siteId}` 存在、`status == "published"`、`rsvpEnabled == true`
 - 尚未超過 `rsvpDeadline`

@@ -88,6 +88,12 @@ const RSVP_OPTIONS = {
     ['both',  '雙方親友'],
     ['other', '其他'],
   ],
+  /* 聯絡方式：新人在後台複選要問哪幾種，賓客至少要填其中一種 */
+  contact: [
+    ['phone', '電話號碼'],
+    ['line',  'LINE ID'],
+    ['email', 'Email'],
+  ],
   meal: [
     ['meat', '葷食'],
     ['veg',  '素食'],
@@ -112,6 +118,35 @@ window.RSVP_OPTIONS = RSVP_OPTIONS;
 function rsvpLabel(group, value){
   const hit = (RSVP_OPTIONS[group] || []).find(([v]) => v === value);
   return hit ? hit[1] : (value || '');
+}
+
+/* ============================================================
+   出席回覆頁的開關（新人在後台「出席回覆」分頁設定）
+   ------------------------------------------------------------
+   一律「沒設定過就視為開著」——
+   欄位是後來才加的，舊站台不會因為少了這幾個欄位就整塊消失。
+   表單（rsvp-form.js）、頁面（invitation.js）與後台儀表板（admin.js）
+   讀的是同一份，三邊才不會各自解讀。
+============================================================ */
+const CONTACT_KEYS = RSVP_OPTIONS.contact.map(([k]) => k);
+
+function rsvpConfig(){
+  const d = (window.SITE && window.SITE.data) || {};
+  const on = (v) => v !== false;   /* 只有明確存了 false 才算關掉 */
+
+  /* 沒設定過就三種都問；存了空陣列代表「不問聯絡方式」 */
+  const contacts = Array.isArray(d.rsvpContactMethods)
+    ? d.rsvpContactMethods.filter(m => CONTACT_KEYS.includes(m))
+    : CONTACT_KEYS.slice();
+
+  return {
+    askCard:     on(d.rsvpAskCard),      // 喜帖
+    askGift:     on(d.rsvpAskGift),      // 喜餅
+    askMessage:  on(d.rsvpAskMessage),   // 想對新人說的話
+    contacts,                            // 要問哪幾種聯絡方式
+    showStory:   on(d.rsvpShowStory),    // 頁面上的「兩人的故事」
+    showGallery: on(d.rsvpShowGallery),  // 頁面上的「照片集」
+  };
 }
 
 /* ---------- localStorage 包裝 ----------
@@ -910,6 +945,7 @@ function startCountdown(el, iso, mode){
    ・站台沒開的頁面不會出現在列上
 ============================================================ */
 const NAV_ITEMS = [
+  { key:'rsvp',       label:'出席回覆' },
   { key:'seating',    label:'桌次' },
   { key:'wall',       label:'祝福' },
   { key:'letter',     label:'給你的信' },
@@ -937,13 +973,10 @@ function buildSiteNav(){
               + `href="${S.pathFor(it.key)}">${escapeHtml(it.label)}</a>`)
     .join('');
 
-  const nav = document.createElement('header');
-  nav.className = 'site-nav';
-  nav.id = 'siteNav';
-  nav.innerHTML = `
-    <nav class="nav-inner">
-      <a class="nav-brand" href="${S.pathFor('lobby')}">${escapeHtml(couple)}</a>
-      <div class="nav-links">${links}</div>
+  /* 還沒在大廳報到過的訪客（例如直接點邀請函連結進來的）沒有名字，
+     這時不該出現「朋友 ▾ / 登出（換一位賓客）」—— 他根本沒登入過。 */
+  const entered = !!LS.get('user', null);
+  const userBox = !entered ? '' : `
       <div class="nav-user">
         <button class="nav-user-btn" id="navUserBtn" type="button" aria-haspopup="true" aria-expanded="false">
           <span class="nav-user-ic" id="navUserIc"></span>
@@ -952,7 +985,15 @@ function buildSiteNav(){
         <div class="nav-user-pop" id="navUserPop">
           <button type="button" data-act="logout">登出（換一位賓客）</button>
         </div>
-      </div>
+      </div>`;
+
+  const nav = document.createElement('header');
+  nav.className = 'site-nav';
+  nav.id = 'siteNav';
+  nav.innerHTML = `
+    <nav class="nav-inner">
+      <a class="nav-brand" href="${S.pathFor('lobby')}">${escapeHtml(couple)}</a>
+      <div class="nav-links">${links}</div>${userBox}
     </nav>`;
   document.body.insertBefore(nav, document.body.firstChild);
 
@@ -960,18 +1001,20 @@ function buildSiteNav(){
 
   const btn = document.getElementById('navUserBtn');
   const pop = document.getElementById('navUserPop');
-  btn.addEventListener('click', (e)=>{
-    e.stopPropagation();
-    const open = pop.classList.toggle('open');
-    btn.setAttribute('aria-expanded', String(open));
-  });
-  document.addEventListener('click', (e)=>{
-    if(!e.target.closest('.nav-user')){
-      pop.classList.remove('open');
-      btn.setAttribute('aria-expanded', 'false');
-    }
-  });
-  pop.querySelector('[data-act="logout"]').addEventListener('click', logout);
+  if(btn && pop){
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const open = pop.classList.toggle('open');
+      btn.setAttribute('aria-expanded', String(open));
+    });
+    document.addEventListener('click', (e)=>{
+      if(!e.target.closest('.nav-user')){
+        pop.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+    pop.querySelector('[data-act="logout"]').addEventListener('click', logout);
+  }
 
   /* 還沒進場就先藏起來，index.js / admin.js 進場後再叫出來 */
   const gate = document.getElementById('gate') || document.getElementById('pwGate');

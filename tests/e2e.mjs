@@ -1,9 +1,9 @@
 /* ============================================================
-   e2e.mjs — 單頁式邀請函（/w/{slug}/invitation）的瀏覽器測試
+   e2e.mjs — 出席回覆（/w/{slug}/invitation）的瀏覽器測試
    ------------------------------------------------------------
-   邀請函已經改用與其他頁面相同的版型：
+   婚禮資訊與出席回覆表單已經合併成這一頁，版型與其他頁面相同：
    走 js/site-context.js 載入站台設定 → 注入 common.js 與 invitation.js，
-   出席回覆表單則與 /w/{slug}/rsvp 共用 js/rsvp-form.js。
+   表單則由 js/rsvp-form.js 依新人在後台的設定產生。
    所以這裡等的是 data-site-ready，而不是舊版自己管的 #content。
 ============================================================ */
 import { chromium } from 'playwright';
@@ -193,11 +193,15 @@ function ok(label, cond, extra = '') {
 }
 
 /* 出席回覆表單：把必填的題目一次填完（能來參加、關係、喜帖、喜餅） */
+/* 預設用「不需要喜帖」＋「現場領取」：這兩個選項不會再追問地址或 Email，
+   讓每個測試只需要填自己真正要驗的欄位 */
 async function fillRsvp(page, { name, attend = 'yes', relation = 'groom',
-                                card = 'digital', gift = 'pickup' } = {}) {
+                                card = 'none', gift = 'pickup',
+                                phone = '0912345678' } = {}) {
   await page.fill('#rName', name);
   await page.click(`#attendRow .choice[data-val="${attend}"]`);
   await page.click(`#relationRow .choice[data-val="${relation}"]`);
+  await page.fill('#rPhone', phone);
   await page.click(`#cardRow .choice[data-val="${card}"]`);
   await page.click(`#giftRow .choice[data-val="${gift}"]`);
 }
@@ -272,6 +276,10 @@ console.log('\n[1a] 出席回覆的題目');
     (await opts('#giftRow .choice')).join('／') === '現場領取／郵寄',
     (await opts('#giftRow .choice')).join('／'));
   ok('其他備註欄位存在', await page.locator('#rMemo').count() === 1);
+  ok('沒設定時三種聯絡方式都問',
+    (await page.locator('.rf-contact-name').allTextContents()).join('／')
+      === '電話號碼／LINE ID／Email',
+    (await page.locator('.rf-contact-name').allTextContents()).join('／'));
 
   /* 出席細節：沒選「熱情出席」之前不出現 */
   ok('未選出席時細節收起來', !(await page.isVisible('#detailBox')));
@@ -310,9 +318,44 @@ console.log('\n[1a] 出席回覆的題目');
   await page.click('#giftRow .choice[data-val="mail"]');
   ok('喜餅選郵寄才問地址', await page.isVisible('#giftAddrBox'));
 
-  /* 郵寄卻沒填地址就送出：要被擋下 */
-  await page.fill('#rName', '沒填地址');
+  /* 喜餅「同上」：喜帖填了地址才會出現，勾了就帶下來 */
+  await page.fill('#rCardZip', '104');
+  await page.fill('#rCardAddr', '台北市中山區南京東路一段 1 號');
+  await page.click('#giftRow .choice[data-val="mail"]');
+  ok('喜帖有地址時，喜餅才出現「同上」', await page.isVisible('#giftAddrSameWrap'));
+  await page.check('#giftAddrSame');
+  ok('勾同上就帶入喜帖的地址',
+    (await page.inputValue('#rGiftZip')) === '104'
+      && (await page.inputValue('#rGiftAddr')).includes('南京東路'),
+    `${await page.inputValue('#rGiftZip')} / ${await page.inputValue('#rGiftAddr')}`);
+  ok('帶進來的欄位轉成唯讀',
+    await page.evaluate(() => document.getElementById('rGiftAddr').readOnly));
+
+  /* 電子喜帖「同上」：聯絡方式填了 Email 才會出現 */
+  await page.click('#cardRow .choice[data-val="digital"]');
+  ok('沒填聯絡 Email 時不出現同上', !(await page.isVisible('#cardEmailSameWrap')));
+  await page.fill('#rEmail', 'guest@example.com');
+  ok('填了聯絡 Email 才出現同上', await page.isVisible('#cardEmailSameWrap'));
+  await page.check('#cardEmailSame');
+  ok('勾同上就帶入聯絡的 Email',
+    (await page.inputValue('#rCardEmail')) === 'guest@example.com',
+    await page.inputValue('#rCardEmail'));
+
+  /* 沒留任何聯絡方式就送出：要被擋下 */
+  await page.fill('#rName', '沒留聯絡方式');
   await page.click('#relationRow .choice[data-val="both"]');
+  await page.fill('#rEmail', '');
+  await page.click('#submitBtn');
+  await page.waitForTimeout(300);
+  ok('沒留聯絡方式會被擋下',
+    (await page.textContent('#rErr')).includes('聯絡方式'),
+    await page.textContent('#rErr'));
+
+  /* 郵寄卻沒填地址就送出：要被擋下 */
+  await page.fill('#rPhone', '0912345678');
+  await page.click('#cardRow .choice[data-val="paper"]');
+  await page.click('#cardDeliveryRow .choice[data-val="mail"]');
+  await page.fill('#rCardZip', '');
   await page.click('#submitBtn');
   await page.waitForTimeout(300);
   ok('郵寄沒填郵遞區號會被擋下',
@@ -466,6 +509,7 @@ console.log('\n[6] honeypot 擋機器人');
   ok('喜帖為紙本自取', saved.cardType === 'paper' && saved.cardDelivery === 'pickup',
     `${saved.cardType}/${saved.cardDelivery}`);
   ok('紙本自取時不留地址', saved.cardAddress === '' && saved.cardZip === '');
+  ok('聯絡電話有存下來', saved.contactPhone === '0912345678', saved.contactPhone);
   ok('喜餅郵寄且有地址',
     saved.giftDelivery === 'mail' && saved.giftZip === '104'
       && saved.giftAddress.includes('南京東路'),
@@ -474,9 +518,9 @@ console.log('\n[6] honeypot 擋機器人');
   ok('createdAt 由伺服器寫入', saved.createdAt && typeof saved.createdAt.toDate === 'function');
   ok('未夾帶多餘欄位',
     Object.keys(saved).sort().join(',') ===
-    'attending,cardAddress,cardDelivery,cardType,cardZip,childSeat,createdAt,dietaryNote,'
-    + 'giftAddress,giftDelivery,giftZip,guestCount,icon,mealMeat,mealVeg,message,name,note,'
-    + 'relation,tentative',
+    'attending,cardAddress,cardDelivery,cardEmail,cardType,cardZip,childSeat,contactEmail,'
+    + 'contactLine,contactPhone,createdAt,dietaryNote,giftAddress,giftDelivery,giftZip,'
+    + 'guestCount,icon,mealMeat,mealVeg,message,name,note,relation,tentative',
     Object.keys(saved).sort().join(','));
 }
 
@@ -505,6 +549,19 @@ console.log('\n[8] 短連結 /s/{code}');
   await page.waitForSelector('#notFoundState', { state: 'visible', timeout: 15000 });
   ok('javascript: 協定被擋下', await page.isVisible('#notFoundState'));
   ok('未離開轉址頁', page.url().includes('/s/evil99'), page.url());
+  await page.close();
+}
+
+/* ---------- 舊網址 /rsvp ---------- */
+console.log('\n[9] 舊的 /rsvp 網址');
+{
+  const page = await newPage();
+  await page.goto(BASE + '/w/chen-lin-0315/rsvp', { waitUntil: 'domcontentloaded' });
+  await page.waitForURL('**/w/chen-lin-0315/invitation', { timeout: 15000 }).catch(() => {});
+  ok('導到合併後的邀請函',
+    page.url().endsWith('/w/chen-lin-0315/invitation'), page.url());
+  await waitReady(page);
+  ok('導過去之後表單正常顯示', await page.isVisible('#rsvpForm'));
   await page.close();
 }
 

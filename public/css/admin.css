@@ -93,6 +93,13 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-check{display:flex;align-items:flex-start;gap:9px;margin-top:18px;
   font-size:13px;line-height:1.8;color:var(--ink);cursor:pointer;}
 .ad-check input{margin-top:5px;flex:0 0 auto;accent-color:var(--primary-deep);}
+/* 同一組勾選框連著排時不要each都空 18px，看起來才像一組 */
+.ad-check + .ad-check{margin-top:6px;}
+
+/* 欄位底下的小提示：比 .ad-sec-note 更貼著它說明的那一組欄位 */
+.ad-hint{margin-top:10px;font-size:11.5px;line-height:1.9;letter-spacing:.02em;
+  color:var(--ink-soft);}
+.ad-hint b{color:var(--ink);font-weight:500;}
 
 .ad-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;}
 
