@@ -24,7 +24,7 @@
   <div class="gate-card">
     <div class="ribbon">Private</div>
     <h1>新人後台</h1>
-    <div class="sub">出席回覆、悄悄話信箱、大廳文案、桌次、囍卡、展覽都在這裡<br>請用新人的 Google 帳號登入</div>
+    <div class="sub">出席回覆、悄悄話信箱、大廳文案、桌次、婚禮小卡、故事牆都在這裡<br>請用新人的 Google 帳號登入</div>
     <button class="btn btn-google" id="ownerLoginBtn" type="button">
       <svg viewBox="0 0 18 18" aria-hidden="true" width="18" height="18">
         <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/>
@@ -69,10 +69,10 @@
       <button class="ad-tab" type="button" data-tab="inbox">悄悄話</button>
       <button class="ad-tab" type="button" data-tab="lobby">婚禮資訊</button>
       <button class="ad-tab" type="button" data-tab="seating">桌次</button>
-      <button class="ad-tab" type="button" data-tab="letters">祝福信</button>
-      <button class="ad-tab" type="button" data-tab="cards">囍卡</button>
-      <button class="ad-tab" type="button" data-tab="exhibits">展覽</button>
-      <button class="ad-tab" type="button" data-tab="quiz">測驗</button>
+      <button class="ad-tab" type="button" data-tab="letters">感謝信</button>
+      <button class="ad-tab" type="button" data-tab="cards">婚禮小卡</button>
+      <button class="ad-tab" type="button" data-tab="exhibits">新人故事牆</button>
+      <button class="ad-tab" type="button" data-tab="quiz">新人熟悉測驗</button>
 
       <!-- <900px 才看得到：桌機版這兩顆留在最上面的 ad-bar 裡 -->
       <div class="ad-side-foot">
@@ -143,22 +143,8 @@
     <section class="ad-sec">
       <h2 class="ad-sec-title">悄悄話信箱</h2>
       <p class="ad-sec-note">
-        賓客從<b>祝福牆</b>投進來的悄悄話都在這裡。
-        規則只讓 ownerEmails 名單內、信箱已驗證的帳號讀得到 ——
-        賓客寫得進去、讀不出來，彼此也看不到。
-        信是賓客送出的紀錄，後台只能看與匯出，不能修改。
+        賓客透過悄悄話信箱寄送的內容
       </p>
-
-      <div class="ad-stats ad-stats-2">
-        <div class="ad-stat">
-          <div class="ad-stat-num" id="adInboxTotal">0</div>
-          <div class="ad-stat-lab">收到的悄悄話</div>
-        </div>
-        <div class="ad-stat">
-          <div class="ad-stat-num" id="adInboxToday">0</div>
-          <div class="ad-stat-lab">今天收到</div>
-        </div>
-      </div>
 
       <div class="ad-row">
         <button class="btn small ghost" id="adInboxExport" type="button">匯出 CSV</button>
@@ -309,22 +295,13 @@
   ============================================================ -->
   <div class="ad-panel" data-panel="seating">
 
-    <!-- 1-0 搜尋開關 -->
-    <section class="ad-sec">
-      <h2 class="ad-sec-title">桌次搜尋</h2>
-      <p class="ad-sec-note">
-        關掉的話，賓客那一頁就<b>只會看到你上傳的桌次圖</b>，沒有輸入名字的欄位 ——
-        名單還沒整理好、或是本來就打算讓大家自己看圖找位子時很適合。
-        改完馬上生效，賓客重新整理就看得到。
-      </p>
-
-      <label class="ad-check">
-        <input type="checkbox" id="adSeatSearch">
-        <span>開啟「輸入名字查桌次」的搜尋功能</span>
-      </label>
-    </section>
+    <nav class="ad-subtabs" data-subtabs="seating">
+      <button class="ad-subtab is-on" type="button" data-subtab="map">桌次圖</button>
+      <button class="ad-subtab" type="button" data-subtab="list">桌次搜尋及名單</button>
+    </nav>
 
     <!-- 1-1 桌次圖 -->
+    <div class="ad-subpanel is-on" data-subpanel="map">
     <section class="ad-sec">
       <h2 class="ad-sec-title">桌次圖</h2>
       <p class="ad-sec-note">
@@ -342,25 +319,35 @@
 
       <div class="ad-imgs" id="adImgs"></div>
     </section>
+    </div>
 
-    <!-- 1-2 桌次名單 -->
+    <!-- 1-2 桌次搜尋及名單 -->
+    <div class="ad-subpanel" data-subpanel="list">
     <section class="ad-sec">
-      <h2 class="ad-sec-title">桌次名單</h2>
-      <p class="ad-sec-note">
-        一行一位賓客，用逗號分開：<b>姓名, 桌次, 備註</b>（備註可以不寫）。
-        Excel 複製過來的逗號或 Tab 分隔都認得。
-      </p>
+      <div class="ad-callout">
+        <label class="ad-callout-head">
+          <input type="checkbox" id="adSeatSearch">
+          <span>開啟「輸入名字查桌次」的搜尋功能</span>
+        </label>
+        <p class="ad-callout-note">
+          關掉的話，賓客那一頁就只會看到你上傳的桌次圖，沒有輸入名字的欄位 ——
+          名單還沒整理好、或是本來就打算讓大家自己看圖找位子時很適合。
+          改完馬上生效，賓客重新整理就看得到。
+        </p>
+      </div>
+    </section>
+
+    <section class="ad-sec">
+      <div class="ad-sec-head">
+        <h2 class="ad-sec-title">桌次名單</h2>
+        <div class="ad-sec-head-actions">
+          <button class="btn small" id="adSeatImportOpen" type="button">匯入名單</button>
+        </div>
+      </div>
       <p class="ad-sec-note" id="adSeatListOff" hidden>
         <b>搜尋功能目前是關的</b>，這份名單賓客那邊看不到 ——
         可以先存著，之後把搜尋打開就會生效。
       </p>
-
-      <textarea class="ad-textarea" id="adSeatBulk" rows="7"
-        placeholder="王小明, 第 3 桌&#10;林美美, 第 3 桌, 素食&#10;陳大同, 主桌"></textarea>
-      <div class="ad-row">
-        <button class="btn small" id="adSeatImport" type="button">匯入名單</button>
-        <button class="btn small ghost" id="adSeatClear" type="button">清空整份名單</button>
-      </div>
 
       <div class="ad-list-head">
         <span id="adSeatCount">目前 0 位</span>
@@ -368,68 +355,33 @@
       </div>
       <div class="ad-list" id="adSeatList"></div>
     </section>
+    </div>
   </div>
 
   <!-- ============================================================
-       分頁 4：祝福信
+       分頁 4：感謝信
   ============================================================ -->
   <div class="ad-panel" data-panel="letters">
     <section class="ad-sec">
-      <h2 class="ad-sec-title">寫一封信</h2>
-      <p class="ad-sec-note">
-        「專屬詞彙」是賓客要輸入的通關密語，可以是名字、綽號、或只有你們懂的暗號，
-        用逗號分開可以寫好幾個。詞彙寫得太短容易被別人誤中，建議至少兩個字。
-      </p>
-
-      <form class="ad-form" id="adLetterForm">
-        <input type="hidden" id="adLetterId">
-
-        <label class="ad-label" for="adLetterTerms">專屬詞彙</label>
-        <input class="ad-input" id="adLetterTerms" type="text" maxlength="200"
-               placeholder="王小明, 小明, 大學室友">
-
-        <label class="ad-label" for="adLetterTitle">信的標題</label>
-        <input class="ad-input" id="adLetterTitle" type="text" maxlength="60"
-               placeholder="給小明的一封信">
-
-        <label class="ad-label" for="adLetterBody">信的內容</label>
-        <textarea class="ad-textarea" id="adLetterBody" rows="9" maxlength="2000"
-                  placeholder="小明：&#10;&#10;謝謝你今天特地趕來…"></textarea>
-        <div class="ad-count"><span id="adLetterLen">0</span> / 2000</div>
-
-        <label class="ad-label" for="adLetterSign">署名</label>
-        <input class="ad-input" id="adLetterSign" type="text" maxlength="60"
-               placeholder="留白的話就用新人的名字">
-
-        <label class="ad-check">
-          <input type="checkbox" id="adLetterDefault">
-          <span>設為通用信（沒對到任何詞彙的賓客，就領到這一封）</span>
-        </label>
-
-        <div class="ad-row">
-          <button class="btn small" type="submit">儲存這封信</button>
-          <button class="btn small ghost" id="adLetterReset" type="button">清空欄位</button>
+      <div class="ad-sec-head">
+        <h2 class="ad-sec-title">新人的感謝與祝福</h2>
+        <div class="ad-sec-head-actions">
+          <button class="btn small" id="adLetterAddBtn" type="button">寫一封信</button>
         </div>
-      </form>
-    </section>
-
-    <section class="ad-sec">
-      <h2 class="ad-sec-title">已經寫好的信</h2>
+      </div>
       <div class="ad-list" id="adLetterList"></div>
     </section>
   </div>
 
   <!-- ============================================================
-       分頁 5：囍卡（抽卡頁的卡池）
+       分頁 5：婚禮小卡（抽卡頁的卡池）
   ============================================================ -->
   <div class="ad-panel" data-panel="cards">
     <section class="ad-sec">
-      <h2 class="ad-sec-title">上傳囍卡照片</h2>
+      <h2 class="ad-sec-title">上傳婚禮小卡照片</h2>
       <p class="ad-sec-note">
-        選好照片會先跳出<b>裁切框</b>，拖曳、縮放到滿意再確定 ——
-        卡片是直式 2:3，這樣人就不會被切到。
-        一次可以選很多張，會一張一張輪流裁切。
-        <b>只要這裡有任何一張卡，抽卡頁就整批用你上傳的，不再用素材資料夾裡的照片。</b>
+        一次可以選很多張，會一張一張輪流裁切，選好照片會先跳出<b>裁切框</b>，
+        拖曳、縮放到滿意再確定 。
       </p>
 
       <label class="ad-upload" id="adCardUpload">
@@ -443,7 +395,7 @@
     </section>
 
     <section class="ad-sec">
-      <h2 class="ad-sec-title">卡池</h2>
+      <h2 class="ad-sec-title">婚禮小卡</h2>
       <p class="ad-sec-note">
         卡名、等級、說明改完就自動存檔。等級 <b>SSR／SR</b> 抽到時會有彩虹光膜與煙火，
         <b>R／N</b> 是一般卡。每張卡被抽到的機率相同，想讓稀有卡難抽就少放幾張。
@@ -454,176 +406,56 @@
   </div>
 
   <!-- ============================================================
-       分頁 6：展覽（戀愛時光的展品與章節）
+       分頁 6：新人故事牆（戀愛時光的故事與章節）
   ============================================================ -->
   <div class="ad-panel" data-panel="exhibits">
     <section class="ad-sec">
-      <h2 class="ad-sec-title">新增展品或章節</h2>
+      <div class="ad-sec-head">
+        <h2 class="ad-sec-title">新人故事牆</h2>
+        <div class="ad-sec-head-actions">
+          <button class="btn small" id="adExhAddPhoto" type="button">新增故事</button>
+          <button class="btn small ghost" id="adExhAddAct" type="button">新增章節</button>
+        </div>
+      </div>
       <p class="ad-sec-note">
-        「展品」是時間軸上的一張照片加文字；「章節」是中間那張分隔卡（例如
-        <b>第一幕・我們的相遇</b>）。兩種都用<b>排序</b>決定先後，數字小的排前面 ——
-        章節卡的排序要放在它底下那些展品的前面。
-        <b>只要這裡有任何一筆，戀愛時光頁就整批用你設定的內容。</b>
+        「故事」是時間軸上的一張照片加文字；「章節」是分隔段落，例如
+        <b>第一幕・我們的相遇</b>。兩種都用<b>排序</b>決定先後，數字小的排前面。
       </p>
 
-      <form class="ad-form" id="adExhForm">
-        <input type="hidden" id="adExhId">
-        <input type="hidden" id="adExhImg">
-
-        <label class="ad-label" for="adExhKind">這一筆是</label>
-        <select class="ad-input" id="adExhKind">
-          <option value="photo">展品（照片＋文字）</option>
-          <option value="act">章節分隔卡</option>
-        </select>
-
-        <div id="adExhPhotoBox">
-          <label class="ad-label">照片</label>
-          <div class="ad-exh-pick">
-            <div class="ad-exh-prev" id="adExhPrev"><span>還沒有照片</span></div>
-            <div class="ad-exh-pick-side">
-              <label class="ad-label" for="adExhRatio">裁切比例</label>
-              <select class="ad-input ad-input-sm" id="adExhRatio">
-                <option value="0.75">直式 3:4</option>
-                <option value="1">方形 1:1</option>
-                <option value="1.3333">橫式 4:3</option>
-              </select>
-              <div class="ad-row">
-                <button class="btn small ghost" id="adExhPickBtn" type="button">選照片</button>
-                <button class="btn small ghost" id="adExhClearImg" type="button">移除照片</button>
-              </div>
-              <input type="file" id="adExhFile" accept="image/*" hidden>
-            </div>
-          </div>
-        </div>
-
-        <label class="ad-label" for="adExhTitle">
-          <span data-kind-label="photo">展品標題</span>
-          <span data-kind-label="act" hidden>章節名稱</span>
-        </label>
-        <input class="ad-input" id="adExhTitle" type="text" maxlength="60"
-               placeholder="第一次一起旅行">
-
-        <label class="ad-label" for="adExhSub">
-          <span data-kind-label="photo">時間補充說明</span>
-          <span data-kind-label="act" hidden>章節副標</span>
-        </label>
-        <input class="ad-input" id="adExhSub" type="text" maxlength="60"
-               placeholder="現在・31 歲　／　我們的相遇">
-
-        <div id="adExhPhotoBox2">
-          <label class="ad-label" for="adExhYear">年份</label>
-          <input class="ad-input ad-input-sm" id="adExhYear" type="text" maxlength="20"
-                 placeholder="2021">
-
-          <label class="ad-label" for="adExhAct">屬於哪一個章節</label>
-          <input class="ad-input" id="adExhAct" type="text" maxlength="40"
-                 placeholder="第一幕（選填，沒有年份時會顯示這個）">
-
-          <label class="ad-label" for="adExhDesc">描述</label>
-          <textarea class="ad-textarea" id="adExhDesc" rows="5" maxlength="500"
-                    placeholder="那天下著大雨，我們還是走完了整條老街…"></textarea>
-          <div class="ad-count"><span id="adExhDescLen">0</span> / 500</div>
-        </div>
-
-        <label class="ad-label" for="adExhOrder">排序（數字小的排前面）</label>
-        <input class="ad-input ad-input-sm" id="adExhOrder" type="number" value="1" min="0" step="1">
-
-        <div class="ad-row">
-          <button class="btn small" type="submit">儲存這一筆</button>
-          <button class="btn small ghost" id="adExhReset" type="button">清空欄位</button>
-        </div>
-      </form>
-    </section>
-
-    <section class="ad-sec">
-      <h2 class="ad-sec-title">展覽內容</h2>
       <div class="ad-list" id="adExhList"></div>
     </section>
   </div>
 
   <!-- ============================================================
-       分頁 7：測驗（賓客那一頁的題目與選項）
+       分頁 7：新人熟悉測驗（賓客那一頁的題目與選項）
   ============================================================ -->
   <div class="ad-panel" data-panel="quiz">
+
+    <nav class="ad-subtabs" data-subtabs="quiz">
+      <button class="ad-subtab is-on" type="button" data-subtab="questions">測驗題目</button>
+      <button class="ad-subtab" type="button" data-subtab="votes">作答記錄</button>
+    </nav>
+
+    <div class="ad-subpanel is-on" data-subpanel="questions">
     <section class="ad-sec">
-      <h2 class="ad-sec-title">新增題目</h2>
+      <div class="ad-sec-head">
+        <h2 class="ad-sec-title">新人熟悉測驗</h2>
+        <div class="ad-sec-head-actions">
+          <button class="btn small" id="adQuizAddBtn" type="button">新增題目</button>
+        </div>
+      </div>
       <p class="ad-sec-note">
-        這裡出的題目就是賓客在<b>「看你多了解我們」</b>看到的那一份，一頁式：
         單選題賓客選完會自動跳下一題，複選題<b>全對才得分</b>。
-        每題固定四個選項，勾起來的那個（或那幾個）就是正確答案 ——
-        新人不用自己作答，送出後長條圖上只會出現賓客自己的「你」。
+        每題固定四個選項，勾起來的那個（或那幾個）就是正確答案 。
         最多 50 題，順序用下面清單左邊的 ⠿ 拖曳調整。
       </p>
 
-      <form class="ad-form" id="adQuizForm">
-        <input type="hidden" id="adQuizId">
-
-        <label class="ad-label" for="adQuizType">題型</label>
-        <select class="ad-input" id="adQuizType">
-          <option value="single">單選（選完自動跳下一題）</option>
-          <option value="multi">複選（全對才得分）</option>
-        </select>
-
-        <label class="ad-label" for="adQuizQ">題目</label>
-        <input class="ad-input" id="adQuizQ" type="text" maxlength="60"
-               placeholder="我們是怎麼認識的？">
-        <div class="ad-count"><span id="adQuizQLen">0</span> / 60</div>
-
-        <label class="ad-label">四個選項（勾選正確答案）</label>
-        <div class="ad-quiz-opts" id="adQuizOpts">
-          <div class="ad-quiz-opt">
-            <label class="ad-quiz-ans" title="設為正確答案">
-              <input type="radio" name="adQuizAns" data-oi="0">
-              <span class="ad-quiz-ltr">A</span>
-            </label>
-            <input class="ad-input ad-quiz-text" type="text" maxlength="40"
-                   data-oi="0" placeholder="選項 A">
-          </div>
-          <div class="ad-quiz-opt">
-            <label class="ad-quiz-ans" title="設為正確答案">
-              <input type="radio" name="adQuizAns" data-oi="1">
-              <span class="ad-quiz-ltr">B</span>
-            </label>
-            <input class="ad-input ad-quiz-text" type="text" maxlength="40"
-                   data-oi="1" placeholder="選項 B">
-          </div>
-          <div class="ad-quiz-opt">
-            <label class="ad-quiz-ans" title="設為正確答案">
-              <input type="radio" name="adQuizAns" data-oi="2">
-              <span class="ad-quiz-ltr">C</span>
-            </label>
-            <input class="ad-input ad-quiz-text" type="text" maxlength="40"
-                   data-oi="2" placeholder="選項 C">
-          </div>
-          <div class="ad-quiz-opt">
-            <label class="ad-quiz-ans" title="設為正確答案">
-              <input type="radio" name="adQuizAns" data-oi="3">
-              <span class="ad-quiz-ltr">D</span>
-            </label>
-            <input class="ad-input ad-quiz-text" type="text" maxlength="40"
-                   data-oi="3" placeholder="選項 D">
-          </div>
-        </div>
-        <div class="ad-count">一個選項最多 40 字（太長的話賓客看到的長條會以「…」收尾）</div>
-
-        <div class="ad-row">
-          <button class="btn small" type="submit">儲存這一題</button>
-          <button class="btn small ghost" id="adQuizReset" type="button">清空欄位</button>
-        </div>
-      </form>
-    </section>
-
-    <section class="ad-sec">
-      <h2 class="ad-sec-title">題目清單</h2>
-      <p class="ad-sec-note">
-        由上到下就是賓客看到的題號順序，拖曳左邊的 ⠿ 就能調整。
-        改完題目或刪掉題目，賓客重新整理測驗頁就會看到新的題目
-        —— 已經作答過的票會留著，但對不到的題目不會再顯示。
-      </p>
       <div class="ad-count" id="adQuizCount">目前 0 題</div>
       <div class="ad-list" id="adQuizList"></div>
     </section>
+    </div>
 
+    <div class="ad-subpanel" data-subpanel="votes">
     <section class="ad-sec">
       <h2 class="ad-sec-title">賓客的作答紀錄</h2>
       <p class="ad-sec-note">
@@ -631,7 +463,7 @@
         就按下面那顆清空 —— 題目不會被動到。
       </p>
 
-      <div class="ad-stats">
+      <div class="ad-stats ad-stats-2">
         <div class="ad-stat">
           <div class="ad-stat-num" id="adQuizVoteCount">0</div>
           <div class="ad-stat-lab">作答人數</div>
@@ -646,6 +478,7 @@
         <button class="btn small ghost" id="adQuizWipe" type="button">清空所有作答紀錄</button>
       </div>
     </section>
+    </div>
   </div>
 
     </main>
@@ -716,11 +549,216 @@
   </div>
 </div>
 
+<!-- 桌次名單：貼上整份名單匯入 -->
+<div class="ad-modal-mask" id="adSeatModalMask" hidden>
+  <div class="ad-modal-card ad-modal-card-form">
+    <div class="ad-modal-title">桌次名單</div>
+    <p class="ad-modal-note">
+      一行一位賓客，用逗號分開：<b>姓名, 桌次, 備註</b>（備註可以不寫）。
+      Excel 複製過來的逗號或 Tab 分隔都認得。
+    </p>
+
+    <textarea class="ad-textarea" id="adSeatBulk" rows="8"
+      placeholder="王小明, 第 3 桌&#10;林美美, 第 3 桌, 素食&#10;陳大同, 主桌"></textarea>
+
+    <div class="ad-modal-actions">
+      <button class="btn small ghost" id="adSeatClear" type="button">清空</button>
+      <button class="btn small ghost" id="adSeatCancel" type="button">取消匯入</button>
+      <button class="btn small" id="adSeatImport" type="button">匯入</button>
+    </div>
+  </div>
+</div>
+
+<!-- 感謝信：新增／編輯用同一個彈窗 -->
+<div class="ad-modal-mask" id="adLetterModalMask" hidden>
+  <div class="ad-modal-card ad-modal-card-form">
+    <div class="ad-modal-title" id="adLetterModalTitle">寫一封信</div>
+    <p class="ad-modal-note">新人可以寫信給賓客，讓賓客輸入關鍵字時可以收到這封信</p>
+
+    <form class="ad-form" id="adLetterForm">
+      <input type="hidden" id="adLetterId">
+
+      <label class="ad-label" for="adLetterTerms">專屬詞彙</label>
+      <input class="ad-input" id="adLetterTerms" type="text" maxlength="200"
+             placeholder="王小明, 小明, 大學室友">
+      <div class="ad-hint">
+        「專屬詞彙」是賓客要輸入的通關密語，可以是名字、綽號、或只有你們懂的暗號，
+        用逗號分開可以寫好幾個。詞彙寫得太短容易被別人誤中，建議至少兩個字。
+      </div>
+
+      <label class="ad-label" for="adLetterTitle">信的標題</label>
+      <input class="ad-input" id="adLetterTitle" type="text" maxlength="60"
+             placeholder="給小明的一封信">
+
+      <label class="ad-label" for="adLetterBody">信的內容</label>
+      <textarea class="ad-textarea" id="adLetterBody" rows="9" maxlength="2000"
+                placeholder="小明：&#10;&#10;謝謝你今天特地趕來…"></textarea>
+      <div class="ad-count"><span id="adLetterLen">0</span> / 2000</div>
+
+      <label class="ad-label" for="adLetterSign">署名</label>
+      <input class="ad-input" id="adLetterSign" type="text" maxlength="60"
+             placeholder="留白的話就用新人的名字">
+
+      <label class="ad-check">
+        <input type="checkbox" id="adLetterDefault">
+        <span>設為通用信（沒對到任何詞彙的賓客，就領到這一封）</span>
+      </label>
+
+      <div class="ad-modal-actions">
+        <button class="btn small ghost" id="adLetterCancelBtn" type="button">取消</button>
+        <button class="btn small" type="submit">儲存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 新人故事牆：新增故事／新增章節／編輯都用同一個彈窗 -->
+<div class="ad-modal-mask" id="adExhModalMask" hidden>
+  <div class="ad-modal-card ad-modal-card-form">
+    <div class="ad-modal-title" id="adExhModalTitle">新增故事</div>
+
+    <form class="ad-form" id="adExhForm">
+      <input type="hidden" id="adExhId">
+      <input type="hidden" id="adExhImg">
+
+      <label class="ad-label" for="adExhKind">這一筆是</label>
+      <select class="ad-input" id="adExhKind">
+        <option value="photo">故事（照片＋文字）</option>
+        <option value="act">章節（分隔段落）</option>
+      </select>
+
+      <div id="adExhPhotoBox">
+        <label class="ad-label">照片</label>
+        <div class="ad-exh-pick">
+          <div class="ad-exh-prev" id="adExhPrev"><span>還沒有照片</span></div>
+          <div class="ad-exh-pick-side">
+            <label class="ad-label" for="adExhRatio">裁切比例</label>
+            <select class="ad-input ad-input-sm" id="adExhRatio">
+              <option value="0.75">直式 3:4</option>
+              <option value="1">方形 1:1</option>
+              <option value="1.3333">橫式 4:3</option>
+            </select>
+            <div class="ad-row">
+              <button class="btn small ghost" id="adExhPickBtn" type="button">選照片</button>
+              <button class="btn small ghost" id="adExhClearImg" type="button">移除照片</button>
+            </div>
+            <input type="file" id="adExhFile" accept="image/*" hidden>
+          </div>
+        </div>
+      </div>
+
+      <label class="ad-label" for="adExhTitle">
+        <span data-kind-label="photo">故事標題</span>
+        <span data-kind-label="act" hidden>章節名稱</span>
+      </label>
+      <input class="ad-input" id="adExhTitle" type="text" maxlength="60"
+             placeholder="第一次一起旅行">
+
+      <label class="ad-label" for="adExhSub">
+        <span data-kind-label="photo">時間補充說明</span>
+        <span data-kind-label="act" hidden>章節副標</span>
+      </label>
+      <input class="ad-input" id="adExhSub" type="text" maxlength="60"
+             placeholder="現在・31 歲　／　我們的相遇">
+
+      <div id="adExhPhotoBox2">
+        <label class="ad-label" for="adExhYear">年份</label>
+        <input class="ad-input ad-input-sm" id="adExhYear" type="text" maxlength="20"
+               placeholder="2021">
+
+        <label class="ad-label" for="adExhAct">屬於哪一個章節</label>
+        <input class="ad-input" id="adExhAct" type="text" maxlength="40"
+               placeholder="第一幕（選填，沒有年份時會顯示這個）">
+
+        <label class="ad-label" for="adExhDesc">描述</label>
+        <textarea class="ad-textarea" id="adExhDesc" rows="5" maxlength="500"
+                  placeholder="那天下著大雨，我們還是走完了整條老街…"></textarea>
+        <div class="ad-count"><span id="adExhDescLen">0</span> / 500</div>
+      </div>
+
+      <label class="ad-label" for="adExhOrder">排序（數字小的排前面）</label>
+      <input class="ad-input ad-input-sm" id="adExhOrder" type="number" value="1" min="0" step="1">
+
+      <div class="ad-modal-actions">
+        <button class="btn small ghost" id="adExhCancelBtn" type="button">取消</button>
+        <button class="btn small" type="submit">儲存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 測驗題目：新增／編輯用同一個彈窗 -->
+<div class="ad-modal-mask" id="adQuizModalMask" hidden>
+  <div class="ad-modal-card ad-modal-card-form">
+    <div class="ad-modal-title" id="adQuizModalTitle">新增題目</div>
+
+    <form class="ad-form" id="adQuizForm">
+      <input type="hidden" id="adQuizId">
+
+      <label class="ad-label" for="adQuizType">題型</label>
+      <select class="ad-input" id="adQuizType">
+        <option value="single">單選（選完自動跳下一題）</option>
+        <option value="multi">複選（全對才得分）</option>
+      </select>
+
+      <label class="ad-label" for="adQuizQ">題目</label>
+      <input class="ad-input" id="adQuizQ" type="text" maxlength="60"
+             placeholder="我們是怎麼認識的？">
+      <div class="ad-count"><span id="adQuizQLen">0</span> / 60</div>
+
+      <label class="ad-label">四個選項（勾選正確答案）</label>
+      <div class="ad-quiz-opts" id="adQuizOpts">
+        <div class="ad-quiz-opt">
+          <label class="ad-quiz-ans" title="設為正確答案">
+            <input type="radio" name="adQuizAns" data-oi="0">
+            <span class="ad-quiz-ltr">A</span>
+          </label>
+          <input class="ad-input ad-quiz-text" type="text" maxlength="40"
+                 data-oi="0" placeholder="選項 A">
+        </div>
+        <div class="ad-quiz-opt">
+          <label class="ad-quiz-ans" title="設為正確答案">
+            <input type="radio" name="adQuizAns" data-oi="1">
+            <span class="ad-quiz-ltr">B</span>
+          </label>
+          <input class="ad-input ad-quiz-text" type="text" maxlength="40"
+                 data-oi="1" placeholder="選項 B">
+        </div>
+        <div class="ad-quiz-opt">
+          <label class="ad-quiz-ans" title="設為正確答案">
+            <input type="radio" name="adQuizAns" data-oi="2">
+            <span class="ad-quiz-ltr">C</span>
+          </label>
+          <input class="ad-input ad-quiz-text" type="text" maxlength="40"
+                 data-oi="2" placeholder="選項 C">
+        </div>
+        <div class="ad-quiz-opt">
+          <label class="ad-quiz-ans" title="設為正確答案">
+            <input type="radio" name="adQuizAns" data-oi="3">
+            <span class="ad-quiz-ltr">D</span>
+          </label>
+          <input class="ad-input ad-quiz-text" type="text" maxlength="40"
+                 data-oi="3" placeholder="選項 D">
+        </div>
+      </div>
+      <div class="ad-count">一個選項最多 40 字（太長的話賓客看到的長條會以「…」收尾）</div>
+
+      <div class="ad-modal-actions">
+        <button class="btn small ghost" id="adQuizCancelBtn" type="button">取消</button>
+        <button class="btn small" type="submit">儲存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- 照片裁切器：只有後台用得到，先載好，admin.js 直接呼叫 cropImage() -->
 <script defer src="/js/cropper.js"></script>
 
 <!-- 測驗的預設題目與欄位上限（與賓客那一頁共用同一份） -->
 <script defer src="/js/quiz-defaults.js"></script>
+
+<!-- 故事牆的預設故事與章節（與戀愛時光那一頁共用同一份） -->
+<script defer src="/js/exhibit-defaults.js"></script>
 
 <!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與本頁 JS -->
 <script type="module" src="/js/site-context.js"></script>

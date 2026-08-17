@@ -208,6 +208,23 @@ async function visit(path, { waitForBody = true, guest = true } = {}){
   return { page, errors };
 }
 
+/* 清空一個子集合，並等到伺服器那邊真的空了才回來 */
+async function wipeCol(col){
+  await Promise.all((await col.get()).docs.map((d) => d.ref.delete()));
+  await waitForColSize(col, 0);
+}
+
+/* 瀏覽器端的 onSnapshot 會先反映「還沒送到伺服器」的寫入，
+   所以用 Admin SDK 查證之前，先等伺服器上的筆數對上 */
+async function waitForColSize(col, want, orderField, ms = 15000){
+  const until = Date.now() + ms;
+  for(;;){
+    const snap = await (orderField ? col.orderBy(orderField) : col).get();
+    if(snap.size === want || Date.now() > until) return snap;
+    await new Promise((r) => setTimeout(r, 300));
+  }
+}
+
 const SLUG = 'ginny-one-20260919';
 /* 素材測試用的站台，slug 對應 public/assets/demo-wedding-2027/ */
 const ASSET_SLUG = 'demo-wedding-2027';
@@ -523,8 +540,8 @@ console.log('\n[10] 信箱權限');
   ok('後台讀得到信件內容', listText.includes('偷偷跟你們說'),
     listText.replace(/\n/g, ' ').slice(0, 60));
   ok('信件上有賓客的名字', listText.includes('測試賓客'));
-  ok('封數統計正確', (await page.textContent('#adInboxTotal')) === '1',
-    await page.textContent('#adInboxTotal'));
+  ok('封數顯示正確', (await page.textContent('#adInboxCount')) === '目前 1 封',
+    await page.textContent('#adInboxCount'));
 
   await page.fill('#adInboxFilter', '不存在的關鍵字');
   await page.waitForTimeout(200);
@@ -893,8 +910,8 @@ console.log('\n[15] 後台改得動大廳文案');
   await page.close();
 }
 
-/* ---------- 後台上傳囍卡（含裁切器） ---------- */
-console.log('\n[16] 後台上傳囍卡與展品');
+/* ---------- 後台上傳婚禮小卡（含裁切器） ---------- */
+console.log('\n[16] 後台上傳婚禮小卡與故事牆內容');
 
 /* 測試用的小圖：60×90 的單色 PNG，直接餵給 <input type="file"> */
 const TEST_PNG = {
@@ -912,7 +929,7 @@ const TEST_PNG = {
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
 
-  /* --- 囍卡 --- */
+  /* --- 婚禮小卡 --- */
   await page.click('.ad-tab[data-tab="cards"]');
   await page.setInputFiles('#adCardFile', TEST_PNG);
 
@@ -930,7 +947,7 @@ const TEST_PNG = {
   await page.waitForTimeout(1500);
 
   const cards = await adb.collection('sites').doc(siteIds[SLUG]).collection('cards').get();
-  ok('囍卡寫進 Firestore', cards.size === 1, `${cards.size} 張`);
+  ok('婚禮小卡寫進 Firestore', cards.size === 1, `${cards.size} 張`);
   const card = cards.size ? cards.docs[0].data() : {};
   ok('存的是 data URL', String(card.img || '').startsWith('data:image/jpeg;base64,'),
     String(card.img || '').slice(0, 24));
@@ -952,21 +969,50 @@ const TEST_PNG = {
   ok('等級改得動', after.rarity === 'SSR', after.rarity);
   ok('說明改得動', after.desc === '那天風很大', after.desc);
 
-  /* --- 展品與章節 --- */
+  /* --- 新人故事牆：故事與章節 --- */
+  const exhCol = adb.collection('sites').doc(siteIds[SLUG]).collection('exhibits');
   await page.click('.ad-tab[data-tab="exhibits"]');
-  await page.selectOption('#adExhKind', 'act');
+
+  /* 先清空，才驗得出「這個分頁第一次打開就把預設內容寫進來當起點」
+     （前面幾段的後台分頁也會各自載一次，這裡要的是這一個分頁自己寫的那一份） */
+  const defCount = await page.evaluate(() => EXHIBIT_DEFAULTS.length);
+  await wipeCol(exhCol);
+  await page.waitForFunction(
+    () => DataStore.getExhibits().length === EXHIBIT_DEFAULTS.length,
+    null, { timeout:20000 });
+  /* 瀏覽器端的 snapshot 會先反映還沒送達的寫入，等伺服器真的收齊再查 */
+  const seededExh = (await waitForColSize(exhCol, defCount, 'order')).docs.map((d) => d.data());
+  ok('第一次打開就寫進預設的故事牆內容', seededExh.length === defCount,
+    `${seededExh.length} / ${defCount} 筆`);
+  ok('預設內容有故事也有章節',
+    seededExh.some((it) => it.kind === 'photo') && seededExh.some((it) => it.kind === 'act'),
+    seededExh.map((it) => it.kind).join(',').slice(0, 40));
+  ok('預設內容的排序是連號',
+    seededExh.map((it) => it.order).join(',') ===
+      seededExh.map((_, i) => i + 1).join(','),
+    seededExh.map((it) => it.order).join(','));
+
+  /* 清掉預設內容，後面的斷言才看得清楚新增了什麼
+     （這個分頁已經記下「載過預設了」，不會又被補回來） */
+  await wipeCol(exhCol);
+  await page.waitForFunction(() => DataStore.getExhibits().length === 0,
+    null, { timeout:15000 });
+
+  await page.click('#adExhAddAct');
+  await page.waitForSelector('#adExhModalMask:not([hidden])', { timeout:5000 });
   await page.fill('#adExhTitle', '第一幕');
   await page.fill('#adExhSub', '我們的相遇');
   await page.fill('#adExhOrder', '1');
   await page.click('#adExhForm button[type="submit"]');
   await page.waitForTimeout(1200);
 
-  await page.selectOption('#adExhKind', 'photo');
+  await page.click('#adExhAddPhoto');
+  await page.waitForSelector('#adExhModalMask:not([hidden])', { timeout:5000 });
   await page.setInputFiles('#adExhFile', TEST_PNG);
   await page.waitForSelector('.cr-mask', { timeout:10000 });
   await page.click('#crOk');
   await page.waitForSelector('.cr-mask', { state:'detached', timeout:15000 });
-  ok('展品照片有預覽', await page.isVisible('#adExhPrev img'));
+  ok('故事照片有預覽', await page.isVisible('#adExhPrev img'));
 
   await page.fill('#adExhTitle', '第一次一起旅行');
   await page.fill('#adExhYear', '2021');
@@ -976,17 +1022,16 @@ const TEST_PNG = {
   await page.click('#adExhForm button[type="submit"]');
   await page.waitForTimeout(1500);
 
-  const exhibits = await adb.collection('sites').doc(siteIds[SLUG])
-    .collection('exhibits').orderBy('order').get();
-  ok('展覽存了兩筆', exhibits.size === 2, `${exhibits.size} 筆`);
+  const exhibits = await waitForColSize(exhCol, 2, 'order');
+  ok('故事牆存了兩筆', exhibits.size === 2, `${exhibits.size} 筆`);
   const [act, photo] = exhibits.docs.map((d) => d.data());
   ok('第一筆是章節卡', act.kind === 'act' && act.title === '第一幕', JSON.stringify(act));
-  ok('第二筆是展品', photo.kind === 'photo' && photo.title === '第一次一起旅行');
-  ok('展品照片是 data URL',
+  ok('第二筆是故事', photo.kind === 'photo' && photo.title === '第一次一起旅行');
+  ok('故事照片是 data URL',
     String(photo.img || '').startsWith('data:image/jpeg;base64,'),
     String(photo.img || '').slice(0, 24));
 
-  ok('囍卡與展覽分頁無 console 錯誤', realErrors(errors).length === 0,
+  ok('婚禮小卡與故事牆分頁無 console 錯誤', realErrors(errors).length === 0,
     realErrors(errors).slice(0, 2).join(' | '));
   await page.close();
 }
@@ -995,7 +1040,7 @@ const TEST_PNG = {
   const { page, errors } = await visit(`/w/${SLUG}/draw`);
   await page.waitForFunction(() => DataStore.getCards().length > 0, null, { timeout:10000 });
   const cards = await page.evaluate(() => CARDS.map((c) => `${c.name}(${c.rarity})`));
-  ok('抽卡用新人上傳的卡池', cards.join('、') === '海邊的我們・改(SSR)', cards.join('、'));
+  ok('抽卡用新人上傳的婚禮小卡', cards.join('、') === '海邊的我們・改(SSR)', cards.join('、'));
 
   await page.click('#drawBtn');
   await page.waitForTimeout(1800);
@@ -1021,10 +1066,10 @@ const TEST_PNG = {
     acts:   Array.from(document.querySelectorAll('.tl-act-div .ac-label')).map((e) => e.textContent),
     imgs:   document.querySelectorAll('.tl-node .tl-ph img').length,
   }));
-  ok('時間軸只剩新人設定的展品',
+  ok('時間軸只剩新人設定的故事',
     nodes.photos.join('、') === '第一次一起旅行', nodes.photos.join('、'));
   ok('章節分隔卡有出現', nodes.acts.join('、') === '第一幕', nodes.acts.join('、'));
-  ok('展品照片有畫出來', nodes.imgs === 1, String(nodes.imgs));
+  ok('故事照片有畫出來', nodes.imgs === 1, String(nodes.imgs));
   ok('戀愛時光無 console 錯誤', realErrors(errors).length === 0,
     realErrors(errors).slice(0, 2).join(' | '));
   await page.close();
@@ -1033,7 +1078,7 @@ const TEST_PNG = {
 /* ---------- 後台分頁跟著頁面開關 ---------- */
 console.log('\n[17] 後台只顯示有開的頁面');
 {
-  /* minimal-site 只開了 rsvp：桌次、祝福信、囍卡、展覽的分頁都不該出現 */
+  /* minimal-site 只開了 rsvp：桌次、感謝信、婚禮小卡、故事牆的分頁都不該出現 */
   const { page, errors } = await visit('/w/minimal-site-2027/admin');
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
@@ -1134,6 +1179,8 @@ console.log('\n[19] 桌次搜尋可以關掉');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
 
   await page.click('.ad-tab[data-tab="seating"]');
+  await page.click('.ad-subtabs[data-subtabs="seating"] .ad-subtab[data-subtab="list"]');
+  await page.waitForSelector('.ad-subpanel[data-subpanel="list"].is-on');
   ok('搜尋開關預設是開著的', await page.isChecked('#adSeatSearch'));
 
   await page.uncheck('#adSeatSearch');
@@ -1169,7 +1216,8 @@ const LONG_OPT = '這是一個故意寫得非常長的選項內容，長到一�
 
   /* 預設題目 */
   await page.waitForFunction(() => DataStore.getQuiz().length === 3, null, { timeout:15000 });
-  const seeded = (await quizCol.orderBy('order').get()).docs.map((d) => d.data());
+  /* 瀏覽器端的 snapshot 會先反映還沒送達的寫入，等伺服器真的收齊再查 */
+  const seeded = (await waitForColSize(quizCol, 3, 'order')).docs.map((d) => d.data());
   ok('第一次打開就寫進 3 題預設題目', seeded.length === 3, `${seeded.length} 題`);
   ok('預設題目的題號是 1、2、3',
     seeded.map((q) => q.order).join(',') === '1,2,3', seeded.map((q) => q.order).join(','));
@@ -1180,7 +1228,9 @@ const LONG_OPT = '這是一個故意寫得非常長的選項內容，長到一�
     seeded.some((q) => q.type === 'single') && seeded.some((q) => q.type === 'multi'),
     seeded.map((q) => q.type).join(','));
 
-  /* 新增一題複選 */
+  /* 新增一題複選（表單現在在彈窗裡） */
+  await page.click('#adQuizAddBtn');
+  await page.waitForSelector('#adQuizModalMask:not([hidden])', { timeout:5000 });
   await page.selectOption('#adQuizType', 'multi');
   await page.fill('#adQuizQ', '我們的貓最愛做什麼？');
   await page.fill('.ad-quiz-text[data-oi="0"]', LONG_OPT);
@@ -1227,7 +1277,9 @@ const LONG_OPT = '這是一個故意寫得非常長的選項內容，長到一�
   await page.waitForSelector('#adModalMask:not([hidden])', { timeout:5000 });
   await page.click('#adModalConfirm');
   await page.waitForFunction(() => DataStore.getQuiz().length === 3, null, { timeout:15000 });
-  ok('刪得掉題目', (await quizCol.get()).size === 3, `${(await quizCol.get()).size} 題`);
+  /* 畫面會先把它藏起來，真正的刪除要等「復原」的 5 秒過了才送出 */
+  const left = await waitForColSize(quizCol, 3, null, 20000);
+  ok('刪得掉題目', left.size === 3, `${left.size} 題`);
 
   ok('測驗分頁無 console 錯誤', realErrors(errors).length === 0,
     realErrors(errors).slice(0, 2).join(' | '));
@@ -1357,6 +1409,8 @@ console.log('\n[20b] 賓客做測驗');
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
   await page.click('.ad-tab[data-tab="quiz"]');
+  await page.click('.ad-subtabs[data-subtabs="quiz"] .ad-subtab[data-subtab="votes"]');
+  await page.waitForSelector('.ad-subpanel[data-subpanel="votes"].is-on');
   await page.waitForFunction(() => DataStore.getQuizVotes().length === 1, null, { timeout:15000 });
   ok('後台看得到作答人數',
     (await page.textContent('#adQuizVoteCount')) === '1',
@@ -1409,7 +1463,8 @@ for(const key of ['', 'wall', 'rsvp', 'quiz', 'seating', 'letter']){
     () => document.querySelector('.ad-tab.is-on')?.dataset.tab === 'seating', null, { timeout:5000 });
   ok('點分頁後抽屜會自動收起來',
     await page.evaluate(() => !document.getElementById('adSide').classList.contains('is-open')));
-  ok('網址跟著切到 #seating', page.url().endsWith('#seating'));
+  /* 桌次分頁底下有子分頁（桌次圖／桌次搜尋及名單），網址會帶到第一個子分頁 */
+  ok('網址跟著切到 #seating/map', page.url().endsWith('#seating/map'), page.url());
   await page.close();
 }
 
