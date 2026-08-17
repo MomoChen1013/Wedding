@@ -712,7 +712,6 @@ function renderRsvps(){
   if(!all.length){
     rsvpListEl.innerHTML = `<div class="ad-empty">${
       total ? '沒有符合的回覆' : '還沒有人回覆出席'}</div>`;
-      DataStore.getRSVPCount() ? '沒有符合的回覆' : '還沒有人回覆出席'}</div>`;
     renderPager(rsvpListEl, rsvpPager, 0, renderRsvps);
     return;
   }
