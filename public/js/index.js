@@ -260,8 +260,34 @@ if(sch){
   const gift  = setOptionalText('giftNote',  'giftNoteItem',  W.giftNote);
   layoutGrid('noteBlock', [dress, gift]);
 
-  const pub  = setOptionalText('transportPublic',  'transportPublicItem',  W.transportPublic);
-  const park = setOptionalText('transportParking', 'transportParkingItem', W.transportParking);
+  /* 文字太長，或是新人有放一張圖時，內文只先露出一小段，
+     其餘要點「展開更多」才在彈窗裡看完整內容（含圖片） */
+  const TRANSPORT_PREVIEW_LEN = 60;
+  function setupTransportItem(textId, boxId, moreBtnId, label, text, imgSrc){
+    const val = (text || '').trim();
+    const box = document.getElementById(boxId);
+    const hasContent = !!val || !!imgSrc;
+    if(box) box.hidden = !hasContent;
+    if(!hasContent) return false;
+
+    const tooLong = val.length > TRANSPORT_PREVIEW_LEN;
+    setText(textId, tooLong ? `${val.slice(0, TRANSPORT_PREVIEW_LEN)}…` : val);
+
+    const moreBtn = document.getElementById(moreBtnId);
+    if(moreBtn){
+      const needsMore = tooLong || !!imgSrc;
+      moreBtn.hidden = !needsMore;
+      if(needsMore){
+        moreBtn.onclick = () => openInfoModal({ title: label, bodyText: val, imgSrc });
+      }
+    }
+    return true;
+  }
+
+  const pub  = setupTransportItem('transportPublic',  'transportPublicItem',  'transportPublicMore',
+    '大眾運輸', W.transportPublic, W.transportPublicImg);
+  const park = setupTransportItem('transportParking', 'transportParkingItem', 'transportParkingMore',
+    '停車資訊', W.transportParking, W.transportParkingImg);
   layoutGrid('transportBlock', [pub, park]);
 
   /* 故事只有一段文字，區塊本身就是那一格 */
@@ -324,16 +350,34 @@ function renderExploreCards(){
   renumberLinkCards();
 }
 
-/* ---------- 彈窗 ---------- */
+/* ---------- 彈窗（自訂內容的「跳出說明」跟交通資訊的「展開更多」共用） ---------- */
 const lcModal = document.getElementById('lcModal');
 
-function openExploreModal(it){
-  document.getElementById('lcModalTitle').textContent = it.title || '';
-  const sub = document.getElementById('lcModalSub');
-  sub.textContent = it.sub || '';
-  sub.hidden = !it.sub;
-  document.getElementById('lcModalBody').textContent = it.body || '';
+function openInfoModal({ title, sub, bodyText, imgSrc }){
+  document.getElementById('lcModalTitle').textContent = title || '';
+  const subEl = document.getElementById('lcModalSub');
+  subEl.textContent = sub || '';
+  subEl.hidden = !sub;
+
+  const bodyEl = document.getElementById('lcModalBody');
+  bodyEl.innerHTML = '';
+  if(imgSrc){
+    const img = document.createElement('img');
+    img.className = 'lc-modal-img';
+    img.src = imgSrc;
+    img.alt = '';
+    bodyEl.appendChild(img);
+  }
+  if(bodyText){
+    const p = document.createElement('p');
+    p.className = 'lc-modal-text';
+    p.textContent = bodyText;
+    bodyEl.appendChild(p);
+  }
   lcModal.classList.add('open');
+}
+function openExploreModal(it){
+  openInfoModal({ title: it.title, sub: it.sub, bodyText: it.body });
 }
 function closeExploreModal(){ lcModal.classList.remove('open'); }
 

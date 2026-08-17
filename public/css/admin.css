@@ -7,6 +7,10 @@
 /* ============================================================
    登入門（與悄悄話信箱同一套）
 ============================================================ */
+/* 後台完全不用賓客那份頂部導覽列（common.js 在 data-page="admin" 時也不會注入），
+   蓋掉 common.css 幫賓客導覽列留的 padding-top，不然畫面上會空一截 */
+body[data-page="admin"]{padding-top:0;}
+
 #pwGate{background:var(--bg1);}
 .gate-card{
   width:min(90vw,400px);background:#fff;border:1px solid var(--line);
@@ -28,34 +32,97 @@
 
 /* ============================================================
    版面
+   ・ad-bar：後台自己的頂列（跟賓客導覽列完全分開）
+   ・ad-layout：頂列下面左右兩欄，左邊 ad-side（桌機常駐、窄螢幕變抽屜）
 ============================================================ */
-.ad-page{max-width:820px;margin:0 auto;padding:26px 20px 120px;}
+.ad-page{padding:0 0 60px;}
 .ad-page[hidden]{display:none;}
 
-.ad-top{display:flex;align-items:flex-start;justify-content:space-between;
-  gap:16px;flex-wrap:wrap;padding-bottom:20px;border-bottom:1px solid var(--line);}
-.ad-top-title{font-family:var(--font-display);font-weight:500;font-size:21px;
+.ad-bar{position:sticky;top:0;z-index:950;display:flex;align-items:center;
+  justify-content:space-between;gap:16px;flex-wrap:wrap;
+  padding:14px 22px;border-bottom:1px solid var(--line);
+  background:rgba(251,250,248,.94);backdrop-filter:blur(6px);}
+.ad-bar-left{display:flex;align-items:center;gap:14px;min-width:0;}
+.ad-menu-btn{display:none;flex-direction:column;justify-content:center;gap:4px;
+  width:34px;height:34px;padding:0;border:1px solid var(--line);border-radius:var(--radius);
+  background:#fff;cursor:pointer;flex:0 0 auto;}
+.ad-menu-btn span{display:block;width:16px;height:1px;background:var(--ink);margin:0 auto;}
+.ad-bar-title{font-family:var(--font-display);font-weight:500;font-size:19px;
   letter-spacing:.2em;color:var(--ink);}
-.ad-top-sub{margin-top:6px;font-size:12px;letter-spacing:.06em;color:var(--ink-soft);
+.ad-bar-sub{margin-top:4px;font-size:12px;letter-spacing:.06em;color:var(--ink-soft);
   word-break:break-all;}
-.ad-top-actions{display:flex;gap:8px;flex:0 0 auto;}
+.ad-bar-actions{display:flex;gap:8px;flex:0 0 auto;}
 
-/* ---------- 分頁 ----------
-   分頁多了之後手機放不下，改成可以橫向滑動的一列 */
-.ad-tabs{display:flex;gap:0;margin:22px 0 26px;border-bottom:1px solid var(--line);
-  overflow-x:auto;scrollbar-width:none;}
-.ad-tabs::-webkit-scrollbar{display:none;}
+/* ---------- 側欄選單 ----------
+   桌機（≥900px）常駐在左邊；窄螢幕收成抽屜，用漢堡按鈕開關 */
+.ad-layout{display:flex;align-items:flex-start;}
+.ad-side{
+  flex:0 0 208px;position:sticky;top:63px;
+  max-height:calc(100svh - 63px);overflow-y:auto;
+  display:flex;flex-direction:column;gap:2px;
+  padding:18px 12px;border-right:1px solid var(--line);
+}
 .ad-tab{
-  flex:1 0 auto;white-space:nowrap;background:transparent;border:none;cursor:pointer;
-  font-family:var(--font-body);font-size:13.5px;letter-spacing:.16em;
-  color:var(--ink-soft);padding:12px 6px;border-bottom:1px solid transparent;
+  display:block;width:100%;text-align:left;white-space:nowrap;
+  background:transparent;border:none;cursor:pointer;border-radius:var(--radius);
+  font-family:var(--font-body);font-size:13.5px;letter-spacing:.14em;
+  color:var(--ink-soft);padding:11px 14px;border-left:2px solid transparent;
+  transition:color .2s,background .2s,border-color .2s;
+}
+.ad-tab:hover{color:var(--ink);background:rgba(255,255,255,.6);}
+.ad-tab.is-on{color:var(--ink);background:#fff;border-left-color:var(--primary-deep);}
+.ad-tab[hidden]{display:none;}
+.ad-side-backdrop{display:none;}
+
+/* 「查看網站／登出」桌機留在最上面的 ad-bar，<900px 才搬進抽屜底部 */
+.ad-side-foot{display:none;}
+
+.ad-main{flex:1 1 auto;min-width:0;max-width:820px;margin:0 auto;padding:26px 20px 120px;}
+
+/* ---------- 大廳內部的橫向子分頁 ---------- */
+.ad-subtabs{display:flex;gap:0;margin:0 0 24px;border-bottom:1px solid var(--line);
+  overflow-x:auto;scrollbar-width:none;}
+.ad-subtabs::-webkit-scrollbar{display:none;}
+.ad-subtab{
+  flex:0 0 auto;white-space:nowrap;background:transparent;border:none;cursor:pointer;
+  font-family:var(--font-body);font-size:13px;letter-spacing:.14em;
+  color:var(--ink-soft);padding:10px 16px;border-bottom:1px solid transparent;
   margin-bottom:-1px;transition:color .2s,border-color .2s;
 }
-.ad-tab:hover{color:var(--ink);}
-.ad-tab.is-on{color:var(--ink);border-bottom-color:var(--ink);}
+.ad-subtab:hover{color:var(--ink);}
+.ad-subtab.is-on{color:var(--ink);border-bottom-color:var(--ink);}
+.ad-subpanel{display:none;}
+.ad-subpanel.is-on{display:block;animation:scInF .3s ease;}
 
 .ad-panel{display:none;}
 .ad-panel.is-on{display:block;animation:scInF .35s ease;}
+
+/* ---------- 窄螢幕：側欄變抽屜（<900px，涵蓋平板直向與手機） ---------- */
+@media(max-width:899px){
+  .ad-menu-btn{display:flex;}
+  .ad-bar-actions{display:none;}
+  .ad-side{
+    position:fixed;top:0;left:0;bottom:0;z-index:1000;
+    width:min(78vw,280px);max-height:none;
+    background:var(--bg1);box-shadow:2px 0 18px rgba(0,0,0,.12);
+    padding:76px 14px 20px;border-right:none;
+    transform:translateX(-100%);transition:transform .28s ease;
+  }
+  .ad-side.is-open{transform:translateX(0);}
+  .ad-side-foot{
+    display:flex;flex-direction:column;gap:8px;margin-top:auto;
+    padding-top:16px;border-top:1px solid var(--line-soft);
+  }
+  .ad-side-foot .btn{width:100%;}
+  .ad-side-backdrop{
+    display:block;position:fixed;inset:0;z-index:990;
+    background:rgba(20,18,14,.32);opacity:0;pointer-events:none;
+    transition:opacity .22s ease;
+  }
+  .ad-side-backdrop.is-on{opacity:1;pointer-events:auto;}
+  .ad-side-backdrop[hidden]{display:none;}
+  .ad-main{max-width:none;padding:20px 16px 110px;}
+}
 
 /* ---------- 區塊 ---------- */
 .ad-sec{margin-bottom:52px;}
@@ -82,6 +149,12 @@
 .ad-input::placeholder,.ad-textarea::placeholder{color:var(--ink-soft);opacity:.6;}
 .ad-textarea{resize:vertical;min-height:96px;}
 .ad-input-sm{max-width:130px;}
+
+/* 即時驗證：欄位旁的錯誤訊息 */
+.ad-input.is-invalid,.ad-textarea.is-invalid{border-color:#a4677a;}
+.ad-field-err{min-height:0;color:#a4677a;font-size:11.5px;letter-spacing:.04em;
+  margin-top:5px;line-height:1.6;}
+.ad-field-err:empty{display:none;}
 select.ad-input{appearance:none;cursor:pointer;
   background-image:linear-gradient(45deg,transparent 50%,var(--ink-soft) 50%),
                    linear-gradient(135deg,var(--ink-soft) 50%,transparent 50%);
@@ -89,6 +162,21 @@ select.ad-input{appearance:none;cursor:pointer;
   background-size:5px 5px, 5px 5px;background-repeat:no-repeat;}
 
 .ad-count{text-align:right;font-size:11.5px;color:var(--ink-soft);margin-top:5px;}
+.ad-hint{font-size:11.5px;color:var(--ink-soft);margin-top:5px;line-height:1.7;}
+
+/* 表單裡再分一個小節（例如「交通資訊」把兩個欄位圈在一起） */
+.ad-sub-sec{margin-top:26px;padding:20px 18px;border:1px solid var(--line-soft);
+  border-radius:var(--radius);background:rgba(255,255,255,.5);}
+.ad-sub-sec .ad-label:first-of-type{margin-top:0;}
+.ad-sub-sec-title{font-size:12.5px;letter-spacing:.18em;color:var(--ink);
+  text-transform:uppercase;margin-bottom:6px;}
+
+/* 欄位下方可以再放一張圖的小上傳區 */
+.ad-img-field{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;}
+.ad-img-field-prev{width:64px;height:64px;object-fit:cover;border-radius:var(--radius);
+  border:1px solid var(--line);background:var(--bg2);}
+.ad-img-field-prev[hidden]{display:none;}
+.ad-img-field .btn{cursor:pointer;}
 
 .ad-check{display:flex;align-items:flex-start;gap:9px;margin-top:18px;
   font-size:13px;line-height:1.8;color:var(--ink);cursor:pointer;}
@@ -191,6 +279,19 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-empty{padding:30px 6px;text-align:center;font-size:13px;
   letter-spacing:.08em;color:var(--ink-soft);}
 
+/* ---------- 分頁筆數（RSVP／桌次名單／悄悄話共用） ---------- */
+.ad-pager{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  gap:10px;margin-top:14px;padding-top:14px;font-size:12px;color:var(--ink-soft);}
+.ad-pager-nav{display:flex;align-items:center;gap:10px;}
+.ad-pager-btn{background:none;border:1px solid var(--line);border-radius:var(--radius);
+  cursor:pointer;padding:6px 12px;font-family:var(--font-body);font-size:12px;
+  letter-spacing:.06em;color:var(--ink);transition:.2s;}
+.ad-pager-btn:hover:not(:disabled){border-color:var(--ink);}
+.ad-pager-btn:disabled{opacity:.35;cursor:not-allowed;}
+.ad-pager-size{display:flex;align-items:center;gap:6px;}
+.ad-pager-size select{padding:5px 8px;border:1px solid var(--line);border-radius:var(--radius);
+  font-family:var(--font-body);font-size:12px;color:var(--ink);background:#fff;cursor:pointer;}
+
 /* ============================================================
    悄悄話
    ・信件是要「讀」的，不像名單只是掃過去，
@@ -261,12 +362,19 @@ select.ad-input{appearance:none;cursor:pointer;
   color:var(--ink-soft);min-width:11px;}
 .ad-quiz-ans input:checked + .ad-quiz-ltr{color:var(--primary-deep);}
 
-/* 題目順序的 ↑ ↓ */
-.ad-move{background:none;border:1px solid var(--line);border-radius:4px;cursor:pointer;
-  width:24px;height:24px;line-height:1;padding:0;color:var(--ink-soft);
-  font-family:var(--font-body);font-size:12px;transition:.2s;}
-.ad-move:hover:not(:disabled){border-color:var(--ink);color:var(--ink);}
-.ad-move:disabled{opacity:.3;cursor:not-allowed;}
+/* 題目順序：拖曳把手（Pointer Events 實作，手機觸控也能用） */
+.ad-quiz-item{display:flex;align-items:flex-start;gap:4px;
+  padding:10px 2px;border-bottom:1px solid var(--line-soft);background:#fff;}
+.ad-quiz-item .ad-item-main{flex:1 1 auto;}
+.ad-drag-handle{flex:0 0 auto;width:40px;height:40px;margin:-8px 0;
+  display:flex;align-items:center;justify-content:center;
+  background:none;border:none;cursor:grab;color:var(--ink-soft);
+  font-size:16px;letter-spacing:.1em;touch-action:none;user-select:none;}
+.ad-drag-handle:hover{color:var(--ink);}
+.ad-quiz-item.is-dragging{opacity:.55;box-shadow:0 4px 14px rgba(0,0,0,.1);position:relative;z-index:2;}
+.ad-quiz-item.is-dragging .ad-drag-handle{cursor:grabbing;}
+.ad-drag-placeholder{border:1px dashed var(--line);border-radius:var(--radius);
+  height:52px;margin:2px 0;background:var(--bg2);}
 
 /* ============================================================
    照片裁切器（cropper.js 動態插入）
@@ -302,19 +410,74 @@ select.ad-input{appearance:none;cursor:pointer;
 .cr-row{display:flex;gap:10px;justify-content:flex-end;margin-top:8px;}
 
 /* ============================================================
-   存檔提示
+   Loading skeleton
+   ・在第一筆 Firestore snapshot 回來之前顯示，跟「真的沒資料」的空狀態區分開
 ============================================================ */
+.ad-skel{display:flex;flex-direction:column;gap:10px;padding:14px 2px;}
+.ad-skel-row{display:flex;flex-direction:column;gap:8px;padding:8px 0;
+  border-bottom:1px solid var(--line-soft);}
+.ad-skel-line{height:11px;border-radius:3px;width:var(--w, 60%);
+  background:linear-gradient(90deg, var(--line-soft) 25%, rgba(0,0,0,.06) 37%, var(--line-soft) 63%);
+  background-size:400% 100%;animation:ad-skel-pulse 1.4s ease infinite;}
+.ad-skel-line.short{width:var(--w, 30%);}
+@keyframes ad-skel-pulse{0%{background-position:100% 0}100%{background-position:0 0}}
+
+/* ============================================================
+   存檔提示（可以同時疊好幾則）
+============================================================ */
+.ad-toast-stack{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:1500;
+  display:flex;flex-direction:column-reverse;align-items:center;gap:10px;
+  pointer-events:none;width:min(92vw,520px);
+}
 .ad-toast{
-  position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:1300;
-  max-width:min(92vw,520px);padding:13px 22px;
+  pointer-events:auto;display:flex;align-items:center;gap:14px;
+  max-width:100%;padding:13px 20px;
   background:var(--ink);color:#fff;border-radius:var(--radius);
-  font-size:13px;line-height:1.8;letter-spacing:.06em;text-align:center;
+  font-size:13px;line-height:1.8;letter-spacing:.06em;text-align:left;
   animation:pop .28s ease;
 }
-.ad-toast[hidden]{display:none;}
+.ad-toast.is-out{animation:adToastOut .2s ease forwards;}
+@keyframes adToastOut{to{opacity:0;transform:translateY(6px);}}
+.ad-toast-msg{flex:1 1 auto;}
 .ad-toast.is-error{background:#8a5765;}
+.ad-toast-action{flex:0 0 auto;background:none;border:none;cursor:pointer;
+  color:#fff;font-family:var(--font-body);font-size:13px;letter-spacing:.1em;
+  text-decoration:underline;text-underline-offset:3px;padding:0;}
+
+/* ============================================================
+   統一的確認 Modal（取代 confirm()）
+============================================================ */
+.ad-modal-mask{position:fixed;inset:0;z-index:1450;background:rgba(43,47,54,.72);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  animation:pop .18s ease;}
+.ad-modal-mask[hidden]{display:none;}
+/* 站內統一的確認框可能疊在其他表單彈窗（例如自訂內容編輯）上面，層級要更高 */
+#adModalMask{z-index:1550;}
+.ad-modal-card{width:min(92vw,420px);background:#fff;border:1px solid var(--line);
+  border-radius:var(--radius);padding:26px 24px 22px;}
+.ad-modal-title{font-family:var(--font-display);font-weight:500;font-size:16px;
+  letter-spacing:.14em;color:var(--ink);margin-bottom:10px;}
+.ad-modal-msg{font-size:13px;line-height:1.9;color:var(--ink-soft);letter-spacing:.03em;}
+.ad-modal-phrase{margin-top:14px;}
+.ad-modal-phrase[hidden]{display:none;}
+.ad-modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
+.ad-modal-card.is-danger .ad-modal-title{color:#a4677a;}
+.ad-modal-card.is-danger #adModalConfirm{background:#a4677a;border-color:#a4677a;}
+.ad-modal-card.is-danger #adModalConfirm:hover{background:transparent;color:#a4677a;}
+#adModalConfirm:disabled{opacity:.4;cursor:not-allowed;}
+
+/* 帶完整表單的彈窗（例如自訂內容的新增／編輯），比確認框寬、可以捲動 */
+.ad-modal-card-form{width:min(92vw,560px);max-height:88svh;overflow-y:auto;}
+.ad-modal-card-form .ad-form > .ad-label:first-of-type{margin-top:0;}
+.ad-modal-card-form .ad-modal-actions{justify-content:flex-end;}
+#adExpDeleteBtn{color:#a4677a;border-color:rgba(164,103,122,.4);margin-right:auto;}
+#adExpDeleteBtn:hover{border-color:#a4677a;}
 
 @media(max-width:560px){
-  .ad-page{padding:20px 14px 110px;}
-  .ad-tab{font-size:12.5px;letter-spacing:.08em;}
+  .ad-bar{padding:12px 14px;}
+  .ad-subtab{font-size:12.5px;letter-spacing:.08em;padding:9px 12px;}
+  .ad-modal-actions{flex-direction:column-reverse;}
+  .ad-modal-actions .btn{width:100%;}
+  .ad-toast-stack{width:calc(100vw - 24px);}
 }

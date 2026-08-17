@@ -914,7 +914,9 @@ function bindCommonUI(){
   fillTemplates();
   rewriteNavLinks();
 
-  /* 每頁共用的導覽列與浮動控制 */
+  /* 每頁共用的導覽列與浮動控制 —— 後台是新人自己的工作畫面，
+     不套用賓客那一份導覽列／主題／BGM 浮動按鈕，後台有自己的一套 */
+  if(window.SITE && window.SITE.page === 'admin') return;
   buildSiteNav();
   buildFloating();
 
