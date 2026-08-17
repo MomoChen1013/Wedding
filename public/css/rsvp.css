@@ -1,5 +1,7 @@
 /* ============================================================
-   rsvp.css — 出席回覆
+   rsvp.css — 出席回覆表單
+   ・由 js/rsvp-form.js 產生的 DOM 使用
+   ・出席回覆頁與單頁邀請函兩邊共用，兩頁的表單長得一模一樣
 ============================================================ */
 
 /* ---- 統計列 ---- */
@@ -13,7 +15,15 @@
 /* ---- 表單欄位 ---- */
 .rf-label{display:block;font-weight:500;color:var(--ink);font-size:13px;
   letter-spacing:.16em;margin:26px 0 10px;}
+.rf-label:first-of-type{margin-top:4px;}
 .rf-label small{font-weight:400;color:var(--ink-soft);letter-spacing:0;}
+/* 條件欄位裡的次級標題：比主標題輕一階，看得出是附屬的 */
+.rf-label-sub{font-weight:400;color:var(--ink-soft);font-size:12px;margin-top:0;}
+/* 必填標記：用文字而不是星號，賓客不用猜 */
+.rf-req{font-style:normal;font-size:10.5px;letter-spacing:.1em;color:var(--primary-deep);
+  border:1px solid var(--gold-soft);border-radius:999px;padding:1px 7px;margin-left:8px;
+  vertical-align:1px;}
+
 .field{position:relative;}
 .field input, .field textarea{
   width:100%;padding:14px 16px;border:1px solid var(--line);border-radius:var(--radius);
@@ -32,26 +42,83 @@
 .choice:hover{border-color:var(--ink);color:var(--ink);}
 .choice.on{border-color:var(--ink);background:var(--ink);color:#fff;}
 
-/* ---- 出席細節 ---- */
+/* ---- 條件展開的區塊 ----
+   靠左邊一條線表示「這是上一題展開來的」，不再多包一層框 */
 .rf-detail{margin-top:4px;padding-top:6px;}
+.rf-sub{margin-top:12px;padding-left:16px;border-left:1px solid var(--line);}
+.rf-sub .rf-label:first-child{margin-top:0;}
 
-/* ---- 人數 stepper ---- */
+/* ---- 數量 stepper ---- */
 .stepper{display:flex;align-items:center;gap:14px;}
-.st-btn{width:42px;height:42px;border-radius:var(--radius);border:1px solid var(--line);
+.st-btn{width:42px;height:42px;flex:0 0 42px;border-radius:var(--radius);border:1px solid var(--line);
   background:#fff;color:var(--ink);font-size:20px;line-height:1;cursor:pointer;transition:.15s;}
-.st-btn:hover{border-color:var(--ink);}
+.st-btn:hover:not(:disabled){border-color:var(--ink);}
 .st-btn:active{opacity:.7;}
+.st-btn:disabled{opacity:.3;cursor:not-allowed;}
 .st-num{font-family:var(--font-display);font-weight:400;font-size:24px;color:var(--ink);
   min-width:36px;text-align:center;font-variant-numeric:tabular-nums;}
 .st-unit{color:var(--ink-soft);font-size:14px;}
 
+/* ---- 葷素分配：兩格並排，手機縮成一欄 ---- */
+.rf-split{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:520px){.rf-split{grid-template-columns:1fr;}}
+.rf-split-item{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;
+  background:#fff;}
+.rf-split-name{display:block;font-size:12.5px;letter-spacing:.16em;color:var(--ink-soft);
+  margin-bottom:10px;}
+.rf-split .stepper{gap:10px;}
+.rf-split .st-btn{width:36px;height:36px;flex:0 0 36px;font-size:17px;}
+.rf-split .st-num{font-size:20px;min-width:28px;}
+
+.rf-hint{margin-top:10px;font-size:12px;letter-spacing:.06em;color:var(--ink-soft);}
+
+/* ---- 聯絡方式：一種一列，左邊窄標籤、右邊輸入框 ---- */
+.rf-contacts{display:flex;flex-direction:column;gap:10px;}
+.rf-contact{display:flex;align-items:center;gap:14px;}
+.rf-contact-name{flex:0 0 72px;font-size:12.5px;letter-spacing:.14em;color:var(--ink-soft);}
+.rf-contact .field{flex:1 1 auto;min-width:0;}
+@media(max-width:420px){
+  .rf-contact{flex-direction:column;align-items:stretch;gap:6px;}
+  .rf-contact-name{flex:none;}
+}
+
+/* ---- 勾選框 ---- */
+.rf-check{display:flex;align-items:center;gap:10px;cursor:pointer;
+  font-size:14px;letter-spacing:.06em;color:var(--ink);
+  border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;background:#fff;
+  transition:border-color .2s;}
+.rf-check[hidden]{display:none;}
+.rf-check:hover{border-color:var(--ink);}
+.rf-check input{width:16px;height:16px;flex:0 0 16px;accent-color:var(--primary-deep);cursor:pointer;}
+/* 「同上」比一般勾選框輕一階：它是捷徑，不是一道題目 */
+.rf-check-sm{padding:10px 14px;font-size:13px;color:var(--ink-soft);margin-bottom:10px;}
+.rf-check-sm:hover{color:var(--ink);}
+
+/* 被「同上」帶進來的欄位：看得到內容，但改不動（要改就取消勾選） */
+.field input.is-locked{background:var(--bg2);color:var(--ink-soft);cursor:not-allowed;}
+
+/* ---- 郵寄地址：郵遞區號窄、地址寬 ----
+   display:grid 會蓋掉 [hidden] 預設的 display:none，所以要再收一次 */
+.rf-addr{display:grid;grid-template-columns:120px 1fr;gap:10px;margin-top:12px;}
+.rf-addr[hidden]{display:none;}
+@media(max-width:520px){.rf-addr{grid-template-columns:1fr;}}
+
+/* ---- honeypot：只有機器人填得到，正常使用者看不見也對不到焦 ---- */
+.rf-hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;}
+
 /* ---- 錯誤訊息 ---- */
-.rf-err{min-height:20px;color:#a4677a;font-size:12.5px;margin:18px 0 10px;text-align:center;}
+.rf-err{min-height:20px;color:#a4677a;font-size:12.5px;margin:22px 0 10px;text-align:center;}
 
 #submitBtn{margin-top:2px;}
 
+/* ---- 回覆已關閉／已截止 ---- */
+.rf-closed{border:1px solid var(--line);border-radius:var(--radius);
+  background:rgba(255,255,255,.9);padding:30px 24px;text-align:center;
+  color:var(--ink-soft);font-size:14px;line-height:2;letter-spacing:.06em;}
+.rf-closed[hidden]{display:none;}
+
 /* ---- 感謝畫面 ---- */
-.thanks-card{text-align:center;padding:44px 26px;}
+.thanks-card{text-align:center;padding:44px 26px;margin-top:0;}
 .thanks-card .tk-em{display:none;}
 .thanks-card h3{font-family:var(--font-display);font-weight:400;font-size:20px;
   color:var(--ink);letter-spacing:.16em;margin-bottom:10px;}

@@ -359,6 +359,96 @@ describe('多頁面子集合', () => {
 });
 
 /* ============================================================
+   RSVP 的新題目：關係、葷素分配、兒童座椅、喜帖、喜餅、備註
+============================================================ */
+describe('rsvps 的完整表單欄位', () => {
+  /* js/rsvp-form.js 實際會送出的形狀 */
+  function fullRsvp(overrides = {}) {
+    return {
+      ...validRsvpPayload(),
+      icon: '✦',
+      tentative: false,
+      relation: 'groom',
+      contactPhone: '0912345678',
+      contactLine: 'guest-line',
+      contactEmail: 'guest@example.com',
+      mealMeat: 1,
+      mealVeg: 1,
+      childSeat: 1,
+      cardType: 'paper',
+      cardDelivery: 'mail',
+      cardZip: '104',
+      cardAddress: '台北市中山區南京東路一段 1 號',
+      cardEmail: '',
+      giftDelivery: 'pickup',
+      giftZip: '',
+      giftAddress: '',
+      note: '會晚 20 分鐘到',
+      ...overrides,
+    };
+  }
+
+  it('完整填完的回覆寫得進去', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(addDoc(collection(db, `sites/${SITE_ID}/rsvps`), fullRsvp()));
+  });
+
+  it('舊版表單（只有核心欄位）仍然寫得進去', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(
+      addDoc(collection(db, `sites/${SITE_ID}/rsvps`), validRsvpPayload()));
+  });
+
+  it('關係、喜帖、喜餅只收允許的值', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      fullRsvp({ relation: 'boss' })));
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      fullRsvp({ cardType: 'nft' })));
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      fullRsvp({ cardDelivery: 'drone' })));
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      fullRsvp({ giftDelivery: 'drone' })));
+  });
+
+  it('人數類欄位必須是 0–10 的整數', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      fullRsvp({ childSeat: 99 })));
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      fullRsvp({ mealVeg: -1 })));
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      fullRsvp({ mealMeat: '兩位' })));
+  });
+
+  it('地址與備註有長度上限', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      fullRsvp({ cardAddress: '路'.repeat(201) })));
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      fullRsvp({ giftZip: '1'.repeat(11) })));
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      fullRsvp({ note: '備'.repeat(301) })));
+  });
+
+  it('聯絡方式有長度上限', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      fullRsvp({ contactPhone: '0'.repeat(31) })));
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      fullRsvp({ contactEmail: `${'a'.repeat(115)}@example.com` })));
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      fullRsvp({ cardEmail: `${'a'.repeat(115)}@example.com` })));
+  });
+
+  it('夾帶白名單以外的欄位仍然整筆被拒', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      fullRsvp({ isAdmin: true })));
+  });
+});
+
+/* ============================================================
    悄悄話信箱：只有站台 ownerEmails 名單內的帳號讀得到
 ============================================================ */
 describe('letters 的擁有者權限', () => {
@@ -889,6 +979,37 @@ describe('sites 的大廳文案更新', () => {
     }));
   });
 
+  it('新人可以開關出席回覆的題目與區塊', async () => {
+    const db = ownerDb();
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      rsvpAskCard: false,
+      rsvpAskGift: true,
+      rsvpAskMessage: false,
+      rsvpShowStory: true,
+      rsvpShowGallery: false,
+      rsvpContactMethods: ['phone', 'email'],
+      updatedAt: Timestamp.now(),
+    }));
+    /* 只認 boolean 與 list，型別不對就整筆擋下 */
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { rsvpAskCard: 'off' }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      rsvpContactMethods: 'phone',
+    }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      rsvpContactMethods: ['a', 'b', 'c', 'd'],
+    }));
+  });
+
+  it('題目開關放行，但出席回覆的開關與截止時間仍然改不動', async () => {
+    const db = ownerDb();
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      rsvpAskCard: false, rsvpEnabled: false,
+    }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      rsvpAskCard: false, rsvpDeadline: Timestamp.fromDate(new Date('2099-01-01')),
+    }));       
+  }); 
+
   it('婚禮 hashtag 最多 3 個', async () => {
     const db = ownerDb();
     await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
@@ -898,6 +1019,7 @@ describe('sites 的大廳文案更新', () => {
       hashtags: ['#a', '#b', '#c', '#d'],
     }));
   });
+
 
   it('交通資訊可以各配一張圖，型別跟大小要合法', async () => {
     const db = ownerDb();

@@ -28,8 +28,8 @@
 | 已知地雷 | Firebase Hosting **不支援 wildcard 子網域**（`*.example.com` 做不到） |
 
 無建置步驟，直接部署到 Hosting。
-`invitation.html` 與 `shortlink.html` 自帶 CSS／JS；
-多頁面站台共用 `css/` 與 `js/`，由 `js/site-context.js` 統一載入。
+`shortlink.html` 自帶 CSS／JS（它只是一個轉址頁，不屬於任何站台）；
+其餘頁面（含單頁邀請函）共用 `css/` 與 `js/`，由 `js/site-context.js` 統一載入。
 
 ---
 
@@ -64,6 +64,15 @@ sites/{siteId}
   rsvpEnabled     : boolean
   seatingSearchEnabled : boolean  # 桌次頁的搜尋開關，沒有這個欄位視為 true；
                                   # false 時賓客只看得到已上傳的桌次圖
+  # ↓ 出席回覆那一頁的題目與區塊開關，由新人在後台設定。
+  #   沒有這些欄位一律視為 true（舊站台不會突然少東西）
+  rsvpAskCard     : boolean  # 要不要問「喜帖發送方式」
+  rsvpAskGift     : boolean  # 要不要問「喜餅領取方式」
+  rsvpAskMessage  : boolean  # 要不要問「想對新人說的話」
+  rsvpContactMethods : string[]  # 要問哪幾種聯絡方式，'phone'|'line'|'email'
+                                  # 沒有這個欄位＝三種都問；空陣列＝整題不問
+  rsvpShowStory   : boolean  # 那一頁要不要放「兩人的故事」
+  rsvpShowGallery : boolean  # 那一頁要不要放「照片集」
   pages           : map      # 頁面開關，見第 10 節
   ownerEmails     : string[] # 新人的 Google 信箱；規則據此決定誰進得了後台
   createdAt       : timestamp
@@ -72,13 +81,32 @@ sites/{siteId}
   # 各功能的子集合，站台之間完全隔離
   rsvps/{autoId}
     name          : string
-    attending     : boolean  # 只有「會出席」是 true
-    tentative     : boolean  # 選填，true 代表「未定」
+    attending     : boolean  # 只有「熱情出席」是 true
+    tentative     : boolean  # 選填，true 代表「視情況而定」
     guestCount    : number   # 1–10
-    meal          : string   # 選填，餐點需求
-    icon          : string   # 選填，賓客 emoji
-    dietaryNote   : string   # 飲食禁忌，選填
+    relation      : string   # 選填，與新人的關係
+                             #   'groom'|'bride'|'both'|'other'
+    contactPhone  : string   # 選填，電話（≤30）
+    contactLine   : string   # 選填，LINE ID（≤60）
+    contactEmail  : string   # 選填，Email（≤120）
+                             #   新人選了要問哪幾種；賓客至少要填一種
+    mealMeat      : number   # 選填，葷食人數（0–10）
+    mealVeg       : number   # 選填，素食人數（0–10）；兩者相加＝guestCount
+    childSeat     : number   # 選填，兒童座椅張數（0–10），0 代表不需要
+    dietaryNote   : string   # 飲食習慣補充，選填
+    cardType      : string   # 選填，喜帖形式
+                             #   'paper'|'digital'|'none'
+    cardDelivery  : string   # 選填，紙本喜帖的給法 'pickup'|'mail'（其餘為 ''）
+    cardZip       : string   # 選填，喜帖郵寄的郵遞區號（≤10）
+    cardAddress   : string   # 選填，喜帖郵寄地址（≤200）
+    cardEmail     : string   # 選填，電子喜帖要寄到的 Email（≤120）
+    giftDelivery  : string   # 選填，喜餅 'pickup'|'mail'
+    giftZip       : string   # 選填，喜餅郵寄的郵遞區號（≤10）
+    giftAddress   : string   # 選填，喜餅郵寄地址（≤200）
     message       : string   # 給新人的話，選填
+    note          : string   # 其他備註，選填
+    icon          : string   # 選填，賓客 emoji
+    meal          : string   # 選填，舊版表單的單一餐點欄位（保留相容）
     createdAt     : timestamp
 
   wishes/{autoId}     name, icon, text(≤300), time      # 祝福牆
@@ -191,7 +219,13 @@ Firestore 的讀取請求不帶條件，規則沒有辦法「只讓對得上的�
 ```
 coupleTitle venueName venueAddress venueMapUrl transportPublic transportParking
 dressCode giftNote story schedule hashtags seatingSearchEnabled updatedAt
+rsvpAskCard rsvpAskGift rsvpAskMessage rsvpContactMethods
+rsvpShowStory rsvpShowGallery
 ```
+
+最後那六個 `rsvp*` 與 `seatingSearchEnabled` 一樣，是「非文案但可以放行」的欄位：
+它們只改變賓客看到的表單長什麼樣，規則本身不拿它們做任何判斷 ——
+能不能寫回覆仍然只看 `rsvpEnabled` 與 `rsvpDeadline`，那兩個依舊改不動。
 
 `seatingSearchEnabled` 是唯一一個非文案的欄位，放行的理由是它只改變賓客那一頁的
 畫面（要不要出現搜尋欄），規則本身不拿它做任何判斷 —— 桌次名單的讀寫權限
@@ -210,16 +244,27 @@ dressCode giftNote story schedule hashtags seatingSearchEnabled updatedAt
 
 ### RSVP 建立時的驗證條件
 
-寫成 rules 內的 helper function `isValidRsvpCreate()`，涵蓋：
+寫成 rules 內的 helper function `isValidRsvp()`，涵蓋：
 
-- 欄位集合必須**完全等於**允許清單，不可夾帶額外欄位
+- 欄位集合必須落在允許清單內，不可夾帶額外欄位
+- 核心欄位（`name` `attending` `guestCount` `dietaryNote` `message` `createdAt`）必填，
+  其餘一律選填 —— 舊版表單送出的回覆仍然收得下
 - `name` 為 string，長度 1–40
 - `attending` 為 boolean
 - `guestCount` 為 int，介於 1–10
-- `message` 與 `dietaryNote` 為 string，長度 ≤ 300
+- `message`、`dietaryNote`、`note` 為 string，長度 ≤ 300
+- `relation`／`cardType`／`cardDelivery`／`giftDelivery` 只收列舉值（見第 2 節）
+- `mealMeat`／`mealVeg`／`childSeat` 為 int，介於 0–10
+- `cardZip`／`giftZip` ≤ 10 字，`cardAddress`／`giftAddress` ≤ 200 字
+- `contactPhone` ≤ 30 字、`contactLine` ≤ 60 字、`contactEmail`／`cardEmail` ≤ 120 字
 - `createdAt` 必須等於 `request.time`（防止偽造時間）
 - 對應的 `sites/{siteId}` 必須存在、`status == "published"`、`rsvpEnabled == true`
 - 若已過 `rsvpDeadline` 則拒絕寫入
+
+**規則不驗跨欄位的商業邏輯**（例如「選了郵寄就一定要有地址」、
+「葷素相加要等於出席人數」）。那些條件寫得出來，但寫進規則等於把整份表單邏輯
+複製一份，日後改了表單忘了改規則就會走鐘 —— 改在 `js/rsvp-form.js`
+送出前擋好。規則負責的是型別、長度、值域這些結構性條件。
 
 RSVP 的讀取綁在**新人本人的 Google 身分**上（`isSiteOwner()`），
 與悄悄話同一套判斷：賓客寫得進去、彼此讀不到，
@@ -264,10 +309,11 @@ node scripts/create-site.js --slug chen-lin-0315 --groom 陳彥廷 --bride 林�
 
 | 來源 | 目的 |
 |---|---|
-| `/w/*/rsvp` `/w/*/wall` `/w/*/cake` | 對應的 HTML |
+| `/w/*/wall` `/w/*/cake` | 對應的 HTML |
 | `/w/*/draw` `/w/*/exhibition` `/w/*/quiz` | 對應的 HTML |
 | `/w/*/seating` `/w/*/letter` `/w/*/admin` | 對應的 HTML |
 | `/w/*/invitation` | `/invitation.html` |
+| `/w/:slug/rsvp` | 301 → `/w/:slug/invitation`（已合併） |
 | `/w/**`（其餘，含 `/w/{slug}/`） | `/index.html`（大廳） |
 | `/s/**` | `/shortlink.html` |
 
@@ -331,27 +377,104 @@ slug 不存在、格式不合法、站台非 `published`、或連線失敗時，
 
 ## 8. 邀請函頁面的視覺要求
 
-沿用 Minato Studio 的設計語言：
+**與其他頁面共用同一套設計**，不再自成一格：
 
-- 主色由 `themeColor` 動態注入 CSS 變數 `--theme`，預設 `#3D9AD1`（天空藍）
-- 強調色琥珀 `#E8A93C` 固定不變（用於分隔線、`&`、重點標記）
-- 字體：`"Noto Sans TC", "Zen Kaku Gothic New", sans-serif`；英文用 `"Archivo"`
-- 行高 1.9、字距 0.04em
-- 圓角、柔和陰影、大量留白
+- `css/common.css` ＋ `css/rsvp.css` ＋ 只放這頁獨有元件的 `css/invitation.css`
+- 版型骨架沿用子場景頁：`.scene-hero`（50vh 標題區）→ `.scene-body`
+  → `.section-title` ＋ `.cardbox`
+- 字體 `Noto Serif TC` 單一字族、1px 線條、**無陰影**、大量留白
+- 主題色走全站的四組色票（香檳金／霧玫瑰／鼠尾草綠／霧霾藍），
+  右下角浮動控制可即時切換；頂部導覽列與 BGM 控制也和其他頁一樣
 - 全站 RWD，手機優先
 - RSVP 表單送出後不跳頁，以 async 寫入 Firestore 並顯示成功狀態
 - 表單有 honeypot 隱藏欄位擋機器人（觸發時畫面照樣顯示成功，但不寫入）
 
+> **`themeColor` 不再套用在這一頁**：多頁面站台的其他頁面本來就只吃
+> `data-theme` 的四組色票，邀請函要「跟其他頁一樣」就得放掉每站一個主色的做法。
+> 欄位保留在資料模型裡，只是前端不再讀它。
+
 頁面區塊順序：
-封面（含倒數計時）→ 兩人的故事 → 照片牆 → 婚禮資訊（日期／地點／服裝／禮金
-＋加入行事曆）→ RSVP → hashtag → footer。
+封面（含倒數計時）→ 封面照 → 兩人的故事 → 婚禮資訊（日期／地點／服裝／禮金
+＋加入行事曆）→ 照片牆 → RSVP → hashtag → footer。
 **每個區塊在對應欄位是空的時候會整段隱藏**，不會留下空標題。
 
-- 倒數計時：顯示距離婚禮剩餘天數，婚禮當天過後改顯示「我們結婚了 ♡」
+- 倒數計時：顯示距離婚禮剩餘天數，婚禮當天過後改顯示「我們結婚囉」
 - 照片牆：響應式格狀排列（手機 2 欄／桌機 3 欄），點圖可放大，
   支援 Esc 關閉；載不到的圖會整格移除不留破圖
 - 加入行事曆：前端產生 `.ics` 檔下載，iOS／Android／桌機通用，
   不依賴任何第三方服務
+
+### 出席回覆只有一頁
+
+原本有兩頁：`/w/{slug}/rsvp`（表單）與 `/w/{slug}/invitation`（單頁邀請函，
+也帶一份表單）。兩頁問的是同一件事、寫進同一個 `rsvps` 子集合、
+後台也只有一份儀表板 —— 題目各寫一份，一邊改了另一邊就對不上。
+
+所以合併成一頁：
+
+| 項目 | 值 | 為什麼 |
+|---|---|---|
+| 網址 | `/w/{slug}/invitation` | 對外分享的是這個連結 |
+| 舊網址 | `/w/{slug}/rsvp` → 301 | 先前發出去的連結不會壞掉 |
+| `pages` 開關代號 | 仍然是 `rsvp` | 規則的 `pageOn()`、後台分頁、`set-pages` CLI 都靠它，改 key 會讓既有站台的設定失效 |
+
+因此 `js/site-context.js` 的 `PAGES` 把「網址片段」（`path`）與
+「開關代號」（key）分開記，兩者不一定相同。
+
+**這一頁不要求先在大廳報到**（沒有 `requireUser()`）：
+它是對外分享的連結，賓客點進去就該看得到表單，
+不必先看入場動畫、填名字。沒報到過的訪客，
+導覽列上也不會出現「朋友 ▾／登出」那一塊（`buildSiteNav()` 判斷）。
+
+表單的 DOM 與送出邏輯在 **`public/js/rsvp-form.js`**，
+HTML 只放一個 `<div id="rsvpFormHost">` —— 題目會依新人在後台的設定增減，
+寫死在 HTML 裡就做不到。
+它是一般 script（不是 module），載入當下只定義函式，
+等頁面 JS 呼叫 `RSVPForm.mount()` 才動到畫面 ——
+`window.SITE` 與 `DataStore` 要等 `site-context.js` 準備好才有。
+
+選項的文字集中在 `js/common.js` 的 `RSVP_OPTIONS`、
+哪些題目要問集中在 `rsvpConfig()`，
+表單、頁面與後台儀表板讀的都是這兩份，三邊才不會各自解讀。
+
+題目與條件顯示（★ 是新人可以在後台關掉的）：
+
+| 題目 | 型態 | 何時出現 |
+|---|---|---|
+| 怎麼稱呼你 | 文字，必填 | always |
+| 能來參加嗎 | 單選：熱情出席／視情況而定／誠摯祝福但無法出席 | always |
+| 與新人的關係 | 單選：男方親友／女方親友／雙方親友／其他 | always |
+| ★ 聯絡方式 | 電話／LINE／Email，新人複選要問哪幾種；賓客至少填一種 | 至少勾一種時才出現 |
+| 出席人數 | 1–10 | 選「熱情出席」才出現 |
+| 餐點分配（葷／素） | 兩個計數器，相加恆等於出席人數 | 同上 |
+| 兒童座椅 | 勾選後才問張數 | 同上 |
+| 飲食習慣補充 | 文字，選填 | 同上 |
+| ★ 喜帖發送方式 | 單選：紙本／電子／不需要 | always |
+| 紙本要怎麼給 | 單選：自行領取／郵寄 | 選「紙本」才出現 |
+| 喜帖郵寄地址 | 郵遞區號 ＋ 地址 | 選「郵寄」才出現 |
+| 電子喜帖的 Email | 文字，可勾「同上」帶入聯絡方式的 Email | 選「電子」才出現 |
+| ★ 喜餅領取方式 | 單選：現場領取／郵寄 | always |
+| 喜餅郵寄地址 | 郵遞區號 ＋ 地址，可勾「同上」帶入喜帖的地址 | 選「郵寄」才出現 |
+| ★ 想對新人說的話 | 文字，選填 | always |
+| 其他備註 | 文字，選填 | always |
+
+**葷素為什麼要互相連動**：兩格加起來永遠等於出席人數 ——
+改一邊另一邊跟著動，賓客分配不出一個和人數對不上的組合，
+新人也就不必事後回頭問「你們家到底幾個吃素」。
+
+**兩個「同上」的捷徑**：婚禮表單最惹人厭的就是同一個地址打兩次。
+
+| 在哪一題 | 帶入什麼 | 什麼時候出現 |
+|---|---|---|
+| 電子喜帖的 Email | 聯絡方式填的 Email | 有問 Email 而且賓客填了 |
+| 喜餅的郵寄地址 | 喜帖的郵寄地址 | 有問喜帖而且賓客填了地址 |
+
+勾起來時目標欄位轉成**唯讀**而不是隱藏 —— 賓客要看得到自己帶了什麼下來；
+要改就把勾勾取消。來源清空時選項自己收起來，不會留下一個帶不到東西的勾勾。
+
+**規則不驗這些跨欄位條件**（見第 3 節）：
+「選了郵寄就要有地址」「至少留一種聯絡方式」都在送出前擋，
+規則只認型別、長度、值域。
 
 ---
 
@@ -393,7 +516,7 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
 | 代號 | 網址 | 頁面 | 可關閉 |
 |---|---|---|---|
 | `lobby` | `/w/{slug}/` | 大廳（入場 gate + 場景導覽） | ❌ |
-| `rsvp` | `/w/{slug}/rsvp` | 出席回覆 | ✅ |
+| `rsvp` | `/w/{slug}/invitation` | 出席回覆（婚禮資訊＋表單同一頁） | ✅ |
 | `wall` | `/w/{slug}/wall` | 祝福牆 | ✅ |
 | `cake` | `/w/{slug}/cake` | 甜點桌 | ✅ |
 | `draw` | `/w/{slug}/draw` | 囍卡抽卡 | ✅ |
@@ -401,7 +524,6 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
 | `quiz` | `/w/{slug}/quiz` | 新人小測驗 | ✅ |
 | `seating` | `/w/{slug}/seating` | 我的桌次 | ✅ |
 | `letter` | `/w/{slug}/letter` | 給你的信（電子祝福信） | ✅ |
-| `invitation` | `/w/{slug}/invitation` | 單頁式邀請函（獨立版型） | ✅ |
 | `admin` | `/w/{slug}/admin` | 新人後台 | ❌ |
 
 關閉一個頁面會同時做到三件事，不只是把畫面藏起來：

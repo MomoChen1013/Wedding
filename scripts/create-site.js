@@ -29,7 +29,7 @@
      --pages          選填，逗號分隔的頁面清單，直接指定要開哪些頁
                        例：--pages rsvp,wall,cake
                        不給則預設開啟 rsvp,wall
-                       可用值：rsvp wall cake draw exhibition quiz invitation
+                       可用值：rsvp wall cake draw exhibition quiz
      --enable         選填，在預設之外「加開」某頁；可重複給多次
      --disable        選填，關掉某頁；可重複給多次
      --owner-email    新人的 Google 信箱；**新人後台要用它登入才進得去**
