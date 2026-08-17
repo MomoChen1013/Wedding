@@ -54,6 +54,10 @@ const PAGES = {
   quiz:       { file:'quiz.html',       label:'新人小測驗', optional:true  },
   seating:    { file:'seating.html',    label:'我的桌次',   optional:true  },
   letter:     { file:'letter.html',     label:'給你的信',   optional:true  },
+  /* 單頁式邀請函：把婚禮資訊與出席回覆收在一頁，
+     適合直接分享給不想逛整個站台的長輩。
+     刻意不放進導覽列（NAV_ITEMS）—— 它是另一個入口，不是子場景。 */
+  invitation: { file:'invitation.html', label:'邀請函',     optional:true  },
   /* 新人後台：不放進導覽列、不對外連結，但永遠開著，
      這樣新人不必先「打開某一頁」才能進去設定內容。
      真正的門檻在 Security Rules（ownerEmails 白名單），不是這個開關。 */

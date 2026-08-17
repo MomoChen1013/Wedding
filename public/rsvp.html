@@ -40,51 +40,9 @@
       </div>
     </div>
 
-    <!-- 表單 -->
-    <div class="cardbox" id="formCard">
-      <div class="section-title">你的出席回覆</div>
-
-      <label class="rf-label">怎麼稱呼你？</label>
-      <div class="field"><input id="rName" type="text" maxlength="20" placeholder="輸入你的名字"></div>
-
-      <label class="rf-label">能來參加嗎？</label>
-      <div class="choice-row" id="attendRow">
-        <button type="button" class="choice" data-val="yes">我會出席</button>
-        <button type="button" class="choice" data-val="no">不克出席</button>
-        <button type="button" class="choice" data-val="maybe">還不確定</button>
-      </div>
-
-      <!-- 出席才要填的細節 -->
-      <div class="rf-detail" id="detailBox" hidden>
-        <label class="rf-label">包含你，共幾位出席？</label>
-        <div class="stepper">
-          <button type="button" class="st-btn" id="minusBtn">−</button>
-          <span class="st-num" id="headNum">1</span>
-          <button type="button" class="st-btn" id="plusBtn">＋</button>
-          <span class="st-unit">位</span>
-        </div>
-
-        <label class="rf-label">餐點需求</label>
-        <div class="choice-row" id="mealRow">
-          <button type="button" class="choice sm" data-val="meat">葷食</button>
-          <button type="button" class="choice sm" data-val="veg">素食</button>
-          <button type="button" class="choice sm" data-val="none">不用餐</button>
-        </div>
-      </div>
-
-      <label class="rf-label">想對新人說的話 <small>（選填）</small></label>
-      <div class="field"><textarea id="rNote" maxlength="200" placeholder="給 {{couple}} 的悄悄話…"></textarea></div>
-
-      <div class="rf-err" id="rErr">&nbsp;</div>
-      <button class="btn" id="submitBtn">送出回覆</button>
-    </div>
-
-    <!-- 送出後的感謝畫面 -->
-    <div class="cardbox thanks-card" id="thanksCard" hidden>
-      <h3 id="tkTitle">收到你的回覆囉</h3>
-      <p id="tkMsg">謝謝你，我們超期待與你相見</p>
-      <button class="btn ghost small" id="editBtn">修改我的回覆</button>
-    </div>
+    <!-- 表單（含送出後的感謝畫面）由 js/rsvp-form.js 產生，
+         與 /w/{slug}/invitation 共用同一份題目 -->
+    <div id="rsvpFormHost"></div>
 
     <!-- 新人專屬：完整名單（網址加 #couple 才出現） -->
     <div class="cardbox owner-list" id="ownerList" hidden>
@@ -97,6 +55,8 @@
   </div>
 </section>
 
+<!-- 出席回覆表單（兩頁共用）：先定義好，等 site-context 載完頁面 JS 才會用到 -->
+<script src="/js/rsvp-form.js"></script>
 <!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與本頁 JS -->
 <script type="module" src="/js/site-context.js"></script>
 </body>

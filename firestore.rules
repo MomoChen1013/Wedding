@@ -348,12 +348,40 @@ service cloud.firestore {
       }
     }
 
+    /* 0–10 之間的整數（人數、張數這類欄位共用） */
+    function isCount(v) {
+      return v is int && v >= 0 && v <= 10;
+    }
+
     /* RSVP 建立時的欄位與商業規則驗證
-       核心欄位必填；icon／tentative／meal 是多頁版表單才用得到的選填欄位。
-       tentative=true 代表「未定」（此時 attending 為 false）。 */
+       ------------------------------------------------------------
+       核心欄位（name／attending／guestCount／dietaryNote／message／createdAt）
+       一定要有；其餘都是選填 —— 舊版表單送出的回覆仍然收得下。
+
+         tentative    true 代表「視情況而定」（此時 attending 為 false）
+         relation     與新人的關係
+         mealMeat／mealVeg   葷素分配，加起來等於 guestCount
+         childSeat    兒童座椅張數，0 代表不需要
+         cardType     喜帖形式：paper／digital／none
+         cardDelivery 紙本喜帖的給法：pickup／mail（其餘情況為空字串）
+         cardZip／cardAddress    喜帖郵寄地址
+         giftDelivery 喜餅：pickup／mail
+         giftZip／giftAddress    喜餅郵寄地址
+         note         其他備註
+         meal         舊版表單的單一餐點欄位，保留相容
+
+       規則只認得「型別、長度、值域」這種結構性條件；
+       「選了郵寄就一定要有地址」這種跨欄位的商業邏輯
+       在 js/rsvp-form.js 送出前先擋好（規則語言寫得出來，
+       但寫進去等於把表單邏輯複製一份，日後兩邊會走鐘）。 */
     function isValidRsvp(data, siteId) {
       let s = site(siteId);
-      return data.keys().hasOnly(['name', 'attending', 'guestCount', 'dietaryNote', 'message', 'createdAt', 'icon', 'tentative', 'meal'])
+      return data.keys().hasOnly([
+             'name', 'attending', 'guestCount', 'dietaryNote', 'message', 'createdAt',
+             'icon', 'tentative', 'meal', 'relation', 'mealMeat', 'mealVeg', 'childSeat',
+             'cardType', 'cardDelivery', 'cardZip', 'cardAddress',
+             'giftDelivery', 'giftZip', 'giftAddress', 'note',
+           ])
         && data.keys().hasAll(['name', 'attending', 'guestCount', 'dietaryNote', 'message', 'createdAt'])
         && data.name is string && data.name.size() >= 1 && data.name.size() <= 40
         && data.attending is bool
@@ -364,6 +392,18 @@ service cloud.firestore {
         && (!('icon' in data) || isStr(data.icon, 8))
         && (!('tentative' in data) || data.tentative is bool)
         && (!('meal' in data) || isStr(data.meal, 20))
+        && (!('note' in data) || isStr(data.note, 300))
+        && (!('relation' in data) || data.relation in ['groom', 'bride', 'both', 'other', ''])
+        && (!('mealMeat' in data) || isCount(data.mealMeat))
+        && (!('mealVeg' in data) || isCount(data.mealVeg))
+        && (!('childSeat' in data) || isCount(data.childSeat))
+        && (!('cardType' in data) || data.cardType in ['paper', 'digital', 'none', ''])
+        && (!('cardDelivery' in data) || data.cardDelivery in ['pickup', 'mail', ''])
+        && (!('cardZip' in data) || isStr(data.cardZip, 10))
+        && (!('cardAddress' in data) || isStr(data.cardAddress, 200))
+        && (!('giftDelivery' in data) || data.giftDelivery in ['pickup', 'mail', ''])
+        && (!('giftZip' in data) || isStr(data.giftZip, 10))
+        && (!('giftAddress' in data) || isStr(data.giftAddress, 200))
         && sitePublished(siteId)
         && s.rsvpEnabled == true
         && request.time <= s.rsvpDeadline;

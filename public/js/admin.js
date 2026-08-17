@@ -231,10 +231,11 @@ document.getElementById('adTabs').addEventListener('click', (e)=>{
    規則只讓 ownerEmails 名單內的帳號讀得到，賓客彼此看不到。
    這裡只看與匯出，不提供修改 —— 回覆是賓客送出的紀錄。
 ============================================================ */
-const RSVP_LABEL = { yes:'會來', maybe:'未定', no:'不克出席' };
+const RSVP_LABEL = { yes:'熱情出席', maybe:'視情況而定', no:'無法出席' };
 
 const rsvpListEl   = document.getElementById('adRsvpList');
 const rsvpFilterEl = document.getElementById('adRsvpFilter');
+const rsvpChartsEl = document.getElementById('adRsvpCharts');
 let rsvpFilter = 'all';
 
 /* createdAt 是 Firestore 的 Timestamp（伺服器時間），不是數字 */
@@ -249,31 +250,142 @@ function visibleRsvps(){
   return DataStore.getRSVPs().filter(r => {
     if(rsvpFilter !== 'all' && DataStore.rsvpStatus(r) !== rsvpFilter) return false;
     if(!q) return true;
-    return normKey(r.name).includes(q) || normKey(r.message).includes(q);
+    return normKey(r.name).includes(q)
+        || normKey(r.message).includes(q)
+        || normKey(r.note).includes(q);
   });
 }
 
+/* ============================================================
+   環狀圖
+   ------------------------------------------------------------
+   不引入圖表函式庫（第 1 節：原生 HTML/CSS/JS，無框架）。
+   SVG 的圓半徑取 15.9155，圓周正好是 100，
+   stroke-dasharray 就可以直接寫百分比，不用自己算弧長。
+   dashoffset 從 25 起算，第一段才會從十二點鐘方向開始。
+============================================================ */
+const DONUT_R = 15.9155;
+
+function donutSvg(slices, total){
+  /* 一筆都沒有時畫一個完整的灰圈，比空白更看得懂 */
+  if(!total){
+    return `<svg class="ad-donut-svg" viewBox="0 0 42 42" aria-hidden="true">
+      <circle class="ad-donut-seg" cx="21" cy="21" r="${DONUT_R}"
+              stroke="var(--dn-na)" stroke-dasharray="100 0" stroke-dashoffset="25"></circle>
+    </svg>`;
+  }
+
+  let acc = 0;
+  const arcs = slices.map((s, i) => {
+    if(!s.value) return '';
+    const pct = (s.value / total) * 100;
+    const offset = 25 - acc;
+    acc += pct;
+    /* 每段之間留 .6 的縫，分界看得出來又不會歪掉 */
+    const len = Math.max(pct - 0.6, 0.4);
+    return `<circle class="ad-donut-seg" cx="21" cy="21" r="${DONUT_R}"
+              stroke="${donutColor(s.key, i)}"
+              stroke-dasharray="${len.toFixed(2)} ${(100 - len).toFixed(2)}"
+              stroke-dashoffset="${offset.toFixed(2)}"></circle>`;
+  }).join('');
+
+  return `<svg class="ad-donut-svg" viewBox="0 0 42 42" aria-hidden="true">
+    <circle class="ad-donut-track" cx="21" cy="21" r="${DONUT_R}"></circle>${arcs}
+  </svg>`;
+}
+
+/* 顏色走同一條由深到淺的主題色階；「未填」固定用最淡的灰 */
+function donutColor(key, i){
+  return key === 'na' ? 'var(--dn-na)' : `var(--dn-${(i % 5) + 1})`;
+}
+
+function donutCard(chart){
+  const total = chart.total || 0;
+  const unit = chart.unit || '筆';
+  const pct = (v) => total ? Math.round((v / total) * 100) : 0;
+
+  const legend = chart.slices.map((s, i) => `
+    <li class="ad-donut-item">
+      <i class="ad-donut-dot" style="background:${donutColor(s.key, i)}"></i>
+      <span class="ad-donut-name">${escapeHtml(s.label)}</span>
+      <span class="ad-donut-val">${s.value}<small>${unit}</small> ・ ${pct(s.value)}%</span>
+    </li>`).join('');
+
+  return `
+    <figure class="ad-donut">
+      <figcaption class="ad-donut-title">
+        ${escapeHtml(chart.title)}<small>${escapeHtml(chart.hint || '')}</small>
+      </figcaption>
+      <div class="ad-donut-body">
+        <div class="ad-donut-chart">
+          ${donutSvg(chart.slices, total)}
+          <div class="ad-donut-center">
+            <b>${total}</b><span>${unit}</span>
+          </div>
+        </div>
+        <ul class="ad-donut-legend">${legend}</ul>
+      </div>
+    </figure>`;
+}
+
+function renderRsvpCharts(){
+  const c = DataStore.getRsvpCharts();
+  const cards = [
+    { ...c.attend, title:'出席',     hint:'依回覆筆數' },
+    { ...c.meal,   title:'飲食',     hint:'依出席人數' },
+    { ...c.child,  title:'兒童座椅',
+      hint: c.child.seats ? `共需 ${c.child.seats} 張` : '依回覆筆數' },
+    { ...c.card,   title:'喜帖',     hint:'依回覆筆數' },
+    { ...c.gift,   title:'喜餅',     hint:'依回覆筆數' },
+  ];
+  rsvpChartsEl.innerHTML = cards.map(donutCard).join('');
+}
+
 function renderRsvps(){
+  const total = DataStore.getRSVPCount();
+  const head  = DataStore.getAttendingCount();
   const tally = DataStore.getRsvpTally();
-  document.getElementById('adRsvpHead').textContent  = DataStore.getAttendingCount();
-  document.getElementById('adRsvpYes').textContent   = tally.yes;
-  document.getElementById('adRsvpMaybe').textContent = tally.maybe;
-  document.getElementById('adRsvpNo').textContent    = tally.no;
+
+  document.getElementById('adRsvpTotal').textContent = total;
+  document.getElementById('adRsvpSub').textContent = total
+    ? `確定出席 ${head} 位・熱情出席 ${tally.yes} 筆・視情況而定 ${tally.maybe} 筆・無法出席 ${tally.no} 筆`
+    : '還沒有人回覆';
+
+  renderRsvpCharts();
 
   const list = visibleRsvps();
   if(!list.length){
     rsvpListEl.innerHTML = `<div class="ad-empty">${
-      DataStore.getRSVPCount() ? '沒有符合的回覆' : '還沒有人回覆出席'}</div>`;
+      total ? '沒有符合的回覆' : '還沒有人回覆出席'}</div>`;
     return;
   }
 
   rsvpListEl.innerHTML = list.map(r => {
     const st = DataStore.rsvpStatus(r);
-    const bits = [];
-    if(st === 'yes') bits.push(`${Number(r.guestCount) || 1} 位`);
-    if(r.meal) bits.push(`餐點：${r.meal}`);
-    if(r.dietaryNote) bits.push(`飲食：${r.dietaryNote}`);
     const t = rsvpTime(r);
+
+    /* 一筆回覆的重點濃縮成一行，細節（留言、備註、地址）另起一行 */
+    const bits = [];
+    if(r.relation) bits.push(rsvpLabel('relation', r.relation));
+    if(st === 'yes'){
+      bits.push(`${Number(r.guestCount) || 1} 位`);
+      const meat = Number(r.mealMeat) || 0;
+      const veg  = Number(r.mealVeg)  || 0;
+      if(meat || veg) bits.push(`葷 ${meat}／素 ${veg}`);
+      else if(r.meal) bits.push(`餐點：${r.meal}`);
+      if(Number(r.childSeat) > 0) bits.push(`兒童椅 ${Number(r.childSeat)} 張`);
+      if(r.dietaryNote) bits.push(`飲食：${r.dietaryNote}`);
+    }
+    if(r.cardType){
+      bits.push(`喜帖：${rsvpLabel('card', r.cardType)}${
+        r.cardType === 'paper' && r.cardDelivery
+          ? `（${rsvpLabel('cardDelivery', r.cardDelivery)}）` : ''}`);
+    }
+    if(r.giftDelivery) bits.push(`喜餅：${rsvpLabel('gift', r.giftDelivery)}`);
+
+    const addrs = [];
+    if(r.cardAddress) addrs.push(`喜帖寄：${r.cardZip || ''} ${r.cardAddress}`);
+    if(r.giftAddress) addrs.push(`喜餅寄：${r.giftZip || ''} ${r.giftAddress}`);
 
     return `
       <div class="ad-item">
@@ -281,7 +393,9 @@ function renderRsvps(){
           <span class="ad-item-title">${escapeHtml(r.icon || '')} ${escapeHtml(r.name || '（沒有名字）')}</span>
           <span class="ad-tag ad-tag-${st}">${RSVP_LABEL[st]}</span>
           ${bits.length ? `<span class="ad-item-sub">${escapeHtml(bits.join('・'))}</span>` : ''}
+          ${addrs.length ? `<span class="ad-item-sub">${escapeHtml(addrs.join('　'))}</span>` : ''}
           ${r.message ? `<span class="ad-item-sub">「${escapeHtml(r.message)}」</span>` : ''}
+          ${r.note ? `<span class="ad-item-sub">備註：${escapeHtml(r.note)}</span>` : ''}
           <span class="ad-item-sub">${t ? fmtTime(t) : '時間未知'}</span>
         </div>
       </div>`;
@@ -300,8 +414,13 @@ document.getElementById('adRsvpChips').addEventListener('click', (e)=>{
   renderRsvps();
 });
 
-/* 規則拒絕讀取時（例如帳號被移出 ownerEmails）講清楚，不要留一個空名單 */
+/* 規則拒絕讀取時（例如帳號被移出 ownerEmails）講清楚，不要留一個空名單。
+   統計也一起收起來 —— 一排 0 和五個空圓圈看起來像「真的沒人回覆」，
+   但實際上是讀不到，兩件事不能長得一樣。 */
 document.addEventListener('data:rsvps:denied', ()=>{
+  document.getElementById('adRsvpSub').textContent = '目前讀不到回覆';
+  document.getElementById('adRsvpTotal').textContent = '—';
+  rsvpChartsEl.innerHTML = '';
   rsvpListEl.innerHTML =
     `<div class="ad-empty">沒有讀取出席回覆的權限<br>請確認這個帳號在 ownerEmails 名單內</div>`;
 });
@@ -314,17 +433,31 @@ document.getElementById('adRsvpExport').addEventListener('click', ()=>{
 
   downloadCsv(
     'rsvps',
-    ['稱呼','是否出席','人數','餐點','飲食禁忌','給新人的話','回覆時間'],
+    ['稱呼','是否出席','與新人關係','人數','葷食','素食','兒童座椅',
+     '飲食習慣','喜帖','喜帖領取','喜帖郵遞區號','喜帖地址',
+     '喜餅','喜餅郵遞區號','喜餅地址','給新人的話','其他備註','回覆時間'],
     rows.map(r => {
       const st = DataStore.rsvpStatus(r);
       const t  = rsvpTime(r);
+      const going = st === 'yes';
       return [
         r.name || '',
         RSVP_LABEL[st],
-        st === 'yes' ? (Number(r.guestCount) || 1) : '',
-        r.meal || '',
+        rsvpLabel('relation', r.relation),
+        going ? (Number(r.guestCount) || 1) : '',
+        going ? (Number(r.mealMeat) || 0) : '',
+        going ? (Number(r.mealVeg)  || 0) : '',
+        going ? (Number(r.childSeat) || 0) : '',
         r.dietaryNote || '',
+        rsvpLabel('card', r.cardType),
+        r.cardType === 'paper' ? rsvpLabel('cardDelivery', r.cardDelivery) : '',
+        r.cardZip || '',
+        r.cardAddress || '',
+        rsvpLabel('gift', r.giftDelivery),
+        r.giftZip || '',
+        r.giftAddress || '',
         r.message || '',
+        r.note || '',
         t ? fmtTime(t) : '',
       ];
     }),

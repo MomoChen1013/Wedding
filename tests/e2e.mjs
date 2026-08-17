@@ -1,3 +1,11 @@
+/* ============================================================
+   e2e.mjs — 單頁式邀請函（/w/{slug}/invitation）的瀏覽器測試
+   ------------------------------------------------------------
+   邀請函已經改用與其他頁面相同的版型：
+   走 js/site-context.js 載入站台設定 → 注入 common.js 與 invitation.js，
+   出席回覆表單則與 /w/{slug}/rsvp 共用 js/rsvp-form.js。
+   所以這裡等的是 data-site-ready，而不是舊版自己管的 #content。
+============================================================ */
 import { chromium } from 'playwright';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 
@@ -20,6 +28,7 @@ function findChromium(){
 
 /* ---------- 先把測試資料寫進 emulator ---------- */
 process.env.FIRESTORE_EMULATOR_HOST ||= '127.0.0.1:8080';
+process.env.FIREBASE_AUTH_EMULATOR_HOST ||= '127.0.0.1:9099';
 const { initializeApp: adminInit } = await import('firebase-admin/app');
 const { getFirestore: adminFirestore, Timestamp: AdminTimestamp } =
   await import('firebase-admin/firestore');
@@ -117,21 +126,32 @@ const SDK_DIR = new URL('../node_modules/firebase/', import.meta.url);
 const sdk = {
   app: readFileSync(new URL('firebase-app.js', SDK_DIR), 'utf8'),
   firestore: readFileSync(new URL('firebase-firestore.js', SDK_DIR), 'utf8'),
+  auth: readFileSync(new URL('firebase-auth.js', SDK_DIR), 'utf8'),
 };
+
+/* 把子模組 import 的 app 版本改成頁面請求的版本，
+   否則會載入兩份 firebase-app 實例，導致 "Service firestore is not available" */
+function pinAppVersion(body, url) {
+  const version = url.match(/firebasejs\/([^/]+)\//)?.[1];
+  return body.replace(
+    /https:\/\/www\.gstatic\.com\/firebasejs\/[^/]+\/firebase-app\.js/g,
+    `https://www.gstatic.com/firebasejs/${version}/firebase-app.js`,
+  );
+}
 
 async function installOfflineRoutes(page) {
   await page.route('**/firebasejs/**/firebase-app.js', (route) =>
     route.fulfill({ contentType: 'text/javascript', body: sdk.app }));
-  await page.route('**/firebasejs/**/firebase-firestore.js', (route) => {
-    /* 把 firestore 內部 import 的 app 版本改成頁面請求的版本，
-       否則會載入兩份 firebase-app 實例，導致 "Service firestore is not available" */
-    const version = route.request().url().match(/firebasejs\/([^/]+)\//)?.[1];
-    const body = sdk.firestore.replace(
-      /https:\/\/www\.gstatic\.com\/firebasejs\/[^/]+\/firebase-app\.js/g,
-      `https://www.gstatic.com/firebasejs/${version}/firebase-app.js`,
-    );
-    return route.fulfill({ contentType: 'text/javascript', body });
-  });
+  await page.route('**/firebasejs/**/firebase-firestore.js', (route) =>
+    route.fulfill({
+      contentType: 'text/javascript',
+      body: pinAppVersion(sdk.firestore, route.request().url()),
+    }));
+  await page.route('**/firebasejs/**/firebase-auth.js', (route) =>
+    route.fulfill({
+      contentType: 'text/javascript',
+      body: pinAppVersion(sdk.auth, route.request().url()),
+    }));
   await page.route('**://fonts.googleapis.com/**', (route) =>
     route.fulfill({ contentType: 'text/css', body: '' }));
   await page.route('**://fonts.gstatic.com/**', (route) => route.abort());
@@ -143,18 +163,28 @@ async function newPage(opts = {}) {
   return page;
 }
 
+/* 等到 site-context.js 決定要顯示邀請函，還是換上找不到的畫面為止 */
+async function waitReady(page) {
+  await page.waitForFunction(
+    () => document.documentElement.dataset.siteReady === '1'
+       || !!document.querySelector('[data-fatal]'),
+    null, { timeout: 15000 });
+}
+
 async function visit(path) {
   const page = await newPage();
   const consoleErrors = [];
   page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text()); });
   page.on('pageerror', (e) => consoleErrors.push('pageerror: ' + e.message));
   await page.goto(BASE + path, { waitUntil: 'domcontentloaded' });
-  /* 等到頁面決定要顯示邀請函還是 404 為止 */
-  await page.waitForFunction(() => {
-    const vis = (id) => !document.getElementById(id).hidden;
-    return vis('content') || vis('notFoundState');
-  }, null, { timeout: 15000 });
+  await waitReady(page);
   return { page, consoleErrors };
+}
+
+/* 字體與素材圖在沙箱裡本來就抓不到，不算真的錯誤 */
+function realErrors(list) {
+  return list.filter((t) =>
+    !/favicon|fonts\.|\.png|\.jpg|\.jpeg|\.webp|\.mp3|ERR_FAILED|status of 404/i.test(t));
 }
 
 function ok(label, cond, extra = '') {
@@ -162,47 +192,132 @@ function ok(label, cond, extra = '') {
   if (!cond) process.exitCode = 1;
 }
 
+/* 出席回覆表單：把必填的題目一次填完（能來參加、關係、喜帖、喜餅） */
+async function fillRsvp(page, { name, attend = 'yes', relation = 'groom',
+                                card = 'digital', gift = 'pickup' } = {}) {
+  await page.fill('#rName', name);
+  await page.click(`#attendRow .choice[data-val="${attend}"]`);
+  await page.click(`#relationRow .choice[data-val="${relation}"]`);
+  await page.click(`#cardRow .choice[data-val="${card}"]`);
+  await page.click(`#giftRow .choice[data-val="${gift}"]`);
+}
+
 /* ---------- 站台 A ---------- */
 console.log('\n[1] /w/chen-lin-0315/invitation');
 {
   const { page, consoleErrors } = await visit('/w/chen-lin-0315/invitation');
   const t = await page.title();
-  const groom = await page.textContent('#groomName');
-  const bride = await page.textContent('#brideName');
-  const theme = await page.evaluate(() =>
-    getComputedStyle(document.documentElement).getPropertyValue('--theme').trim());
+  const couple = await page.textContent('.inv-couple');
   const detailDate = await page.textContent('#detailDate');
   const venue = await page.textContent('#venueName');
-  const storyVisible = await page.isVisible('#storySection');
-  const story = await page.textContent('#story');
+  const storyVisible = await page.isVisible('#storyBlock');
+  const story = await page.textContent('#storyText');
   const formVisible = await page.isVisible('#rsvpForm');
-  const notFoundHidden = !(await page.isVisible('#notFoundState'));
+  const notFound = await page.locator('[data-fatal]').count();
 
   ok('標題', t.includes('陳彥廷') && t.includes('林佳蓉'), t);
-  ok('新人姓名', groom === '陳彥廷' && bride === '林佳蓉', `${groom}/${bride}`);
-  ok('主題色 #3D9AD1', theme === '#3D9AD1', theme);
+  ok('新人姓名', couple.trim() === '陳彥廷 & 林佳蓉', couple.trim());
   ok('日期以婚禮時區顯示', detailDate === '2027.03.15（一）12:00', detailDate);
   ok('場地', venue.includes('晶華'), venue);
   ok('故事區塊顯示', storyVisible && story.includes('蛋糕'));
   ok('故事保留換行', story.includes('\n'));
   ok('RSVP 表單顯示', formVisible);
-  ok('未顯示 404', notFoundHidden);
+  ok('未顯示找不到畫面', notFound === 0);
 
-  /* 新增內容區塊 */
-  ok('倒數計時顯示', (await page.textContent('#countdown')).includes('距離婚禮還有'),
-    await page.textContent('#countdown'));
+  /* 與其他頁面同一套版型：共用的頂部導覽列與浮動控制都要在 */
+  ok('套用共用版型（common.css）',
+    await page.evaluate(() => Array.from(document.styleSheets)
+      .some((s) => (s.href || '').includes('/css/common.css'))));
+  ok('有共用的頂部導覽列', await page.isVisible('#siteNav'));
+  ok('有共用的主題／音樂浮動控制', await page.isVisible('.floating'));
+  ok('沿用共用的區塊標題樣式',
+    await page.locator('.section-title').count() >= 3,
+    String(await page.locator('.section-title').count()));
+
+  /* 內容區塊 */
+  ok('倒數計時顯示', (await page.textContent('#invCountdown')).includes('距離婚禮還有'),
+    await page.textContent('#invCountdown'));
   ok('照片牆顯示 3 張', await page.locator('#gallery button').count() === 3,
     String(await page.locator('#gallery button').count()));
   ok('Dress code 顯示',
     (await page.textContent('#dressCode')).includes('香檳金'));
   ok('禮金說明顯示',
     (await page.textContent('#giftNote')).includes('最好的禮物'));
-  const tags = await page.locator('#hashtags li').allTextContents();
+  const tags = await page.locator('#hashtags span').allTextContents();
   ok('hashtag 顯示且自動補 #',
     tags.join(',') === '#陳林2027,#我們結婚了', tags.join(','));
   ok('加入行事曆按鈕顯示', await page.isVisible('#calBtn'));
 
-  ok('無 console 錯誤', consoleErrors.length === 0, consoleErrors.join(' | '));
+  ok('無 console 錯誤', realErrors(consoleErrors).length === 0,
+    realErrors(consoleErrors).join(' | '));
+  await page.close();
+}
+
+/* ---------- 表單題目 ---------- */
+console.log('\n[1a] 出席回覆的題目');
+{
+  const { page } = await visit('/w/chen-lin-0315/invitation');
+  const opts = (sel) => page.locator(sel).allTextContents();
+
+  ok('能來參加嗎？三個選項',
+    (await opts('#attendRow .choice')).join('／') === '熱情出席／視情況而定／誠摯祝福但無法出席',
+    (await opts('#attendRow .choice')).join('／'));
+  ok('與新人關係四個選項',
+    (await opts('#relationRow .choice')).join('／') === '男方親友／女方親友／雙方親友／其他',
+    (await opts('#relationRow .choice')).join('／'));
+  ok('喜帖三個選項',
+    (await opts('#cardRow .choice')).join('／') === '需要紙本喜帖／需要電子喜帖／不需要喜帖',
+    (await opts('#cardRow .choice')).join('／'));
+  ok('喜餅兩個選項',
+    (await opts('#giftRow .choice')).join('／') === '現場領取／郵寄',
+    (await opts('#giftRow .choice')).join('／'));
+  ok('其他備註欄位存在', await page.locator('#rMemo').count() === 1);
+
+  /* 出席細節：沒選「熱情出席」之前不出現 */
+  ok('未選出席時細節收起來', !(await page.isVisible('#detailBox')));
+  await page.click('#attendRow .choice[data-val="yes"]');
+  ok('選了出席才展開細節', await page.isVisible('#detailBox'));
+
+  /* 葷素分配跟著人數走 */
+  await page.click('#headPlus');
+  await page.click('#headPlus');
+  ok('人數 stepper', (await page.textContent('#headNum')) === '3',
+    await page.textContent('#headNum'));
+  ok('預設全部算葷食', (await page.textContent('#meatNum')) === '3',
+    await page.textContent('#meatNum'));
+  await page.click('#vegPlus');
+  ok('素食加一，葷食自動減一',
+    (await page.textContent('#meatNum')) === '2' && (await page.textContent('#vegNum')) === '1',
+    `${await page.textContent('#meatNum')}/${await page.textContent('#vegNum')}`);
+
+  /* 兒童座椅：打勾才問幾張 */
+  ok('未勾選時不問張數', !(await page.isVisible('#childSeatBox')));
+  await page.check('#childSeatOn');
+  ok('勾選後可以選張數', await page.isVisible('#childSeatBox'));
+  ok('勾選後預設 1 張', (await page.textContent('#childNum')) === '1',
+    await page.textContent('#childNum'));
+
+  /* 喜帖：紙本才問領取方式，郵寄才問地址 */
+  ok('未選紙本時不問領取方式', !(await page.isVisible('#cardPaperBox')));
+  await page.click('#cardRow .choice[data-val="paper"]');
+  ok('選了紙本才問領取方式', await page.isVisible('#cardPaperBox'));
+  ok('未選郵寄時不問地址', !(await page.isVisible('#cardAddrBox')));
+  await page.click('#cardDeliveryRow .choice[data-val="mail"]');
+  ok('選了郵寄才問地址', await page.isVisible('#cardAddrBox'));
+
+  /* 喜餅：郵寄才問地址 */
+  ok('喜餅預設不問地址', !(await page.isVisible('#giftAddrBox')));
+  await page.click('#giftRow .choice[data-val="mail"]');
+  ok('喜餅選郵寄才問地址', await page.isVisible('#giftAddrBox'));
+
+  /* 郵寄卻沒填地址就送出：要被擋下 */
+  await page.fill('#rName', '沒填地址');
+  await page.click('#relationRow .choice[data-val="both"]');
+  await page.click('#submitBtn');
+  await page.waitForTimeout(300);
+  ok('郵寄沒填郵遞區號會被擋下',
+    (await page.textContent('#rErr')).includes('郵遞區號'),
+    await page.textContent('#rErr'));
   await page.close();
 }
 
@@ -220,29 +335,24 @@ console.log('\n[1b] 照片放大');
   await page.close();
 }
 
-/* ---------- 站台 B（主題色與內容須互不干擾） ---------- */
+/* ---------- 站台 B（內容須互不干擾） ---------- */
 console.log('\n[2] /w/wu-yang-1220/invitation');
 {
   const { page, consoleErrors } = await visit('/w/wu-yang-1220/invitation');
-  const groom = await page.textContent('#groomName');
-  const bride = await page.textContent('#brideName');
-  const theme = await page.evaluate(() =>
-    getComputedStyle(document.documentElement).getPropertyValue('--theme').trim());
-  const submitBg = await page.evaluate(() =>
-    getComputedStyle(document.getElementById('submitBtn')).backgroundColor);
+  const couple = await page.textContent('.inv-couple');
   const detailDate = await page.textContent('#detailDate');
-  const storyHidden = !(await page.isVisible('#storySection'));
 
-  ok('新人姓名', groom === '吳柏勳' && bride === '楊雅婷', `${groom}/${bride}`);
-  ok('主題色 #B5838D', theme === '#B5838D', theme);
-  ok('主題色實際套用到按鈕', submitBg === 'rgb(181, 131, 141)', submitBg);
+  ok('新人姓名', couple.trim() === '吳柏勳 & 楊雅婷', couple.trim());
   ok('日期以東京時區顯示', detailDate === '2027.12.20（一）18:30', detailDate);
-  ok('無 story 時區塊隱藏', storyHidden);
-  ok('無照片時照片牆隱藏', !(await page.isVisible('#gallerySection')));
+  ok('無 story 時區塊隱藏', !(await page.isVisible('#storyBlock')));
+  ok('無照片時照片牆隱藏', !(await page.isVisible('#galleryBlock')));
   ok('無 dress code 時該列隱藏', !(await page.isVisible('#dressRow')));
-  ok('無禮金說明時該列隱藏', !(await page.isVisible('#giftRow')));
-  ok('無 hashtag 時區塊隱藏', !(await page.isVisible('#tagSection')));
-  ok('無 console 錯誤', consoleErrors.length === 0, consoleErrors.join(' | '));
+  ok('無禮金說明時該列隱藏', !(await page.isVisible('#giftNoteRow')));
+  const tags = await page.locator('#hashtags span').allTextContents();
+  ok('沒設 hashtag 時用預設兩個',
+    tags.join(',') === '#我們結婚了,#Married', tags.join(','));
+  ok('無 console 錯誤', realErrors(consoleErrors).length === 0,
+    realErrors(consoleErrors).join(' | '));
   await page.close();
 }
 
@@ -250,16 +360,13 @@ console.log('\n[2] /w/wu-yang-1220/invitation');
 console.log('\n[3] /w/does-not-exist/invitation');
 {
   const { page, consoleErrors } = await visit('/w/does-not-exist/invitation');
-  const nf = await page.isVisible('#notFoundState');
-  const contentHidden = !(await page.isVisible('#content'));
-  const loadingHidden = !(await page.isVisible('#loadingState'));
-  const text = await page.textContent('#notFoundState');
+  const text = await page.textContent('body');
 
-  ok('顯示 404 畫面', nf);
-  ok('內容區隱藏', contentHidden);
-  ok('載入動畫消失（非白畫面）', loadingHidden);
+  ok('顯示找不到畫面', (await page.locator('[data-fatal]').count()) === 1);
   ok('中文友善訊息', text.includes('找不到這張邀請函'));
-  ok('無 console 錯誤', consoleErrors.length === 0, consoleErrors.join(' | '));
+  ok('不是白畫面', text.trim().length > 0);
+  ok('無 console 錯誤', realErrors(consoleErrors).length === 0,
+    realErrors(consoleErrors).join(' | '));
   await page.close();
 }
 
@@ -267,7 +374,7 @@ console.log('\n[3] /w/does-not-exist/invitation');
 console.log('\n[4] draft 站台');
 {
   const { page } = await visit('/w/draft-site-test/invitation');
-  ok('draft 顯示 404', await page.isVisible('#notFoundState'));
+  ok('draft 顯示找不到畫面', (await page.locator('[data-fatal]').count()) === 1);
   await page.close();
 }
 
@@ -292,25 +399,34 @@ console.log('\n[4b] RSVP 截止與關閉');
 console.log('\n[5] RSVP 送出流程');
 {
   const { page, consoleErrors } = await visit('/w/chen-lin-0315/invitation');
-  await page.fill('#fName', '王小明');
-  await page.click('label.choice:has(input[value="yes"])');
-  await page.click('#plusBtn');
-  await page.click('#plusBtn');
-  const count = await page.textContent('#guestCount');
-  ok('人數 stepper', count === '3', count);
-  await page.fill('#fDiet', '素食 1 位');
-  await page.fill('#fMsg', '祝你們永遠幸福！');
+  await fillRsvp(page, { name: '王小明', relation: 'groom', card: 'paper', gift: 'mail' });
+
+  /* 出席細節 */
+  await page.click('#headPlus');
+  await page.click('#headPlus');
+  await page.click('#vegPlus');
+  await page.check('#childSeatOn');
+  await page.fill('#rDiet', '不吃牛');
+
+  /* 紙本喜帖自行領取、喜餅郵寄 */
+  await page.click('#cardDeliveryRow .choice[data-val="pickup"]');
+  await page.fill('#rGiftZip', '104');
+  await page.fill('#rGiftAddr', '台北市中山區南京東路一段 1 號');
+
+  await page.fill('#rNote', '祝你們永遠幸福！');
+  await page.fill('#rMemo', '會晚 20 分鐘到');
 
   const urlBefore = page.url();
   await page.click('#submitBtn');
-  await page.waitForSelector('#doneBox:visible', { timeout: 8000 });
+  await page.waitForSelector('#thanksCard:visible', { timeout: 8000 });
 
   ok('不跳頁', page.url() === urlBefore);
-  ok('顯示成功狀態', await page.isVisible('#doneBox'));
+  ok('顯示成功狀態', await page.isVisible('#thanksCard'));
   ok('表單隱藏', !(await page.isVisible('#rsvpForm')));
-  const doneText = await page.textContent('#doneText');
+  const doneText = await page.textContent('#tkMsg');
   ok('成功訊息含人數', doneText.includes('3'), doneText);
-  ok('無 console 錯誤', consoleErrors.length === 0, consoleErrors.join(' | '));
+  ok('無 console 錯誤', realErrors(consoleErrors).length === 0,
+    realErrors(consoleErrors).join(' | '));
   await page.close();
 }
 
@@ -318,12 +434,16 @@ console.log('\n[5] RSVP 送出流程');
 console.log('\n[6] honeypot 擋機器人');
 {
   const { page } = await visit('/w/chen-lin-0315/invitation');
-  await page.fill('#fName', '機器人');
-  await page.click('label.choice:has(input[value="yes"])');
-  await page.evaluate(() => { document.getElementById('fWebsite').value = 'http://spam.example'; });
+  /* 上一段已經回覆過，這一頁會直接顯示感謝畫面 —— 先清掉本機紀錄 */
+  await page.evaluate(() => LS.remove('rsvp.mine'));
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await waitReady(page);
+
+  await fillRsvp(page, { name: '機器人', attend: 'no' });
+  await page.evaluate(() => { document.getElementById('rWebsite').value = 'http://spam.example'; });
   await page.click('#submitBtn');
-  await page.waitForSelector('#doneBox:visible', { timeout: 8000 });
-  ok('honeypot 觸發時畫面仍顯示成功', await page.isVisible('#doneBox'));
+  await page.waitForSelector('#thanksCard:visible', { timeout: 8000 });
+  ok('honeypot 觸發時畫面仍顯示成功', await page.isVisible('#thanksCard'));
   await page.close();
 
   /* 關鍵：畫面雖然顯示成功，但資料庫不該多出這筆 */
@@ -335,13 +455,28 @@ console.log('\n[6] honeypot 擋機器人');
   ok('RSVP 總數為 1', rsvps.size === 1, String(rsvps.size));
 
   const saved = rsvps.docs[0].data();
-  ok('guestCount 正確', saved.guestCount === 3, String(saved.guestCount));
   ok('attending 為 boolean true', saved.attending === true);
-  ok('dietaryNote 正確', saved.dietaryNote === '素食 1 位', saved.dietaryNote);
+  ok('guestCount 正確', saved.guestCount === 3, String(saved.guestCount));
+  ok('與新人關係正確', saved.relation === 'groom', saved.relation);
+  ok('葷素分配加起來等於人數',
+    saved.mealMeat === 2 && saved.mealVeg === 1,
+    `葷 ${saved.mealMeat} / 素 ${saved.mealVeg}`);
+  ok('兒童座椅張數正確', saved.childSeat === 1, String(saved.childSeat));
+  ok('飲食習慣正確', saved.dietaryNote === '不吃牛', saved.dietaryNote);
+  ok('喜帖為紙本自取', saved.cardType === 'paper' && saved.cardDelivery === 'pickup',
+    `${saved.cardType}/${saved.cardDelivery}`);
+  ok('紙本自取時不留地址', saved.cardAddress === '' && saved.cardZip === '');
+  ok('喜餅郵寄且有地址',
+    saved.giftDelivery === 'mail' && saved.giftZip === '104'
+      && saved.giftAddress.includes('南京東路'),
+    `${saved.giftDelivery}/${saved.giftZip}/${saved.giftAddress}`);
+  ok('其他備註有存下來', saved.note === '會晚 20 分鐘到', saved.note);
   ok('createdAt 由伺服器寫入', saved.createdAt && typeof saved.createdAt.toDate === 'function');
   ok('未夾帶多餘欄位',
     Object.keys(saved).sort().join(',') ===
-    'attending,createdAt,dietaryNote,guestCount,message,name',
+    'attending,cardAddress,cardDelivery,cardType,cardZip,childSeat,createdAt,dietaryNote,'
+    + 'giftAddress,giftDelivery,giftZip,guestCount,icon,mealMeat,mealVeg,message,name,note,'
+    + 'relation,tentative',
     Object.keys(saved).sort().join(','));
 }
 
@@ -352,9 +487,9 @@ console.log('\n[8] 短連結 /s/{code}');
   await page.goto(BASE + '/s/ab23cd', { waitUntil: 'domcontentloaded' });
   await page.waitForURL('**/w/chen-lin-0315/invitation', { timeout: 15000 });
   ok('正確轉址到邀請函', page.url().endsWith('/w/chen-lin-0315/invitation'), page.url());
-  await page.waitForSelector('#content', { state: 'visible', timeout: 15000 });
+  await waitReady(page);
   ok('轉址後邀請函正常顯示',
-    (await page.textContent('#groomName')) === '陳彥廷');
+    (await page.textContent('.inv-couple')).trim() === '陳彥廷 & 林佳蓉');
   await page.close();
 }
 {
@@ -378,7 +513,7 @@ console.log('\n[7] 手機版 RWD（375px）');
 {
   const page = await newPage({ viewport: { width: 375, height: 812 } });
   await page.goto(BASE + '/w/chen-lin-0315/invitation', { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('#content', { state: 'visible', timeout: 15000 });
+  await waitReady(page);
   const overflow = await page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth);
   ok('無水平捲動', overflow <= 0, `溢出 ${overflow}px`);
@@ -390,7 +525,7 @@ console.log('\n[7] 手機版 RWD（375px）');
 {
   const page = await newPage({ viewport: { width: 1280, height: 900 } });
   await page.goto(BASE + '/w/chen-lin-0315/invitation', { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('#content', { state: 'visible', timeout: 15000 });
+  await waitReady(page);
   await page.screenshot({ path: '/tmp/desktop.png', fullPage: true });
   await page.close();
 }

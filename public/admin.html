@@ -75,29 +75,21 @@
   ============================================================ -->
   <div class="ad-panel is-on" data-panel="rsvp">
     <section class="ad-sec">
-      <h2 class="ad-sec-title">出席統計</h2>
+      <h2 class="ad-sec-title">出席回覆總覽</h2>
 
-      <div class="ad-stats">
-        <div class="ad-stat">
-          <div class="ad-stat-num" id="adRsvpHead">0</div>
-          <div class="ad-stat-lab">確定出席人數</div>
-        </div>
-        <div class="ad-stat">
-          <div class="ad-stat-num" id="adRsvpYes">0</div>
-          <div class="ad-stat-lab">回覆會來</div>
-        </div>
-        <div class="ad-stat">
-          <div class="ad-stat-num" id="adRsvpMaybe">0</div>
-          <div class="ad-stat-lab">還沒決定</div>
-        </div>
-        <div class="ad-stat">
-          <div class="ad-stat-num" id="adRsvpNo">0</div>
-          <div class="ad-stat-lab">不克出席</div>
-        </div>
+      <!-- 最大的那個數字：一眼看到收到幾份回覆 -->
+      <div class="ad-hero-stat">
+        <div class="ad-hero-num" id="adRsvpTotal">0</div>
+        <div class="ad-hero-lab">總回覆人數</div>
+        <div class="ad-hero-sub" id="adRsvpSub">還沒有人回覆</div>
       </div>
 
+      <!-- 五張環狀圖，由 js/admin.js 依表單的題目產生 -->
+      <div class="ad-donuts" id="adRsvpCharts"></div>
+
       <p class="ad-sec-note">
-        「確定出席人數」是把每筆回覆的人數加總，其餘三個是<b>回覆筆數</b>。
+        除了<b>飲食</b>是以「人」為單位（依每筆回覆的葷素分配加總），
+        其餘四張都是以<b>回覆筆數</b>計算。
         回覆是賓客送出的紀錄，後台只能看與匯出，不能修改。
       </p>
     </section>
@@ -112,11 +104,11 @@
       <div class="ad-list-head">
         <div class="ad-chips" id="adRsvpChips">
           <button class="ad-chip is-on" type="button" data-filter="all">全部</button>
-          <button class="ad-chip" type="button" data-filter="yes">會來</button>
-          <button class="ad-chip" type="button" data-filter="maybe">未定</button>
-          <button class="ad-chip" type="button" data-filter="no">不克出席</button>
+          <button class="ad-chip" type="button" data-filter="yes">熱情出席</button>
+          <button class="ad-chip" type="button" data-filter="maybe">視情況而定</button>
+          <button class="ad-chip" type="button" data-filter="no">無法出席</button>
         </div>
-        <input class="ad-filter" id="adRsvpFilter" type="text" placeholder="搜尋名字或留言…">
+        <input class="ad-filter" id="adRsvpFilter" type="text" placeholder="搜尋名字、留言或備註…">
       </div>
 
       <div class="ad-list" id="adRsvpList"></div>

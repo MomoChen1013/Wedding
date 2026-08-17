@@ -68,6 +68,52 @@ function findBlessing(input, list){
 function $(sel, root){ return (root||document).querySelector(sel); }
 function $all(sel, root){ return Array.from((root||document).querySelectorAll(sel)); }
 
+/* ============================================================
+   出席回覆的題目選項（表單與後台儀表板共用同一份）
+   ------------------------------------------------------------
+   ・js/rsvp-form.js 拿它畫出選項按鈕
+   ・js/admin.js 拿它畫環狀圖的標籤與順序
+   兩邊共用，圖表的分類才不會和賓客實際看到的選項對不起來。
+   陣列順序＝畫面順序＝圖表區段順序。
+============================================================ */
+const RSVP_OPTIONS = {
+  attend: [
+    ['yes',   '熱情出席'],
+    ['maybe', '視情況而定'],
+    ['no',    '誠摯祝福但無法出席'],
+  ],
+  relation: [
+    ['groom', '男方親友'],
+    ['bride', '女方親友'],
+    ['both',  '雙方親友'],
+    ['other', '其他'],
+  ],
+  meal: [
+    ['meat', '葷食'],
+    ['veg',  '素食'],
+  ],
+  card: [
+    ['paper',   '需要紙本喜帖'],
+    ['digital', '需要電子喜帖'],
+    ['none',    '不需要喜帖'],
+  ],
+  cardDelivery: [
+    ['pickup', '自行領取'],
+    ['mail',   '郵寄'],
+  ],
+  gift: [
+    ['pickup', '現場領取'],
+    ['mail',   '郵寄'],
+  ],
+};
+window.RSVP_OPTIONS = RSVP_OPTIONS;
+
+/* 代號 → 中文（找不到就原樣回傳，舊資料才不會變成空白） */
+function rsvpLabel(group, value){
+  const hit = (RSVP_OPTIONS[group] || []).find(([v]) => v === value);
+  return hit ? hit[1] : (value || '');
+}
+
 /* ---------- localStorage 包裝 ----------
    key 以 siteId 分隔，同一位賓客逛兩組新人的網站時，
    名字、主題、回覆紀錄不會互相污染 */
@@ -356,10 +402,16 @@ const DataStore = {
   /* ===== RSVP 出席回覆 =====
      規則只讓 ownerEmails 名單內的帳號讀，所以不放進 _subscribe()，
      由新人後台登入成功後才呼叫。
-     欄位以 rsvp.js 實際寫入的為準：
-       attending  bool   只有「會出席」是 true
-       tentative  bool   true 代表「未定」
+     欄位以 js/rsvp-form.js 實際寫入的為準：
+       attending  bool   只有「熱情出席」是 true
+       tentative  bool   true 代表「視情況而定」
        guestCount int    出席人數
+       relation   string 與新人的關係
+       mealMeat / mealVeg  int  葷素分配（加起來＝guestCount）
+       childSeat  int    兒童座椅張數（0 代表不需要）
+       cardType / cardDelivery / cardZip / cardAddress    喜帖
+       giftDelivery / giftZip / giftAddress               喜餅
+       note       string 其他備註
        createdAt  Timestamp（伺服器時間） */
   subscribeRsvps(){
     this._lazySub('rsvps', 'rsvps', 'createdAt');
@@ -390,6 +442,98 @@ const DataStore = {
     const t = { yes:0, maybe:0, no:0 };
     this._rsvps.forEach(r => { t[this.rsvpStatus(r)]++; });
     return t;
+  },
+
+  /* ===== 後台儀表板用的統計 =====
+     每一組回傳 { total, slices:[{ key, label, value }] }，
+     admin.js 直接拿去畫環狀圖，不必自己再算一次。
+
+     分母刻意不一致，因為問的問題不一樣：
+       出席／喜帖／喜餅／兒童座椅 → 以「回覆筆數」計（一筆回覆一個決定）
+       飲食                      → 以「人數」計（葷素是分配到每個人身上的）
+     沒填到的舊資料歸進「未填」，總數才跟回覆筆數對得起來。 */
+  getRsvpCharts(){
+    const rows = this._rsvps;
+    const NA = { key:'na', label:'未填' };
+
+    /* 依 key 累加成 slices，順序照 RSVP_OPTIONS 走，最後補上「未填」 */
+    const tally = (group, pickKey) => {
+      const counts = new Map((RSVP_OPTIONS[group] || []).map(([k]) => [k, 0]));
+      let na = 0;
+      rows.forEach(r => {
+        const k = pickKey(r);
+        if(k != null && counts.has(k)) counts.set(k, counts.get(k) + 1);
+        else na++;
+      });
+      const slices = (RSVP_OPTIONS[group] || [])
+        .map(([k, label]) => ({ key:k, label, value: counts.get(k) }));
+      if(na) slices.push({ ...NA, value: na });
+      return { total: rows.length, slices };
+    };
+
+    /* 出席：三選一，用同一個 rsvpStatus() 判斷，和名單上的標籤一致 */
+    const attend = tally('attend', r => this.rsvpStatus(r));
+
+    /* 飲食：只算「會來」的那些回覆，單位是人 */
+    const going = rows.filter(r => this.rsvpStatus(r) === 'yes');
+    let meat = 0, veg = 0, unset = 0;
+    going.forEach(r => {
+      const m = Number(r.mealMeat) || 0;
+      const v = Number(r.mealVeg) || 0;
+      if(m + v > 0){ meat += m; veg += v; }
+      else unset += Number(r.guestCount) || 1;   /* 舊資料沒有葷素分配 */
+    });
+    const mealSlices = [
+      { key:'meat', label:'葷食', value: meat },
+      { key:'veg',  label:'素食', value: veg },
+    ];
+    if(unset) mealSlices.push({ ...NA, value: unset });
+    const meal = { total: meat + veg + unset, slices: mealSlices, unit:'位' };
+
+    /* 兒童座椅：需要／不需要，另外附上總張數 */
+    let seatRows = 0, seats = 0;
+    rows.forEach(r => {
+      const n = Number(r.childSeat) || 0;
+      if(n > 0){ seatRows++; seats += n; }
+    });
+    const child = {
+      total: rows.length,
+      seats,
+      slices: [
+        { key:'need',   label:'需要兒童座椅', value: seatRows },
+        { key:'noneed', label:'不需要',       value: rows.length - seatRows },
+      ],
+    };
+
+    /* 喜帖：紙本再拆成自行領取／郵寄，新人才知道要寄幾份 */
+    const cardCounts = { pickup:0, mail:0, paper:0, digital:0, none:0, na:0 };
+    rows.forEach(r => {
+      const t = r.cardType;
+      if(t === 'paper'){
+        cardCounts.paper++;
+        if(r.cardDelivery === 'mail') cardCounts.mail++;
+        else if(r.cardDelivery === 'pickup') cardCounts.pickup++;
+      }
+      else if(t === 'digital') cardCounts.digital++;
+      else if(t === 'none') cardCounts.none++;
+      else cardCounts.na++;
+    });
+    const cardSlices = [
+      { key:'pickup',  label:'紙本・自行領取', value: cardCounts.pickup },
+      { key:'mail',    label:'紙本・郵寄',     value: cardCounts.mail },
+      { key:'digital', label:'電子喜帖',       value: cardCounts.digital },
+      { key:'none',    label:'不需要喜帖',     value: cardCounts.none },
+    ];
+    /* 選了紙本卻沒選領取方式的（舊資料）不要憑空消失 */
+    const cardOrphan = cardCounts.paper - cardCounts.pickup - cardCounts.mail;
+    if(cardOrphan > 0) cardSlices.push({ key:'paper', label:'紙本・未指定', value: cardOrphan });
+    if(cardCounts.na) cardSlices.push({ ...NA, value: cardCounts.na });
+    const card = { total: rows.length, slices: cardSlices };
+
+    /* 喜餅：現場領取／郵寄 */
+    const gift = tally('gift', r => r.giftDelivery || null);
+
+    return { attend, meal, child, card, gift };
   },
 };
 

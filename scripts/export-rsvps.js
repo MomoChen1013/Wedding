@@ -22,13 +22,34 @@ import { writeFileSync } from 'node:fs';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
+/* 代號 → 中文。與 public/js/common.js 的 RSVP_OPTIONS 對齊，
+   匯出的 CSV 才和後台儀表板／名單上寫的是同一組字。 */
+const LABELS = {
+  relation:     { groom:'男方親友', bride:'女方親友', both:'雙方親友', other:'其他' },
+  cardType:     { paper:'需要紙本喜帖', digital:'需要電子喜帖', none:'不需要喜帖' },
+  cardDelivery: { pickup:'自行領取', mail:'郵寄' },
+  giftDelivery: { pickup:'現場領取', mail:'郵寄' },
+};
+
 const COLUMNS = [
-  ['name',        '稱呼'],
-  ['attending',   '是否出席'],
-  ['guestCount',  '人數'],
-  ['dietaryNote', '飲食禁忌'],
-  ['message',     '給新人的話'],
-  ['createdAt',   '回覆時間'],
+  ['name',         '稱呼'],
+  ['attending',    '是否出席'],
+  ['relation',     '與新人關係'],
+  ['guestCount',   '人數'],
+  ['mealMeat',     '葷食'],
+  ['mealVeg',      '素食'],
+  ['childSeat',    '兒童座椅'],
+  ['dietaryNote',  '飲食習慣'],
+  ['cardType',     '喜帖'],
+  ['cardDelivery', '喜帖領取'],
+  ['cardZip',      '喜帖郵遞區號'],
+  ['cardAddress',  '喜帖地址'],
+  ['giftDelivery', '喜餅'],
+  ['giftZip',      '喜餅郵遞區號'],
+  ['giftAddress',  '喜餅地址'],
+  ['message',      '給新人的話'],
+  ['note',         '其他備註'],
+  ['createdAt',    '回覆時間'],
 ];
 
 function parseCliArgs(argv) {
@@ -102,9 +123,19 @@ async function exportRsvps(values) {
       totalGuests += Number(d.guestCount) || 0;
     }
     rows.push(COLUMNS.map(([key]) => {
-      if (key === 'attending') return csvCell(d.attending ? '出席' : '不克出席');
+      if (key === 'attending') {
+        /* tentative=true 代表「視情況而定」（此時 attending 為 false） */
+        if (d.attending) return csvCell('熱情出席');
+        return csvCell(d.tentative ? '視情況而定' : '無法出席');
+      }
       if (key === 'createdAt') return csvCell(formatTime(d.createdAt, timeZone));
-      if (key === 'guestCount') return csvCell(d.attending ? d.guestCount : '');
+      /* 只有真的會來才有人數與餐點，其餘留空比填 0 好讀 */
+      if (['guestCount', 'mealMeat', 'mealVeg', 'childSeat'].includes(key)) {
+        return csvCell(d.attending ? (d[key] ?? '') : '');
+      }
+      /* 沒選紙本喜帖時，領取方式沒有意義 */
+      if (key === 'cardDelivery' && d.cardType !== 'paper') return csvCell('');
+      if (LABELS[key]) return csvCell(LABELS[key][d[key]] ?? d[key] ?? '');
       return csvCell(d[key]);
     }).join(','));
   });

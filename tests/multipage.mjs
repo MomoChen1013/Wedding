@@ -229,7 +229,7 @@ async function signInAsOwner(page, email){
 /* ---------- 每一頁都要載得起來 ---------- */
 console.log('\n[1] 每個頁面都能正常載入');
 for(const key of ['', 'rsvp', 'wall', 'cake', 'draw', 'exhibition', 'quiz',
-                  'seating', 'letter']){
+                  'seating', 'letter', 'invitation']){
   const path = `/w/${SLUG}/${key}`;
   const { page, errors } = await visit(path);
   const hasSite = await page.evaluate(() => !!window.SITE);
@@ -333,15 +333,24 @@ console.log('\n[4] 祝福牆寫入隔離');
   await page.close();
 }
 
-/* ---------- RSVP ---------- */
+/* ---------- RSVP ----------
+   表單由 js/rsvp-form.js 產生，與單頁邀請函共用同一份題目 */
 console.log('\n[5] RSVP 寫入');
 {
   const { page } = await visit(`/w/${SLUG}/rsvp`);
   await page.fill('#rName', '王小明');
   await page.click('#attendRow .choice[data-val="yes"]');
-  await page.click('#mealRow .choice[data-val="veg"]');
-  await page.click('#plusBtn');
+  await page.click('#relationRow .choice[data-val="bride"]');
+  await page.click('#headPlus');            // 2 位
+  await page.click('#vegPlus');             // 其中 1 位素食
+  await page.check('#childSeatOn');         // 需要 1 張兒童椅
+  await page.click('#cardRow .choice[data-val="paper"]');
+  await page.click('#cardDeliveryRow .choice[data-val="mail"]');
+  await page.fill('#rCardZip', '104');
+  await page.fill('#rCardAddr', '台北市中山區南京東路一段 1 號');
+  await page.click('#giftRow .choice[data-val="pickup"]');
   await page.fill('#rNote', '恭喜！');
+  await page.fill('#rMemo', '停車位需要一個');
   await page.click('#submitBtn');
   await page.waitForTimeout(2500);
 
@@ -351,20 +360,35 @@ console.log('\n[5] RSVP 寫入');
     const d = snap.docs[0].data();
     ok('attending 是 boolean', d.attending === true, String(d.attending));
     ok('guestCount 正確', d.guestCount === 2, String(d.guestCount));
-    ok('meal 保留', d.meal === 'veg', d.meal);
+    ok('與新人關係有存下來', d.relation === 'bride', d.relation);
+    ok('葷素分配加起來等於人數',
+      d.mealMeat === 1 && d.mealVeg === 1, `葷 ${d.mealMeat} / 素 ${d.mealVeg}`);
+    ok('兒童座椅張數正確', d.childSeat === 1, String(d.childSeat));
+    ok('喜帖紙本郵寄並帶地址',
+      d.cardType === 'paper' && d.cardDelivery === 'mail' && d.cardZip === '104'
+        && d.cardAddress.includes('南京東路'),
+      `${d.cardType}/${d.cardDelivery}/${d.cardZip}`);
+    ok('喜餅現場領取時不留地址',
+      d.giftDelivery === 'pickup' && d.giftAddress === '', d.giftDelivery);
+    ok('其他備註有存下來', d.note === '停車位需要一個', d.note);
     ok('tentative 為 false', d.tentative === false, String(d.tentative));
     ok('createdAt 由伺服器寫入', d.createdAt && typeof d.createdAt.toDate === 'function');
   }
   await page.close();
 }
 
-/* ---------- 未定（maybe）也要能存 ---------- */
-console.log('\n[6] 未定回覆');
+/* ---------- 視情況而定（maybe）也要能存 ---------- */
+console.log('\n[6] 視情況而定的回覆');
 {
   const { page } = await visit(`/w/${SLUG}/rsvp`);
   await page.evaluate(() => LS.remove('rsvp.mine'));
+  await page.reload({ waitUntil:'domcontentloaded' });
+  await page.waitForFunction(() => !!document.getElementById('rsvpForm'), null, { timeout:20000 });
   await page.fill('#rName', '張三');
   await page.click('#attendRow .choice[data-val="maybe"]');
+  await page.click('#relationRow .choice[data-val="other"]');
+  await page.click('#cardRow .choice[data-val="none"]');
+  await page.click('#giftRow .choice[data-val="pickup"]');
   await page.click('#submitBtn');
   await page.waitForTimeout(2500);
 
@@ -374,6 +398,39 @@ console.log('\n[6] 未定回覆');
   ok('未定 → attending false + tentative true',
     maybe && maybe.attending === false && maybe.tentative === true,
     maybe ? `${maybe.attending}/${maybe.tentative}` : '');
+  ok('沒出席就不記人數與餐點',
+    maybe && maybe.guestCount === 1 && maybe.mealMeat === 0 && maybe.mealVeg === 0,
+    maybe ? `${maybe.guestCount}/${maybe.mealMeat}/${maybe.mealVeg}` : '');
+  await page.close();
+}
+
+/* ---------- 必填的題目沒填完就送不出去 ---------- */
+console.log('\n[6b] 表單驗證');
+{
+  const { page } = await visit(`/w/${SLUG}/rsvp`);
+  await page.evaluate(() => LS.remove('rsvp.mine'));
+  await page.reload({ waitUntil:'domcontentloaded' });
+  await page.waitForFunction(() => !!document.getElementById('rsvpForm'), null, { timeout:20000 });
+
+  const before = (await adb.collection('sites').doc(siteIds[SLUG])
+    .collection('rsvps').get()).size;
+
+  await page.fill('#rName', '李四');
+  await page.click('#attendRow .choice[data-val="no"]');
+  await page.click('#submitBtn');            // 還沒選關係
+  await page.waitForTimeout(400);
+  ok('沒選關係會被擋下',
+    (await page.innerText('#rErr')).includes('關係'), await page.innerText('#rErr'));
+
+  await page.click('#relationRow .choice[data-val="groom"]');
+  await page.click('#submitBtn');            // 還沒選喜帖
+  await page.waitForTimeout(400);
+  ok('沒選喜帖會被擋下',
+    (await page.innerText('#rErr')).includes('喜帖'), await page.innerText('#rErr'));
+
+  const after = (await adb.collection('sites').doc(siteIds[SLUG])
+    .collection('rsvps').get()).size;
+  ok('沒填完不會寫進資料庫', after === before, `${before} → ${after}`);
   await page.close();
 }
 
@@ -782,13 +839,26 @@ console.log('\n[14b] 後台看得到出席回覆');
   await page.waitForFunction(
     (n) => DataStore.getRSVPCount() === n, rows.length, { timeout:15000 });
 
-  ok('後台讀得到全部回覆',
-    Number(await page.textContent('#adRsvpYes'))
-      + Number(await page.textContent('#adRsvpMaybe'))
-      + Number(await page.textContent('#adRsvpNo')) === rows.length,
-    `資料庫 ${rows.length} 筆`);
-  ok('確定出席人數是依 guestCount 加總',
-    Number(await page.textContent('#adRsvpHead')) === expectHead, `應為 ${expectHead}`);
+  /* 儀表板：最大的數字是總回覆筆數，底下五張環狀圖 */
+  ok('總回覆人數正確',
+    Number(await page.textContent('#adRsvpTotal')) === rows.length,
+    `應為 ${rows.length}`);
+  ok('副標帶出確定出席人數',
+    (await page.textContent('#adRsvpSub')).includes(`確定出席 ${expectHead} 位`),
+    await page.textContent('#adRsvpSub'));
+
+  const chartTitles = await page.locator('#adRsvpCharts .ad-donut-title').allInnerTexts();
+  ok('五張環狀圖：出席、飲食、兒童座椅、喜帖、喜餅',
+    chartTitles.map((t) => t.split('\n')[0].trim()).join(',') === '出席,飲食,兒童座椅,喜帖,喜餅',
+    chartTitles.map((t) => t.split('\n')[0].trim()).join(','));
+  ok('環狀圖有畫出色塊',
+    (await page.locator('#adRsvpCharts .ad-donut-seg').count()) > 0,
+    String(await page.locator('#adRsvpCharts .ad-donut-seg').count()));
+
+  /* 出席那一張的中心數字＝回覆筆數，圖例的百分比要加得起來 */
+  const attendCenter = await page.locator('#adRsvpCharts .ad-donut').first()
+    .locator('.ad-donut-center b').textContent();
+  ok('出席圖的中心是回覆筆數', Number(attendCenter) === rows.length, attendCenter);
 
   const listText = await page.innerText('#adRsvpList');
   ok('名單列出賓客的名字', listText.includes('王小明'), listText.replace(/\n/g, ' ').slice(0, 80));
@@ -1058,7 +1128,9 @@ console.log('\n[17] 後台只顯示有開的頁面');
 
   const onTab = await page.evaluate(() =>
     document.querySelector('.ad-tab.is-on')?.dataset.tab);
-  ok('出席回覆關掉時自動改開大廳內容', onTab === 'lobby', String(onTab));
+  /* 分頁順序上「悄悄話」排在出席回覆後面，而且沒有對應的頁面開關（永遠都在），
+     所以出席回覆被關掉時，第一個還在的分頁就是它 */
+  ok('出席回覆關掉時自動改開第一個還在的分頁', onTab === 'inbox', String(onTab));
   ok('出席回覆的內容也收起來',
     await page.evaluate(() =>
       !document.querySelector('.ad-panel[data-panel="rsvp"]').classList.contains('is-on')));
@@ -1141,6 +1213,10 @@ console.log('\n[19] 桌次搜尋可以關掉');
     !(await page.evaluate(() => document.getElementById('adSeatListOff').hidden)));
 
   ok('桌次分頁無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+
 /* ---------- 後台的測驗題目 ---------- */
 console.log('\n[20] 後台出測驗題目');
 
@@ -1325,9 +1401,11 @@ console.log('\n[20b] 賓客做測驗');
 {
   /* 再打開，賓客那一側就回到原本的樣子 */
   await adb.collection('sites').doc(siteIds[SLUG]).update({ seatingSearchEnabled: true });
-  const { page } = await visit(`/w/${SLUG}/seating`);
+  const seatPage = (await visit(`/w/${SLUG}/seating`)).page;
   ok('重新打開後搜尋又回來了',
-    !(await page.evaluate(() => document.getElementById('stSearch').hidden)));
+    !(await seatPage.evaluate(() => document.getElementById('stSearch').hidden)));
+  await seatPage.close();
+
   /* 後台看得到剛剛那筆作答，也清得掉 */
   const { page } = await visit(`/w/${SLUG}/admin`);
   page.on('dialog', (d) => d.accept());
@@ -1348,7 +1426,7 @@ console.log('\n[20b] 賓客做測驗');
 
 /* ---------- 手機版 ---------- */
 console.log('\n[8] 手機版無水平捲動');
-for(const key of ['', 'wall', 'rsvp', 'quiz', 'seating', 'letter']){
+for(const key of ['', 'wall', 'rsvp', 'quiz', 'seating', 'letter', 'invitation']){
   const page = await newPage({ viewport:{ width:375, height:812 } });
   await page.goto(`${BASE}/w/${SLUG}/${key}`, { waitUntil:'domcontentloaded' });
   await page.waitForFunction(

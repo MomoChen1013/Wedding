@@ -17,7 +17,7 @@
 | `/w/{slug}/quiz` | 看你多了解我們（題目由新人在後台出） |
 | `/w/{slug}/seating` | 我的桌次（當天輸入名字查桌次 + 桌次圖） |
 | `/w/{slug}/letter` | 給你的信（新人寫的電子祝福信） |
-| `/w/{slug}/invitation` | 單頁式邀請函（獨立版型） |
+| `/w/{slug}/invitation` | 單頁式邀請函（婚禮資訊＋出席回覆收在一頁） |
 | `/w/{slug}/admin` | 新人後台（Google 登入）**一定有・不對外連結** |
 | `/s/{code}` | 短連結 |
 
@@ -44,6 +44,13 @@
   **Dress Code、交通資訊、兩人的故事沒填的話那一塊就不出現**，
   不會留下一個空標題（見〈新人後台〉的「大廳內容」）。
 - **每頁的 `.scene-hero`** 固定 50vh。
+- **單頁邀請函**（`/w/{slug}/invitation`）走的是同一套版型 ——
+  同樣的導覽列、`.scene-hero`、`.section-title`、`.cardbox` 與主題色票，
+  只多一份放專屬元件（封面照、資訊列、照片牆、放大檢視）的 `css/invitation.css`。
+  它原本自帶一整套 CSS／JS，和其他頁長得完全不一樣，現在已經收斂進來。
+  出席回覆表單也和 `/w/{slug}/rsvp` 共用 `js/rsvp-form.js` 同一份題目。
+  > 代價是 `themeColor`（每站一個主色）不再套用在這一頁 ——
+  > 其他頁面本來就只吃 `data-theme` 的四組色票，要一致就得放掉它。
 - **風格**：極簡線條。全站單一字族 **Noto Serif TC**（Google Fonts CDN），
   無陰影、無 emoji，靠 1px 線條與留白分層。
 - **BGM**：預設播內建的 `public/audio/bgm.mp3`，新人放了自己的音檔就換成他們的。
@@ -69,7 +76,7 @@
 │   ├─ seating.html           # 我的桌次（婚禮當天查桌次 + 桌次圖）
 │   ├─ letter.html            # 給你的信（新人寫的電子祝福信）
 │   ├─ admin.html             # 新人後台（回覆／悄悄話／大廳文案／桌次／祝福信／卡片／囍卡／展覽／測驗）
-│   ├─ invitation.html        # 單頁式邀請函（獨立版型，自成一格）
+│   ├─ invitation.html        # 單頁式邀請函（版型與其他頁共用）
 │   ├─ shortlink.html         # 短連結轉址頁
 │   ├─ 404.html
 │   ├─ assets/{slug}/         # 每組新人的照片
@@ -80,6 +87,7 @@
 │       ├─ common.js          # 資料層 DataStore、導覽、特效、樣板文字
 │       ├─ cropper.js         # 後台專用的照片裁切器（只有 admin.html 載入）
 │       ├─ quiz-defaults.js   # 測驗的預設題目與上限（quiz.html 與 admin.html 共用）
+│       ├─ rsvp-form.js       # 出席回覆表單（rsvp.html 與 invitation.html 共用同一份）
 │       └─ index.js rsvp.js …           # 各頁邏輯
 ├─ scripts/
 │   ├─ create-site.js         # 建立客戶站台（slug transaction）
@@ -143,8 +151,15 @@ sites/{siteId}
 
   # ↓ 各功能的資料都掛在這組新人底下，站台之間完全看不到彼此
   rsvps/{autoId}       name, attending(bool), tentative(bool), guestCount(1–10),
-                       meal, dietaryNote, message, icon, createdAt
+                       relation('groom'|'bride'|'both'|'other'),
+                       mealMeat(0–10), mealVeg(0–10),   # 相加＝guestCount
+                       childSeat(0–10), dietaryNote,
+                       cardType('paper'|'digital'|'none'),
+                       cardDelivery('pickup'|'mail'), cardZip, cardAddress,
+                       giftDelivery('pickup'|'mail'), giftZip, giftAddress,
+                       message, note, icon, createdAt
                        # 只有新人讀得到；後台可看可匯出，但不能改不能刪
+                       # 核心欄位以外全是選填，舊版表單送出的回覆仍然收得下
   wishes/{autoId}      name, icon, text, time          # 祝福牆
   letters/{autoId}     name, icon, text, time          # 悄悄話（後台的悄悄話分頁）
   cakes/{autoId}       name, icon, cake, emoji, img, time
@@ -389,10 +404,28 @@ npm run set-pages -- --slug ginny-one-20260919 \
 
 ### 0. 出席回覆（後台「出席回覆」分頁）
 
-四個統計數字 ——「確定出席人數」是把每筆回覆的 `guestCount` 加總，
-其餘三個（會來／未定／不克出席）是**回覆筆數**。
+分成**總覽**與**名單**兩塊。
 
-名單可以依狀態篩選、用名字或留言內容搜尋，也可以**匯出 CSV**
+總覽最上面是一個大數字：**總回覆人數**（收到幾份回覆），
+底下那行小字補上「確定出席 N 位」與三種回覆各幾筆。
+再往下是五張環狀圖，一張對應表單上的一個題目：
+
+| 環狀圖 | 分成幾段 | 單位 |
+|---|---|---|
+| 出席 | 熱情出席／視情況而定／誠摯祝福但無法出席 | 回覆筆數 |
+| 飲食 | 葷食／素食 | **人**（把每筆回覆的葷素分配加總） |
+| 兒童座椅 | 需要／不需要（標題附上共需幾張） | 回覆筆數 |
+| 喜帖 | 紙本・自行領取／紙本・郵寄／電子喜帖／不需要 | 回覆筆數 |
+| 喜餅 | 現場領取／郵寄 | 回覆筆數 |
+
+只有「飲食」以人為單位，因為葷素是分配到每個人身上的；
+其餘四題都是一筆回覆一個決定。舊資料沒填到的欄位會歸進「未填」那一段，
+加起來仍然等於總回覆數，不會有人憑空消失。
+
+圖是純 SVG 畫的（沒有引入任何圖表函式庫），手機上一行一張、
+圓環與圖例左右並排，色階跟著目前的主題色走。
+
+名單可以依狀態篩選、用名字／留言／備註搜尋，也可以**匯出 CSV**
 （欄位與 `npm run export-rsvps` 一致，含 BOM，Excel 開中文不會亂碼；
 匯出的是「目前篩選出來的那些」，不是全部）。
 
@@ -874,6 +907,17 @@ node scripts/export-rsvps.js --slug chen-lin-0315 --out chen-lin.csv
 ```
 
 CSV 帶 UTF-8 BOM，Excel 直接打開不會亂碼；時間以婚禮當地時區顯示。
+欄位依序是：
+
+```
+稱呼、是否出席、與新人關係、人數、葷食、素食、兒童座椅、飲食習慣、
+喜帖、喜帖領取、喜帖郵遞區號、喜帖地址、
+喜餅、喜餅郵遞區號、喜餅地址、給新人的話、其他備註、回覆時間
+```
+
+代號都已經換成中文（`groom` → 男方親友、`paper` → 需要紙本喜帖…），
+和後台名單、儀表板上寫的是同一組字。
+沒出席的那幾筆，人數與餐點欄位留空而不是填 0 —— 0 會被誤讀成「來了但不吃」。
 
 ---
 
@@ -970,14 +1014,16 @@ npm run test:e2e
 會自動寫入測試資料並用 Chromium 跑完整流程，預期全部 ✅：
 
 ```
-[1]  /w/{slug}/invitation   # 內容、主題色、時區、倒數、照片牆、hashtag、行事曆
+[1]  /w/{slug}/invitation   # 內容、時區、倒數、照片牆、hashtag、行事曆
+                            # 以及「與其他頁共用版型」：導覽列、浮動控制、common.css
+[1a] 出席回覆的題目         # 三個出席選項、關係／喜帖／喜餅、條件欄位、葷素連動
 [1b] 照片放大               # 點圖開啟、Esc 關閉
-[2]  /w/wu-yang-1220        # 另一組 slug，主題色與內容互不干擾、空欄位區塊隱藏
-[3]  /w/does-not-exist      # 中文 404 畫面，非白畫面且無 console 錯誤
-[4]  draft 站台             # 未發布顯示 404
+[2]  /w/wu-yang-1220        # 另一組 slug，內容互不干擾、空欄位區塊隱藏
+[3]  /w/does-not-exist      # 中文找不到畫面，非白畫面且無 console 錯誤
+[4]  draft 站台             # 未發布顯示找不到畫面
 [4b] RSVP 截止與關閉
 [5]  RSVP 送出流程          # 不跳頁、成功狀態、寫入欄位正確
-[6]  honeypot 擋機器人      # 畫面顯示成功但確認未寫入 Firestore
+[6]  honeypot 擋機器人      # 畫面顯示成功但確認未寫入 Firestore，並逐一驗證新欄位
 [8]  短連結 /s/{code}       # 正常轉址、不存在代號、javascript: 協定被擋
 [7]  手機版 RWD（375px）    # 無水平捲動
 ```
@@ -1067,14 +1113,23 @@ node scripts/create-site.js --slug chen-lin-0315 … \
 
 RSVP 建立時必須全數通過：
 
-- 欄位集合**完全等於**允許清單，不可夾帶額外欄位
+- 欄位集合必須落在允許清單內，不可夾帶額外欄位
+- 核心欄位（`name` `attending` `guestCount` `dietaryNote` `message` `createdAt`）必填，
+  其餘一律選填，舊版表單送出的回覆仍然收得下
 - `name` 為 string，長度 1–40
 - `attending` 為 boolean
 - `guestCount` 為 int，1–10
-- `dietaryNote`、`message` 為 string，長度 ≤ 300
+- `dietaryNote`、`message`、`note` 為 string，長度 ≤ 300
+- `relation`／`cardType`／`cardDelivery`／`giftDelivery` 只收列舉值
+- `mealMeat`／`mealVeg`／`childSeat` 為 int，0–10
+- `cardZip`／`giftZip` ≤ 10 字，`cardAddress`／`giftAddress` ≤ 200 字
 - `createdAt` 必須等於 `request.time`（防止偽造時間）
 - 對應的 `sites/{siteId}` 存在、`status == "published"`、`rsvpEnabled == true`
 - 尚未超過 `rsvpDeadline`
+
+> 規則不驗「選了郵寄就一定要有地址」這類跨欄位條件 ——
+> 那等於把整份表單邏輯複製一份到規則裡，日後兩邊會走鐘。
+> 這些檢查在 `public/js/rsvp-form.js` 送出前擋好。
 
 所有寫入 `sites`／`slugs`／`short` 的操作都走 **Admin SDK**（`scripts/` 底下的腳本），
 Admin SDK 以服務帳戶連線，會略過 Security Rules，因此不需要為管理端在規則裡開後門。

@@ -127,7 +127,66 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-img-title:focus{border-bottom-color:var(--line);}
 
 /* ============================================================
-   出席統計
+   出席回覆總覽
+   ・一個大數字（總回覆）＋ 五張環狀圖
+   ・手機優先：環狀圖一欄一張，圖與圖例左右並排到 360px 都還讀得完
+============================================================ */
+.ad-hero-stat{border:1px solid var(--line);border-radius:var(--radius);
+  background:rgba(255,255,255,.9);padding:30px 22px 26px;text-align:center;}
+.ad-hero-num{font-family:var(--font-display);font-weight:500;line-height:1;
+  font-size:clamp(52px,16vw,84px);color:var(--primary-deep);
+  font-variant-numeric:tabular-nums;letter-spacing:.02em;}
+.ad-hero-lab{margin-top:10px;font-size:12.5px;letter-spacing:.28em;color:var(--ink);}
+.ad-hero-sub{margin-top:10px;font-size:12px;line-height:1.9;letter-spacing:.04em;
+  color:var(--ink-soft);}
+
+/* 環狀圖群組：桌機兩欄、手機一欄，靠 1px 線分隔（沿用全站語彙） */
+.ad-donuts{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  margin-top:18px;border-top:1px solid var(--line);border-left:1px solid var(--line);}
+@media(max-width:600px){.ad-donuts{grid-template-columns:1fr;}}
+
+.ad-donut{margin:0;padding:20px 18px;background:rgba(255,255,255,.9);
+  border-right:1px solid var(--line);border-bottom:1px solid var(--line);
+  /* 由深到淺的主題色階。主題色只夠拉出三階（再細分就看不出差別了），
+     第四、五段改用中性灰，四選項以上的題目才分得清楚是哪一段。
+     「未填」固定用最淡的灰，和圓環底色同一個色系。 */
+  --dn-1:var(--primary-deep);
+  --dn-2:var(--secondary);
+  --dn-3:var(--sun);
+  --dn-4:rgba(47,43,38,.46);
+  --dn-5:rgba(47,43,38,.24);
+  --dn-na:rgba(47,43,38,.12);
+}
+.ad-donut-title{font-family:var(--font-display);font-weight:500;font-size:13.5px;
+  letter-spacing:.2em;color:var(--ink);margin-bottom:16px;
+  display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+.ad-donut-title small{font-weight:400;font-size:11px;letter-spacing:.08em;color:var(--ink-soft);}
+
+.ad-donut-body{display:flex;align-items:center;gap:18px;}
+@media(max-width:360px){.ad-donut-body{flex-direction:column;align-items:flex-start;gap:14px;}}
+
+.ad-donut-chart{position:relative;flex:0 0 96px;width:96px;height:96px;}
+.ad-donut-svg{width:100%;height:100%;transform:rotate(-90deg);}
+.ad-donut-track{fill:none;stroke:var(--dn-na);stroke-width:4;}
+.ad-donut-seg{fill:none;stroke-width:4;}
+.ad-donut-center{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:1px;pointer-events:none;}
+.ad-donut-center b{font-family:var(--font-display);font-weight:500;font-size:22px;
+  line-height:1;color:var(--ink);font-variant-numeric:tabular-nums;}
+.ad-donut-center span{font-size:10px;letter-spacing:.14em;color:var(--ink-soft);}
+
+.ad-donut-legend{flex:1 1 auto;min-width:0;list-style:none;margin:0;padding:0;
+  display:flex;flex-direction:column;gap:7px;}
+.ad-donut-item{display:flex;align-items:center;gap:8px;font-size:12px;line-height:1.6;}
+.ad-donut-dot{flex:0 0 8px;width:8px;height:8px;border-radius:50%;}
+.ad-donut-name{flex:1 1 auto;min-width:0;color:var(--ink);letter-spacing:.04em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ad-donut-val{flex:0 0 auto;color:var(--ink-soft);letter-spacing:.02em;
+  font-variant-numeric:tabular-nums;}
+.ad-donut-val small{font-size:10px;margin-left:1px;}
+
+/* ============================================================
+   統計方格（悄悄話等其他分頁仍在用）
 ============================================================ */
 .ad-stats{display:grid;grid-template-columns:repeat(4,1fr);
   border-top:1px solid var(--line);border-left:1px solid var(--line);}
