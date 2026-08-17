@@ -179,6 +179,8 @@ function buildWed(site) {
     giftNote: site.giftNote || '',
     transportPublic: site.transportPublic || '',
     transportParking: site.transportParking || '',
+    transportPublicImg: site.transportPublicImg || '',
+    transportParkingImg: site.transportParkingImg || '',
     /* 沒設定過就視為開著，舊站台的桌次搜尋不會突然消失 */
     seatingSearch: site.seatingSearchEnabled !== false,
     story: site.story || '',

@@ -889,6 +889,36 @@ describe('sites 的大廳文案更新', () => {
     }));
   });
 
+  it('婚禮 hashtag 最多 3 個', async () => {
+    const db = ownerDb();
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      hashtags: ['#a', '#b', '#c'],
+    }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      hashtags: ['#a', '#b', '#c', '#d'],
+    }));
+  });
+
+  it('交通資訊可以各配一張圖，型別跟大小要合法', async () => {
+    const db = ownerDb();
+    const tinyImg = 'data:image/jpeg;base64,' + 'a'.repeat(100);
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      transportPublicImg: tinyImg,
+      transportParkingImg: tinyImg,
+    }));
+    /* 移除圖片：空字串合法 */
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      transportPublicImg: '',
+    }));
+    /* 不是 data:image/... 開頭的一律擋下 */
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      transportPublicImg: 'https://evil.example.com/x.jpg',
+    }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      transportParkingImg: 'data:image/jpeg;base64,' + 'a'.repeat(300001),
+    }));
+  });
+
   it('新人可以開關桌次搜尋', async () => {
     const db = ownerDb();
     await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {

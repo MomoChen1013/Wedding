@@ -780,7 +780,8 @@ seatSearchEl.addEventListener('change', async ()=>{
 ============================================================ */
 const MAX_DATAURL = 900000;
 
-async function shrinkImage(file){
+async function shrinkImage(file, maxBytes, startEdge){
+  maxBytes = maxBytes || MAX_DATAURL;
   const url = URL.createObjectURL(file);
   try{
     const img = await new Promise((resolve, reject)=>{
@@ -790,7 +791,7 @@ async function shrinkImage(file){
       im.src = url;
     });
 
-    let edge = 1800;   /* 桌次圖上有字，解析度不能砍太兇 */
+    let edge = startEdge || 1800;   /* 桌次圖上有字，解析度不能砍太兇 */
     for(let round = 0; round < 6; round++){
       const scale = Math.min(1, edge / Math.max(img.naturalWidth, img.naturalHeight));
       const w = Math.max(1, Math.round(img.naturalWidth  * scale));
@@ -806,7 +807,7 @@ async function shrinkImage(file){
 
       for(const q of [0.86, 0.74, 0.62]){
         const out = cv.toDataURL('image/jpeg', q);
-        if(out.length <= MAX_DATAURL) return out;
+        if(out.length <= maxBytes) return out;
       }
       edge = Math.round(edge * 0.75);
     }
@@ -1138,9 +1139,14 @@ lf.list.addEventListener('click', async (e)=>{
 });
 
 /* ============================================================
-   3. 首頁自訂卡片
+   3. 自訂內容（首頁 Explore 區）
+   ------------------------------------------------------------
+   畫面上只看得到清單＋「新增自訂內容」；新增／編輯都用同一個彈窗，
+   刪除也移進彈窗裡（清單列只留「編輯」）。
 ============================================================ */
 const ef = {
+  modalMask: document.getElementById('adExpModalMask'),
+  modalTitle: document.getElementById('adExpModalTitle'),
   form:  document.getElementById('adExpForm'),
   id:    document.getElementById('adExpId'),
   title: document.getElementById('adExpTitle'),
@@ -1152,6 +1158,8 @@ const ef = {
   urlBox:  document.getElementById('adExpUrlBox'),
   bodyBox: document.getElementById('adExpBodyBox'),
   list:  document.getElementById('adExpList'),
+  cancelBtn: document.getElementById('adExpCancelBtn'),
+  deleteBtn: document.getElementById('adExpDeleteBtn'),
 };
 
 /* 選了「開啟連結」就只問網址，選了「跳出說明」就只問內文 */
@@ -1163,22 +1171,55 @@ function syncKindFields(){
 ef.kind.addEventListener('change', syncKindFields);
 syncKindFields();
 
-liveValidate(ef.title, notBlank('卡片標題'));
+liveValidate(ef.title, notBlank('內容標題'));
 liveValidate(ef.url, (v)=>{
   if(ef.kind.value !== 'link') return '';
   if(!v.trim()) return '連結網址不能是空的';
   return urlOrBlank(v);
 });
-liveValidate(ef.body, (v)=> ef.kind.value === 'popup' ? notBlank('彈窗內文')(v) : '');
+liveValidate(ef.body, (v)=> ef.kind.value === 'popup' ? notBlank('彈出視窗內文')(v) : '');
 
-function resetExpForm(){
+function openExpModal(it){
   ef.form.reset();
-  ef.id.value = '';
-  ef.order.value = String(DataStore.getExplore().length + 1);
-  syncKindFields();
   [ef.title, ef.url, ef.body].forEach(el => setFieldError(el, ''));
+
+  if(it){
+    ef.modalTitle.textContent = '編輯自訂內容';
+    ef.id.value    = it.id;
+    ef.title.value = it.title || '';
+    ef.sub.value   = it.sub || '';
+    ef.kind.value  = it.kind === 'link' ? 'link' : 'popup';
+    ef.url.value   = it.url || '';
+    ef.body.value  = it.body || '';
+    ef.order.value = String(it.order ?? 0);
+    ef.deleteBtn.hidden = false;
+  }else{
+    ef.modalTitle.textContent = '新增自訂內容';
+    ef.id.value = '';
+    ef.order.value = String(DataStore.getExplore().length + 1);
+    ef.deleteBtn.hidden = true;
+  }
+  syncKindFields();
+  ef.modalMask.hidden = false;
+  ef.title.focus();
 }
-document.getElementById('adExpReset').addEventListener('click', resetExpForm);
+function closeExpModal(){ ef.modalMask.hidden = true; }
+
+document.getElementById('adExpAddBtn').addEventListener('click', ()=> openExpModal(null));
+ef.cancelBtn.addEventListener('click', closeExpModal);
+ef.modalMask.addEventListener('click', (e)=>{ if(e.target === ef.modalMask) closeExpModal(); });
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape' && !ef.modalMask.hidden) closeExpModal();
+});
+
+ef.deleteBtn.addEventListener('click', async ()=>{
+  const id = ef.id.value;
+  if(!id) return;
+  const ok = await confirmModal({ title:'刪除自訂內容', message:'確定要刪掉這筆自訂內容嗎？' });
+  if(!ok) return;
+  closeExpModal();
+  scheduleUndoDelete('explore', id, '這筆自訂內容', renderExplore);
+});
 
 ef.form.addEventListener('submit', async (e)=>{
   e.preventDefault();
@@ -1202,8 +1243,8 @@ ef.form.addEventListener('submit', async (e)=>{
       order: Number(ef.order.value) || 0,
       time:  Date.now(),
     });
-    resetExpForm();
-    toast('卡片已儲存');
+    closeExpModal();
+    toast('已儲存');
   }catch(err){ writeFailed(err); }
 });
 
@@ -1214,14 +1255,20 @@ function renderExplore(){
   }
   const list = DataStore.getExplore().filter(it => !isPendingDelete('explore', it.id));
   if(!list.length){
-    ef.list.innerHTML = `<div class="ad-empty">還沒有自訂卡片</div>`;
+    ef.list.innerHTML = `
+      <div class="ad-empty">
+        目前還沒有自訂內容喔
+        <div class="ad-row" style="justify-content:center">
+          <button class="btn small ghost" id="adExpEmptyAddBtn" type="button">新增自訂內容</button>
+        </div>
+      </div>`;
     return;
   }
   ef.list.innerHTML = list.map(it => `
     <div class="ad-item">
       <div class="ad-item-main">
         <span class="ad-item-title">${escapeHtml(it.title)}</span>
-        <span class="ad-tag">${it.kind === 'link' ? '連結' : '彈窗'}</span>
+        <span class="ad-tag">${it.kind === 'link' ? '連結' : '彈出視窗'}</span>
         ${it.sub ? `<span class="ad-item-sub">${escapeHtml(it.sub)}</span>` : ''}
         <span class="ad-item-sub">${escapeHtml(
           it.kind === 'link' ? (it.url || '') : (it.body || '').slice(0, 48)
@@ -1230,37 +1277,17 @@ function renderExplore(){
       <div class="ad-item-actions">
         <span class="ad-order">#${it.order ?? 0}</span>
         <button class="ad-edit" data-edit-exp="${it.id}" type="button">編輯</button>
-        <button class="ad-del"  data-del-exp="${it.id}"  type="button">刪除</button>
       </div>
     </div>`).join('');
 }
 document.addEventListener('data:explore', renderExplore);
 
-ef.list.addEventListener('click', async (e)=>{
+ef.list.addEventListener('click', (e)=>{
+  if(e.target.id === 'adExpEmptyAddBtn'){ openExpModal(null); return; }
   const editId = e.target.dataset.editExp;
-  const delId  = e.target.dataset.delExp;
-
-  if(editId){
-    const it = DataStore.getExplore().find(x => x.id === editId);
-    if(!it) return;
-    ef.id.value    = it.id;
-    ef.title.value = it.title || '';
-    ef.sub.value   = it.sub || '';
-    ef.kind.value  = it.kind === 'link' ? 'link' : 'popup';
-    ef.url.value   = it.url || '';
-    ef.body.value  = it.body || '';
-    ef.order.value = String(it.order ?? 0);
-    syncKindFields();
-    ef.form.scrollIntoView({ behavior:'smooth', block:'start' });
-    return;
-  }
-
-  if(delId){
-    const ok = await confirmModal({ title:'刪除卡片', message:'確定要刪掉這張卡片嗎？' });
-    if(!ok) return;
-    if(ef.id.value === delId) resetExpForm();
-    scheduleUndoDelete('explore', delId, '這張卡片', renderExplore);
-  }
+  if(!editId) return;
+  const it = DataStore.getExplore().find(x => x.id === editId);
+  if(it) openExpModal(it);
 });
 
 /* ============================================================
@@ -1327,9 +1354,61 @@ sf.title.addEventListener('input', ()=>{
 });
 liveValidate(sf.map, urlOrBlank);
 
+/* 標題留白的話，前台會退回兩位的名字 —— 直接把這個預設值填進欄位裡，
+   新人一打開就看得到實際會顯示的內容，不用自己想像空白會變成什麼 */
+function defaultCoupleTitle(){
+  return clampTitle((window.WED && window.WED.couple) || '');
+}
+
+/* ---------- 交通資訊：大眾運輸／停車各可以配一張圖 ----------
+   選了就馬上壓縮上傳、存回站台文件，跟桌次圖同一套邏輯，
+   只是這裡跟很多文字欄位共用同一份文件，圖片刻意壓得更小一點。 */
+const TRANSPORT_IMG_MAX_BYTES = 150000;
+
+function setupTransportImageField(key, fileId, prevId, clearId){
+  const fileEl  = document.getElementById(fileId);
+  const prevEl  = document.getElementById(prevId);
+  const clearEl = document.getElementById(clearId);
+
+  function render(){
+    const val = siteData()[key] || '';
+    prevEl.src = val;
+    prevEl.hidden = !val;
+    clearEl.hidden = !val;
+  }
+
+  fileEl.addEventListener('change', async ()=>{
+    const file = fileEl.files && fileEl.files[0];
+    fileEl.value = '';
+    if(!file) return;
+    if(!file.type.startsWith('image/')){ toast('請選圖片檔', true); return; }
+    try{
+      const img = await shrinkImage(file, TRANSPORT_IMG_MAX_BYTES, 1000);
+      await DataStore.saveSiteFields({ [key]: img });
+      render();
+      toast('圖片已更新');
+    }catch(err){ writeFailed(err); }
+  });
+
+  clearEl.addEventListener('click', async ()=>{
+    try{
+      await DataStore.saveSiteFields({ [key]: '' });
+      render();
+      toast('已移除圖片');
+    }catch(err){ writeFailed(err); }
+  });
+
+  return render;
+}
+
+const renderTransportPublicImg = setupTransportImageField(
+  'transportPublicImg', 'adTransportPublicImgFile', 'adTransportPublicImgPrev', 'adTransportPublicImgClear');
+const renderTransportParkingImg = setupTransportImageField(
+  'transportParkingImg', 'adTransportParkingImgFile', 'adTransportParkingImgPrev', 'adTransportParkingImgClear');
+
 function fillSiteForm(){
   const d = siteData();
-  sf.title.value = d.coupleTitle  || '';
+  sf.title.value = d.coupleTitle || defaultCoupleTitle();
   sf.titleLen.textContent = [...sf.title.value].length;
   sf.venue.value = d.venueName    || '';
   sf.addr.value  = d.venueAddress || '';
@@ -1350,6 +1429,8 @@ function fillSiteForm(){
 
   sf.transitPub.value  = d.transportPublic  || '';
   sf.transitPark.value = d.transportParking || '';
+  renderTransportPublicImg();
+  renderTransportParkingImg();
   sf.dress.value = d.dressCode    || '';
   sf.gift.value  = d.giftNote     || '';
   sf.story.value = d.story        || '';
@@ -1362,9 +1443,9 @@ sf.form.addEventListener('submit', async (e)=>{
   const map = sf.map.value.trim();
   if(!sf.map._adValidate()){ sf.map.focus(); return; }
 
-  /* hashtag 沒寫 # 就自動補上，大廳才不會出現光禿禿的字 */
+  /* hashtag 沒寫 # 就自動補上，大廳才不會出現光禿禿的字；最多 3 個 */
   const hashtags = sf.tags.value
-    .split(/[,，\s]+/).map(s => s.trim()).filter(Boolean).slice(0, 10)
+    .split(/[,，\s]+/).map(s => s.trim()).filter(Boolean).slice(0, 3)
     .map(s => (s.startsWith('#') ? s : `#${s}`).slice(0, 40));
 
   const patch = {

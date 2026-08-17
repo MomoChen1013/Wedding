@@ -162,6 +162,21 @@ select.ad-input{appearance:none;cursor:pointer;
   background-size:5px 5px, 5px 5px;background-repeat:no-repeat;}
 
 .ad-count{text-align:right;font-size:11.5px;color:var(--ink-soft);margin-top:5px;}
+.ad-hint{font-size:11.5px;color:var(--ink-soft);margin-top:5px;line-height:1.7;}
+
+/* 表單裡再分一個小節（例如「交通資訊」把兩個欄位圈在一起） */
+.ad-sub-sec{margin-top:26px;padding:20px 18px;border:1px solid var(--line-soft);
+  border-radius:var(--radius);background:rgba(255,255,255,.5);}
+.ad-sub-sec .ad-label:first-of-type{margin-top:0;}
+.ad-sub-sec-title{font-size:12.5px;letter-spacing:.18em;color:var(--ink);
+  text-transform:uppercase;margin-bottom:6px;}
+
+/* 欄位下方可以再放一張圖的小上傳區 */
+.ad-img-field{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;}
+.ad-img-field-prev{width:64px;height:64px;object-fit:cover;border-radius:var(--radius);
+  border:1px solid var(--line);background:var(--bg2);}
+.ad-img-field-prev[hidden]{display:none;}
+.ad-img-field .btn{cursor:pointer;}
 
 .ad-check{display:flex;align-items:flex-start;gap:9px;margin-top:18px;
   font-size:13px;line-height:1.8;color:var(--ink);cursor:pointer;}
@@ -437,6 +452,8 @@ select.ad-input{appearance:none;cursor:pointer;
   display:flex;align-items:center;justify-content:center;padding:20px;
   animation:pop .18s ease;}
 .ad-modal-mask[hidden]{display:none;}
+/* 站內統一的確認框可能疊在其他表單彈窗（例如自訂內容編輯）上面，層級要更高 */
+#adModalMask{z-index:1550;}
 .ad-modal-card{width:min(92vw,420px);background:#fff;border:1px solid var(--line);
   border-radius:var(--radius);padding:26px 24px 22px;}
 .ad-modal-title{font-family:var(--font-display);font-weight:500;font-size:16px;
@@ -449,6 +466,13 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-modal-card.is-danger #adModalConfirm{background:#a4677a;border-color:#a4677a;}
 .ad-modal-card.is-danger #adModalConfirm:hover{background:transparent;color:#a4677a;}
 #adModalConfirm:disabled{opacity:.4;cursor:not-allowed;}
+
+/* 帶完整表單的彈窗（例如自訂內容的新增／編輯），比確認框寬、可以捲動 */
+.ad-modal-card-form{width:min(92vw,560px);max-height:88svh;overflow-y:auto;}
+.ad-modal-card-form .ad-form > .ad-label:first-of-type{margin-top:0;}
+.ad-modal-card-form .ad-modal-actions{justify-content:flex-end;}
+#adExpDeleteBtn{color:#a4677a;border-color:rgba(164,103,122,.4);margin-right:auto;}
+#adExpDeleteBtn:hover{border-color:#a4677a;}
 
 @media(max-width:560px){
   .ad-bar{padding:12px 14px;}

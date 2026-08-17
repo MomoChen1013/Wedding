@@ -67,7 +67,7 @@
     <nav class="ad-side" id="adSide">
       <button class="ad-tab is-on" type="button" data-tab="rsvp">出席回覆</button>
       <button class="ad-tab" type="button" data-tab="inbox">悄悄話</button>
-      <button class="ad-tab" type="button" data-tab="lobby">大廳內容</button>
+      <button class="ad-tab" type="button" data-tab="lobby">婚禮資訊</button>
       <button class="ad-tab" type="button" data-tab="seating">桌次</button>
       <button class="ad-tab" type="button" data-tab="letters">祝福信</button>
       <button class="ad-tab" type="button" data-tab="cards">囍卡</button>
@@ -181,30 +181,26 @@
     <nav class="ad-subtabs" data-subtabs="lobby">
       <button class="ad-subtab is-on" type="button" data-subtab="info">婚禮資訊</button>
       <button class="ad-subtab" type="button" data-subtab="schedule">當日流程</button>
-      <button class="ad-subtab" type="button" data-subtab="explore">首頁卡片</button>
+      <button class="ad-subtab" type="button" data-subtab="explore">自訂內容</button>
     </nav>
 
     <div class="ad-subpanel is-on" data-subpanel="info">
     <section class="ad-sec">
       <h2 class="ad-sec-title">婚禮資訊</h2>
       <p class="ad-sec-note">
-        這裡改的是<b>大廳（首頁）</b>上看得到的文字：地點、交通、Dress Code、禮金說明、
-        兩人的故事、當日流程。存檔之後重新整理大廳就會看到新內容，不需要我們重新部署。
-        <b>交通、Dress Code、禮金、兩人的故事留白的話，大廳就不會出現那一塊</b>，
-        不用勉強想文案。婚禮 hashtag 沒填的話，大廳會用預設的
-        <b>#我們結婚了　#Married</b>。
-        新人姓名、日期與頁面開關不在這裡 —— 那些會影響網址與出席回覆的判斷，請找我們改。
+        填寫婚禮基本資訊，如果「交通、Dress Code、禮金、兩人的故事」留白的話，
+        就不會出現那一塊資訊。
       </p>
 
       <form class="ad-form" id="adSiteForm">
-        <label class="ad-label" for="adCoupleTitle">大廳上的稱呼（最多 8 個字）</label>
-        <input class="ad-input" id="adCoupleTitle" type="text" maxlength="8"
-               placeholder="留白的話就用兩位的名字">
+        <label class="ad-label" for="adCoupleTitle">標題（最多 8 個字）</label>
+        <input class="ad-input" id="adCoupleTitle" type="text" maxlength="8">
         <div class="ad-count"><span id="adCoupleTitleLen">0</span> / 8</div>
 
         <label class="ad-label" for="adVenueName">地點名稱</label>
         <input class="ad-input" id="adVenueName" type="text" maxlength="80"
                placeholder="台北國賓大飯店・二樓國際廳">
+        <div class="ad-hint">例如：台北婚宴大飯店・二樓宴會廳</div>
 
         <label class="ad-label" for="adVenueAddress">地址</label>
         <input class="ad-input" id="adVenueAddress" type="text" maxlength="200"
@@ -214,17 +210,39 @@
         <input class="ad-input" id="adVenueMapUrl" type="url" maxlength="500"
                placeholder="留白的話就用地址自動開 Google 地圖">
 
-        <label class="ad-label" for="adEventTime">開始時間（日期由我們設定，這裡只能調整幾點開始）</label>
+        <label class="ad-label" for="adEventTime">開始時間</label>
         <input class="ad-input ad-input-sm" id="adEventTime" type="time">
+        <div class="ad-hint">日期由我們設定，這裡只能調整幾點開始</div>
         <div class="ad-count" id="adEventTimeOff" hidden>婚禮日期還沒設定，請先找我們排定日期</div>
 
-        <label class="ad-label" for="adTransportPublic">交通・大眾運輸</label>
-        <textarea class="ad-textarea" id="adTransportPublic" rows="3" maxlength="500"
-                  placeholder="捷運中山站 2 號出口步行 5 分鐘；公車 218、220 到中山北路口"></textarea>
+        <div class="ad-sub-sec">
+          <div class="ad-sub-sec-title">交通資訊</div>
 
-        <label class="ad-label" for="adTransportParking">交通・停車資訊</label>
-        <textarea class="ad-textarea" id="adTransportParking" rows="3" maxlength="500"
-                  placeholder="飯店 B2 有停車場，用餐可折抵 3 小時；旁邊也有市民路邊停車格"></textarea>
+          <label class="ad-label" for="adTransportPublic">大眾運輸</label>
+          <textarea class="ad-textarea" id="adTransportPublic" rows="3" maxlength="500"
+                    placeholder="捷運中山站 2 號出口步行 5 分鐘；公車 218、220 到中山北路口"></textarea>
+          <div class="ad-img-field" id="adTransportPublicImgField">
+            <img class="ad-img-field-prev" id="adTransportPublicImgPrev" alt="大眾運輸圖片" hidden>
+            <label class="btn small ghost">
+              選一張圖片
+              <input type="file" id="adTransportPublicImgFile" accept="image/*" hidden>
+            </label>
+            <button class="btn small ghost" type="button" id="adTransportPublicImgClear" hidden>移除圖片</button>
+          </div>
+
+          <label class="ad-label" for="adTransportParking">停車資訊</label>
+          <textarea class="ad-textarea" id="adTransportParking" rows="3" maxlength="500"
+                    placeholder="飯店 B2 有停車場，用餐可折抵 3 小時；旁邊也有市民路邊停車格"></textarea>
+          <div class="ad-img-field" id="adTransportParkingImgField">
+            <img class="ad-img-field-prev" id="adTransportParkingImgPrev" alt="停車資訊圖片" hidden>
+            <label class="btn small ghost">
+              選一張圖片
+              <input type="file" id="adTransportParkingImgFile" accept="image/*" hidden>
+            </label>
+            <button class="btn small ghost" type="button" id="adTransportParkingImgClear" hidden>移除圖片</button>
+          </div>
+          <div class="ad-hint">圖片和文字太長時，前台會收成「展開更多」，點開才看得到完整內容</div>
+        </div>
 
         <label class="ad-label" for="adDressCode">Dress Code</label>
         <textarea class="ad-textarea" id="adDressCode" rows="3" maxlength="500"
@@ -238,9 +256,9 @@
         <textarea class="ad-textarea" id="adStory" rows="5" maxlength="2000"
                   placeholder="第一次見面是在朋友的聚會上…"></textarea>
 
-        <label class="ad-label" for="adHashtags">婚禮 hashtag</label>
-        <input class="ad-input" id="adHashtags" type="text" maxlength="200"
-               placeholder="#GinnyOne2026, #我們結婚了（逗號分開，最多 10 個）">
+        <label class="ad-label" for="adHashtags">婚禮 hashtag（最多 3 個）</label>
+        <input class="ad-input" id="adHashtags" type="text" maxlength="120"
+               placeholder="#married #我們結婚了（用空格或逗號分開）">
 
         <div class="ad-row">
           <button class="btn small" type="submit">儲存婚禮資訊</button>
@@ -269,54 +287,18 @@
 
     <div class="ad-subpanel" data-subpanel="explore">
     <section class="ad-sec">
-      <h2 class="ad-sec-title">新增一張卡片</h2>
+      <h2 class="ad-sec-title">自訂內容</h2>
       <p class="ad-sec-note">
-        會出現在首頁 Explore 區、內建卡片的後面。
-        選「開啟連結」就是點了跳到你給的網址；選「跳出說明」則是點了在原地展開一段文字。
+        出現在首頁 Explore 區的後面。<br>
+        可以選「開啟連結」就是點了跳到你給的網址，可以用作上傳照片或是 Line、社群連結<br>
+        選「跳出說明」則是賓客點擊後會展開一段文字，可以用作現場活動的說明。
       </p>
 
-      <form class="ad-form" id="adExpForm">
-        <input type="hidden" id="adExpId">
-
-        <label class="ad-label" for="adExpTitle">卡片標題</label>
-        <input class="ad-input" id="adExpTitle" type="text" maxlength="40"
-               placeholder="婚禮當天的接駁車">
-
-        <label class="ad-label" for="adExpSub">一句話說明</label>
-        <input class="ad-input" id="adExpSub" type="text" maxlength="120"
-               placeholder="幾點在哪裡上車，這裡先講清楚">
-
-        <label class="ad-label" for="adExpKind">點了之後</label>
-        <select class="ad-input" id="adExpKind">
-          <option value="popup">跳出說明（文字＋popup）</option>
-          <option value="link">開啟連結（文字＋連結）</option>
-        </select>
-
-        <div id="adExpUrlBox" hidden>
-          <label class="ad-label" for="adExpUrl">連結網址</label>
-          <input class="ad-input" id="adExpUrl" type="url" maxlength="500"
-                 placeholder="https://...">
-        </div>
-
-        <div id="adExpBodyBox">
-          <label class="ad-label" for="adExpBody">彈窗內文</label>
-          <textarea class="ad-textarea" id="adExpBody" rows="7" maxlength="2000"
-                    placeholder="早上 10:30 在台北車站東三門集合，車程約 40 分鐘…"></textarea>
-        </div>
-
-        <label class="ad-label" for="adExpOrder">排序（數字小的排前面）</label>
-        <input class="ad-input ad-input-sm" id="adExpOrder" type="number" value="1" min="0" step="1">
-
-        <div class="ad-row">
-          <button class="btn small" type="submit">儲存這張卡片</button>
-          <button class="btn small ghost" id="adExpReset" type="button">清空欄位</button>
-        </div>
-      </form>
-    </section>
-
-    <section class="ad-sec">
-      <h2 class="ad-sec-title">已經加上的卡片</h2>
       <div class="ad-list" id="adExpList"></div>
+
+      <div class="ad-row">
+        <button class="btn small" id="adExpAddBtn" type="button">新增自訂內容</button>
+      </div>
     </section>
     </div>
 
@@ -685,6 +667,52 @@
       <button class="btn small ghost" id="adModalCancel" type="button">取消</button>
       <button class="btn small" id="adModalConfirm" type="button">確定</button>
     </div>
+  </div>
+</div>
+
+<!-- 自訂內容（首頁 Explore 區）：新增／編輯用同一個彈窗 -->
+<div class="ad-modal-mask" id="adExpModalMask" hidden>
+  <div class="ad-modal-card ad-modal-card-form">
+    <div class="ad-modal-title" id="adExpModalTitle">新增自訂內容</div>
+
+    <form class="ad-form" id="adExpForm">
+      <input type="hidden" id="adExpId">
+
+      <label class="ad-label" for="adExpTitle">內容標題</label>
+      <input class="ad-input" id="adExpTitle" type="text" maxlength="40"
+             placeholder="婚禮當天的接駁車">
+
+      <label class="ad-label" for="adExpSub">一句話說明</label>
+      <input class="ad-input" id="adExpSub" type="text" maxlength="120"
+             placeholder="幾點在哪裡上車，這裡先講清楚">
+
+      <label class="ad-label" for="adExpKind">點了之後</label>
+      <select class="ad-input" id="adExpKind">
+        <option value="popup">跳出說明（文字＋彈出視窗說明）</option>
+        <option value="link">開啟連結（文字＋連結）</option>
+      </select>
+
+      <div id="adExpUrlBox" hidden>
+        <label class="ad-label" for="adExpUrl">連結網址</label>
+        <input class="ad-input" id="adExpUrl" type="url" maxlength="500"
+               placeholder="https://...">
+      </div>
+
+      <div id="adExpBodyBox">
+        <label class="ad-label" for="adExpBody">彈出視窗內文</label>
+        <textarea class="ad-textarea" id="adExpBody" rows="7" maxlength="2000"
+                  placeholder="早上 10:30 在台北車站東三門集合，車程約 40 分鐘…"></textarea>
+      </div>
+
+      <label class="ad-label" for="adExpOrder">排序（數字小的排前面）</label>
+      <input class="ad-input ad-input-sm" id="adExpOrder" type="number" value="1" min="0" step="1">
+
+      <div class="ad-modal-actions">
+        <button class="btn small ghost" id="adExpCancelBtn" type="button">取消</button>
+        <button class="btn small ghost" id="adExpDeleteBtn" type="button" hidden>刪除</button>
+        <button class="btn small" type="submit">儲存</button>
+      </div>
+    </form>
   </div>
 </div>
 
