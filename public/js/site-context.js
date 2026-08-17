@@ -39,14 +39,24 @@ const firebaseConfig = {
 
 /* ============================================================
    頁面清單
-   key      : 網址與 sites.pages 裡使用的代號
+   key      : sites.pages 裡使用的開關代號（規則與後台也用同一組）
+   path     : 網址片段；沒寫就等於 key
    file     : 實際的 HTML 檔名
    label    : 給大廳／後台顯示的中文名稱
    optional : false 代表這頁一定存在，不可關閉
 ============================================================ */
 const PAGES = {
   lobby:      { file:'index.html',      label:'首頁',       optional:false },
-  rsvp:       { file:'rsvp.html',       label:'出席回覆',   optional:true  },
+  /* 出席回覆＝單頁邀請函：婚禮資訊與表單收在同一頁。
+     原本 /rsvp 與 /invitation 是兩頁、兩份表單、寫進同一個子集合，
+     等於同一件事做兩次，所以合併成一頁。
+
+     網址沿用 /invitation（對外分享的是這個連結），
+     但開關代號仍然是 rsvp —— firestore.rules 的 pageOn()、後台分頁、
+     set-pages CLI 都靠它，改 key 會讓既有站台的 pages 設定失效。
+     所以「網址片段」與「開關代號」在這裡分開記。 */
+  rsvp:       { file:'invitation.html', path:'invitation',
+                label:'邀請函',     optional:true  },
   wall:       { file:'wall.html',       label:'祝福牆',     optional:true  },
   cake:       { file:'cake.html',       label:'集氣送祝福', optional:true  },
   draw:       { file:'draw.html',       label:'抽卡',       optional:true  },
@@ -60,11 +70,24 @@ const PAGES = {
   admin:      { file:'admin.html',      label:'新人後台',   optional:false },
 };
 
-/* 已經搬家的舊網址 → 現在的頁面。
-   悄悄話信箱本來是獨立一頁、要新人自己再登入一次，
-   現在是後台的一個分頁，舊連結（或書籤）直接帶過去。 */
-const MOVED_PAGES = {
+/* 開關代號 → 網址片段 */
+function pathOf(key) {
+  return (PAGES[key] && PAGES[key].path) || key;
+}
+
+/* 網址片段 → 開關代號 */
+const PATH_TO_KEY = Object.fromEntries(
+  Object.keys(PAGES).map((key) => [pathOf(key), key])
+);
+
+/* 已經搬家的舊網址片段 → 現在的網址片段。
+   ・inbox：悄悄話信箱本來是獨立一頁、要新人自己再登入一次，
+     現在是後台的一個分頁，舊連結（或書籤）直接帶過去
+   ・rsvp ：出席回覆已經併進單頁邀請函
+   正式站台由 Hosting 的 301 轉址處理，這裡是本機與直接開檔的後路。 */
+const MOVED_PATHS = {
   inbox: 'admin',
+  rsvp: 'invitation',
 };
 
 /* 檔名 → 代號，給連結改寫用 */
@@ -99,8 +122,10 @@ onAuthStateChanged(auth, (user) => {
 });
 
 /* ---------- 網址解析 ---------- */
-/* /w/{slug}            → { slug, page:'lobby' }
-   /w/{slug}/cake       → { slug, page:'cake'  } */
+/* /w/{slug}            → { slug, seg:'',           page:'lobby' }
+   /w/{slug}/cake       → { slug, seg:'cake',       page:'cake'  }
+   /w/{slug}/invitation → { slug, seg:'invitation', page:'rsvp'  }
+   seg 是網址上的字，page 是 sites.pages 的開關代號，兩者不一定相同 */
 function parseLocation() {
   const m = location.pathname.match(/^\/w\/([^/?#]+)(?:\/([^/?#]*))?/);
   if (!m) return null;
@@ -109,8 +134,8 @@ function parseLocation() {
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) return null;
 
   const seg = (m[2] || '').replace(/\.html$/, '');
-  const page = seg === '' ? 'lobby' : seg;
-  return { slug, page };
+  const page = seg === '' ? 'lobby' : (PATH_TO_KEY[seg] || seg);
+  return { slug, seg, page };
 }
 
 /* ---------- 錯誤畫面 ---------- */
@@ -243,8 +268,8 @@ async function boot() {
   }
 
   /* 搬家的舊網址：先導過去，不用等站台設定讀完 */
-  if (MOVED_PAGES[loc.page]) {
-    location.replace(`/w/${loc.slug}/${MOVED_PAGES[loc.page]}`);
+  if (MOVED_PATHS[loc.seg]) {
+    location.replace(`/w/${loc.slug}/${MOVED_PATHS[loc.seg]}`);
     return;
   }
 
@@ -299,9 +324,10 @@ async function boot() {
     data: site,
     pages: PAGES,
     isEnabled,
-    /* 產生站內連結：pathFor('cake') → /w/{slug}/cake */
+    /* 產生站內連結：pathFor('cake') → /w/{slug}/cake
+       出席回覆的網址片段是 invitation，不是它的開關代號 rsvp */
     pathFor(key) {
-      return key === 'lobby' ? `/w/${loc.slug}/` : `/w/${loc.slug}/${key}`;
+      return key === 'lobby' ? `/w/${loc.slug}/` : `/w/${loc.slug}/${pathOf(key)}`;
     },
     fileToKey: FILE_TO_KEY,
   };
@@ -314,7 +340,8 @@ async function boot() {
   /* 資料到齊了才載入舊有頁面 JS */
   try {
     await loadScript('/js/common.js');
-    const pageScript = { lobby:'index' }[pageKey] || pageKey;
+    /* 開關代號 → 頁面 JS 檔名（檔名跟著 HTML 走，不是跟著代號） */
+    const pageScript = { lobby:'index', rsvp:'invitation' }[pageKey] || pageKey;
     await loadScript(`/js/${pageScript}.js`);
   } catch (err) {
     showFatal('頁面載入失敗', '請重新整理一次，如果一直發生請告訴我們');

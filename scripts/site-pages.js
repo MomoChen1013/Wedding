@@ -16,7 +16,7 @@
 ============================================================ */
 
 export const OPTIONAL_PAGES = [
-  'rsvp', 'wall', 'cake', 'draw', 'exhibition', 'quiz', 'invitation',
+  'rsvp', 'wall', 'cake', 'draw', 'exhibition', 'quiz',
   'seating', 'letter',
 ];
 
@@ -25,13 +25,14 @@ export const DEFAULT_PAGES = ['rsvp', 'wall'];
 
 /* 給人看的名稱，印在 CLI 訊息裡 */
 export const PAGE_LABELS = {
-  rsvp:       '出席回覆',
+  /* 出席回覆的網址是 /w/{slug}/invitation（婚禮資訊與表單在同一頁），
+     但開關代號仍然是 rsvp —— 規則與既有站台的 pages 設定都靠它 */
+  rsvp:       '出席回覆（邀請函）',
   wall:       '祝福牆',
   cake:       '集氣送祝福',
   draw:       '抽卡',
   exhibition: '我們的故事',
   quiz:       '新人小測驗',
-  invitation: '單頁邀請函',
   seating:    '我的桌次',
   letter:     '給你的信',
 };

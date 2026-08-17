@@ -1,0 +1,79 @@
+/* ============================================================
+   invitation.css — 單頁式邀請函
+   ・語彙與其他頁面完全一致：1px 線、無陰影、Noto Serif TC
+   ・只放這一頁獨有的東西（封面、資訊列、照片牆、放大檢視）
+     表單的樣式在 rsvp.css，兩頁共用
+============================================================ */
+
+/* ---------- 封面 ---------- */
+.inv-hero{gap:18px;}
+.inv-kicker{font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--ink-soft);}
+.inv-couple{margin:0;}
+.inv-countdown{font-size:12.5px;letter-spacing:.16em;color:var(--ink-soft);min-height:1.4em;}
+.inv-countdown b{font-family:var(--font-display);font-weight:500;font-size:17px;
+  color:var(--primary-deep);letter-spacing:.04em;margin:0 4px;}
+
+/* ---------- 封面照 ---------- */
+.inv-cover{margin:0 0 8px;border:1px solid var(--line);border-radius:var(--radius);
+  overflow:hidden;background:var(--bg2);line-height:0;}
+.inv-cover[hidden]{display:none;}
+.inv-cover img{width:100%;display:block;aspect-ratio:3/2;object-fit:cover;}
+@media(max-width:560px){.inv-cover img{aspect-ratio:4/5;}}
+
+/* ---------- 區塊 ---------- */
+.inv-block{margin-top:60px;}
+.inv-block:first-of-type{margin-top:40px;}
+.inv-block[hidden]{display:none;}
+.inv-lead{font-size:13.5px;line-height:2;color:var(--ink-soft);letter-spacing:.06em;
+  margin:-6px 0 18px;}
+
+/* ---------- 兩人的故事 ---------- */
+.inv-story{white-space:pre-wrap;font-size:15px;line-height:2.1;color:var(--ink);
+  letter-spacing:.04em;}
+
+/* ---------- 資訊列 ----------
+   與大廳的資訊卡同一個排版：左邊窄標籤、右邊內容 */
+.inv-rows{display:flex;flex-direction:column;}
+.inv-row{display:flex;gap:18px;padding:16px 0;border-bottom:1px solid var(--line-soft);}
+.inv-row:first-child{padding-top:0;}
+.inv-row:last-child{border-bottom:0;padding-bottom:0;}
+.inv-row[hidden]{display:none;}
+.ir-label{flex:0 0 58px;font-size:11.5px;letter-spacing:.2em;color:var(--ink-soft);
+  padding-top:.4em;}
+.ir-body{flex:1 1 auto;min-width:0;}
+.ir-val{font-size:15px;line-height:1.9;color:var(--ink);letter-spacing:.04em;}
+.ir-sub{margin-top:3px;font-size:13px;line-height:1.9;color:var(--ink-soft);}
+.ir-jump{display:inline-block;margin-top:8px;font-size:12.5px;letter-spacing:.1em;
+  color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);
+  padding-bottom:2px;transition:.2s;}
+.ir-jump:hover{color:var(--ink);border-bottom-color:var(--ink);}
+.ir-jump[hidden]{display:none;}
+.inv-note{white-space:pre-wrap;}
+
+.inv-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px;}
+.inv-actions .btn[hidden]{display:none;}
+
+/* ---------- 照片牆 ---------- */
+.inv-gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+@media(min-width:600px){.inv-gallery{grid-template-columns:repeat(3,1fr);gap:14px;}}
+.inv-gallery button{padding:0;border:1px solid var(--line);background:none;cursor:zoom-in;
+  border-radius:var(--radius);overflow:hidden;line-height:0;transition:border-color .2s;}
+.inv-gallery button:hover{border-color:var(--ink);}
+.inv-gallery button:focus-visible{outline:1px solid var(--ink);outline-offset:3px;}
+.inv-gallery img{width:100%;aspect-ratio:4/5;object-fit:cover;background:var(--bg2);}
+
+/* ---------- 照片放大 ---------- */
+.inv-lightbox{position:fixed;inset:0;z-index:1200;display:flex;
+  align-items:center;justify-content:center;padding:24px;
+  background:rgba(47,43,38,.88);cursor:zoom-out;animation:pop .2s ease;}
+.inv-lightbox[hidden]{display:none;}
+.inv-lightbox img{max-width:100%;max-height:100%;object-fit:contain;border-radius:var(--radius);}
+.inv-lightbox-close{position:absolute;top:14px;right:16px;width:38px;height:38px;
+  border:1px solid rgba(255,255,255,.4);border-radius:50%;background:transparent;
+  color:#fff;font-size:15px;line-height:1;cursor:pointer;transition:.2s;}
+.inv-lightbox-close:hover{border-color:#fff;}
+
+/* ---------- hashtag ---------- */
+.inv-tags{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;}
+.inv-tags span{font-size:12.5px;letter-spacing:.1em;color:var(--ink-soft);
+  border:1px solid var(--line);border-radius:999px;padding:6px 14px;}

@@ -31,16 +31,17 @@
         "source": "/w/:slug/info",
         "destination": "/w/:slug/",
         "type": 301
+      },
+      {
+        "source": "/w/:slug/rsvp",
+        "destination": "/w/:slug/invitation",
+        "type": 301
       }
     ],
     "rewrites": [
       {
         "source": "/assets/*/manifest.json",
         "destination": "/assets/empty-manifest.json"
-      },
-      {
-        "source": "/w/*/rsvp",
-        "destination": "/rsvp.html"
       },
       {
         "source": "/w/*/wall",
