@@ -59,6 +59,7 @@
 .intro-line{font-family:var(--font-display);font-weight:300;
   font-size:clamp(19px,5.4vw,30px);line-height:2;letter-spacing:.18em;
   color:var(--ink);text-align:center;padding:0 26px;max-width:20ch;
+  white-space:pre-line;                     /* 文案裡的 \n 就是換行 */
   animation:introFade .9s ease;}
 @keyframes introFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 

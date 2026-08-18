@@ -363,8 +363,16 @@ console.log('\n[3b] 入場登入（entryLoginEnabled）');
     (await page.locator('#gate').count()) === 0);
   ok('改成一進來就播開場字幕', await page.isVisible('#intro'));
   const line = (await page.innerText('#introLine')).trim();
-  ok('字幕是開場文案', ['我們要結婚了', '也想邀請你，見證這一刻'].includes(line), line);
+  ok('字幕是開場文案',
+    ['我們要結婚了', '邀請你，\n見證這一刻'].includes(line), JSON.stringify(line));
   ok('開場期間有「跳過」', await page.isVisible('#introSkip'));
+
+  /* 第二句要真的斷成兩行（文案裡的 \n ＋ white-space:pre-line） */
+  await page.waitForFunction(
+    () => document.getElementById('introLine').textContent.includes('見證這一刻'),
+    null, { timeout: 5000 });
+  const second = await page.innerText('#introLine');
+  ok('第二句斷成兩行', /邀請你，\s*\n\s*見證這一刻/.test(second), JSON.stringify(second));
 
   /* 不按跳過的話，字幕 2 秒 + 簾幕 1.5 秒之後自己進大廳 */
   await page.waitForSelector('#app', { state:'visible', timeout: 10000 });
