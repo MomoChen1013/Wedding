@@ -2001,8 +2001,11 @@ console.log('\n[21] 後台排桌管理');
   ok('自動編號有給到（女方是 B 開頭）', /B\d\d/.test(poolText), poolText.slice(0, 40));
 
   /* ---- 用「移動到桌位」把人放進第 01 桌（手機也是走這條路） ---- */
+  /* 卡片只剩兩行，「移動到桌位」在滑過去才出現的完整樣貌（peek）裡 */
   const moveGuest = async (name, tableLabel) => {
-    await page.click(`.sp-card:has-text("${name}") [data-move]`);
+    await page.hover(`.sp-card:has-text("${name}")`);
+    await page.waitForSelector('#spPeek:not([hidden])', { timeout:5000 });
+    await page.click('#spPeek [data-peek="move"]');
     await page.waitForSelector('#spMoveMask:not([hidden])', { timeout:5000 });
     await page.click(`.sp-move-item:has-text("${tableLabel}")`);
     await page.waitForSelector('#spMoveMask', { state:'hidden', timeout:5000 });

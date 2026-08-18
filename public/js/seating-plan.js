@@ -562,20 +562,16 @@
     const heads = guests.reduce((n, g) => n + g.count, 0);
     const seated = guests.filter((g) => g.tableId);
     const seatedHeads = seated.reduce((n, g) => n + g.count, 0);
-    const over = plan.tables.filter((t) => seatedOf(t.id, guests).heads > t.cap).length;
-    const special = guests.filter((g) => g.specials.length)
-      .reduce((n, g) => n + g.count, 0);
     const avg = plan.tables.length ? (seatedHeads / plan.tables.length) : 0;
 
+    /* 只留四個一直要盯著的數字。超過容量、特殊需求、待確認 RSVP
+       都在下面的提醒列講得更清楚（而且會指名是第幾桌），
+       擺在這裡只會讓真正要看的四個數字變小。 */
     const cells = [
-      [heads, '總賓客人數'],
-      [seatedHeads, '已安排人數'],
-      [heads - seatedHeads, '未安排人數'],
+      [heads, '總人數'],
       [plan.tables.length, '總桌數'],
-      [plan.tables.length ? avg.toFixed(1) : '—', '平均每桌人數'],
-      [over, '超過容量桌數'],
-      [special, '有特殊需求人數'],
-      [guests.length, '賓客筆數'],
+      [heads - seatedHeads, '未安排人數'],
+      [plan.tables.length ? avg.toFixed(1) : '—', '平均一桌人數'],
     ];
     $('spStats').innerHTML = cells.map(([n, lab]) => `
       <div class="ad-stat">
@@ -643,30 +639,174 @@
 
   /* ============================================================
      畫面：賓客卡
+     ------------------------------------------------------------
+     一張卡就兩行：
+       第一行　編號　姓名 …………… 人數
+       第二行　標籤（放不下就左右滑）
+     排桌時要掃過去的是「誰、幾位、什麼標籤」，其餘（類別、RSVP、
+     備註、目前桌號）收進 peek —— 桌機滑過去、手機點一下才出現。
+     卡片小一格，一個螢幕就多看得到好幾桌。
   ============================================================ */
   function guestCard(g) {
     const primary = primaryTag(g);
     const chips = [];
     if (primary) chips.push(`<span class="sp-chip">${esc(primary.name)}</span>`);
-    g.specials.forEach((sp) =>
-      chips.push(`<span class="sp-chip is-special">${sp.icon} ${esc(sp.label)}</span>`));
+    g.specials.forEach((sp) => {
+      /* 主要標籤本身就是特殊需求時不要重複出現 */
+      if (primary && primary.name === sp.label) return;
+      chips.push(`<span class="sp-chip is-special">${sp.icon} ${esc(sp.label)}</span>`);
+    });
+    /* 其餘標籤照樣掛上去，放不下就左右滑 */
+    g.tagNames.forEach((n) => {
+      if (primary && n === primary.name) return;
+      if (g.specials.some((sp) => sp.label === n
+        || sp.match.some((m) => n.toLowerCase().includes(m.toLowerCase())))) return;
+      chips.push(`<span class="sp-chip">${esc(n)}</span>`);
+    });
+    /* 一個標籤都沒有的人也不要空一行，退回顯示類別 */
+    const line2 = chips.length
+      ? chips.join('')
+      : (g.cat ? `<span class="sp-chip is-plain">${esc(g.cat)}</span>` : '');
 
     return `
-      <article class="sp-card${g.rsvp === 'no' ? ' is-declined' : ''}"
-               data-guest="${esc(g.id)}" draggable="true" tabindex="0"
-               aria-label="${esc(g.name)}，${g.count} 位">
-        <div class="sp-card-top">
+      <article class="sp-card is-rsvp-${g.rsvp}" data-guest="${esc(g.id)}"
+               draggable="true" tabindex="0"
+               aria-label="${esc(g.name)}，${g.count} 位，${RSVP_TEXT[g.rsvp]}">
+        <div class="sp-card-line">
           <span class="sp-card-code">${esc(g.code || '—')}</span>
+          <span class="sp-card-name">${esc(g.name)}</span>
           <span class="sp-card-count">${g.count} 人</span>
         </div>
-        <div class="sp-card-name">${esc(g.name)}</div>
-        ${g.cat ? `<div class="sp-card-cat">${esc(g.cat)}</div>` : ''}
-        ${chips.length ? `<div class="sp-card-chips">${chips.join('')}</div>` : ''}
-        <div class="sp-card-foot">
-          <span class="sp-card-rsvp is-${g.rsvp}">${RSVP_TEXT[g.rsvp]}</span>
-          <button class="sp-card-move" type="button" data-move="${esc(g.id)}">移動到桌位</button>
-        </div>
+        ${line2 ? `<div class="sp-card-tags">${line2}</div>` : ''}
       </article>`;
+  }
+
+  /* ============================================================
+     完整樣貌（peek）
+     ------------------------------------------------------------
+     卡片只留兩行，其餘資訊在這一片浮層裡。
+     ・桌機（有滑鼠）：滑過去就出現
+     ・手機／平板：點一下才出現，再點別的地方收起來
+     浮層用 position:fixed 貼著卡片畫，才不會被「未安排」那一欄的
+     捲動容器裁掉，也不會把下面的卡片擠開。
+  ============================================================ */
+  const peekEl = $('spPeek');
+  const hoverMq = window.matchMedia('(hover: hover) and (pointer: fine)');
+  let peekId = '';
+  let peekTimer = 0;
+
+  /* 「這台機器有沒有滑鼠」不夠用 —— 觸控筆電兩種都有。
+     所以再看最後一次是用手指還是滑鼠碰的：
+       手指 → 點一下先展開 peek（沒有 hover 可以用）
+       滑鼠 → 滑過去就看得到，點下去直接開詳細資料 */
+  let lastTouch = false;
+  document.addEventListener('pointerdown', (e) => {
+    lastTouch = e.pointerType === 'touch' || e.pointerType === 'pen';
+  }, true);
+
+  function usingMouse() { return !lastTouch && hoverMq.matches; }
+
+  function peekRow(name, value) {
+    return value
+      ? `<div class="sp-peek-row"><span>${esc(name)}</span><b>${esc(value)}</b></div>`
+      : '';
+  }
+
+  function openPeek(card) {
+    const g = guestById(card.dataset.guest);
+    if (!g) return;
+    peekId = g.id;
+    const t = tableById(g.tableId);
+
+    peekEl.innerHTML = `
+      <div class="sp-peek-head">
+        <span class="sp-peek-code">${esc(g.code || '—')}</span>
+        <span class="sp-peek-name">${esc(g.name)}</span>
+        <span class="sp-peek-count">${g.count} 人</span>
+      </div>
+      <div class="sp-peek-rows">
+        ${peekRow('類別', g.cat)}
+        ${peekRow('RSVP', RSVP_TEXT[g.rsvp])}
+        ${peekRow('目前桌號', t ? tableLabel(t) : '未安排')}
+        ${peekRow('備註', g.note)}
+        ${g.gift ? peekRow('喜餅', `${g.gift} 份${g.got ? '・已確認收到' : ''}`) : ''}
+      </div>
+      ${g.tagNames.length
+        ? `<div class="sp-peek-tags">${g.tagNames
+            .map((n) => `<span class="sp-chip">${esc(n)}</span>`).join('')}</div>`
+        : ''}
+      <div class="sp-peek-actions">
+        <button class="btn small ghost" type="button" data-peek="move">移動到桌位</button>
+        <button class="btn small ghost" type="button" data-peek="detail">詳細資料</button>
+      </div>`;
+
+    peekEl.hidden = false;
+    placePeek(card);
+  }
+
+  /* 貼著卡片放；下面塞不下就翻到上面，左右超出畫面就往內收 */
+  function placePeek(card) {
+    const r = card.getBoundingClientRect();
+    const w = Math.min(280, window.innerWidth - 16);
+    peekEl.style.width = `${w}px`;
+    const h = peekEl.offsetHeight;
+
+    let top = r.bottom + 6;
+    if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 6);
+    let left = r.left;
+    if (left + w > window.innerWidth - 8) left = window.innerWidth - w - 8;
+
+    peekEl.style.top = `${Math.round(top)}px`;
+    peekEl.style.left = `${Math.round(Math.max(8, left))}px`;
+  }
+
+  function closePeek() {
+    clearTimeout(peekTimer);
+    peekEl.hidden = true;
+    peekId = '';
+  }
+
+  function bindPeek() {
+    const panel = document.querySelector('[data-panel="seatingPlan"]');
+
+    /* 桌機：滑過去就看得到，晚一點點出現才不會一路掃過去閃個不停 */
+    panel.addEventListener('mouseover', (e) => {
+      /* 觸控裝置點一下之後也會補送 mouseover，這裡要擋掉 */
+      if (!usingMouse()) return;
+      const card = e.target.closest('.sp-card');
+      if (!card || card.dataset.guest === peekId) return;
+      clearTimeout(peekTimer);
+      peekTimer = setTimeout(() => openPeek(card), 140);
+    });
+    panel.addEventListener('mouseout', (e) => {
+      if (!usingMouse()) return;
+      const card = e.target.closest('.sp-card');
+      if (!card) return;
+      if (e.relatedTarget && (card.contains(e.relatedTarget) || peekEl.contains(e.relatedTarget))) return;
+      closePeek();
+    });
+
+    /* 手機／平板：點一下卡片就展開，點別的地方收起來 */
+    document.addEventListener('click', (e) => {
+      if (peekEl.hidden) return;
+      if (peekEl.contains(e.target)) return;
+      if (e.target.closest('.sp-card')) return;
+      closePeek();
+    });
+
+    peekEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-peek]');
+      if (!btn) return;
+      const id = peekId;
+      closePeek();
+      if (btn.dataset.peek === 'move') openMove(id);
+      else openDrawer(id);
+    });
+
+    /* 捲動、拖曳、換分頁時先收起來，浮層才不會留在半空中 */
+    ['scroll', 'wheel'].forEach((ev) =>
+      window.addEventListener(ev, () => { if (!peekEl.hidden) closePeek(); }, true));
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePeek(); });
   }
 
   /* ============================================================
@@ -880,6 +1020,7 @@
     renderBoard();
     renderTableList();
     renderSyncState();
+    if (!peekEl.hidden) closePeek();
     if (!$('spDrawer').hidden) fillDrawer($('spDrawerId').value);
   }
 
@@ -938,6 +1079,7 @@
         dragTable = '';
         card.classList.add('is-dragging');
       } else return;
+      closePeek();
       e.dataTransfer.effectAllowed = 'move';
       /* Firefox 需要真的設一份資料，拖曳才會開始 */
       try { e.dataTransfer.setData('text/plain', dragGuest || dragTable); } catch {}
@@ -1818,9 +1960,6 @@
 
     /* ---- 工作區：點卡片開抽屜、點「移動到桌位」開選單 ---- */
     panel.addEventListener('click', (e) => {
-      const move = e.target.closest('[data-move]');
-      if (move) { e.stopPropagation(); openMove(move.dataset.move); return; }
-
       const editTable = e.target.closest('[data-edit-table]');
       if (editTable) { openTableModal(editTable.dataset.editTable); return; }
 
@@ -1838,7 +1977,12 @@
       }
 
       const card = e.target.closest('.sp-card');
-      if (card) openDrawer(card.dataset.guest);
+      if (!card) return;
+      /* 有滑鼠的機器滑過去就看得到完整樣貌，點下去直接開詳細資料；
+         觸控裝置沒有 hover，點一下先展開 peek（裡面才有「詳細資料」） */
+      if (usingMouse()) openDrawer(card.dataset.guest);
+      else if (card.dataset.guest === peekId) closePeek();
+      else openPeek(card);
     });
 
     /* 鍵盤也走得完：卡片上按 Enter／空白鍵等於點開 */
@@ -1975,6 +2119,7 @@
     view.tagOrder = LS.get('seatPlan.tagOrder', []) || [];
     bindEvents();
     bindDnd();
+    bindPeek();
     renderAll();
     load();
   }

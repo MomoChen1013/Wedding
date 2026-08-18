@@ -669,14 +669,17 @@ select.ad-input{appearance:none;cursor:pointer;
   width:7px;height:7px;border-radius:50%;background:#a4677a;}
 
 /* ---------- 統計 ---------- */
-/* 統計是「一直要看得到的數字」，不是主角 ——
-   排成一條窄帶，工作區才留得住螢幕的高度 */
-.sp-stats{grid-template-columns:repeat(8,1fr);}
-@media(max-width:1200px){.sp-stats{grid-template-columns:repeat(4,1fr);}}
-@media(max-width:640px){.sp-stats{grid-template-columns:repeat(2,1fr);}}
-.sp-stats .ad-stat{padding:12px 8px;}
-.sp-stats .ad-stat-num{font-size:clamp(19px,2.4vw,24px);}
-.sp-stats .ad-stat-lab{margin-top:4px;font-size:10.5px;letter-spacing:.06em;}
+/* 統計只留四個一直要盯著的數字，手機也一列排得完 */
+.sp-stats{grid-template-columns:repeat(4,1fr);}
+.sp-stats .ad-stat{padding:12px 6px;}
+.sp-stats .ad-stat-num{font-size:clamp(17px,2.2vw,26px);}
+.sp-stats .ad-stat-lab{margin-top:4px;font-size:10.5px;letter-spacing:.04em;
+  white-space:nowrap;}
+@media(max-width:430px){
+  .sp-stats .ad-stat{padding:10px 2px;}
+  .sp-stats .ad-stat-num{font-size:17px;}
+  .sp-stats .ad-stat-lab{font-size:9px;letter-spacing:0;}
+}
 
 /* ---------- 提醒 ---------- */
 .sp-warns{display:flex;flex-direction:column;gap:6px;margin:18px 0 6px;}
@@ -727,50 +730,78 @@ select.ad-input{appearance:none;cursor:pointer;
   letter-spacing:.2em;color:var(--ink);}
 .sp-pool-count{font-size:11.5px;letter-spacing:.06em;color:var(--ink-soft);
   font-variant-numeric:tabular-nums;}
-.sp-pool-body{flex:1 1 auto;overflow-y:auto;padding:10px;
-  display:flex;flex-direction:column;gap:8px;min-height:120px;}
+.sp-pool-body{flex:1 1 auto;overflow-y:auto;padding:9px;
+  display:flex;flex-direction:column;gap:6px;min-height:120px;}
 
-.sp-group{display:flex;flex-direction:column;gap:8px;}
+.sp-group{display:flex;flex-direction:column;gap:6px;}
 .sp-group-head{display:flex;align-items:baseline;gap:8px;margin-top:6px;
   padding-bottom:5px;border-bottom:1px solid var(--line-soft);
   font-size:11.5px;letter-spacing:.16em;color:var(--ink);}
 .sp-group-head small{font-size:10.5px;letter-spacing:.04em;color:var(--ink-soft);}
 
-/* ---------- 賓客卡 ---------- */
-.sp-card{border:1px solid var(--line);border-radius:var(--radius);background:#fff;
-  padding:9px 11px;cursor:grab;transition:border-color .18s,background .18s;}
+/* ---------- 賓客卡 ----------
+   兩行就好：第一行 編號＋姓名＋人數，第二行標籤（放不下就左右滑）。
+   其餘資訊在 .sp-peek（桌機 hover、手機／平板點一下）。 */
+.sp-card{position:relative;border:1px solid var(--line);border-radius:var(--radius);
+  background:#fff;padding:7px 9px;cursor:grab;
+  transition:border-color .18s,background .18s;}
 .sp-card:hover{border-color:var(--ink);}
 .sp-card:focus-visible{outline:2px solid var(--primary-deep);outline-offset:1px;}
 .sp-card.is-dragging{opacity:.45;cursor:grabbing;}
-.sp-card.is-declined{opacity:.62;}
-.sp-card-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
-.sp-card-code{font-family:var(--font-display);font-size:11px;letter-spacing:.14em;
-  color:var(--ink-soft);}
-.sp-card-count{font-size:11.5px;letter-spacing:.04em;color:var(--primary-deep);
-  font-variant-numeric:tabular-nums;}
-.sp-card-name{margin-top:3px;font-size:14px;letter-spacing:.05em;color:var(--ink);
-  word-break:break-all;}
-.sp-card-cat{margin-top:2px;font-size:11px;letter-spacing:.04em;color:var(--ink-soft);}
-.sp-card-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
-.sp-chip{border:1px solid var(--line);border-radius:999px;padding:1px 8px;
-  font-size:10.5px;letter-spacing:.05em;color:var(--ink);background:var(--bg2);}
+/* RSVP 狀態不佔一行，改用左邊那道細線表示 */
+.sp-card{border-left:3px solid transparent;}
+.sp-card.is-rsvp-maybe{border-left-color:var(--sun);}
+.sp-card.is-rsvp-no{border-left-color:rgba(164,103,122,.55);opacity:.66;}
+
+.sp-card-line{display:flex;align-items:baseline;gap:7px;}
+.sp-card-code{flex:0 0 auto;font-family:var(--font-display);font-size:10.5px;
+  letter-spacing:.1em;color:var(--ink-soft);}
+.sp-card-name{flex:1 1 auto;min-width:0;font-size:13.5px;letter-spacing:.04em;
+  color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sp-card-count{flex:0 0 auto;font-size:11.5px;letter-spacing:.02em;
+  color:var(--primary-deep);font-variant-numeric:tabular-nums;}
+
+/* 標籤一行排完，放不下就左右滑（不換行、不長高） */
+.sp-card-tags{display:flex;flex-wrap:nowrap;gap:4px;margin-top:4px;
+  overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  scroll-snap-type:x proximity;overscroll-behavior-x:contain;}
+.sp-card-tags::-webkit-scrollbar{display:none;}
+.sp-chip{flex:0 0 auto;scroll-snap-align:start;white-space:nowrap;
+  border:1px solid var(--line);border-radius:999px;padding:1px 7px;
+  font-size:10px;letter-spacing:.03em;color:var(--ink);background:var(--bg2);}
 .sp-chip.is-special{color:var(--primary-deep);border-color:var(--primary);
   background:transparent;}
-.sp-card-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;
-  margin-top:7px;padding-top:6px;border-top:1px solid var(--line-soft);}
-.sp-card-rsvp{font-size:10.5px;letter-spacing:.08em;color:var(--ink-soft);}
-.sp-card-rsvp.is-yes{color:var(--primary-deep);}
-.sp-card-rsvp.is-no{color:#a4677a;}
-.sp-card-move{background:none;border:none;cursor:pointer;padding:2px 0;
-  font-family:var(--font-body);font-size:11px;letter-spacing:.06em;
-  color:var(--ink-soft);border-bottom:1px solid transparent;}
-.sp-card-move:hover{color:var(--ink);border-bottom-color:var(--ink);}
+.sp-chip.is-plain{background:transparent;border-color:transparent;
+  color:var(--ink-soft);padding-left:0;}
+
+/* ---------- 完整樣貌（peek） ---------- */
+.sp-peek{position:fixed;z-index:1200;background:#fff;border:1px solid var(--ink);
+  border-radius:var(--radius);padding:12px 14px 11px;
+  box-shadow:0 6px 22px rgba(43,47,54,.14);animation:pop .14s ease;}
+.sp-peek[hidden]{display:none;}
+.sp-peek-head{display:flex;align-items:baseline;gap:7px;padding-bottom:8px;
+  border-bottom:1px solid var(--line-soft);}
+.sp-peek-code{font-family:var(--font-display);font-size:11px;letter-spacing:.1em;
+  color:var(--ink-soft);}
+.sp-peek-name{flex:1 1 auto;min-width:0;font-size:14.5px;letter-spacing:.05em;
+  color:var(--ink);word-break:break-all;}
+.sp-peek-count{flex:0 0 auto;font-size:12px;color:var(--primary-deep);
+  font-variant-numeric:tabular-nums;}
+.sp-peek-rows{display:flex;flex-direction:column;gap:5px;margin-top:9px;}
+.sp-peek-row{display:flex;gap:10px;align-items:baseline;font-size:12px;line-height:1.6;}
+.sp-peek-row span{flex:0 0 54px;color:var(--ink-soft);letter-spacing:.08em;font-size:11px;}
+.sp-peek-row b{flex:1 1 auto;min-width:0;font-weight:400;color:var(--ink);
+  word-break:break-all;}
+.sp-peek-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px;
+  padding-top:9px;border-top:1px solid var(--line-soft);}
+.sp-peek-actions{display:flex;gap:8px;margin-top:12px;}
+.sp-peek-actions .btn{flex:1 1 auto;padding:8px 10px;font-size:12px;letter-spacing:.06em;}
 
 /* ---------- 桌位 ---------- */
 /* align-items:start：每張桌卡只長到自己的內容高度，
    不會被同一列最高的那一桌拉長成一片空白 */
-.sp-tables{display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));
-  gap:14px;align-content:start;align-items:start;}
+.sp-tables{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));
+  gap:12px;align-content:start;align-items:start;}
 .sp-tables-empty{grid-column:1 / -1;}
 
 .sp-table{border:1px solid var(--line);border-radius:var(--radius);background:#fff;
@@ -802,8 +833,8 @@ select.ad-input{appearance:none;cursor:pointer;
 .sp-flag{border:1px solid var(--line-soft);border-radius:999px;padding:1px 8px;
   font-size:10.5px;letter-spacing:.04em;color:var(--ink);background:var(--bg2);}
 
-.sp-table-body{flex:1 1 auto;display:flex;flex-direction:column;gap:7px;
-  padding:10px 12px 12px;min-height:74px;}
+.sp-table-body{flex:1 1 auto;display:flex;flex-direction:column;gap:5px;
+  padding:9px 10px 11px;min-height:66px;}
 .sp-table-empty{border:1px dashed var(--line);border-radius:var(--radius);
   padding:16px 8px;text-align:center;font-size:11.5px;letter-spacing:.08em;
   color:var(--ink-soft);}
@@ -916,10 +947,10 @@ select.ad-input{appearance:none;cursor:pointer;
   .sp-board{grid-template-columns:1fr;}
   .sp-pool{position:static;max-height:none;}
   /* 未安排改成一格一格排，整頁才不會被一長條卡片吃掉 */
-  .sp-pool-body{max-height:44svh;display:grid;align-content:start;
-    grid-template-columns:repeat(auto-fill,minmax(190px,1fr));}
-  .sp-pool-body .sp-group{grid-column:1 / -1;display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(190px,1fr));}
+  .sp-pool-body{max-height:44svh;display:grid;align-content:start;gap:6px;
+    grid-template-columns:repeat(auto-fill,minmax(172px,1fr));}
+  .sp-pool-body .sp-group{grid-column:1 / -1;display:grid;gap:6px;
+    grid-template-columns:repeat(auto-fill,minmax(172px,1fr));}
   .sp-pool-body .sp-group-head{grid-column:1 / -1;}
   .sp-card{cursor:pointer;}
   .sp-table-head{cursor:default;}
