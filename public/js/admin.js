@@ -240,7 +240,7 @@ const modalPhraseEl  = document.getElementById('adModalPhrase');
 const modalCancelBtn = document.getElementById('adModalCancel');
 const modalConfirmBtn= document.getElementById('adModalConfirm');
 
-function confirmModal({ title, message, danger, requirePhrase, confirmText, cancelText }){
+function confirmModal({ title, message, danger, requirePhrase, confirmText, cancelText, input }){
   return new Promise(resolve => {
     modalTitleEl.textContent = title || '確定嗎？';
     modalMsgEl.textContent = message || '';
@@ -248,15 +248,23 @@ function confirmModal({ title, message, danger, requirePhrase, confirmText, canc
     modalConfirmBtn.textContent = confirmText || '確定';
     modalCancelBtn.textContent = cancelText || '取消';
 
-    modalPhraseEl.hidden = !requirePhrase;
-    modalPhraseEl.value = '';
-    modalPhraseEl.placeholder = requirePhrase ? `輸入「${requirePhrase}」` : '';
-    modalConfirmBtn.disabled = !!requirePhrase;
+    /* input 有值＝當成「請輸入一段文字」用（新增標籤這種），
+       解析出來的是字串而不是 true／false */
+    const asPrompt = !!input;
+    modalPhraseEl.hidden = !requirePhrase && !asPrompt;
+    modalPhraseEl.value = asPrompt ? (input.value || '') : '';
+    modalPhraseEl.placeholder = asPrompt
+      ? (input.placeholder || '')
+      : (requirePhrase ? `輸入「${requirePhrase}」` : '');
+    modalPhraseEl.maxLength = asPrompt ? (input.maxLength || 100) : 200;
+    modalConfirmBtn.disabled = !!requirePhrase || (asPrompt && !modalPhraseEl.value.trim());
 
     function onPhraseInput(){
-      modalConfirmBtn.disabled = modalPhraseEl.value.trim() !== requirePhrase;
+      modalConfirmBtn.disabled = asPrompt
+        ? !modalPhraseEl.value.trim()
+        : modalPhraseEl.value.trim() !== requirePhrase;
     }
-    if(requirePhrase) modalPhraseEl.addEventListener('input', onPhraseInput);
+    if(requirePhrase || asPrompt) modalPhraseEl.addEventListener('input', onPhraseInput);
 
     function close(result){
       modalMaskEl.hidden = true;
@@ -267,10 +275,16 @@ function confirmModal({ title, message, danger, requirePhrase, confirmText, canc
       document.removeEventListener('keydown', onKeydown);
       resolve(result);
     }
-    function onConfirm(){ if(!modalConfirmBtn.disabled) close(true); }
+    function onConfirm(){
+      if(!modalConfirmBtn.disabled) close(asPrompt ? modalPhraseEl.value.trim() : true);
+    }
     function onCancel(){ close(false); }
     function onMaskClick(e){ if(e.target === modalMaskEl) close(false); }
-    function onKeydown(e){ if(e.key === 'Escape') close(false); }
+    function onKeydown(e){
+      if(e.key === 'Escape') close(false);
+      /* 打完字直接按 Enter 就送出，不用再移到按鈕上 */
+      if(e.key === 'Enter' && asPrompt && document.activeElement === modalPhraseEl) onConfirm();
+    }
 
     modalConfirmBtn.addEventListener('click', onConfirm);
     modalCancelBtn.addEventListener('click', onCancel);
@@ -278,7 +292,15 @@ function confirmModal({ title, message, danger, requirePhrase, confirmText, canc
     document.addEventListener('keydown', onKeydown);
 
     modalMaskEl.hidden = false;
-    (requirePhrase ? modalPhraseEl : modalConfirmBtn).focus();
+    (requirePhrase || asPrompt ? modalPhraseEl : modalConfirmBtn).focus();
+  });
+}
+
+/* 只要一行字的輸入視窗（新增標籤…）：取消回傳 false，確定回傳去頭尾空白的字串 */
+function promptModal({ title, message, placeholder, maxLength, value, confirmText }){
+  return confirmModal({
+    title, message, confirmText,
+    input:{ placeholder, maxLength, value },
   });
 }
 
@@ -403,7 +425,11 @@ function openAdmin(){
      沒開的頁面連訂閱都省下來，不做白工的讀取。 */
   if(tabEnabled('rsvp')){
     DataStore.subscribeRsvps();
+    /* 沒開標籤功能就連訂閱都省下來 */
+    if(guestTagsOn()) DataStore.subscribeRsvpTags();
     fillRsvpFormSettings();
+    renderTags();
+    renderRsvpTagChips();
     renderRsvps();
   }
   if(tabEnabled('seating')){
@@ -587,6 +613,8 @@ const rsvpListEl   = document.getElementById('adRsvpList');
 const rsvpFilterEl = document.getElementById('adRsvpFilter');
 const rsvpChartsEl = document.getElementById('adRsvpCharts');
 let rsvpFilter = 'all';
+/* 標籤篩選：'all'＝不篩、'none'＝一個標籤都沒有、其他就是標籤 id */
+let rsvpTagFilter = 'all';
 const rsvpPager = pagerState('rsvp');
 
 /* createdAt 是 Firestore 的 Timestamp（伺服器時間），不是數字 */
@@ -596,14 +624,34 @@ function rsvpTime(r){
   return 0;
 }
 
+/* 一位賓客身上的標籤 ＝ 他自己在表單選的那一個 ＋ 新人在後台掛的那些。
+   賓客選的存在回覆裡（改不動），新人掛的存在 rsvpTags/{回覆 id}，
+   這裡合起來當成同一份清單用（已經刪掉的標籤查不到名字，自動略過）。 */
+function rsvpTagIds(r){
+  const mine = DataStore.getRsvpTagMap()[r.id] || [];
+  const all = [String(r.tag || ''), ...mine].filter(Boolean);
+  return [...new Set(all)].filter(id => guestTagName(id));
+}
+
 function visibleRsvps(){
   const q = normKey(rsvpFilterEl.value);
+  const tagsOn = guestTagsOn();
   return DataStore.getRSVPs().filter(r => {
     if(rsvpFilter !== 'all' && DataStore.rsvpStatus(r) !== rsvpFilter) return false;
+
+    if(tagsOn && rsvpTagFilter !== 'all'){
+      const ids = rsvpTagIds(r);
+      if(rsvpTagFilter === 'none'){ if(ids.length) return false; }
+      else if(!ids.includes(rsvpTagFilter)) return false;
+    }
+
     if(!q) return true;
+    /* 標籤名字也吃得到搜尋，「大學同學」打進去就找得到那一群 */
+    const tagText = tagsOn ? rsvpTagIds(r).map(guestTagName).join(' ') : '';
     return normKey(r.name).includes(q)
         || normKey(r.message).includes(q)
-        || normKey(r.note).includes(q);
+        || normKey(r.note).includes(q)
+        || normKey(tagText).includes(q);
   });
 }
 
@@ -756,6 +804,12 @@ function renderRsvps(){
     if(r.cardAddress) addrs.push(`喜帖寄：${r.cardZip || ''} ${r.cardAddress}`);
     if(r.giftAddress) addrs.push(`喜餅寄：${r.giftZip || ''} ${r.giftAddress}`);
 
+    /* 標籤：賓客自己選的那個也一起顯示，看起來就是同一群人的分類 */
+    const tagsOn = guestTagsOn();
+    const tagChips = !tagsOn ? '' : rsvpTagIds(r)
+      .map(id => `<span class="ad-tag ad-tag-guest">${escapeHtml(guestTagName(id))}</span>`)
+      .join('');
+
     return `
       <div class="ad-item">
         <div class="ad-item-main">
@@ -766,13 +820,17 @@ function renderRsvps(){
           ${addrs.length ? `<span class="ad-item-sub">${escapeHtml(addrs.join('　'))}</span>` : ''}
           ${r.message ? `<span class="ad-item-sub">「${escapeHtml(r.message)}」</span>` : ''}
           ${r.note ? `<span class="ad-item-sub">備註：${escapeHtml(r.note)}</span>` : ''}
+          ${tagChips ? `<span class="ad-item-sub ad-item-tags">${tagChips}</span>` : ''}
           <span class="ad-item-sub">${t ? fmtTime(t) : '時間未知'}</span>
         </div>
+        ${tagsOn ? `<div class="ad-item-actions">
+          <button class="ad-edit" type="button" data-tag-edit="${r.id}">標籤</button>
+        </div>` : ''}
       </div>`;
   }).join('');
 }
 
-document.addEventListener('data:rsvps', renderRsvps);
+document.addEventListener('data:rsvps', ()=>{ renderRsvps(); refreshTagCounts(); });
 rsvpFilterEl.addEventListener('input', ()=>{ rsvpPager.page = 1; renderRsvps(); });
 
 document.getElementById('adRsvpChips').addEventListener('click', (e)=>{
@@ -805,7 +863,7 @@ document.getElementById('adRsvpExport').addEventListener('click', ()=>{
 
   downloadCsv(
     'rsvps',
-    ['稱呼','是否出席','與新人關係','電話','LINE','Email','人數','葷食','素食','兒童座椅',
+    ['稱呼','是否出席','與新人關係','標籤','電話','LINE','Email','人數','葷食','素食','兒童座椅',
      '飲食習慣','喜帖','喜帖領取','喜帖郵遞區號','喜帖地址','喜帖 Email',
      '喜餅','喜餅郵遞區號','喜餅地址','給新人的話','其他備註','回覆時間'],
     rows.map(r => {
@@ -816,6 +874,7 @@ document.getElementById('adRsvpExport').addEventListener('click', ()=>{
         r.name || '',
         RSVP_LABEL[st],
         rsvpLabel('relation', r.relation),
+        guestTagsOn() ? rsvpTagIds(r).map(guestTagName).join('／') : '',
         r.contactPhone || '',
         r.contactLine || '',
         r.contactEmail || '',
@@ -999,6 +1058,259 @@ document.getElementById('adRsvpForm').addEventListener('submit', async (e)=>{
     writeFailed(err);
   }
   btn.disabled = false;
+});
+
+/* ============================================================
+   0c. 賓客標籤
+   ------------------------------------------------------------
+   標籤庫存在站台文件的 guestTags（新人自己維護），
+   掛在誰身上存在 rsvpTags/{回覆 id}（新人自己整理的分類）。
+   賓客在表單上選的那一個存在回覆裡，改不動 —— 兩邊在畫面上合起來看。
+
+   整個功能由 guestTagsEnabled 決定要不要出現，新人改不動：
+   這是要配合排桌次一起用的進階功能，由我們決定哪一組新人要用
+   （Firebase Console，或 `npm run set-pages -- --guest-tags on`）。
+============================================================ */
+const tagSecEl   = document.getElementById('adTagSec');
+const tagListEl  = document.getElementById('adTagList');
+const tagChipsEl = document.getElementById('adRsvpTagChips');
+
+/* 標籤存的是 id 不是名字，改名才不會讓已經掛好的分類對不到 */
+function newTagId(){
+  return `t${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+}
+
+/* 寫回站台文件。規則只擋筆數與型別，每一筆的內容在這裡先切好 */
+async function saveGuestTags(list){
+  const clean = list
+    .map(t => ({
+      id:     String(t.id || '').slice(0, 40),
+      name:   String(t.name || '').trim().slice(0, GUEST_TAG_NAME_MAX),
+      onForm: t.onForm === true,
+    }))
+    .filter(t => t.id && t.name)
+    .slice(0, GUEST_TAG_MAX);
+  await DataStore.saveSiteFields({ guestTags: clean });
+  return clean;
+}
+
+/* 每個標籤現在掛在幾位賓客身上（含賓客自己選的那一個） */
+function tagUseCount(){
+  const count = {};
+  DataStore.getRSVPs().forEach(r => {
+    rsvpTagIds(r).forEach(id => { count[id] = (count[id] || 0) + 1; });
+  });
+  return count;
+}
+
+function renderTags(){
+  const on = guestTagsOn();
+  tagSecEl.hidden = !on;
+  /* 題目清單裡那一列跟著標籤設定走：沒有任何標籤當選項時，賓客也看不到那一題 */
+  document.getElementById('adAskTagRow').hidden = !on || !guestTagList().some(t => t.onForm);
+  if(!on) return;
+
+  const list = guestTagList();
+  if(!list.length){
+    tagListEl.innerHTML =
+      `<div class="ad-empty">還沒有標籤<br>按「加入常用標籤」可以一次帶入 VIP、長輩、小孩、大學同學…</div>`;
+    return;
+  }
+
+  const count = tagUseCount();
+  tagListEl.innerHTML = list.map(t => `
+    <div class="ad-tagrow" data-id="${escapeHtml(t.id)}">
+      <input class="ad-input ad-tagrow-name" type="text" maxlength="${GUEST_TAG_NAME_MAX}"
+             value="${escapeHtml(t.name)}" aria-label="標籤名稱">
+      <label class="ad-check ad-tagrow-check">
+        <input type="checkbox" class="ad-tagrow-onform"${t.onForm ? ' checked' : ''}>
+        <span>當表單選項</span>
+      </label>
+      <span class="ad-tagrow-count">${count[t.id] || 0} 位</span>
+      <button class="ad-del" type="button" data-del-tag="${escapeHtml(t.id)}">刪除</button>
+    </div>`).join('');
+}
+
+/* 回覆進來時只換數字，不重畫整排 —— 正在改名字的欄位不會被抽掉 */
+function refreshTagCounts(){
+  if(tagSecEl.hidden) return;
+  const count = tagUseCount();
+  tagListEl.querySelectorAll('.ad-tagrow').forEach(row => {
+    const el = row.querySelector('.ad-tagrow-count');
+    if(el) el.textContent = `${count[row.dataset.id] || 0} 位`;
+  });
+}
+
+/* 標籤一動，名單的標籤、篩選鈕、題目清單那一列都要跟著換 */
+function renderTagsAndList(){
+  renderTags();
+  renderRsvpTagChips();
+  renderRsvps();
+}
+
+/* 改名或改「當表單選項」：離開欄位就存 */
+tagListEl.addEventListener('change', async (e)=>{
+  const row = e.target.closest('.ad-tagrow');
+  if(!row) return;
+  const name = row.querySelector('.ad-tagrow-name').value.trim();
+  if(!name){
+    toast('標籤名稱不能空白', true);
+    renderTags();
+    return;
+  }
+  const onForm = row.querySelector('.ad-tagrow-onform').checked;
+  try{
+    await saveGuestTags(guestTagList().map(t =>
+      (t.id === row.dataset.id ? { ...t, name, onForm } : t)));
+    toast('標籤已更新');
+    renderTagsAndList();
+  }catch(err){ writeFailed(err); }
+});
+
+tagListEl.addEventListener('click', async (e)=>{
+  const id = e.target.dataset.delTag;
+  if(!id) return;
+  const tag = guestTagList().find(t => t.id === id);
+  const used = tagUseCount()[id] || 0;
+
+  const ok = await confirmModal({
+    title: `刪除「${tag ? tag.name : '這個標籤'}」`,
+    message: used
+      ? `目前有 ${used} 位賓客掛著這個標籤，刪掉之後他們身上的這個標籤也會一起消失。`
+      : '刪掉之後就找不回來了。',
+    danger: true,
+    confirmText: '刪除',
+  });
+  if(!ok) return;
+
+  try{
+    await saveGuestTags(guestTagList().filter(t => t.id !== id));
+    /* 掛在賓客身上的那一份也要拔掉，不然篩選會留下一堆查不到名字的空標籤 */
+    const map = DataStore.getRsvpTagMap();
+    await Promise.all(Object.entries(map)
+      .filter(([, ids]) => ids.includes(id))
+      .map(([rsvpId, ids]) => DataStore.saveRsvpTags(rsvpId, ids.filter(x => x !== id))));
+    toast('標籤已刪除');
+    renderTagsAndList();
+  }catch(err){ writeFailed(err); }
+});
+
+document.getElementById('adTagAddBtn').addEventListener('click', async ()=>{
+  const list = guestTagList();
+  if(list.length >= GUEST_TAG_MAX){ toast(`標籤最多 ${GUEST_TAG_MAX} 個`, true); return; }
+
+  const name = await promptModal({
+    title: '新增標籤',
+    message: '例如：大學同學、公司同事、教會朋友、伴郎伴娘',
+    placeholder: '標籤名稱',
+    maxLength: GUEST_TAG_NAME_MAX,
+    confirmText: '新增',
+  });
+  if(!name) return;
+  if(list.some(t => t.name === name)){ toast('已經有同名的標籤了', true); return; }
+
+  try{
+    await saveGuestTags([...list, { id:newTagId(), name, onForm:false }]);
+    toast('標籤已新增');
+    renderTagsAndList();
+  }catch(err){ writeFailed(err); }
+});
+
+document.getElementById('adTagPresetBtn').addEventListener('click', async ()=>{
+  const list = guestTagList();
+  const add = DEFAULT_GUEST_TAGS
+    .filter(p => !list.some(t => t.name === p.name))
+    .map(p => ({ id:newTagId(), name:p.name, onForm:p.onForm }))
+    .slice(0, Math.max(GUEST_TAG_MAX - list.length, 0));
+
+  if(!add.length){ toast('常用標籤都已經在清單裡了'); return; }
+  try{
+    await saveGuestTags([...list, ...add]);
+    toast(`加入了 ${add.length} 個常用標籤`);
+    renderTagsAndList();
+  }catch(err){ writeFailed(err); }
+});
+
+/* ---------- 名單上的標籤篩選 ---------- */
+function renderRsvpTagChips(){
+  const list = guestTagList();
+  const show = guestTagsOn() && list.length > 0;
+  tagChipsEl.hidden = !show;
+  if(!show){
+    rsvpTagFilter = 'all';
+    tagChipsEl.innerHTML = '';
+    return;
+  }
+  /* 選著的標籤被刪掉時退回「全部標籤」，不然會篩出一個空名單 */
+  if(rsvpTagFilter !== 'all' && rsvpTagFilter !== 'none'
+     && !list.some(t => t.id === rsvpTagFilter)) rsvpTagFilter = 'all';
+
+  tagChipsEl.innerHTML = [{ id:'all', name:'全部標籤' }, ...list, { id:'none', name:'沒有標籤' }]
+    .map(c => `<button class="ad-chip${c.id === rsvpTagFilter ? ' is-on' : ''}" type="button"
+             data-tag="${escapeHtml(c.id)}">${escapeHtml(c.name)}</button>`).join('');
+}
+
+tagChipsEl.addEventListener('click', (e)=>{
+  const chip = e.target.closest('.ad-chip');
+  if(!chip) return;
+  rsvpTagFilter = chip.dataset.tag;
+  rsvpPager.page = 1;
+  renderRsvpTagChips();
+  renderRsvps();
+});
+
+/* ---------- 幫某一位賓客掛標籤 ---------- */
+const tagPickMask   = document.getElementById('adTagPickMask');
+const tagPickListEl = document.getElementById('adTagPickList');
+const tagPickWhoEl  = document.getElementById('adTagPickWho');
+const tagPickSaveBtn= document.getElementById('adTagPickSave');
+let tagPickId = '';
+const closeTagPick = registerFormModal(tagPickMask);
+
+function openTagPick(rsvpId){
+  const r = DataStore.getRSVPs().find(x => x.id === rsvpId);
+  if(!r) return;
+  const list = guestTagList();
+  if(!list.length){ toast('還沒有標籤，先到「表單設定」建立幾個', true); return; }
+
+  tagPickId = rsvpId;
+  /* 賓客自己選的那一個是他送出的紀錄，後台改不動，所以畫成關不掉的勾勾 */
+  const own = String(r.tag || '');
+  const mine = DataStore.getRsvpTagMap()[rsvpId] || [];
+  tagPickWhoEl.textContent = `${r.name || '（沒有名字）'}・可以複選`;
+  tagPickListEl.innerHTML = list.map(t => {
+    const isOwn = t.id === own;
+    const checked = isOwn || mine.includes(t.id);
+    return `<label class="ad-check${isOwn ? ' is-fixed' : ''}">
+      <input type="checkbox" value="${escapeHtml(t.id)}"${checked ? ' checked' : ''}${isOwn ? ' disabled' : ''}>
+      <span>${escapeHtml(t.name)}${isOwn ? '<small>賓客自己選的</small>' : ''}</span>
+    </label>`;
+  }).join('');
+  tagPickMask.hidden = false;
+}
+
+rsvpListEl.addEventListener('click', (e)=>{
+  const id = e.target.dataset.tagEdit;
+  if(id) openTagPick(id);
+});
+
+document.getElementById('adTagPickCancel').addEventListener('click', ()=> closeTagPick());
+
+tagPickSaveBtn.addEventListener('click', async ()=>{
+  const ids = [...tagPickListEl.querySelectorAll('input[type="checkbox"]:checked:not(:disabled)')]
+    .map(el => el.value);
+  tagPickSaveBtn.disabled = true;
+  try{
+    await DataStore.saveRsvpTags(tagPickId, ids);
+    toast('標籤已更新');
+    closeTagPick();
+  }catch(err){ writeFailed(err); }
+  tagPickSaveBtn.disabled = false;
+});
+
+document.addEventListener('data:rsvpTags', ()=>{
+  renderRsvps();
+  refreshTagCounts();
 });
 
 /* ============================================================

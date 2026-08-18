@@ -151,6 +151,8 @@ sites/{siteId}
   transportPublic, transportParking   # 交通資訊，留白則大廳不出現這一塊
   themeColor(hex), coverImageUrl, story
   photos(string[]), hashtags(string[])
+  guestTagsEnabled(bool)  # 賓客標籤的總開關，新人改不動；沒有這個欄位＝關
+  guestTags(map[])        # 標籤庫 { id, name, onForm }，新人自己維護
   dressCode, giftNote
   schedule(map[])       # 當日流程，每筆 { time, title, desc? }
   rsvpDeadline(timestamp), rsvpEnabled(bool)
@@ -173,7 +175,8 @@ sites/{siteId}
                        cardDelivery('pickup'|'mail'), cardZip, cardAddress,
                        cardEmail,                                  # 電子喜帖寄到哪
                        giftDelivery('pickup'|'mail'), giftZip, giftAddress,
-                       message, note, icon, createdAt
+                       message, note, icon, createdAt,
+                       tag                    # 賓客自己選的標籤（單選、選填）
                        # 只有新人讀得到；後台可看可匯出，但不能改不能刪
                        # 核心欄位以外全是選填，舊版表單送出的回覆仍然收得下
   wishes/{autoId}      name, icon, text, time          # 祝福牆
@@ -186,7 +189,9 @@ sites/{siteId}
   meta/hearts          count                           # 愛心計數器
   meta/letterCount     count                           # 公開的信件數量
 
-  # ↓ 這七個集合由新人在 /w/{slug}/admin 自己維護（規則只認 ownerEmails 名單）
+  # ↓ 這八個集合由新人在 /w/{slug}/admin 自己維護（規則只認 ownerEmails 名單）
+  rsvpTags/{回覆 id}     tags(string[]), updatedAt   # 新人幫賓客掛的標籤
+                                                     # 只有新人讀得到；文件 id ＝ 那筆回覆的 id
   seating/{autoId}       name, table, note, time       # 桌次名單
   seatingImages/{autoId} img(data URL), title, order, time   # 桌次圖
   blessings/{autoId}     terms[], title, body, sign, isDefault, time  # 新人寫的感謝信
@@ -371,6 +376,9 @@ npm run set-pages -- --slug ginny-one-20260919 --pages draw --dry-run
 # 順便設定新人後台的可用帳號（整組覆蓋）
 npm run set-pages -- --slug ginny-one-20260919 \
   --owner-email groom@gmail.com --owner-email bride@gmail.com
+
+# 打開／關掉「賓客標籤」（配合排桌次的進階功能，預設是關的）
+npm run set-pages -- --slug ginny-one-20260919 --guest-tags on
 ```
 
 也可以直接去 Firebase Console → Firestore → 該筆 `sites` 文件 → `pages` 欄位
@@ -456,6 +464,7 @@ Excel 開中文不會亂碼；匯出的是「目前篩選出來的那些」，�
 | 題目 | 依表單順序列出目前所有題目。喜帖發送方式／喜餅領取方式／想對新人說的話可以個別關掉；**固定題目用打勾但關不掉（disabled）的勾選框列出來**，讓新人一眼看到表單上實際會有哪些題目 |
 | 聯絡方式 | 電話號碼／LINE ID／Email，**可複選**；勾了幾種，賓客就要至少填其中一種 |
 | 表單資訊 | 題目以外那一頁還會出現的內容：先列出**婚禮資訊**目前填了什麼（日期與開始時間、地點、地址、地圖連結、服裝、禮金、hashtag、封面照），再放**兩人的故事**與**照片集**兩個開關 |
+| 賓客標籤 | 只有開了標籤功能的站台才看得到，見下面〈賓客標籤〉 |
 
 表單資訊只是把現在的內容列出來，不在這裡編輯：婚禮資訊與兩人的故事按
 「去填寫…」會直接跳到「婚禮資訊」分頁並把游標對到那一欄；
@@ -467,6 +476,34 @@ Excel 開中文不會亂碼；匯出的是「目前篩選出來的那些」，�
 **沒設定過一律視為開著**，舊站台不會因為少了這幾個欄位就整塊消失。
 關掉的題目在名單與 CSV 裡留白，已經送出的回覆不受影響；
 儀表板上那一題的環狀圖也會跟著收起來（一張全是「未填」的圖沒有任何資訊）。
+
+#### 賓客標籤（配合之後的排桌次）
+
+給新人自己把賓客分群用的：**VIP、長輩、小孩、行動不便、大學同學、公司同事、
+教會朋友、親戚**（按「加入常用標籤」一次帶進來），也可以自己新增。
+**一位賓客可以有好幾個標籤。**
+
+| 在哪裡 | 可以做什麼 |
+|---|---|
+| 表單設定 →「賓客標籤」 | 新增／改名／刪除標籤，勾選哪些要「當表單選項」，看每個標籤用在幾位賓客身上 |
+| 賓客那一頁 | 「與新人的關係」下面多一題**單選、選填**的「更具體是哪一種？」，選項就是勾了「當表單選項」的那些標籤 |
+| 回覆資訊 | 名單多一排**標籤篩選**（含「沒有標籤」），搜尋框也吃得到標籤名字；每一筆右邊的「標籤」可以幫那位賓客加掛（可複選） |
+| 匯出 CSV | 多一欄「標籤」，後台與 `npm run export-rsvps` 都有 |
+
+賓客自己選的那一個存在回覆裡（**送出後誰都改不動**，包括新人），
+新人掛上去的存在另一份 `rsvpTags`，畫面上合起來顯示。
+標籤存的是代號不是名字，改名不會讓已經分好的類跑掉。
+
+> **這個功能預設是關的**，和頁面開關 `pages` 一樣由我們決定哪一組新人要用
+> （排桌次是進階功能，操作有一定複雜度）。要打開：
+>
+> ```bash
+> npm run set-pages -- --slug ginny-one-20260919 --guest-tags on
+> ```
+>
+> 也可以直接去 Firebase Console 把站台文件的 `guestTagsEnabled` 設成 `true`。
+> 關掉的話後台不會出現標籤設定、名單不會有標籤篩選，賓客表單也不會多那一題
+> （已經存下來的標籤不會被刪掉，之後再打開就都還在）。
 
 **兩個「同上」的捷徑**：勾了 Email 當聯絡方式時，賓客選「需要電子喜帖」可以直接
 勾「同上」帶入同一個信箱；喜帖選了郵寄之後，喜餅那一題也會出現「同上」帶入同一個地址。
@@ -1124,6 +1161,7 @@ http://127.0.0.1:5000/w/你的slug/cake?live=1
 |---|---|---|---|---|
 | `sites/{siteId}` | ✅ | ❌ | ❌ | ❌ |
 | `sites/{siteId}/rsvps` | ❌ | ✅（需通過驗證） | ❌ | ❌ |
+| `sites/{siteId}/rsvpTags` | 只有新人 | 只有新人 | 只有新人 | 只有新人 |
 | `sites/{siteId}/wishes` | ✅ | ✅（需通過驗證） | ❌ | ❌ |
 | `sites/{siteId}/letters` | 只有 `ownerEmails` 名單內的已驗證 Google 帳號 | ✅（需通過驗證） | ❌ | ❌ |
 | `sites/{siteId}/cakes` | ✅ | ✅（需通過驗證） | ❌ | ❌ |

@@ -35,6 +35,8 @@ const COLUMNS = [
   ['name',         '稱呼'],
   ['attending',    '是否出席'],
   ['relation',     '與新人關係'],
+  /* 賓客自己選的那個標籤 ＋ 新人在後台掛的（存在 rsvpTags 子集合） */
+  ['tags',         '標籤'],
   ['contactPhone', '電話'],
   ['contactLine',  'LINE'],
   ['contactEmail', 'Email'],
@@ -116,6 +118,23 @@ async function exportRsvps(values) {
     .orderBy('createdAt', 'asc')
     .get();
 
+  /* 標籤：站台文件裡是「標籤庫」（id → 名字），
+     掛在誰身上則在 rsvpTags/{回覆 id}。兩邊合起來才是一位賓客的標籤。 */
+  const tagNames = new Map(
+    (Array.isArray(site.guestTags) ? site.guestTags : [])
+      .filter((t) => t && t.id && t.name)
+      .map((t) => [String(t.id), String(t.name)])
+  );
+  const ownerTags = new Map();
+  const tagSnap = await db
+    .collection('sites').doc(siteId).collection('rsvpTags').get();
+  tagSnap.forEach((d) => {
+    ownerTags.set(d.id, Array.isArray(d.data().tags) ? d.data().tags.map(String) : []);
+  });
+  const tagsOf = (docId, data) => [
+    ...new Set([String(data.tag || ''), ...(ownerTags.get(docId) || [])].filter(Boolean)),
+  ].map((id) => tagNames.get(id)).filter(Boolean).join('／');
+
   const rows = [COLUMNS.map(([, label]) => label).join(',')];
   let attendingGroups = 0;
   let totalGuests = 0;
@@ -133,6 +152,7 @@ async function exportRsvps(values) {
         return csvCell(d.tentative ? '視情況而定' : '無法出席');
       }
       if (key === 'createdAt') return csvCell(formatTime(d.createdAt, timeZone));
+      if (key === 'tags') return csvCell(tagsOf(docSnap.id, d));
       /* 只有真的會來才有人數與餐點，其餘留空比填 0 好讀 */
       if (['guestCount', 'mealMeat', 'mealVeg', 'childSeat'].includes(key)) {
         return csvCell(d.attending ? (d[key] ?? '') : '');

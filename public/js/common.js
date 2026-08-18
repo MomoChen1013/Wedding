@@ -146,7 +146,68 @@ function rsvpConfig(){
     contacts,                            // 要問哪幾種聯絡方式
     showStory:   on(d.rsvpShowStory),    // 頁面上的「兩人的故事」
     showGallery: on(d.rsvpShowGallery),  // 頁面上的「照片集」
+    /* 賓客標籤：整個功能預設是關的，由我們在 Firebase 打開（見下面說明） */
+    tagsOn:      guestTagsOn(),
+    tags:        guestTagList(),
+    tagOptions:  guestTagsOn() ? guestTagList().filter(t => t.onForm) : [],
   };
+}
+
+/* ============================================================
+   賓客標籤（VIP、長輩、大學同學…）
+   ------------------------------------------------------------
+   為什麼分成兩段開關：
+   ・guestTagsEnabled（站台文件，新人改不動）＝整個功能的總開關。
+     這是要配合排桌次一起用的進階功能，操作有一定複雜度，
+     所以和 pages 一樣由我們決定哪一組新人要用（Firebase Console
+     或 `npm run set-pages -- --guest-tags on`）。
+   ・guestTags[].onForm ＝這個標籤要不要變成表單上的選項。
+     新人可以自己維護標籤庫，但不是每個標籤都適合讓賓客自己選
+     （「VIP」「行動不便」這種通常是新人自己掛的）。
+
+   標籤存的是 id 不是名字：新人日後改名，已經送出的回覆
+   與後台掛好的分類都還對得到同一個標籤。
+============================================================ */
+/* 「加入常用標籤」帶進來的那一組。onForm＝預設要不要當表單選項：
+   賓客自己答得出來的（大學同學、公司同事…）才預設打開，
+   VIP／長輩／小孩／行動不便通常是新人自己判斷的，預設只在後台掛。 */
+const DEFAULT_GUEST_TAGS = [
+  { name:'VIP',      onForm:false },
+  { name:'長輩',     onForm:false },
+  { name:'小孩',     onForm:false },
+  { name:'行動不便', onForm:false },
+  { name:'大學同學', onForm:true  },
+  { name:'公司同事', onForm:true  },
+  { name:'教會朋友', onForm:true  },
+  { name:'親戚',     onForm:true  },
+];
+
+const GUEST_TAG_MAX = 30;        // 一個站台最多幾個標籤（規則也擋同一個數字）
+const GUEST_TAG_NAME_MAX = 20;   // 一個標籤最多幾個字
+const GUEST_TAGS_PER_RSVP = 20;  // 一位賓客最多掛幾個標籤
+
+function guestTagsOn(){
+  return !!(window.SITE && window.SITE.data && window.SITE.data.guestTagsEnabled === true);
+}
+
+/* 站台文件裡的標籤庫；壞掉的資料（沒有 id／名字）直接略過，不讓畫面出現空標籤 */
+function guestTagList(){
+  const raw = (window.SITE && window.SITE.data && window.SITE.data.guestTags) || [];
+  if(!Array.isArray(raw)) return [];
+  return raw
+    .map(t => (t && typeof t === 'object' ? {
+      id:     String(t.id || '').slice(0, 40),
+      name:   String(t.name || '').trim().slice(0, GUEST_TAG_NAME_MAX),
+      onForm: t.onForm === true,
+    } : null))
+    .filter(t => t && t.id && t.name)
+    .slice(0, GUEST_TAG_MAX);
+}
+
+/* id → 名字。找不到（新人把標籤刪了）就回空字串，讓呼叫端自己決定要不要顯示 */
+function guestTagName(id){
+  const hit = guestTagList().find(t => t.id === id);
+  return hit ? hit.name : '';
 }
 
 /* ---------- localStorage 包裝 ----------
@@ -325,7 +386,7 @@ const DataStore = {
      重複呼叫是安全的，只會訂閱一次。
   ============================================================ */
   _seating:[], _seatingImages:[], _blessings:[], _explore:[],
-  _cards:[], _exhibits:[], _quiz:[], _quizVotes:[],
+  _cards:[], _exhibits:[], _quiz:[], _quizVotes:[], _rsvpTags:[],
   _subs:{},
 
   _lazySub(key, colName, orderField){
@@ -361,6 +422,9 @@ const DataStore = {
   /* 測驗：題目由新人維護（order 決定題號），作答紀錄是賓客送上來的票 */
   subscribeQuiz(){      this._lazySub('quiz',      'quiz',      'order'); },
   subscribeQuizVotes(){ this._lazySub('quizVotes', 'quizVotes', 'time'); },
+  /* 新人幫賓客掛的標籤：文件 id 就是那筆回覆的 id，沒有排序欄位。
+     只有後台讀得到（規則和 rsvps 一樣只開給 ownerEmails）。 */
+  subscribeRsvpTags(){ this._lazySub('rsvpTags', 'rsvpTags'); },
 
   getSeating()       { return this._seating; },
   getSeatingImages() { return this._seatingImages; },
@@ -370,6 +434,27 @@ const DataStore = {
   getExhibits()      { return this._exhibits; },
   getQuiz()          { return this._quiz; },
   getQuizVotes()     { return this._quizVotes; },
+
+  /* rsvpId → 標籤 id 陣列。畫名單、篩選、匯出都查這一份 */
+  getRsvpTagMap(){
+    const map = {};
+    this._rsvpTags.forEach(d => {
+      map[d.id] = Array.isArray(d.tags) ? d.tags.map(String) : [];
+    });
+    return map;
+  },
+  /* 一位賓客的標籤整組覆寫；空陣列就把整份刪掉，不留空文件 */
+  async saveRsvpTags(rsvpId, tags){
+    const list = [...new Set((tags || []).map(String).filter(Boolean))]
+      .slice(0, GUEST_TAGS_PER_RSVP);
+    if(!list.length){
+      try{ await this.removeDoc('rsvpTags', rsvpId); }
+      catch(err){ if(err && err.code !== 'not-found') throw err; }
+      return [];
+    }
+    await this.saveDoc('rsvpTags', rsvpId, { tags:list, updatedAt: Date.now() });
+    return list;
+  },
 
   /* ===== 新人專用的寫入（規則只認 ownerEmails 名單內的 Google 帳號） =====
      沒有 id 就新增，有 id 就覆寫同一份文件。 */

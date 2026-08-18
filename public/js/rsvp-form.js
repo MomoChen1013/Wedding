@@ -111,6 +111,16 @@
   function formHtml(cfg) {
     const hasEmail = cfg.contacts.includes('email');
 
+    /* 標籤：新人在後台勾了「當表單選項」的那幾個才會出現在這裡。
+       賓客只能選一個（後台可以再幫同一位賓客加掛別的標籤），
+       而且是選填 —— 對不上的人硬要選一個反而更難排座位。 */
+    const tagBlock = !cfg.tagOptions.length ? '' : `
+    <label class="rf-label">更具體是哪一種？ <small>（選填）</small></label>
+    <div class="choice-row" id="tagRow">${cfg.tagOptions.map((t) =>
+      `<button type="button" class="choice sm" data-val="${esc(t.id)}">${esc(t.name)}</button>`
+    ).join('')}</div>
+    <div class="rf-hint">選一個最接近的就好，方便我們安排座位；選錯再點一次可以取消</div>`;
+
     /* 喜帖：紙本要問怎麼給、郵寄要問地址；電子要問寄到哪個 Email */
     const cardBlock = !cfg.askCard ? '' : `
     <label class="rf-label">喜帖發送方式<i class="rf-req">必填</i></label>
@@ -160,6 +170,7 @@
 
     <label class="rf-label">與新人的關係<i class="rf-req">必填</i></label>
     ${choiceRow('relationRow', 'relation', 'sm')}
+${tagBlock}
 
     ${contactBlock(cfg.contacts)}
 
@@ -269,6 +280,7 @@ ${messageBlock}
     const state = {
       attending: null,      // 'yes' | 'no' | 'maybe'
       relation: null,       // groom | bride | both | other
+      tag: null,            // 新人開放的標籤 id（單選、選填）
       head: 1,
       veg: 0,               // 葷食人數 = head - veg
       childSeat: 0,
@@ -411,6 +423,19 @@ ${messageBlock}
     wireRow('cardDeliveryRow', (v) => { state.cardDelivery = v; syncCard(); });
     wireRow('giftRow', (v) => { state.gift = v; syncGift(); });
 
+    /* 選填的題目：再點一次選好的那顆就取消，不然賓客手滑選了就拿不掉 */
+    (function wireTagRow() {
+      const row = $('tagRow');
+      if (!row) return;
+      row.addEventListener('click', (e) => {
+        const btn = e.target.closest('.choice');
+        if (!btn) return;
+        state.tag = state.tag === btn.dataset.val ? null : btn.dataset.val;
+        pick('tagRow', state.tag);
+        clearErr();
+      });
+    }());
+
     syncCounts();
     if (refreshCardEmailSame) refreshCardEmailSame();
     if (refreshGiftAddrSame) refreshGiftAddrSame();
@@ -492,6 +517,8 @@ ${messageBlock}
         tentative: state.attending === 'maybe',
         guestCount: going ? state.head : 1,
         relation: state.relation || '',
+        /* 新人沒開標籤功能、或這個標籤已經被拿掉時一律存空字串 */
+        tag: cfg.tagOptions.some((t) => t.id === state.tag) ? state.tag : '',
         contactPhone: contact('phone'),
         contactLine: contact('line'),
         contactEmail: contact('email'),
@@ -545,6 +572,7 @@ ${messageBlock}
         icon: payload.icon,
         attending: state.attending,
         relation: state.relation,
+        tag: payload.tag,
         phone: payload.contactPhone,
         line: payload.contactLine,
         email: payload.contactEmail,
@@ -628,6 +656,8 @@ ${messageBlock}
 
       state.attending = mine.attending || null;
       state.relation = mine.relation || null;
+      /* 新人事後把標籤拿掉或改成不當選項時，本機記的那個就當作沒選過 */
+      state.tag = cfg.tagOptions.some((t) => t.id === mine.tag) ? mine.tag : null;
       state.card = mine.card || null;
       state.cardDelivery = mine.cardDelivery || null;
       state.gift = mine.gift || null;
@@ -637,6 +667,7 @@ ${messageBlock}
 
       pick('attendRow', state.attending);
       pick('relationRow', state.relation);
+      pick('tagRow', state.tag);
       pick('cardRow', state.card);
       pick('cardDeliveryRow', state.cardDelivery);
       pick('giftRow', state.gift);

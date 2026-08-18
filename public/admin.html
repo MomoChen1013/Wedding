@@ -136,6 +136,9 @@
         <input class="ad-filter" id="adRsvpFilter" type="text" placeholder="搜尋名字、留言或備註…">
       </div>
 
+      <!-- 標籤篩選：由 js/admin.js 依標籤庫產生；沒開標籤功能就整排收起來 -->
+      <div class="ad-chips ad-chips-sub" id="adRsvpTagChips" hidden></div>
+
       <div class="ad-list" id="adRsvpList"></div>
     </section>
     </div>
@@ -170,6 +173,10 @@
           <input type="checkbox" checked disabled><span>能來參加嗎？</span></label>
         <label class="ad-check is-fixed">
           <input type="checkbox" checked disabled><span>與新人的關係</span></label>
+        <!-- 只有開了標籤功能、而且至少有一個標籤當選項時才看得到 -->
+        <label class="ad-check is-fixed" id="adAskTagRow" hidden>
+          <input type="checkbox" checked disabled>
+          <span>更具體是哪一種？<small>選項在下面的「賓客標籤」設定</small></span></label>
         <label class="ad-check is-fixed">
           <input type="checkbox" checked disabled>
           <span>包含你，共幾位出席？<small>選「熱情出席」才會出現</small></span></label>
@@ -246,6 +253,30 @@
           <button class="btn small ghost" id="adRsvpFormReset" type="button">還原成目前的設定</button>
         </div>
       </form>
+    </section>
+
+    <!-- 賓客標籤：整個功能預設是關的，由我們在 Firebase 打開（guestTagsEnabled） -->
+    <section class="ad-sec" id="adTagSec" hidden>
+      <div class="ad-sec-head">
+        <h2 class="ad-sec-title">賓客標籤</h2>
+        <div class="ad-sec-head-actions">
+          <button class="btn small" id="adTagAddBtn" type="button">新增標籤</button>
+          <button class="btn small ghost" id="adTagPresetBtn" type="button">加入常用標籤</button>
+        </div>
+      </div>
+      <p class="ad-sec-note">
+        標籤是你們自己給賓客分類用的（VIP、長輩、小孩、行動不便、大學同學…），
+        <b>之後排桌次會用到</b>。勾了<b>「當表單選項」</b>的標籤，
+        賓客填出席回覆時可以自己選<b>一個</b>；沒勾的只有你們在後台掛得上去。
+        一位賓客可以有好幾個標籤，在<b>「回覆資訊」</b>那一頁按「標籤」就能改。
+      </p>
+
+      <div class="ad-list" id="adTagList"></div>
+      <div class="ad-hint">
+        改名不會影響已經掛好的分類（存的是標籤代號，不是名字）。
+        刪掉標籤時，掛在賓客身上的那一份也會一起拿掉，救不回來
+        （賓客當初送出的回覆本身不會被改動，只是那個標籤不再顯示）。
+      </div>
     </section>
     </div>
   </div>
@@ -660,6 +691,21 @@
         <button class="btn small" type="submit">儲存</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- 幫某一位賓客掛標籤：可複選，存進 rsvpTags/{回覆 id} -->
+<div class="ad-modal-mask" id="adTagPickMask" hidden>
+  <div class="ad-modal-card ad-modal-card-form">
+    <div class="ad-modal-title">賓客標籤</div>
+    <p class="ad-modal-note" id="adTagPickWho"></p>
+
+    <div class="ad-tagpick" id="adTagPickList"></div>
+
+    <div class="ad-modal-actions">
+      <button class="btn small ghost" id="adTagPickCancel" type="button">取消</button>
+      <button class="btn small" id="adTagPickSave" type="button">儲存</button>
+    </div>
   </div>
 </div>
 
