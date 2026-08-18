@@ -69,6 +69,16 @@ const SEED = {
     story:'', dressCode:'', giftNote:'', hashtags:[],
     pages: allOn, ownerEmails:[],
   },
+  /* 關掉入場登入的站台：賓客不必報上名來，一進來就是大廳 */
+  'no-login-2027': {
+    groomName:'阿明', brideName:'阿美',
+    themeColor:'#B5838D',
+    venueName:'福華飯店', venueAddress:'台北市大安區仁愛路三段',
+    story:'', dressCode:'', giftNote:'', hashtags:[],
+    pages: Object.fromEntries(ALL_PAGES.map((k) => [k, k === 'seating' || k === 'wall'])),
+    ownerEmails:[],
+    entryLoginEnabled: false,
+  },
   'minimal-site-2027': {
     groomName:'小明', brideName:'小美',
     themeColor:'#B5838D',
@@ -341,6 +351,51 @@ console.log('\n[3] 頁面開關');
   await page.waitForURL(`**/w/minimal-site-2027/`, { timeout: 20000 }).catch(() => {});
   ok('直接開未啟用頁面會導回大廳',
     page.url().endsWith('/w/minimal-site-2027/'), page.url());
+  await page.close();
+}
+
+/* ---------- 入場登入的開關 ---------- */
+console.log('\n[3b] 入場登入（entryLoginEnabled）');
+{
+  /* guest:false＝localStorage 是乾淨的，等於一位第一次點進來的賓客 */
+  const { page, errors } = await visit('/w/no-login-2027/', { guest:false });
+  ok('關掉入場登入後大廳沒有入場畫面',
+    (await page.locator('#gate').count()) === 0);
+  ok('一進來就看得到大廳內容', await page.isVisible('#app'));
+  ok('導覽列出現', await page.isVisible('#siteNav'));
+  ok('還沒留名字，導覽列不出現 User 那塊',
+    (await page.locator('.nav-user').count()) === 0);
+  ok('無 console 錯誤', realErrors(errors).length === 0, realErrors(errors).slice(0,2).join(' | '));
+  await page.close();
+}
+{
+  /* 沒有 gate 可以報到，所以需要名字的頁面不能再把賓客彈回大廳 */
+  const { page, errors } = await visit('/w/no-login-2027/wall', { guest:false });
+  ok('祝福牆不會被導回大廳',
+    new URL(page.url()).pathname === '/w/no-login-2027/wall', page.url());
+
+  await page.fill('#wishText', '祝你們幸福');
+  await page.click('#postWish');
+  ok('送出的那一刻才問名字', await page.isVisible('.ask-name'));
+
+  await page.fill('.ask-name .ask-input', '路過的朋友');
+  await page.click('.ask-name [data-act="ok"]');
+  await page.waitForSelector('.ask-name', { state:'detached', timeout: 10000 });
+
+  const wishes = await waitForColSize(
+    adb.collection('sites').doc(siteIds['no-login-2027']).collection('wishes'), 1);
+  ok('填完名字才真的送出', wishes.size === 1, `${wishes.size} 筆`);
+  ok('祝福掛在剛填的名字下',
+    wishes.size === 1 && wishes.docs[0].data().name === '路過的朋友',
+    wishes.size ? JSON.stringify(wishes.docs[0].data()) : '');
+  ok('有名字之後導覽列長出 User 那塊', await page.isVisible('.nav-user'));
+  ok('無 console 錯誤', realErrors(errors).length === 0, realErrors(errors).slice(0,2).join(' | '));
+  await page.close();
+}
+{
+  /* 開著入場登入的站台照舊：第一次來的賓客先看到入場畫面 */
+  const { page } = await visit(`/w/${SLUG}/`, { guest:false });
+  ok('沒關開關的站台仍有入場畫面', await page.isVisible('#gate'));
   await page.close();
 }
 

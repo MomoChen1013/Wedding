@@ -218,6 +218,24 @@ body.nav-off{padding-top:0;}
 .wax-seal{display:none;}
 
 /* ============================================================
+   問名字的小視窗（common.js 的 askName()）
+   ------------------------------------------------------------
+   入場登入關掉的站台沒有大廳那道 gate，寫祝福／送甜點時
+   才用這個視窗補問名字。外框沿用上面的 .letter-card。
+============================================================ */
+.ask-name .ask-icon{width:56px;height:56px;margin:0 auto;display:flex;align-items:center;
+  justify-content:center;font-size:22px;color:var(--primary-deep);cursor:pointer;
+  border:1px solid var(--line);border-radius:50%;}
+.ask-name .ask-hint{font-size:12px;color:var(--ink-soft);text-align:center;
+  margin:10px 0 18px;letter-spacing:.1em;}
+.ask-name .ask-hint b{font-weight:500;color:var(--ink);cursor:pointer;
+  border-bottom:1px solid var(--line);}
+.ask-name .ask-input{width:100%;padding:13px 16px;border:1px solid var(--line);
+  border-radius:var(--radius);font-family:var(--font-body);font-size:15px;
+  color:var(--ink);outline:none;background:#fff;text-align:center;letter-spacing:.1em;}
+.ask-name .ask-input:focus{border-color:var(--ink);}
+
+/* ============================================================
    浮動控制：主題 + BGM（由 js/common.js 注入）
 ============================================================ */
 .floating{position:fixed;right:18px;bottom:18px;z-index:900;

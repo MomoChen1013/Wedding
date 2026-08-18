@@ -752,13 +752,91 @@ async function logout(){
   location.href = sitePath('lobby');
 }
 
+/* ============================================================
+   入場登入（大廳那道 gate）的總開關
+   ------------------------------------------------------------
+   entryLoginEnabled（站台文件，新人改不動）＝要不要請賓客先報上名來。
+   ・沒有這個欄位＝視為開著，既有站台的入場動畫不會突然消失
+   ・關掉時：大廳不出現 gate，賓客直接看到內容；
+     需要名字的動作（寫祝福、送甜點）改成在那一刻才用 ensureUser() 問
+   只用大廳與桌次查詢的站台，賓客其實沒有一件事需要名字，
+   多一道「輸入名字」只是把人擋在門外，所以做成可以整個關掉。
+============================================================ */
+function entryLoginOn(){
+  return !(window.WED && window.WED.entryLogin === false);
+}
+
 /* 子場景：沒登入就丟回大廳 */
 function requireUser(){
+  /* 入場登入關掉的站台沒有 gate 可以報到，這時不能把賓客彈回大廳 ——
+     否則祝福牆、抽卡這些頁面變成誰都進不去的死路。 */
+  if(!entryLoginOn()) return true;
   if(!LS.get('user', null)){
     location.href = sitePath('lobby');
     return false;
   }
   return true;
+}
+
+/* ============================================================
+   需要名字才能做的事（寫祝福、寄信、送甜點）
+   ------------------------------------------------------------
+   入場登入開著 → 賓客一定在大廳報到過，直接沿用那個名字。
+   入場登入關著 → 沒有報到這回事，所以在真的要送出的那一刻才問，
+                  填過一次就存進 localStorage，之後不再打擾。
+   回傳 Promise<user|null>，null＝賓客按了取消（呼叫端就別送出）。
+============================================================ */
+function ensureUser(){
+  if(LS.get('user', null)) return Promise.resolve(me_user);
+  return askName();
+}
+
+/* 問名字的小視窗（沿用信件視窗的外框樣式，只換內容） */
+function askName(){
+  return new Promise(resolve => {
+    let icon = ICONS[Math.floor(Math.random() * ICONS.length)];
+
+    const modal = document.createElement('div');
+    modal.className = 'letter-modal ask-name';
+    modal.innerHTML = `
+      <div class="letter-card">
+        <span class="letter-close" data-act="cancel" role="button" aria-label="關閉">✕</span>
+        <h3>先報上名來</h3>
+        <div class="ltip">讓新人知道這份心意是誰送的</div>
+        <div class="ask-icon" data-act="reroll" role="button" aria-label="換一個記號"></div>
+        <div class="ask-hint">這是你的專屬記號・<b data-act="reroll">換一個</b></div>
+        <input class="ask-input" type="text" maxlength="12" placeholder="輸入你的名字">
+        <div class="letter-actions">
+          <button class="btn ghost" type="button" data-act="cancel">再等等</button>
+          <button class="btn" type="button" data-act="ok">就是我</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+
+    const iconEl = modal.querySelector('.ask-icon');
+    const input  = modal.querySelector('.ask-input');
+    iconEl.textContent = icon;
+
+    const close = (user) => { modal.remove(); resolve(user); };
+    const submit = () => {
+      const name = input.value.trim();
+      if(!name){ input.focus(); return; }
+      saveUser({ name, icon });
+      /* 有名字之後導覽列才要長出那塊 User（原本是整塊不畫的） */
+      refreshSiteNav();
+      close(me_user);
+    };
+
+    modal.addEventListener('click', (e) => {
+      const act = e.target.closest('[data-act]')?.dataset.act;
+      if(act === 'reroll'){ icon = ICONS[Math.floor(Math.random()*ICONS.length)]; iconEl.textContent = icon; }
+      else if(act === 'ok') submit();
+      else if(act === 'cancel' || e.target === modal) close(null);
+    });
+    input.addEventListener('keydown', (e) => { if(e.key === 'Enter') submit(); });
+
+    requestAnimationFrame(() => { modal.classList.add('open'); input.focus(); });
+  });
 }
 
 /* ============================================================
@@ -1110,6 +1188,17 @@ function buildSiteNav(){
   /* 還沒進場就先藏起來，index.js / admin.js 進場後再叫出來 */
   const gate = document.getElementById('gate') || document.getElementById('pwGate');
   setNavVisible(!(gate && gate.style.display !== 'none'));
+}
+
+/* 從沒名字變成有名字（入場登入關著的站台，在祝福牆填完名字）時，
+   整塊 User 要重新長出來 —— syncNavUser() 只改得動已經存在的節點 */
+function refreshSiteNav(){
+  const nav = document.getElementById('siteNav');
+  if(!nav) return;                       /* 沒有導覽列的頁面（邀請函／後台）不用管 */
+  const visible = !nav.hidden;
+  nav.remove();
+  buildSiteNav();
+  setNavVisible(visible);
 }
 
 /* 名字或記號變動後重新畫一次導覽列上的 User */

@@ -44,6 +44,8 @@
   給你的信、故事、測驗、抽卡、集氣、User」。
   由 `js/common.js` 統一注入，站台沒開的頁面不會出現在列上；
   還沒在大廳報到過的訪客不會出現最後那塊 User。
+- **入場登入**：第一次進大廳的賓客要填名字、抽一個記號才進得去（`#gate`）。
+  這道門可以整個關掉（站台文件的 `entryLoginEnabled`），見〈入場登入〉。
 - **首頁**：固定背景（一張圖或一段影片，滾動時不動）→ 置中開場（`h1` + `.cn`）→
   婚禮資訊卡 → 當日流程 → Dress Code → 交通資訊 → 兩人的故事 → 日期倒數 →
   RSVP → 卡片連結（兩欄，內建七張＋新人在後台自訂的卡片）。
@@ -151,6 +153,8 @@ sites/{siteId}
   transportPublic, transportParking   # 交通資訊，留白則大廳不出現這一塊
   themeColor(hex), coverImageUrl, story
   photos(string[]), hashtags(string[])
+  entryLoginEnabled(bool) # 大廳入場登入的總開關，新人改不動；沒這個欄位視為 true
+                          # false 時大廳不出現入場畫面，賓客不必填名字就看得到內容
   guestTagsEnabled(bool)  # 賓客標籤的總開關，新人改不動；沒有這個欄位＝關
   guestTags(map[])        # 標籤庫 { id, name, onForm }，新人自己維護
   dressCode, giftNote
@@ -381,6 +385,9 @@ npm run set-pages -- --slug ginny-one-20260919 \
 
 # 打開／關掉「賓客標籤」（配合排桌次的進階功能，預設是關的）
 npm run set-pages -- --slug ginny-one-20260919 --guest-tags on
+
+# 關掉／打開「入場登入」（賓客要不要先報上名來，預設是開的）
+npm run set-pages -- --slug ginny-one-20260919 --entry-login off
 ```
 
 也可以直接去 Firebase Console → Firestore → 該筆 `sites` 文件 → `pages` 欄位
@@ -393,6 +400,43 @@ npm run set-pages -- --slug ginny-one-20260919 --guest-tags on
 
 > **注意**：預設是 `draft`，賓客會看到 404。
 > 內容確認好之後，到 Firebase Console 把 `status` 改成 `published` 才會對外公開。
+
+---
+
+### 入場登入
+
+大廳第一次被打開時，賓客要填名字、抽一個專屬記號才進得去（`#gate`）。
+名字用在祝福牆的小卡、悄悄話、甜點桌上的送禮者，也會顯示在導覽列右邊。
+
+**只用大廳＋桌次查詢的站台，其實沒有一件事需要名字**，
+這時可以把整道門關掉：
+
+```bash
+# 關掉（賓客一進來就是大廳，沒有入場畫面、不倒數）
+npm run set-pages -- --slug ginny-one-20260919 --entry-login off
+
+# 再打開
+npm run set-pages -- --slug ginny-one-20260919 --entry-login on
+```
+
+也可以直接去 Firebase Console → Firestore → 該筆 `sites` 文件，
+把 `entryLoginEnabled`（boolean）設成 `false`。
+**沒有這個欄位＝視為開著**，既有站台不受影響。
+
+關掉之後：
+
+| | 行為 |
+|---|---|
+| 大廳 | 沒有入場畫面，也不跑倒數與開幕簾（那兩段是「按下進場」的獎賞）；BGM 改由賓客自己按右下角那顆音樂鈕 |
+| 導覽列 | 右邊那塊 User（名字 ▾／登出）在留下名字之前不出現 |
+| 桌次、邀請函、抽卡、測驗、故事 | 照常，本來就不需要名字 |
+| 祝福牆、悄悄話、甜點桌 | **要送出的那一刻才問名字**（一個小視窗，填過一次就記住），不會再把賓客彈回大廳 |
+
+> 這個開關和 `pages`、`guestTagsEnabled` 一樣**新人在後台改不動**
+> （Security Rules 的白名單裡沒有它），要開要關都由我們下指令。
+
+> **不要靠這道門當權限**：它只是入場儀式，資料的讀寫權限一律由
+> Security Rules 決定（見〈安全性設計〉）。
 
 ---
 
@@ -677,7 +721,8 @@ public/assets/{slug}/seating/
 有填流程時，大廳資訊卡的「時間」那一列底下會多一個文字連結，
 點了直接捲到當日流程。
 
-> **改不動的欄位**：新人姓名、婚禮日期、頁面開關、出席回覆的開關與截止時間。
+> **改不動的欄位**：新人姓名、婚禮日期、頁面開關、入場登入的開關、
+> 出席回覆的開關與截止時間。
 > 這些是 Security Rules 自己拿來判斷的依據（或會影響網址與倒數計時），
 > 規則層只放行文案欄位的 `update`，其他欄位連夾帶都會被整筆拒絕。
 > 要改這些請跑 `npm run set-pages` 或找我們。

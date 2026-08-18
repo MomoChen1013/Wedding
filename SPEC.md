@@ -62,6 +62,11 @@ sites/{siteId}
   schedule        : map[]    # 當日流程，陣列順序即顯示順序（見下方說明）
   rsvpDeadline    : timestamp
   rsvpEnabled     : boolean
+  entryLoginEnabled    : boolean  # 大廳入場登入的總開關，沒有這個欄位視為 true；
+                                  # false 時大廳不出現入場畫面（#gate），賓客不必
+                                  # 報上名來就看得到內容；需要名字的動作（寫祝福、
+                                  # 悄悄話、送甜點）改成送出的那一刻才問。
+                                  # 和 pages 一樣不在規則白名單內，新人改不動
   seatingSearchEnabled : boolean  # 桌次頁的搜尋開關，沒有這個欄位視為 true；
                                   # false 時賓客只看得到已上傳的桌次圖
   seatingFeatureEnabled: boolean  # 桌次功能的總開關，沒有這個欄位視為 true；
@@ -236,6 +241,9 @@ rsvpShowStory rsvpShowGallery guestTags
 `guestTags` 是新人自己維護的標籤庫，所以在名單內；
 但**總開關 `guestTagsEnabled` 不在名單內** —— 和 `pages` 一樣，
 由我們決定哪一組新人要用這個功能（`npm run set-pages -- --guest-tags on`）。
+
+**`entryLoginEnabled` 也不在名單內**，理由同上：它改變的是整站的入場方式
+（要不要請賓客先報上名來），由我們決定（`npm run set-pages -- --entry-login off`）。
 
 最後那六個 `rsvp*` 與 `seatingSearchEnabled` 一樣，是「非文案但可以放行」的欄位：
 它們只改變賓客看到的表單長什麼樣，規則本身不拿它們做任何判斷 ——
@@ -556,7 +564,7 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
 
 | 代號 | 網址 | 頁面 | 可關閉 |
 |---|---|---|---|
-| `lobby` | `/w/{slug}/` | 大廳（入場 gate + 場景導覽） | ❌ |
+| `lobby` | `/w/{slug}/` | 大廳（入場 gate + 場景導覽；gate 可另外關掉） | ❌ |
 | `rsvp` | `/w/{slug}/invitation` | 出席回覆（婚禮資訊＋表單同一頁） | ✅ |
 | `wall` | `/w/{slug}/wall` | 祝福牆 | ✅ |
 | `cake` | `/w/{slug}/cake` | 甜點桌 | ✅ |
@@ -581,6 +589,26 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
   key 以 `wed.{siteId}.` 開頭 —— 同一位賓客逛兩組新人的網站不會互相污染
 - 抽卡收藏用 Firebase 匿名登入的 uid 隔離，只讀得到自己的卡
 - 各站台的祝福、信件、蛋糕、測驗票數都在自己的子集合底下，彼此看不到
+
+### 入場登入的開關（`entryLoginEnabled`）
+
+只用大廳與桌次查詢的站台，賓客沒有一件事需要名字，
+先擋一道「輸入名字」只是把人擋在門外，所以整道門可以關掉
+（站台文件的 `entryLoginEnabled: false`，沒有這個欄位＝開著）。
+
+| | 開著（預設） | 關掉 |
+|---|---|---|
+| 大廳 | gate → 倒數 5 秒 → 開幕 → 首頁 | 直接進首頁，gate 從 DOM 移除 |
+| BGM | 按下「進場觀禮」時啟動 | 不自動播（沒有使用者手勢，瀏覽器本來就會擋），由浮動按鈕開 |
+| 導覽列的 User | 報到後出現 | 留下名字之前不出現 |
+| `requireUser()` | 沒報到就導回大廳 | 直接放行 —— 沒有 gate 可以報到，彈回去等於死路 |
+| 寫祝福／悄悄話／送甜點 | 用報到時的名字 | `ensureUser()` 在送出那一刻用小視窗補問，填過一次就記住 |
+
+實作分三處：`site-context.js` 攤成 `WED.entryLogin`、`common.js` 的
+`entryLoginOn()／requireUser()／ensureUser()／askName()`、`index.js` 的
+`setupGate()／skipGate()`。
+
+> 這道門從來不是權限 —— 誰讀得到、寫得進什麼，一律由 Security Rules 決定。
 
 ---
 
