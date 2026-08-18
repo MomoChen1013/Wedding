@@ -1053,6 +1053,18 @@ describe('sites 的大廳文案更新', () => {
     }));
   });
 
+  it('新人可以開關桌次功能', async () => {
+    const db = ownerDb();
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      seatingFeatureEnabled: false,
+      updatedAt: Timestamp.now(),
+    }));
+    /* 只認 boolean，塞字串進去就當作無效 */
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      seatingFeatureEnabled: 'off',
+    }));
+  });
+
   it('賓客改不動任何欄位', async () => {
     const db = testEnv.unauthenticatedContext().firestore();
     await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { dressCode: '隨便穿' }));

@@ -208,6 +208,8 @@ function buildWed(site) {
     transportParkingImg: site.transportParkingImg || '',
     /* 沒設定過就視為開著，舊站台的桌次搜尋不會突然消失 */
     seatingSearch: site.seatingSearchEnabled !== false,
+    /* 桌次功能的總開關，同樣是沒設定過就視為開著 */
+    seatingFeature: site.seatingFeatureEnabled !== false,
     story: site.story || '',
     coverImageUrl: site.coverImageUrl || '',
     photos: Array.isArray(site.photos) ? site.photos : [],
@@ -295,10 +297,24 @@ async function boot() {
 
   /* 沒設定 pages 就視為全部啟用，舊站台不會因此壞掉 */
   const pages = site.pages && typeof site.pages === 'object' ? site.pages : null;
-  const isEnabled = (key) => {
+
+  /* 這一頁有沒有開給這組新人用（只看 pages，我們才改得動） */
+  const isPageOn = (key) => {
     if (!PAGES[key]) return false;
     if (!PAGES[key].optional) return true;
     return pages ? pages[key] === true : true;
+  };
+
+  /* 賓客現在看不看得到這一頁。
+     桌次另外有一個新人自己控制的總開關（後台「婚禮資訊」分頁的
+     「開放桌次功能」）：關著的時候整頁一起收起來 —— 導覽列的連結、
+     大廳的「尋找我的座位」都是靠 isEnabled() 判斷的，直接打網址進來
+     也會被導回大廳，賓客才不會在婚禮還沒到的時候就先去找位子。
+     沒有這個欄位＝視為開著，既有站台的桌次頁不會突然消失。
+     （後台自己看的是 isPageOn()，功能關著時新人照樣進得去整理名單） */
+  const isEnabled = (key) => {
+    if (key === 'seating' && site.seatingFeatureEnabled === false) return false;
+    return isPageOn(key);
   };
 
   /* 這頁沒開放就導回大廳，不要讓賓客卡在空頁面 */
@@ -324,6 +340,7 @@ async function boot() {
     data: site,
     pages: PAGES,
     isEnabled,
+    isPageOn,
     /* 產生站內連結：pathFor('cake') → /w/{slug}/cake
        出席回覆的網址片段是 invitation，不是它的開關代號 rsvp */
     pathFor(key) {

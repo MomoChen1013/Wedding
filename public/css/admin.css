@@ -132,6 +132,8 @@ body[data-page="admin"]{padding-top:0;}
 
 /* ---------- 區塊 ---------- */
 .ad-sec{margin-bottom:52px;}
+/* 貼在子分頁列上方的那一塊（例如「開放桌次功能」），間距收窄一點 */
+.ad-sec-flush{margin-bottom:24px;}
 .ad-sec-title{font-family:var(--font-display);font-weight:500;font-size:15px;
   letter-spacing:.2em;color:var(--ink);padding-bottom:11px;
   border-bottom:1px solid var(--line-soft);margin-bottom:14px;}

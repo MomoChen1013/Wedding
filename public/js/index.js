@@ -6,7 +6,8 @@
      已入場   → 跳過 gate，直接顯示首頁
 
    內容（原本的 info 頁已併進本頁）：
-     置中開場 → 婚禮資訊卡 → 當日流程 → Dress Code → 日期倒數 → RSVP
+     置中開場 → 婚禮資訊卡（含尋找我的座位）→ 當日流程 → 出席前的小提醒
+     → 日期倒數 → RSVP
      → 卡片連結（兩欄）
 ============================================================ */
 
@@ -290,6 +291,19 @@ if(sch){
     '停車資訊', W.transportParking, W.transportParkingImg);
   layoutGrid('transportBlock', [pub, park]);
 
+  /* 資訊卡「地點」那一列的捷徑：新人有寫交通資訊才出現，
+     跟「時間」那一列的當日流程捷徑是同一套做法 */
+  const venueJump = document.getElementById('infoVenueJump');
+  if(venueJump){
+    venueJump.hidden = !(pub || park);
+    venueJump.addEventListener('click', (e)=>{
+      const target = document.getElementById('transportBlock');
+      if(!target) return;
+      e.preventDefault();
+      target.scrollIntoView({ behavior:'smooth', block:'start' });
+    });
+  }
+
   /* 故事只有一段文字，區塊本身就是那一格 */
   setOptionalText('storyText', 'storyBlock', W.story);
 })();
@@ -297,7 +311,7 @@ if(sch){
 /* ============================================================
    Explore：新人自訂的卡片
    ------------------------------------------------------------
-   內建的五張卡是模板功能，這裡再補上新人自己寫的內容
+   內建的那幾張是模板功能，這裡再補上新人自己寫的內容
    （這場婚禮規劃了什麼、要注意什麼、附上的連結…）。
 
    兩種類型：
@@ -308,7 +322,7 @@ if(sch){
 ============================================================ */
 const linkGrid = document.getElementById('linkGrid');
 
-/* HTML 裡寫死的五張是模板卡，重新渲染時要保留 */
+/* HTML 裡寫死的那幾張是模板卡，重新渲染時要保留 */
 const builtinCards = linkGrid
   ? Array.from(linkGrid.querySelectorAll('.link-card'))
   : [];
@@ -394,7 +408,7 @@ DataStore.subscribeExplore();
 
 /* ============================================================
    卡片連結的編號
-   HTML 裡寫死的 01～05 是「全部頁面都開」時的號碼；
+   HTML 裡寫死的號碼是「全部頁面都開」時的順序；
    這組新人關掉的頁面已經被 rewriteNavLinks 移掉，
    自訂卡片則是接在後面，所以每次都從 01 重編一次，
    不會跳號（例：01、04）。只剩一張時編號沒有意義，直接不顯示。
@@ -417,6 +431,10 @@ function renumberLinkCards(){
 (function hideEmptySections(){
   const cta = document.querySelector('.rsvp-cta');
   if(cta && !cta.querySelector('a')) cta.closest('.info-block').hidden = true;
+
+  /* 新人把「開放桌次功能」關起來 → 連結已被移掉，外框也一起收 */
+  const seatCta = document.getElementById('infoSeatCta');
+  if(seatCta && !seatCta.querySelector('a')) seatCta.hidden = true;
 
   const grid = document.querySelector('.link-grid');
   if(grid && !grid.querySelector('.link-card')) grid.closest('.link-section').hidden = true;

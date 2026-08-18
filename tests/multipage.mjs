@@ -303,11 +303,14 @@ console.log('\n[2b] 新人名字有套進畫面');
   ok('首頁顯示新人與場地',
     text.includes('Ginny & One') && text.includes('台北國賓大飯店'),
     text.slice(0, 80).replace(/\n/g, ' '));
-  /* 內建 7 張（wall/exhibition/quiz/draw/cake/seating/letter 都開著）
+  /* 內建 6 張（wall/exhibition/quiz/draw/cake/letter 都開著；桌次已經改成
+     資訊區最下面的「尋找我的座位」按鈕，不再是 Explore 的卡片）
      ＋ 新人自訂的 2 張。自訂卡是非同步讀進來的，等它出現再數 */
   await page.waitForSelector('.link-card.is-custom', { timeout: 10000 }).catch(() => {});
   const cardCount = await page.locator('.link-card').count();
-  ok('首頁卡片＝內建 7 張＋自訂 2 張', cardCount === 9, String(cardCount));
+  ok('首頁卡片＝內建 6 張＋自訂 2 張', cardCount === 8, String(cardCount));
+  ok('資訊區最下面有「尋找我的座位」',
+    await page.isVisible('#infoSeatCta a'));
   ok('每頁都有頂部導覽列', await page.isVisible('#siteNav'));
   await page.close();
 }
@@ -829,7 +832,7 @@ console.log('\n[13] Explore 自訂卡片');
   const idx = await page.evaluate(() =>
     Array.from(document.querySelectorAll('.link-card .lc-index')).map((e) => e.textContent));
   ok('卡片編號連號到最後一張',
-    idx.join(',') === '01,02,03,04,05,06,07,08,09', idx.join(','));
+    idx.join(',') === '01,02,03,04,05,06,07,08', idx.join(','));
 
   ok('首頁無 console 錯誤', realErrors(errors).length === 0,
     realErrors(errors).slice(0, 2).join(' | '));
@@ -1227,6 +1230,8 @@ console.log('\n[18] 大廳的選填區塊與預設 hashtag');
   }));
   ok('沒填 Dress Code／禮金時整塊不出現', state.note === true);
   ok('沒填交通資訊時整塊不出現', state.transport === true);
+  ok('沒填交通資訊時「地點」那列也沒有捷徑',
+    await page.evaluate(() => document.getElementById('infoVenueJump').hidden));
   ok('沒填兩人的故事時整塊不出現', state.story === true);
   ok('沒填 hashtag 時用預設的兩個',
     state.tags.join('') === '#我們結婚了#Married', state.tags.join(' '));
@@ -1248,6 +1253,7 @@ console.log('\n[18] 大廳的選填區塊與預設 hashtag');
     story:     document.getElementById('storyBlock').hidden,
     note:      document.getElementById('noteBlock').hidden,
     jump:      document.getElementById('infoTimeJump').hidden,
+    venueJump: document.getElementById('infoVenueJump').hidden,
     tags:      Array.from(document.querySelectorAll('#lobbyTags .tag')).map((e) => e.textContent),
   }));
   ok('大廳稱呼用新人自己寫的', state.couple === '結婚快樂', state.couple);
@@ -1256,6 +1262,7 @@ console.log('\n[18] 大廳的選填區塊與預設 hashtag');
   ok('填了故事就出現', state.story === false);
   ok('填了 Dress Code 就出現', state.note === false);
   ok('有流程時「時間」那列出現捷徑', state.jump === false);
+  ok('有交通資訊時「地點」那列出現捷徑', state.venueJump === false);
   ok('有填 hashtag 時用新人自己的',
     state.tags.join('') === '#GinnyOne2026', state.tags.join(' '));
 
@@ -1265,7 +1272,54 @@ console.log('\n[18] 大廳的選填區塊與預設 hashtag');
   const near = await page.evaluate(() =>
     Math.abs(document.getElementById('scheduleBlock').getBoundingClientRect().top));
   ok('點捷徑會捲到當日流程', near < 120, `距離視窗頂端 ${Math.round(near)}px`);
+
+  /* 「地點」那列的捷徑會捲到 Transport */
+  await page.click('#infoVenueJump');
+  await page.waitForTimeout(900);
+  const nearT = await page.evaluate(() =>
+    Math.abs(document.getElementById('transportBlock').getBoundingClientRect().top));
+  ok('點捷徑會捲到交通資訊', nearT < 120, `距離視窗頂端 ${Math.round(nearT)}px`);
   await page.close();
+}
+
+/* ---------- 開放桌次功能 ---------- */
+console.log('\n[18b] 桌次功能可以整個關掉');
+{
+  const { page } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+
+  await page.click('.ad-tab[data-tab="lobby"]');
+  ok('桌次功能開關預設是開著的', await page.isChecked('#adSeatFeature'));
+
+  await page.uncheck('#adSeatFeature');
+  await page.waitForTimeout(1500);
+  const site = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
+  ok('開關寫回 sites 文件', site.seatingFeatureEnabled === false,
+    String(site.seatingFeatureEnabled));
+  ok('關掉之後後台還進得去桌次分頁',
+    !(await page.evaluate(() =>
+      document.querySelector('#adSide .ad-tab[data-tab="seating"]').hidden)));
+  await page.close();
+}
+{
+  /* 賓客那一側：大廳沒有按鈕、導覽列沒有桌次、直接打網址會被導回大廳 */
+  const { page } = await visit(`/w/${SLUG}/`);
+  ok('關掉後大廳沒有「尋找我的座位」',
+    await page.evaluate(() => document.getElementById('infoSeatCta').hidden));
+  ok('關掉後導覽列也沒有桌次',
+    await page.evaluate(() => !Array.from(document.querySelectorAll('#siteNav .nav-link'))
+      .some((a) => a.textContent.includes('桌次'))));
+  await page.close();
+
+  const direct = await newPage();
+  await direct.goto(`${BASE}/w/${SLUG}/seating`, { waitUntil:'domcontentloaded' });
+  await direct.waitForURL(`**/w/${SLUG}/`, { timeout: 20000 }).catch(() => {});
+  ok('關掉後直接打網址會導回大廳', direct.url().endsWith(`/w/${SLUG}/`), direct.url());
+  await direct.close();
+
+  /* 還原，後面的桌次測試還要用 */
+  await adb.collection('sites').doc(siteIds[SLUG]).update({ seatingFeatureEnabled: true });
 }
 
 /* ---------- 桌次搜尋開關 ---------- */
@@ -1758,7 +1812,7 @@ console.log('\n[14d] 後台賓客標籤');
 
 /* ---------- 手機版 ---------- */
 console.log('\n[8] 手機版無水平捲動');
-for(const key of ['', 'wall', 'invitation', 'quiz', 'seating', 'letter']){
+for(const key of ['', 'wall', 'invitation', 'quiz', 'seating', 'letter', 'exhibition']){
   const page = await newPage({ viewport:{ width:375, height:812 } });
   await page.goto(`${BASE}/w/${SLUG}/${key}`, { waitUntil:'domcontentloaded' });
   await page.waitForFunction(
