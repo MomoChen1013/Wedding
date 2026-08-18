@@ -95,6 +95,14 @@
   const undoStack = [];
   const redoStack = [];
 
+  /* 提醒先只露出前幾條，其餘收起來（見 renderWarns） */
+  const WARN_PREVIEW = 3;
+  let warnsOpen = false;
+
+  /* 篩選預設收起來：這一頁最重要的是那兩欄工作區，
+     一進來就先看到人和桌子，需要篩再展開。 */
+  let filtersOpen = false;
+
   /* 畫面上的篩選與排序 */
   const view = {
     q: '',
@@ -612,9 +620,25 @@
     const noCount = guests.filter((g) => g.tableId && g.count <= 0);
     if (noCount.length) out.push(`有 ${noCount.length} 位已排桌的賓客缺少人數`);
 
-    $('spWarns').innerHTML = out.length
-      ? out.map((w) => `<div class="sp-warn">⚠️ ${esc(w)}</div>`).join('')
-      : `<div class="sp-warn is-ok">目前沒有需要注意的地方</div>`;
+    /* 二十幾桌的婚禮很容易一次列出十幾條提醒，整片攤開會把工作區
+       擠到螢幕外 —— 那就違反了「未安排的人要一直看得見」。
+       所以只先露出前幾條，其餘收起來讓使用者自己決定要不要看。 */
+    if (!out.length) {
+      $('spWarns').innerHTML = `<div class="sp-warn is-ok">目前沒有需要注意的地方</div>`;
+      return;
+    }
+
+    const shown = warnsOpen ? out : out.slice(0, WARN_PREVIEW);
+    const rest = out.length - shown.length;
+    $('spWarns').innerHTML =
+      shown.map((w) => `<div class="sp-warn">⚠️ ${esc(w)}</div>`).join('')
+      + (rest > 0 || warnsOpen
+        ? `<button class="sp-warn-more" type="button" id="spWarnToggle">${
+            warnsOpen ? '收起提醒' : `還有 ${rest} 項提醒，展開看看`}</button>`
+        : '');
+
+    const toggle = $('spWarnToggle');
+    if (toggle) toggle.addEventListener('click', () => { warnsOpen = !warnsOpen; renderWarns(); });
   }
 
   /* ============================================================
@@ -724,7 +748,8 @@
         <article class="sp-table is-${state}" data-table="${esc(t.id)}">
           <header class="sp-table-head" draggable="true" data-table-head="${esc(t.id)}">
             <span class="sp-table-no">${no2(t.no)}</span>
-            <span class="sp-table-name">${t.name ? esc(t.name) : '<i>未命名</i>'}</span>
+            <!-- 沒設定桌名就只留桌號，不要生出「（桌名）」這種空殼 -->
+            <span class="sp-table-name">${esc(t.name)}</span>
             ${type ? `<span class="sp-table-type">${esc(type)}</span>` : ''}
             <button class="ad-edit sp-table-edit" type="button" data-edit-table="${esc(t.id)}">編輯</button>
           </header>
@@ -799,6 +824,21 @@
     view.table = sel.value;
   }
 
+  /* 篩選鈕上寫著現在套了幾個條件，收起來也知道有沒有在篩 */
+  function renderFilterToggle() {
+    const n = (view.seat !== 'all' ? 1 : 0)
+            + (view.rsvp !== 'all' ? 1 : 0)
+            + view.tags.size
+            + (view.table !== 'all' ? 1 : 0);
+    const btn = $('spFilterToggle');
+    btn.textContent = n ? `篩選（${n}）` : '篩選';
+    btn.classList.toggle('is-on', n > 0);
+    /* 有套條件時不讓它被收起來藏著，不然會找不到為什麼名單少了人 */
+    const open = filtersOpen || n > 0;
+    $('spFilters').hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+  }
+
   function renderSyncState() {
     const el = $('spSyncState');
     const note = $('spSyncNote');
@@ -834,6 +874,7 @@
   function renderAll() {
     if (!started) return;
     renderTools();
+    renderFilterToggle();
     renderStats();
     renderWarns();
     renderBoard();
@@ -1738,13 +1779,22 @@
       renderBoard();
     });
     $('spSort').addEventListener('change', (e) => { view.sort = e.target.value; renderBoard(); });
-    $('spTableFilter').addEventListener('change', (e) => { view.table = e.target.value; renderBoard(); });
+    $('spTableFilter').addEventListener('change', (e) => {
+      view.table = e.target.value;
+      renderFilterToggle();
+      renderBoard();
+    });
+    $('spFilterToggle').addEventListener('click', () => {
+      filtersOpen = $('spFilters').hidden;
+      renderFilterToggle();
+    });
 
     $('spSeatChips').addEventListener('click', (e) => {
       const chip = e.target.closest('.ad-chip');
       if (!chip) return;
       view.seat = chip.dataset.seat;
       $('spSeatChips').querySelectorAll('.ad-chip').forEach((c) => c.classList.toggle('is-on', c === chip));
+      renderFilterToggle();
       renderBoard();
     });
     $('spRsvpChips').addEventListener('click', (e) => {
@@ -1752,6 +1802,7 @@
       if (!chip) return;
       view.rsvp = chip.dataset.rsvp;
       $('spRsvpChips').querySelectorAll('.ad-chip').forEach((c) => c.classList.toggle('is-on', c === chip));
+      renderFilterToggle();
       renderBoard();
     });
     /* 標籤是多選：VIP ＋ 素食 可以一起篩 */
@@ -1761,6 +1812,7 @@
       const id = chip.dataset.tag;
       if (view.tags.has(id)) view.tags.delete(id); else view.tags.add(id);
       chip.classList.toggle('is-on');
+      renderFilterToggle();
       renderBoard();
     });
 

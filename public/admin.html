@@ -576,9 +576,11 @@
             </select>
           </label>
           <button class="btn small ghost" id="spTagOrderBtn" type="button">分組順序</button>
+          <button class="btn small ghost" id="spFilterToggle" type="button"
+                  aria-expanded="false" aria-controls="spFilters">篩選</button>
         </div>
 
-        <div class="sp-filters">
+        <div class="sp-filters" id="spFilters" hidden>
           <div class="sp-filter-line">
             <span class="sp-filter-lab">排桌狀態</span>
             <div class="ad-chips" id="spSeatChips">

@@ -2021,6 +2021,9 @@ console.log('\n[21] 後台排桌管理');
   const t2 = await page.innerText(tableCard('02'));
   ok('超過容量仍然排得進去', t2.includes('3 / 2 人'), t2.replace(/\n/g, ' ').slice(0, 60));
   ok('超過容量有明確提醒', t2.includes('超過容量 1 位'), t2.replace(/\n/g, ' ').slice(0, 60));
+  /* 提醒預設只露出前幾條，先展開再看 */
+  if (await page.locator('#spWarnToggle').count()) await page.click('#spWarnToggle');
+  await page.waitForTimeout(200);
   ok('上方警告列也講一次',
     (await page.innerText('#spWarns')).includes('第 02 桌超過容量 1 位'),
     (await page.innerText('#spWarns')).replace(/\n/g, ' ').slice(0, 80));

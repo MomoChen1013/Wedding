@@ -641,9 +641,13 @@ select.ad-input{appearance:none;cursor:pointer;
    間距收緊，一個螢幕才裝得下二十幾桌。
 ============================================================ */
 
-/* 這一頁比其他分頁寬很多，放不進 820px 的主欄 */
+/* 工作區要寬（一個螢幕裝得下越多桌越好），
+   但「桌位管理」「匯入匯出」是一般的清單與說明，維持原本的閱讀寬度 */
 .ad-panel[data-panel="seatingPlan"].is-on{margin:0 auto;}
 .ad-main:has(.ad-panel[data-panel="seatingPlan"].is-on){max-width:1360px;}
+.ad-panel[data-panel="seatingPlan"] .ad-subpanel[data-subpanel="tables"],
+.ad-panel[data-panel="seatingPlan"] .ad-subpanel[data-subpanel="io"]{
+  max-width:860px;}
 
 /* ---------- 最上面那一列：狀態 ＋ 儲存／同步 ---------- */
 .sp-bar{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
@@ -665,10 +669,14 @@ select.ad-input{appearance:none;cursor:pointer;
   width:7px;height:7px;border-radius:50%;background:#a4677a;}
 
 /* ---------- 統計 ---------- */
-.sp-stats{grid-template-columns:repeat(4,1fr);}
-@media(max-width:900px){.sp-stats{grid-template-columns:repeat(2,1fr);}}
-.sp-stats .ad-stat{padding:16px 10px;}
-.sp-stats .ad-stat-num{font-size:clamp(22px,4vw,28px);}
+/* 統計是「一直要看得到的數字」，不是主角 ——
+   排成一條窄帶，工作區才留得住螢幕的高度 */
+.sp-stats{grid-template-columns:repeat(8,1fr);}
+@media(max-width:1200px){.sp-stats{grid-template-columns:repeat(4,1fr);}}
+@media(max-width:640px){.sp-stats{grid-template-columns:repeat(2,1fr);}}
+.sp-stats .ad-stat{padding:12px 8px;}
+.sp-stats .ad-stat-num{font-size:clamp(19px,2.4vw,24px);}
+.sp-stats .ad-stat-lab{margin-top:4px;font-size:10.5px;letter-spacing:.06em;}
 
 /* ---------- 提醒 ---------- */
 .sp-warns{display:flex;flex-direction:column;gap:6px;margin:18px 0 6px;}
@@ -677,6 +685,11 @@ select.ad-input{appearance:none;cursor:pointer;
   font-size:12.5px;line-height:1.8;letter-spacing:.03em;color:#8a5765;}
 .sp-warn.is-ok{border-color:var(--line-soft);background:rgba(255,255,255,.7);
   color:var(--ink-soft);}
+/* 提醒太多時的展開／收起 */
+.sp-warn-more{align-self:flex-start;background:none;border:none;cursor:pointer;
+  padding:2px 0;font-family:var(--font-body);font-size:12px;letter-spacing:.06em;
+  color:var(--ink-soft);border-bottom:1px solid transparent;}
+.sp-warn-more:hover{color:var(--ink);border-bottom-color:var(--ink);}
 
 /* ---------- 工具列 ---------- */
 .sp-tools{margin:20px 0 16px;padding:14px 16px;border:1px solid var(--line-soft);
@@ -690,6 +703,9 @@ select.ad-input{appearance:none;cursor:pointer;
 
 .sp-filters{display:flex;flex-direction:column;gap:9px;margin-top:12px;
   padding-top:12px;border-top:1px dashed var(--line-soft);}
+.sp-filters[hidden]{display:none;}
+/* 有套條件時「篩選」自己站出來，收起來也知道名單為什麼變少 */
+#spFilterToggle.is-on{background:var(--ink);color:#fff;border-color:var(--ink);}
 .sp-filter-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .sp-filter-line[hidden]{display:none;}
 .sp-filter-lab{flex:0 0 62px;font-size:11px;letter-spacing:.14em;color:var(--ink-soft);}
@@ -697,6 +713,10 @@ select.ad-input{appearance:none;cursor:pointer;
 /* ---------- 工作區：左未安排、右桌位 ---------- */
 .sp-board{display:grid;grid-template-columns:280px minmax(0,1fr);gap:16px;
   align-items:start;}
+/* 筆電／橫向平板：未安排那一欄收窄一點，右邊才排得下兩桌以上 */
+@media(max-width:1240px){
+  .sp-board{grid-template-columns:232px minmax(0,1fr);gap:12px;}
+}
 
 .sp-pool{position:sticky;top:78px;display:flex;flex-direction:column;
   max-height:calc(100svh - 100px);
@@ -747,8 +767,10 @@ select.ad-input{appearance:none;cursor:pointer;
 .sp-card-move:hover{color:var(--ink);border-bottom-color:var(--ink);}
 
 /* ---------- 桌位 ---------- */
-.sp-tables{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));
-  gap:14px;align-content:start;}
+/* align-items:start：每張桌卡只長到自己的內容高度，
+   不會被同一列最高的那一桌拉長成一片空白 */
+.sp-tables{display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));
+  gap:14px;align-content:start;align-items:start;}
 .sp-tables-empty{grid-column:1 / -1;}
 
 .sp-table{border:1px solid var(--line);border-radius:var(--radius);background:#fff;
@@ -764,7 +786,7 @@ select.ad-input{appearance:none;cursor:pointer;
   letter-spacing:.08em;color:var(--primary-deep);font-variant-numeric:tabular-nums;}
 .sp-table-name{flex:1 1 auto;min-width:0;font-size:13.5px;letter-spacing:.06em;
   color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.sp-table-name i{color:var(--ink-soft);font-style:normal;opacity:.7;}
+.sp-table-name:empty{flex:1 1 auto;}
 .sp-table-type{flex:0 0 auto;border:1px solid var(--line);border-radius:999px;
   padding:1px 8px;font-size:10.5px;letter-spacing:.06em;color:var(--ink-soft);}
 .sp-table-edit{flex:0 0 auto;}
@@ -826,6 +848,9 @@ select.ad-input{appearance:none;cursor:pointer;
   max-height:180px;overflow-y:auto;padding:4px 2px;
   border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);}
 .sp-drawer-tag{margin-top:8px;}
+/* 姓名跟著出席回覆走、改不動：畫成唯讀的樣子，不要看起來像可以打字 */
+.sp-drawer-body .ad-input:disabled{background:var(--bg2);color:var(--ink-soft);
+  cursor:not-allowed;}
 #spDrawerDelete{color:#a4677a;border-color:rgba(164,103,122,.4);margin-right:auto;}
 
 /* ---------- 移動到桌位 ---------- */
@@ -890,7 +915,12 @@ select.ad-input{appearance:none;cursor:pointer;
 @media(max-width:960px){
   .sp-board{grid-template-columns:1fr;}
   .sp-pool{position:static;max-height:none;}
-  .sp-pool-body{max-height:46svh;}
+  /* 未安排改成一格一格排，整頁才不會被一長條卡片吃掉 */
+  .sp-pool-body{max-height:44svh;display:grid;align-content:start;
+    grid-template-columns:repeat(auto-fill,minmax(190px,1fr));}
+  .sp-pool-body .sp-group{grid-column:1 / -1;display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(190px,1fr));}
+  .sp-pool-body .sp-group-head{grid-column:1 / -1;}
   .sp-card{cursor:pointer;}
   .sp-table-head{cursor:default;}
 }
