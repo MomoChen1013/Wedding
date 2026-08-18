@@ -7,7 +7,11 @@
 /* ============================================================
    入場：填名字 → 抽 icon
 ============================================================ */
-#gate{background:var(--bg1);}
+/* 入場畫面預設是藏著的：站台設定是非同步讀來的，先畫再藏會閃一下 ——
+   關掉入場登入、或已經報到過的賓客，都會看到一瞬間的登入畫面。
+   要不要顯示由 js/index.js 決定（setupGate／skipGate），
+   在那之前賓客看到的是站台背景，跟開場字幕同一個底色，接得起來。 */
+#gate{background:var(--bg1);display:none;}
 .gate-card{
   width:min(90vw,400px);background:#fff;border:1px solid var(--line);
   border-radius:var(--radius);padding:44px 34px;text-align:center;
@@ -49,13 +53,23 @@
 .btn.btn-google[disabled]{opacity:.5;cursor:wait;}
 
 /* ============================================================
-   倒數 5 秒 + 開幕
+   開場字幕（兩句、共兩秒）＋ 開幕 ＋ 跳過
 ============================================================ */
-#countdown{background:var(--bg1);flex-direction:column;display:none;gap:18px;}
-.count-num{font-family:var(--font-display);font-weight:300;font-size:min(34vw,180px);
-  color:var(--ink);line-height:1;animation:countPop .9s ease;}
-@keyframes countPop{0%{opacity:0}30%{opacity:1}100%{opacity:.15}}
-.count-label{color:var(--ink-soft);letter-spacing:.4em;font-size:11px;text-transform:uppercase;}
+#intro{background:var(--bg1);flex-direction:column;display:none;gap:18px;}
+.intro-line{font-family:var(--font-display);font-weight:300;
+  font-size:clamp(19px,5.4vw,30px);line-height:2;letter-spacing:.18em;
+  color:var(--ink);text-align:center;padding:0 26px;max-width:20ch;
+  animation:introFade .9s ease;}
+@keyframes introFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* 跳過：字幕與開幕簾都在 z-index 1000（.overlay），所以要再高一級 */
+.intro-skip{position:fixed;right:18px;bottom:18px;z-index:1010;cursor:pointer;
+  font-family:var(--font-body);font-size:12px;letter-spacing:.2em;
+  color:var(--ink-soft);background:transparent;
+  border:1px solid var(--line);border-radius:var(--radius);padding:9px 18px;
+  transition:color .2s,border-color .2s;}
+.intro-skip:hover{color:var(--ink);border-color:var(--ink);}
+.intro-skip[hidden]{display:none;}
 
 #curtain{display:none;background:transparent;pointer-events:none;}
 .curtain-top{display:none;}

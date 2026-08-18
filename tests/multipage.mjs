@@ -361,11 +361,56 @@ console.log('\n[3b] 入場登入（entryLoginEnabled）');
   const { page, errors } = await visit('/w/no-login-2027/', { guest:false });
   ok('關掉入場登入後大廳沒有入場畫面',
     (await page.locator('#gate').count()) === 0);
-  ok('一進來就看得到大廳內容', await page.isVisible('#app'));
+  ok('改成一進來就播開場字幕', await page.isVisible('#intro'));
+  const line = (await page.innerText('#introLine')).trim();
+  ok('字幕是開場文案', ['我們要結婚了', '也想邀請你，見證這一刻'].includes(line), line);
+  ok('開場期間有「跳過」', await page.isVisible('#introSkip'));
+
+  /* 不按跳過的話，字幕 2 秒 + 簾幕 1.5 秒之後自己進大廳 */
+  await page.waitForSelector('#app', { state:'visible', timeout: 10000 });
+  ok('開場播完自動進大廳', await page.isVisible('#app'));
+  ok('播完收掉字幕與跳過按鈕',
+    !(await page.isVisible('#intro')) && !(await page.isVisible('#introSkip')));
   ok('導覽列出現', await page.isVisible('#siteNav'));
   ok('還沒留名字，導覽列不出現 User 那塊',
     (await page.locator('.nav-user').count()) === 0);
   ok('無 console 錯誤', realErrors(errors).length === 0, realErrors(errors).slice(0,2).join(' | '));
+
+  /* 同一個分頁再回大廳：開場不再播（sessionStorage 記著） */
+  await page.goto(`${BASE}/w/no-login-2027/`, { waitUntil:'domcontentloaded' });
+  await page.waitForFunction(() => document.documentElement.dataset.siteReady === '1',
+    null, { timeout: 20000 });
+  ok('同一個分頁回大廳不再播開場',
+    !(await page.isVisible('#intro')) && await page.isVisible('#app'));
+  await page.close();
+}
+{
+  /* 「跳過」要能中途把開場收掉，直接進大廳 */
+  const { page } = await visit('/w/no-login-2027/', { guest:false });
+  await page.click('#introSkip');
+  ok('按跳過直接進大廳', await page.isVisible('#app'));
+  ok('跳過後字幕、簾幕、跳過按鈕都收掉',
+    !(await page.isVisible('#intro'))
+    && !(await page.isVisible('#curtain'))
+    && !(await page.isVisible('#introSkip')));
+  await page.close();
+}
+{
+  /* 入場畫面預設藏著（由 CSS 決定），所以在 JS 決定之前不會閃一下登入畫面 */
+  const { page } = await visit(`/w/${SLUG}/`);
+  const gateHiddenByCss = await page.evaluate(() => {
+    for(const sheet of document.styleSheets){
+      let rules;
+      try{ rules = sheet.cssRules; }catch{ continue; }
+      for(const r of rules){
+        if(r.selectorText === '#gate' && r.style.display === 'none') return true;
+      }
+    }
+    return false;
+  });
+  ok('入場畫面預設是藏著的（不會閃一下）', gateHiddenByCss);
+  ok('報到過的賓客連 gate 元素都不留',
+    (await page.locator('#gate').count()) === 0);
   await page.close();
 }
 {
@@ -376,6 +421,7 @@ console.log('\n[3b] 入場登入（entryLoginEnabled）');
 
   await page.fill('#wishText', '祝你們幸福');
   await page.click('#postWish');
+  await page.waitForSelector('.ask-name', { state:'visible', timeout: 5000 }).catch(() => {});
   ok('送出的那一刻才問名字', await page.isVisible('.ask-name'));
 
   await page.fill('.ask-name .ask-input', '路過的朋友');
@@ -393,9 +439,17 @@ console.log('\n[3b] 入場登入（entryLoginEnabled）');
   await page.close();
 }
 {
-  /* 開著入場登入的站台照舊：第一次來的賓客先看到入場畫面 */
+  /* 開著入場登入的站台照舊：第一次來的賓客先看到入場畫面，
+     填完名字才播開場字幕 */
   const { page } = await visit(`/w/${SLUG}/`, { guest:false });
   ok('沒關開關的站台仍有入場畫面', await page.isVisible('#gate'));
+  ok('入場畫面期間沒有跳過按鈕', !(await page.isVisible('#introSkip')));
+
+  await page.fill('#nameInput', '第一次來的賓客');
+  await page.click('#enterBtn');
+  ok('填完名字才播開場字幕', await page.isVisible('#intro'));
+  await page.waitForSelector('#app', { state:'visible', timeout: 10000 });
+  ok('開場播完進大廳', await page.isVisible('#app'));
   await page.close();
 }
 

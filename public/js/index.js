@@ -2,10 +2,11 @@
    index.js — 首頁
    ------------------------------------------------------------
    流程：
-     首次造訪 → gate（填名字 + 抽記號）→ 倒數 5 秒 → 開幕 → 進入首頁
+     首次造訪 → gate（填名字 + 抽記號）→ 開場字幕 2 秒 → 開幕 → 進入首頁
      已入場   → 跳過 gate，直接顯示首頁
      入場登入關掉（站台文件 entryLoginEnabled: false）
-              → 沒有 gate、不倒數，一進來就是首頁
+              → 沒有 gate，一進來就播開場字幕（同一個分頁只播一次）
+     開場期間右下角有「跳過」，任何時候都能直接進首頁
 
    內容（原本的 info 頁已併進本頁）：
      置中開場 → 婚禮資訊卡（含尋找我的座位）→ 當日流程 → 出席前的小提醒
@@ -87,27 +88,91 @@ function enterSite(){
   syncNavUser();
 }
 
-function runCountdown(){
-  const cd=document.getElementById('countdown'); const num=document.getElementById('countNum');
-  cd.style.display='flex'; let n=5; num.textContent=n;
-  const t=setInterval(()=>{
-    n--;
-    if(n<=0){ clearInterval(t); cd.style.display='none'; openCurtain(); return; }
-    num.textContent=n;
-    num.style.animation='none'; void num.offsetWidth; num.style.animation='countPop .9s ease';
-  },1000);
+/* ============================================================
+   開場：兩句字幕（一句一秒）→ 拉開簾幕 → 首頁
+   ------------------------------------------------------------
+   本來是 5、4、3、2、1 的數字倒數；賓客在意的不是還剩幾秒，
+   所以改成兩句話、共兩秒，把那兩秒拿來說要說的事。
+   期間右下角有「跳過」，不想看的人不必等（timers 統一收在
+   introTimers，跳過時一次清掉，才不會有殘留的 setTimeout 把
+   已經收起來的畫面又叫出來）。
+============================================================ */
+const INTRO_LINES = ['我們要結婚了', '也想邀請你，見證這一刻'];
+const INTRO_BEAT_MS = 1000;                 /* 一句停留多久 */
+const CURTAIN_MS = 1500;                    /* 簾幕拉開的時間，對齊 index.css */
+
+const introBox  = document.getElementById('intro');
+const introLine = document.getElementById('introLine');
+const skipBtn   = document.getElementById('introSkip');
+let introTimers = [];
+
+/* 同一個分頁只播一次：賓客在大廳與子頁之間來回時不必每次都等兩秒。
+   用 sessionStorage 而不是 localStorage —— 關掉分頁再回來還是看得到開場。 */
+const INTRO_SEEN_KEY = `wed.${(window.SITE && window.SITE.siteId) || 'default'}.introSeen`;
+function introSeen(){
+  try{ return sessionStorage.getItem(INTRO_SEEN_KEY) === '1'; }catch{ return false; }
 }
+function markIntroSeen(){
+  try{ sessionStorage.setItem(INTRO_SEEN_KEY, '1'); }catch{}
+}
+
+function runIntro(){
+  markIntroSeen();
+  introBox.style.display = 'flex';
+  skipBtn.hidden = false;
+
+  INTRO_LINES.forEach((text, i) => {
+    introTimers.push(setTimeout(()=>{
+      introLine.textContent = text;
+      /* 重播進場動畫：不重設 animation 的話第二句會直接跳出來 */
+      introLine.style.animation='none'; void introLine.offsetWidth;
+      introLine.style.animation='introFade .9s ease';
+    }, i * INTRO_BEAT_MS));
+  });
+
+  introTimers.push(setTimeout(()=>{
+    introBox.style.display = 'none';
+    openCurtain();
+  }, INTRO_LINES.length * INTRO_BEAT_MS));
+}
+
 function openCurtain(){
   const cur=document.getElementById('curtain'); cur.style.display='block';
   requestAnimationFrame(()=>cur.classList.add('curtain-open'));
-  setTimeout(()=>{
+  introTimers.push(setTimeout(()=>{
     cur.style.display='none';
+    endIntro();
     enterSite();
     goldFall();
-  },1500);
+  }, CURTAIN_MS));
 }
 
+/* 開場結束（不論是播完還是被跳過）：收掉字幕、簾幕與跳過按鈕 */
+function endIntro(){
+  introTimers.forEach(clearTimeout);
+  introTimers = [];
+  introBox.style.display = 'none';
+  const cur = document.getElementById('curtain');
+  cur.classList.remove('curtain-open');
+  cur.style.display = 'none';
+  skipBtn.hidden = true;
+}
+
+/* 跳過：直接進首頁。不放金箔 —— 那是簾幕拉開的收尾，沒看到簾幕就沒有收尾 */
+skipBtn.addEventListener('click', ()=>{
+  endIntro();
+  enterSite();
+});
+
 function setupGate(){
+  /* 已經報到過的賓客：gate 不必出現。CSS 預設就是藏著的，
+     所以這裡不會閃一下登入畫面，直接進首頁。 */
+  if(LS.get('user', null)){
+    gate.remove();
+    enterSite();
+    return;
+  }
+
   iconPick.textContent = currentIcon;
   iconPick.addEventListener('click', rollIcon);
   document.getElementById('rerollIcon').addEventListener('click', rollIcon);
@@ -139,24 +204,22 @@ function setupGate(){
     try { saveUser({ name:n, icon:currentIcon }); } catch(e){ console.warn('saveUser failed', e); }
     syncNavUser();
     gate.style.display='none';                   // 先把入口畫面收掉
-    runCountdown();                              // 馬上開始倒數
+    runIntro();                                  // 馬上開始開場字幕
     try { startBGM(); } catch(e){ console.warn('BGM 啟動失敗', e); }  // 音樂掛掉也不影響流程
   });
 
-  /* 若已經入場過，直接跳過 gate */
-  if(LS.get('user', null)){
-    gate.style.display='none';
-    enterSite();
-  }
+  /* 都綁好了才顯示，畫面不會在還沒決定要不要出現時先閃一下 */
+  gate.style.display='flex';
 }
 
-/* 這組新人不用入場登入：整道 gate 從畫面上移除，直接看到大廳。
-   ・不跑倒數與開幕簾 —— 那兩段是「按下進場」的獎賞，沒有那個動作就不放
-   ・BGM 也不自動開 —— 沒有使用者手勢，瀏覽器本來就會擋掉自動播放，
+/* 這組新人不用入場登入：整道 gate 從畫面上移除，改成一進來就播開場字幕。
+   ・同一個分頁播過就不再播（子頁逛回大廳時不會每次都被兩秒的字幕擋住）
+   ・BGM 不自動開 —— 沒有使用者手勢，瀏覽器本來就會擋掉自動播放，
      賓客想聽的話按右下角那顆音樂鈕（浮動控制照舊） */
 function skipGate(){
   gate.remove();
-  enterSite();
+  if(introSeen()) enterSite();
+  else            runIntro();
 }
 
 if(entryLoginOn()) setupGate();
