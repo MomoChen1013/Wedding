@@ -208,6 +208,27 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-check input{margin-top:5px;flex:0 0 auto;accent-color:var(--primary-deep);}
 /* 同一組勾選框連著排時不要each都空 18px，看起來才像一組 */
 .ad-check + .ad-check{margin-top:6px;}
+/* 括號裡的補充（例如「選熱情出席才會出現」）跟在題目後面，不另起一行搶注意力 */
+.ad-check small{margin-left:8px;font-size:11.5px;color:var(--ink-soft);}
+/* 固定題目：打勾但關不掉，整列調淡才看得出「這一列只是在告訴你有這題」 */
+.ad-check.is-fixed{cursor:default;color:var(--ink-soft);}
+.ad-check.is-fixed input{cursor:default;}
+
+/* ---------- 只讀的內容清單（例如出席回覆的「表單資訊」） ----------
+   內容在別的分頁編輯，這裡只把現在填了什麼列出來 */
+.ad-info{margin-top:12px;border-top:1px solid var(--line-soft);}
+.ad-info-row{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;
+  padding:9px 0;border-bottom:1px solid var(--line-soft);}
+.ad-info-name{flex:0 0 auto;min-width:96px;font-size:11.5px;letter-spacing:.14em;
+  color:var(--ink-soft);}
+.ad-info-val{flex:1 1 180px;min-width:0;font-size:13px;line-height:1.8;
+  color:var(--ink);word-break:break-word;}
+.ad-info-val.is-empty{color:var(--ink-soft);opacity:.75;}
+
+/* 小節標題下面的一句說明 */
+.ad-sub-sec-note{margin:0 0 12px;font-size:11.5px;line-height:1.9;
+  letter-spacing:.02em;color:var(--ink-soft);}
+.ad-sub-sec-note b{color:var(--ink);font-weight:500;}
 
 /* 欄位底下的小提示：比 .ad-sec-note 更貼著它說明的那一組欄位 */
 .ad-hint{margin-top:10px;font-size:11.5px;line-height:1.9;letter-spacing:.02em;

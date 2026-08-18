@@ -392,6 +392,9 @@ function openAdmin(){
   /* 「查看網站」在桌機留在頂列，<900px 搬進抽屜底部（見 CSS），兩顆都要指到同一個網址 */
   document.getElementById('adViewBtn').href = sitePath('lobby');
   document.getElementById('adViewBtnMobile').href = sitePath('lobby');
+  /* 表單設定裡的兩顆按鈕指的都是賓客那一頁（分享出去的就是這個網址） */
+  document.getElementById('adRsvpViewForm').href = sitePath('rsvp');
+  document.getElementById('adRsvpGalleryView').href = sitePath('rsvp');
 
   applyTabVisibility();
   initRouter();
@@ -473,6 +476,7 @@ if(!ownerEmails().length){
    這樣重新整理、分享連結、瀏覽器上一頁都能回到原本開著的那一頁。
 ============================================================ */
 const SUBTABS = {
+  rsvp:    ['overview', 'replies', 'form'],
   lobby:   ['info', 'schedule', 'explore'],
   seating: ['map', 'list'],
   quiz:    ['questions', 'votes'],
@@ -876,6 +880,102 @@ function fillRsvpFormSettings(){
 
 document.getElementById('adRsvpFormReset')
   .addEventListener('click', fillRsvpFormSettings);
+
+/* ---------- 表單資訊 ----------
+   題目以外，邀請函那一頁還會出現的內容：婚禮資訊那幾列、兩人的故事、照片集。
+   內容本身都不在這裡編輯（婚禮資訊在隔壁分頁、照片在素材資料夾），
+   所以這裡只把「現在填了什麼」列出來，再給一個過去填寫的入口 ——
+   新人才不用自己在兩個分頁之間猜哪一列會出現在邀請函上。 */
+const RSVP_INFO_CLIP = 40;
+
+function clip(s){
+  const t = String(s || '').replace(/\s+/g, ' ').trim();
+  return [...t].length > RSVP_INFO_CLIP ? `${[...t].slice(0, RSVP_INFO_CLIP).join('')}…` : t;
+}
+
+/* 婚禮日期是我們設定的，後台只能改幾點開始；這裡照婚禮當地時區顯示 */
+function weddingDateText(){
+  const d = siteData();
+  const ev = toJsDate(d.eventDate);
+  if(!ev) return '';
+  const p = {};
+  new Intl.DateTimeFormat('zh-TW', {
+    timeZone: d.timezone || 'Asia/Taipei', hour12:false,
+    year:'numeric', month:'2-digit', day:'2-digit',
+    hour:'2-digit', minute:'2-digit', weekday:'short',
+  }).formatToParts(ev).forEach(x => { p[x.type] = x.value; });
+  const hour = p.hour === '24' ? '00' : p.hour;
+  return `${p.year}.${p.month}.${p.day}（${(p.weekday || '').replace('週', '')}）${hour}:${p.minute}`;
+}
+
+function rsvpInfoRows(){
+  const d = siteData();
+  const tags = Array.isArray(d.hashtags) ? d.hashtags.filter(Boolean) : [];
+  const cover = d.coverImageUrl
+    || ((window.SITE && window.SITE.assets && window.SITE.assets.cover) || '');
+  return [
+    { name:'日期與開始時間', value: weddingDateText(),
+      empty:'婚禮日期還沒設定，請先找我們排定' },
+    { name:'地點名稱',   value: clip(d.venueName) },
+    { name:'地址',       value: clip(d.venueAddress) },
+    { name:'地圖連結',   value: clip(d.venueMapUrl),
+      empty:'留白就用地址自動開 Google 地圖' },
+    { name:'服裝',       value: clip(d.dressCode) },
+    { name:'關於禮金',   value: clip(d.giftNote) },
+    { name:'婚禮 hashtag', value: clip(tags.join('　')),
+      empty:'留白就用預設的 #我們結婚了 #Married' },
+    { name:'封面照',     value: cover ? '已經放好了' : '',
+      empty:'還沒有封面照，需要的話把照片給我們' },
+  ];
+}
+
+function infoRowHtml(row){
+  const empty = !row.value;
+  const text = empty ? (row.empty || '還沒填，這一列就不會出現') : row.value;
+  return `<div class="ad-info-row">
+    <span class="ad-info-name">${escapeHtml(row.name)}</span>
+    <span class="ad-info-val${empty ? ' is-empty' : ''}">${escapeHtml(text)}</span>
+  </div>`;
+}
+
+function renderRsvpFormInfo(){
+  const list = document.getElementById('adRsvpInfoList');
+  if(!list) return;
+  list.innerHTML = rsvpInfoRows().map(infoRowHtml).join('');
+
+  const d = siteData();
+  const story = String(d.story || '').trim();
+  document.getElementById('adRsvpStoryInfo').innerHTML = infoRowHtml({
+    name:'目前的內容', value: clip(story),
+    empty:'還沒填，就算打開也不會出現這一塊',
+  });
+
+  const photos = (Array.isArray(d.photos) ? d.photos : []).filter(Boolean);
+  document.getElementById('adRsvpGalleryInfo').innerHTML = infoRowHtml({
+    name:'目前的照片', value: photos.length ? `${photos.length} 張` : '',
+    empty:'還沒有照片，就算打開也不會出現這一塊',
+  });
+}
+
+/* 內容要去「婚禮資訊」那一頁填：切過去之後把該填的欄位捲到畫面中間並游標對好，
+   不然新人到了那一頁還要自己找是哪一欄。 */
+function jumpToLobbyInfo(fieldId){
+  const focus = ()=>{
+    const el = document.getElementById(fieldId);
+    if(!el) return;
+    el.scrollIntoView({ block:'center', behavior:'smooth' });
+    el.focus({ preventScroll:true });
+  };
+  if(location.hash === '#lobby/info'){ focus(); return; }
+  /* activateTab 會在 hashchange 時把畫面捲回最上面，所以排在它之後才捲 */
+  window.addEventListener('hashchange', ()=> setTimeout(focus, 0), { once:true });
+  location.hash = 'lobby/info';
+}
+
+document.getElementById('adRsvpInfoJump')
+  .addEventListener('click', ()=> jumpToLobbyInfo('adVenueName'));
+document.getElementById('adRsvpStoryJump')
+  .addEventListener('click', ()=> jumpToLobbyInfo('adStory'));
 
 document.getElementById('adRsvpForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
@@ -1738,6 +1838,9 @@ function fillSiteForm(){
   sf.gift.value  = d.giftNote     || '';
   sf.story.value = d.story        || '';
   sf.tags.value  = Array.isArray(d.hashtags) ? d.hashtags.join(', ') : '';
+
+  /* 出席回覆的「表單資訊」列的就是這些欄位，改完要跟著重畫 */
+  renderRsvpFormInfo();
 }
 document.getElementById('adSiteReset').addEventListener('click', fillSiteForm);
 

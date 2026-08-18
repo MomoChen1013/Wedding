@@ -888,6 +888,10 @@ console.log('\n[14b] 後台看得到出席回覆');
     .locator('.ad-donut-center b').textContent();
   ok('出席圖的中心是回覆筆數', Number(attendCenter) === rows.length, attendCenter);
 
+  /* 名單搬到「回覆資訊」子分頁 */
+  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="replies"]');
+  await page.waitForTimeout(200);
+
   const listText = await page.innerText('#adRsvpList');
   ok('名單列出賓客的名字', listText.includes('王小明'), listText.replace(/\n/g, ' ').slice(0, 80));
 
@@ -1514,6 +1518,20 @@ console.log('\n[14c] 後台開關表單題目');
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
 
+  /* 表單設定是出席回覆的第三個子分頁 */
+  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="form"]');
+  await page.waitForTimeout(200);
+
+  ok('「查看表單」指向賓客那一頁',
+    (await page.getAttribute('#adRsvpViewForm', 'href')) === `/w/${SLUG}/invitation`,
+    await page.getAttribute('#adRsvpViewForm', 'href'));
+  ok('固定題目用關不掉的勾選框列出來',
+    (await page.locator('#adRsvpForm .ad-check.is-fixed input:disabled:checked').count()) === 8,
+    String(await page.locator('#adRsvpForm .ad-check.is-fixed input:disabled:checked').count()));
+  ok('表單資訊列出婚禮資訊的內容',
+    (await page.innerText('#adRsvpInfoList')).includes('地點名稱'),
+    (await page.innerText('#adRsvpInfoList')).replace(/\n/g, ' ').slice(0, 80));
+
   ok('題目預設全部開著',
     (await page.isChecked('#adAskCard')) && (await page.isChecked('#adAskGift'))
       && (await page.isChecked('#adAskMessage')));
@@ -1542,7 +1560,8 @@ console.log('\n[14c] 後台開關表單題目');
   ok('沒有動到出席回覆的開關與截止時間',
     site.rsvpEnabled === true && !!site.rsvpDeadline);
 
-  /* 關掉的題目不再畫成環狀圖 */
+  /* 關掉的題目不再畫成環狀圖（圖表在「出席回覆總覽」那個子分頁） */
+  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="overview"]');
   await page.waitForTimeout(300);
   const titles = await page.locator('#adRsvpCharts .ad-donut-title').allInnerTexts();
   ok('關掉的題目不出現在儀表板',
