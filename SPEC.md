@@ -598,7 +598,8 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
 
 | | 開著（預設） | 關掉 |
 |---|---|---|
-| 大廳 | gate → 倒數 5 秒 → 開幕 → 首頁 | 直接進首頁，gate 從 DOM 移除 |
+| 大廳 | gate → 開場 → 首頁 | gate 從 DOM 移除，一進來就播開場 |
+| 開場重播 | 報到過就不再播（localStorage 有名字） | 同一個分頁只播一次（sessionStorage 的 `introSeen`） |
 | BGM | 按下「進場觀禮」時啟動 | 不自動播（沒有使用者手勢，瀏覽器本來就會擋），由浮動按鈕開 |
 | 導覽列的 User | 報到後出現 | 留下名字之前不出現 |
 | `requireUser()` | 沒報到就導回大廳 | 直接放行 —— 沒有 gate 可以報到，彈回去等於死路 |
@@ -607,6 +608,21 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
 實作分三處：`site-context.js` 攤成 `WED.entryLogin`、`common.js` 的
 `entryLoginOn()／requireUser()／ensureUser()／askName()`、`index.js` 的
 `setupGate()／skipGate()`。
+
+`#gate` 在 `index.css` 裡預設 `display:none`，由 `index.js` 決定要不要顯示 ——
+站台設定是非同步讀來的，先畫再藏會閃一下登入畫面（關掉入場登入、
+或已經報到過的賓客最明顯）。
+
+### 開場（字幕 + 開幕簾 + 跳過）
+
+進場之後播的那段動畫，`index.js`：
+
+| | |
+|---|---|
+| 字幕 | `INTRO_LINES` 兩句，`INTRO_BEAT_MS` 一句一秒 —— 本來是 5、4、3、2、1 的數字倒數，賓客在意的不是還剩幾秒，所以把那兩秒拿來說要說的事 |
+| 開幕簾 | `CURTAIN_MS` 1.5 秒，拉開後灑金箔（`goldFall()`） |
+| 跳過 | `#introSkip`，字幕與簾幕期間都點得到（簾幕本身 `pointer-events:none`），點了直接進大廳、不灑金箔 |
+| 收尾 | 所有 `setTimeout` 收在 `introTimers`，`endIntro()` 一次清掉 —— 跳過之後不會有殘留的計時器把收起來的畫面又叫出來 |
 
 > 這道門從來不是權限 —— 誰讀得到、寫得進什麼，一律由 Security Rules 決定。
 

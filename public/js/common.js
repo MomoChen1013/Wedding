@@ -797,7 +797,9 @@ function askName(){
     let icon = ICONS[Math.floor(Math.random() * ICONS.length)];
 
     const modal = document.createElement('div');
-    modal.className = 'letter-modal ask-name';
+    /* 直接帶著 open 進場：這個視窗是「按了送出才出現」的，
+       晚一個 frame 才顯示會讓按鈕看起來像沒反應 */
+    modal.className = 'letter-modal ask-name open';
     modal.innerHTML = `
       <div class="letter-card">
         <span class="letter-close" data-act="cancel" role="button" aria-label="關閉">✕</span>
@@ -835,7 +837,7 @@ function askName(){
     });
     input.addEventListener('keydown', (e) => { if(e.key === 'Enter') submit(); });
 
-    requestAnimationFrame(() => { modal.classList.add('open'); input.focus(); });
+    requestAnimationFrame(() => input.focus());
   });
 }
 

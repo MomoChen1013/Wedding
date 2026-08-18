@@ -58,10 +58,9 @@
   </div>
 </div>
 
-<!-- ============ 倒數 ============ -->
-<div class="overlay" id="countdown">
-  <div class="count-num" id="countNum">5</div>
-  <div class="count-label">即將揭幕</div>
+<!-- ============ 開場字幕：兩句，一句一秒（文案寫在 js/index.js 的 INTRO_LINES） ============ -->
+<div class="overlay" id="intro">
+  <div class="intro-line" id="introLine"></div>
 </div>
 
 <!-- ============ 開幕 ============ -->
@@ -69,6 +68,10 @@
   <div class="curtain-panel left"></div>
   <div class="curtain-panel right"></div>
 </div>
+
+<!-- 跳過開場：字幕與開幕簾期間都點得到（簾幕本身是 pointer-events:none），
+     由 js/index.js 在開場開始時叫出來、結束時收掉 -->
+<button class="intro-skip" id="introSkip" type="button" hidden>跳過</button>
 
 <!-- ============ 主畫面 ============ -->
 <div id="app">
