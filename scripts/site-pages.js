@@ -20,6 +20,19 @@ export const OPTIONAL_PAGES = [
   'seating', 'letter',
 ];
 
+/* 只在新人後台出現、沒有自己網址的功能開關。
+   和上面那些頁面共用同一個 sites.pages map（新人自己改不動，
+   要開要關都得經過我們），差別只在它不對應 /w/{slug}/{key}。
+
+   seatingPlan（排桌管理）＝把 Excel 排桌搬上線的工作台。
+   它產出的結果最後同步進 seating（我的桌次）那一份公開名單，
+   所以兩個開關是獨立的：可以先開排桌管理慢慢排，
+   婚禮當天才打開賓客那一頁。 */
+export const ADMIN_PAGES = ['seatingPlan'];
+
+/* pages map 裡會出現的所有代號（頁面 ＋ 後台功能） */
+export const ALL_PAGE_KEYS = [...OPTIONAL_PAGES, ...ADMIN_PAGES];
+
 /* 建站時沒特別指定就開這些 */
 export const DEFAULT_PAGES = ['rsvp', 'wall'];
 
@@ -35,6 +48,8 @@ export const PAGE_LABELS = {
   quiz:       '新人小測驗',
   seating:    '我的桌次',
   letter:     '給你的信',
+  /* 沒有對外網址，只是新人後台的一個分頁 */
+  seatingPlan: '排桌管理（後台）',
 };
 
 export function labelOf(key) {
@@ -48,10 +63,10 @@ export function labelOf(key) {
    --pages 是「整組覆蓋」：沒列到的一律關掉。
    --enable／--disable 則是在起點上加減。 */
 export function resolvePages(values, baseOn = DEFAULT_PAGES) {
-  const known = new Set(OPTIONAL_PAGES);
+  const known = new Set(ALL_PAGE_KEYS);
   const assertKnown = (key, flag) => {
     if (!known.has(key)) {
-      throw new Error(`${flag} 「${key}」不是有效的頁面，可用值：${OPTIONAL_PAGES.join('、')}`);
+      throw new Error(`${flag} 「${key}」不是有效的頁面，可用值：${ALL_PAGE_KEYS.join('、')}`);
     }
   };
 
@@ -66,5 +81,5 @@ export function resolvePages(values, baseOn = DEFAULT_PAGES) {
   (values.enable || []).forEach((k) => { assertKnown(k, '--enable'); on.add(k); });
   (values.disable || []).forEach((k) => { assertKnown(k, '--disable'); on.delete(k); });
 
-  return Object.fromEntries(OPTIONAL_PAGES.map((k) => [k, on.has(k)]));
+  return Object.fromEntries(ALL_PAGE_KEYS.map((k) => [k, on.has(k)]));
 }

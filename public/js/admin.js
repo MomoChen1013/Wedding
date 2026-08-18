@@ -6,6 +6,8 @@
      2. 悄悄話     — 賓客投進信箱的悄悄話（原本的 /inbox 頁已併進這裡）
      3. 大廳內容   — 地點、Dress Code、禮金說明、當日流程（寫回 sites 文件）
      4. 桌次       — 上傳桌次圖、匯入賓客名單
+     4b. 排桌管理  — 把賓客排進桌位（js/seating-plan.js），存好之後
+                     再由新人自己決定要不要同步到賓客的桌次查詢
      5. 感謝信     — 寫給特定賓客的電子信
      6. 首頁卡片   — Explore 區的自訂模組（連結型／彈窗型）
      7. 婚禮小卡   — 抽卡頁的卡池：裁切上傳照片、設等級與說明
@@ -209,7 +211,8 @@ function renderPager(listEl, state, total, onChange){
    跟「真的沒有資料」的空狀態區分開，畫面才不會忽閃忽現。
 ============================================================ */
 const loadedOnce = new Set();
-['rsvps', 'letters', 'seating', 'seatingImages', 'blessings', 'explore', 'cards', 'exhibits', 'quiz']
+['rsvps', 'letters', 'seating', 'seatingImages', 'blessings', 'explore', 'cards', 'exhibits', 'quiz',
+ 'rsvpTags']
   .forEach(key => {
     document.addEventListener(`data:${key}`, ()=> loadedOnce.add(key));
     document.addEventListener(`data:${key}:denied`, ()=> loadedOnce.add(key));
@@ -382,6 +385,9 @@ const TAB_PAGE = {
   rsvp:     'rsvp',
   lobby:    null,
   seating:  'seating',
+  /* 排桌管理沒有對外網址，開關同樣放在 pages 裡（見 site-context.js 的
+     ADMIN_FEATURES）—— 沒開的站台後台就不會長出這個分頁 */
+  seatingPlan: 'seatingPlan',
   letters:  'letter',
   cards:    'draw',
   exhibits: 'exhibition',
@@ -442,6 +448,13 @@ function openAdmin(){
     renderSeatList();
     renderImages();
     syncSeatSearchUI();
+  }
+  /* 排桌管理要讀 RSVP（賓客與人數）與賓客標籤，所以連它們一起訂閱 ——
+     出席回覆那一頁被關掉時，這裡仍然需要同一份名單 */
+  if(tabEnabled('seatingPlan')){
+    DataStore.subscribeRsvps();
+    if(guestTagsOn()) DataStore.subscribeRsvpTags();
+    if(window.SeatingPlan) SeatingPlan.init();
   }
   if(tabEnabled('letters')){ DataStore.subscribeBlessings(); renderLetters(); }
   if(tabEnabled('cards')){ DataStore.subscribeCards(); renderCards(); }
@@ -511,6 +524,7 @@ const SUBTABS = {
   rsvp:    ['overview', 'replies', 'form'],
   lobby:   ['info', 'schedule', 'explore'],
   seating: ['map', 'list'],
+  seatingPlan: ['board', 'tables', 'io'],
   quiz:    ['questions', 'votes'],
 };
 

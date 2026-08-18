@@ -30,6 +30,9 @@
                        例：--pages rsvp,wall,cake
                        不給則預設開啟 rsvp,wall
                        可用值：rsvp wall cake draw exhibition quiz
+                              seating letter
+                       另外還有一個只在新人後台出現的開關 seatingPlan
+                       （排桌管理），它沒有對外網址，但也放在同一組
      --enable         選填，在預設之外「加開」某頁；可重複給多次
      --disable        選填，關掉某頁；可重複給多次
      --owner-email    新人的 Google 信箱；**新人後台要用它登入才進得去**
@@ -56,7 +59,7 @@ import { parseArgs } from 'node:util';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { resolveBaseUrl } from './site-url.js';
-import { OPTIONAL_PAGES, DEFAULT_PAGES, resolvePages } from './site-pages.js';
+import { OPTIONAL_PAGES, ADMIN_PAGES, DEFAULT_PAGES, PAGE_LABELS, resolvePages } from './site-pages.js';
 
 /* ---------- 保留字黑名單 ---------- */
 const RESERVED_SLUGS = new Set(['admin', 'api', 'www', 'app', 'w', 's', 'assets', 'static']);
@@ -243,13 +246,18 @@ async function main() {
   initializeApp(initOptions);
 
   const { siteId, slug, pages, owners } = await createSite(values);
-  const on = Object.entries(pages).filter(([, v]) => v).map(([k]) => k);
+  /* 後台功能（seatingPlan）也在 pages 裡，但它不是一頁，分開印 */
+  const on = OPTIONAL_PAGES.filter((k) => pages[k]);
+  const adminOn = ADMIN_PAGES.filter((k) => pages[k]);
 
   console.log('✅ 站台建立成功！');
   console.log(`   siteId : ${siteId}`);
   console.log(`   slug   : ${slug}`);
   console.log(`   網址   : ${resolveBaseUrl(values.base)}/w/${slug}/`);
   console.log(`   已開頁面 : 大廳（固定）${on.length ? '、' + on.join('、') : ''}`);
+  if (adminOn.length) {
+    console.log(`   後台功能 : ${adminOn.map((k) => PAGE_LABELS[k] || k).join('、')}`);
+  }
   if (owners.length) {
     console.log(`   後台可用 : ${owners.join('、')}`);
   } else {

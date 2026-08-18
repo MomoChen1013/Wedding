@@ -23,6 +23,11 @@
      # 打開／關掉「賓客標籤」（配合排桌次用的進階功能，預設是關的）
      node scripts/set-pages.js --slug ginny-one-20260919 --guest-tags on
 
+     # 打開「排桌管理」後台（沒有自己的網址，只是後台多一個分頁）
+     # 排桌會用到標籤分組，通常兩個一起開
+     node scripts/set-pages.js --slug ginny-one-20260919 \
+       --enable seatingPlan --guest-tags on
+
      # 關掉「入場登入」：賓客不用報上名來，一進來就是大廳
      # （只用大廳＋桌次查詢的站台適合關掉，預設是開的）
      node scripts/set-pages.js --slug ginny-one-20260919 --entry-login off
@@ -30,6 +35,7 @@
    參數：
      --slug          必填，要修改的站台代稱
      --pages         逗號分隔的完整清單，沒列到的一律關掉
+                     （seatingPlan 也吃這一組，它是後台功能不是頁面）
      --enable        加開某頁；可重複給多次
      --disable       關掉某頁；可重複給多次
      --owner-email   重設後台可用帳號；可重複給多次
@@ -53,7 +59,7 @@ import { parseArgs } from 'node:util';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { resolveBaseUrl } from './site-url.js';
-import { OPTIONAL_PAGES, resolvePages, labelOf } from './site-pages.js';
+import { OPTIONAL_PAGES, ADMIN_PAGES, ALL_PAGE_KEYS, resolvePages, labelOf } from './site-pages.js';
 
 function parseCliArgs(argv) {
   const { values } = parseArgs({
@@ -79,12 +85,12 @@ function parseCliArgs(argv) {
 function currentPages(site) {
   const raw = site.pages && typeof site.pages === 'object' ? site.pages : null;
   return Object.fromEntries(
-    OPTIONAL_PAGES.map((k) => [k, raw ? raw[k] === true : true])
+    ALL_PAGE_KEYS.map((k) => [k, raw ? raw[k] === true : true])
   );
 }
 
 function onKeys(pages) {
-  return OPTIONAL_PAGES.filter((k) => pages[k]);
+  return ALL_PAGE_KEYS.filter((k) => pages[k]);
 }
 
 async function main() {
@@ -220,15 +226,21 @@ function padDisplay(text, width) {
 
 /* 印出開關；有 before 就標出這次的變化 */
 function printPages(after, before) {
-  console.log(`   ${padDisplay('大廳（首頁）', 28)}✅ 開（永遠開啟）`);
-  for (const key of OPTIONAL_PAGES) {
+  const line = (key) => {
     const mark = after[key] ? '✅ 開' : '⛔ 關';
     let change = '';
     if (before && before[key] !== after[key]) {
       change = after[key] ? '  ← 這次打開' : '  ← 這次關掉';
     }
     console.log(`   ${padDisplay(labelOf(key), 28)}${mark}${change}`);
-  }
+  };
+
+  console.log(`   ${padDisplay('大廳（首頁）', 28)}✅ 開（永遠開啟）`);
+  OPTIONAL_PAGES.forEach(line);
+
+  /* 後台功能沒有自己的網址，和賓客看得到的頁面分開列，才不會被誤會成「多一頁」 */
+  console.log('   ── 只在新人後台出現 ──');
+  ADMIN_PAGES.forEach(line);
 }
 
 main().catch((err) => {
