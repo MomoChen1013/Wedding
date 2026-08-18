@@ -95,8 +95,7 @@
   const undoStack = [];
   const redoStack = [];
 
-  /* 提醒先只露出前幾條，其餘收起來（見 renderWarns） */
-  const WARN_PREVIEW = 3;
+  /* 提醒收起來時只佔一行，其餘展開才看（見 renderWarns） */
   let warnsOpen = false;
 
   /* 篩選預設收起來：這一頁最重要的是那兩欄工作區，
@@ -585,53 +584,92 @@
      ------------------------------------------------------------
      一律只提醒，不擋操作 —— 婚宴實務上常常要臨時硬塞一個人進去。
   ============================================================ */
-  function renderWarns() {
+  /* 提醒分兩級：
+       warn 要處理（沒排到、爆容量、缺人數）
+       info 知道就好（誰還沒回覆、哪一桌有幾位素食）
+     混在一起數的話，「8 項提醒」看起來會比實際嚴重得多。 */
+  function buildWarns() {
     const guests = allGuests();
-    const out = [];
+    const list = [];
 
+    /* 1. 沒排到的人 —— 這一頁最不想發生的事，永遠排第一 */
     const unassigned = guests.filter((g) => !g.tableId && g.count > 0);
     if (unassigned.length) {
       const heads = unassigned.reduce((n, g) => n + g.count, 0);
-      out.push(`尚有 ${unassigned.length} 位賓客（${heads} 人）未安排`);
+      list.push({ level:'warn', text:`尚有 ${unassigned.length} 位賓客（${heads} 人）未安排` });
     }
 
+    /* 2. 爆容量的桌子 */
     sortedTables().forEach((t) => {
-      const { heads, rows } = seatedOf(t.id, guests);
-      if (heads > t.cap) out.push(`第 ${no2(t.no)} 桌超過容量 ${heads - t.cap} 位`);
+      const { heads } = seatedOf(t.id, guests);
+      if (heads > t.cap) {
+        list.push({ level:'warn', text:`第 ${no2(t.no)} 桌超過容量 ${heads - t.cap} 位（${heads} / ${t.cap}）` });
+      }
+    });
+
+    /* 3. 排了桌卻沒有人數，容量就算不準 */
+    const noCount = guests.filter((g) => g.tableId && g.count <= 0);
+    if (noCount.length) {
+      list.push({ level:'warn', text:`有 ${noCount.length} 位已排桌的賓客缺少人數` });
+    }
+
+    /* 4. 還沒確認出席的人 */
+    const pending = guests.filter((g) => g.rsvp === 'maybe');
+    if (pending.length) {
+      const who = pending.slice(0, 3).map((g) => g.code || g.name).join('、');
+      list.push({ level:'info',
+        text:`${who}${pending.length > 3 ? ` 等 ${pending.length} 位` : ''} 尚未確認 RSVP` });
+    }
+
+    /* 5. 每一桌的特殊需求（素食、行動不便、兒童、VIP）——
+          桌卡上本來就寫著，這裡是給「一次看完」用的 */
+    sortedTables().forEach((t) => {
+      const { rows } = seatedOf(t.id, guests);
       const names = rows.flatMap((g) => g.tagNames);
       specialsOf(names).forEach((sp) => {
         const n = rows.filter((g) => g.tagNames.some((x) =>
           sp.match.some((m) => x.toLowerCase().includes(m.toLowerCase()))))
-          .reduce((s, g) => s + g.count, 0);
-        if (n) out.push(`第 ${no2(t.no)} 桌有 ${n} 位${sp.label}賓客`);
+          .reduce((acc, g) => acc + g.count, 0);
+        if (n) list.push({ level:'info', icon: sp.icon, text:`第 ${no2(t.no)} 桌有 ${n} 位${sp.label}賓客` });
       });
     });
 
-    const pending = guests.filter((g) => g.rsvp === 'maybe');
-    if (pending.length) {
-      const who = pending.slice(0, 3).map((g) => g.code || g.name).join('、');
-      out.push(`${who}${pending.length > 3 ? ` 等 ${pending.length} 位` : ''} 尚未確認 RSVP`);
-    }
+    return list;
+  }
 
-    const noCount = guests.filter((g) => g.tableId && g.count <= 0);
-    if (noCount.length) out.push(`有 ${noCount.length} 位已排桌的賓客缺少人數`);
+  /* 收起來的時候只佔一行：最該處理的那一條 ＋「還有 N 項」。
+     二十幾桌的婚禮一次會有十幾條提醒，全部攤開會把工作區推出螢幕，
+     那就違反了「未安排的人要一直看得見」。 */
+  function renderWarns() {
+    const list = buildWarns();
+    const box = $('spWarns');
 
-    /* 二十幾桌的婚禮很容易一次列出十幾條提醒，整片攤開會把工作區
-       擠到螢幕外 —— 那就違反了「未安排的人要一直看得見」。
-       所以只先露出前幾條，其餘收起來讓使用者自己決定要不要看。 */
-    if (!out.length) {
-      $('spWarns').innerHTML = `<div class="sp-warn is-ok">目前沒有需要注意的地方</div>`;
+    if (!list.length) {
+      box.innerHTML = `<div class="sp-warn is-ok">目前沒有需要注意的地方</div>`;
       return;
     }
 
-    const shown = warnsOpen ? out : out.slice(0, WARN_PREVIEW);
-    const rest = out.length - shown.length;
-    $('spWarns').innerHTML =
-      shown.map((w) => `<div class="sp-warn">⚠️ ${esc(w)}</div>`).join('')
-      + (rest > 0 || warnsOpen
-        ? `<button class="sp-warn-more" type="button" id="spWarnToggle">${
-            warnsOpen ? '收起提醒' : `還有 ${rest} 項提醒，展開看看`}</button>`
-        : '');
+    const [first, ...rest] = list;
+    const warnCount = list.filter((w) => w.level === 'warn').length;
+
+    const row = (w) => `
+      <div class="sp-warn is-${w.level}">
+        <span class="sp-warn-ic">${w.icon ? esc(w.icon) : (w.level === 'warn' ? '⚠️' : '·')}</span>
+        <span class="sp-warn-text">${esc(w.text)}</span>
+      </div>`;
+
+    box.innerHTML = `
+      <div class="sp-warn is-${first.level} sp-warn-head">
+        <span class="sp-warn-ic">${first.icon ? esc(first.icon) : (first.level === 'warn' ? '⚠️' : '·')}</span>
+        <span class="sp-warn-text">${esc(first.text)}</span>
+        ${rest.length ? `
+          <button class="sp-warn-more${warnCount > 1 ? ' has-warn' : ''}" type="button"
+                  id="spWarnToggle" aria-expanded="${warnsOpen}" aria-controls="spWarnRest"
+                  title="${warnCount > 1 ? `其中 ${warnCount - 1} 項要處理` : '其餘都是知道就好'}">${
+            warnsOpen ? '收起' : `還有 ${rest.length} 項`}</button>` : ''}
+      </div>
+      ${rest.length ? `<div class="sp-warn-rest" id="spWarnRest"${warnsOpen ? '' : ' hidden'}>${
+        rest.map(row).join('')}</div>` : ''}`;
 
     const toggle = $('spWarnToggle');
     if (toggle) toggle.addEventListener('click', () => { warnsOpen = !warnsOpen; renderWarns(); });
