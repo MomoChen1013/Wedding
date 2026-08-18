@@ -100,6 +100,8 @@ async function checkOne(db, slug, base) {
   console.log(`   婚禮日期 : ${fmtDate(s.eventDate)}（時區 ${s.timezone || 'Asia/Taipei'}）`);
   console.log(`   場地     : ${s.venueName || '（未設定）'}`);
   console.log(`   主題色   : ${s.themeColor || '（預設）'}`);
+  console.log(`   入場登入 : ${s.entryLoginEnabled === false
+    ? '關（賓客不用填名字，一進來就是大廳）' : '開（先報上名來才進得去）'}`);
 
   /* 5. 頁面開關 */
   console.log('');

@@ -206,6 +206,9 @@ function buildWed(site) {
     transportParking: site.transportParking || '',
     transportPublicImg: site.transportPublicImg || '',
     transportParkingImg: site.transportParkingImg || '',
+    /* 入場登入（大廳的 gate）：沒設定過就視為開著，舊站台的入場動畫不會突然消失。
+       關掉時賓客不必報上名來，直接看到大廳（見 common.js 的 entryLoginOn()） */
+    entryLogin: site.entryLoginEnabled !== false,
     /* 沒設定過就視為開著，舊站台的桌次搜尋不會突然消失 */
     seatingSearch: site.seatingSearchEnabled !== false,
     /* 桌次功能的總開關，同樣是沒設定過就視為開著 */

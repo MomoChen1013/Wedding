@@ -77,8 +77,13 @@ CAKES.forEach((c,i)=>{
 });
 applyCake(CAKES[0]);
 
-/* 在 drop 步驟預先顯示送禮者名字 */
-document.getElementById('senderPreview').textContent = me_user.name;
+/* 在 drop 步驟預先顯示送禮者名字（還沒報上名來的話留白，
+   等下面 startBtn 問完名字再補上） */
+const senderPreview = document.getElementById('senderPreview');
+function syncSenderPreview(){
+  senderPreview.textContent = LS.get('user', null) ? me_user.name : '';
+}
+syncSenderPreview();
 
 /* ============================================================
    步驟控制
@@ -108,8 +113,14 @@ function showStep(name){
   if(name === 'pick'){ document.getElementById('wishLine').textContent = ''; }
 }
 
-/* idle → pick */
-document.getElementById('startBtn').addEventListener('click', ()=>showStep('pick'));
+/* idle → pick。名字是最後要跟著甜點一起送出去的，所以在儀式開始前先問清楚
+   （入場登入開著時賓客早就報到過，ensureUser() 不會跳出來打擾） */
+document.getElementById('startBtn').addEventListener('click', async ()=>{
+  const u = await ensureUser();
+  if(!u) return;
+  syncSenderPreview();
+  showStep('pick');
+});
 
 /* pick → blow */
 document.getElementById('toBlowBtn').addEventListener('click', ()=>showStep('blow'));

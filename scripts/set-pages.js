@@ -23,6 +23,10 @@
      # 打開／關掉「賓客標籤」（配合排桌次用的進階功能，預設是關的）
      node scripts/set-pages.js --slug ginny-one-20260919 --guest-tags on
 
+     # 關掉「入場登入」：賓客不用報上名來，一進來就是大廳
+     # （只用大廳＋桌次查詢的站台適合關掉，預設是開的）
+     node scripts/set-pages.js --slug ginny-one-20260919 --entry-login off
+
    參數：
      --slug          必填，要修改的站台代稱
      --pages         逗號分隔的完整清單，沒列到的一律關掉
@@ -30,6 +34,8 @@
      --disable       關掉某頁；可重複給多次
      --owner-email   重設後台可用帳號；可重複給多次
      --guest-tags    on／off，賓客標籤功能的總開關（新人自己改不動）
+     --entry-login   on／off，大廳入場登入（填名字才進得去）的總開關；
+                     關掉時需要名字的動作（寫祝福、送甜點）才會當場問
      --dry-run       只印出結果，不寫入資料庫
      --project       覆寫 Firebase 專案 ID
 
@@ -59,6 +65,7 @@ function parseCliArgs(argv) {
       disable:       { type: 'string', multiple: true },
       'owner-email': { type: 'string', multiple: true },
       'guest-tags':  { type: 'string' },
+      'entry-login': { type: 'string' },
       'dry-run':     { type: 'boolean', default: false },
       base:          { type: 'string' },
       project:       { type: 'string' },
@@ -119,28 +126,24 @@ async function main() {
     }
   });
 
-  /* 賓客標籤：新人在後台改不動（規則的白名單裡沒有這個欄位），
+  /* 賓客標籤與入場登入：新人在後台都改不動（規則的白名單裡沒有這兩個欄位），
      所以要開要關都從這裡下指令 */
-  let guestTags = null;
-  if (values['guest-tags'] !== undefined) {
-    const v = String(values['guest-tags']).trim().toLowerCase();
-    if (!['on', 'off', 'true', 'false'].includes(v)) {
-      throw new Error('--guest-tags 只接受 on 或 off');
-    }
-    guestTags = v === 'on' || v === 'true';
-  }
+  const guestTags  = parseSwitch(values['guest-tags'], '--guest-tags');
+  const entryLogin = parseSwitch(values['entry-login'], '--entry-login');
 
   const touchesPages =
     values.pages !== undefined || values.enable?.length || values.disable?.length;
 
-  if (!touchesPages && !owners && guestTags === null) {
+  if (!touchesPages && !owners && guestTags === null && entryLogin === null) {
     /* 什麼都沒指定就當成查詢 */
     console.log(`站台：${values.slug}（siteId: ${siteId}）`);
     console.log(hadPagesField ? '' : '⚠️ 這個站台還沒有 pages 欄位，目前等於「全部開啟」。');
     printPages(before);
     console.log(`   ${padDisplay('賓客標籤（排桌次用）', 28)}${
       site.guestTagsEnabled === true ? '✅ 開' : '⛔ 關'}`);
-    console.log('\n加上 --pages／--enable／--disable／--guest-tags 才會實際修改。');
+    console.log(`   ${padDisplay('入場登入（填名字進場）', 28)}${
+      site.entryLoginEnabled === false ? '⛔ 關' : '✅ 開'}`);
+    console.log('\n加上 --pages／--enable／--disable／--guest-tags／--entry-login 才會實際修改。');
     return;
   }
 
@@ -172,6 +175,16 @@ async function main() {
       site.guestTagsEnabled === guestTags ? '' : (guestTags ? '  ← 這次打開' : '  ← 這次關掉')}`);
   }
 
+  if (entryLogin !== null) {
+    console.log('');
+    console.log(`   ${padDisplay('入場登入（填名字進場）', 28)}${entryLogin ? '✅ 開' : '⛔ 關'}${
+      (site.entryLoginEnabled !== false) === entryLogin
+        ? '' : (entryLogin ? '  ← 這次打開' : '  ← 這次關掉')}`);
+    if (!entryLogin) {
+      console.log('     大廳不再出現入場畫面；寫祝福、送甜點時才會當場問名字。');
+    }
+  }
+
   if (values['dry-run']) {
     console.log('\n（--dry-run，沒有寫入資料庫）');
     return;
@@ -181,10 +194,21 @@ async function main() {
   if (touchesPages) patch.pages = after;
   if (owners) patch.ownerEmails = owners;
   if (guestTags !== null) patch.guestTagsEnabled = guestTags;
+  if (entryLogin !== null) patch.entryLoginEnabled = entryLogin;
   await siteRef.update(patch);
 
   console.log('\n✅ 已更新，重新整理網頁就會生效（不用重新 deploy）。');
   console.log(`   ${resolveBaseUrl(values.base)}/w/${values.slug}/`);
+}
+
+/* on／off 開關：沒給就回 null（代表這次不動它） */
+function parseSwitch(raw, flag) {
+  if (raw === undefined) return null;
+  const v = String(raw).trim().toLowerCase();
+  if (!['on', 'off', 'true', 'false'].includes(v)) {
+    throw new Error(`${flag} 只接受 on 或 off`);
+  }
+  return v === 'on' || v === 'true';
 }
 
 /* 中日文字在終端機佔兩格，padEnd 會算錯，自己補空白才對得齊 */

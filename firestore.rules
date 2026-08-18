@@ -45,7 +45,10 @@ service cloud.firestore {
 
     /* 新人在後台可以改的站台欄位：只有大廳看得到的文案。
        slug／status／ownerEmails／pages／rsvp* 一律不在名單內 ——
-       那些欄位是規則自己的判斷依據，能改的話等於能自己開後門。 */
+       那些欄位是規則自己的判斷依據，能改的話等於能自己開後門。
+       guestTagsEnabled 與 entryLoginEnabled 也不在名單內：它們不參與規則判斷，
+       但一改就動到整站的用法（要不要用標籤、賓客要不要先報上名來），
+       和 pages 一樣由我們用 Admin SDK／Console 決定哪一組新人要用。 */
     function isValidSiteContentUpdate(siteId) {
       let d = request.resource.data;
       return isSiteOwner(siteId)

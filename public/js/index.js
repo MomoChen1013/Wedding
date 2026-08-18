@@ -4,6 +4,8 @@
    流程：
      首次造訪 → gate（填名字 + 抽記號）→ 倒數 5 秒 → 開幕 → 進入首頁
      已入場   → 跳過 gate，直接顯示首頁
+     入場登入關掉（站台文件 entryLoginEnabled: false）
+              → 沒有 gate、不倒數，一進來就是首頁
 
    內容（原本的 info 頁已併進本頁）：
      置中開場 → 婚禮資訊卡（含尋找我的座位）→ 當日流程 → 出席前的小提醒
@@ -61,15 +63,16 @@ let currentIcon = ICONS[Math.floor(Math.random()*ICONS.length)];
 
 /* ============================================================
    入場 gate
+   ------------------------------------------------------------
+   entryLoginEnabled 關掉的站台整道 gate 都不出現（見下面的 setupGate）：
+   只用大廳與桌次查詢時，賓客沒有一件事需要名字，
+   先擋一道「輸入名字」只是把人擋在門外。
 ============================================================ */
 function rollIcon(){
   currentIcon = ICONS[Math.floor(Math.random()*ICONS.length)];
   iconPick.textContent = currentIcon;
   iconPick.classList.remove('roll'); void iconPick.offsetWidth; iconPick.classList.add('roll');
 }
-iconPick.textContent = currentIcon;
-iconPick.addEventListener('click', rollIcon);
-document.getElementById('rerollIcon').addEventListener('click', rollIcon);
 
 function shake(){
   const c=document.querySelector('.gate-card');
@@ -104,42 +107,60 @@ function openCurtain(){
   },1500);
 }
 
-/* Google 登入：彈窗成功後自動填名字 + 進場 */
-const googleBtn = document.getElementById('googleBtn');
-googleBtn.addEventListener('click', async ()=>{
-  if(!window.fb || !window.fb.auth){
-    console.warn('Firebase 尚未就緒'); shake(); return;
-  }
-  googleBtn.disabled = true;
-  try{
-    const provider = new window.fb.GoogleAuthProvider();
-    const result   = await window.fb.signInWithPopup(window.fb.auth, provider);
-    const dn       = result.user?.displayName || '朋友';
-    nameInput.value = dn.slice(0, 12);   // input maxlength=12，超過裁掉
-    document.getElementById('enterBtn').click();
-  }catch(e){
-    console.warn('Google 登入失敗或取消：', e);
-    shake();
-    googleBtn.disabled = false;
-  }
-});
+function setupGate(){
+  iconPick.textContent = currentIcon;
+  iconPick.addEventListener('click', rollIcon);
+  document.getElementById('rerollIcon').addEventListener('click', rollIcon);
 
-/* 進場按鈕 */
-document.getElementById('enterBtn').addEventListener('click', ()=>{
-  const n = nameInput.value.trim();
-  if(!n){ nameInput.focus(); shake(); return; }
-  try { saveUser({ name:n, icon:currentIcon }); } catch(e){ console.warn('saveUser failed', e); }
-  syncNavUser();
-  gate.style.display='none';                   // 先把入口畫面收掉
-  runCountdown();                              // 馬上開始倒數
-  try { startBGM(); } catch(e){ console.warn('BGM 啟動失敗', e); }  // 音樂掛掉也不影響流程
-});
+  /* Google 登入：彈窗成功後自動填名字 + 進場 */
+  const googleBtn = document.getElementById('googleBtn');
+  googleBtn.addEventListener('click', async ()=>{
+    if(!window.fb || !window.fb.auth){
+      console.warn('Firebase 尚未就緒'); shake(); return;
+    }
+    googleBtn.disabled = true;
+    try{
+      const provider = new window.fb.GoogleAuthProvider();
+      const result   = await window.fb.signInWithPopup(window.fb.auth, provider);
+      const dn       = result.user?.displayName || '朋友';
+      nameInput.value = dn.slice(0, 12);   // input maxlength=12，超過裁掉
+      document.getElementById('enterBtn').click();
+    }catch(e){
+      console.warn('Google 登入失敗或取消：', e);
+      shake();
+      googleBtn.disabled = false;
+    }
+  });
 
-/* 若已經入場過，直接跳過 gate */
-if(LS.get('user', null)){
-  gate.style.display='none';
+  /* 進場按鈕 */
+  document.getElementById('enterBtn').addEventListener('click', ()=>{
+    const n = nameInput.value.trim();
+    if(!n){ nameInput.focus(); shake(); return; }
+    try { saveUser({ name:n, icon:currentIcon }); } catch(e){ console.warn('saveUser failed', e); }
+    syncNavUser();
+    gate.style.display='none';                   // 先把入口畫面收掉
+    runCountdown();                              // 馬上開始倒數
+    try { startBGM(); } catch(e){ console.warn('BGM 啟動失敗', e); }  // 音樂掛掉也不影響流程
+  });
+
+  /* 若已經入場過，直接跳過 gate */
+  if(LS.get('user', null)){
+    gate.style.display='none';
+    enterSite();
+  }
+}
+
+/* 這組新人不用入場登入：整道 gate 從畫面上移除，直接看到大廳。
+   ・不跑倒數與開幕簾 —— 那兩段是「按下進場」的獎賞，沒有那個動作就不放
+   ・BGM 也不自動開 —— 沒有使用者手勢，瀏覽器本來就會擋掉自動播放，
+     賓客想聽的話按右下角那顆音樂鈕（浮動控制照舊） */
+function skipGate(){
+  gate.remove();
   enterSite();
 }
+
+if(entryLoginOn()) setupGate();
+else               skipGate();
 
 /* ============================================================
    婚禮資訊（原 info.js；資料全部來自站台設定 window.WED）

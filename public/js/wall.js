@@ -27,10 +27,15 @@ function renderWishes(){
     wall.appendChild(d);
   });
 }
-document.getElementById('postWish').addEventListener('click',()=>{
+
+/* 名字：入場登入開著時就是大廳報到的那個；關著的話 ensureUser() 會在這一刻補問，
+   賓客按了取消就不送出（留言留在輸入框裡，不會白打一次） */
+document.getElementById('postWish').addEventListener('click',async ()=>{
   const t=document.getElementById('wishText').value.trim();
   if(!t) return;
-  DataStore.addWish({name:me_user.name, icon:me_user.icon, text:t});
+  const u = await ensureUser();
+  if(!u) return;
+  DataStore.addWish({name:u.name, icon:u.icon, text:t});
   document.getElementById('wishText').value='';
   confettiRain();
   /* 不需手動 renderWishes，onSnapshot 會推 'data:wishes' 回來自動重畫 */
@@ -50,10 +55,12 @@ function renderLetterCount(){
 }
 function openLetter(){ letterModal.classList.add('open'); setTimeout(()=>letterText.focus(),60); }
 function closeLetter(){ letterModal.classList.remove('open'); }
-function submitLetter(){
+async function submitLetter(){
   const t=letterText.value.trim();
   if(!t){ letterText.focus(); return; }
-  DataStore.addLetter({name:me_user.name, icon:me_user.icon, text:t});
+  const u = await ensureUser();
+  if(!u) return;
+  DataStore.addLetter({name:u.name, icon:u.icon, text:t});
   letterText.value='';
   closeLetter();
   spawnFloat(DEFAULT_ICON, innerWidth/2, innerHeight*0.7);
