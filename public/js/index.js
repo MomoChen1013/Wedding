@@ -97,7 +97,9 @@ function enterSite(){
    introTimers，跳過時一次清掉，才不會有殘留的 setTimeout 把
    已經收起來的畫面又叫出來）。
 ============================================================ */
-const INTRO_LINES = ['我們要結婚了', '也想邀請你，見證這一刻'];
+/* 一個元素一句；字串裡的 \n 就是換行（.intro-line 是 white-space:pre-line，
+   所以照樣走 textContent，不必為了換行改用 innerHTML） */
+const INTRO_LINES = ['我們要結婚了', '邀請你，\n見證這一刻'];
 const INTRO_BEAT_MS = 1000;                 /* 一句停留多久 */
 const CURTAIN_MS = 1500;                    /* 簾幕拉開的時間，對齊 index.css */
 
