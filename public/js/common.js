@@ -1028,9 +1028,10 @@ function startCountdown(el, iso, mode){
              → 給你的信(letter) → 故事(exhibition) → 測驗(quiz)
              → 抽卡(draw) → 集氣(cake) → User
    ・站台沒開的頁面不會出現在列上
+   ・出席回覆（邀請函）不放進導覽列：它是單獨分享出去的一頁，
+     大廳本來就有一塊 RSVP 的入口，不需要在每一頁都再擺一次
 ============================================================ */
 const NAV_ITEMS = [
-  { key:'rsvp',       label:'出席回覆' },
   { key:'seating',    label:'桌次' },
   { key:'wall',       label:'祝福' },
   { key:'letter',     label:'給你的信' },
@@ -1039,6 +1040,11 @@ const NAV_ITEMS = [
   { key:'draw',       label:'抽卡' },
   { key:'cake',       label:'集氣' },
 ];
+
+/* 這幾頁不掛導覽列：
+   ・admin ：新人自己的工作畫面，有自己的一套介面
+   ・rsvp  ：邀請函是單獨分享出去的一頁，只留邀請函本身的內容 */
+const NO_NAV_PAGES = new Set(['admin', 'rsvp']);
 
 /* 入場前（大廳的 gate、信箱的登入畫面）先不顯示導覽列 */
 function setNavVisible(on){
@@ -1189,7 +1195,10 @@ function bindCommonUI(){
   /* 每頁共用的導覽列與浮動控制 —— 後台是新人自己的工作畫面，
      不套用賓客那一份導覽列／主題／BGM 浮動按鈕，後台有自己的一套 */
   if(window.SITE && window.SITE.page === 'admin') return;
-  buildSiteNav();
+
+  /* 邀請函只藏導覽列，主題與 BGM 的浮動按鈕照舊 */
+  if(window.SITE && NO_NAV_PAGES.has(window.SITE.page)) setNavVisible(false);
+  else buildSiteNav();
   buildFloating();
 
   /* 主題切換 */

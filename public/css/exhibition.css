@@ -1,8 +1,10 @@
 /* ============================================================
-   橫向時間軸主舞台（垂直滾動驅動橫向移動）
+   橫向時間軸主舞台（直接左右滑動，手機優先）
+   ・軌道本身就是一個橫向捲動容器，手機用手指滑、桌機可拖曳或按方向鍵
+   ・scroll-snap 讓每一張展品自動停在畫面正中間
 ============================================================ */
-.tl-sec{position:relative;}             /* 高度由 JS 依節點數量設定 */
-.tl-pin{position:sticky;top:0;height:100vh;overflow:hidden;
+.tl-sec{position:relative;}
+.tl-pin{position:relative;height:calc(100svh - var(--nav-h));min-height:520px;overflow:hidden;
   display:flex;align-items:center;background:rgba(255,255,255,.72);}
 
 /* 巨大年份襯底（隨聚焦卡片切換；無年份時隱藏） */
@@ -12,27 +14,42 @@
   transition:opacity .4s, color .4s;white-space:nowrap;}
 .tl-year-back.hidden{opacity:0;}
 
-/* 頂部小標 */
-.tl-head{position:absolute;top:26px;left:0;right:0;text-align:center;z-index:6;}
+/* 頂部小標：捲到一半時舞台上緣會滑到固定導覽列底下，
+   所以留出導覽列的高度，小標才不會被蓋住 */
+.tl-head{position:absolute;top:calc(var(--nav-h) + 20px);left:0;right:0;
+  text-align:center;z-index:6;}
 .tl-eyebrow{font-family:var(--font-display);font-weight:400;letter-spacing:.24em;
   font-size:11px;color:var(--ink-soft);}
 .tl-head h2{font-family:var(--font-display);font-weight:400;font-size:17px;
   letter-spacing:.24em;color:var(--ink);margin-top:8px;}
 
-/* 軌道：水平排列所有節點 */
-.tl-track{display:flex;align-items:center;gap:46px;padding:0 14vw;
-  position:relative;z-index:2;will-change:transform;}
+/* 軌道：水平排列所有節點，本身就是橫向捲動容器
+   ・左右各留半個畫面的內距，第一張與最後一張也停得到正中間
+   ・overscroll-behavior-x:contain 擋掉 iOS 的「往回上一頁」手勢 */
+.tl-track{display:flex;align-items:center;gap:46px;padding:0 50vw;
+  position:relative;z-index:2;width:100%;
+  overflow-x:auto;overflow-y:hidden;
+  scroll-snap-type:x mandatory;scroll-behavior:smooth;
+  overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;-ms-overflow-style:none;
+  cursor:grab;touch-action:pan-x pan-y pinch-zoom;}
+.tl-track::-webkit-scrollbar{display:none;}
+.tl-track.dragging{cursor:grabbing;scroll-behavior:auto;scroll-snap-type:none;}
+/* 滑到一半時不要一路平滑動畫（拖曳中由 JS 直接設 scrollLeft） */
+@media(prefers-reduced-motion:reduce){
+  .tl-track{scroll-behavior:auto;}
+}
 
-/* 時間線（在照片後方穿過卡片） */
-.tl-rail{position:absolute;left:0;top:50%;height:2px;width:100%;z-index:0;
+/* 時間線（在照片後方穿過卡片）——放在軌道外層，不跟著橫向捲動 */
+.tl-rail{position:absolute;left:0;top:50%;height:2px;width:100%;z-index:1;
   background:linear-gradient(90deg,transparent,var(--primary-deep) 6%,var(--primary-deep) 94%,transparent);
-  opacity:.35;}
+  opacity:.35;pointer-events:none;}
 
 /* 節點（單一拍立得 + 下方文字） */
 .tl-node{flex:0 0 auto;position:relative;display:flex;flex-direction:column;align-items:center;gap:14px;
   transition:transform .45s cubic-bezier(.2,.7,.2,1), opacity .45s, filter .45s;
   transform:scale(.82);opacity:.5;filter:saturate(.75);
-  max-width:min(70vw,340px);}
+  max-width:min(70vw,340px);scroll-snap-align:center;scroll-snap-stop:always;}
 .tl-node.focus{transform:scale(1);opacity:1;filter:none;}
 
 /* ============================================================
@@ -86,7 +103,7 @@
 ============================================================ */
 .tl-act-div{flex:0 0 auto;position:relative;display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:14px;
-  padding:36px 30px;min-width:160px;z-index:3;
+  padding:36px 30px;min-width:160px;z-index:3;scroll-snap-align:center;
   background:rgba(255,255,255,.92);
   border-radius:var(--radius);border:1px solid var(--line);}
 .tl-act-div .ac-label{font-family:var(--font-display);font-weight:400;
@@ -104,8 +121,21 @@
   display:flex;gap:6px;background:rgba(255,255,255,.86);border:1px solid var(--line);
   padding:8px 14px;border-radius:999px;max-width:90vw;flex-wrap:nowrap;}
 .tl-progress .pd{width:6px;height:6px;border-radius:50%;background:var(--line);
-  transition:.3s;flex:0 0 auto;}
+  transition:.3s;flex:0 0 auto;padding:0;border:none;cursor:pointer;
+  appearance:none;-webkit-appearance:none;}
 .tl-progress .pd.on{background:var(--ink);width:20px;border-radius:3px;}
+
+/* 左右箭頭（桌機用，手機隱藏 —— 直接滑就好） */
+.tl-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:7;
+  width:44px;height:44px;border-radius:50%;cursor:pointer;
+  background:rgba(255,255,255,.9);border:1px solid var(--line);
+  font-family:var(--font-display);font-size:22px;line-height:1;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  transition:border-color .25s,opacity .25s;}
+.tl-arrow:hover{border-color:var(--ink);}
+.tl-arrow:disabled{opacity:.25;cursor:default;}
+.tl-arrow.prev{left:16px;}
+.tl-arrow.next{right:16px;}
 
 /* 頂部全頁進度條 */
 .tl-topbar{position:fixed;top:var(--nav-h);left:0;height:1px;width:0;z-index:960;
@@ -142,6 +172,8 @@
    行動裝置調整
 ============================================================ */
 @media(max-width:720px){
+  .tl-arrow{display:none;}
+  .tl-progress{bottom:22px;}
   .tl-node{max-width:min(80vw,280px);}
   .tl-ph img{max-width:min(70vw,260px);max-height:46vh;}
   .tl-cap{font-size:21px;padding:12px 6px 18px;min-height:44px;}

@@ -65,7 +65,7 @@ service cloud.firestore {
                 不在名單內 —— 和 pages 一樣，只能由我們用 Admin SDK／
                 Console 打開，新人不會自己誤觸一個還沒教過的功能。 */
              'guestTags',
-             'seatingSearchEnabled', 'eventDate', 'updatedAt',
+             'seatingSearchEnabled', 'seatingFeatureEnabled', 'eventDate', 'updatedAt',
            ])
         /* 只放行「幾點開始」：後台只送整個 Timestamp 進來（年月日沿用原本設定好的），
            日期本身還是要透過我們才能改，不然出席回覆的判斷、網址都可能跟著跑掉 */
@@ -88,6 +88,11 @@ service cloud.firestore {
         && (!('story'     in d) || isStr(d.story, 2000))
         /* 桌次搜尋的開關：只影響賓客那一頁的畫面，不是規則的判斷依據 */
         && (!('seatingSearchEnabled' in d) || d.seatingSearchEnabled is bool)
+        /* 桌次功能的總開關：關著的時候大廳不出現「尋找我的座位」、
+           導覽列也不放桌次。和 pages 不一樣的是它不參與任何規則判斷
+           （桌次名單本來就只有新人寫得進去），所以放行給新人自己控制 —— 
+           婚禮當天才打開，賓客就不會提早跑去找位子。 */
+        && (!('seatingFeatureEnabled' in d) || d.seatingFeatureEnabled is bool)
         /* 出席回覆的題目開關，同理 */
         && (!('rsvpAskCard'    in d) || d.rsvpAskCard is bool)
         && (!('rsvpAskGift'    in d) || d.rsvpAskGift is bool)

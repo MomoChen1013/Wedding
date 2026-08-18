@@ -37,19 +37,25 @@
     <div class="scroll-cue"><span>Scroll</span><span class="arrow"></span></div>
   </div>
 
-  <!-- 橫向時間軸 -->
+  <!-- 橫向時間軸：手機直接用手指左右滑，桌機可以拖曳、按左右鍵或點兩側的箭頭 -->
   <section class="tl-sec" id="tlSec">
     <div class="tl-pin">
       <div class="tl-year-back" id="tlYearBack">2021</div>
       <div class="tl-head">
-        <div class="tl-eyebrow">上下滑動來看展覽</div>
+        <div class="tl-eyebrow">左右滑動看展覽</div>
         <h2>Our Love Timeline</h2>
       </div>
 
+      <!-- 時間線：留在軌道外面，才不會跟著橫向捲動跑掉 -->
+      <div class="tl-rail"></div>
+
       <div class="tl-track" id="tlTrack">
-        <div class="tl-rail"></div>
         <!-- 節點由 js/exhibition.js 動態建立 -->
       </div>
+
+      <!-- 桌機用的左右箭頭（手機隱藏，直接滑就好） -->
+      <button class="tl-arrow prev" id="tlPrev" type="button" aria-label="上一張">‹</button>
+      <button class="tl-arrow next" id="tlNext" type="button" aria-label="下一張">›</button>
 
       <div class="tl-progress" id="tlDots"></div>
     </div>

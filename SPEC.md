@@ -64,6 +64,10 @@ sites/{siteId}
   rsvpEnabled     : boolean
   seatingSearchEnabled : boolean  # 桌次頁的搜尋開關，沒有這個欄位視為 true；
                                   # false 時賓客只看得到已上傳的桌次圖
+  seatingFeatureEnabled: boolean  # 桌次功能的總開關，沒有這個欄位視為 true；
+                                  # false 時大廳不出現「尋找我的座位」、導覽列
+                                  # 也沒有桌次，直接打網址會被導回大廳。
+                                  # 後台不受影響（看的是 pages），名單照樣先整理
   # ↓ 出席回覆那一頁的題目與區塊開關，由新人在後台設定。
   #   沒有這些欄位一律視為 true（舊站台不會突然少東西）
   rsvpAskCard     : boolean  # 要不要問「喜帖發送方式」
@@ -223,7 +227,8 @@ Firestore 的讀取請求不帶條件，規則沒有辦法「只讓對得上的�
 
 ```
 coupleTitle venueName venueAddress venueMapUrl transportPublic transportParking
-dressCode giftNote story schedule hashtags seatingSearchEnabled updatedAt
+dressCode giftNote story schedule hashtags updatedAt
+seatingSearchEnabled seatingFeatureEnabled
 rsvpAskCard rsvpAskGift rsvpAskMessage rsvpContactMethods
 rsvpShowStory rsvpShowGallery guestTags
 ```
@@ -236,9 +241,10 @@ rsvpShowStory rsvpShowGallery guestTags
 它們只改變賓客看到的表單長什麼樣，規則本身不拿它們做任何判斷 ——
 能不能寫回覆仍然只看 `rsvpEnabled` 與 `rsvpDeadline`，那兩個依舊改不動。
 
-`seatingSearchEnabled` 是唯一一個非文案的欄位，放行的理由是它只改變賓客那一頁的
-畫面（要不要出現搜尋欄），規則本身不拿它做任何判斷 —— 桌次名單的讀寫權限
-和有沒有這個開關無關。
+兩個 `seating*` 開關放行的理由一樣：它們只改變賓客看到的畫面
+（`seatingSearchEnabled`＝那一頁要不要出現搜尋欄，`seatingFeatureEnabled`＝
+整個桌次功能要不要對賓客開放），規則本身不拿它們做任何判斷 ——
+桌次名單的讀寫權限和有沒有這兩個開關無關，`pageOn()` 也只看 `pages`。
 
 實作用 `request.resource.data.diff(resource.data).affectedKeys().hasOnly([...])`，
 所以夾帶任何一個名單外的欄位（哪怕其他欄位都合法）整筆就被拒。
@@ -658,7 +664,7 @@ allow read: if request.auth != null
 |---|---|
 | 出席回覆 | `rsvp` |
 | 婚禮資訊 | 永遠都在（大廳是必開的頁面） |
-| 桌次 | `seating` |
+| 桌次 | `seating`（只看 `pages`：新人自己把「開放桌次功能」關起來時，後台照樣進得去） |
 | 感謝信 | `letter` |
 | 首頁卡片 | 永遠都在（Explore 區屬於大廳） |
 | 婚禮小卡 | `draw` |
@@ -690,7 +696,15 @@ allow read: if request.auth != null
 | 名字 → 桌次的查詢 | `sites/{siteId}/seating` |
 | 桌次圖（多張、可放大拖曳） | `sites/{siteId}/seatingImages` ＋ `assets/{slug}/seating/` |
 
-**搜尋可以整個關掉**（後台的 `seatingSearchEnabled` 開關）：
+**整個桌次功能可以先關著**（後台「婚禮資訊」分頁最上面的
+「開放桌次功能」checkbox → `seatingFeatureEnabled`）：
+關掉時大廳的婚禮資訊卡最下面不出現「尋找我的座位」、導覽列也沒有桌次，
+直接打 `/w/{slug}/seating` 會被導回大廳（`site-context.js` 的 `isEnabled()`）。
+用途是「還沒到婚禮當天就先別讓賓客找位子」，所以後台不受影響 ——
+後台的分頁看的是 `pages`（`isPageOn()`），功能關著時名單與桌次圖照樣先整理好。
+沒有這個欄位的舊站台視為開著。
+
+**搜尋可以單獨關掉**（後台的 `seatingSearchEnabled` 開關）：
 關掉時前台只留桌次圖，查詢欄整塊收起來，也不再訂閱整份名單 ——
 名單還沒整理好、或本來就打算讓大家自己看圖找位子時用。
 沒有這個欄位的舊站台視為開著，行為不變。

@@ -228,11 +228,14 @@ console.log('\n[1] /w/chen-lin-0315/invitation');
   ok('RSVP 表單顯示', formVisible);
   ok('未顯示找不到畫面', notFound === 0);
 
-  /* 與其他頁面同一套版型：共用的頂部導覽列與浮動控制都要在 */
+  /* 與其他頁面同一套版型（共用的浮動控制要在），
+     但邀請函是單獨分享出去的一頁，不掛導覽列 */
   ok('套用共用版型（common.css）',
     await page.evaluate(() => Array.from(document.styleSheets)
       .some((s) => (s.href || '').includes('/css/common.css'))));
-  ok('有共用的頂部導覽列', await page.isVisible('#siteNav'));
+  ok('邀請函不掛頂部導覽列',
+    await page.evaluate(() => !document.getElementById('siteNav')
+      && document.body.classList.contains('nav-off')));
   ok('有共用的主題／音樂浮動控制', await page.isVisible('.floating'));
   ok('沿用共用的區塊標題樣式',
     await page.locator('.section-title').count() >= 3,

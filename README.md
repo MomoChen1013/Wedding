@@ -157,6 +157,8 @@ sites/{siteId}
   schedule(map[])       # 當日流程，每筆 { time, title, desc? }
   rsvpDeadline(timestamp), rsvpEnabled(bool)
   seatingSearchEnabled(bool)   # 桌次頁的搜尋開關，沒這個欄位視為 true
+  seatingFeatureEnabled(bool)  # 桌次功能的總開關，沒這個欄位視為 true；
+                               # false 時大廳不出現「尋找我的座位」、導覽列也沒有桌次
   rsvpAskCard / rsvpAskGift / rsvpAskMessage(bool)   # 出席回覆要問哪些題目
   rsvpContactMethods(string[])  # 要問哪幾種聯絡方式（phone/line/email）
   rsvpShowStory / rsvpShowGallery(bool)              # 那一頁要不要放這兩塊

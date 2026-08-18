@@ -98,7 +98,9 @@
             <div class="info-row"><div class="ir-label">時間</div><div class="ir-body"><div class="ir-val" id="infoTime">—</div>
               <!-- 有當日流程時才出現（js/index.js 判斷），點了捲到下面的 Schedule -->
               <a class="ir-jump" id="infoTimeJump" href="#scheduleBlock" hidden>看當日流程 →</a></div></div>
-            <div class="info-row"><div class="ir-label">地點</div><div class="ir-body"><div class="ir-val" id="infoVenue">—</div><div class="ir-sub" id="infoAddr"></div></div></div>
+            <div class="info-row"><div class="ir-label">地點</div><div class="ir-body"><div class="ir-val" id="infoVenue">—</div><div class="ir-sub" id="infoAddr"></div>
+              <!-- 有交通資訊時才出現（js/index.js 判斷），點了捲到下面的 Transport -->
+              <a class="ir-jump" id="infoVenueJump" href="#transportBlock" hidden>看交通資訊 →</a></div></div>
           </div>
 
           <div class="info-actions">
@@ -106,19 +108,25 @@
             <a class="btn small ghost" id="calBtn" href="#" target="_blank" rel="noopener">加入行事曆</a>
           </div>
         </div>
+
+        <!-- 桌次功能：新人在後台把「開放桌次功能」關起來時，
+             rewriteNavLinks() 會把下面這條連結整個移除，js/index.js 再把外框收掉 -->
+        <div class="info-seat" id="infoSeatCta">
+          <a class="btn" href="seating.html">尋找我的座位</a>
+        </div>
       </section>
 
       <!-- ===== 2. 當日流程 ===== -->
       <section class="info-block" id="scheduleBlock">
         <div class="block-title">Schedule</div>
-        <div class="block-sub">當日流程・大約時間，輕鬆來就好</div>
+        <div class="block-sub">當日流程</div>
         <div class="timeline" id="schedule"></div>
       </section>
 
       <!-- ===== 3. Dress Code 小提醒 =====
            兩格都沒填就整塊收起來（js/index.js 判斷） -->
       <section class="info-block" id="noteBlock" hidden>
-        <div class="block-title">Dress Code</div>
+        <div class="block-title">Just a heads-up</div>
         <div class="block-sub">出席前的小提醒</div>
         <div class="note-grid">
           <div class="note-item" id="dressCodeItem" hidden>
@@ -135,7 +143,7 @@
       <!-- ===== 4. 交通資訊（新人沒寫就不出現） ===== -->
       <section class="info-block" id="transportBlock" hidden>
         <div class="block-title">Transport</div>
-        <div class="block-sub">怎麼來・停哪裡，先寫在這裡</div>
+        <div class="block-sub">交通資訊</div>
         <div class="note-grid">
           <div class="note-item" id="transportPublicItem" hidden>
             <div class="note-label">大眾運輸</div>
@@ -179,14 +187,8 @@
       <!-- ===== 卡片連結 ===== -->
       <section class="link-section">
         <div class="block-title">Explore</div>
-        <div class="block-sub">婚禮之外，還有這些可以一起玩</div>
+        <div class="block-sub">探索其他活動吧！</div>
         <div class="link-grid" id="linkGrid">
-          <a class="link-card" href="seating.html">
-            <span class="lc-index">01</span>
-            <span class="lc-title">找到你的桌次</span>
-            <span class="lc-sub">輸入名字，馬上知道今天坐在哪一桌</span>
-            <span class="lc-go">前往</span>
-          </a>
           <a class="link-card" href="wall.html">
             <span class="lc-index">02</span>
             <span class="lc-title">新人祝福牆</span>

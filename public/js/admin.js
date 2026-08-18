@@ -391,7 +391,12 @@ const TAB_PAGE = {
 function tabEnabled(tab){
   const key = TAB_PAGE[tab];
   if(!key) return true;
-  return !!(window.SITE && window.SITE.isEnabled(key));
+  /* 看的是 pages（我們幫這組新人開了哪幾頁），不是 isEnabled()——
+     桌次功能被新人自己關起來時，賓客看不到那一頁，
+     但後台的「桌次」分頁要留著，名單和桌次圖才有地方先整理。 */
+  const S = window.SITE;
+  if(!S) return false;
+  return !!(S.isPageOn ? S.isPageOn(key) : S.isEnabled(key));
 }
 
 /* 關掉的分頁連按鈕帶內容一起收起來（面板的顯示交給 activateTab 統一處理） */
@@ -455,6 +460,7 @@ function openAdmin(){
   renderExplore();
 
   /* 大廳文案不是子集合，是站台文件本身；載入時已經讀進 window.SITE.data */
+  syncSeatFeatureUI();
   fillSiteForm();
   renderSchedule(siteSchedule());
 }
@@ -1394,6 +1400,36 @@ document.getElementById('adInboxExport').addEventListener('click', ()=>{
     rows.map(l => [l.name || '', l.icon || '', l.text || '', fmtTime(l.time)]),
   );
   toast(`已匯出 ${rows.length} 封悄悄話`);
+});
+
+/* ============================================================
+   2-0 開放桌次功能（放在「婚禮資訊」分頁最上面）
+   ------------------------------------------------------------
+   關著的時候賓客那邊完全看不到桌次：大廳沒有「尋找我的座位」、
+   導覽列沒有「桌次」、直接打網址也會被導回大廳（見 site-context.js）。
+   新人這邊不受影響，「桌次」分頁照樣可以先把名單與桌次圖準備好。
+   沒設定過的舊站台一律視為開著，不會因為多了這個欄位就突然關掉。
+============================================================ */
+const seatFeatureEl = document.getElementById('adSeatFeature');
+
+function seatFeatureOn(){ return siteData().seatingFeatureEnabled !== false; }
+
+function syncSeatFeatureUI(){
+  seatFeatureEl.checked = seatFeatureOn();
+}
+
+seatFeatureEl.addEventListener('change', async ()=>{
+  const on = seatFeatureEl.checked;
+  try{
+    await DataStore.saveSiteFields({ seatingFeatureEnabled: on });
+    syncSeatFeatureUI();
+    toast(on ? '已開放桌次功能，賓客現在看得到「尋找我的座位」'
+             : '已關閉桌次功能，賓客那邊不會出現桌次');
+  }catch(err){
+    /* 存不進去就把開關扳回原本的狀態，畫面不要和資料庫說不一樣的話 */
+    syncSeatFeatureUI();
+    writeFailed(err);
+  }
 });
 
 /* ============================================================
