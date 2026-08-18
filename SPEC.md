@@ -73,6 +73,9 @@ sites/{siteId}
                                   # 沒有這個欄位＝三種都問；空陣列＝整題不問
   rsvpShowStory   : boolean  # 那一頁要不要放「兩人的故事」
   rsvpShowGallery : boolean  # 那一頁要不要放「照片集」
+  # ↓ 賓客標籤（配合排桌次用）。總開關新人改不動，和 pages 一樣由我們設定
+  guestTagsEnabled: boolean  # 這個站台要不要用標籤；沒有這個欄位＝關
+  guestTags       : map[]    # 標籤庫，陣列順序即顯示順序（見下方說明）
   pages           : map      # 頁面開關，見第 10 節
   ownerEmails     : string[] # 新人的 Google 信箱；規則據此決定誰進得了後台
   createdAt       : timestamp
@@ -186,6 +189,7 @@ short/{code}                # 短連結
 |---|---|---|---|---|
 | `sites/{siteId}` | 允許 | 拒絕 | 新人（限文案欄位） | 拒絕 |
 | `sites/{siteId}/rsvps/{id}` | 新人 | 允許（需通過驗證） | 拒絕 | 拒絕 |
+| `sites/{siteId}/rsvpTags/{rsvpId}` | 新人 | 新人 | 新人 | 新人 |
 | `sites/{siteId}/seating/{id}` | 允許 | 新人 | 新人 | 新人 |
 | `sites/{siteId}/seatingImages/{id}` | 允許 | 新人 | 新人 | 新人 |
 | `sites/{siteId}/blessings/{id}` | 允許 | 新人 | 新人 | 新人 |
@@ -205,6 +209,7 @@ short/{code}                # 短連結
 |---|---|---|---|
 | 賓客要用的內容 | `seating` `seatingImages` `blessings` `explore` `cards` `exhibits` `quiz` | 公開 | 新人 |
 | 賓客交上來的資料 | `rsvps` `letters` | 新人 | 賓客（create only） |
+| 新人自己的整理 | `rsvpTags` | 新人 | 新人 |
 | 賓客的公開投票 | `wishes` `cakes` `quizVotes` | 公開 | 賓客（create only） |
 
 上面那組 **read 必須公開**，因為比對（桌次查名字、祝福信對暗號）在瀏覽器端做——
@@ -220,8 +225,12 @@ Firestore 的讀取請求不帶條件，規則沒有辦法「只讓對得上的�
 coupleTitle venueName venueAddress venueMapUrl transportPublic transportParking
 dressCode giftNote story schedule hashtags seatingSearchEnabled updatedAt
 rsvpAskCard rsvpAskGift rsvpAskMessage rsvpContactMethods
-rsvpShowStory rsvpShowGallery
+rsvpShowStory rsvpShowGallery guestTags
 ```
+
+`guestTags` 是新人自己維護的標籤庫，所以在名單內；
+但**總開關 `guestTagsEnabled` 不在名單內** —— 和 `pages` 一樣，
+由我們決定哪一組新人要用這個功能（`npm run set-pages -- --guest-tags on`）。
 
 最後那六個 `rsvp*` 與 `seatingSearchEnabled` 一樣，是「非文案但可以放行」的欄位：
 它們只改變賓客看到的表單長什麼樣，規則本身不拿它們做任何判斷 ——
@@ -444,6 +453,7 @@ HTML 只放一個 `<div id="rsvpFormHost">` —— 題目會依新人在後台�
 | 怎麼稱呼你 | 文字，必填 | always |
 | 能來參加嗎 | 單選：熱情出席／視情況而定／誠摯祝福但無法出席 | always |
 | 與新人的關係 | 單選：男方親友／女方親友／雙方親友／其他 | always |
+| ★ 更具體是哪一種？ | 單選、選填；選項＝新人開放的賓客標籤 | 開了標籤功能、而且至少有一個標籤設成「當表單選項」時 |
 | ★ 聯絡方式 | 電話／LINE／Email，新人複選要問哪幾種；賓客至少填一種 | 至少勾一種時才出現 |
 | 出席人數 | 1–10 | 選「熱情出席」才出現 |
 | 餐點分配（葷／素） | 兩個計數器，相加恆等於出席人數 | 同上 |
@@ -457,6 +467,31 @@ HTML 只放一個 `<div id="rsvpFormHost">` —— 題目會依新人在後台�
 | 喜餅郵寄地址 | 郵遞區號 ＋ 地址，可勾「同上」帶入喜帖的地址 | 選「郵寄」才出現 |
 | ★ 想對新人說的話 | 文字，選填 | always |
 | 其他備註 | 文字，選填 | always |
+
+### 賓客標籤（配合排桌次）
+
+給新人自己把賓客分群用的：VIP、長輩、小孩、行動不便、大學同學、公司同事…
+新人可以自己新增自訂標籤，**一位賓客可以有好幾個標籤**。
+
+分成兩層開關，理由不同：
+
+| 開關 | 存在哪 | 誰能改 | 為什麼 |
+|---|---|---|---|
+| `guestTagsEnabled` | 站台文件 | 只有我們（Admin SDK／Console） | 這是配合排桌次的進階功能，操作有複雜度，和 `pages` 一樣由我們決定哪一組新人要用 |
+| `guestTags[].onForm` | 站台文件的標籤庫 | 新人 | 不是每個標籤都適合讓賓客自己選（VIP、行動不便通常是新人自己判斷的） |
+
+打開／關掉：`npm run set-pages -- --slug {slug} --guest-tags on`（或 `off`）。
+
+標籤資料分成兩份，因為**回覆本身仍然不可修改**：
+
+| 資料 | 存在哪 | 誰寫的 |
+|---|---|---|
+| 賓客自己選的那一個 | `rsvps/{id}.tag`（單選、選填） | 賓客，送出後就改不動 |
+| 新人掛上去的那些 | `rsvpTags/{回覆 id}.tags`（陣列） | 新人，後台隨時可改 |
+
+畫面上兩者合起來看（後台名單的標籤、篩選、匯出的 CSV 都是聯集）。
+標籤存的是 **id 不是名字**，新人改名時已經掛好的分類不會跟著跑掉；
+刪掉標籤時後台會順手把掛在賓客身上的那一份也清掉。
 
 **葷素為什麼要互相連動**：兩格加起來永遠等於出席人數 ——
 改一邊另一邊跟著動，賓客分配不出一個和人數對不上的組合，
@@ -637,6 +672,7 @@ allow read: if request.auth != null
 
 | 分頁 | 子分頁 |
 |---|---|
+| 出席回覆 | 出席回覆總覽／回覆資訊／表單設定 |
 | 婚禮資訊 | 婚禮資訊／當日流程／自訂內容 |
 | 桌次 | 桌次圖／桌次搜尋及名單 |
 | 新人熟悉測驗 | 測驗題目／作答記錄 |

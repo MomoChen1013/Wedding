@@ -87,6 +87,15 @@
        分頁 0：出席回覆
   ============================================================ -->
   <div class="ad-panel is-on" data-panel="rsvp">
+
+    <nav class="ad-subtabs" data-subtabs="rsvp">
+      <button class="ad-subtab is-on" type="button" data-subtab="overview">出席回覆總覽</button>
+      <button class="ad-subtab" type="button" data-subtab="replies">回覆資訊</button>
+      <button class="ad-subtab" type="button" data-subtab="form">表單設定</button>
+    </nav>
+
+    <!-- 0-1 出席回覆總覽 -->
+    <div class="ad-subpanel is-on" data-subpanel="overview">
     <section class="ad-sec">
       <h2 class="ad-sec-title">出席回覆總覽</h2>
 
@@ -106,7 +115,10 @@
         回覆是賓客送出的紀錄，後台只能看與匯出，不能修改。
       </p>
     </section>
+    </div>
 
+    <!-- 0-2 回覆資訊 -->
+    <div class="ad-subpanel" data-subpanel="replies">
     <section class="ad-sec">
       <h2 class="ad-sec-title">回覆名單</h2>
 
@@ -124,11 +136,24 @@
         <input class="ad-filter" id="adRsvpFilter" type="text" placeholder="搜尋名字、留言或備註…">
       </div>
 
+      <!-- 標籤篩選：由 js/admin.js 依標籤庫產生；沒開標籤功能就整排收起來 -->
+      <div class="ad-chips ad-chips-sub" id="adRsvpTagChips" hidden></div>
+
       <div class="ad-list" id="adRsvpList"></div>
     </section>
+    </div>
 
+    <!-- 0-3 表單設定 -->
+    <div class="ad-subpanel" data-subpanel="form">
     <section class="ad-sec">
-      <h2 class="ad-sec-title">表單與頁面設定</h2>
+      <div class="ad-sec-head">
+        <h2 class="ad-sec-title">表單設定</h2>
+        <div class="ad-sec-head-actions">
+          <!-- 網址由 js/admin.js 填成 /w/{slug}/invitation，就是分享給賓客的那一頁 -->
+          <a class="btn small ghost" id="adRsvpViewForm" href="/"
+             target="_blank" rel="noopener noreferrer">查看表單</a>
+        </div>
+      </div>
       <p class="ad-sec-note">
         這裡決定<b>邀請函</b>那一頁要問賓客什麼、要放哪些內容。
         存檔之後賓客重新整理就看得到，<b>已經送出的回覆不受影響</b>。
@@ -136,28 +161,91 @@
       </p>
 
       <form class="ad-form" id="adRsvpForm">
-        <label class="ad-label">要問的題目</label>
+        <label class="ad-label">題目</label>
+        <div class="ad-hint">
+          由上到下就是賓客在表單上看到的順序。
+          <b>灰掉、打勾但點不動的是固定題目</b>，每份回覆都要有，不能關。
+        </div>
+
+        <label class="ad-check is-fixed">
+          <input type="checkbox" checked disabled><span>怎麼稱呼你？</span></label>
+        <label class="ad-check is-fixed">
+          <input type="checkbox" checked disabled><span>能來參加嗎？</span></label>
+        <label class="ad-check is-fixed">
+          <input type="checkbox" checked disabled><span>與新人的關係</span></label>
+        <!-- 只有開了標籤功能、而且至少有一個標籤當選項時才看得到 -->
+        <label class="ad-check is-fixed" id="adAskTagRow" hidden>
+          <input type="checkbox" checked disabled>
+          <span>更具體是哪一種？<small>選項在下面的「賓客標籤」設定</small></span></label>
+        <label class="ad-check is-fixed">
+          <input type="checkbox" checked disabled>
+          <span>包含你，共幾位出席？<small>選「熱情出席」才會出現</small></span></label>
+        <label class="ad-check is-fixed">
+          <input type="checkbox" checked disabled>
+          <span>餐點分配（葷食／素食）<small>選「熱情出席」才會出現</small></span></label>
+        <label class="ad-check is-fixed">
+          <input type="checkbox" checked disabled>
+          <span>兒童座椅<small>選「熱情出席」才會出現</small></span></label>
+        <label class="ad-check is-fixed">
+          <input type="checkbox" checked disabled>
+          <span>飲食習慣補充<small>選「熱情出席」才會出現</small></span></label>
+
         <label class="ad-check"><input type="checkbox" id="adAskCard"><span>喜帖發送方式</span></label>
         <label class="ad-check"><input type="checkbox" id="adAskGift"><span>喜餅領取方式</span></label>
         <label class="ad-check"><input type="checkbox" id="adAskMessage"><span>想對新人說的話</span></label>
-        <div class="ad-hint">
-          稱呼、出席與否、與新人的關係、出席人數、餐點、兒童座椅與其他備註是固定題目，不能關。
+
+        <label class="ad-check is-fixed">
+          <input type="checkbox" checked disabled><span>其他備註</span></label>
+
+        <div class="ad-sub-sec">
+          <div class="ad-sub-sec-title">聯絡方式（可複選）</div>
+          <label class="ad-check"><input type="checkbox" id="adContactPhone"><span>電話號碼</span></label>
+          <label class="ad-check"><input type="checkbox" id="adContactLine"><span>LINE ID</span></label>
+          <label class="ad-check"><input type="checkbox" id="adContactEmail"><span>Email</span></label>
+          <div class="ad-hint">
+            勾了幾種，賓客就要<b>至少填其中一種</b>。三種都不勾就整題不問。
+            有勾 Email 時，賓客選「需要電子喜帖」可以直接勾「同上」帶入同一個信箱。
+          </div>
         </div>
 
-        <label class="ad-label">聯絡方式（可複選）</label>
-        <label class="ad-check"><input type="checkbox" id="adContactPhone"><span>電話號碼</span></label>
-        <label class="ad-check"><input type="checkbox" id="adContactLine"><span>LINE ID</span></label>
-        <label class="ad-check"><input type="checkbox" id="adContactEmail"><span>Email</span></label>
+        <label class="ad-label">表單資訊</label>
         <div class="ad-hint">
-          勾了幾種，賓客就要<b>至少填其中一種</b>。三種都不勾就整題不問。
-          有勾 Email 時，賓客選「需要電子喜帖」可以直接勾「同上」帶入同一個信箱。
+          題目以外，邀請函那一頁還會出現這些內容。
         </div>
 
-        <label class="ad-label">頁面上要放的區塊</label>
-        <label class="ad-check"><input type="checkbox" id="adShowStory"><span>兩人的故事</span></label>
-        <label class="ad-check"><input type="checkbox" id="adShowGallery"><span>照片集</span></label>
-        <div class="ad-hint">
-          內容本身在「大廳內容」分頁與素材資料夾裡；這裡只決定邀請函那一頁要不要放。
+        <div class="ad-sub-sec">
+          <div class="ad-sub-sec-title">婚禮資訊</div>
+          <p class="ad-sub-sec-note">
+            在「婚禮資訊」分頁填寫，這裡只是列出目前的內容。
+            <b>留白的那一列不會出現在邀請函上</b>。
+          </p>
+          <div class="ad-info" id="adRsvpInfoList"></div>
+          <div class="ad-row">
+            <button class="btn small ghost" id="adRsvpInfoJump" type="button">去填寫婚禮資訊</button>
+          </div>
+        </div>
+
+        <div class="ad-sub-sec">
+          <div class="ad-sub-sec-title">兩人的故事</div>
+          <label class="ad-check"><input type="checkbox" id="adShowStory"><span>在邀請函上放「兩人的故事」</span></label>
+          <div class="ad-info" id="adRsvpStoryInfo"></div>
+          <div class="ad-row">
+            <button class="btn small ghost" id="adRsvpStoryJump" type="button">去填寫兩人的故事</button>
+          </div>
+        </div>
+
+        <div class="ad-sub-sec">
+          <div class="ad-sub-sec-title">照片集</div>
+          <label class="ad-check"><input type="checkbox" id="adShowGallery"><span>在邀請函上放「照片集」</span></label>
+          <div class="ad-info" id="adRsvpGalleryInfo"></div>
+          <div class="ad-row">
+            <a class="btn small ghost" id="adRsvpGalleryView" href="/"
+               target="_blank" rel="noopener noreferrer">看看目前的照片集</a>
+          </div>
+          <div class="ad-hint">
+            照片集的照片放在<b>這場婚禮的素材資料夾</b>裡，後台不能自己上傳 ——
+            要新增或更換照片，把檔案給我們就會幫你換上。
+          </div>
         </div>
 
         <div class="ad-row">
@@ -166,6 +254,31 @@
         </div>
       </form>
     </section>
+
+    <!-- 賓客標籤：整個功能預設是關的，由我們在 Firebase 打開（guestTagsEnabled） -->
+    <section class="ad-sec" id="adTagSec" hidden>
+      <div class="ad-sec-head">
+        <h2 class="ad-sec-title">賓客標籤</h2>
+        <div class="ad-sec-head-actions">
+          <button class="btn small" id="adTagAddBtn" type="button">新增標籤</button>
+          <button class="btn small ghost" id="adTagPresetBtn" type="button">加入常用標籤</button>
+        </div>
+      </div>
+      <p class="ad-sec-note">
+        標籤是你們自己給賓客分類用的（VIP、長輩、小孩、行動不便、大學同學…），
+        <b>之後排桌次會用到</b>。勾了<b>「當表單選項」</b>的標籤，
+        賓客填出席回覆時可以自己選<b>一個</b>；沒勾的只有你們在後台掛得上去。
+        一位賓客可以有好幾個標籤，在<b>「回覆資訊」</b>那一頁按「標籤」就能改。
+      </p>
+
+      <div class="ad-list" id="adTagList"></div>
+      <div class="ad-hint">
+        改名不會影響已經掛好的分類（存的是標籤代號，不是名字）。
+        刪掉標籤時，掛在賓客身上的那一份也會一起拿掉，救不回來
+        （賓客當初送出的回覆本身不會被改動，只是那個標籤不再顯示）。
+      </div>
+    </section>
+    </div>
   </div>
 
   <!-- ============================================================
@@ -578,6 +691,21 @@
         <button class="btn small" type="submit">儲存</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- 幫某一位賓客掛標籤：可複選，存進 rsvpTags/{回覆 id} -->
+<div class="ad-modal-mask" id="adTagPickMask" hidden>
+  <div class="ad-modal-card ad-modal-card-form">
+    <div class="ad-modal-title">賓客標籤</div>
+    <p class="ad-modal-note" id="adTagPickWho"></p>
+
+    <div class="ad-tagpick" id="adTagPickList"></div>
+
+    <div class="ad-modal-actions">
+      <button class="btn small ghost" id="adTagPickCancel" type="button">取消</button>
+      <button class="btn small" id="adTagPickSave" type="button">儲存</button>
+    </div>
   </div>
 </div>
 

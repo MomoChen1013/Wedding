@@ -20,12 +20,16 @@
      node scripts/set-pages.js --slug ginny-one-20260919 \
        --owner-email groom@gmail.com --owner-email bride@gmail.com
 
+     # 打開／關掉「賓客標籤」（配合排桌次用的進階功能，預設是關的）
+     node scripts/set-pages.js --slug ginny-one-20260919 --guest-tags on
+
    參數：
      --slug          必填，要修改的站台代稱
      --pages         逗號分隔的完整清單，沒列到的一律關掉
      --enable        加開某頁；可重複給多次
      --disable       關掉某頁；可重複給多次
      --owner-email   重設後台可用帳號；可重複給多次
+     --guest-tags    on／off，賓客標籤功能的總開關（新人自己改不動）
      --dry-run       只印出結果，不寫入資料庫
      --project       覆寫 Firebase 專案 ID
 
@@ -54,6 +58,7 @@ function parseCliArgs(argv) {
       enable:        { type: 'string', multiple: true },
       disable:       { type: 'string', multiple: true },
       'owner-email': { type: 'string', multiple: true },
+      'guest-tags':  { type: 'string' },
       'dry-run':     { type: 'boolean', default: false },
       base:          { type: 'string' },
       project:       { type: 'string' },
@@ -114,15 +119,28 @@ async function main() {
     }
   });
 
+  /* 賓客標籤：新人在後台改不動（規則的白名單裡沒有這個欄位），
+     所以要開要關都從這裡下指令 */
+  let guestTags = null;
+  if (values['guest-tags'] !== undefined) {
+    const v = String(values['guest-tags']).trim().toLowerCase();
+    if (!['on', 'off', 'true', 'false'].includes(v)) {
+      throw new Error('--guest-tags 只接受 on 或 off');
+    }
+    guestTags = v === 'on' || v === 'true';
+  }
+
   const touchesPages =
     values.pages !== undefined || values.enable?.length || values.disable?.length;
 
-  if (!touchesPages && !owners) {
+  if (!touchesPages && !owners && guestTags === null) {
     /* 什麼都沒指定就當成查詢 */
     console.log(`站台：${values.slug}（siteId: ${siteId}）`);
     console.log(hadPagesField ? '' : '⚠️ 這個站台還沒有 pages 欄位，目前等於「全部開啟」。');
     printPages(before);
-    console.log('\n加上 --pages／--enable／--disable 才會實際修改。');
+    console.log(`   ${padDisplay('賓客標籤（排桌次用）', 28)}${
+      site.guestTagsEnabled === true ? '✅ 開' : '⛔ 關'}`);
+    console.log('\n加上 --pages／--enable／--disable／--guest-tags 才會實際修改。');
     return;
   }
 
@@ -148,6 +166,12 @@ async function main() {
     console.log('   要修的話加上 --owner-email 新人的Gmail');
   }
 
+  if (guestTags !== null) {
+    console.log('');
+    console.log(`   ${padDisplay('賓客標籤（排桌次用）', 28)}${guestTags ? '✅ 開' : '⛔ 關'}${
+      site.guestTagsEnabled === guestTags ? '' : (guestTags ? '  ← 這次打開' : '  ← 這次關掉')}`);
+  }
+
   if (values['dry-run']) {
     console.log('\n（--dry-run，沒有寫入資料庫）');
     return;
@@ -156,6 +180,7 @@ async function main() {
   const patch = { updatedAt: FieldValue.serverTimestamp() };
   if (touchesPages) patch.pages = after;
   if (owners) patch.ownerEmails = owners;
+  if (guestTags !== null) patch.guestTagsEnabled = guestTags;
   await siteRef.update(patch);
 
   console.log('\n✅ 已更新，重新整理網頁就會生效（不用重新 deploy）。');

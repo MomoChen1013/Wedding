@@ -50,6 +50,13 @@ const SEED = {
     hashtags:['#GinnyOne2026'],
     pages: allOn,
     ownerEmails:['couple@example.com'],
+    /* 賓客標籤：整個功能由我們打開（新人改不動），
+       onForm 的那個才會變成表單上的選項 */
+    guestTagsEnabled: true,
+    guestTags: [
+      { id:'tag-college', name:'大學同學', onForm:true },
+      { id:'tag-vip',     name:'VIP',      onForm:false },
+    ],
     /* 固定日期，斷言才不會隨執行日期漂移：台北 2026-09-19 12:00 */
     eventDate: TS.fromDate(new Date('2026-09-19T04:00:00Z')),
   },
@@ -360,6 +367,10 @@ console.log('\n[5] RSVP 寫入');
   await page.fill('#rName', '王小明');
   await page.click('#attendRow .choice[data-val="yes"]');
   await page.click('#relationRow .choice[data-val="bride"]');
+  ok('表單只出現新人開放的標籤',
+    (await page.locator('#tagRow .choice').allInnerTexts()).join('／') === '大學同學',
+    (await page.locator('#tagRow .choice').allInnerTexts()).join('／'));
+  await page.click('#tagRow .choice[data-val="tag-college"]');
   await page.fill('#rPhone', '0912345678');
   await page.click('#headPlus');            // 2 位
   await page.click('#vegPlus');             // 其中 1 位素食
@@ -381,6 +392,7 @@ console.log('\n[5] RSVP 寫入');
     ok('attending 是 boolean', d.attending === true, String(d.attending));
     ok('guestCount 正確', d.guestCount === 2, String(d.guestCount));
     ok('與新人關係有存下來', d.relation === 'bride', d.relation);
+    ok('賓客自己選的標籤有存下來', d.tag === 'tag-college', d.tag);
     ok('葷素分配加起來等於人數',
       d.mealMeat === 1 && d.mealVeg === 1, `葷 ${d.mealMeat} / 素 ${d.mealVeg}`);
     ok('兒童座椅張數正確', d.childSeat === 1, String(d.childSeat));
@@ -887,6 +899,10 @@ console.log('\n[14b] 後台看得到出席回覆');
   const attendCenter = await page.locator('#adRsvpCharts .ad-donut').first()
     .locator('.ad-donut-center b').textContent();
   ok('出席圖的中心是回覆筆數', Number(attendCenter) === rows.length, attendCenter);
+
+  /* 名單搬到「回覆資訊」子分頁 */
+  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="replies"]');
+  await page.waitForTimeout(200);
 
   const listText = await page.innerText('#adRsvpList');
   ok('名單列出賓客的名字', listText.includes('王小明'), listText.replace(/\n/g, ' ').slice(0, 80));
@@ -1514,6 +1530,21 @@ console.log('\n[14c] 後台開關表單題目');
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
 
+  /* 表單設定是出席回覆的第三個子分頁 */
+  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="form"]');
+  await page.waitForTimeout(200);
+
+  ok('「查看表單」指向賓客那一頁',
+    (await page.getAttribute('#adRsvpViewForm', 'href')) === `/w/${SLUG}/invitation`,
+    await page.getAttribute('#adRsvpViewForm', 'href'));
+  const fixedQs = '#adRsvpForm .ad-check.is-fixed:not(#adAskTagRow) input:disabled:checked';
+  ok('固定題目用關不掉的勾選框列出來',
+    (await page.locator(fixedQs).count()) === 8,
+    String(await page.locator(fixedQs).count()));
+  ok('表單資訊列出婚禮資訊的內容',
+    (await page.innerText('#adRsvpInfoList')).includes('地點名稱'),
+    (await page.innerText('#adRsvpInfoList')).replace(/\n/g, ' ').slice(0, 80));
+
   ok('題目預設全部開著',
     (await page.isChecked('#adAskCard')) && (await page.isChecked('#adAskGift'))
       && (await page.isChecked('#adAskMessage')));
@@ -1542,7 +1573,8 @@ console.log('\n[14c] 後台開關表單題目');
   ok('沒有動到出席回覆的開關與截止時間',
     site.rsvpEnabled === true && !!site.rsvpDeadline);
 
-  /* 關掉的題目不再畫成環狀圖 */
+  /* 關掉的題目不再畫成環狀圖（圖表在「出席回覆總覽」那個子分頁） */
+  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="overview"]');
   await page.waitForTimeout(300);
   const titles = await page.locator('#adRsvpCharts .ad-donut-title').allInnerTexts();
   ok('關掉的題目不出現在儀表板',
@@ -1596,6 +1628,132 @@ console.log('\n[14c] 後台開關表單題目');
     rsvpShowStory: true, rsvpShowGallery: true,
     rsvpContactMethods: ['phone', 'line', 'email'],
   });
+}
+
+/* ---------- 賓客標籤 ---------- */
+console.log('\n[14d] 後台賓客標籤');
+{
+  const tagCol = adb.collection('sites').doc(siteIds[SLUG]).collection('rsvpTags');
+  const siteRef = adb.collection('sites').doc(siteIds[SLUG]);
+  const readTags = async () => ((await siteRef.get()).data().guestTags || []);
+
+  const { page, errors } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="form"]');
+  await page.waitForTimeout(300);
+
+  ok('標籤區塊看得到', await page.isVisible('#adTagSec'));
+  ok('題目清單多了標籤那一題', await page.isVisible('#adAskTagRow'));
+  const names = await page.$$eval('#adTagList .ad-tagrow-name', (els) => els.map((e) => e.value));
+  ok('列出目前的標籤', names.join('／') === '大學同學／VIP', names.join('／'));
+
+  /* 一鍵帶入常用標籤：已經有的不重複加 */
+  await page.click('#adTagPresetBtn');
+  await page.waitForTimeout(1200);
+  const preset = await readTags();
+  ok('常用標籤只補沒有的那幾個', preset.length === 8, `${preset.length} 個`);
+  ok('常用標籤的表單選項預設值正確',
+    preset.filter((t) => t.onForm).map((t) => t.name).join('／') === '大學同學／公司同事／教會朋友／親戚',
+    preset.filter((t) => t.onForm).map((t) => t.name).join('／'));
+
+  /* 自訂標籤：走輸入視窗 */
+  await page.click('#adTagAddBtn');
+  await page.waitForSelector('#adModalMask:not([hidden])', { timeout:5000 });
+  await page.fill('#adModalPhrase', '伴娘團');
+  await page.click('#adModalConfirm');
+  await page.waitForTimeout(1200);
+  const added = await readTags();
+  ok('新人加得了自訂標籤',
+    added.length === 9 && added.some((t) => t.name === '伴娘團'), `${added.length} 個`);
+
+  /* 改名與「當表單選項」都是離開欄位就存 */
+  await page.fill('#adTagList .ad-tagrow:last-child .ad-tagrow-name', '伴娘伴郎');
+  await page.locator('#adTagList .ad-tagrow:last-child .ad-tagrow-onform').check();
+  await page.waitForTimeout(1200);
+  const renamed = (await readTags()).find((t) => t.id === added[added.length - 1].id);
+  ok('改名與表單選項都存得回去',
+    renamed && renamed.name === '伴娘伴郎' && renamed.onForm === true,
+    JSON.stringify(renamed));
+
+  /* 名單：標籤篩選 */
+  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="replies"]');
+  await page.waitForTimeout(400);
+  ok('名單上看得到標籤篩選', await page.isVisible('#adRsvpTagChips'));
+  ok('王小明身上有自己選的標籤',
+    (await page.innerText('#adRsvpList')).includes('大學同學'));
+
+  await page.click('#adRsvpTagChips .ad-chip[data-tag="tag-college"]');
+  await page.waitForTimeout(300);
+  ok('篩得出某個標籤的賓客',
+    (await page.innerText('#adRsvpList')).includes('王小明'));
+  await page.click('#adRsvpTagChips .ad-chip[data-tag="none"]');
+  await page.waitForTimeout(300);
+  ok('「沒有標籤」篩掉已經有標籤的人',
+    !(await page.innerText('#adRsvpList')).includes('王小明'));
+  await page.click('#adRsvpTagChips .ad-chip[data-tag="all"]');
+  await page.waitForTimeout(300);
+
+  /* 幫賓客加掛標籤（賓客自己選的那個關不掉） */
+  const row = page.locator('#adRsvpList .ad-item', { hasText:'王小明' }).first();
+  await row.locator('[data-tag-edit]').click();
+  await page.waitForSelector('#adTagPickMask:not([hidden])', { timeout:5000 });
+  ok('賓客自己選的標籤在彈窗裡關不掉',
+    await page.isDisabled('#adTagPickList input[value="tag-college"]'));
+  await page.check('#adTagPickList input[value="tag-vip"]');
+  await page.click('#adTagPickSave');
+  await page.waitForTimeout(1500);
+
+  const tagDocs = (await tagCol.get()).docs.map((d) => d.data());
+  ok('新人掛的標籤寫進 rsvpTags',
+    tagDocs.length === 1 && tagDocs[0].tags.join(',') === 'tag-vip',
+    JSON.stringify(tagDocs));
+  ok('名單上一起顯示兩個標籤',
+    (await page.innerText('#adRsvpList')).includes('VIP'));
+
+  /* 匯出的 CSV 也要有標籤欄 */
+  ok('回覆沒有被改動（rsvps 仍然只有賓客送出的內容）',
+    (await adb.collection('sites').doc(siteIds[SLUG]).collection('rsvps').get())
+      .docs.every((d) => !('tags' in d.data())));
+
+  /* 刪掉標籤：連掛在賓客身上的那一份一起拿掉 */
+  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="form"]');
+  await page.waitForTimeout(300);
+  const vipRow = page.locator('#adTagList .ad-tagrow[data-id="tag-vip"]');
+  ok('標籤列出用了幾次', (await vipRow.innerText()).includes('1 位'), await vipRow.innerText());
+  await vipRow.locator('.ad-del').click();
+  await page.waitForSelector('#adModalMask:not([hidden])', { timeout:5000 });
+  await page.click('#adModalConfirm');
+  await page.waitForTimeout(1800);
+
+  const afterDel = await readTags();
+  ok('標籤刪得掉',
+    afterDel.length === 8 && !afterDel.some((t) => t.name === 'VIP'), `${afterDel.length} 個`);
+  const leftovers = (await tagCol.get()).docs.flatMap((d) => d.data().tags || []);
+  ok('賓客身上的那個標籤也跟著拿掉',
+    !leftovers.includes('tag-vip'), leftovers.join(','));
+
+  ok('標籤無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+{
+  /* 沒開這個功能的站台：後台不出現標籤，賓客表單也沒有那一題 */
+  const { page } = await visit('/w/minimal-site-2027/admin');
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="form"]');
+  await page.waitForTimeout(300);
+  ok('沒開標籤功能的站台看不到標籤設定', !(await page.isVisible('#adTagSec')));
+  ok('沒開標籤功能的站台也沒有標籤那一題', !(await page.isVisible('#adAskTagRow')));
+  await page.close();
+
+  const guest = await visit('/w/minimal-site-2027/invitation');
+  await guest.page.waitForFunction(
+    () => !!document.getElementById('rsvpForm'), null, { timeout:20000 });
+  ok('沒開標籤功能時賓客也看不到那一題',
+    (await guest.page.locator('#tagRow').count()) === 0);
+  await guest.page.close();
 }
 
 /* ---------- 手機版 ---------- */

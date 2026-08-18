@@ -520,7 +520,7 @@ console.log('\n[6] honeypot 擋機器人');
     Object.keys(saved).sort().join(',') ===
     'attending,cardAddress,cardDelivery,cardEmail,cardType,cardZip,childSeat,contactEmail,'
     + 'contactLine,contactPhone,createdAt,dietaryNote,giftAddress,giftDelivery,giftZip,'
-    + 'guestCount,icon,mealMeat,mealVeg,message,name,note,relation,tentative',
+    + 'guestCount,icon,mealMeat,mealVeg,message,name,note,relation,tag,tentative',
     Object.keys(saved).sort().join(','));
 }
 

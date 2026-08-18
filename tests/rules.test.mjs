@@ -1190,3 +1190,91 @@ describe('rsvps 的擁有者權限', () => {
     await assertFails(getDocs(collection(ownerDb(), `sites/${SITE_ID}/rsvps`)));
   });
 });
+
+
+/* ============================================================
+   賓客標籤
+   ------------------------------------------------------------
+   標籤庫在站台文件（新人自己維護），掛在誰身上在 rsvpTags，
+   總開關 guestTagsEnabled 只能由我們改。
+============================================================ */
+describe('賓客標籤', () => {
+  const OWNER = 'couple@example.com';
+  const ownerDb = () => testEnv
+    .authenticatedContext('couple', { email: OWNER, email_verified: true })
+    .firestore();
+
+  beforeEach(async () => {
+    await seedSite(SITE_ID, {
+      ownerEmails: [OWNER],
+      guestTagsEnabled: true,
+      guestTags: [{ id:'t1', name:'大學同學', onForm:true }],
+    });
+  });
+
+  it('新人改得動標籤庫', async () => {
+    await assertSucceeds(updateDoc(doc(ownerDb(), `sites/${SITE_ID}`), {
+      guestTags: [
+        { id:'t1', name:'大學同學', onForm:true },
+        { id:'t2', name:'VIP', onForm:false },
+      ],
+    }));
+  });
+
+  it('標籤庫最多 30 個', async () => {
+    const many = Array.from({ length: 31 }, (_, i) => ({ id:`t${i}`, name:`標籤${i}`, onForm:false }));
+    await assertFails(updateDoc(doc(ownerDb(), `sites/${SITE_ID}`), { guestTags: many }));
+  });
+
+  it('新人改不動總開關 guestTagsEnabled', async () => {
+    await assertFails(updateDoc(doc(ownerDb(), `sites/${SITE_ID}`), { guestTagsEnabled: false }));
+  });
+
+  it('開了功能時，賓客可以在回覆裡帶一個標籤', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      validRsvpPayload({ tag: 't1' })));
+  });
+
+  it('沒開功能的站台，帶標籤的回覆會被拒（空字串仍然可以）', async () => {
+    await seedSite(SITE_ID, { ownerEmails: [OWNER] });
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      validRsvpPayload({ tag: 't1' })));
+    await assertSucceeds(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      validRsvpPayload({ tag: '' })));
+  });
+
+  it('新人讀寫得了 rsvpTags，賓客讀不到也寫不進去', async () => {
+    const owner = ownerDb();
+    await assertSucceeds(setDoc(doc(owner, `sites/${SITE_ID}/rsvpTags/r1`),
+      { tags: ['t1'], updatedAt: Date.now() }));
+    await assertSucceeds(getDocs(collection(owner, `sites/${SITE_ID}/rsvpTags`)));
+    await assertSucceeds(deleteDoc(doc(owner, `sites/${SITE_ID}/rsvpTags/r1`)));
+
+    const guest = testEnv.unauthenticatedContext().firestore();
+    await assertFails(getDocs(collection(guest, `sites/${SITE_ID}/rsvpTags`)));
+    await assertFails(setDoc(doc(guest, `sites/${SITE_ID}/rsvpTags/r1`),
+      { tags: ['t1'], updatedAt: Date.now() }));
+  });
+
+  it('rsvpTags 只收 tags 與 updatedAt，且最多 20 個標籤', async () => {
+    const owner = ownerDb();
+    await assertFails(setDoc(doc(owner, `sites/${SITE_ID}/rsvpTags/r2`),
+      { tags: ['t1'], updatedAt: Date.now(), table: '主桌' }));
+    await assertFails(setDoc(doc(owner, `sites/${SITE_ID}/rsvpTags/r2`),
+      { tags: Array.from({ length: 21 }, (_, i) => `t${i}`), updatedAt: Date.now() }));
+    await assertFails(setDoc(doc(owner, `sites/${SITE_ID}/rsvpTags/r2`),
+      { tags: 't1', updatedAt: Date.now() }));
+  });
+
+  it('別的站台的新人碰不到這個站台的 rsvpTags', async () => {
+    await seedSite('other-site', { ownerEmails: ['other@example.com'] });
+    const db = testEnv
+      .authenticatedContext('other', { email:'other@example.com', email_verified: true })
+      .firestore();
+    await assertFails(getDocs(collection(db, `sites/${SITE_ID}/rsvpTags`)));
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/rsvpTags/r3`),
+      { tags: ['t1'], updatedAt: Date.now() }));
+  });
+});

@@ -206,8 +206,31 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-check{display:flex;align-items:flex-start;gap:9px;margin-top:18px;
   font-size:13px;line-height:1.8;color:var(--ink);cursor:pointer;}
 .ad-check input{margin-top:5px;flex:0 0 auto;accent-color:var(--primary-deep);}
+/* display:flex 會蓋掉瀏覽器對 [hidden] 的 display:none，要自己補回來 */
+.ad-check[hidden]{display:none;}
 /* 同一組勾選框連著排時不要each都空 18px，看起來才像一組 */
 .ad-check + .ad-check{margin-top:6px;}
+/* 括號裡的補充（例如「選熱情出席才會出現」）跟在題目後面，不另起一行搶注意力 */
+.ad-check small{margin-left:8px;font-size:11.5px;color:var(--ink-soft);}
+/* 固定題目：打勾但關不掉，整列調淡才看得出「這一列只是在告訴你有這題」 */
+.ad-check.is-fixed{cursor:default;color:var(--ink-soft);}
+.ad-check.is-fixed input{cursor:default;}
+
+/* ---------- 只讀的內容清單（例如出席回覆的「表單資訊」） ----------
+   內容在別的分頁編輯，這裡只把現在填了什麼列出來 */
+.ad-info{margin-top:12px;border-top:1px solid var(--line-soft);}
+.ad-info-row{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;
+  padding:9px 0;border-bottom:1px solid var(--line-soft);}
+.ad-info-name{flex:0 0 auto;min-width:96px;font-size:11.5px;letter-spacing:.14em;
+  color:var(--ink-soft);}
+.ad-info-val{flex:1 1 180px;min-width:0;font-size:13px;line-height:1.8;
+  color:var(--ink);word-break:break-word;}
+.ad-info-val.is-empty{color:var(--ink-soft);opacity:.75;}
+
+/* 小節標題下面的一句說明 */
+.ad-sub-sec-note{margin:0 0 12px;font-size:11.5px;line-height:1.9;
+  letter-spacing:.02em;color:var(--ink-soft);}
+.ad-sub-sec-note b{color:var(--ink);font-weight:500;}
 
 /* 欄位底下的小提示：比 .ad-sec-note 更貼著它說明的那一組欄位 */
 .ad-hint{margin-top:10px;font-size:11.5px;line-height:1.9;letter-spacing:.02em;
@@ -330,6 +353,10 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-chip.is-on{background:var(--ink);border-color:var(--ink);color:#fff;}
 
 /* 回覆狀態的標籤 */
+/* 名單上的篩選鈕分兩排時，第二排（標籤）縮一點、和第一排拉開距離 */
+.ad-chips-sub{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line-soft);}
+.ad-chips-sub .ad-chip{font-size:11.5px;padding:5px 12px;}
+
 .ad-tag-yes{color:var(--primary-deep);border-color:var(--primary);}
 .ad-tag-maybe{color:var(--ink-soft);}
 .ad-tag-no{color:#a4677a;border-color:rgba(164,103,122,.4);}
@@ -358,6 +385,26 @@ select.ad-input{appearance:none;cursor:pointer;
 
 .ad-tag{border:1px solid var(--line);border-radius:999px;padding:2px 10px;
   font-size:11px;letter-spacing:.08em;color:var(--primary-deep);flex:0 0 auto;}
+
+/* 賓客身上的標籤（VIP、長輩…）：和出席狀態的 pill 同一種形狀，換個顏色 */
+.ad-tag-guest{background:var(--bg2);border-color:var(--line);color:var(--ink);
+  margin-right:6px;}
+.ad-item-tags{display:flex;flex-wrap:wrap;gap:4px 0;align-items:center;}
+
+/* 標籤庫的一列：名稱、要不要當表單選項、用了幾次、刪除 */
+.ad-tagrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  padding:12px 0;border-bottom:1px solid var(--line-soft);}
+.ad-tagrow-name{flex:1 1 180px;min-width:0;padding:9px 12px;font-size:14px;}
+.ad-tagrow-check{margin-top:0;flex:0 0 auto;white-space:nowrap;}
+.ad-tagrow-check input{margin-top:3px;}
+.ad-tagrow-count{flex:0 0 auto;font-size:11.5px;letter-spacing:.1em;color:var(--ink-soft);}
+
+/* 幫某一位賓客勾標籤的彈窗：一列一個，超過就自己捲 */
+.ad-tagpick{max-height:46vh;overflow-y:auto;margin-top:6px;
+  border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);
+  padding:6px 2px;}
+.ad-tagpick .ad-check{margin-top:10px;}
+.ad-tagpick .ad-check:first-child{margin-top:6px;}
 
 .ad-del,.ad-edit{background:none;border:none;cursor:pointer;
   font-family:var(--font-body);font-size:12px;letter-spacing:.1em;padding:2px 0;
