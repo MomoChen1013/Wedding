@@ -375,6 +375,65 @@ select.ad-input{appearance:none;cursor:pointer;
   background:#fff;outline:none;}
 .ad-filter:focus{border-color:var(--ink);}
 
+/* ============================================================
+   篩選工具列（回覆名單）
+   ------------------------------------------------------------
+   出席狀態、標籤、搜尋本來是散在三個地方的三塊，
+   收進同一個框才看得出「這一整條都是在篩下面那張表」。
+============================================================ */
+.ad-filterbar{
+  margin:22px 0 14px;border:1px solid var(--line);border-radius:var(--radius);
+  background:rgba(255,255,255,.75);
+}
+.ad-filterbar-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:11px 14px;}
+.ad-filterbar-row + .ad-filterbar-row{border-top:1px dashed var(--line-soft);}
+.ad-filterbar-lab{flex:0 0 auto;font-size:11.5px;letter-spacing:.14em;
+  color:var(--ink-soft);min-width:2.6em;}
+.ad-filterbar-row .ad-chips{flex:1 1 auto;}
+.ad-filterbar-search{flex:0 1 240px;margin-left:auto;}
+/* 標籤那一排的 chip 小一號，和上面那排分得出主次 */
+#adRsvpTagChips .ad-chip{font-size:11.5px;padding:5px 12px;}
+/* 「設定標籤 ↗」：不是篩選條件，是一個出口，所以畫成虛線框 */
+.ad-chip-link{border-style:dashed;color:var(--primary-deep);}
+.ad-chip-link:hover{border-style:solid;border-color:var(--primary-deep);
+  color:var(--primary-deep);}
+.ad-chip-link.is-on{background:transparent;border-color:var(--line);}
+
+/* ============================================================
+   表格清單（回覆名單）
+   ------------------------------------------------------------
+   欄位多到一定會橫向捲，所以表頭 sticky —— 捲到第 40 列還看得到
+   自己在看哪一欄。捲動的是外面那個框，不是整頁。
+============================================================ */
+.ad-tablewrap{overflow:auto;max-height:70vh;border:1px solid var(--line);
+  border-radius:var(--radius);background:#fff;}
+.ad-table{border-collapse:separate;border-spacing:0;width:100%;
+  font-size:12.5px;letter-spacing:.02em;}
+.ad-table th{
+  position:sticky;top:0;z-index:2;background:var(--bg2);
+  padding:10px 12px;text-align:left;white-space:nowrap;
+  font-weight:400;font-size:11.5px;letter-spacing:.1em;color:var(--ink-soft);
+  border-bottom:1px solid var(--line);
+}
+.ad-table td{padding:11px 12px;vertical-align:top;color:var(--ink);
+  border-bottom:1px solid var(--line-soft);line-height:1.7;}
+.ad-table tbody tr:hover td{background:rgba(0,0,0,.018);}
+.ad-table .is-num{text-align:center;width:1%;white-space:nowrap;}
+.ad-table .is-name{font-size:13.5px;white-space:nowrap;}
+.ad-table .is-wide{min-width:180px;}
+.ad-table .is-act{width:1%;white-space:nowrap;text-align:right;}
+.ad-td-empty{color:var(--line);}
+.ad-td-lines{display:flex;flex-direction:column;gap:2px;}
+.ad-td-sub{font-size:11.5px;color:var(--ink-soft);}
+/* 表頭裡那顆「設定標籤」：跟著表頭走，不要比欄位名還搶眼 */
+.ad-th-link{margin-left:8px;background:transparent;border:1px solid var(--line);
+  border-radius:999px;padding:2px 9px;cursor:pointer;
+  font-family:var(--font-body);font-size:10.5px;letter-spacing:.06em;
+  color:var(--primary-deep);}
+.ad-th-link:hover{border-color:var(--primary-deep);}
+.ad-tagcell{display:flex;flex-wrap:wrap;gap:4px;align-items:center;min-width:120px;}
+
 .ad-list{border-top:1px solid var(--line-soft);}
 .ad-item{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
   padding:14px 2px;border-bottom:1px solid var(--line-soft);}

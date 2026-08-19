@@ -1073,7 +1073,7 @@ console.log('\n[14b] 後台看得到出席回覆');
   /* 篩選：只看「未定」 */
   await page.click('#adRsvpChips .ad-chip[data-filter="maybe"]');
   await page.waitForTimeout(200);
-  const maybeCount = await page.locator('#adRsvpList .ad-item').count();
+  const maybeCount = await page.locator('#adRsvpList tbody tr').count();
   const expectMaybe = rows.filter((r) => r.attending !== true && r.tentative === true).length;
   ok('可以只篩出未定的回覆', maybeCount === expectMaybe, `${maybeCount} / 應為 ${expectMaybe}`);
 
@@ -1086,8 +1086,80 @@ console.log('\n[14b] 後台看得到出席回覆');
   ok('搜尋沒結果時顯示空狀態',
     (await page.innerText('#adRsvpList')).includes('沒有符合的回覆'));
   await page.fill('#adRsvpFilter', '');
+  await page.waitForTimeout(200);
+
+  /* 表格：表頭欄位固定在上面，一欄一件事 */
+  const heads = await page.$$eval('#adRsvpList thead th', (els) =>
+    els.map((e) => e.textContent.replace('設定標籤', '').trim()));
+  ok('名單是表格，表頭列出各欄位',
+    ['姓名', '出席回應', '分類', '聯絡資訊', '葷', '素', '喜帖', '喜餅', '備註', '填表時間']
+      .every((h) => heads.includes(h)),
+    heads.join('｜'));
+  ok('表頭是 sticky（捲動時留在上面）',
+    await page.$eval('#adRsvpList thead th', (el) => getComputedStyle(el).position === 'sticky'));
+  ok('表格橫向捲在自己的框裡，不會把整頁撐開',
+    await page.$eval('#adRsvpList .ad-tablewrap',
+      (el) => getComputedStyle(el).overflowX !== 'visible'));
+
+  /* 匯出 CSV 搬到標題右邊 */
+  ok('匯出 CSV 在標題列右側',
+    await page.$eval('#adRsvpExport',
+      (el) => !!el.closest('.ad-sec-head-actions')));
+
+  /* 篩選收在同一塊裡 */
+  ok('狀態 chips 與搜尋框在同一組篩選列',
+    await page.$eval('#adRsvpChips', (el) => !!el.closest('.ad-filterbar'))
+      && await page.$eval('#adRsvpFilter', (el) => !!el.closest('.ad-filterbar')));
 
   ok('後台無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+{
+  /* 刪除一筆重複的回覆：要連過兩關，第二關還要打字 */
+  const rsvpCol = adb.collection('sites').doc(siteIds[SLUG]).collection('rsvps');
+  await rsvpCol.doc('dupe-1').set({
+    name:'重複小明', attending:true, tentative:false, guestCount:1,
+    relation:'groom', mealMeat:1, mealVeg:0, childSeat:0,
+    dietaryNote:'', message:'', note:'', createdAt: TS.now(),
+  });
+
+  const { page, errors } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="replies"]');
+  await page.waitForFunction(
+    () => document.querySelector('#adRsvpList tbody tr'), null, { timeout:10000 });
+  await page.fill('#adRsvpFilter', '重複小明');
+  await page.waitForTimeout(300);
+
+  const dupRow = page.locator('#adRsvpList tbody tr', { hasText:'重複小明' }).first();
+  ok('找得到那筆重複的回覆', (await dupRow.count()) === 1);
+
+  /* 第一關：取消就什麼都不會發生 */
+  await dupRow.locator('[data-del-rsvp]').click();
+  await page.waitForSelector('#adModalMask:not([hidden])', { timeout:5000 });
+  await page.click('#adModalCancel');
+  await page.waitForTimeout(600);
+  ok('第一關按取消不會刪掉', (await rsvpCol.doc('dupe-1').get()).exists);
+
+  /* 再來一次，這次走完兩關 */
+  await dupRow.locator('[data-del-rsvp]').click();
+  await page.waitForSelector('#adModalMask:not([hidden])', { timeout:5000 });
+  await page.click('#adModalConfirm');
+  await page.waitForTimeout(400);
+  ok('第二關要打字才按得下去', await page.isDisabled('#adModalConfirm'));
+  await page.fill('#adModalPhrase', '刪除');
+  await page.waitForTimeout(200);
+  await page.click('#adModalConfirm');
+  await page.waitForTimeout(2500);
+
+  ok('兩關都過了才真的刪掉', !(await rsvpCol.doc('dupe-1').get()).exists);
+  ok('刪掉的那筆從名單上消失',
+    !(await page.innerText('#adRsvpList')).includes('重複小明'),
+    (await page.innerText('#adRsvpList')).replace(/\n/g, ' ').slice(0, 60));
+
+  ok('刪除回覆無 console 錯誤', realErrors(errors).length === 0,
     realErrors(errors).slice(0, 2).join(' | '));
   await page.close();
 }
@@ -1912,8 +1984,21 @@ console.log('\n[14d] 後台賓客標籤');
   await page.click('#adRsvpTagChips .ad-chip[data-tag="all"]');
   await page.waitForTimeout(300);
 
+  /* chips 最後一顆是出口，不是篩選條件 */
+  const lastChip = page.locator('#adRsvpTagChips .ad-chip').last();
+  ok('標籤 chips 最後一顆是「設定標籤 ↗」',
+    (await lastChip.innerText()).includes('設定標籤')
+      && (await lastChip.innerText()).includes('↗'),
+    await lastChip.innerText());
+  await lastChip.click();
+  await page.waitForTimeout(300);
+  ok('「設定標籤 ↗」跳到設定賓客標籤那一頁',
+    page.url().endsWith('#rsvp/tags'), page.url());
+  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="replies"]');
+  await page.waitForTimeout(300);
+
   /* 幫賓客加掛標籤（賓客自己選的那個關不掉） */
-  const row = page.locator('#adRsvpList .ad-item', { hasText:'王小明' }).first();
+  const row = page.locator('#adRsvpList tbody tr', { hasText:'王小明' }).first();
   await row.locator('[data-tag-edit]').click();
   await page.waitForSelector('#adTagPickMask:not([hidden])', { timeout:5000 });
   ok('賓客自己選的標籤在彈窗裡關不掉',
@@ -2246,6 +2331,59 @@ console.log('\n[21] 後台排桌管理');
     JSON.stringify(synced.slice(0, 2)));
   ok('同步是整份換掉，探針被清掉',
     !synced.some((r) => r.name === '名單探針'), `${synced.length} 筆`);
+
+  /* ---- 刪掉一筆回覆之後，其他人的編號不會跟著往前挪 ---- */
+  await page.click('.ad-tab[data-tab="seatingPlan"]');
+  await page.click('.ad-subtabs[data-subtabs="seatingPlan"] .ad-subtab[data-subtab="board"]');
+  await page.waitForTimeout(500);
+
+  /* 未安排區已經空了（三位都排進桌位），所以直接從桌上的卡片讀編號 */
+  const codeOfCard = (name) => page.evaluate((n) => {
+    const card = Array.from(document.querySelectorAll('.sp-card'))
+      .find((el) => el.querySelector('.sp-card-name')?.textContent.trim() === n);
+    return card ? card.querySelector('.sp-card-code').textContent.trim() : '';
+  }, name);
+
+  const codeMing = await codeOfCard('排桌小明');
+  const codeMei  = await codeOfCard('排桌小美');
+  ok('兩位女方賓客拿到連號的 B 編號',
+    /^B\d\d$/.test(codeMing) && /^B\d\d$/.test(codeMei) && codeMing !== codeMei,
+    `${codeMing} / ${codeMei}`);
+
+  /* 從「回覆資訊」把前面那一位刪掉 */
+  await page.click('.ad-tab[data-tab="rsvp"]');
+  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="replies"]');
+  await page.waitForTimeout(400);
+  await page.fill('#adRsvpFilter', '排桌小明');
+  await page.waitForTimeout(400);
+  await page.locator('#adRsvpList tbody tr', { hasText:'排桌小明' }).first()
+    .locator('[data-del-rsvp]').click();
+  await page.waitForSelector('#adModalMask:not([hidden])', { timeout:5000 });
+  await page.click('#adModalConfirm');
+  await page.waitForTimeout(300);
+  await page.fill('#adModalPhrase', '刪除');
+  await page.click('#adModalConfirm');
+  await page.waitForTimeout(2500);
+  await page.fill('#adRsvpFilter', '');
+
+  await page.click('.ad-tab[data-tab="seatingPlan"]');
+  await page.waitForTimeout(600);
+  ok('刪掉一筆之後，其他人的編號原地不動',
+    (await codeOfCard('排桌小美')) === codeMei,
+    `${await codeOfCard('排桌小美')}（原本 ${codeMei}）`);
+
+  /* 新的回覆接在最大號後面，不會把空出來的號碼撿回去用 */
+  await rsvpCol.doc('plan-d').set({
+    ...base, name:'排桌新來', guestCount:1, relation:'bride', createdAt: TS.now(),
+  });
+  await page.waitForTimeout(1800);
+  const codeNew = await codeOfCard('排桌新來');
+  ok('新回覆不會撿走剛剛空出來的號碼',
+    /^B\d\d$/.test(codeNew) && codeNew !== codeMing,
+    `${codeNew}（空出來的是 ${codeMing}）`);
+  ok('新回覆的號碼比現有的都大',
+    Number(codeNew.slice(1)) > Number(codeMei.slice(1)),
+    `${codeNew} vs ${codeMei}`);
 
   ok('排桌管理分頁無 console 錯誤', realErrors(errors).length === 0,
     realErrors(errors).slice(0, 2).join(' | '));

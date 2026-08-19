@@ -237,6 +237,59 @@ describe('sites/{siteId}/rsvps/{rsvpId}', () => {
     await assertFails(updateDoc(doc(db, `sites/${SITE_ID}/rsvps/${rsvpId}`), { attending: false }));
     await assertFails(deleteDoc(doc(db, `sites/${SITE_ID}/rsvps/${rsvpId}`)));
   });
+
+  /* 「改不動」和「刪得掉」是兩件事：新人可以整筆拿掉重複的回覆，
+     但不能動裡面任何一個字。 */
+  describe('新人刪除重複的回覆', () => {
+    const OWNER = 'couple@example.com';
+    const ownerDb = () => testEnv
+      .authenticatedContext('couple', { email: OWNER, email_verified: true })
+      .firestore();
+
+    async function seedRsvp() {
+      let id;
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        const ref = await addDoc(
+          collection(context.firestore(), `sites/${SITE_ID}/rsvps`),
+          validRsvpPayload({ createdAt: Timestamp.now() })
+        );
+        id = ref.id;
+      });
+      return id;
+    }
+
+    beforeEach(async () => {
+      await seedSite(SITE_ID, { ownerEmails: [OWNER] });
+    });
+
+    it('新人刪得掉自己站台的回覆', async () => {
+      const id = await seedRsvp();
+      await assertSucceeds(deleteDoc(doc(ownerDb(), `sites/${SITE_ID}/rsvps/${id}`)));
+    });
+
+    it('新人仍然改不動回覆的內容', async () => {
+      const id = await seedRsvp();
+      await assertFails(
+        updateDoc(doc(ownerDb(), `sites/${SITE_ID}/rsvps/${id}`), { attending: false })
+      );
+    });
+
+    it('不在 ownerEmails 名單內的帳號刪不掉', async () => {
+      const id = await seedRsvp();
+      const db = testEnv
+        .authenticatedContext('nosy', { email: 'nosy@example.com', email_verified: true })
+        .firestore();
+      await assertFails(deleteDoc(doc(db, `sites/${SITE_ID}/rsvps/${id}`)));
+    });
+
+    it('信箱沒驗證的帳號刪不掉', async () => {
+      const id = await seedRsvp();
+      const db = testEnv
+        .authenticatedContext('couple2', { email: OWNER, email_verified: false })
+        .firestore();
+      await assertFails(deleteDoc(doc(db, `sites/${SITE_ID}/rsvps/${id}`)));
+    });
+  });
 });
 
 describe('short/{code}', () => {
@@ -1266,7 +1319,9 @@ describe('rsvps 的擁有者權限', () => {
     await assertFails(getDocs(collection(db, `sites/${SITE_ID}/rsvps`)));
   });
 
-  it('新人可以看，但不能改也不能刪回覆', async () => {
+  /* 新人改不動回覆的內容，但刪得掉整筆（重複送出的那幾份）。
+     「改不動」和「刪得掉」不衝突：留下來的每一筆都還是賓客當初寫的原文。 */
+  it('新人改不動回覆的內容', async () => {
     let rsvpId;
     await testEnv.withSecurityRulesDisabled(async (c) => {
       const ref = await addDoc(
@@ -1277,7 +1332,7 @@ describe('rsvps 的擁有者權限', () => {
     });
     const db = ownerDb();
     await assertFails(updateDoc(doc(db, `sites/${SITE_ID}/rsvps/${rsvpId}`), { attending: false }));
-    await assertFails(deleteDoc(doc(db, `sites/${SITE_ID}/rsvps/${rsvpId}`)));
+    await assertSucceeds(deleteDoc(doc(db, `sites/${SITE_ID}/rsvps/${rsvpId}`)));
   });
 
   it('站台沒有設定 ownerEmails 時，誰都讀不到', async () => {

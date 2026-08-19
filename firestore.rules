@@ -128,13 +128,18 @@ service cloud.firestore {
          但只有新人本人讀得到 —— 和悄悄話信箱同一套身分判斷。
          賓客彼此看不到誰要來、留了什麼話、有什麼飲食禁忌。
 
-         仍然不開放 update／delete：回覆是賓客送出的紀錄，
+         仍然不開放 update：回覆是賓客送出的紀錄，
          新人可以看、可以匯出，但不該在後台改掉別人寫的內容。
-         真的要刪（測試資料、重複回覆）走 Admin SDK。 */
+
+         delete 只開給新人本人，而且只為了一件事：同一個人重複送出好幾份。
+         「改不動」和「刪得掉」不衝突 —— 留下來的每一筆都還是賓客當初寫的原文，
+         後台能做的只有整筆拿掉，不能動裡面任何一個字。
+         後台會連按兩次確認才真的刪（見 admin.js 的 deleteRsvp）。 */
       match /rsvps/{rsvpId} {
         allow create: if isValidRsvp(request.resource.data, siteId);
         allow read: if isSiteOwner(siteId);
-        allow update, delete: if false;
+        allow update: if false;
+        allow delete: if isSiteOwner(siteId);
       }
 
       /* 新人幫賓客掛的標籤（VIP、長輩、行動不便…），一位賓客可以有好幾個。

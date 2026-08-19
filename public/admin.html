@@ -123,26 +123,40 @@
     <!-- 0-2 回覆資訊 -->
     <div class="ad-subpanel" data-subpanel="replies">
     <section class="ad-sec">
-      <h2 class="ad-sec-title">回覆名單</h2>
-
-      <div class="ad-row">
-        <button class="btn small ghost" id="adRsvpExport" type="button">匯出 CSV</button>
-      </div>
-
-      <div class="ad-list-head">
-        <div class="ad-chips" id="adRsvpChips">
-          <button class="ad-chip is-on" type="button" data-filter="all">全部</button>
-          <button class="ad-chip" type="button" data-filter="yes">熱情出席</button>
-          <button class="ad-chip" type="button" data-filter="maybe">視情況而定</button>
-          <button class="ad-chip" type="button" data-filter="no">無法出席</button>
+      <div class="ad-sec-head">
+        <h2 class="ad-sec-title">回覆名單</h2>
+        <div class="ad-sec-head-actions">
+          <button class="btn small ghost" id="adRsvpExport" type="button">匯出 CSV</button>
         </div>
-        <input class="ad-filter" id="adRsvpFilter" type="text" placeholder="搜尋名字、留言或備註…">
+      </div>
+      <p class="ad-sec-note">
+        回覆是賓客送出的紀錄，<b>內容改不動</b>。
+        同一個人重複填了好幾次時，可以把多的那幾筆<b>刪掉</b>（要連按兩次確認）。
+      </p>
+
+      <!-- 出席狀態、標籤、搜尋收在同一塊，看起來就是同一組篩選工具 -->
+      <div class="ad-filterbar">
+        <div class="ad-filterbar-row">
+          <span class="ad-filterbar-lab">出席</span>
+          <div class="ad-chips" id="adRsvpChips">
+            <button class="ad-chip is-on" type="button" data-filter="all">全部</button>
+            <button class="ad-chip" type="button" data-filter="yes">熱情出席</button>
+            <button class="ad-chip" type="button" data-filter="maybe">視情況而定</button>
+            <button class="ad-chip" type="button" data-filter="no">無法出席</button>
+          </div>
+          <input class="ad-filter ad-filterbar-search" id="adRsvpFilter" type="text"
+                 placeholder="搜尋名字、留言或備註…">
+        </div>
+
+        <!-- 標籤篩選：由 js/admin.js 依標籤庫產生（最後一顆是「設定標籤 ↗」）；
+             沒開標籤功能就整排收起來 -->
+        <div class="ad-filterbar-row" id="adRsvpTagRow" hidden>
+          <span class="ad-filterbar-lab">標籤</span>
+          <div class="ad-chips" id="adRsvpTagChips"></div>
+        </div>
       </div>
 
-      <!-- 標籤篩選：由 js/admin.js 依標籤庫產生；沒開標籤功能就整排收起來 -->
-      <div class="ad-chips ad-chips-sub" id="adRsvpTagChips" hidden></div>
-
-      <div class="ad-list" id="adRsvpList"></div>
+      <div class="ad-list-table" id="adRsvpList"></div>
     </section>
     </div>
 

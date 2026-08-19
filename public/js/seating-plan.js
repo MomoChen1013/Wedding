@@ -182,17 +182,58 @@
   }
 
   /* 自動編號：同一個字首依回覆時間排序後給 01、02…
-     算出來的東西不存進資料庫 —— 新人沒改過就每次算一樣的結果。 */
+     算出來的東西不存進資料庫 —— 新人沒改過就每次算一樣的結果。
+
+     ------------------------------------------------------------
+     號碼「不重複使用」
+     ------------------------------------------------------------
+     編號是拿來對人的：桌卡上寫 B06、跟長輩講「你是 B06」、
+     匯出的 CSV 裡也是 B06。所以一個號碼一輩子只能屬於一個人。
+
+     刪掉 B05 之後：
+       ・B06～B08 不會往前挪（他們手上那張紙沒有跟著改）
+       ・下一筆新回覆拿到的是 B09，不是把 B05 補回去
+     空號沒有成本，重號有 —— 兩個不同的人在不同時間都叫 B05，
+     紙本名單和後台就對不起來了。
+
+     實作上靠 plan.meta[id].code：那是「已經定下來」的號碼。
+     刪回覆之前後台會先呼叫 freezeCodes() 把當下的號碼全部釘進去，
+     所以這裡只要「跳過已經用掉的號碼、從最大的往後發」就夠了。 */
+  function codeOf(prefix, n) { return `${prefix}${String(n).padStart(2, '0')}`; }
+
   function autoCodes() {
     const rows = DataStore.getRSVPs()
       .slice()
       .sort((a, b) => rsvpMs(a) - rsvpMs(b) || String(a.id).localeCompare(String(b.id)));
-    const seq = {};
+
     const out = {};
+    const used = new Set();   /* 已經被用掉的號碼（含手動賓客的） */
+    const next = {};          /* 字首 → 下一個要發的號碼 */
+
+    /* 第一輪：先收下所有「已經定下來」的號碼 */
+    const take = (code) => {
+      if (!code) return;
+      used.add(String(code).toUpperCase());
+      const m = /^([A-Za-z]+)(\d+)$/.exec(String(code));
+      if (!m) return;
+      const p = m[1].toUpperCase();
+      next[p] = Math.max(next[p] || 1, Number(m[2]) + 1);
+    };
+    Object.values(plan.meta).forEach((m) => take(m && m.code));
     rows.forEach((r) => {
+      const m = plan.meta[r.id];
+      if (m && m.code) out[r.id] = m.code;
+    });
+
+    /* 第二輪：還沒有號碼的，從各自字首的最大號往後發，跳過用掉的 */
+    rows.forEach((r) => {
+      if (out[r.id]) return;
       const p = CODE_PREFIX[r.relation] || 'D';
-      seq[p] = (seq[p] || 0) + 1;
-      out[r.id] = `${p}${String(seq[p]).padStart(2, '0')}`;
+      let n = next[p] || 1;
+      while (used.has(codeOf(p, n).toUpperCase())) n++;
+      out[r.id] = codeOf(p, n);
+      used.add(out[r.id].toUpperCase());
+      next[p] = n + 1;
     });
     return out;
   }
@@ -2472,6 +2513,37 @@
     loadPromise = load();
   }
 
+  /* 把現在算出來的自動編號釘進草稿裡。
+     ------------------------------------------------------------
+     後台要刪掉一筆出席回覆之前會先呼叫這個（見 admin.js 的 deleteRsvp）。
+     編號本來是照回覆順序算的，少一筆就會讓後面每個人往前挪一號 ——
+     新人可能已經把 B06 寫在紙本名單、桌卡上了。先釘住，
+     刪掉的那一號就變成空號，其他人一個都不會動。
+
+     回傳有沒有真的寫進資料庫（沒開排桌管理的站台就是 false，不算失敗）。 */
+  async function freezeCodes() {
+    if (!started) return false;                 /* 沒開排桌管理，沒有編號這回事 */
+    if (loadPromise) await loadPromise;
+
+    const codes = autoCodes();
+    let changed = 0;
+    DataStore.getRSVPs().forEach((r) => {
+      const m = plan.meta[r.id];
+      if (m && m.code) return;                  /* 已經定下來了 */
+      const code = codes[r.id];
+      if (!code) return;
+      plan.meta[r.id] = { ...(m || {}), id: r.id, src: 'rsvp', code };
+      changed++;
+    });
+    if (!changed) return false;
+
+    invalidateGuests();
+    /* 有沒存的修改時不要偷偷幫他存整份草稿（儲存在這一頁是刻意的動作）——
+       釘在記憶體裡，等新人自己按「儲存排桌」一起帶走。 */
+    if (dirty) { renderAll(); return false; }
+    return save(true);
+  }
+
   /* 「桌次名單」那一頁的「同步現在的排桌」按鈕走這裡。
      草稿是非同步讀進來的，太早按會誤判成沒資料，所以先等它讀完。 */
   async function syncNow() {
@@ -2485,5 +2557,5 @@
     return true;
   }
 
-  window.SeatingPlan = { init, syncNow };
+  window.SeatingPlan = { init, syncNow, freezeCodes };
 })();

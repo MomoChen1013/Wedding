@@ -805,65 +805,181 @@ function renderRsvps(){
 
   renderPager(rsvpListEl, rsvpPager, all.length, renderRsvps);
   const list = all.slice((rsvpPager.page - 1) * rsvpPager.size, rsvpPager.page * rsvpPager.size);
+  rsvpListEl.innerHTML = rsvpTableHtml(list);
+}
 
-  rsvpListEl.innerHTML = list.map(r => {
+/* ============================================================
+   回覆名單的表格
+   ------------------------------------------------------------
+   本來一筆是一張堆疊的卡片，欄位一多就要一行一行讀。
+   改成表格：同一欄從上到下對得起來，才比得出「誰吃素、誰要喜餅」。
+   欄位多到一定會橫向捲，所以表頭 sticky（見 admin.css）。
+   關掉的題目整欄不出現 —— 一整欄的「—」沒有任何資訊。
+============================================================ */
+function rsvpColumns(){
+  const cfg = rsvpConfig();
+  return {
+    tags: guestTagsOn(),
+    contact: cfg.contacts.length > 0,
+    card: cfg.askCard,
+    gift: cfg.askGift,
+    message: cfg.askMessage,
+  };
+}
+
+/* 空的格子畫一條短破折號，不要留成一片空白讓人以為是漏讀 */
+function td(html, cls){
+  const c = cls ? ` class="${cls}"` : '';
+  return `<td${c}>${html || '<span class="ad-td-empty">—</span>'}</td>`;
+}
+
+function rsvpTableHtml(list){
+  const col = rsvpColumns();
+
+  const head = [
+    col.tags ? `<th>標籤<button class="ad-th-link" type="button" id="adRsvpTagSetupHead">設定標籤</button></th>` : '',
+    '<th class="is-name">姓名</th>',
+    '<th>出席回應</th>',
+    '<th>分類</th>',
+    col.contact ? '<th>聯絡資訊</th>' : '',
+    '<th class="is-num">人數</th>',
+    '<th class="is-num">葷</th>',
+    '<th class="is-num">素</th>',
+    '<th class="is-num">兒童椅</th>',
+    '<th>飲食習慣</th>',
+    col.card ? '<th>喜帖</th>' : '',
+    col.gift ? '<th>喜餅</th>' : '',
+    col.message ? '<th class="is-wide">給新人的話</th>' : '',
+    '<th class="is-wide">備註</th>',
+    '<th>填表時間</th>',
+    '<th class="is-act"></th>',
+  ].filter(Boolean).join('');
+
+  const rows = list.map(r => {
     const st = DataStore.rsvpStatus(r);
     const t = rsvpTime(r);
+    const going = st === 'yes';
 
-    /* 一筆回覆的重點濃縮成一行，細節（留言、備註、地址）另起一行 */
-    const bits = [];
-    if(r.relation) bits.push(rsvpLabel('relation', r.relation));
+    const tagCell = !col.tags ? '' : `<td><div class="ad-tagcell">${
+      rsvpTagIds(r).map(id =>
+        `<span class="ad-tag ad-tag-guest">${escapeHtml(guestTagName(id))}</span>`).join('')
+    }<button class="ad-edit" type="button" data-tag-edit="${r.id}">標籤</button></div></td>`;
+
     const contacts = [
       r.contactPhone && `電話 ${r.contactPhone}`,
       r.contactLine && `LINE ${r.contactLine}`,
-      r.contactEmail && `Email ${r.contactEmail}`,
+      r.contactEmail && r.contactEmail,
     ].filter(Boolean);
-    if(st === 'yes'){
-      bits.push(`${Number(r.guestCount) || 1} 位`);
-      const meat = Number(r.mealMeat) || 0;
-      const veg  = Number(r.mealVeg)  || 0;
-      if(meat || veg) bits.push(`葷 ${meat}／素 ${veg}`);
-      else if(r.meal) bits.push(`餐點：${r.meal}`);
-      if(Number(r.childSeat) > 0) bits.push(`兒童椅 ${Number(r.childSeat)} 張`);
-      if(r.dietaryNote) bits.push(`飲食：${r.dietaryNote}`);
-    }
+
+    /* 喜帖／喜餅：選了什麼放第一行，寄去哪裡縮小放第二行 */
+    const cardBits = [];
     if(r.cardType){
-      bits.push(`喜帖：${rsvpLabel('card', r.cardType)}${
-        r.cardType === 'paper' && r.cardDelivery
-          ? `（${rsvpLabel('cardDelivery', r.cardDelivery)}）` : ''}`);
+      cardBits.push(rsvpLabel('card', r.cardType)
+        + (r.cardType === 'paper' && r.cardDelivery
+            ? `（${rsvpLabel('cardDelivery', r.cardDelivery)}）` : ''));
     }
-    if(r.giftDelivery) bits.push(`喜餅：${rsvpLabel('gift', r.giftDelivery)}`);
+    const cardSub = [
+      r.cardEmail,
+      r.cardAddress && `${r.cardZip || ''} ${r.cardAddress}`.trim(),
+    ].filter(Boolean);
 
-    const addrs = [];
-    if(r.cardEmail) addrs.push(`喜帖寄：${r.cardEmail}`);
-    if(r.cardAddress) addrs.push(`喜帖寄：${r.cardZip || ''} ${r.cardAddress}`);
-    if(r.giftAddress) addrs.push(`喜餅寄：${r.giftZip || ''} ${r.giftAddress}`);
+    const giftBits = r.giftDelivery ? [rsvpLabel('gift', r.giftDelivery)] : [];
+    const giftSub = r.giftAddress ? [`${r.giftZip || ''} ${r.giftAddress}`.trim()] : [];
 
-    /* 標籤：賓客自己選的那個也一起顯示，看起來就是同一群人的分類 */
-    const tagsOn = guestTagsOn();
-    const tagChips = !tagsOn ? '' : rsvpTagIds(r)
-      .map(id => `<span class="ad-tag ad-tag-guest">${escapeHtml(guestTagName(id))}</span>`)
-      .join('');
+    const stack = (main, sub) => {
+      if(!main.length && !sub.length) return '';
+      return `<div class="ad-td-lines">${
+        main.map(x => `<span>${escapeHtml(x)}</span>`).join('')
+      }${
+        sub.map(x => `<span class="ad-td-sub">${escapeHtml(x)}</span>`).join('')
+      }</div>`;
+    };
 
-    return `
-      <div class="ad-item">
-        <div class="ad-item-main">
-          <span class="ad-item-title">${escapeHtml(r.icon || '')} ${escapeHtml(r.name || '（沒有名字）')}</span>
-          <span class="ad-tag ad-tag-${st}">${RSVP_LABEL[st]}</span>
-          ${bits.length ? `<span class="ad-item-sub">${escapeHtml(bits.join('・'))}</span>` : ''}
-          ${contacts.length ? `<span class="ad-item-sub">${escapeHtml(contacts.join('　'))}</span>` : ''}
-          ${addrs.length ? `<span class="ad-item-sub">${escapeHtml(addrs.join('　'))}</span>` : ''}
-          ${r.message ? `<span class="ad-item-sub">「${escapeHtml(r.message)}」</span>` : ''}
-          ${r.note ? `<span class="ad-item-sub">備註：${escapeHtml(r.note)}</span>` : ''}
-          ${tagChips ? `<span class="ad-item-sub ad-item-tags">${tagChips}</span>` : ''}
-          <span class="ad-item-sub">${t ? fmtTime(t) : '時間未知'}</span>
-        </div>
-        ${tagsOn ? `<div class="ad-item-actions">
-          <button class="ad-edit" type="button" data-tag-edit="${r.id}">標籤</button>
-        </div>` : ''}
-      </div>`;
+    return `<tr data-rsvp="${r.id}">
+      ${tagCell}
+      <td class="is-name">${escapeHtml(`${r.icon || ''} ${r.name || '（沒有名字）'}`.trim())}</td>
+      <td><span class="ad-tag ad-tag-${st}">${RSVP_LABEL[st]}</span></td>
+      ${td(escapeHtml(rsvpLabel('relation', r.relation)))}
+      ${col.contact ? td(stack(contacts, [])) : ''}
+      ${td(going ? String(Number(r.guestCount) || 1) : '', 'is-num')}
+      ${td(going ? String(Number(r.mealMeat) || 0) : '', 'is-num')}
+      ${td(going ? String(Number(r.mealVeg) || 0) : '', 'is-num')}
+      ${td(going && Number(r.childSeat) > 0 ? String(Number(r.childSeat)) : '', 'is-num')}
+      ${td(escapeHtml(r.dietaryNote || ''))}
+      ${col.card ? td(stack(cardBits, cardSub)) : ''}
+      ${col.gift ? td(stack(giftBits, giftSub)) : ''}
+      ${col.message ? td(escapeHtml(r.message || ''), 'is-wide') : ''}
+      ${td(escapeHtml(r.note || ''), 'is-wide')}
+      <td class="ad-td-sub">${t ? fmtTime(t) : '時間未知'}</td>
+      <td class="is-act"><button class="ad-del" type="button" data-del-rsvp="${r.id}">刪除</button></td>
+    </tr>`;
   }).join('');
+
+  return `<div class="ad-tablewrap"><table class="ad-table">
+    <thead><tr>${head}</tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
 }
+
+/* ============================================================
+   刪除一筆回覆
+   ------------------------------------------------------------
+   回覆本來是「誰都改不動」的紀錄（規則仍然擋 update）。
+   開放刪除只為了一件事：同一個人重複送出好幾份。
+   所以要連過兩關 —— 先看清楚要刪的是哪一筆，再打字確認。
+
+   刪之前先把排桌的自動編號釘住（見 SeatingPlan.freezeCodes）：
+   編號是照回覆順序算出來的，少一筆就會讓後面每個人往前挪一號，
+   而新人可能已經把 B06 寫在紙本名單上了。
+============================================================ */
+async function deleteRsvp(id){
+  const r = DataStore.getRSVPs().find(x => x.id === id);
+  if(!r) return;
+
+  const t = rsvpTime(r);
+  const st = DataStore.rsvpStatus(r);
+  const who = r.name || '（沒有名字）';
+
+  const first = await confirmModal({
+    title: `刪除「${who}」這一筆回覆`,
+    message: `${RSVP_LABEL[st]}・${st === 'yes' ? `${Number(r.guestCount) || 1} 位・` : ''}`
+           + `${t ? fmtTime(t) : '時間未知'} 送出。`
+           + '刪掉之後這筆回覆就找不回來了（統計、匯出、排桌名單都會少一筆）。',
+    danger: true,
+    confirmText: '繼續',
+  });
+  if(!first) return;
+
+  const second = await confirmModal({
+    title: '再確認一次',
+    message: `真的要刪掉「${who}」的這筆回覆嗎？請輸入「刪除」。`,
+    danger: true,
+    requirePhrase: '刪除',
+    confirmText: '刪除',
+  });
+  if(!second) return;
+
+  /* 排桌編號先定住，其他人的號碼才不會跟著往前挪 */
+  if(window.SeatingPlan && SeatingPlan.freezeCodes){
+    try{ await SeatingPlan.freezeCodes(); }
+    catch(err){ console.warn('[回覆] 排桌編號沒能先定住', err); }
+  }
+
+  try{
+    await DataStore.removeDoc('rsvps', id);
+    /* 新人幫他掛的標籤另外存一份，一起收掉，不然會留下一筆孤兒 */
+    if(guestTagsOn() && (DataStore.getRsvpTagMap()[id] || []).length){
+      await DataStore.removeDoc('rsvpTags', id).catch(()=>{});
+    }
+    toast('已刪除這筆回覆');
+  }catch(err){ writeFailed(err); }
+}
+
+rsvpListEl.addEventListener('click', (e)=>{
+  const del = e.target.closest('[data-del-rsvp]');
+  if(del){ deleteRsvp(del.dataset.delRsvp); return; }
+  if(e.target.id === 'adRsvpTagSetupHead'){ location.hash = 'rsvp/tags'; }
+});
 
 document.addEventListener('data:rsvps', ()=>{ renderRsvps(); refreshTagCounts(); });
 rsvpFilterEl.addEventListener('input', ()=>{ rsvpPager.page = 1; renderRsvps(); });
@@ -1271,12 +1387,16 @@ document.getElementById('adTagPresetBtn').addEventListener('click', async ()=>{
   }catch(err){ writeFailed(err); }
 });
 
-/* ---------- 名單上的標籤篩選 ---------- */
+/* ---------- 名單上的標籤篩選 ----------
+   最後一顆不是篩選條件，是一個出口：「設定標籤 ↗」直接跳到標籤那一頁。
+   一個標籤都還沒建的時候整排也要留著 —— 不然新人根本找不到入口。 */
+const tagFilterRowEl = document.getElementById('adRsvpTagRow');
+
 function renderRsvpTagChips(){
   const list = guestTagList();
-  const show = guestTagsOn() && list.length > 0;
-  tagChipsEl.hidden = !show;
-  if(!show){
+  const on = guestTagsOn();
+  tagFilterRowEl.hidden = !on;
+  if(!on){
     rsvpTagFilter = 'all';
     tagChipsEl.innerHTML = '';
     return;
@@ -1285,14 +1405,21 @@ function renderRsvpTagChips(){
   if(rsvpTagFilter !== 'all' && rsvpTagFilter !== 'none'
      && !list.some(t => t.id === rsvpTagFilter)) rsvpTagFilter = 'all';
 
-  tagChipsEl.innerHTML = [{ id:'all', name:'全部標籤' }, ...list, { id:'none', name:'沒有標籤' }]
+  const chips = list.length
+    ? [{ id:'all', name:'全部標籤' }, ...list, { id:'none', name:'沒有標籤' }]
+    : [];
+
+  tagChipsEl.innerHTML = chips
     .map(c => `<button class="ad-chip${c.id === rsvpTagFilter ? ' is-on' : ''}" type="button"
-             data-tag="${escapeHtml(c.id)}">${escapeHtml(c.name)}</button>`).join('');
+             data-tag="${escapeHtml(c.id)}">${escapeHtml(c.name)}</button>`).join('')
+    + `<button class="ad-chip ad-chip-link" type="button" data-tag-setup="1"
+               title="到「設定賓客標籤」新增或修改標籤">設定標籤 ↗</button>`;
 }
 
 tagChipsEl.addEventListener('click', (e)=>{
   const chip = e.target.closest('.ad-chip');
   if(!chip) return;
+  if(chip.dataset.tagSetup){ location.hash = 'rsvp/tags'; return; }
   rsvpTagFilter = chip.dataset.tag;
   rsvpPager.page = 1;
   renderRsvpTagChips();
