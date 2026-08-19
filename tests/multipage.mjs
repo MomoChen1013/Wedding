@@ -1396,10 +1396,14 @@ const TEST_PNG = {
       const img = document.querySelector('#cardViewArt img');
       return !!img && img.getAttribute('src').startsWith('data:image');
     }));
-  ok('大圖上帶著卡名與等級',
-    (await page.textContent('#cardViewNm')).includes('海邊的我們')
-      && (await page.textContent('#cardViewRk')) === 'SSR',
-    `${await page.textContent('#cardViewNm')} / ${await page.textContent('#cardViewRk')}`);
+  /* 卡面上只有照片：等級、卡名、說明都不疊上去 */
+  ok('大圖上只有照片，沒有等級／卡名的字幕條',
+    await page.evaluate(() => {
+      const t = document.getElementById('cardViewCard').innerText.trim();
+      return t === '' && !document.querySelector('#cardViewCard .cv-meta');
+    }));
+  ok('SSR 的彩虹光膜還在',
+    await page.evaluate(() => !document.getElementById('cardViewHolo').hidden));
 
   const cardDl = await Promise.all([
     page.waitForEvent('download', { timeout:15000 }),

@@ -60,19 +60,16 @@
   </div>
 </section>
 
-<!-- 收藏裡的小卡放大看：點一下收藏的卡片就打開，可以另存成 JPG -->
+<!-- 收藏裡的小卡放大看：點一下收藏的卡片就打開，可以另存成 JPG。
+     卡面只有照片（SSR／SR 多一層會動的彩虹光膜）—— 等級、卡名、說明
+     在小卡的 title 上看得到，放大看的重點是照片本身。 -->
 <div class="cv" id="cardView" hidden>
   <button class="cv-close" id="cardViewClose" type="button" aria-label="關閉">✕</button>
   <div class="cv-box" role="dialog" aria-modal="true" aria-label="收藏的婚禮小卡">
     <div class="cv-card" id="cardViewCard">
       <div class="cv-art" id="cardViewArt"></div>
       <div class="cv-holo" id="cardViewHolo" hidden></div>
-      <div class="cv-meta">
-        <div class="rk" id="cardViewRk"></div>
-        <div class="nm" id="cardViewNm"></div>
-      </div>
     </div>
-    <div class="cv-desc" id="cardViewDesc"></div>
     <div class="cv-actions">
       <button class="btn small" id="cardViewSave" type="button">儲存下載</button>
     </div>

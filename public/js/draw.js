@@ -211,15 +211,18 @@ function redrawCollection(){
   renderCollection();
 }
 
-
 /* ============================================================
    收藏卡放大看 ＋ 儲存下載
    ------------------------------------------------------------
-   點收藏裡的小卡 → 蓋上一張 2:3 的大卡（照片 ＋ 等級 ＋ 卡名 ＋ 說明）。
-   「儲存下載」把同一張卡畫進 canvas 輸出 JPG，存進手機相簿或電腦。
+   點收藏裡的小卡 → 蓋上一張 2:3 的大卡。卡面上只有照片，
+   SSR／SR 多一層會動的彩虹光膜；等級、卡名、說明都不畫上去 ——
+   放大看的重點就是那張照片，字疊在上面只會擋到人。
+
+   「儲存下載」把同一張照片畫進 canvas 輸出 JPG，
+   照片底下只留一行「新人名字・日期」，其餘什麼都不加。
 
    為什麼是自己畫而不是截圖：全站不引第三方函式庫（html2canvas 之類），
-   而且卡面就是「一張照片 ＋ 一條字幕」，自己畫拿得到更好的解析度。
+   而且卡面就是一張照片，自己畫拿得到更好的解析度。
 
    跨網域的卡圖（新人把 art 指到外部網址）會把 canvas 染色，
    toBlob 會丟 SecurityError —— 接住它，改叫使用者長按存圖。
@@ -227,9 +230,6 @@ function redrawCollection(){
 const cvEl    = document.getElementById('cardView');
 const cvArt   = document.getElementById('cardViewArt');
 const cvHolo  = document.getElementById('cardViewHolo');
-const cvRk    = document.getElementById('cardViewRk');
-const cvNm    = document.getElementById('cardViewNm');
-const cvDesc  = document.getElementById('cardViewDesc');
 const cvSave  = document.getElementById('cardViewSave');
 const cvHint  = document.getElementById('cardViewHint');
 
@@ -257,9 +257,6 @@ function openCardView(rec, index){
   }else{
     cvArt.textContent = art || DEFAULT_ICON;
   }
-  cvRk.textContent = RANK[rec.rarity] || 'N';
-  cvNm.textContent = rec.name || '婚禮小卡';
-  cvDesc.textContent = rec.desc || '';
   cvHolo.hidden = !(rec.rarity === 'SSR' || rec.rarity === 'SR');
   cvSetHint('');
 
@@ -337,26 +334,22 @@ function drawCover(ctx, img, x, y, w, h){
   ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
 }
 
-async function drawCardCanvas(rec, art){
+async function drawCardCanvas(art){
   const W = 1080;
   const PAD = 60;
   const CW = W - PAD * 2;            /* 卡寬 */
   const CH = Math.round(CW * 1.5);   /* 2:3 */
   const RADIUS = 26;
 
-  const ink     = cssVar('--ink', '#2f2b26');
   const inkSoft = cssVar('--ink-soft', '#7c7267');
   const soft    = cssVar('--primary-soft', '#f3eee3');
   const bg2     = cssVar('--bg2', '#f4f1ea');
   const line    = cssVar('--line', 'rgba(47,43,38,.18)');
   const serif   = '"Noto Serif TC", "Songti TC", "PingFang TC", "Microsoft JhengHei", serif';
 
-  /* 說明與頁尾的高度先算好，畫布才開得出正確的大小
-     （說明限一行，太長就切掉 —— 卡片下面那條小紙條本來就只放一句） */
-  const desc = String(rec.desc || '').trim();
-  const descH = desc ? 58 : 0;
+  /* 照片下面只留一行「新人名字・日期」，高度是固定的 */
   const footH = 74;
-  const H = PAD + CH + descH + footH + PAD;
+  const H = PAD + CH + footH + PAD;
 
   const cv = document.createElement('canvas');
   cv.width = W;
@@ -366,7 +359,7 @@ async function drawCardCanvas(rec, art){
   ctx.fillStyle = bg2;
   ctx.fillRect(0, 0, W, H);
 
-  /* ---- 卡面 ---- */
+  /* ---- 照片 ---- */
   ctx.save();
   roundRect(ctx, PAD, PAD, CW, CH, RADIUS);
   ctx.clip();
@@ -393,59 +386,22 @@ async function drawCardCanvas(rec, art){
     ctx.textBaseline = 'middle';
     ctx.fillText(art || DEFAULT_ICON, W / 2, PAD + CH / 2);
   }
-
-  /* SSR／SR 的光膜：畫面上是會動的彩虹，靜態圖用一道斜向的柔光代表 */
-  if(rec.rarity === 'SSR' || rec.rarity === 'SR'){
-    const sheen = ctx.createLinearGradient(PAD, PAD, PAD + CW, PAD + CH);
-    sheen.addColorStop(0.00, 'rgba(255,110,196,.16)');
-    sheen.addColorStop(0.30, 'rgba(255,255,255,.28)');
-    sheen.addColorStop(0.55, 'rgba(120,115,245,.16)');
-    sheen.addColorStop(0.80, 'rgba(252,211,77,.18)');
-    sheen.addColorStop(1.00, 'rgba(74,222,128,.14)');
-    ctx.fillStyle = sheen;
-    ctx.fillRect(PAD, PAD, CW, CH);
-  }
-
-  /* 底部字幕條：等級 ＋ 卡名 */
-  const barH = 190;
-  const barY = PAD + CH - barH;
-  const grad = ctx.createLinearGradient(0, barY, 0, PAD + CH);
-  grad.addColorStop(0, 'rgba(47,43,38,0)');
-  grad.addColorStop(1, 'rgba(47,43,38,.72)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(PAD, barY, CW, barH);
-
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = '#fff';
-  ctx.font = `500 30px ${serif}`;
-  /* 等級用寬字距，和畫面上的 letter-spacing .24em 對得起來 */
-  ctx.fillText((RANK[rec.rarity] || 'N').split('').join(' '), W / 2, PAD + CH - 96);
-  ctx.font = `34px ${serif}`;
-  ctx.fillText(String(rec.name || '婚禮小卡').slice(0, 24), W / 2, PAD + CH - 46);
   ctx.restore();
 
-  /* 卡的細邊框（clip 之外才畫得到整條線） */
+  /* 照片的細邊框（clip 之外才畫得到整條線） */
   ctx.strokeStyle = line;
   ctx.lineWidth = 2;
   roundRect(ctx, PAD + 1, PAD + 1, CW - 2, CH - 2, RADIUS);
   ctx.stroke();
 
-  /* ---- 說明 ---- */
-  ctx.textAlign = 'center';
-  if(desc){
-    ctx.fillStyle = ink;
-    ctx.font = `26px ${serif}`;
-    ctx.fillText(desc.slice(0, 30), W / 2, PAD + CH + 44);
-  }
-
   /* ---- 這是誰的婚禮 ---- */
   const WED = window.WED || {};
-  const foot = [WED.couple, WED.date, (WED.hashtags && WED.hashtags[0]) || '']
-    .filter(Boolean).join('・');
+  const foot = [WED.couple, WED.date].filter(Boolean).join('・');
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = inkSoft;
   ctx.font = `21px ${serif}`;
-  ctx.fillText(foot, W / 2, PAD + CH + descH + 46);
+  ctx.fillText(foot, W / 2, PAD + CH + 46);
 
   return cv;
 }
@@ -465,7 +421,7 @@ cvSave.addEventListener('click', async ()=>{
     /* 字體還在下載時畫出來會變成系統預設字，等它載完再畫 */
     if(document.fonts && document.fonts.ready) await document.fonts.ready;
 
-    const canvas = await drawCardCanvas(cvOpen.rec, cvOpen.art);
+    const canvas = await drawCardCanvas(cvOpen.art);
     const blob = await new Promise((res, rej) => {
       try{ canvas.toBlob(b => (b ? res(b) : rej(new Error('toBlob failed'))), 'image/jpeg', 0.92); }
       catch(err){ rej(err); }
