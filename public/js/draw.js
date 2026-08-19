@@ -167,7 +167,9 @@ const collCount = document.getElementById('collCount');
 const descEl    = document.getElementById('cardDesc');
 let drawing = false;
 
-/* ===== 收藏（mini-card） ===== */
+/* ===== 收藏（mini-card） =====
+   點得下去：開放大檢視（見下面的「收藏卡放大看」），
+   所以要有 button 的語意 —— 鍵盤也走得到、Enter 也打得開。 */
 function appendMini(pick){
   const art = cardArtOf(pick);
   const mc = document.createElement('div');
@@ -181,6 +183,12 @@ function appendMini(pick){
     mc.insertAdjacentHTML('beforeend', '<div class="mh"></div>');
   }
   mc.title = pick.name + '・' + pick.rarity + (pick.desc ? '\n' + pick.desc : '');
+  mc.setAttribute('role', 'button');
+  mc.setAttribute('tabindex', '0');
+  mc.setAttribute('aria-label', `看大圖：${pick.name || '婚禮小卡'}`);
+  /* 卡池之後可能被後台的卡換掉，所以存的是「這一筆收藏」本身，
+     圖每次開的時候再用 cardArtOf() 取一次 */
+  mc._rec = pick;
   coll.appendChild(mc);
 }
 
@@ -202,6 +210,284 @@ function redrawCollection(){
   coll.innerHTML = '';
   renderCollection();
 }
+
+
+/* ============================================================
+   收藏卡放大看 ＋ 儲存下載
+   ------------------------------------------------------------
+   點收藏裡的小卡 → 蓋上一張 2:3 的大卡（照片 ＋ 等級 ＋ 卡名 ＋ 說明）。
+   「儲存下載」把同一張卡畫進 canvas 輸出 JPG，存進手機相簿或電腦。
+
+   為什麼是自己畫而不是截圖：全站不引第三方函式庫（html2canvas 之類），
+   而且卡面就是「一張照片 ＋ 一條字幕」，自己畫拿得到更好的解析度。
+
+   跨網域的卡圖（新人把 art 指到外部網址）會把 canvas 染色，
+   toBlob 會丟 SecurityError —— 接住它，改叫使用者長按存圖。
+============================================================ */
+const cvEl    = document.getElementById('cardView');
+const cvArt   = document.getElementById('cardViewArt');
+const cvHolo  = document.getElementById('cardViewHolo');
+const cvRk    = document.getElementById('cardViewRk');
+const cvNm    = document.getElementById('cardViewNm');
+const cvDesc  = document.getElementById('cardViewDesc');
+const cvSave  = document.getElementById('cardViewSave');
+const cvHint  = document.getElementById('cardViewHint');
+
+const CV_HINT = '存成 JPG 圖片，收進手機或電腦相簿';
+function cvSetHint(text){ cvHint.textContent = text || CV_HINT; }
+
+/* 現在開著的是哪一張（關掉之後清掉，避免存到上一張） */
+let cvOpen = null;
+let cvLastFocus = null;
+
+function openCardView(rec, index){
+  const art = cardArtOf(rec);
+  cvOpen = { rec, art, index };
+  cvLastFocus = document.activeElement;
+
+  cvArt.textContent = '';
+  if(isImage(art)){
+    const img = new Image();
+    img.alt = rec.name || '婚禮小卡';
+    img.draggable = false;
+    /* 圖掛掉時退回記號，不要留一個破圖 */
+    img.onerror = () => { cvArt.textContent = DEFAULT_ICON; };
+    img.src = art;
+    cvArt.appendChild(img);
+  }else{
+    cvArt.textContent = art || DEFAULT_ICON;
+  }
+  cvRk.textContent = RANK[rec.rarity] || 'N';
+  cvNm.textContent = rec.name || '婚禮小卡';
+  cvDesc.textContent = rec.desc || '';
+  cvHolo.hidden = !(rec.rarity === 'SSR' || rec.rarity === 'SR');
+  cvSetHint('');
+
+  cvEl.hidden = false;
+  document.body.style.overflow = 'hidden';
+  cvSave.focus();
+}
+
+function closeCardView(){
+  cvEl.hidden = true;
+  cvOpen = null;
+  document.body.style.overflow = '';
+  if(cvLastFocus && cvLastFocus.isConnected) cvLastFocus.focus();
+  cvLastFocus = null;
+}
+
+/* 點收藏裡的小卡就打開（鍵盤也走得到） */
+coll.addEventListener('click', (e)=>{
+  const mc = e.target.closest('.mini-card');
+  if(!mc || !mc._rec) return;
+  openCardView(mc._rec, [...coll.children].indexOf(mc) + 1);
+});
+coll.addEventListener('keydown', (e)=>{
+  if(e.key !== 'Enter' && e.key !== ' ') return;
+  const mc = e.target.closest('.mini-card');
+  if(!mc || !mc._rec) return;
+  e.preventDefault();
+  openCardView(mc._rec, [...coll.children].indexOf(mc) + 1);
+});
+
+document.getElementById('cardViewClose').addEventListener('click', closeCardView);
+/* 點卡片以外的地方（背景）也關得掉 */
+cvEl.addEventListener('click', (e)=>{ if(e.target === cvEl) closeCardView(); });
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape' && !cvEl.hidden) closeCardView();
+});
+
+/* ---------- 畫成一張圖 ---------- */
+/* 先試著用 CORS 載，載不到再退回一般載入（外部圖多半沒有 CORS 標頭，
+   退回來的圖畫得出來但會染色，toBlob 那一步才會知道） */
+function loadCardImage(src){
+  return new Promise((resolve, reject) => {
+    const attempt = (useCors) => {
+      const img = new Image();
+      if(useCors) img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = () => (useCors ? attempt(false) : reject(new Error('圖片載入失敗')));
+      img.src = src;
+    };
+    attempt(!/^data:/.test(src));
+  });
+}
+
+function cssVar(name, fallback){
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+
+function roundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+/* object-fit: cover —— 短邊填滿，長邊置中裁掉 */
+function drawCover(ctx, img, x, y, w, h){
+  const ir = img.naturalWidth / img.naturalHeight;
+  const br = w / h;
+  let dw = w, dh = h;
+  if(ir > br) dw = h * ir; else dh = w / ir;
+  ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+}
+
+async function drawCardCanvas(rec, art){
+  const W = 1080;
+  const PAD = 60;
+  const CW = W - PAD * 2;            /* 卡寬 */
+  const CH = Math.round(CW * 1.5);   /* 2:3 */
+  const RADIUS = 26;
+
+  const ink     = cssVar('--ink', '#2f2b26');
+  const inkSoft = cssVar('--ink-soft', '#7c7267');
+  const soft    = cssVar('--primary-soft', '#f3eee3');
+  const bg2     = cssVar('--bg2', '#f4f1ea');
+  const line    = cssVar('--line', 'rgba(47,43,38,.18)');
+  const serif   = '"Noto Serif TC", "Songti TC", "PingFang TC", "Microsoft JhengHei", serif';
+
+  /* 說明與頁尾的高度先算好，畫布才開得出正確的大小
+     （說明限一行，太長就切掉 —— 卡片下面那條小紙條本來就只放一句） */
+  const desc = String(rec.desc || '').trim();
+  const descH = desc ? 58 : 0;
+  const footH = 74;
+  const H = PAD + CH + descH + footH + PAD;
+
+  const cv = document.createElement('canvas');
+  cv.width = W;
+  cv.height = H;
+  const ctx = cv.getContext('2d');
+
+  ctx.fillStyle = bg2;
+  ctx.fillRect(0, 0, W, H);
+
+  /* ---- 卡面 ---- */
+  ctx.save();
+  roundRect(ctx, PAD, PAD, CW, CH, RADIUS);
+  ctx.clip();
+
+  ctx.fillStyle = soft;
+  ctx.fillRect(PAD, PAD, CW, CH);
+
+  if(isImage(art)){
+    try{
+      const img = await loadCardImage(art);
+      drawCover(ctx, img, PAD, PAD, CW, CH);
+    }catch{
+      /* 圖載不進來就留底色 ＋ 記號，不要整張空白 */
+      ctx.fillStyle = inkSoft;
+      ctx.font = `160px ${serif}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(DEFAULT_ICON, W / 2, PAD + CH / 2);
+    }
+  }else{
+    ctx.fillStyle = inkSoft;
+    ctx.font = `160px ${serif}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(art || DEFAULT_ICON, W / 2, PAD + CH / 2);
+  }
+
+  /* SSR／SR 的光膜：畫面上是會動的彩虹，靜態圖用一道斜向的柔光代表 */
+  if(rec.rarity === 'SSR' || rec.rarity === 'SR'){
+    const sheen = ctx.createLinearGradient(PAD, PAD, PAD + CW, PAD + CH);
+    sheen.addColorStop(0.00, 'rgba(255,110,196,.16)');
+    sheen.addColorStop(0.30, 'rgba(255,255,255,.28)');
+    sheen.addColorStop(0.55, 'rgba(120,115,245,.16)');
+    sheen.addColorStop(0.80, 'rgba(252,211,77,.18)');
+    sheen.addColorStop(1.00, 'rgba(74,222,128,.14)');
+    ctx.fillStyle = sheen;
+    ctx.fillRect(PAD, PAD, CW, CH);
+  }
+
+  /* 底部字幕條：等級 ＋ 卡名 */
+  const barH = 190;
+  const barY = PAD + CH - barH;
+  const grad = ctx.createLinearGradient(0, barY, 0, PAD + CH);
+  grad.addColorStop(0, 'rgba(47,43,38,0)');
+  grad.addColorStop(1, 'rgba(47,43,38,.72)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(PAD, barY, CW, barH);
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#fff';
+  ctx.font = `500 30px ${serif}`;
+  /* 等級用寬字距，和畫面上的 letter-spacing .24em 對得起來 */
+  ctx.fillText((RANK[rec.rarity] || 'N').split('').join(' '), W / 2, PAD + CH - 96);
+  ctx.font = `34px ${serif}`;
+  ctx.fillText(String(rec.name || '婚禮小卡').slice(0, 24), W / 2, PAD + CH - 46);
+  ctx.restore();
+
+  /* 卡的細邊框（clip 之外才畫得到整條線） */
+  ctx.strokeStyle = line;
+  ctx.lineWidth = 2;
+  roundRect(ctx, PAD + 1, PAD + 1, CW - 2, CH - 2, RADIUS);
+  ctx.stroke();
+
+  /* ---- 說明 ---- */
+  ctx.textAlign = 'center';
+  if(desc){
+    ctx.fillStyle = ink;
+    ctx.font = `26px ${serif}`;
+    ctx.fillText(desc.slice(0, 30), W / 2, PAD + CH + 44);
+  }
+
+  /* ---- 這是誰的婚禮 ---- */
+  const WED = window.WED || {};
+  const foot = [WED.couple, WED.date, (WED.hashtags && WED.hashtags[0]) || '']
+    .filter(Boolean).join('・');
+  ctx.fillStyle = inkSoft;
+  ctx.font = `21px ${serif}`;
+  ctx.fillText(foot, W / 2, PAD + CH + descH + 46);
+
+  return cv;
+}
+
+/* 檔名維持純英數：中文檔名在部分手機下載器會被換成 "download" */
+function cardFileName(index){
+  const slug = (window.SITE && window.SITE.slug) || 'wedding';
+  const no = String(index || 1).padStart(2, '0');
+  return `card-${slug}-${new Date().toISOString().slice(0, 10)}-${no}.jpg`;
+}
+
+cvSave.addEventListener('click', async ()=>{
+  if(!cvOpen) return;
+  cvSave.disabled = true;
+  cvSetHint('正在畫成圖片…');
+  try{
+    /* 字體還在下載時畫出來會變成系統預設字，等它載完再畫 */
+    if(document.fonts && document.fonts.ready) await document.fonts.ready;
+
+    const canvas = await drawCardCanvas(cvOpen.rec, cvOpen.art);
+    const blob = await new Promise((res, rej) => {
+      try{ canvas.toBlob(b => (b ? res(b) : rej(new Error('toBlob failed'))), 'image/jpeg', 0.92); }
+      catch(err){ rej(err); }
+    });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = cardFileName(cvOpen.index);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    /* 立刻 revoke 會讓部分瀏覽器的下載半路斷掉，晚一點再收 */
+    setTimeout(()=> URL.revokeObjectURL(url), 30000);
+    cvSetHint('已存成 JPG，去相簿或下載資料夾看看');
+  }catch(err){
+    console.warn('[抽卡] 存圖失敗', err);
+    cvSetHint('這張圖存不下來，改成長按（電腦按右鍵）另存圖片吧');
+  }finally{
+    cvSave.disabled = false;
+  }
+});
 
 document.addEventListener('data:collected', renderCollection);
 document.addEventListener('data:cards', applyOwnerCards);

@@ -1384,6 +1384,37 @@ const TEST_PNG = {
     `${rec.cardId} / art=${JSON.stringify(rec.art)}`);
   ok('收藏的小卡看得到圖',
     await page.evaluate(() => !!document.querySelector('#collection .mini-card img')));
+
+  /* 點收藏裡的小卡 → 放大看，並且存得下來 */
+  ok('收藏的小卡是可以點的（有 button 語意）',
+    await page.getAttribute('#collection .mini-card', 'role') === 'button');
+
+  await page.click('#collection .mini-card');
+  await page.waitForSelector('#cardView:not([hidden])', { timeout:5000 });
+  ok('點下去看得到那張照片的大圖',
+    await page.evaluate(() => {
+      const img = document.querySelector('#cardViewArt img');
+      return !!img && img.getAttribute('src').startsWith('data:image');
+    }));
+  ok('大圖上帶著卡名與等級',
+    (await page.textContent('#cardViewNm')).includes('海邊的我們')
+      && (await page.textContent('#cardViewRk')) === 'SSR',
+    `${await page.textContent('#cardViewNm')} / ${await page.textContent('#cardViewRk')}`);
+
+  const cardDl = await Promise.all([
+    page.waitForEvent('download', { timeout:15000 }),
+    page.click('#cardViewSave'),
+  ]).then(([d]) => d).catch(() => null);
+  ok('收藏的小卡存得下來，而且是 JPG',
+    !!cardDl && /^card-.*\.jpg$/.test(cardDl.suggestedFilename()),
+    cardDl ? cardDl.suggestedFilename() : '(沒有下載)');
+
+  /* Esc 關得掉，捲動也要還回去 */
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('#cardView[hidden]', { state:'attached', timeout:5000 });
+  ok('Esc 關得掉大圖', await page.evaluate(
+    () => document.getElementById('cardView').hidden && document.body.style.overflow === ''));
+
   ok('抽卡頁無 console 錯誤', realErrors(errors).length === 0,
     realErrors(errors).slice(0, 2).join(' | '));
   await page.close();
