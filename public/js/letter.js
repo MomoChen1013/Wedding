@@ -101,8 +101,9 @@ document.getElementById('wlAgain').addEventListener('click', closeLetter);
    儲存下載（JPG）
    ------------------------------------------------------------
    信是一張信紙，賓客會想留著 —— 所以做的是「一張圖」而不是截圖：
-   用 canvas 重畫一次同一張信紙（同樣的邊框、橫線、署名），
-   輸出 JPG 就能存進手機相簿或電腦。
+   用 canvas 重畫一次同一張信紙（同樣的邊框、手寫內文、署名），
+   輸出 1080×1920 的直式 JPG，比例就是手機螢幕的 9:16，
+   存進相簿或設成限時動態的底圖都剛好。
 
    為什麼不直接截 DOM：不引第三方函式庫（html2canvas 之類）是全站的規矩，
    而且信紙的版面很單純，自己畫反而拿得到更好的解析度與留白。
@@ -155,12 +156,16 @@ function wrapText(ctx, text, maxWidth){
   return lines;
 }
 
+/* 直式 9:16（手機螢幕的比例），信紙就是滿滿的一整頁 */
+const SAVE_W = 1080;
+const SAVE_H = 1920;
+
 /* 把目前這封信畫成一張 canvas */
 function drawLetterCanvas(b, typed){
-  const W = 1080;
-  const PAD = 96;                       /* 信紙到畫布邊界 */
-  const INNER = 34;                      /* 內縮的第二層細框 */
-  const CW = W - PAD * 2 - INNER * 2;    /* 文字可用寬度 */
+  const W = SAVE_W;
+  const PAD   = 72;                      /* 畫布邊界到信紙 */
+  const INNER = 46;                      /* 信紙邊框到文字 */
+  const FOOT  = 96;                      /* 信紙下方那行小字的高度 */
 
   const ink     = cssVar('--ink', '#2f2b26');
   const inkSoft = cssVar('--ink-soft', '#7c7267');
@@ -169,25 +174,50 @@ function drawLetterCanvas(b, typed){
   const deep    = cssVar('--primary-deep', '#8e7748');
   const bg2     = cssVar('--bg2', '#f4f1ea');
   const serif   = '"Noto Serif TC", "Songti TC", "PingFang TC", "Microsoft JhengHei", serif';
+  /* 內文的手寫字體，跟網頁上的 --font-hand 同一組 */
+  const hand    = '"LXGW WenKai TC", "Klee One", "Kaiti TC", "KaiTi", "DFKai-SB", ' + serif;
 
-  const TITLE_F = `500 40px ${serif}`;
-  const BODY_F  = `28px ${serif}`;
-  const BODY_LH = 63;                    /* 對齊網頁上的 line-height 2.25 */
+  const textLeft = PAD + INNER;
+  const textW    = W - textLeft * 2;
 
-  /* 先量一次高度，再開實際大小的畫布（畫布不能中途改高度） */
+  const TITLE_F  = `500 42px ${serif}`;
+  const TITLE_LH = 66;
+
+  /* 先量字，才知道要不要把內文縮一級 —— canvas 開下去就不能改大小了 */
   const probe = document.createElement('canvas').getContext('2d');
   probe.font = TITLE_F;
-  const titleLines = wrapText(probe, b.title || `給 ${typed} 的一封信`, CW);
-  probe.font = BODY_F;
-  const bodyLines = wrapText(probe, b.body || '', CW);
+  const titleLines = wrapText(probe, b.title || `給 ${typed} 的一封信`, textW);
 
-  const headH = 92;                      /* 上方的 ── ✦ ── */
-  const titleH = titleLines.length * 62 + 34;
-  const bodyH  = bodyLines.length * BODY_LH;
-  const signH  = 150;
-  const footH  = 78;
-  const sheetH = INNER + headH + titleH + bodyH + signH + INNER;
-  const H = Math.round(PAD * 2 + sheetH + footH);
+  /* 這一頁裡，內文可以用的高度：標題結束到署名開始之間 */
+  const headH    = 132;                  /* 上方的 ── ✦ ── */
+  const titleH   = titleLines.length * TITLE_LH + 54;
+  const signH    = 170;                  /* 署名那一區 */
+  const headBase = PAD + INNER + headH;  /* 花飾以下就是正文區 */
+  const bodyMax  = (SAVE_H - PAD - FOOT - INNER - signH) - headBase - titleH;
+
+  /* 內文從大到小試一輪，挑塞得進一頁的最大字級 */
+  let bodySize = 18, bodyLH = 39, bodyLines = [];
+  for(const size of [32, 30, 28, 26, 24, 22, 20, 18]){
+    probe.font = `${size}px ${hand}`;
+    bodySize  = size;
+    bodyLH    = Math.round(size * 2.15);
+    bodyLines = wrapText(probe, b.body || '', textW);
+    if(bodyLines.length * bodyLH <= bodyMax) break;
+  }
+  const bodyH = bodyLines.length * bodyLH;
+
+  /* 真的寫了一封超長的信時，寧可把畫布拉長也不要把字截掉 */
+  const H = SAVE_H + Math.max(0, Math.ceil(bodyH - bodyMax));
+
+  const sheetTop = PAD;
+  const sheetH   = H - PAD - FOOT - sheetTop;
+
+  /* 信短的時候整張紙會空一大片，把「花飾＋標題＋內文」整組往下挪一點，
+     讓留白平均分在上下，不要全部堆在署名前面 */
+  const slack   = Math.max(0, bodyMax - bodyH);
+  const shift   = Math.min(Math.round(slack * 0.42), 320);
+  const titleY0 = headBase + shift;
+  const bodyTop = titleY0 + titleH;
 
   const cv = document.createElement('canvas');
   cv.width = W;
@@ -200,17 +230,16 @@ function drawLetterCanvas(b, typed){
 
   /* 信紙 */
   ctx.fillStyle = '#fffdf9';
-  ctx.fillRect(PAD, PAD, W - PAD * 2, sheetH);
+  ctx.fillRect(PAD, sheetTop, W - PAD * 2, sheetH);
   ctx.strokeStyle = line;
   ctx.lineWidth = 2;
-  ctx.strokeRect(PAD + 1, PAD + 1, W - PAD * 2 - 2, sheetH - 2);
+  ctx.strokeRect(PAD + 1, sheetTop + 1, W - PAD * 2 - 2, sheetH - 2);
   ctx.strokeStyle = lineSoft;
   ctx.lineWidth = 2;
-  ctx.strokeRect(PAD + 22, PAD + 22, W - PAD * 2 - 44, sheetH - 44);
-
-  let y = PAD + INNER + 56;
+  ctx.strokeRect(PAD + 22, sheetTop + 22, W - PAD * 2 - 44, sheetH - 44);
 
   /* ── ✦ ── */
+  let y = sheetTop + INNER + 56 + shift;
   ctx.strokeStyle = line;
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -224,40 +253,29 @@ function drawLetterCanvas(b, typed){
   ctx.fillText('✦', W / 2, y);
 
   /* 標題 */
-  y = PAD + INNER + headH + 30;
+  y = titleY0 + 30;
   ctx.fillStyle = ink;
   ctx.font = TITLE_F;
   ctx.textBaseline = 'alphabetic';
-  titleLines.forEach(ln => { ctx.fillText(ln, W / 2, y); y += 62; });
+  titleLines.forEach(ln => { ctx.fillText(ln, W / 2, y); y += TITLE_LH; });
 
-  /* 內文：先畫橫線，再把字壓上去 */
-  const bodyTop = PAD + INNER + headH + titleH;
-  const left = PAD + INNER;
-  ctx.strokeStyle = lineSoft;
-  ctx.lineWidth = 1.5;
-  for(let i = 0; i < bodyLines.length; i++){
-    const ly = bodyTop + (i + 1) * BODY_LH - 6;
-    ctx.beginPath();
-    ctx.moveTo(left, ly);
-    ctx.lineTo(W - left, ly);
-    ctx.stroke();
-  }
+  /* 內文：手寫字體，不畫橫線（網頁上的信紙也拿掉了） */
   ctx.fillStyle = ink;
-  ctx.font = BODY_F;
+  ctx.font = `${bodySize}px ${hand}`;
   ctx.textAlign = 'left';
   bodyLines.forEach((ln, i) => {
-    ctx.fillText(ln, left, bodyTop + (i + 1) * BODY_LH - 20);
+    ctx.fillText(ln, textLeft, bodyTop + (i + 1) * bodyLH - Math.round(bodySize * 0.5));
   });
 
-  /* 署名 */
-  const signY = bodyTop + bodyH + 66;
+  /* 署名：貼著信紙的下緣，中間留白就是信紙該有的樣子 */
+  const signY = sheetTop + sheetH - INNER - 46;
   ctx.textAlign = 'right';
   ctx.fillStyle = inkSoft;
   ctx.font = `19px ${serif}`;
-  ctx.fillText('F R O M', W - left, signY);
+  ctx.fillText('F R O M', W - textLeft, signY);
   ctx.fillStyle = ink;
   ctx.font = `500 31px ${serif}`;
-  ctx.fillText(b.sign || (window.WED && window.WED.couple) || '', W - left, signY + 46);
+  ctx.fillText(b.sign || (window.WED && window.WED.couple) || '', W - textLeft, signY + 46);
 
   /* 信紙外的一行小字：這是誰的婚禮 */
   const W_ = window.WED || {};
@@ -266,7 +284,7 @@ function drawLetterCanvas(b, typed){
   ctx.textAlign = 'center';
   ctx.fillStyle = inkSoft;
   ctx.font = `21px ${serif}`;
-  ctx.fillText(foot, W / 2, PAD + sheetH + 50);
+  ctx.fillText(foot, W / 2, sheetTop + sheetH + 56);
 
   return cv;
 }
@@ -283,8 +301,14 @@ async function saveLetterImage(){
   wlSaveBtn.disabled = true;
   saveHint('正在畫成圖片…');
   try{
-    /* 字體還在下載時畫出來會變成系統預設字，等它載完再畫 */
-    if(document.fonts && document.fonts.ready) await document.fonts.ready;
+    /* 字體還在下載時畫出來會變成系統預設字，等它載完再畫。
+       中文字體是切成一段一段下載的，canvas 不會自己去要沒用到的那幾段，
+       所以這裡先照著信的內容把手寫字體要用的字胚叫進來 */
+    if(document.fonts){
+      const txt = `${openedLetter.letter.title || ''}${openedLetter.letter.body || ''}`;
+      try{ await document.fonts.load(`28px "LXGW WenKai TC"`, txt); }catch{}
+      if(document.fonts.ready) await document.fonts.ready;
+    }
 
     const cv = drawLetterCanvas(openedLetter.letter, openedLetter.typed);
     const blob = await new Promise(res => cv.toBlob(res, 'image/jpeg', 0.92));

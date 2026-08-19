@@ -1,11 +1,20 @@
 /* ============================================================
    letter.css — 給你的信
-   ・信封：純 CSS 疊層（背面 → 信紙 → 正面 → 封口 → 火漆），
-     掀蓋用 rotateX，不需要任何圖檔
-   ・信紙：橫線紙 + 內縮邊框，字體沿用全站的 Noto Serif TC
+   ・信封：純 CSS 疊層（內裡 → 信紙 → 正面 → 封口 → 火漆），
+     掀蓋用 rotateX，不需要任何圖檔。
+     正面是一整面實心的，信紙完全藏在裡面，
+     所以闔起來的時候看不到任何白色的缺口（就是一個信封的樣子）
+   ・信紙：內縮邊框 + 手寫字體，抬頭沿用全站的 Noto Serif TC
 ============================================================ */
 
 .wl-body{max-width:680px;}
+
+/* 內文的手寫字體：先 Google Fonts 的霞鶩文楷，
+   載不到就退回系統的楷體（Mac：Kaiti TC／Windows：標楷體），
+   最後才回到全站的明體 */
+:root{
+  --font-hand:'LXGW WenKai TC','Klee One','Kaiti TC','KaiTi','DFKai-SB','標楷體',var(--font-body);
+}
 
 /* ============================================================
    信封
@@ -14,50 +23,68 @@
 .wl-stage.is-sent{opacity:.28;transform:scale(.94);}
 
 .envelope{
-  position:relative;width:min(100%,420px);margin:0 auto;
-  aspect-ratio:1.62 / 1;                 /* 接近實際的西式信封比例 */
+  position:relative;width:min(100%,400px);margin:0 auto;
+  aspect-ratio:1.45 / 1;                 /* 接近實際的西式信封比例 */
   perspective:1400px;
 }
 
-/* 信封本體：背面（底層） */
-.env-back{position:absolute;inset:0;background:var(--primary-soft);
-  border:1px solid var(--line);border-radius:var(--radius);}
+/* 信封內裡：闔起來時整個被正面蓋住，掀蓋後從上緣露出來 */
+.env-back{
+  position:absolute;inset:0;border-radius:var(--radius);
+  border:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(47,43,38,.12),rgba(47,43,38,.02) 55%),
+             var(--primary-soft);
+  box-shadow:0 14px 30px rgba(47,43,38,.10);
+}
 
-/* 藏在裡面的信紙，掀蓋後會露出一角 */
+/* 藏在裡面的信紙：掀蓋後往上抽，從信封上緣冒出一截 */
 .env-paper{
-  position:absolute;left:8%;right:8%;top:14%;height:74%;
-  background:#fff;border:1px solid var(--line-soft);border-radius:1px;
-  transition:transform .55s cubic-bezier(.2,.8,.3,1);
+  position:absolute;left:6%;right:6%;top:9%;height:80%;z-index:2;
+  background:#fffdf9;border:1px solid var(--line-soft);border-radius:1px;
+  box-shadow:0 -2px 6px rgba(47,43,38,.06);
+  transition:transform .6s cubic-bezier(.2,.8,.3,1) .18s;
 }
-.envelope.is-open .env-paper{transform:translateY(-16%);}
+.envelope.is-open .env-paper{transform:translateY(-42%);}
 
-/* 正面：兩道斜線做出信封的折角 */
+/* 正面：整面實心，下半兩道淡折線做出信封的摺角。
+   折線各自只鋪在左下／右下那一格，才不會延伸到上半部去撞到封口 */
 .env-front{
-  position:absolute;inset:0;border:1px solid var(--line);border-radius:var(--radius);
+  position:absolute;inset:0;z-index:3;border-radius:var(--radius);
+  border:1px solid var(--line);
   background:
-    linear-gradient(to bottom right, transparent 49.6%, var(--line) 49.6%, var(--line) 50.2%, transparent 50.2%),
-    linear-gradient(to bottom left,  transparent 49.6%, var(--line) 49.6%, var(--line) 50.2%, transparent 50.2%),
+    linear-gradient(to bottom right, transparent calc(50% - 1px), var(--line-soft) calc(50% - 1px),
+                    var(--line-soft) calc(50% + 1px), transparent calc(50% + 1px))
+      left bottom / 50% 50% no-repeat,
+    linear-gradient(to bottom left,  transparent calc(50% - 1px), var(--line-soft) calc(50% - 1px),
+                    var(--line-soft) calc(50% + 1px), transparent calc(50% + 1px))
+      right bottom / 50% 50% no-repeat,
+    linear-gradient(180deg, rgba(255,255,255,.45), rgba(47,43,38,.05)),
     var(--primary-soft);
-  clip-path:polygon(0 32%, 50% 66%, 100% 32%, 100% 100%, 0 100%);
 }
 
-/* 封口：以上緣為軸掀開 */
+/* 封口：以上緣為軸掀開。闔著的時候靠陰影做出摺線，不畫硬邊 */
 .env-flap{
-  position:absolute;left:0;right:0;top:0;height:62%;
-  background:var(--primary-soft);border:1px solid var(--line);
-  border-radius:var(--radius) var(--radius) 0 0;
+  position:absolute;left:0;right:0;top:0;height:58%;z-index:4;
+  background:linear-gradient(180deg, rgba(255,255,255,.6), rgba(47,43,38,.09)),
+             var(--primary-soft);
   clip-path:polygon(0 0, 100% 0, 50% 100%);
+  border-radius:var(--radius) var(--radius) 0 0;
   transform-origin:top center;
-  transition:transform .6s cubic-bezier(.4,.1,.2,1);
-  z-index:3;
+  filter:drop-shadow(0 3px 3px rgba(47,43,38,.18));
+  transition:transform .62s cubic-bezier(.4,.1,.2,1),filter .3s ease;
 }
-.envelope.is-open .env-flap{transform:rotateX(-172deg);}
+/* 掀開後把封口壓到最底層，才不會擋住抽出來的信紙 */
+.envelope.is-open .env-flap{
+  transform:rotateX(-168deg);filter:none;z-index:1;
+  transition:transform .62s cubic-bezier(.4,.1,.2,1),filter .3s ease,z-index 0s .3s;
+}
 
-/* 火漆印 */
+/* 火漆印：壓在封口的尖角上 */
 .env-seal{
-  position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);
-  width:56px;height:56px;border-radius:50%;z-index:4;
+  position:absolute;left:50%;top:58%;transform:translate(-50%,-50%);
+  width:56px;height:56px;border-radius:50%;z-index:6;
   background:var(--primary);border:1px solid var(--primary-deep);
+  box-shadow:0 2px 6px rgba(47,43,38,.18);
   display:flex;align-items:center;justify-content:center;
   transition:opacity .35s ease,transform .45s ease;
 }
@@ -67,7 +94,7 @@
 
 /* 收件人 */
 .env-to{
-  position:absolute;left:0;right:0;bottom:13%;z-index:4;text-align:center;
+  position:absolute;left:0;right:0;bottom:14%;z-index:5;text-align:center;
   display:flex;align-items:baseline;justify-content:center;gap:10px;
   transition:opacity .35s ease;
 }
@@ -80,7 +107,7 @@
 /* ============================================================
    輸入區
 ============================================================ */
-.wl-form{max-width:420px;margin:30px auto 0;text-align:center;}
+.wl-form{max-width:400px;margin:30px auto 0;text-align:center;}
 .wl-label{display:block;font-size:12.5px;letter-spacing:.1em;
   color:var(--ink-soft);margin-bottom:12px;}
 .wl-row{display:flex;gap:10px;}
@@ -125,14 +152,12 @@
   font-size:clamp(18px,4.4vw,23px);letter-spacing:.16em;line-height:1.7;
   color:var(--ink);text-align:center;margin-bottom:28px;
 }
+/* 內文：手寫字體，不再壓橫線 —— 橫線在標題下方會多出一條，
+   看起來像是誤放的分隔線 */
 .wl-text{
-  font-size:15.5px;line-height:2.25;letter-spacing:.05em;color:var(--ink);
+  font-family:var(--font-hand);
+  font-size:17.5px;line-height:2.1;letter-spacing:.04em;color:var(--ink);
   white-space:pre-wrap;word-break:break-word;
-  /* 橫線紙：用 repeating-linear-gradient 對齊行高 */
-  background-image:repeating-linear-gradient(
-    to bottom, transparent 0, transparent calc(2.25em - 1px),
-    var(--line-soft) calc(2.25em - 1px), var(--line-soft) 2.25em);
-  background-position:0 .35em;
 }
 
 .wl-sign{margin-top:32px;text-align:right;}
@@ -148,7 +173,7 @@
 
 @media(max-width:560px){
   .wl-sheet-inner{padding:34px 22px 30px;}
-  .wl-text{font-size:15px;}
+  .wl-text{font-size:17px;}
   .env-seal{width:48px;height:48px;}
   .env-seal-mark{font-size:19px;}
 }
