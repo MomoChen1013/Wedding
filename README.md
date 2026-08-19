@@ -71,6 +71,15 @@
 - **BGM**：預設播內建的 `public/audio/bgm.mp3`，新人放了自己的音檔就換成他們的。
   想換全站的預設曲目，直接換掉這個檔案（路徑寫在 `js/common.js` 的 `DEFAULT_BGM`）。
   音檔真的載不起來時，最後才退回 Web Audio 合成的〈愛的禮讚 Salut d'Amour〉。
+- **分頁圖示**：`public/favicon.png`（512×512 正方形）。**所有站台共用同一張** ——
+  它是工作室的識別，不是某一組新人的。要換就直接覆蓋這個檔案，
+  12 個 HTML 都指到同一個路徑，不用改任何一行標記。
+  同一張也當 `apple-touch-icon`（iOS「加到主畫面」的圖示），iOS 會自己縮。
+
+  > 換完看不到新的？`firebase.json` 的 `no-cache` 只涵蓋 `html|js|css|json`，
+  > **圖檔不在裡面**，瀏覽器會把舊的圖示快取住。硬重新整理，
+  > 或直接開 `/favicon.png` 確認換上去了。分頁圖示是快取最兇的東西之一，
+  > 有時要關掉分頁重開才會換。
 
 ---
 
@@ -94,6 +103,7 @@
 │   ├─ invitation.html        # 單頁式邀請函（獨立版型，自成一格）
 │   ├─ shortlink.html         # 短連結轉址頁
 │   ├─ 404.html
+│   ├─ favicon.png            # 全站共用的分頁圖示 ＋ iOS 主畫面圖示（512×512）
 │   ├─ assets/{slug}/         # 每組新人的照片
 │   ├─ audio/bgm.mp3          # 全站共用的預設背景音樂（新人沒放自己的就播這首）
 │   ├─ css/
