@@ -910,9 +910,49 @@ console.log('\n[12] 電子祝福信');
   ok('沒對到詞彙就給通用信',
     (await page.innerText('#wlSheet')).includes('這一天因為你更完整'));
 
+  /* 儲存下載：把信畫成 JPG */
+  const letterDl = await Promise.all([
+    page.waitForEvent('download', { timeout:15000 }),
+    page.click('#wlSave'),
+  ]).then(([d]) => d).catch(() => null);
+  ok('感謝信存得下來，而且是 JPG',
+    !!letterDl && /^letter-.*\.jpg$/.test(letterDl.suggestedFilename()),
+    letterDl ? letterDl.suggestedFilename() : '(沒有下載)');
+
   ok('祝福信頁無 console 錯誤', realErrors(errors).length === 0,
     realErrors(errors).slice(0, 2).join(' | '));
   await page.close();
+}
+{
+  /* 好幾封通用信：同一個名字每次拿到的都是同一封，不同名字會分散開 */
+  const site = adb.collection('sites').doc(siteIds[SLUG]);
+  await site.collection('blessings').doc('b3').set({
+    terms:[], title:'給遠道而來的朋友',
+    body:'謝謝你跑這麼遠，這一路辛苦了。',
+    sign:'Ginny & One', isDefault:true, time: Date.now(),
+  });
+
+  const { page } = await visit(`/w/${SLUG}/letter`);
+  await page.waitForFunction(() => DataStore.getBlessings().length >= 3, null, { timeout:10000 });
+
+  const pick = (name) => page.evaluate((n) =>
+    findBlessing(n, DataStore.getBlessings()).item.id, name);
+
+  const first = await pick('路過的朋友');
+  ok('好幾封通用信時仍然領得到一封', first === 'b2' || first === 'b3', String(first));
+  ok('同一個名字每次拿到同一封', (await pick('路過的朋友')) === first);
+
+  const spread = new Set();
+  for(const n of ['阿一','阿二','阿三','阿四','阿五','阿六','阿七','阿八']){
+    spread.add(await pick(n));
+  }
+  ok('不同名字會分到不同的通用信', spread.size === 2, [...spread].join(','));
+
+  ok('有專屬詞彙的信仍然優先',
+    (await pick('小明')) === 'b1', String(await pick('小明')));
+
+  await page.close();
+  await site.collection('blessings').doc('b3').delete();
 }
 
 /* ---------- Explore 自訂卡片 ---------- */
@@ -1816,9 +1856,13 @@ console.log('\n[14d] 後台賓客標籤');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
   await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="form"]');
   await page.waitForTimeout(300);
-
-  ok('標籤區塊看得到', await page.isVisible('#adTagSec'));
   ok('題目清單多了標籤那一題', await page.isVisible('#adAskTagRow'));
+
+  /* 標籤設定自己一個橫向子分頁 */
+  ok('看得到「設定賓客標籤」子分頁', await page.isVisible('#adTagSubtab'));
+  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="tags"]');
+  await page.waitForTimeout(300);
+  ok('標籤區塊看得到', await page.isVisible('#adTagSec'));
   const names = await page.$$eval('#adTagList .ad-tagrow-name', (els) => els.map((e) => e.value));
   ok('列出目前的標籤', names.join('／') === '大學同學／VIP', names.join('／'));
 
@@ -1891,7 +1935,7 @@ console.log('\n[14d] 後台賓客標籤');
       .docs.every((d) => !('tags' in d.data())));
 
   /* 刪掉標籤：連掛在賓客身上的那一份一起拿掉 */
-  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="form"]');
+  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="tags"]');
   await page.waitForTimeout(300);
   const vipRow = page.locator('#adTagList .ad-tagrow[data-id="tag-vip"]');
   ok('標籤列出用了幾次', (await vipRow.innerText()).includes('1 位'), await vipRow.innerText());
@@ -1919,6 +1963,7 @@ console.log('\n[14d] 後台賓客標籤');
   await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="form"]');
   await page.waitForTimeout(300);
   ok('沒開標籤功能的站台看不到標籤設定', !(await page.isVisible('#adTagSec')));
+  ok('沒開標籤功能的站台也沒有標籤子分頁', !(await page.isVisible('#adTagSubtab')));
   ok('沒開標籤功能的站台也沒有標籤那一題', !(await page.isVisible('#adAskTagRow')));
   await page.close();
 
@@ -1928,6 +1973,74 @@ console.log('\n[14d] 後台賓客標籤');
   ok('沒開標籤功能時賓客也看不到那一題',
     (await guest.page.locator('#tagRow').count()) === 0);
   await guest.page.close();
+}
+
+/* ---------- 後台感謝信 ---------- */
+console.log('\n[14e] 後台感謝信（通用信／指定信）');
+{
+  const site = adb.collection('sites').doc(siteIds[SLUG]);
+  await site.collection('blessings').doc('b3').set({
+    terms:[], title:'給遠道而來的朋友',
+    body:'謝謝你跑這麼遠，這一路辛苦了。',
+    sign:'Ginny & One', isDefault:true, time: Date.now(),
+  });
+
+  const { page, errors } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  await page.click('.ad-tab[data-tab="letters"]');
+  await page.waitForFunction(
+    () => document.querySelectorAll('#adLetterList .ad-item').length >= 3,
+    null, { timeout:10000 });
+
+  const chipText = await page.innerText('#adLetterChips');
+  ok('chip 上帶著各自的封數',
+    chipText.includes('全部（3）') && chipText.includes('通用信（2）')
+      && chipText.includes('指定信（1）'),
+    chipText.replace(/\n/g, ' '));
+
+  await page.click('#adLetterChips [data-letter-kind="default"]');
+  await page.waitForTimeout(300);
+  const defs = await page.innerText('#adLetterList');
+  ok('「通用信」只列通用信',
+    defs.includes('給每一位朋友') && defs.includes('給遠道而來的朋友')
+      && !defs.includes('給小明的一封信'),
+    defs.replace(/\n/g, ' ').slice(0, 80));
+
+  await page.click('#adLetterChips [data-letter-kind="personal"]');
+  await page.waitForTimeout(300);
+  const pers = await page.innerText('#adLetterList');
+  ok('「指定信」只列有專屬詞彙的信',
+    pers.includes('給小明的一封信') && !pers.includes('給每一位朋友'),
+    pers.replace(/\n/g, ' ').slice(0, 80));
+
+  /* 每一列都標得出自己是哪一種 */
+  ok('指定信這一列標成「指定信」', pers.includes('指定信'), pers.replace(/\n/g, ' ').slice(0, 60));
+
+  /* 再寫一封通用信：新人可以有好幾封 */
+  await page.click('#adLetterChips [data-letter-kind="all"]');
+  await page.click('#adLetterAddBtn');
+  await page.waitForSelector('#adLetterModalMask:not([hidden])', { timeout:5000 });
+  await page.fill('#adLetterTitle', '給臨時趕來的你');
+  await page.fill('#adLetterBody', '不管你幾點到，我們都很開心。');
+  await page.check('#adLetterDefault');
+  await page.click('#adLetterForm button[type="submit"]');
+  await page.waitForSelector('#adLetterModalMask', { state:'hidden', timeout:8000 });
+  await page.waitForTimeout(1200);
+
+  const saved = (await site.collection('blessings').get()).docs
+    .map((d) => d.data()).filter((b) => b.isDefault === true);
+  ok('通用信存得了第三封（沒有專屬詞彙也過得了驗證）',
+    saved.length === 3, `${saved.length} 封`);
+
+  ok('後台感謝信無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+
+  /* 收乾淨，後面的測試還用得到原本那兩封 */
+  const extra = (await site.collection('blessings').get()).docs
+    .filter((d) => !['b1', 'b2'].includes(d.id));
+  await Promise.all(extra.map((d) => d.ref.delete()));
 }
 
 /* ---------- 手機版 ---------- */
@@ -2085,6 +2198,22 @@ console.log('\n[21] 後台排桌管理');
     (await page.textContent('#spSyncState')).includes('已同步'),
     await page.textContent('#spSyncState'));
 
+  /* ---- 從出席表單匯入：講清楚現在接進來的是誰 ---- */
+  await page.click('.ad-subtabs[data-subtabs="seatingPlan"] .ad-subtab[data-subtab="io"]');
+  await page.waitForTimeout(300);
+  await page.click('#spImportRsvpBtn');
+  await page.waitForSelector('#spRsvpImportMask:not([hidden])', { timeout:5000 });
+  const rsvpImportText = await page.innerText('#spRsvpImportBody');
+  ok('從出席表單匯入列出回覆筆數',
+    rsvpImportText.includes('3') && rsvpImportText.includes('出席回覆'),
+    rsvpImportText.replace(/\n/g, ' ').slice(0, 80));
+  ok('從出席表單匯入列出賓客本人',
+    rsvpImportText.includes('排桌小明') && rsvpImportText.includes('排桌大同'),
+    rsvpImportText.replace(/\n/g, ' ').slice(0, 80));
+  await page.click('#spRsvpImportGo');
+  await page.waitForSelector('#spRsvpImportMask', { state:'hidden', timeout:5000 });
+  ok('「去排桌工作區」切回工作區', page.url().endsWith('#seatingPlan/board'), page.url());
+
   /* ---- 匯出：至少要跑得完、拿得到檔案 ---- */
   const dl = await Promise.all([
     page.waitForEvent('download', { timeout:10000 }),
@@ -2093,6 +2222,30 @@ console.log('\n[21] 後台排桌管理');
   ]).then(([d]) => d).catch(() => null);
   ok('匯出 Excel 下載得到檔案', !!dl && /^seating-plan-.*\.xlsx$/.test(dl.suggestedFilename()),
     dl ? dl.suggestedFilename() : '(沒有下載)');
+
+  /* ---- 桌次名單那一頁的「同步現在的排桌」 ---- */
+  await page.click('.ad-tab[data-tab="seating"]');
+  await page.click('.ad-subtabs[data-subtabs="seating"] .ad-subtab[data-subtab="list"]');
+  await page.waitForTimeout(400);
+  ok('桌次名單看得到「同步現在的排桌」', await page.isVisible('#adSeatSyncPlan'));
+
+  /* 先把名單清成別的內容，才驗得出這一顆真的把排桌搬過來 */
+  await adb.collection('sites').doc(siteId).collection('seating').doc('probe')
+    .set({ name:'名單探針', table:'第 9 桌', note:'', time: Date.now() });
+  await page.waitForTimeout(800);
+
+  await page.click('#adSeatSyncPlan');
+  await page.waitForSelector('#adModalMask:not([hidden])', { timeout:8000 });
+  await page.click('#adModalConfirm');
+  await page.waitForTimeout(2000);
+
+  const synced = (await adb.collection('sites').doc(siteId).collection('seating').get())
+    .docs.map((d) => d.data());
+  ok('桌次名單這一顆也同步得到排桌結果',
+    synced.some((r) => r.name === '排桌小明' && r.table === '01｜主桌'),
+    JSON.stringify(synced.slice(0, 2)));
+  ok('同步是整份換掉，探針被清掉',
+    !synced.some((r) => r.name === '名單探針'), `${synced.length} 筆`);
 
   ok('排桌管理分頁無 console 錯誤', realErrors(errors).length === 0,
     realErrors(errors).slice(0, 2).join(' | '));

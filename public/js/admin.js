@@ -410,6 +410,15 @@ function applyTabVisibility(){
   document.querySelectorAll('#adSide .ad-tab').forEach(btn => {
     btn.hidden = !tabEnabled(btn.dataset.tab);
   });
+  /* 子分頁只有「設定賓客標籤」有開關。先在 initRouter 之前決定它在不在，
+     #rsvp/tags 這個網址才進得去（進不去的話 activateSubtab 會退回第一個） */
+  const tagBtn = document.getElementById('adTagSubtab');
+  if(tagBtn) tagBtn.hidden = !guestTagsOn();
+  /* 桌次名單的「同步現在的排桌」要有排桌管理才有意義 */
+  const seatSyncBtn = document.getElementById('adSeatSyncPlan');
+  const seatSyncNote = document.getElementById('adSeatSyncNote');
+  if(seatSyncBtn) seatSyncBtn.hidden = !tabEnabled('seatingPlan');
+  if(seatSyncNote) seatSyncNote.hidden = !tabEnabled('seatingPlan');
 }
 
 let opened = false;
@@ -521,7 +530,7 @@ if(!ownerEmails().length){
    這樣重新整理、分享連結、瀏覽器上一頁都能回到原本開著的那一頁。
 ============================================================ */
 const SUBTABS = {
-  rsvp:    ['overview', 'replies', 'form'],
+  rsvp:    ['overview', 'replies', 'form', 'tags'],
   lobby:   ['info', 'schedule', 'explore'],
   seating: ['map', 'list'],
   seatingPlan: ['board', 'tables', 'io'],
@@ -538,13 +547,19 @@ function tabButtons(){
   return Array.from(document.querySelectorAll('#adSide .ad-tab'));
 }
 
-/* 對不上的子分頁一律退回第一個（清單的第一項就是預設） */
+/* 對不上、或被收起來的子分頁一律退回第一個看得到的（清單的第一項就是預設）。
+   「設定賓客標籤」在沒開標籤功能時是 hidden 的，用網址直接指過去也要退回去。 */
 function activateSubtab(tab, subtab){
   const list = SUBTABS[tab];
   if(!list) return '';
-  const valid = list.includes(subtab) ? subtab : list[0];
-  document.querySelectorAll(`.ad-subtabs[data-subtabs="${tab}"] .ad-subtab`).forEach(b =>
-    b.classList.toggle('is-on', b.dataset.subtab === valid));
+  const btns = Array.from(
+    document.querySelectorAll(`.ad-subtabs[data-subtabs="${tab}"] .ad-subtab`));
+  const shown = list.filter(k => {
+    const b = btns.find(x => x.dataset.subtab === k);
+    return !b || !b.hidden;
+  });
+  const valid = shown.includes(subtab) ? subtab : (shown[0] || list[0]);
+  btns.forEach(b => b.classList.toggle('is-on', b.dataset.subtab === valid));
   document.querySelectorAll(`.ad-panel[data-panel="${tab}"] .ad-subpanel`).forEach(p =>
     p.classList.toggle('is-on', p.dataset.subpanel === valid));
   return valid;
@@ -592,7 +607,7 @@ document.getElementById('adSide').addEventListener('click', (e)=>{
 document.querySelectorAll('.ad-subtabs').forEach(nav => {
   nav.addEventListener('click', (e)=>{
     const btn = e.target.closest('.ad-subtab');
-    if(!btn) return;
+    if(!btn || btn.hidden) return;
     location.hash = `${nav.dataset.subtabs}/${btn.dataset.subtab}`;
   });
 });
@@ -1092,6 +1107,7 @@ document.getElementById('adRsvpForm').addEventListener('submit', async (e)=>{
    （Firebase Console，或 `npm run set-pages -- --guest-tags on`）。
 ============================================================ */
 const tagSecEl   = document.getElementById('adTagSec');
+const tagSubtabEl= document.getElementById('adTagSubtab');
 const tagListEl  = document.getElementById('adTagList');
 const tagChipsEl = document.getElementById('adRsvpTagChips');
 
@@ -1126,6 +1142,10 @@ function tagUseCount(){
 function renderTags(){
   const on = guestTagsOn();
   tagSecEl.hidden = !on;
+  /* 標籤是自己一個橫向子分頁，沒開這個功能就連分頁鈕一起收起來；
+     已經停在那一頁的話（重新整理、舊網址）退回第一個看得到的子分頁 */
+  tagSubtabEl.hidden = !on;
+  if(!on && tagSubtabEl.classList.contains('is-on')) activateSubtab('rsvp', '');
   /* 題目清單裡那一列跟著標籤設定走：沒有任何標籤當選項時，賓客也看不到那一題 */
   document.getElementById('adAskTagRow').hidden = !on || !guestTagList().some(t => t.onForm);
   if(!on) return;
@@ -1668,6 +1688,17 @@ async function cancelSeatImport(){
 
 registerFormModal(seatModalMask, cancelSeatImport);
 document.getElementById('adSeatImportOpen').addEventListener('click', openSeatModal);
+
+/* ---------- 從排桌管理同步過來 ----------
+   排桌管理排好的結果整份換掉這份名單。同樣的動作在「排桌管理」那一頁
+   也有一顆（儲存後會問），這裡只是讓人在桌次名單這邊也按得到。 */
+const seatSyncPlanBtn = document.getElementById('adSeatSyncPlan');
+seatSyncPlanBtn.addEventListener('click', async ()=>{
+  if(!window.SeatingPlan){ toast('尚無排桌資料', true); return; }
+  seatSyncPlanBtn.disabled = true;
+  try{ await SeatingPlan.syncNow(); }
+  finally{ seatSyncPlanBtn.disabled = false; }
+});
 document.getElementById('adSeatCancel').addEventListener('click', cancelSeatImport);
 
 document.getElementById('adSeatImport').addEventListener('click', async ()=>{
@@ -1851,13 +1882,36 @@ lf.form.addEventListener('submit', async (e)=>{
   }catch(err){ writeFailed(err); }
 });
 
+/* 通用信與指定信是兩種完全不同的信，混在一張清單裡分不出來，
+   所以上面用 chip 分流。all / default（通用信）/ personal（指定信） */
+let letterKind = 'all';
+const letterChipsEl = document.getElementById('adLetterChips');
+
+function isDefaultLetter(b){ return b.isDefault === true; }
+
+function renderLetterChips(all){
+  const n = {
+    all: all.length,
+    default: all.filter(isDefaultLetter).length,
+    personal: all.filter(b => !isDefaultLetter(b)).length,
+  };
+  letterChipsEl.querySelectorAll('[data-letter-kind]').forEach(btn => {
+    const k = btn.dataset.letterKind;
+    btn.classList.toggle('is-on', k === letterKind);
+    const label = k === 'all' ? '全部' : (k === 'default' ? '通用信' : '指定信');
+    btn.textContent = `${label}（${n[k]}）`;
+  });
+}
+
 function renderLetters(){
   if(!loadedOnce.has('blessings')){
     lf.list.innerHTML = skeletonHtml(3);
     return;
   }
-  const list = DataStore.getBlessings().filter(b => !isPendingDelete('blessings', b.id));
-  if(!list.length){
+  const all = DataStore.getBlessings().filter(b => !isPendingDelete('blessings', b.id));
+  renderLetterChips(all);
+
+  if(!all.length){
     lf.list.innerHTML = `
       <div class="ad-empty">
         還沒有寫任何一封感謝信
@@ -1867,15 +1921,36 @@ function renderLetters(){
       </div>`;
     return;
   }
+
+  const list = letterKind === 'all' ? all
+    : all.filter(b => (letterKind === 'default') === isDefaultLetter(b));
+
+  if(!list.length){
+    lf.list.innerHTML = letterKind === 'default'
+      ? `<div class="ad-empty">
+           還沒有通用信<br>沒對到任何詞彙的賓客現在會撲空，寫一封通用信接住他們
+           <div class="ad-row" style="justify-content:center">
+             <button class="btn small ghost" id="adLetterEmptyAddBtn" type="button">寫一封通用信</button>
+           </div>
+         </div>`
+      : `<div class="ad-empty">
+           還沒有指定信<br>指定信要填「專屬詞彙」，賓客輸入對到才領得到
+           <div class="ad-row" style="justify-content:center">
+             <button class="btn small ghost" id="adLetterEmptyAddBtn" type="button">寫一封指定信</button>
+           </div>
+         </div>`;
+    return;
+  }
+
   lf.list.innerHTML = list.map(b => `
     <div class="ad-item">
       <div class="ad-item-main">
         <span class="ad-item-title">${escapeHtml(b.title || '（沒有標題）')}</span>
-        ${b.isDefault ? `<span class="ad-tag">通用信</span>` : ''}
+        <span class="ad-tag">${isDefaultLetter(b) ? '通用信' : '指定信'}</span>
         <span class="ad-item-sub">
           ${(Array.isArray(b.terms) && b.terms.length)
             ? `詞彙：${escapeHtml(b.terms.join('、'))}`
-            : '沒有專屬詞彙'}
+            : (isDefaultLetter(b) ? '不用對詞彙，沒對到的賓客就領這一封' : '沒有專屬詞彙')}
         </span>
         <span class="ad-item-sub">${escapeHtml((b.body || '').slice(0, 48))}…・${fmtTime(b.time)}</span>
       </div>
@@ -1887,8 +1962,20 @@ function renderLetters(){
 }
 document.addEventListener('data:blessings', renderLetters);
 
+letterChipsEl.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-letter-kind]');
+  if(!btn) return;
+  letterKind = btn.dataset.letterKind;
+  renderLetters();
+});
+
 lf.list.addEventListener('click', async (e)=>{
-  if(e.target.id === 'adLetterEmptyAddBtn'){ openLetterModal(null); return; }
+  if(e.target.id === 'adLetterEmptyAddBtn'){
+    /* 從「通用信／指定信」那一格按進來時，先幫他把勾勾設成對的那一種 */
+    openLetterModal(null);
+    if(letterKind !== 'all') lf.isDef.checked = (letterKind === 'default');
+    return;
+  }
   const editId = e.target.dataset.editLetter;
   const delId  = e.target.dataset.delLetter;
 

@@ -61,8 +61,17 @@ function findBlessing(input, list){
   });
   if(best) return { item: best, personal: true };
 
-  const def = all.find(b => b.isDefault === true);
-  return def ? { item: def, personal: false } : null;
+  /* 沒對到專屬詞彙 → 給通用信。新人可以寫好幾封通用信（給男方朋友一封、
+     給同事一封…），這裡用輸入字串挑一封：同一個人不管開幾次都拿到同一封，
+     不同的人則平均分散開來。排序過才不會因為讀取順序不同而換信。 */
+  const defs = all.filter(b => b.isDefault === true);
+  if(!defs.length) return null;
+  if(defs.length === 1) return { item: defs[0], personal: false };
+
+  const sorted = defs.slice().sort((a, b) => String(a.id).localeCompare(String(b.id)));
+  let h = 0;
+  for(let i = 0; i < q.length; i++) h = (h * 31 + q.charCodeAt(i)) >>> 0;
+  return { item: sorted[h % sorted.length], personal: false };
 }
 
 function $(sel, root){ return (root||document).querySelector(sel); }

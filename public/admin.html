@@ -93,6 +93,8 @@
       <button class="ad-subtab is-on" type="button" data-subtab="overview">出席回覆總覽</button>
       <button class="ad-subtab" type="button" data-subtab="replies">回覆資訊</button>
       <button class="ad-subtab" type="button" data-subtab="form">表單設定</button>
+      <!-- 賓客標籤整個功能預設是關的（guestTagsEnabled），關著時這一顆連同內容都收起來 -->
+      <button class="ad-subtab" type="button" data-subtab="tags" id="adTagSubtab" hidden>設定賓客標籤</button>
     </nav>
 
     <!-- 0-1 出席回覆總覽 -->
@@ -177,7 +179,7 @@
         <!-- 只有開了標籤功能、而且至少有一個標籤當選項時才看得到 -->
         <label class="ad-check is-fixed" id="adAskTagRow" hidden>
           <input type="checkbox" checked disabled>
-          <span>更具體是哪一種？<small>選項在下面的「賓客標籤」設定</small></span></label>
+          <span>更具體是哪一種？<small>選項在「設定賓客標籤」那一頁</small></span></label>
         <label class="ad-check is-fixed">
           <input type="checkbox" checked disabled>
           <span>包含你，共幾位出席？<small>選「熱情出席」才會出現</small></span></label>
@@ -256,19 +258,22 @@
       </form>
     </section>
 
-    <!-- 賓客標籤：整個功能預設是關的，由我們在 Firebase 打開（guestTagsEnabled） -->
+    </div>
+
+    <!-- 0-4 設定賓客標籤：整個功能預設是關的，由我們在 Firebase 打開（guestTagsEnabled） -->
+    <div class="ad-subpanel" data-subpanel="tags">
     <section class="ad-sec" id="adTagSec" hidden>
       <div class="ad-sec-head">
-        <h2 class="ad-sec-title">賓客標籤</h2>
+        <h2 class="ad-sec-title">設定賓客標籤</h2>
         <div class="ad-sec-head-actions">
           <button class="btn small" id="adTagAddBtn" type="button">新增標籤</button>
           <button class="btn small ghost" id="adTagPresetBtn" type="button">加入常用標籤</button>
         </div>
       </div>
       <p class="ad-sec-note">
-        標籤是你們自己給賓客分類用的（VIP、長輩、小孩、行動不便、大學同學…），
-        <b>之後排桌次會用到</b>。勾了<b>「當表單選項」</b>的標籤，
-        賓客填出席回覆時可以自己選<b>一個</b>；沒勾的只有你們在後台掛得上去。
+        標籤是分類賓客用的（行動不便、大學同學…），
+        <b>之後排桌次可以依照標籤排位</b>。<br>
+        勾了<b>「當表單選項」</b>，賓客填出席回覆時可以自己選；沒勾的只有在後台出現。<br>
         一位賓客可以有好幾個標籤，在<b>「回覆資訊」</b>那一頁按「標籤」就能改。
       </p>
 
@@ -503,12 +508,18 @@
       <div class="ad-sec-head">
         <h2 class="ad-sec-title">桌次名單</h2>
         <div class="ad-sec-head-actions">
+          <!-- 只有開了「排桌管理」的站台才長得出來（見 admin.js 的 applyTabVisibility） -->
+          <button class="btn small ghost" id="adSeatSyncPlan" type="button" hidden>同步現在的排桌</button>
           <button class="btn small" id="adSeatImportOpen" type="button">匯入名單</button>
         </div>
       </div>
       <p class="ad-sec-note" id="adSeatListOff" hidden>
         <b>搜尋功能目前是關的</b>，這份名單賓客那邊看不到 ——
         可以先存著，之後把搜尋打開就會生效。
+      </p>
+      <p class="ad-sec-note" id="adSeatSyncNote" hidden>
+        「<b>同步現在的排桌</b>」會把「排桌管理」目前排好的結果整份搬過來，
+        <b>原本這份名單會被換掉</b>；還沒排任何人的話會提示「尚無排桌資料」。
       </p>
 
       <div class="ad-list-head">
@@ -642,11 +653,17 @@
         <div class="ad-sec-head">
           <h2 class="ad-sec-title">匯入</h2>
           <div class="ad-sec-head-actions">
-            <button class="btn small" id="spImportBtn" type="button">匯入 Excel／CSV</button>
+            <button class="btn small" id="spImportRsvpBtn" type="button">從出席表單匯入</button>
+            <button class="btn small ghost" id="spImportBtn" type="button">匯入 Excel／CSV</button>
           </div>
         </div>
         <p class="ad-sec-note">
-          支援 <b>.xlsx</b> 與 <b>.csv</b>。匯入分成五步：選檔案 → 預覽 → 欄位對應 →
+          「<b>從出席表單匯入</b>」抓的是<b>現在收到的出席回覆</b> ——
+          姓名、人數、葷素、兒童座椅、標籤會一起帶進排桌名單，不必先匯出成檔案。
+        </p>
+        <p class="ad-sec-note">
+          「<b>匯入 Excel／CSV</b>」是給手上那份名單用的（沒填回覆的長輩、公司桌…）。
+          支援 <b>.xlsx</b> 與 <b>.csv</b>，分成五步：選檔案 → 預覽 → 欄位對應 →
           檢查資料 → 確認匯入。<b>有問題的那幾筆不會被匯進來</b>，會逐筆告訴你是第幾列、哪裡不對。
         </p>
       </section>
@@ -679,6 +696,20 @@
           <button class="btn small" id="adLetterAddBtn" type="button">寫一封信</button>
         </div>
       </div>
+      <p class="ad-sec-note">
+        <b>指定信</b>要對到「專屬詞彙」才領得到；<b>通用信</b>是沒對到任何詞彙時的那一封。
+        通用信可以寫<b>好幾封</b>（給同事一封、給遠道而來的親友一封…），
+        沒對到詞彙的賓客會拿到其中一封 —— 同一個名字每次拿到的都是同一封。
+      </p>
+
+      <div class="ad-list-head">
+        <div class="ad-chips" id="adLetterChips">
+          <button class="ad-chip is-on" type="button" data-letter-kind="all">全部</button>
+          <button class="ad-chip" type="button" data-letter-kind="default">通用信</button>
+          <button class="ad-chip" type="button" data-letter-kind="personal">指定信</button>
+        </div>
+      </div>
+
       <div class="ad-list" id="adLetterList"></div>
     </section>
   </div>
@@ -926,7 +957,7 @@
 
       <label class="ad-check">
         <input type="checkbox" id="adLetterDefault">
-        <span>設為通用信（沒對到任何詞彙的賓客，就領到這一封）</span>
+        <span>設為通用信<small>沒對到任何詞彙的賓客就領這一封。通用信可以寫好幾封，系統會挑一封給他</small></span>
       </label>
 
       <div class="ad-modal-actions">
@@ -1236,6 +1267,19 @@
       <button class="btn small ghost" id="spImportCancel" type="button">取消</button>
       <button class="btn small ghost" id="spImportBack" type="button" hidden>上一步</button>
       <button class="btn small" id="spImportNext" type="button">下一步</button>
+    </div>
+  </div>
+</div>
+
+<!-- 從出席表單匯入：出席回覆本來就會自動進排桌名單，這個彈窗把「現在帶進來的是誰」講清楚 -->
+<div class="ad-modal-mask" id="spRsvpImportMask" hidden>
+  <div class="ad-modal-card ad-modal-card-form sp-import-card">
+    <div class="ad-modal-title">從出席表單匯入</div>
+    <div class="sp-step-body" id="spRsvpImportBody"></div>
+    <div class="ad-modal-actions">
+      <button class="btn small ghost" id="spRsvpImportClose" type="button">關閉</button>
+      <button class="btn small ghost" id="spRsvpImportDedupe" type="button" hidden>清掉重複的手動賓客</button>
+      <button class="btn small" id="spRsvpImportGo" type="button">去排桌工作區</button>
     </div>
   </div>
 </div>

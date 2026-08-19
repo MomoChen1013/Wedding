@@ -86,6 +86,7 @@
     assign: {},     /* guestId → tableId */
   };
 
+  let loadPromise = null;   /* load() 的 promise，外面要等草稿讀完才問得到排桌資料 */
   let savedAt = 0;      /* 上次按「儲存排桌」的時間 */
   let syncedAt = 0;     /* 上次同步到桌次查詢的時間 */
   let dirty = false;    /* 有還沒存的修改 */
@@ -935,7 +936,7 @@
         done: lib.length > 0,
         title: '建立賓客標籤',
         body: tagsOn()
-          ? '女方好友、VIP、素食…之後排桌就是靠它分群。到「出席回覆 → 表單設定 → 賓客標籤」建立。'
+          ? '女方好友、VIP、素食…之後排桌就是靠它分群。到「出席回覆 → 設定賓客標籤」建立。'
           : '這個站台還沒開賓客標籤功能，可以先跳過，用「類別」分群也排得完。',
         act: tagsOn() ? { label:'去建立標籤', act:'goto-tags' } : null,
       },
@@ -1805,6 +1806,119 @@
   }
 
   /* ============================================================
+     從出席表單匯入
+     ------------------------------------------------------------
+     排桌名單的第一個來源就是出席回覆：allGuests() 直接讀 rsvps，
+     所以「匯入」在這裡不是把資料複製一份，而是把回覆接進來 ——
+     新的回覆一進來，名單自己就會多一位，不會有兩份各自過期的名單。
+
+     這顆按鈕做三件事：
+       1. 講清楚現在接進來的是誰（幾筆、幾人、幾位還沒排）
+       2. 抓最新的一次回覆（畫面重畫，順便把推導出來的標籤重算）
+       3. 找出「和回覆同名的手動賓客」—— 先從 Excel 匯入、之後那個人
+          又自己填了表單，就會一個人佔兩張卡，這裡可以一鍵清掉
+  ============================================================ */
+  const rsvpImportMask = $('spRsvpImportMask');
+
+  /* 目前的出席回覆 vs 排桌名單 */
+  function rsvpImportStat() {
+    const guests = allGuests();
+    const rsvps = guests.filter((g) => g.src === 'rsvp');
+    const byName = new Map();
+    rsvps.forEach((g) => { if (g.name) byName.set(normKey(g.name), g); });
+
+    return {
+      rsvps,
+      heads: rsvps.reduce((n, g) => n + (Number(g.count) || 0), 0),
+      yes: rsvps.filter((g) => g.rsvp === 'yes').length,
+      maybe: rsvps.filter((g) => g.rsvp === 'maybe').length,
+      no: rsvps.filter((g) => g.rsvp === 'no').length,
+      unseated: rsvps.filter((g) => !g.tableId && g.rsvp !== 'no').length,
+      /* 同名的手動賓客：多半是先匯了 Excel，那個人後來又自己填了表單 */
+      dupes: guests.filter((g) => g.src === 'manual' && byName.has(normKey(g.name))),
+    };
+  }
+
+  function openRsvpImport() {
+    renderRsvpImport();
+    rsvpImportMask.hidden = false;
+  }
+
+  function renderRsvpImport() {
+    const st = rsvpImportStat();
+    const body = $('spRsvpImportBody');
+    $('spRsvpImportDedupe').hidden = !st.dupes.length;
+    $('spRsvpImportGo').hidden = !st.rsvps.length;
+
+    if (!st.rsvps.length) {
+      body.innerHTML = `
+        <p class="ad-modal-note">目前還沒有收到任何出席回覆。</p>
+        <div class="ad-hint">
+          賓客在<b>邀請函</b>那一頁送出出席回覆之後，這裡就會有人。
+          等不及的話，先用「匯入 Excel／CSV」或「＋ 新增賓客」把手上的名單放進來。
+        </div>`;
+      return;
+    }
+
+    const preview = st.rsvps.slice(0, 12);
+    body.innerHTML = `
+      <p class="ad-modal-note">
+        已經帶進排桌名單的出席回覆共 <b>${st.rsvps.length}</b> 筆、<b>${st.heads}</b> 人
+        （已確認 ${st.yes}・待確認 ${st.maybe}・無法出席 ${st.no}）。
+        ${st.unseated ? `其中 <b>${st.unseated}</b> 筆還沒排到桌位。` : '全部都排好位子了。'}
+      </p>
+      <div class="ad-hint">
+        出席回覆是<b>即時接進來</b>的，不需要每次重按 ——
+        賓客一送出，左邊的「未安排」就會多一位。
+        人數、葷素、兒童座椅、賓客自己選的標籤都跟著回覆走；
+        要改成別的數字，點開那位賓客的抽屜覆寫就好，<b>回覆本身不會被動到</b>。
+      </div>
+      ${st.dupes.length ? `<div class="sp-bad"><div class="sp-bad-row">
+        有 <b>${st.dupes.length}</b> 位手動賓客和出席回覆同名
+        （${esc(st.dupes.slice(0, 6).map((g) => g.name).join('、'))}${st.dupes.length > 6 ? '…' : ''}），
+        可能是先匯過 Excel、那個人後來又自己填了表單，同一個人會佔兩張卡。
+      </div></div>` : ''}
+      <div class="sp-table-scroll"><table class="sp-preview">
+        <thead><tr><th>編號</th><th>姓名</th><th>人數</th><th>RSVP</th><th>標籤</th><th>桌位</th></tr></thead>
+        <tbody>${preview.map((g) => {
+          const t = tableById(g.tableId);
+          return `<tr>
+            <td>${esc(g.code)}</td><td>${esc(g.name)}</td><td>${g.count}</td>
+            <td>${esc(RSVP_TEXT[g.rsvp] || '')}</td>
+            <td>${esc(g.tagNames.join('／'))}</td>
+            <td>${esc(t ? tableLabel(t) : '未安排')}</td></tr>`;
+        }).join('')}</tbody>
+      </table></div>
+      ${st.rsvps.length > preview.length
+        ? `<div class="ad-hint">只列出前 ${preview.length} 筆，其餘都在排桌工作區裡。</div>` : ''}`;
+  }
+
+  /* 清掉和出席回覆同名的手動賓客。走 mutate() 所以可以「復原」救回來 */
+  async function dedupeManualGuests() {
+    const dupes = rsvpImportStat().dupes;
+    if (!dupes.length) { toast('沒有重複的手動賓客'); return; }
+
+    const ok = await confirmModal({
+      title: '清掉重複的手動賓客',
+      message: `會移除 ${dupes.length} 位和出席回覆同名的手動賓客`
+             + `（${dupes.slice(0, 6).map((g) => g.name).join('、')}${dupes.length > 6 ? '…' : ''}），`
+             + '出席回覆那一份會留著。按下去之後仍然可以用「復原」還原。',
+      danger: true,
+      confirmText: '清掉',
+    });
+    if (!ok) return;
+
+    mutate(() => {
+      dupes.forEach((g) => {
+        delete plan.meta[g.id];
+        delete plan.assign[g.id];
+      });
+    });
+    renderRsvpImport();
+    toast(`已清掉 ${dupes.length} 位重複的手動賓客，記得按「儲存排桌」`);
+  }
+
+  /* ============================================================
      匯入（五步）
      ------------------------------------------------------------
      1 選檔案 → 2 預覽 → 3 欄位對應 → 4 檢查資料 → 5 確認匯入
@@ -2190,7 +2304,7 @@
         if (what === 'add-table') openTableModal('');
         if (what === 'batch-table') batchAddTables();
         /* 標籤庫住在「出席回覆」那一頁，直接帶過去，不用自己找 */
-        if (what === 'goto-tags') location.hash = 'rsvp/form';
+        if (what === 'goto-tags') location.hash = 'rsvp/tags';
         if (what === 'goto-import') location.hash = 'seatingPlan/io';
         return;
       }
@@ -2259,6 +2373,15 @@
     registerFormModal($('spTagOrderMask'));
 
     /* ---- 匯入 / 匯出 ---- */
+    $('spImportRsvpBtn').addEventListener('click', openRsvpImport);
+    $('spRsvpImportClose').addEventListener('click', () => { rsvpImportMask.hidden = true; });
+    $('spRsvpImportDedupe').addEventListener('click', dedupeManualGuests);
+    $('spRsvpImportGo').addEventListener('click', () => {
+      rsvpImportMask.hidden = true;
+      location.hash = 'seatingPlan/board';
+    });
+    registerFormModal(rsvpImportMask);
+
     $('spImportBtn').addEventListener('click', openImport);
     $('spImportCancel').addEventListener('click', () => { importMask.hidden = true; });
     $('spImportBack').addEventListener('click', () => {
@@ -2317,8 +2440,14 @@
     });
 
     /* ---- 資料變動 ---- */
-    document.addEventListener('data:rsvps', () => { invalidateGuests(); renderAll(); });
-    document.addEventListener('data:rsvpTags', () => { invalidateGuests(); renderAll(); });
+    /* 「從出席表單匯入」開著的時候有新回覆進來，數字要跟著跳 —— 這一頁講的就是即時 */
+    const onData = () => {
+      invalidateGuests();
+      renderAll();
+      if (!rsvpImportMask.hidden) renderRsvpImport();
+    };
+    document.addEventListener('data:rsvps', onData);
+    document.addEventListener('data:rsvpTags', onData);
 
     /* 有還沒存的修改時提醒一聲，不要整個下午的排桌被一個關閉分頁弄不見 */
     window.addEventListener('beforeunload', (e) => {
@@ -2340,8 +2469,21 @@
     bindDnd();
     bindPeek();
     renderAll();
-    load();
+    loadPromise = load();
   }
 
-  window.SeatingPlan = { init };
+  /* 「桌次名單」那一頁的「同步現在的排桌」按鈕走這裡。
+     草稿是非同步讀進來的，太早按會誤判成沒資料，所以先等它讀完。 */
+  async function syncNow() {
+    if (!started) init();
+    if (loadPromise) await loadPromise;
+    if (!allGuests().some((g) => g.tableId)) {
+      toast('尚無排桌資料', true);
+      return false;
+    }
+    await syncToSeating();
+    return true;
+  }
+
+  window.SeatingPlan = { init, syncNow };
 })();
