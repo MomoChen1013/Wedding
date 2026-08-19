@@ -621,18 +621,9 @@
         text:`${who}${pending.length > 3 ? ` 等 ${pending.length} 位` : ''} 尚未確認 RSVP` });
     }
 
-    /* 5. 每一桌的特殊需求（素食、行動不便、兒童、VIP）——
-          桌卡上本來就寫著，這裡是給「一次看完」用的 */
-    sortedTables().forEach((t) => {
-      const { rows } = seatedOf(t.id, guests);
-      const names = rows.flatMap((g) => g.tagNames);
-      specialsOf(names).forEach((sp) => {
-        const n = rows.filter((g) => g.tagNames.some((x) =>
-          sp.match.some((m) => x.toLowerCase().includes(m.toLowerCase()))))
-          .reduce((acc, g) => acc + g.count, 0);
-        if (n) list.push({ level:'info', icon: sp.icon, text:`第 ${no2(t.no)} 桌有 ${n} 位${sp.label}賓客` });
-      });
-    });
+    /* 每一桌的特殊需求（素食、行動不便、兒童、VIP）刻意不做成提醒：
+       每桌每種各一條，二十幾桌就是幾十條，真正要處理的那幾條會被埋掉。
+       它們本來就寫在桌卡上（🥬 2 位素食），那裡才是看得到桌況的地方。 */
 
     return list;
   }
@@ -991,7 +982,9 @@
     $('spTagChips').innerHTML = lib.map((t) => `
       <button class="ad-chip${view.tags.has(t.id) ? ' is-on' : ''}" type="button"
               data-tag="${esc(t.id)}">${esc(t.name)}</button>`).join('');
-    $('spTagOrderBtn').hidden = !lib.length;
+    /* 分組順序只有在「優先按照 Tags 分組」時才有作用，
+       其他排序方式下擺著只會讓人不知道它是幹嘛的 */
+    $('spTagOrderBtn').hidden = !lib.length || view.sort !== 'tag';
 
     const sel = $('spTableFilter');
     const cur = view.table;
@@ -1958,7 +1951,11 @@
       view.q = normKey(e.target.value);
       renderBoard();
     });
-    $('spSort').addEventListener('change', (e) => { view.sort = e.target.value; renderBoard(); });
+    $('spSort').addEventListener('change', (e) => {
+      view.sort = e.target.value;
+      renderTools();
+      renderBoard();
+    });
     $('spTableFilter').addEventListener('change', (e) => {
       view.table = e.target.value;
       renderFilterToggle();

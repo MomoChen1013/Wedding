@@ -542,11 +542,14 @@
     <div class="ad-subpanel is-on" data-subpanel="board">
 
       <!-- 儲存與同步：整頁最上面，永遠看得到現在是什麼狀態 -->
+      <!-- 同步狀態、即時統計、儲存／同步收在同一列，
+           工作區才拿得回螢幕的高度（窄螢幕會自己拆行） -->
       <div class="sp-bar">
         <div class="sp-bar-status">
           <span class="sp-sync" id="spSyncState" data-state="none">尚未同步</span>
           <span class="sp-sync-note" id="spSyncNote">目前排桌資料尚未同步至桌次查詢系統</span>
         </div>
+        <div class="ad-stats sp-stats" id="spStats"></div>
         <div class="sp-bar-actions">
           <button class="btn small ghost" id="spUndo" type="button" disabled>復原</button>
           <button class="btn small ghost" id="spRedo" type="button" disabled>重做</button>
@@ -554,9 +557,6 @@
           <button class="btn small" id="spSaveBtn" type="button">儲存排桌</button>
         </div>
       </div>
-
-      <!-- 即時統計 -->
-      <div class="ad-stats sp-stats" id="spStats"></div>
 
       <!-- 提醒（不擋操作，只提醒） -->
       <div class="sp-warns" id="spWarns"></div>
