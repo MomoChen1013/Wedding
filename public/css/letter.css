@@ -141,7 +141,10 @@
 .wl-sign-name{font-family:var(--font-display);font-size:17px;letter-spacing:.16em;
   color:var(--ink);margin-top:6px;}
 
-.wl-sheet-actions{margin-top:20px;text-align:center;}
+.wl-sheet-actions{margin-top:20px;display:flex;flex-wrap:wrap;gap:10px;
+  align-items:center;justify-content:center;}
+.wl-save-hint{flex:1 0 100%;text-align:center;font-size:11.5px;letter-spacing:.06em;
+  color:var(--ink-soft);min-height:1.4em;}
 
 @media(max-width:560px){
   .wl-sheet-inner{padding:34px 22px 30px;}

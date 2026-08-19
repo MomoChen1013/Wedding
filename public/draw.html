@@ -52,13 +52,30 @@
         </div>
         <div class="card-desc" id="cardDesc"></div>
         <button class="btn small" id="drawBtn">抽一張婚禮小卡</button>
-        <div class="draw-info">你的收藏（<span id="collCount">0</span> 張）</div>
+        <div class="draw-info">你的收藏（<span id="collCount">0</span> 張）<small class="draw-info-hint">點卡片看大圖・可以存下來</small></div>
         <div class="collection" id="collection"></div>
       </div>
     </div>
     <footer>made for {{couple}}・{{hashtag}}</footer>
   </div>
 </section>
+
+<!-- 收藏裡的小卡放大看：點一下收藏的卡片就打開，可以另存成 JPG。
+     卡面只有照片（SSR／SR 多一層會動的彩虹光膜）—— 等級、卡名、說明
+     在小卡的 title 上看得到，放大看的重點是照片本身。 -->
+<div class="cv" id="cardView" hidden>
+  <button class="cv-close" id="cardViewClose" type="button" aria-label="關閉">✕</button>
+  <div class="cv-box" role="dialog" aria-modal="true" aria-label="收藏的婚禮小卡">
+    <div class="cv-card" id="cardViewCard">
+      <div class="cv-art" id="cardViewArt"></div>
+      <div class="cv-holo" id="cardViewHolo" hidden></div>
+    </div>
+    <div class="cv-actions">
+      <button class="btn small" id="cardViewSave" type="button">儲存下載</button>
+    </div>
+    <div class="cv-hint" id="cardViewHint" aria-live="polite"></div>
+  </div>
+</div>
 
 <!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與本頁 JS -->
 <script type="module" src="/js/site-context.js"></script>

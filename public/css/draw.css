@@ -37,6 +37,47 @@
 .mini-card .mh{position:absolute;inset:0;mix-blend-mode:color-dodge;opacity:.4;
   background:conic-gradient(from 0deg,#ff6ec4,#7873f5,#4ade80,#fcd34d,#ff6ec4);background-size:160% 160%;animation:holoMove 4s linear infinite;}
 .draw-info{font-size:12.5px;color:var(--ink-soft);text-align:center;letter-spacing:.14em;}
+.draw-info-hint{display:block;margin-top:4px;font-size:11px;letter-spacing:.08em;opacity:.8;}
+
+/* 收藏的小卡點得下去，就要看起來點得下去 */
+.mini-card{cursor:pointer;transition:transform .18s ease,border-color .18s ease;}
+.mini-card:hover,.mini-card:focus-visible{transform:translateY(-3px);border-color:var(--ink);}
+.mini-card:focus-visible{outline:1px solid var(--ink);outline-offset:2px;}
+
+/* ============================================================
+   收藏的小卡放大看
+   ------------------------------------------------------------
+   點收藏裡的小卡就蓋上來。卡面比例和抽卡那張一樣（2:3），
+   下面接說明與「儲存下載」。
+============================================================ */
+.cv{position:fixed;inset:0;z-index:1200;display:flex;
+  align-items:center;justify-content:center;padding:24px 20px;
+  background:rgba(47,43,38,.86);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  animation:pop .2s ease;overflow-y:auto;}
+.cv[hidden]{display:none;}
+.cv-box{display:flex;flex-direction:column;align-items:center;gap:14px;
+  width:min(88vw,340px);margin:auto;}
+.cv-card{position:relative;width:100%;aspect-ratio:2/3;border-radius:var(--radius);
+  overflow:hidden;border:1px solid rgba(255,255,255,.35);background:#fff;
+  animation:lbPop .35s cubic-bezier(.18,1.4,.4,1);}
+@keyframes lbPop{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+.cv-art{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:76px;color:var(--ink-soft);background:var(--primary-soft);}
+.cv-art img{width:100%;height:100%;object-fit:cover;}
+.cv-holo{position:absolute;inset:0;z-index:2;mix-blend-mode:color-dodge;opacity:.45;
+  background:
+    linear-gradient(115deg,transparent 30%,rgba(255,255,255,.7) 45%,transparent 55%),
+    conic-gradient(from 0deg,#ff6ec4,#7873f5,#4ade80,#fcd34d,#ff6ec4);
+  background-size:200% 200%,180% 180%;animation:holoMove 4s linear infinite;}
+.cv-holo[hidden]{display:none;}
+.cv-actions{display:flex;gap:10px;}
+.cv-hint{min-height:1.4em;text-align:center;font-size:11.5px;letter-spacing:.06em;
+  color:rgba(255,255,255,.72);}
+/* 蓋版本身會捲（小螢幕放不下整張卡），所以關閉鈕要 fixed 才不會跟著捲走 */
+.cv-close{position:fixed;top:14px;right:16px;z-index:2;width:38px;height:38px;
+  border:1px solid rgba(255,255,255,.4);border-radius:50%;background:transparent;
+  color:#fff;font-size:15px;line-height:1;cursor:pointer;transition:.2s;}
+.cv-close:hover{border-color:#fff;}
 
 /* 大卡下方的說明小紙條 */
 .card-desc{max-width:300px;margin:4px auto 0;text-align:center;
