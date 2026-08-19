@@ -733,37 +733,33 @@ select.ad-input{appearance:none;cursor:pointer;
   animation:scInF .22s ease;}
 .sp-warn-rest[hidden]{display:none;}
 
-/* ---------- 工具列 ---------- */
-.sp-tools{margin:20px 0 16px;padding:14px 16px;border:1px solid var(--line-soft);
-  border-radius:var(--radius);background:rgba(255,255,255,.6);}
-.sp-tools-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
-/* 左邊「用什麼順序排桌」，右邊「找人」，中間一條直線隔開 */
-.sp-tools-group{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
-.sp-tools-find{flex:1 1 320px;min-width:0;}
-.sp-tools-sep{flex:0 0 auto;align-self:center;width:1px;height:30px;
-  background:var(--ink);opacity:.28;}
-.sp-tools-note{margin:10px 0 0;font-size:11.5px;line-height:1.8;
-  letter-spacing:.02em;color:var(--ink-soft);}
-.sp-tools-note b{color:var(--ink);font-weight:500;}
-.sp-search{flex:1 1 240px;min-width:0;}
-@media(max-width:760px){
-  .sp-tools-sep{display:none;}
-  .sp-tools-group{flex:1 1 100%;}
-  .sp-tools-find{padding-top:10px;border-top:1px solid var(--line-soft);}
-}
-.sp-select{display:flex;align-items:center;gap:7px;flex:0 0 auto;
-  font-size:11.5px;letter-spacing:.14em;color:var(--ink-soft);}
-.sp-select select{padding:8px 30px 8px 11px;font-size:13px;width:auto;min-width:150px;
-  background-position:calc(100% - 16px) 15px, calc(100% - 11px) 15px;}
-
-.sp-filters{display:flex;flex-direction:column;gap:9px;margin-top:12px;
-  padding-top:12px;border-top:1px dashed var(--line-soft);}
-.sp-filters[hidden]{display:none;}
-/* 有套條件時「篩選」自己站出來，收起來也知道名單為什麼變少 */
+/* ---------- 「未安排」面板裡的工具列 ----------
+   搜尋、篩選、排序整理的都是這一區，所以就住在這一區裡。
+   第一行找人（搜尋＋篩選），第二行決定順序。 */
+.sp-tools{padding:9px 11px 10px;border-bottom:1px solid var(--line);}
+.sp-tools-row{display:flex;gap:8px;align-items:center;}
+.sp-tools-row + .sp-tools-row{margin-top:7px;}
+.sp-search{flex:1 1 auto;min-width:0;padding:7px 10px;font-size:12.5px;}
+.sp-tools .btn.small{padding:8px 12px;font-size:12px;letter-spacing:.06em;}
+.sp-tools-sort{justify-content:space-between;}
+.sp-select{display:flex;align-items:center;gap:6px;flex:1 1 auto;min-width:0;
+  font-size:11px;letter-spacing:.12em;color:var(--ink-soft);}
+.sp-select select{flex:1 1 auto;min-width:0;width:auto;
+  padding:7px 26px 7px 9px;font-size:12.5px;
+  background-position:calc(100% - 14px) 14px, calc(100% - 9px) 14px;}
+#spFilterToggle{flex:0 0 auto;}
 #spFilterToggle.is-on{background:var(--ink);color:#fff;border-color:var(--ink);}
-.sp-filter-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+
+.sp-filters{display:flex;flex-direction:column;gap:8px;margin-top:9px;
+  padding-top:9px;border-top:1px dashed var(--line-soft);}
+.sp-filters[hidden]{display:none;}
+.sp-filter-line{display:flex;flex-direction:column;gap:5px;}
 .sp-filter-line[hidden]{display:none;}
-.sp-filter-lab{flex:0 0 62px;font-size:11px;letter-spacing:.14em;color:var(--ink-soft);}
+.sp-filter-lab{font-size:10.5px;letter-spacing:.14em;color:var(--ink-soft);}
+.sp-filters .ad-chip{font-size:11px;padding:3px 10px;}
+.sp-filter-declined{margin-top:2px;font-size:12px;}
+.sp-filter-declined small{display:block;margin-left:0;font-size:10.5px;
+  color:var(--ink-soft);}
 
 /* ---------- 工作區：左未安排、右桌位 ---------- */
 .sp-board{display:grid;grid-template-columns:280px minmax(0,1fr);gap:16px;
@@ -806,6 +802,8 @@ select.ad-input{appearance:none;cursor:pointer;
 .sp-card:hover{border-color:var(--ink);}
 .sp-card:focus-visible{outline:2px solid var(--primary-deep);outline-offset:1px;}
 .sp-card.is-dragging{opacity:.45;cursor:grabbing;}
+/* 搜尋命中：已經坐在桌上的人也標起來，「王小明在第 06 桌」一眼看到 */
+.sp-card.is-hit{border-color:var(--ink);background:var(--primary-soft);}
 /* RSVP 狀態不佔一行，改用左邊那道細線表示 */
 .sp-card{border-left:3px solid transparent;}
 .sp-card.is-rsvp-maybe{border-left-color:var(--sun);}
@@ -901,6 +899,31 @@ select.ad-input{appearance:none;cursor:pointer;
   color:var(--ink-soft);}
 .sp-table-hidden{font-size:10.5px;letter-spacing:.04em;color:var(--ink-soft);
   text-align:center;padding-top:2px;}
+
+/* ---------- 第一次進來的引導 ---------- */
+.sp-start{grid-column:1 / -1;border:1px solid var(--line);border-radius:var(--radius);
+  background:#fff;padding:22px 24px 20px;}
+.sp-start-head{padding-bottom:14px;border-bottom:1px solid var(--line-soft);}
+.sp-start-title{font-family:var(--font-display);font-size:16px;font-weight:500;
+  letter-spacing:.2em;color:var(--ink);}
+.sp-start-sub{display:block;margin-top:6px;font-size:12px;letter-spacing:.04em;
+  color:var(--ink-soft);}
+.sp-start-steps{list-style:none;margin:0;padding:0;
+  display:flex;flex-direction:column;}
+.sp-start-step{display:flex;gap:14px;padding:16px 0;
+  border-bottom:1px solid var(--line-soft);}
+.sp-start-step:last-child{border-bottom:none;padding-bottom:2px;}
+.sp-start-no{flex:0 0 26px;height:26px;border-radius:50%;
+  border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-size:12px;color:var(--ink-soft);}
+.sp-start-step.is-done .sp-start-no{background:var(--primary-deep);color:#fff;
+  border-color:var(--primary-deep);}
+.sp-start-body{flex:1 1 auto;min-width:0;}
+.sp-start-name{font-size:14px;letter-spacing:.06em;color:var(--ink);}
+.sp-start-step.is-done .sp-start-name{color:var(--ink-soft);}
+.sp-start-text{margin:5px 0 0;font-size:12.5px;line-height:1.9;
+  letter-spacing:.02em;color:var(--ink-soft);}
+.sp-start .ad-row{margin-top:10px;}
 
 /* ---------- 拖曳回饋 ----------
    目標區塊變色，並直接在上面寫「放入第 05 桌」／「⚠️ 此桌將超過容量」 */
@@ -1027,3 +1050,10 @@ select.ad-input{appearance:none;cursor:pointer;
 /* 未安排區右上角的「＋ 新增賓客」（沒填回覆的長輩、臨時加的親友） */
 .sp-pool-add{flex:0 0 100%;text-align:left;color:var(--primary-deep);}
 .sp-pool-add:hover{border-bottom-color:var(--primary-deep);}
+
+/* 從排桌管理跳過來打開「開放桌次功能」時，閃一下讓人看到是哪一個開關 */
+.ad-callout.is-flash{animation:adFlash 1.6s ease;}
+@keyframes adFlash{
+  0%,100%{background:#fff;}
+  15%,55%{background:var(--primary-soft);border-color:var(--primary-deep);}
+}

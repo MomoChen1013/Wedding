@@ -561,69 +561,6 @@
       <!-- 提醒（不擋操作，只提醒） -->
       <div class="sp-warns" id="spWarns"></div>
 
-      <!-- 搜尋 / 篩選 / 排序 -->
-      <div class="sp-tools">
-        <div class="sp-tools-row">
-          <!-- 左邊這一組是「要用什麼順序排桌」，右邊是「找人」。
-               中間一條直線隔開，才不會被當成同一件事 -->
-          <div class="sp-tools-group">
-            <label class="sp-select">未安排排序
-              <select class="ad-input" id="spSort">
-                <option value="default">預設排序（依編號）</option>
-                <option value="name">依姓名</option>
-                <option value="countDesc">人數多 → 少</option>
-                <option value="countAsc">人數少 → 多</option>
-                <option value="tag">優先按照標籤分組</option>
-              </select>
-            </label>
-            <button class="btn small ghost" id="spTagOrderBtn" type="button">標籤權重</button>
-          </div>
-
-          <span class="sp-tools-sep" aria-hidden="true"></span>
-
-          <div class="sp-tools-group sp-tools-find">
-            <input class="ad-filter sp-search" id="spSearch" type="text"
-                   placeholder="搜尋姓名、編號、類別、桌號或標籤…">
-            <button class="btn small ghost" id="spFilterToggle" type="button"
-                    aria-expanded="false" aria-controls="spFilters">篩選</button>
-          </div>
-        </div>
-        <p class="sp-tools-note">
-          排序只改變<b>「未安排」那一區的顯示順序</b> ——
-          不會動到任何人的位子，也不需要復原。
-        </p>
-
-        <div class="sp-filters" id="spFilters" hidden>
-          <div class="sp-filter-line">
-            <span class="sp-filter-lab">排桌狀態</span>
-            <div class="ad-chips" id="spSeatChips">
-              <button class="ad-chip is-on" type="button" data-seat="all">全部</button>
-              <button class="ad-chip" type="button" data-seat="none">尚未安排</button>
-              <button class="ad-chip" type="button" data-seat="done">已安排</button>
-            </div>
-          </div>
-          <div class="sp-filter-line">
-            <span class="sp-filter-lab">RSVP</span>
-            <div class="ad-chips" id="spRsvpChips">
-              <button class="ad-chip is-on" type="button" data-rsvp="all">全部</button>
-              <button class="ad-chip" type="button" data-rsvp="yes">已確認</button>
-              <button class="ad-chip" type="button" data-rsvp="maybe">待確認</button>
-              <button class="ad-chip" type="button" data-rsvp="no">無法出席</button>
-            </div>
-          </div>
-          <div class="sp-filter-line" id="spTagFilterLine">
-            <span class="sp-filter-lab">Tags</span>
-            <div class="ad-chips" id="spTagChips"></div>
-          </div>
-          <div class="sp-filter-line">
-            <span class="sp-filter-lab">桌號</span>
-            <label class="sp-select">
-              <select class="ad-input" id="spTableFilter"><option value="all">全部桌位</option></select>
-            </label>
-          </div>
-        </div>
-      </div>
-
       <!-- 左：未安排　右：桌位 -->
       <div class="sp-board">
         <aside class="sp-pool" id="spPool">
@@ -631,6 +568,48 @@
             <span class="sp-pool-title">未安排</span>
             <span class="sp-pool-count" id="spPoolCount">0 位</span>
             <button class="ad-edit sp-pool-add" id="spGuestAddBtn" type="button">＋ 新增賓客</button>
+          </div>
+
+          <!-- 搜尋／篩選／排序都是在整理這一區，所以就住在這一區裡 -->
+          <div class="sp-tools">
+            <div class="sp-tools-row">
+              <input class="ad-filter sp-search" id="spSearch" type="text"
+                     placeholder="搜尋姓名、編號、標籤…">
+              <button class="btn small ghost" id="spFilterToggle" type="button"
+                      aria-expanded="false" aria-controls="spFilters">篩選</button>
+            </div>
+
+            <div class="sp-tools-row sp-tools-sort">
+              <label class="sp-select">排序
+                <select class="ad-input" id="spSort">
+                  <option value="default">預設（依編號）</option>
+                  <option value="name">依姓名</option>
+                  <option value="countDesc">人數多 → 少</option>
+                  <option value="countAsc">人數少 → 多</option>
+                  <option value="tag">優先按照標籤分組</option>
+                </select>
+              </label>
+              <button class="btn small ghost" id="spTagOrderBtn" type="button">標籤權重</button>
+            </div>
+
+            <div class="sp-filters" id="spFilters" hidden>
+              <div class="sp-filter-line">
+                <span class="sp-filter-lab">RSVP</span>
+                <div class="ad-chips" id="spRsvpChips">
+                  <button class="ad-chip is-on" type="button" data-rsvp="all">全部</button>
+                  <button class="ad-chip" type="button" data-rsvp="yes">已確認</button>
+                  <button class="ad-chip" type="button" data-rsvp="maybe">待確認</button>
+                </div>
+              </div>
+              <div class="sp-filter-line" id="spTagFilterLine">
+                <span class="sp-filter-lab">標籤</span>
+                <div class="ad-chips" id="spTagChips"></div>
+              </div>
+              <label class="ad-check sp-filter-declined">
+                <input type="checkbox" id="spShowDeclined">
+                <span>顯示「無法出席」的賓客<small>預設不列，他們不需要位子</small></span>
+              </label>
+            </div>
           </div>
           <div class="sp-pool-body" id="spPoolBody" data-drop="pool"></div>
         </aside>

@@ -105,12 +105,11 @@
   /* 畫面上的篩選與排序 */
   const view = {
     q: '',
-    seat: 'all',       /* all / none / done */
-    rsvp: 'all',       /* all / yes / maybe / no */
-    tags: new Set(),   /* 多選；空的代表不篩 */
-    table: 'all',
+    rsvp: 'all',          /* all / yes / maybe */
+    tags: new Set(),      /* 多選；空的代表不篩 */
+    showDeclined: false,  /* 「無法出席」預設不列 —— 他們不需要位子 */
     sort: 'default',
-    tagOrder: [],      /* 分組優先順序（標籤 id），沒設定就照標籤庫的順序 */
+    tagOrder: [],         /* 標籤權重（標籤 id），沒設定就照標籤庫的順序 */
   };
 
   /* ============================================================
@@ -161,6 +160,23 @@
       .filter((id) => guestTagName(id));
   }
 
+  /* 出席回覆已經問過「葷素分配」了，填了素食就不該再叫新人手動掛一次。
+     所以 mealVeg > 0 的人自動帶上標籤庫裡的素食標籤（找得到才掛）。
+     這是從回覆推出來的，不寫回 rsvpTags —— 回覆改不動，推論就跟著回覆走。 */
+  function vegTagId() {
+    const hit = tagLib().find((t) => /素/.test(t.name));
+    return hit ? hit.id : '';
+  }
+
+  function derivedTagIds(r) {
+    const out = [];
+    if (Number(r.mealVeg) > 0) {
+      const id = vegTagId();
+      if (id) out.push(id);
+    }
+    return out;
+  }
+
   /* 自動編號：同一個字首依回覆時間排序後給 01、02…
      算出來的東西不存進資料庫 —— 新人沒改過就每次算一樣的結果。 */
   function autoCodes() {
@@ -192,7 +208,8 @@
     const list = DataStore.getRSVPs().map((r) => {
       const m = plan.meta[r.id] || {};
       const status = DataStore.rsvpStatus(r);
-      const ids = tagIdsOfRsvp(r);
+      const derived = derivedTagIds(r);
+      const ids = [...new Set([...tagIdsOfRsvp(r), ...derived])];
       /* 無法出席的人預設不佔位子；真的要留位就在抽屜裡自己填人數 */
       const baseCount = status === 'no' ? 0 : (Number(r.guestCount) || 1);
       return {
@@ -205,9 +222,12 @@
         rsvp: m.rsvp || status,
         tagIds: ids,
         tagNames: ids.map(guestTagName).filter(Boolean),
+        /* 這幾個標籤是從回覆推出來的，抽屜裡畫成關不掉的勾勾 */
+        lockedTagIds: [...derived, String(r.tag || '')].filter(Boolean),
         note: m.note != null && m.note !== '' ? m.note : (r.note || r.dietaryNote || ''),
         gift: Number(m.gift) || 0,
         got: m.got === true,
+        since: rsvpMs(r),
       };
     });
 
@@ -217,6 +237,7 @@
       list.push({
         id,
         src: 'manual',
+        lockedTagIds: [],
         code: m.code || '',
         name: m.name || '（沒有名字）',
         cat: m.cat || '',
@@ -227,6 +248,7 @@
         note: m.note || '',
         gift: Number(m.gift) || 0,
         got: m.got === true,
+        since: 0,
       });
     });
 
@@ -481,10 +503,36 @@
       await DataStore.importSeating(rows);
       syncedAt = Date.now();
       await save(true);
-      toast(`已同步 ${rows.length} 位賓客到桌次查詢`);
+      afterSyncToast(rows.length);
     } catch (err) {
       writeFailed(err);
     }
+  }
+
+  /* 同步完不代表賓客看得到 —— 桌次那一頁還有一個總開關
+     （「婚禮資訊」分頁最上面的「開放桌次功能」），關著的話前台什麼都沒有。
+     這是婚禮當天最容易卡住的地方，所以同步成功就直接問。 */
+  function afterSyncToast(n) {
+    const off = siteData().seatingFeatureEnabled === false;
+    if (!off) {
+      toast(`已同步 ${n} 位賓客到桌次查詢`);
+      return;
+    }
+    showToast(`已同步 ${n} 位，但「開放桌次功能」還關著，賓客目前還看不到`, {
+      duration: 9000,
+      actionLabel: '現在打開',
+      onAction() {
+        location.hash = 'lobby/info';
+        /* 換分頁要一點時間，等畫面切過去再把開關捲進視野並閃一下 */
+        setTimeout(() => {
+          const box = document.getElementById('adSeatFeature');
+          if (!box) return;
+          box.closest('.ad-callout').scrollIntoView({ block:'center', behavior:'smooth' });
+          box.closest('.ad-callout').classList.add('is-flash');
+          setTimeout(() => box.closest('.ad-callout').classList.remove('is-flash'), 1600);
+        }, 260);
+      },
+    });
   }
 
   /* 儲存 →（存成功才問）要不要同步 */
@@ -521,18 +569,25 @@
     return hit || null;
   }
 
-  function matchesFilters(g) {
-    if (view.seat === 'none' && g.tableId) return false;
-    if (view.seat === 'done' && !g.tableId) return false;
+  /* 搜尋比對用的一串字（姓名、編號、類別、標籤、桌號都吃得到） */
+  function haystack(g) {
+    const t = tableById(g.tableId);
+    return normKey([g.name, g.code, g.cat, g.tagNames.join(' '), t ? tableLabel(t) : ''].join(' '));
+  }
+
+  function hitsSearch(g) {
+    return !view.q || haystack(g).includes(view.q);
+  }
+
+  /* 篩選只作用在「未安排」那一區 —— 它就住在那一區裡。
+     已經排好的人不會因為篩選而從桌上消失（那樣會嚇到人），
+     搜尋到的人改成在桌上標起來（見 renderBoard）。 */
+  function inPool(g) {
+    if (g.tableId) return false;
+    if (!view.showDeclined && g.rsvp === 'no') return false;
     if (view.rsvp !== 'all' && g.rsvp !== view.rsvp) return false;
     if (view.tags.size && !g.tagIds.some((id) => view.tags.has(id))) return false;
-    if (view.table !== 'all' && g.tableId !== view.table) return false;
-
-    if (!view.q) return true;
-    const t = tableById(g.tableId);
-    const hay = [g.name, g.code, g.cat, g.tagNames.join(' '), t ? tableLabel(t) : '']
-      .join(' ');
-    return normKey(hay).includes(view.q);
+    return hitsSearch(g);
   }
 
   function sortGuests(list) {
@@ -601,7 +656,17 @@
       list.push({ level:'warn', text:`尚有 ${unassigned.length} 位賓客（${heads} 人）未安排` });
     }
 
-    /* 2. 爆容量的桌子 */
+    /* 2. 上次儲存之後才進來的回覆 —— RSVP 常常一路收到婚禮前一週，
+          排完之後又進來幾筆是常態，不講的話很容易整批漏掉 */
+    if (savedAt) {
+      const fresh = guests.filter((g) => g.src === 'rsvp' && !g.tableId
+        && g.rsvp !== 'no' && g.since > savedAt);
+      if (fresh.length) {
+        list.push({ level:'warn', text:`有 ${fresh.length} 筆新回覆還沒排（上次儲存之後進來的）` });
+      }
+    }
+
+    /* 3. 爆容量的桌子 */
     sortedTables().forEach((t) => {
       const { heads } = seatedOf(t.id, guests);
       if (heads > t.cap) {
@@ -609,13 +674,13 @@
       }
     });
 
-    /* 3. 排了桌卻沒有人數，容量就算不準 */
+    /* 4. 排了桌卻沒有人數，容量就算不準 */
     const noCount = guests.filter((g) => g.tableId && g.count <= 0);
     if (noCount.length) {
       list.push({ level:'warn', text:`有 ${noCount.length} 位已排桌的賓客缺少人數` });
     }
 
-    /* 4. 還沒確認出席的人 */
+    /* 5. 還沒確認出席的人 */
     const pending = guests.filter((g) => g.rsvp === 'maybe');
     if (pending.length) {
       const who = pending.slice(0, 3).map((g) => g.code || g.name).join('、');
@@ -699,8 +764,11 @@
       ? chips.join('')
       : (g.cat ? `<span class="sp-chip is-plain">${esc(g.cat)}</span>` : '');
 
+    /* 搜尋有打字時，命中的卡片標起來（含已經坐在桌上的） */
+    const hit = view.q && hitsSearch(g) ? ' is-hit' : '';
+
     return `
-      <article class="sp-card is-rsvp-${g.rsvp}" data-guest="${esc(g.id)}"
+      <article class="sp-card is-rsvp-${g.rsvp}${hit}" data-guest="${esc(g.id)}"
                draggable="true" tabindex="0"
                aria-label="${esc(g.name)}，${g.count} 位，${RSVP_TEXT[g.rsvp]}">
         <div class="sp-card-line">
@@ -841,23 +909,94 @@
   }
 
   /* ============================================================
+     第一次進來的引導
+     ------------------------------------------------------------
+     還沒有任何桌位＝這組新人第一次用。與其只寫「還沒有任何桌位」，
+     不如把整條路講完：標籤 → 開桌 → 排人 → 存檔同步。
+     已經做完的那一步會打勾，看得出自己走到哪裡。
+  ============================================================ */
+  function startGuideHtml(guests) {
+    const lib = tagLib();
+    const hasGuests = guests.length > 0;
+
+    const steps = [
+      {
+        done: lib.length > 0,
+        title: '建立賓客標籤',
+        body: tagsOn()
+          ? '女方好友、VIP、素食…之後排桌就是靠它分群。到「出席回覆 → 表單設定 → 賓客標籤」建立。'
+          : '這個站台還沒開賓客標籤功能，可以先跳過，用「類別」分群也排得完。',
+        act: tagsOn() ? { label:'去建立標籤', act:'goto-tags' } : null,
+      },
+      {
+        done: hasGuests,
+        title: '把賓客放進來',
+        body: '填過出席回覆的人會自動出現在左邊。沒填表單的長輩、臨時加的親友，'
+            + '用「＋ 新增賓客」一位一位加，或從 Excel／CSV 整份匯入。',
+        act: { label:'匯入名單', act:'goto-import' },
+      },
+      {
+        done: false,
+        title: '開桌位',
+        body: `先把桌子開出來才有地方放人。桌號、桌名、容量、順序之後都改得動。`,
+        act: { label:'一次加好幾桌', act:'batch-table' },
+        alt: { label:'只加一桌', act:'add-table' },
+      },
+      {
+        done: false,
+        title: '排桌，然後存檔',
+        body: '把左邊的人拖到桌上（手機是點卡片 →「移動到桌位」）。'
+            + '排完按「儲存排桌」，系統才會問你要不要同步到賓客的「我的桌次」——'
+            + '在那之前，前台看到的還是舊的。',
+        act: null,
+      },
+    ];
+
+    return `
+      <div class="sp-start">
+        <div class="sp-start-head">
+          <span class="sp-start-title">開始排桌</span>
+          <span class="sp-start-sub">四個步驟，做完就可以交給賓客查了</span>
+        </div>
+        <ol class="sp-start-steps">
+          ${steps.map((st, i) => `
+            <li class="sp-start-step${st.done ? ' is-done' : ''}">
+              <span class="sp-start-no">${st.done ? '✓' : i + 1}</span>
+              <div class="sp-start-body">
+                <div class="sp-start-name">${esc(st.title)}</div>
+                <p class="sp-start-text">${esc(st.body)}</p>
+                ${st.act || st.alt ? `<div class="ad-row">
+                  ${st.act ? `<button class="btn small" type="button" data-act="${st.act.act}">${esc(st.act.label)}</button>` : ''}
+                  ${st.alt ? `<button class="btn small ghost" type="button" data-act="${st.alt.act}">${esc(st.alt.label)}</button>` : ''}
+                </div>` : ''}
+              </div>
+            </li>`).join('')}
+        </ol>
+      </div>`;
+  }
+
+  /* ============================================================
      畫面：未安排區 ＋ 桌位
   ============================================================ */
   function renderBoard() {
     const guests = allGuests();
-    const shown = guests.filter(matchesFilters);
 
-    /* ---- 左邊：未安排 ---- */
-    const pool = sortGuests(shown.filter((g) => !g.tableId));
+    /* ---- 未安排 ---- */
+    const pool = sortGuests(guests.filter(inPool));
     const poolHeads = pool.reduce((n, g) => n + g.count, 0);
     $('spPoolCount').textContent = `${pool.length} 筆・${poolHeads} 人`;
 
     const body = $('spPoolBody');
+    const anyUnseated = guests.some((g) => !g.tableId
+      && (view.showDeclined || g.rsvp !== 'no'));
+
     if (!loaded) {
       body.innerHTML = skeletonHtml(3, ['60%', '40%']);
     } else if (!pool.length) {
       body.innerHTML = `<div class="ad-empty">${
-        guests.some((g) => !g.tableId) ? '沒有符合條件的未安排賓客' : '所有賓客都排好位子了'
+        anyUnseated ? '沒有符合條件的賓客'
+          : (guests.length ? '所有賓客都排好位子了'
+            : '還沒有賓客<br>等賓客填出席回覆，或先用「＋ 新增賓客」「匯入」把名單放進來')
       }</div>`;
     } else if (view.sort === 'tag') {
       /* 依標籤分組：同一位賓客只會出現在一組（主要排序 Tag） */
@@ -881,18 +1020,11 @@
       body.innerHTML = pool.map(guestCard).join('');
     }
 
-    /* ---- 右邊：桌位 ---- */
+    /* ---- 桌位 ---- */
     const board = $('spTablesBoard');
     const tables = sortedTables();
     if (!tables.length) {
-      board.innerHTML = `
-        <div class="ad-empty sp-tables-empty">
-          還沒有任何桌位
-          <div class="ad-row" style="justify-content:center">
-            <button class="btn small" type="button" data-act="add-table">新增第一桌</button>
-            <button class="btn small ghost" type="button" data-act="batch-table">一次加好幾桌</button>
-          </div>
-        </div>`;
+      board.innerHTML = startGuideHtml(guests);
       return;
     }
 
@@ -912,7 +1044,9 @@
         return n ? `<span class="sp-flag">${sp.icon} ${n} 位${esc(sp.label)}</span>` : '';
       }).join('');
 
-      const cards = rows.filter(matchesFilters);
+      /* 已經排好的人不會因為篩選而消失 —— 那樣會讓人以為位子不見了。
+         搜尋到的那幾位改成在桌上標起來（「王小明在第 06 桌」一眼看到）。 */
+      const cards = rows;
       const type = typeName(t);
 
       return `
@@ -933,9 +1067,6 @@
             ${cards.length
               ? cards.map(guestCard).join('')
               : `<div class="sp-table-empty">把賓客拖進來</div>`}
-            ${rows.length && cards.length < rows.length
-              ? `<div class="sp-table-hidden">另有 ${rows.length - cards.length} 位被目前的篩選藏起來</div>`
-              : ''}
           </div>
         </article>`;
     }).join('');
@@ -987,22 +1118,13 @@
     /* 標籤權重只有在「優先按照標籤分組」時才有作用，
        其他排序方式下擺著只會讓人不知道那顆按鈕是幹嘛的 */
     $('spTagOrderBtn').hidden = !lib.length || view.sort !== 'tag';
-
-    const sel = $('spTableFilter');
-    const cur = view.table;
-    sel.innerHTML = `<option value="all">全部桌位</option>`
-      + sortedTables().map((t) =>
-        `<option value="${esc(t.id)}">${esc(tableLabel(t))}</option>`).join('');
-    sel.value = sortedTables().some((t) => t.id === cur) ? cur : 'all';
-    view.table = sel.value;
+    $('spShowDeclined').checked = view.showDeclined;
   }
 
-  /* 篩選鈕上寫著現在套了幾個條件，收起來也知道有沒有在篩 */
   function renderFilterToggle() {
-    const n = (view.seat !== 'all' ? 1 : 0)
-            + (view.rsvp !== 'all' ? 1 : 0)
+    const n = (view.rsvp !== 'all' ? 1 : 0)
             + view.tags.size
-            + (view.table !== 'all' ? 1 : 0);
+            + (view.showDeclined ? 1 : 0);
     const btn = $('spFilterToggle');
     btn.textContent = n ? `篩選（${n}）` : '篩選';
     btn.classList.toggle('is-on', n > 0);
@@ -1339,12 +1461,29 @@
     toast('桌位已刪除，可以按「復原」救回來');
   }
 
+  /* 要開幾桌？系統已經知道總人數了，就別讓新人自己算。
+     用「需要安排的人數 ÷ 每桌容量」無條件進位，扣掉已經開好的桌數。 */
+  function suggestTables() {
+    const heads = allGuests()
+      .filter((g) => g.rsvp !== 'no')
+      .reduce((n, g) => n + g.count, 0);
+    const need = Math.ceil(heads / DEFAULT_CAP);
+    return { heads, need, more: Math.max(1, need - plan.tables.length) };
+  }
+
   async function batchAddTables() {
+    const { heads, need, more } = suggestTables();
+    const hint = heads
+      ? `目前 ${heads} 人，${DEFAULT_CAP} 人桌大約需要 ${need} 桌${
+          plan.tables.length ? `（已經開了 ${plan.tables.length} 桌）` : ''}。`
+      : '';
+
     const raw = await promptModal({
       title: '一次加好幾桌',
-      message: `要新增幾桌？會從第 ${no2(nextTableNo())} 桌接著編號，容量預設 ${DEFAULT_CAP} 人。`,
+      message: `${hint}會從第 ${no2(nextTableNo())} 桌接著編號，容量預設 ${DEFAULT_CAP} 人，之後都可以改。`,
       placeholder: '例如 12',
       maxLength: 3,
+      value: String(more),
       confirmText: '新增',
     });
     if (!raw) return;
@@ -1418,16 +1557,20 @@
 
     const lib = tagLib();
     $('spDrawerTagsOff').hidden = !!lib.length;
-    /* 賓客自己在表單上選的那一個是他送出的紀錄，後台改不動，畫成關不掉的勾勾 */
+    /* 兩種標籤後台改不動，畫成關不掉的勾勾：
+       ・賓客自己在表單上選的那一個（那是他送出的紀錄）
+       ・從回覆推出來的（葷素分配填了素食） */
     const r = g.src === 'rsvp' ? DataStore.getRSVPs().find((x) => x.id === g.id) : null;
     const own = r ? String(r.tag || '') : '';
+    const veg = r && Number(r.mealVeg) > 0 ? vegTagId() : '';
     $('spDrawerTags').innerHTML = lib.map((tg) => {
-      const isOwn = tg.id === own;
+      const why = tg.id === own ? '賓客自己選的'
+        : (tg.id === veg ? '出席回覆填了素食' : '');
       return `
-      <label class="ad-check sp-drawer-tag${isOwn ? ' is-fixed' : ''}">
+      <label class="ad-check sp-drawer-tag${why ? ' is-fixed' : ''}">
         <input type="checkbox" value="${esc(tg.id)}"${g.tagIds.includes(tg.id) ? ' checked' : ''}${
-          isOwn ? ' disabled' : ''}>
-        <span>${esc(tg.name)}${isOwn ? '<small>賓客自己選的</small>' : ''}</span>
+          why ? ' disabled' : ''}>
+        <span>${esc(tg.name)}${why ? `<small>${why}</small>` : ''}</span>
       </label>`;
     }).join('');
 
@@ -1958,8 +2101,8 @@
       renderTools();
       renderBoard();
     });
-    $('spTableFilter').addEventListener('change', (e) => {
-      view.table = e.target.value;
+    $('spShowDeclined').addEventListener('change', (e) => {
+      view.showDeclined = e.target.checked;
       renderFilterToggle();
       renderBoard();
     });
@@ -1968,14 +2111,6 @@
       renderFilterToggle();
     });
 
-    $('spSeatChips').addEventListener('click', (e) => {
-      const chip = e.target.closest('.ad-chip');
-      if (!chip) return;
-      view.seat = chip.dataset.seat;
-      $('spSeatChips').querySelectorAll('.ad-chip').forEach((c) => c.classList.toggle('is-on', c === chip));
-      renderFilterToggle();
-      renderBoard();
-    });
     $('spRsvpChips').addEventListener('click', (e) => {
       const chip = e.target.closest('.ad-chip');
       if (!chip) return;
@@ -2008,8 +2143,12 @@
 
       const act = e.target.closest('[data-act]');
       if (act) {
-        if (act.dataset.act === 'add-table') openTableModal('');
-        if (act.dataset.act === 'batch-table') batchAddTables();
+        const what = act.dataset.act;
+        if (what === 'add-table') openTableModal('');
+        if (what === 'batch-table') batchAddTables();
+        /* 標籤庫住在「出席回覆」那一頁，直接帶過去，不用自己找 */
+        if (what === 'goto-tags') location.hash = 'rsvp/form';
+        if (what === 'goto-import') location.hash = 'seatingPlan/io';
         return;
       }
 
