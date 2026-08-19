@@ -160,20 +160,23 @@
       .filter((id) => guestTagName(id));
   }
 
-  /* 出席回覆已經問過「葷素分配」了，填了素食就不該再叫新人手動掛一次。
-     所以 mealVeg > 0 的人自動帶上標籤庫裡的素食標籤（找得到才掛）。
+  /* 出席回覆已經問過「葷素分配」與「兒童座椅」了，
+     填了就不該再叫新人手動掛一次標籤。所以：
+       mealVeg  > 0 → 自動帶素食標籤
+       childSeat> 0 → 自動帶小孩標籤
+     找得到標籤庫裡對應的標籤才掛得上去（名字自己取的，用關鍵字比對）。
      這是從回覆推出來的，不寫回 rsvpTags —— 回覆改不動，推論就跟著回覆走。 */
-  function vegTagId() {
-    const hit = tagLib().find((t) => /素/.test(t.name));
+  function tagIdByName(re) {
+    const hit = tagLib().find((t) => re.test(t.name));
     return hit ? hit.id : '';
   }
+  function vegTagId() { return tagIdByName(/素/); }
+  function kidTagId() { return tagIdByName(/小孩|兒童|幼兒|寶寶/); }
 
   function derivedTagIds(r) {
     const out = [];
-    if (Number(r.mealVeg) > 0) {
-      const id = vegTagId();
-      if (id) out.push(id);
-    }
+    if (Number(r.mealVeg) > 0) { const id = vegTagId(); if (id) out.push(id); }
+    if (Number(r.childSeat) > 0) { const id = kidTagId(); if (id) out.push(id); }
     return out;
   }
 
@@ -227,6 +230,9 @@
         note: m.note != null && m.note !== '' ? m.note : (r.note || r.dietaryNote || ''),
         gift: Number(m.gift) || 0,
         got: m.got === true,
+        /* 這兩個是回覆裡問到的實際數字，比「整筆算一個人」準得多 */
+        veg: Number(r.mealVeg) || 0,
+        seats: m.seats != null ? Number(m.seats) : (Number(r.childSeat) || 0),
         since: rsvpMs(r),
       };
     });
@@ -248,6 +254,8 @@
         note: m.note || '',
         gift: Number(m.gift) || 0,
         got: m.got === true,
+        veg: 0,
+        seats: Number(m.seats) || 0,
         since: 0,
       });
     });
@@ -407,6 +415,7 @@
     if (g.rsvp && RSVP_TEXT[g.rsvp]) m.rsvp = g.rsvp;
     if (Array.isArray(g.tags)) m.tags = g.tags.map(String).slice(0, 20);
     if (g.note != null) m.note = String(g.note).slice(0, 200);
+    if (g.seats != null && g.seats !== '') m.seats = clampInt(g.seats, 0, 10, 0);
     if (g.gift != null) m.gift = clampInt(g.gift, 0, 99, 0);
     if (g.got === true) m.got = true;
     return m;
@@ -417,7 +426,8 @@
   function metaIsEmpty(m) {
     if (m.src === 'manual') return false;
     return !m.code && !m.cat && !m.name && m.count == null && !m.rsvp
-      && !(m.tags && m.tags.length) && !m.note && !m.gift && m.got !== true;
+      && !(m.tags && m.tags.length) && !m.note && !m.gift && m.got !== true
+      && m.seats == null;
   }
 
   function planPayload() {
@@ -828,6 +838,7 @@
         ${peekRow('RSVP', RSVP_TEXT[g.rsvp])}
         ${peekRow('目前桌號', t ? tableLabel(t) : '未安排')}
         ${peekRow('備註', g.note)}
+        ${g.seats ? peekRow('兒童椅', `${g.seats} 個`) : ''}
         ${g.gift ? peekRow('喜餅', `${g.gift} 份${g.got ? '・已確認收到' : ''}`) : ''}
       </div>
       ${g.tagNames.length
@@ -1036,13 +1047,7 @@
         ? `超過容量 ${heads - t.cap} 位`
         : (left === 0 ? '已滿' : `剩餘 ${left} 位`);
 
-      /* 這一桌的特殊需求：直接寫成「🥬 2 位素食」，不用點進去才看得到 */
-      const flags = specialsOf(rows.flatMap((g) => g.tagNames)).map((sp) => {
-        const n = rows.filter((g) => g.tagNames.some((x) =>
-          sp.match.some((m) => x.toLowerCase().includes(m.toLowerCase()))))
-          .reduce((s, g) => s + g.count, 0);
-        return n ? `<span class="sp-flag">${sp.icon} ${n} 位${esc(sp.label)}</span>` : '';
-      }).join('');
+      const flags = tableFlags(rows);
 
       /* 已經排好的人不會因為篩選而消失 —— 那樣會讓人以為位子不見了。
          搜尋到的那幾位改成在桌上標起來（「王小明在第 06 桌」一眼看到）。 */
@@ -1070,6 +1075,40 @@
           </div>
         </article>`;
     }).join('');
+  }
+
+  /* 一桌要提醒的事，直接寫在桌卡上，不用點進去才看得到。
+     數字能用回覆裡問到的實際值就用實際值 ——
+     一筆「3 位」裡面只有 1 位吃素的話，寫「3 位素食」是錯的。 */
+  function tableFlags(rows) {
+    const has = (g, sp) => g.tagNames.some((x) =>
+      sp.match.some((m) => x.toLowerCase().includes(m.toLowerCase())));
+    const out = [];
+
+    /* 素食：回覆填過葷素分配的用實際人數，只有標籤沒有數字的才整筆算 */
+    const vegSp = SPECIAL_TAGS.find((sp) => sp.key === 'veg');
+    const veg = rows.reduce((n, g) =>
+      n + (g.veg > 0 ? g.veg : (has(g, vegSp) ? g.count : 0)), 0);
+    if (veg) out.push(`${vegSp.icon} ${veg} 位素食`);
+
+    /* 兒童座椅：這是「要跟飯店要幾張椅子」的數字，單位是張不是人 */
+    const seats = rows.reduce((n, g) => n + (Number(g.seats) || 0), 0);
+    if (seats) out.push(`🪑 ${seats} 個兒童椅`);
+
+    /* 有小孩但沒要兒童椅的，另外算一筆，才不會和上面那個重複數 */
+    const kidSp = SPECIAL_TAGS.find((sp) => sp.key === 'kid');
+    const kids = rows.reduce((n, g) =>
+      n + (has(g, kidSp) && !g.seats ? g.count : 0), 0);
+    if (kids) out.push(`${kidSp.icon} ${kids} 位兒童`);
+
+    /* 剩下這兩種回覆裡沒有數字可用，只能整筆算 */
+    ['a11y', 'vip'].forEach((key) => {
+      const sp = SPECIAL_TAGS.find((x) => x.key === key);
+      const n = rows.reduce((acc, g) => acc + (has(g, sp) ? g.count : 0), 0);
+      if (n) out.push(`${sp.icon} ${n} 位${sp.label}`);
+    });
+
+    return out.map((t) => `<span class="sp-flag">${esc(t)}</span>`).join('');
   }
 
   /* ============================================================
@@ -1551,6 +1590,7 @@
     $('spDrawerOverride').hidden = g.src !== 'rsvp';
     $('spDrawerCount').value = g.count;
     $('spDrawerNote').value = g.note;
+    $('spDrawerSeats').value = g.seats;
     $('spDrawerGift').value = g.gift;
     $('spDrawerGot').checked = g.got;
     $('spDrawerDelete').hidden = g.src !== 'manual';
@@ -1563,9 +1603,11 @@
     const r = g.src === 'rsvp' ? DataStore.getRSVPs().find((x) => x.id === g.id) : null;
     const own = r ? String(r.tag || '') : '';
     const veg = r && Number(r.mealVeg) > 0 ? vegTagId() : '';
+    const kid = r && Number(r.childSeat) > 0 ? kidTagId() : '';
     $('spDrawerTags').innerHTML = lib.map((tg) => {
       const why = tg.id === own ? '賓客自己選的'
-        : (tg.id === veg ? '出席回覆填了素食' : '');
+        : (tg.id === veg ? '出席回覆填了素食'
+          : (tg.id === kid ? '出席回覆要了兒童座椅' : ''));
       return `
       <label class="ad-check sp-drawer-tag${why ? ' is-fixed' : ''}">
         <input type="checkbox" value="${esc(tg.id)}"${g.tagIds.includes(tg.id) ? ' checked' : ''}${
@@ -1594,6 +1636,7 @@
       rsvp: $('spDrawerRsvp').value,
       count: clampInt($('spDrawerCount').value, 0, 30, 0),
       note: $('spDrawerNote').value.trim().slice(0, 200),
+      seats: clampInt($('spDrawerSeats').value, 0, 10, 0),
       gift: clampInt($('spDrawerGift').value, 0, 99, 0),
       got: $('spDrawerGot').checked,
     };
