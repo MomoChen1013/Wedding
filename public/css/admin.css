@@ -632,3 +632,428 @@ select.ad-input{appearance:none;cursor:pointer;
   .ad-modal-actions .btn{width:100%;}
   .ad-toast-stack{width:calc(100vw - 24px);}
 }
+
+/* ============================================================
+   排桌管理
+   ------------------------------------------------------------
+   後台裡密度最高的一頁：左邊「未安排」永遠在，右邊是桌位。
+   語彙照舊（1px 線、無陰影、Noto Serif TC），只是把卡片縮小、
+   間距收緊，一個螢幕才裝得下二十幾桌。
+============================================================ */
+
+/* 桌況的兩個顏色：綠＝坐滿、紅＝超量。
+   全站的語彙沒有綠色，這裡取鼠尾草主題那一支（同一個色感，不會突兀）。 */
+.ad-panel[data-panel="seatingPlan"]{--seat-full:#6d7f5f;--seat-over:#a4677a;}
+
+/* 工作區要寬（一個螢幕裝得下越多桌越好），
+   但「桌位管理」「匯入匯出」是一般的清單與說明，維持原本的閱讀寬度 */
+.ad-panel[data-panel="seatingPlan"].is-on{margin:0 auto;}
+.ad-main:has(.ad-panel[data-panel="seatingPlan"].is-on){max-width:1360px;}
+.ad-panel[data-panel="seatingPlan"] .ad-subpanel[data-subpanel="tables"],
+.ad-panel[data-panel="seatingPlan"] .ad-subpanel[data-subpanel="io"]{
+  max-width:860px;}
+
+/* ---------- 最上面那一列：狀態 ＋ 統計 ＋ 儲存／同步 ----------
+   三塊收在同一列（桌機），工作區才拿得回螢幕的高度。
+   窄螢幕自己拆行，順序仍然是狀態 → 統計 → 按鈕。 */
+.sp-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:12px 16px;margin-bottom:14px;
+  border:1px solid var(--line);border-left:3px solid var(--primary-deep);
+  border-radius:var(--radius);background:#fff;}
+.sp-bar-status{display:flex;flex-direction:column;gap:4px;min-width:0;flex:0 1 auto;}
+.sp-bar-actions{display:flex;gap:8px;flex-wrap:wrap;flex:0 0 auto;margin-left:auto;}
+
+.sp-sync{align-self:flex-start;border:1px solid var(--line);border-radius:999px;
+  padding:3px 12px;font-size:11.5px;letter-spacing:.1em;color:var(--ink-soft);
+  white-space:nowrap;}
+.sp-sync[data-state="ok"]{color:var(--primary-deep);border-color:var(--primary);}
+.sp-sync[data-state="stale"]{color:#8a5765;border-color:rgba(164,103,122,.45);}
+.sp-sync-note{font-size:11.5px;line-height:1.7;letter-spacing:.02em;color:var(--ink-soft);}
+
+/* 有還沒存的修改時，「儲存排桌」自己站出來 */
+.btn.is-dirty{position:relative;}
+.btn.is-dirty::after{content:'';position:absolute;top:-3px;right:-3px;
+  width:7px;height:7px;border-radius:50%;background:#a4677a;}
+
+/* ---------- 統計 ----------
+   只留四個一直要盯著的數字。住在頂列裡，所以不用外框，
+   靠中間那幾條分隔線就夠了；手機也一列排得完。 */
+.sp-stats{flex:1 1 300px;min-width:0;
+  grid-template-columns:repeat(4,1fr);border:none;}
+.sp-stats .ad-stat{padding:2px 10px;background:transparent;
+  border:none;border-left:1px solid var(--line-soft);}
+.sp-stats .ad-stat:first-child{border-left:none;}
+.sp-stats .ad-stat-num{font-size:clamp(17px,1.7vw,23px);}
+.sp-stats .ad-stat-lab{margin-top:2px;font-size:10.5px;letter-spacing:.04em;
+  white-space:nowrap;}
+/* 窄螢幕拆成兩段：先四個統計，一條線之後才是同步狀態與按鈕。
+   先看「還剩幾個人沒排」，再決定要不要存、要不要同步。 */
+@media(max-width:1180px){
+  .sp-bar{gap:10px;}
+  .sp-stats{flex:1 1 100%;order:1;}
+  .sp-bar-status{flex:1 1 100%;order:2;
+    padding-top:10px;border-top:1px solid var(--line-soft);}
+  .sp-bar-actions{flex:1 1 100%;order:3;margin-left:0;}
+  .sp-bar-actions .btn{flex:1 1 auto;}
+}
+@media(max-width:430px){
+  .sp-stats .ad-stat{padding:2px 2px;}
+  .sp-stats .ad-stat-num{font-size:17px;}
+  .sp-stats .ad-stat-lab{font-size:9px;letter-spacing:0;}
+}
+
+/* ---------- 提醒 ----------
+   收起來只佔一行（最該處理的那一條 ＋「還有 N 項」），展開才列出其餘。
+   兩級：warn 要處理（粉底）、info 知道就好（淡框，不搶注意力）。 */
+.sp-warns{display:flex;flex-direction:column;gap:5px;margin:16px 0 6px;}
+
+.sp-warn{display:flex;align-items:baseline;gap:8px;
+  border:1px solid var(--line-soft);border-radius:var(--radius);
+  background:rgba(255,255,255,.7);padding:8px 13px;
+  font-size:12.5px;line-height:1.8;letter-spacing:.03em;color:var(--ink-soft);}
+.sp-warn.is-warn{border-color:rgba(164,103,122,.35);background:rgba(164,103,122,.06);
+  color:#8a5765;}
+.sp-warn.is-ok{color:var(--ink-soft);}
+.sp-warn-ic{flex:0 0 auto;font-size:12px;line-height:1.6;}
+.sp-warn-text{flex:1 1 auto;min-width:0;}
+
+/* 第一條後面掛著展開鈕，收起來時整塊就這一行 */
+.sp-warn-head .sp-warn-more{flex:0 0 auto;margin-left:auto;padding-right:2px;}
+.sp-warn-more{position:relative;background:none;border:none;cursor:pointer;padding:1px 0;
+  font-family:var(--font-body);font-size:11.5px;letter-spacing:.06em;
+  color:var(--ink-soft);border-bottom:1px solid var(--line);white-space:nowrap;}
+/* 收起來的那幾項裡還有「要處理」的，點一下紅點就知道值得展開 */
+.sp-warn-more.has-warn::after{content:'';position:absolute;top:-1px;right:-7px;
+  width:5px;height:5px;border-radius:50%;background:#a4677a;}
+.sp-warn-more:hover{color:var(--ink);border-bottom-color:var(--ink);}
+.sp-warn.is-warn .sp-warn-more{color:#8a5765;border-bottom-color:rgba(164,103,122,.4);}
+.sp-warn.is-warn .sp-warn-more:hover{border-bottom-color:#8a5765;}
+
+.sp-warn-rest{display:flex;flex-direction:column;gap:5px;
+  animation:scInF .22s ease;}
+.sp-warn-rest[hidden]{display:none;}
+
+/* ---------- 「未安排」面板裡的工具列 ----------
+   搜尋、篩選、排序整理的都是這一區，所以就住在這一區裡。
+   第一行找人（搜尋＋篩選），第二行決定順序。 */
+.sp-tools{padding:9px 11px 10px;border-bottom:1px solid var(--line);}
+.sp-tools-row{display:flex;gap:8px;align-items:center;}
+.sp-tools-row + .sp-tools-row{margin-top:7px;}
+.sp-search{flex:1 1 auto;min-width:0;padding:7px 10px;font-size:12.5px;}
+.sp-tools .btn.small{padding:8px 12px;font-size:12px;letter-spacing:.06em;}
+.sp-tools-sort{justify-content:space-between;}
+.sp-select{display:flex;align-items:center;gap:6px;flex:1 1 auto;min-width:0;
+  font-size:11px;letter-spacing:.12em;color:var(--ink-soft);}
+.sp-select select{flex:1 1 auto;min-width:0;width:auto;
+  padding:7px 26px 7px 9px;font-size:12.5px;
+  background-position:calc(100% - 14px) 14px, calc(100% - 9px) 14px;}
+#spFilterToggle{flex:0 0 auto;}
+#spFilterToggle.is-on{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+.sp-filters{display:flex;flex-direction:column;gap:8px;margin-top:9px;
+  padding-top:9px;border-top:1px dashed var(--line-soft);}
+.sp-filters[hidden]{display:none;}
+.sp-filter-line{display:flex;flex-direction:column;gap:5px;}
+.sp-filter-line[hidden]{display:none;}
+.sp-filter-lab{font-size:10.5px;letter-spacing:.14em;color:var(--ink-soft);}
+.sp-filters .ad-chip{font-size:11px;padding:3px 10px;}
+.sp-filter-declined{margin-top:2px;font-size:12px;}
+.sp-filter-declined small{display:block;margin-left:0;font-size:10.5px;
+  color:var(--ink-soft);}
+
+/* ---------- 工作區：左未安排、右桌位 ---------- */
+.sp-board{display:grid;grid-template-columns:280px minmax(0,1fr);gap:16px;
+  align-items:start;}
+/* 筆電／橫向平板：未安排那一欄收窄一點，右邊才排得下兩桌以上 */
+@media(max-width:1240px){
+  .sp-board{grid-template-columns:232px minmax(0,1fr);gap:12px;}
+}
+
+/* 「未安排」不是一張桌子，所以刻意長得不一樣：
+   淡色底、左邊一道實心的主題色、標題也比桌卡重一些。
+   桌卡是白底細框，兩者放在一起一眼就分得出來。 */
+.sp-pool{position:sticky;top:78px;display:flex;flex-direction:column;
+  max-height:calc(100svh - 100px);
+  border:1px solid var(--line);border-left:3px solid var(--primary-deep);
+  border-radius:var(--radius);background:var(--bg2);}
+.sp-pool-head{display:flex;align-items:baseline;justify-content:space-between;
+  gap:6px 8px;flex-wrap:wrap;padding:11px 13px;
+  border-bottom:1px solid var(--line);}
+.sp-pool-title{font-family:var(--font-display);font-size:14px;font-weight:500;
+  letter-spacing:.22em;color:var(--ink);}
+.sp-pool-count{border:1px solid var(--line);border-radius:999px;padding:2px 9px;
+  background:#fff;font-size:11px;letter-spacing:.04em;color:var(--ink);
+  font-variant-numeric:tabular-nums;}
+.sp-pool-body{flex:1 1 auto;overflow-y:auto;padding:9px;
+  display:flex;flex-direction:column;gap:6px;min-height:120px;}
+
+.sp-group{display:flex;flex-direction:column;gap:6px;}
+.sp-group-head{display:flex;align-items:baseline;gap:8px;margin-top:6px;
+  padding-bottom:5px;border-bottom:1px solid var(--line-soft);
+  font-size:11.5px;letter-spacing:.16em;color:var(--ink);}
+.sp-group-head small{font-size:10.5px;letter-spacing:.04em;color:var(--ink-soft);}
+
+/* ---------- 賓客卡 ----------
+   兩行就好：第一行 編號＋姓名＋人數，第二行標籤（放不下就左右滑）。
+   其餘資訊在 .sp-peek（桌機 hover、手機／平板點一下）。 */
+.sp-card{position:relative;border:1px solid var(--line);border-radius:var(--radius);
+  background:#fff;padding:7px 9px;cursor:grab;
+  transition:border-color .18s,background .18s;}
+.sp-card:hover{border-color:var(--ink);}
+.sp-card:focus-visible{outline:2px solid var(--primary-deep);outline-offset:1px;}
+.sp-card.is-dragging{opacity:.45;cursor:grabbing;}
+/* 搜尋命中：已經坐在桌上的人也標起來，「王小明在第 06 桌」一眼看到 */
+.sp-card.is-hit{border-color:var(--ink);background:var(--primary-soft);}
+/* RSVP 狀態不佔一行，改用左邊那道細線表示 */
+.sp-card{border-left:3px solid transparent;}
+.sp-card.is-rsvp-maybe{border-left-color:var(--sun);}
+.sp-card.is-rsvp-no{border-left-color:rgba(164,103,122,.55);opacity:.66;}
+
+.sp-card-line{display:flex;align-items:baseline;gap:7px;}
+.sp-card-code{flex:0 0 auto;font-family:var(--font-display);font-size:10.5px;
+  letter-spacing:.1em;color:var(--ink-soft);}
+.sp-card-name{flex:1 1 auto;min-width:0;font-size:13.5px;letter-spacing:.04em;
+  color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sp-card-count{flex:0 0 auto;font-size:11.5px;letter-spacing:.02em;
+  color:var(--primary-deep);font-variant-numeric:tabular-nums;}
+
+/* 標籤一行排完，放不下就左右滑（不換行、不長高） */
+.sp-card-tags{display:flex;flex-wrap:nowrap;gap:4px;margin-top:4px;
+  overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  scroll-snap-type:x proximity;overscroll-behavior-x:contain;}
+.sp-card-tags::-webkit-scrollbar{display:none;}
+.sp-chip{flex:0 0 auto;scroll-snap-align:start;white-space:nowrap;
+  border:1px solid var(--line);border-radius:999px;padding:1px 7px;
+  font-size:10px;letter-spacing:.03em;color:var(--ink);background:var(--bg2);}
+.sp-chip.is-special{color:var(--primary-deep);border-color:var(--primary);
+  background:transparent;}
+.sp-chip.is-plain{background:transparent;border-color:transparent;
+  color:var(--ink-soft);padding-left:0;}
+
+/* ---------- 完整樣貌（peek） ---------- */
+.sp-peek{position:fixed;z-index:1200;background:#fff;border:1px solid var(--ink);
+  border-radius:var(--radius);padding:12px 14px 11px;
+  box-shadow:0 6px 22px rgba(43,47,54,.14);animation:pop .14s ease;}
+.sp-peek[hidden]{display:none;}
+.sp-peek-head{display:flex;align-items:baseline;gap:7px;padding-bottom:8px;
+  border-bottom:1px solid var(--line-soft);}
+.sp-peek-code{font-family:var(--font-display);font-size:11px;letter-spacing:.1em;
+  color:var(--ink-soft);}
+.sp-peek-name{flex:1 1 auto;min-width:0;font-size:14.5px;letter-spacing:.05em;
+  color:var(--ink);word-break:break-all;}
+.sp-peek-count{flex:0 0 auto;font-size:12px;color:var(--primary-deep);
+  font-variant-numeric:tabular-nums;}
+.sp-peek-rows{display:flex;flex-direction:column;gap:5px;margin-top:9px;}
+.sp-peek-row{display:flex;gap:10px;align-items:baseline;font-size:12px;line-height:1.6;}
+.sp-peek-row span{flex:0 0 54px;color:var(--ink-soft);letter-spacing:.08em;font-size:11px;}
+.sp-peek-row b{flex:1 1 auto;min-width:0;font-weight:400;color:var(--ink);
+  word-break:break-all;}
+.sp-peek-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px;
+  padding-top:9px;border-top:1px solid var(--line-soft);}
+.sp-peek-actions{display:flex;gap:8px;margin-top:12px;}
+.sp-peek-actions .btn{flex:1 1 auto;padding:8px 10px;font-size:12px;letter-spacing:.06em;}
+
+/* ---------- 桌位 ---------- */
+/* align-items:start：每張桌卡只長到自己的內容高度，
+   不會被同一列最高的那一桌拉長成一片空白 */
+.sp-tables{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));
+  gap:12px;align-content:start;align-items:start;}
+.sp-tables-empty{grid-column:1 / -1;}
+
+/* 桌卡：白底細框。滿員與超量各自換成 3px 的粗框 ——
+   box-sizing 是 border-box，所以加粗不會把版面推開。
+   綠＝剛剛好坐滿、紅＝超過容量，掃一眼就知道哪幾桌要動。 */
+.sp-table{border:1px solid var(--line);border-radius:var(--radius);background:#fff;
+  display:flex;flex-direction:column;position:relative;
+  transition:border-color .18s,border-width .12s,background .18s;}
+.sp-table.is-full{border:3px solid var(--seat-full);}
+.sp-table.is-over{border:3px solid var(--seat-over);}
+
+.sp-table-head{display:flex;align-items:center;gap:8px;padding:10px 12px;
+  border-bottom:1px solid var(--line-soft);cursor:grab;}
+.sp-table-head:active{cursor:grabbing;}
+.sp-table-no{font-family:var(--font-display);font-size:17px;font-weight:500;
+  letter-spacing:.08em;color:var(--primary-deep);font-variant-numeric:tabular-nums;}
+.sp-table-name{flex:1 1 auto;min-width:0;font-size:13.5px;letter-spacing:.06em;
+  color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sp-table-name:empty{flex:1 1 auto;}
+.sp-table-type{flex:0 0 auto;border:1px solid var(--line);border-radius:999px;
+  padding:1px 8px;font-size:10.5px;letter-spacing:.06em;color:var(--ink-soft);}
+.sp-table-edit{flex:0 0 auto;}
+
+.sp-table-meta{display:flex;align-items:baseline;justify-content:space-between;gap:8px;
+  padding:8px 12px;font-size:12px;letter-spacing:.04em;}
+.sp-table-count{color:var(--ink);font-variant-numeric:tabular-nums;}
+.sp-table-left{color:var(--ink-soft);}
+.sp-table.is-full .sp-table-left{color:var(--seat-full);font-weight:500;}
+.sp-table.is-over .sp-table-left{color:var(--seat-over);font-weight:500;}
+
+.sp-table-flags{display:flex;flex-wrap:wrap;gap:5px;padding:0 12px 8px;}
+.sp-flag{border:1px solid var(--line-soft);border-radius:999px;padding:1px 8px;
+  font-size:10.5px;letter-spacing:.04em;color:var(--ink);background:var(--bg2);}
+
+.sp-table-body{flex:1 1 auto;display:flex;flex-direction:column;gap:5px;
+  padding:9px 10px 11px;min-height:66px;}
+.sp-table-empty{border:1px dashed var(--line);border-radius:var(--radius);
+  padding:16px 8px;text-align:center;font-size:11.5px;letter-spacing:.08em;
+  color:var(--ink-soft);}
+.sp-table-hidden{font-size:10.5px;letter-spacing:.04em;color:var(--ink-soft);
+  text-align:center;padding-top:2px;}
+
+/* ---------- 第一次進來的引導 ---------- */
+.sp-start{grid-column:1 / -1;border:1px solid var(--line);border-radius:var(--radius);
+  background:#fff;padding:22px 24px 20px;}
+.sp-start-head{padding-bottom:14px;border-bottom:1px solid var(--line-soft);}
+.sp-start-title{font-family:var(--font-display);font-size:16px;font-weight:500;
+  letter-spacing:.2em;color:var(--ink);}
+.sp-start-sub{display:block;margin-top:6px;font-size:12px;letter-spacing:.04em;
+  color:var(--ink-soft);}
+.sp-start-steps{list-style:none;margin:0;padding:0;
+  display:flex;flex-direction:column;}
+.sp-start-step{display:flex;gap:14px;padding:16px 0;
+  border-bottom:1px solid var(--line-soft);}
+.sp-start-step:last-child{border-bottom:none;padding-bottom:2px;}
+.sp-start-no{flex:0 0 26px;height:26px;border-radius:50%;
+  border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-size:12px;color:var(--ink-soft);}
+.sp-start-step.is-done .sp-start-no{background:var(--primary-deep);color:#fff;
+  border-color:var(--primary-deep);}
+.sp-start-body{flex:1 1 auto;min-width:0;}
+.sp-start-name{font-size:14px;letter-spacing:.06em;color:var(--ink);}
+.sp-start-step.is-done .sp-start-name{color:var(--ink-soft);}
+.sp-start-text{margin:5px 0 0;font-size:12.5px;line-height:1.9;
+  letter-spacing:.02em;color:var(--ink-soft);}
+.sp-start .ad-row{margin-top:10px;}
+
+/* ---------- 拖曳回饋 ----------
+   目標區塊變色，並直接在上面寫「放入第 05 桌」／「⚠️ 此桌將超過容量」 */
+.sp-table.is-drop,.sp-pool.is-drop{border-color:var(--primary-deep);
+  background:var(--primary-soft);}
+.sp-card.is-drop{border-color:var(--primary-deep);background:var(--primary-soft);}
+.sp-table.is-drop::after,.sp-pool.is-drop::after,.sp-card.is-drop::after{
+  content:attr(data-hint);position:absolute;left:50%;top:8px;transform:translateX(-50%);
+  z-index:5;white-space:nowrap;pointer-events:none;
+  background:var(--ink);color:#fff;border-radius:var(--radius);
+  padding:5px 12px;font-size:11.5px;letter-spacing:.06em;}
+.sp-pool{position:sticky;}      /* 提示要定位，pool 本身已經是 sticky */
+.sp-card{position:relative;}
+
+/* ---------- 桌位管理清單 ---------- */
+.sp-table-row .ad-item-actions .ad-edit[disabled]{opacity:.3;cursor:not-allowed;}
+
+/* ---------- 賓客詳細資料抽屜 ---------- */
+.sp-drawer-mask{position:fixed;inset:0;z-index:1300;background:rgba(43,47,54,.42);}
+.sp-drawer-mask[hidden]{display:none;}
+.sp-drawer{position:fixed;top:0;right:0;bottom:0;z-index:1310;
+  width:min(92vw,400px);display:flex;flex-direction:column;
+  background:var(--bg1);border-left:1px solid var(--line);
+  animation:spDrawerIn .22s ease;}
+.sp-drawer[hidden]{display:none;}
+@keyframes spDrawerIn{from{transform:translateX(18px);opacity:.4}to{transform:none;opacity:1}}
+.sp-drawer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+  padding:18px 20px 14px;border-bottom:1px solid var(--line);}
+.sp-drawer-title{font-family:var(--font-display);font-size:17px;font-weight:500;
+  letter-spacing:.12em;color:var(--ink);}
+.sp-drawer-sub{margin-top:5px;font-size:12px;letter-spacing:.04em;color:var(--ink-soft);}
+.sp-drawer-close{background:none;border:none;cursor:pointer;font-size:15px;
+  color:var(--ink-soft);padding:2px 4px;}
+.sp-drawer-close:hover{color:var(--ink);}
+.sp-drawer-body{flex:1 1 auto;overflow-y:auto;padding:18px 20px 30px;}
+.sp-drawer-tags{display:flex;flex-direction:column;gap:2px;margin-top:6px;
+  max-height:180px;overflow-y:auto;padding:4px 2px;
+  border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);}
+.sp-drawer-tag{margin-top:8px;}
+/* 姓名跟著出席回覆走、改不動：畫成唯讀的樣子，不要看起來像可以打字 */
+.sp-drawer-body .ad-input:disabled{background:var(--bg2);color:var(--ink-soft);
+  cursor:not-allowed;}
+#spDrawerDelete{color:#a4677a;border-color:rgba(164,103,122,.4);margin-right:auto;}
+
+/* ---------- 移動到桌位 ---------- */
+.sp-move-list{display:flex;flex-direction:column;gap:6px;max-height:52vh;
+  overflow-y:auto;margin-top:6px;padding:2px;}
+.sp-move-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  cursor:pointer;background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:11px 13px;font-family:var(--font-body);font-size:13.5px;
+  letter-spacing:.05em;color:var(--ink);transition:border-color .18s;}
+.sp-move-item:hover{border-color:var(--ink);}
+.sp-move-item.is-on{border-color:var(--primary-deep);background:var(--primary-soft);}
+.sp-move-item.is-clear{color:var(--ink-soft);}
+.sp-move-name{flex:1 1 auto;min-width:0;}
+.sp-move-cap{flex:0 0 auto;font-size:11.5px;color:var(--ink-soft);
+  font-variant-numeric:tabular-nums;}
+.sp-move-warn{flex:0 0 auto;font-size:11px;color:#a4677a;}
+
+/* ---------- 標籤權重 ---------- */
+.sp-tagorder{display:flex;flex-direction:column;
+  border-top:1px solid var(--line-soft);margin-top:4px;}
+.sp-tagorder-row{display:flex;align-items:center;gap:10px;padding:9px 2px;
+  border-bottom:1px solid var(--line-soft);}
+.sp-tagorder-no{flex:0 0 22px;font-size:11.5px;letter-spacing:.1em;color:var(--ink-soft);
+  font-variant-numeric:tabular-nums;}
+.sp-tagorder-name{flex:1 1 auto;min-width:0;font-size:13.5px;color:var(--ink);}
+.sp-tagorder-row.is-rest .sp-tagorder-name{color:var(--ink-soft);}
+.sp-tagorder-row .ad-edit[disabled]{opacity:.3;cursor:not-allowed;}
+
+/* ---------- 匯入精靈 ---------- */
+.sp-import-card{width:min(94vw,680px);}
+.sp-steps{list-style:none;display:flex;gap:6px;flex-wrap:wrap;margin:0 0 18px;padding:0;}
+.sp-steps li{flex:1 1 auto;text-align:center;padding:7px 6px;
+  border:1px solid var(--line-soft);border-radius:var(--radius);
+  font-size:11px;letter-spacing:.06em;color:var(--ink-soft);background:rgba(255,255,255,.5);}
+.sp-steps li.is-done{color:var(--ink);border-color:var(--line);}
+.sp-steps li.is-on{color:#fff;background:var(--ink);border-color:var(--ink);}
+.sp-step-body{min-height:180px;}
+
+.sp-table-scroll{overflow-x:auto;border:1px solid var(--line-soft);border-radius:var(--radius);}
+.sp-preview{border-collapse:collapse;width:100%;font-size:12px;}
+.sp-preview th,.sp-preview td{border-bottom:1px solid var(--line-soft);
+  padding:6px 9px;text-align:left;white-space:nowrap;
+  max-width:180px;overflow:hidden;text-overflow:ellipsis;}
+.sp-preview th{color:var(--ink-soft);letter-spacing:.08em;font-weight:400;
+  background:var(--bg2);}
+
+.sp-map-row{display:flex;align-items:center;gap:12px;padding:8px 0;
+  border-bottom:1px solid var(--line-soft);}
+.sp-map-name{flex:0 0 88px;font-size:12px;letter-spacing:.1em;color:var(--ink-soft);}
+.sp-map-row select{flex:1 1 auto;min-width:0;padding:8px 30px 8px 11px;font-size:13px;
+  background-position:calc(100% - 16px) 15px, calc(100% - 11px) 15px;}
+
+.sp-bad{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;
+  max-height:180px;overflow-y:auto;}
+.sp-bad-row{border:1px solid rgba(164,103,122,.35);border-radius:var(--radius);
+  background:rgba(164,103,122,.06);padding:7px 11px;
+  font-size:12px;line-height:1.7;color:#8a5765;}
+
+/* ---------- 平板／手機 ----------
+   拖曳在觸控裝置上不好用，改成每張卡片自己的「移動到桌位」；
+   未安排區改成貼在最上面的一塊，仍然是先看到的東西。 */
+@media(max-width:960px){
+  .sp-board{grid-template-columns:1fr;}
+  .sp-pool{position:static;max-height:none;}
+  /* 未安排改成一格一格排，整頁才不會被一長條卡片吃掉 */
+  .sp-pool-body{max-height:44svh;display:grid;align-content:start;gap:6px;
+    grid-template-columns:repeat(auto-fill,minmax(172px,1fr));}
+  .sp-pool-body .sp-group{grid-column:1 / -1;display:grid;gap:6px;
+    grid-template-columns:repeat(auto-fill,minmax(172px,1fr));}
+  .sp-pool-body .sp-group-head{grid-column:1 / -1;}
+  .sp-card{cursor:pointer;}
+  .sp-table-head{cursor:default;}
+}
+@media(max-width:560px){
+  .sp-bar{flex-direction:column;align-items:stretch;}
+  .sp-bar-actions .btn{flex:1 1 auto;}
+  .sp-filter-lab{flex:0 0 100%;}
+  .sp-tables{grid-template-columns:1fr;}
+  .sp-steps li{flex:1 1 40%;}
+}
+
+/* 未安排區右上角的「＋ 新增賓客」（沒填回覆的長輩、臨時加的親友） */
+.sp-pool-add{flex:0 0 100%;text-align:left;color:var(--primary-deep);}
+.sp-pool-add:hover{border-bottom-color:var(--primary-deep);}
+
+/* 從排桌管理跳過來打開「開放桌次功能」時，閃一下讓人看到是哪一個開關 */
+.ad-callout.is-flash{animation:adFlash 1.6s ease;}
+@keyframes adFlash{
+  0%,100%{background:#fff;}
+  15%,55%{background:var(--primary-soft);border-color:var(--primary-deep);}
+}

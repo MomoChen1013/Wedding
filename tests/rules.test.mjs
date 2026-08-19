@@ -607,6 +607,89 @@ describe('seating（桌次名單與桌次圖）', () => {
 });
 
 /* ============================================================
+   排桌管理：整份草稿只有新人讀得寫得，賓客碰不到
+============================================================ */
+describe('seatingPlan（排桌草稿）', () => {
+  const OWNER = 'couple@example.com';
+
+  function ownerDb() {
+    return testEnv
+      .authenticatedContext('couple', { email: OWNER, email_verified: true })
+      .firestore();
+  }
+
+  function planDoc(overrides = {}) {
+    return {
+      tables: [{ id:'tb1', no:1, name:'主桌', cap:10, type:'main', typeName:'', order:1 }],
+      guests: [{ id:'g1', src:'manual', name:'王小明', code:'M01', count:2 }],
+      assign: { g1: 'tb1' },
+      savedAt: Date.now(),
+      ...overrides,
+    };
+  }
+
+  beforeEach(async () => {
+    await seedSite(SITE_ID, { ownerEmails: [OWNER] });
+  });
+
+  it('新人可以建立、修改、刪除排桌草稿', async () => {
+    const ref = doc(ownerDb(), `sites/${SITE_ID}/seatingPlan/draft`);
+    await assertSucceeds(setDoc(ref, planDoc()));
+    await assertSucceeds(setDoc(ref, planDoc({ syncedAt: Date.now() })));
+    await assertSucceeds(getDoc(ref));
+    await assertSucceeds(deleteDoc(ref));
+  });
+
+  it('賓客讀不到也寫不進去（名單上有姓名與備註）', async () => {
+    await testEnv.withSecurityRulesDisabled(async (c) => {
+      await setDoc(doc(c.firestore(), `sites/${SITE_ID}/seatingPlan/draft`), planDoc());
+    });
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(getDoc(doc(db, `sites/${SITE_ID}/seatingPlan/draft`)));
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/seatingPlan/draft`), planDoc()));
+  });
+
+  it('夾帶白名單以外的欄位會被拒', async () => {
+    await assertFails(setDoc(doc(ownerDb(), `sites/${SITE_ID}/seatingPlan/draft`),
+      planDoc({ ownerEmails: ['evil@example.com'] })));
+  });
+
+  it('桌位最多 60 桌、賓客最多 600 位', async () => {
+    const ref = doc(ownerDb(), `sites/${SITE_ID}/seatingPlan/draft`);
+    await assertFails(setDoc(ref, planDoc({
+      tables: Array.from({ length: 61 }, (_, i) => ({ id:`tb${i}`, no:i + 1, cap:10 })),
+    })));
+    await assertFails(setDoc(ref, planDoc({
+      guests: Array.from({ length: 601 }, (_, i) => ({ id:`g${i}`, src:'manual', name:`賓客${i}` })),
+    })));
+  });
+
+  it('型別不對（tables 不是陣列、assign 不是 map、savedAt 不是數字）會被拒', async () => {
+    const ref = doc(ownerDb(), `sites/${SITE_ID}/seatingPlan/draft`);
+    await assertFails(setDoc(ref, planDoc({ tables: '主桌' })));
+    await assertFails(setDoc(ref, planDoc({ assign: ['tb1'] })));
+    await assertFails(setDoc(ref, planDoc({ savedAt: '剛剛' })));
+  });
+
+  it('不在名單內的登入帳號讀不到也寫不進去', async () => {
+    const db = testEnv
+      .authenticatedContext('nosy', { email:'nosy@example.com', email_verified: true })
+      .firestore();
+    await assertFails(getDoc(doc(db, `sites/${SITE_ID}/seatingPlan/draft`)));
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/seatingPlan/draft`), planDoc()));
+  });
+
+  it('別的站台的新人碰不到這個站台的排桌草稿', async () => {
+    await seedSite('other-site', { ownerEmails: ['other@example.com'] });
+    const db = testEnv
+      .authenticatedContext('other', { email:'other@example.com', email_verified: true })
+      .firestore();
+    await assertFails(getDoc(doc(db, `sites/${SITE_ID}/seatingPlan/draft`)));
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/seatingPlan/draft`), planDoc()));
+  });
+});
+
+/* ============================================================
    電子祝福信：賓客領得到，但只有新人寫得出來
 ============================================================ */
 describe('blessings（電子祝福信）', () => {

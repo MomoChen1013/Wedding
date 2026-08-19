@@ -70,6 +70,20 @@ const PAGES = {
   admin:      { file:'admin.html',      label:'新人後台',   optional:false },
 };
 
+/* ============================================================
+   只在新人後台出現的功能開關
+   ------------------------------------------------------------
+   和上面的頁面共用同一個 sites.pages map，差別是它們沒有自己的網址：
+   不會出現在導覽列、也走不到 /w/{slug}/{key}，只決定後台要不要
+   長出那一個分頁（firestore.rules 的 pageOn() 用的是同一個 key）。
+
+   seatingPlan（排桌管理）＝把 Excel 排桌搬上線的工作台，
+   排完之後由新人自己按「同步」寫進 seating（我的桌次）那一份公開名單。
+============================================================ */
+const ADMIN_FEATURES = {
+  seatingPlan: { label:'排桌管理' },
+};
+
 /* 開關代號 → 網址片段 */
 function pathOf(key) {
   return (PAGES[key] && PAGES[key].path) || key;
@@ -303,6 +317,9 @@ async function boot() {
 
   /* 這一頁有沒有開給這組新人用（只看 pages，我們才改得動） */
   const isPageOn = (key) => {
+    /* 後台功能沒有 PAGES 條目，但一樣看 pages map（沒設定過＝全開，
+       和頁面同一套判斷，前端與 Security Rules 才不會各說各話） */
+    if (ADMIN_FEATURES[key]) return pages ? pages[key] === true : true;
     if (!PAGES[key]) return false;
     if (!PAGES[key].optional) return true;
     return pages ? pages[key] === true : true;
@@ -316,6 +333,8 @@ async function boot() {
      沒有這個欄位＝視為開著，既有站台的桌次頁不會突然消失。
      （後台自己看的是 isPageOn()，功能關著時新人照樣進得去整理名單） */
   const isEnabled = (key) => {
+    /* 後台功能不是賓客看得到的頁面，永遠不算「已啟用」 */
+    if (ADMIN_FEATURES[key]) return false;
     if (key === 'seating' && site.seatingFeatureEnabled === false) return false;
     return isPageOn(key);
   };
@@ -342,6 +361,7 @@ async function boot() {
     page: pageKey,
     data: site,
     pages: PAGES,
+    adminFeatures: ADMIN_FEATURES,
     isEnabled,
     isPageOn,
     /* 產生站內連結：pathFor('cake') → /w/{slug}/cake

@@ -319,6 +319,40 @@ service cloud.firestore {
         allow delete: if isSiteOwner(siteId);
       }
 
+      /* ---------- 排桌管理（後台的工作台） ----------
+         整份排桌草稿存在同一份文件裡（seatingPlan/draft）：
+           tables  桌位清單（桌號、桌名、容量、類型、順序）
+           guests  賓客的排桌欄位（編號、類別、人數、喜餅…）
+                   —— RSVP 本身一個字都不會被改，這裡只放「排桌時補的資料」
+           assign  賓客 id → 桌位 id 的對照（排桌關係）
+
+         為什麼是一份文件而不是三個子集合：
+         排桌是「改一堆、看整體、覺得可以了才存」的工作，
+         一次寫一份文件才存得起完整的一版，也才做得到
+         「儲存」與「同步到桌次查詢」分成兩段（見 SPEC 13.8）。
+
+         只有新人讀得到 —— 名單上有賓客的姓名、飲食與備註，
+         和 rsvps、rsvpTags 同一套身分判斷。
+         規則語言沒辦法逐筆檢查 list／map 裡的內容（和 schedule、
+         guestTags 同一個限制），所以只擋型別與筆數，
+         每一筆的欄位在後台送出前先切好、擋好。 */
+      match /seatingPlan/{docId} {
+        allow read: if isSiteOwner(siteId);
+        allow create, update: if isSiteOwner(siteId)
+          && request.resource.data.keys().hasOnly(
+               ['tables', 'guests', 'assign', 'savedAt', 'syncedAt'])
+          && request.resource.data.tables is list
+          && request.resource.data.tables.size() <= 60
+          && request.resource.data.guests is list
+          && request.resource.data.guests.size() <= 600
+          && request.resource.data.assign is map
+          && request.resource.data.assign.size() <= 600
+          && request.resource.data.savedAt is number
+          && (!('syncedAt' in request.resource.data)
+              || request.resource.data.syncedAt is number);
+        allow delete: if isSiteOwner(siteId);
+      }
+
       /* 電子祝福信：新人寫好，賓客用名字或專屬詞彙領取。
          比對在前端做，所以信件內容是公開可讀的
          —— 這裡適合寫給某人的祝福，不適合放不能被看到的祕密。

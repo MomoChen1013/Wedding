@@ -21,7 +21,7 @@ import { parseArgs } from 'node:util';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { resolveBaseUrl } from './site-url.js';
-import { OPTIONAL_PAGES } from './site-pages.js';
+import { OPTIONAL_PAGES, ADMIN_PAGES, ALL_PAGE_KEYS, PAGE_LABELS } from './site-pages.js';
 
 function parseCliArgs(argv) {
   const { values } = parseArgs({
@@ -112,9 +112,17 @@ async function checkOne(db, slug, base) {
     const known = Object.entries(s.pages).filter(([k]) => OPTIONAL_PAGES.includes(k));
     const on  = known.filter(([, v]) => v).map(([k]) => k);
     const off = known.filter(([, v]) => !v).map(([k]) => k);
-    const gone = Object.keys(s.pages).filter((k) => !OPTIONAL_PAGES.includes(k));
+    /* ALL_PAGE_KEYS 而不是 OPTIONAL_PAGES：後台功能（seatingPlan）也住在 pages 裡，
+       不然它會被當成「已下架的代號」 */
+    const gone = Object.keys(s.pages).filter((k) => !ALL_PAGE_KEYS.includes(k));
     console.log(`   已開頁面 : 大廳（固定）${on.length ? '、' + on.join('、') : ''}`);
     if (off.length) console.log(`   已關頁面 : ${off.join('、')}`);
+
+    /* 後台功能沒有網址，分開列才不會被誤會成多一頁 */
+    const admin = ADMIN_PAGES.map((k) =>
+      `${PAGE_LABELS[k] || k}${s.pages[k] === true ? '：開' : '：關'}`);
+    console.log(`   後台功能 : ${admin.join('、')}`);
+
     if (gone.length) console.log(`ℹ️  已下架的代號（留著不影響）: ${gone.join('、')}`);
   }
 

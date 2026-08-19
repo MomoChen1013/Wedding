@@ -37,6 +37,9 @@ const future = (d) => TS.fromMillis(Date.now() + d * DAY);
 const ALL_PAGES = ['rsvp','wall','cake','draw','exhibition','quiz',
   'seating','letter'];
 const allOn = Object.fromEntries(ALL_PAGES.map((k) => [k, true]));
+/* 排桌管理沒有對外網址，開關同樣放在 pages 裡（見 site-context.js 的 ADMIN_FEATURES）。
+   還原 pages 的地方也要記得帶上它，不然後台的分頁會跟著消失。 */
+const allOnPlusAdmin = { ...allOn, seatingPlan: true };
 
 const SEED = {
   /* 全部頁面都開的站台 */
@@ -48,7 +51,7 @@ const SEED = {
     story:'第一次見面是在朋友的聚會上，\n那天我們聊到了最後一個離開。',
     dressCode:'溫柔大地色系', giftNote:'您願意撥空前來就是最好的禮物 ♡',
     hashtags:['#GinnyOne2026'],
-    pages: allOn,
+    pages: allOnPlusAdmin,
     ownerEmails:['couple@example.com'],
     /* 賓客標籤：整個功能由我們打開（新人改不動），
        onForm 的那個才會變成表單上的選項 */
@@ -856,7 +859,7 @@ console.log('\n[11b] 查桌次時一併提示有信');
 {
   /* 沒開 letter 頁的站台不該出現這個入口，也不該去讀 blessings */
   await adb.collection('sites').doc(siteIds[SLUG]).update({
-    pages: { ...allOn, letter: false },
+    pages: { ...allOnPlusAdmin, letter: false },
   });
   const { page } = await visit(`/w/${SLUG}/seating`);
   await page.waitForFunction(() => DataStore.getSeating().length > 0, null, { timeout:10000 });
@@ -866,7 +869,7 @@ console.log('\n[11b] 查桌次時一併提示有信');
   ok('關掉信件頁時不顯示信件入口',
     (await page.locator('.st-letter').count()) === 0);
   await page.close();
-  await adb.collection('sites').doc(siteIds[SLUG]).update({ pages: allOn });
+  await adb.collection('sites').doc(siteIds[SLUG]).update({ pages: allOnPlusAdmin });
 }
 {
   /* 賓客不能竄改桌次名單 */
@@ -1940,6 +1943,169 @@ for(const key of ['', 'wall', 'invitation', 'quiz', 'seating', 'letter', 'exhibi
   const overflow = await page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth);
   ok(`/${key || 'lobby'} 無水平捲動`, overflow <= 1, `溢出 ${overflow}px`);
+  await page.close();
+}
+
+/* ---------- 排桌管理 ---------- */
+console.log('\n[21] 後台排桌管理');
+{
+  const siteId = siteIds[SLUG];
+  const rsvpCol = adb.collection('sites').doc(siteId).collection('rsvps');
+
+  /* 三位排桌用的賓客：人數刻意不同，容量才驗得出「算人不算筆」 */
+  const base = {
+    attending:true, tentative:false, dietaryNote:'', message:'', note:'',
+    createdAt: TS.now(),
+  };
+  await rsvpCol.doc('plan-a').set({ ...base, name:'排桌小明', guestCount:2, relation:'bride' });
+  await rsvpCol.doc('plan-b').set({ ...base, name:'排桌小美', guestCount:3, relation:'bride' });
+  await rsvpCol.doc('plan-c').set({ ...base, name:'排桌大同', guestCount:1, relation:'groom' });
+
+  const { page, errors } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+
+  ok('側欄看得到「排桌管理」',
+    await page.isVisible('.ad-tab[data-tab="seatingPlan"]'));
+
+  await page.click('.ad-tab[data-tab="seatingPlan"]');
+  await page.waitForFunction(
+    () => document.querySelector('.ad-tab.is-on')?.dataset.tab === 'seatingPlan',
+    null, { timeout:5000 });
+  ok('網址帶到第一個子分頁', page.url().endsWith('#seatingPlan/board'), page.url());
+
+  /* ---- 桌位管理：新增兩桌 ---- */
+  await page.click('.ad-subtabs[data-subtabs="seatingPlan"] .ad-subtab[data-subtab="tables"]');
+  const addTable = async (name, cap) => {
+    await page.click('#spTableAddBtn');
+    await page.waitForSelector('#spTableModalMask:not([hidden])', { timeout:5000 });
+    await page.fill('#spTableName', name);
+    await page.fill('#spTableCap', String(cap));
+    await page.click('#spTableForm button[type="submit"]');
+    await page.waitForSelector('#spTableModalMask', { state:'hidden', timeout:5000 });
+  };
+  await addTable('主桌', 10);
+  await addTable('女方親友', 2);
+
+  const tableTitles = await page.$$eval('#spTableList .ad-item-title', (els) =>
+    els.map((e) => e.textContent.trim()));
+  ok('桌號補成兩位數且接著編號',
+    tableTitles.join('／') === '01｜主桌／02｜女方親友', tableTitles.join('／'));
+
+  /* ---- 工作區：未安排區看得到賓客 ---- */
+  await page.click('.ad-subtabs[data-subtabs="seatingPlan"] .ad-subtab[data-subtab="board"]');
+  await page.waitForTimeout(400);
+  const poolText = await page.innerText('#spPoolBody');
+  ok('未安排區列出賓客', poolText.includes('排桌小明') && poolText.includes('排桌小美'),
+    poolText.replace(/\n/g, ' ').slice(0, 60));
+  ok('自動編號有給到（女方是 B 開頭）', /B\d\d/.test(poolText), poolText.slice(0, 40));
+
+  /* ---- 用「移動到桌位」把人放進第 01 桌（手機也是走這條路） ---- */
+  /* 卡片只剩兩行，「移動到桌位」在滑過去才出現的完整樣貌（peek）裡 */
+  const moveGuest = async (name, tableLabel) => {
+    await page.hover(`.sp-card:has-text("${name}")`);
+    await page.waitForSelector('#spPeek:not([hidden])', { timeout:5000 });
+    await page.click('#spPeek [data-peek="move"]');
+    await page.waitForSelector('#spMoveMask:not([hidden])', { timeout:5000 });
+    await page.click(`.sp-move-item:has-text("${tableLabel}")`);
+    await page.waitForSelector('#spMoveMask', { state:'hidden', timeout:5000 });
+  };
+  await moveGuest('排桌小明', '01｜主桌');
+  await page.waitForTimeout(200);
+
+  const tableCard = (no) => `.sp-table:has(.sp-table-no:text-is("${no}"))`;
+  const t1 = await page.innerText(tableCard('01'));
+  ok('桌位以「人數」計算容量（2 人）', t1.includes('2 / 10 人'), t1.replace(/\n/g, ' ').slice(0, 60));
+  ok('顯示剩餘座位', t1.includes('剩餘 8 位'), t1.replace(/\n/g, ' ').slice(0, 60));
+
+  /* ---- 超過容量：3 人排進容量 2 的桌子，提醒但不擋 ---- */
+  await moveGuest('排桌小美', '02｜女方親友');
+  await page.waitForTimeout(200);
+  const t2 = await page.innerText(tableCard('02'));
+  ok('超過容量仍然排得進去', t2.includes('3 / 2 人'), t2.replace(/\n/g, ' ').slice(0, 60));
+  ok('超過容量有明確提醒', t2.includes('超過容量 1 位'), t2.replace(/\n/g, ' ').slice(0, 60));
+  /* 提醒預設只露出前幾條，先展開再看 */
+  if (await page.locator('#spWarnToggle').count()) await page.click('#spWarnToggle');
+  await page.waitForTimeout(200);
+  ok('上方警告列也講一次',
+    (await page.innerText('#spWarns')).includes('第 02 桌超過容量 1 位'),
+    (await page.innerText('#spWarns')).replace(/\n/g, ' ').slice(0, 80));
+
+  /* ---- 復原 ---- */
+  await page.click('#spUndo');
+  await page.waitForTimeout(300);
+  ok('復原把小美放回未安排',
+    (await page.innerText('#spPoolBody')).includes('排桌小美'));
+  await page.click('#spRedo');
+  await page.waitForTimeout(300);
+  ok('重做又把她排回去',
+    (await page.innerText(tableCard('02'))).includes('排桌小美'));
+
+  /* ---- 儲存：存完先問要不要同步，選「稍後再說」 ---- */
+  await page.click('#spSaveBtn');
+  await page.waitForSelector('#adModalMask:not([hidden])', { timeout:8000 });
+  ok('存完會先問要不要同步',
+    (await page.textContent('#adModalTitle')).includes('排桌已儲存'),
+    await page.textContent('#adModalTitle'));
+  await page.click('#adModalCancel');
+  await page.waitForTimeout(600);
+
+  const draft = (await adb.collection('sites').doc(siteId)
+    .collection('seatingPlan').doc('draft').get()).data();
+  ok('排桌草稿寫進 seatingPlan/draft', !!draft);
+  ok('草稿裡有兩桌', draft && draft.tables.length === 2, draft && String(draft.tables.length));
+  ok('草稿記下了排桌關係',
+    draft && Object.keys(draft.assign).length === 2,
+    draft && JSON.stringify(draft.assign));
+
+  /* 沒按同步 → 前台的桌次名單不該被動到 */
+  const before = await adb.collection('sites').doc(siteId).collection('seating').get();
+  ok('沒同步就不會動到賓客的桌次查詢',
+    before.docs.every((d) => !String(d.data().name).startsWith('排桌')),
+    `${before.size} 筆`);
+  ok('狀態顯示尚未同步',
+    (await page.textContent('#spSyncState')).includes('尚未同步'),
+    await page.textContent('#spSyncState'));
+
+  /* ---- 同步 ---- */
+  await page.click('#spSyncBtn');
+  await page.waitForSelector('#adModalMask:not([hidden])', { timeout:8000 });
+  await page.click('#adModalConfirm');
+  await page.waitForTimeout(1500);
+
+  const after = await adb.collection('sites').doc(siteId).collection('seating').get();
+  const rows = after.docs.map((d) => d.data());
+  ok('同步後桌次查詢讀得到排好的位子',
+    rows.some((r) => r.name === '排桌小明' && r.table === '01｜主桌'),
+    JSON.stringify(rows.slice(0, 2)));
+  ok('同步是整份換掉（舊名單不會殘留）',
+    !rows.some((r) => r.name === '王小明' && r.table === '第 3 桌'),
+    `${rows.length} 筆`);
+  ok('狀態變成已同步',
+    (await page.textContent('#spSyncState')).includes('已同步'),
+    await page.textContent('#spSyncState'));
+
+  /* ---- 匯出：至少要跑得完、拿得到檔案 ---- */
+  const dl = await Promise.all([
+    page.waitForEvent('download', { timeout:10000 }),
+    page.click('.ad-subtabs[data-subtabs="seatingPlan"] .ad-subtab[data-subtab="io"]')
+      .then(() => page.click('#spExportXlsx')),
+  ]).then(([d]) => d).catch(() => null);
+  ok('匯出 Excel 下載得到檔案', !!dl && /^seating-plan-.*\.xlsx$/.test(dl.suggestedFilename()),
+    dl ? dl.suggestedFilename() : '(沒有下載)');
+
+  ok('排桌管理分頁無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+{
+  /* 沒開這個開關的站台，後台就不該長出「排桌管理」 */
+  const { page } = await visit('/w/minimal-site-2027/admin');
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  ok('沒開 seatingPlan 的站台看不到排桌管理',
+    await page.evaluate(() =>
+      document.querySelector('.ad-tab[data-tab="seatingPlan"]').hidden));
   await page.close();
 }
 

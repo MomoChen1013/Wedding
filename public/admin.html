@@ -69,6 +69,7 @@
       <button class="ad-tab" type="button" data-tab="inbox">悄悄話</button>
       <button class="ad-tab" type="button" data-tab="lobby">婚禮資訊</button>
       <button class="ad-tab" type="button" data-tab="seating">桌次</button>
+      <button class="ad-tab" type="button" data-tab="seatingPlan">排桌管理</button>
       <button class="ad-tab" type="button" data-tab="letters">感謝信</button>
       <button class="ad-tab" type="button" data-tab="cards">婚禮小卡</button>
       <button class="ad-tab" type="button" data-tab="exhibits">新人故事牆</button>
@@ -519,6 +520,154 @@
     </div>
   </div>
 
+
+  <!-- ============================================================
+       分頁 3b：排桌管理
+       ------------------------------------------------------------
+       把 Excel 排桌搬上線的工作台。三個子分頁：
+         排桌工作區 — 未安排賓客 ←→ 桌位，拖曳安排
+         桌位管理   — 新增／編輯／排序桌位
+         匯入匯出   — Excel／CSV 雙向進出
+       排完之後要自己按「儲存排桌」，再決定要不要同步到賓客的桌次查詢。
+  ============================================================ -->
+  <div class="ad-panel" data-panel="seatingPlan">
+
+    <nav class="ad-subtabs" data-subtabs="seatingPlan">
+      <button class="ad-subtab is-on" type="button" data-subtab="board">排桌工作區</button>
+      <button class="ad-subtab" type="button" data-subtab="tables">桌位管理</button>
+      <button class="ad-subtab" type="button" data-subtab="io">匯入匯出</button>
+    </nav>
+
+    <!-- ---------- 3b-1 排桌工作區 ---------- -->
+    <div class="ad-subpanel is-on" data-subpanel="board">
+
+      <!-- 儲存與同步：整頁最上面，永遠看得到現在是什麼狀態 -->
+      <!-- 同步狀態、即時統計、儲存／同步收在同一列，
+           工作區才拿得回螢幕的高度（窄螢幕會自己拆行） -->
+      <div class="sp-bar">
+        <div class="ad-stats sp-stats" id="spStats"></div>
+        <div class="sp-bar-status">
+          <span class="sp-sync" id="spSyncState" data-state="none">尚未同步</span>
+          <span class="sp-sync-note" id="spSyncNote">目前排桌資料尚未同步至桌次查詢系統</span>
+        </div>
+        <div class="sp-bar-actions">
+          <button class="btn small ghost" id="spUndo" type="button" disabled>復原</button>
+          <button class="btn small ghost" id="spRedo" type="button" disabled>重做</button>
+          <button class="btn small ghost" id="spSyncBtn" type="button">同步至桌次查詢</button>
+          <button class="btn small" id="spSaveBtn" type="button">儲存排桌</button>
+        </div>
+      </div>
+
+      <!-- 提醒（不擋操作，只提醒） -->
+      <div class="sp-warns" id="spWarns"></div>
+
+      <!-- 左：未安排　右：桌位 -->
+      <div class="sp-board">
+        <aside class="sp-pool" id="spPool">
+          <div class="sp-pool-head">
+            <span class="sp-pool-title">未安排</span>
+            <span class="sp-pool-count" id="spPoolCount">0 位</span>
+            <button class="ad-edit sp-pool-add" id="spGuestAddBtn" type="button">＋ 新增賓客</button>
+          </div>
+
+          <!-- 搜尋／篩選／排序都是在整理這一區，所以就住在這一區裡 -->
+          <div class="sp-tools">
+            <div class="sp-tools-row">
+              <input class="ad-filter sp-search" id="spSearch" type="text"
+                     placeholder="搜尋姓名、編號、標籤…">
+              <button class="btn small ghost" id="spFilterToggle" type="button"
+                      aria-expanded="false" aria-controls="spFilters">篩選</button>
+            </div>
+
+            <div class="sp-tools-row sp-tools-sort">
+              <label class="sp-select">排序
+                <select class="ad-input" id="spSort">
+                  <option value="default">預設（依編號）</option>
+                  <option value="name">依姓名</option>
+                  <option value="countDesc">人數多 → 少</option>
+                  <option value="countAsc">人數少 → 多</option>
+                  <option value="tag">優先按照標籤分組</option>
+                </select>
+              </label>
+              <button class="btn small ghost" id="spTagOrderBtn" type="button">標籤權重</button>
+            </div>
+
+            <div class="sp-filters" id="spFilters" hidden>
+              <div class="sp-filter-line">
+                <span class="sp-filter-lab">RSVP</span>
+                <div class="ad-chips" id="spRsvpChips">
+                  <button class="ad-chip is-on" type="button" data-rsvp="all">全部</button>
+                  <button class="ad-chip" type="button" data-rsvp="yes">已確認</button>
+                  <button class="ad-chip" type="button" data-rsvp="maybe">待確認</button>
+                </div>
+              </div>
+              <div class="sp-filter-line" id="spTagFilterLine">
+                <span class="sp-filter-lab">標籤</span>
+                <div class="ad-chips" id="spTagChips"></div>
+              </div>
+              <label class="ad-check sp-filter-declined">
+                <input type="checkbox" id="spShowDeclined">
+                <span>顯示「無法出席」的賓客<small>預設不列，他們不需要位子</small></span>
+              </label>
+            </div>
+          </div>
+          <div class="sp-pool-body" id="spPoolBody" data-drop="pool"></div>
+        </aside>
+
+        <div class="sp-tables" id="spTablesBoard"></div>
+      </div>
+    </div>
+
+    <!-- ---------- 3b-2 桌位管理 ---------- -->
+    <div class="ad-subpanel" data-subpanel="tables">
+      <section class="ad-sec">
+        <div class="ad-sec-head">
+          <h2 class="ad-sec-title">桌位管理</h2>
+          <div class="ad-sec-head-actions">
+            <button class="btn small" id="spTableAddBtn" type="button">新增桌位</button>
+            <button class="btn small ghost" id="spTableBatchBtn" type="button">一次加好幾桌</button>
+          </div>
+        </div>
+        <p class="ad-sec-note">
+          桌號一律是<b>兩位數</b>（01、02…10、11），排序、桌名、容量、類型都可以改。
+          調整順序<b>不會</b>影響已經排好的賓客 —— 賓客記的是桌位本身，不是桌號。
+        </p>
+        <div class="ad-list" id="spTableList"></div>
+      </section>
+    </div>
+
+    <!-- ---------- 3b-3 匯入匯出 ---------- -->
+    <div class="ad-subpanel" data-subpanel="io">
+      <section class="ad-sec">
+        <div class="ad-sec-head">
+          <h2 class="ad-sec-title">匯入</h2>
+          <div class="ad-sec-head-actions">
+            <button class="btn small" id="spImportBtn" type="button">匯入 Excel／CSV</button>
+          </div>
+        </div>
+        <p class="ad-sec-note">
+          支援 <b>.xlsx</b> 與 <b>.csv</b>。匯入分成五步：選檔案 → 預覽 → 欄位對應 →
+          檢查資料 → 確認匯入。<b>有問題的那幾筆不會被匯進來</b>，會逐筆告訴你是第幾列、哪裡不對。
+        </p>
+      </section>
+
+      <section class="ad-sec">
+        <div class="ad-sec-head">
+          <h2 class="ad-sec-title">匯出</h2>
+        </div>
+        <p class="ad-sec-note">
+          「賓客明細」是一列一位賓客；「桌位排桌表」依桌位分組，每桌最後附上總人數。
+          Excel 檔一次含這兩張工作表。
+        </p>
+        <div class="ad-row">
+          <button class="btn small" id="spExportXlsx" type="button">匯出 Excel</button>
+          <button class="btn small ghost" id="spExportCsv" type="button">匯出 CSV（賓客明細）</button>
+          <button class="btn small ghost" id="spExportCsvTable" type="button">匯出 CSV（桌位排桌表）</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
   <!-- ============================================================
        分頁 4：感謝信
   ============================================================ -->
@@ -927,6 +1076,170 @@
   </div>
 </div>
 
+<!-- ============================================================
+     排桌管理的彈窗與抽屜
+============================================================ -->
+
+<!-- 賓客卡的「完整樣貌」：桌機滑過去、手機／平板點一下才出現。
+     用 fixed 貼著卡片畫，才不會被「未安排」那一欄的捲動容器裁掉 -->
+<div class="sp-peek" id="spPeek" hidden></div>
+
+<!-- 賓客詳細資料：從右邊滑出來，可以直接改 -->
+<div class="sp-drawer-mask" id="spDrawerMask" hidden></div>
+<aside class="sp-drawer" id="spDrawer" hidden aria-label="賓客詳細資料">
+  <div class="sp-drawer-head">
+    <div>
+      <div class="sp-drawer-title" id="spDrawerName">賓客</div>
+      <div class="sp-drawer-sub" id="spDrawerWhere"></div>
+    </div>
+    <button class="sp-drawer-close" id="spDrawerClose" type="button" aria-label="關閉">✕</button>
+  </div>
+
+  <form class="ad-form sp-drawer-body" id="spDrawerForm">
+    <input type="hidden" id="spDrawerId">
+
+    <label class="ad-label" for="spDrawerCode">編號</label>
+    <input class="ad-input" id="spDrawerCode" type="text" maxlength="12" placeholder="B01">
+
+    <label class="ad-label" for="spDrawerNameInput">姓名</label>
+    <input class="ad-input" id="spDrawerNameInput" type="text" maxlength="40">
+    <div class="ad-hint" id="spDrawerNameLock" hidden>
+      這是賓客自己送出的回覆，姓名以回覆為準，改不動。
+    </div>
+
+    <label class="ad-label" for="spDrawerCat">類別</label>
+    <input class="ad-input" id="spDrawerCat" type="text" maxlength="20" placeholder="女方父母朋友">
+
+    <label class="ad-label" for="spDrawerRsvp">RSVP</label>
+    <select class="ad-input" id="spDrawerRsvp">
+      <option value="yes">已確認</option>
+      <option value="maybe">待確認</option>
+      <option value="no">無法出席</option>
+    </select>
+    <div class="ad-hint" id="spDrawerOverride" hidden>
+      這裡改的是<b>排桌用</b>的資料。賓客當初送出的回覆本身不會被改動，
+      「出席回覆」那一頁看到的仍然是原本的內容。
+    </div>
+
+    <label class="ad-label" for="spDrawerCount">人數</label>
+    <input class="ad-input ad-input-sm" id="spDrawerCount" type="number" min="0" max="30" step="1">
+
+    <label class="ad-label">Tags</label>
+    <div class="sp-drawer-tags" id="spDrawerTags"></div>
+    <div class="ad-hint" id="spDrawerTagsOff" hidden>
+      這個站台還沒開賓客標籤，排桌時就只能用類別分群。
+    </div>
+
+    <label class="ad-label" for="spDrawerNote">備註</label>
+    <textarea class="ad-textarea" id="spDrawerNote" rows="3" maxlength="200"></textarea>
+
+    <label class="ad-label" for="spDrawerSeats">兒童椅</label>
+    <input class="ad-input ad-input-sm" id="spDrawerSeats" type="number" min="0" max="10" step="1">
+    <div class="ad-hint">出席回覆填過就自動帶進來，這裡可以改；桌卡會加總成「🪑 N 個兒童椅」。</div>
+
+    <label class="ad-label" for="spDrawerGift">喜餅數量</label>
+    <input class="ad-input ad-input-sm" id="spDrawerGift" type="number" min="0" max="99" step="1">
+
+    <label class="ad-check">
+      <input type="checkbox" id="spDrawerGot"><span>喜餅已確認收到</span>
+    </label>
+
+    <label class="ad-label" for="spDrawerTable">目前桌號</label>
+    <select class="ad-input" id="spDrawerTable"></select>
+
+    <div class="ad-modal-actions">
+      <button class="btn small ghost" id="spDrawerDelete" type="button" hidden>刪除賓客</button>
+      <button class="btn small" type="submit">儲存賓客資料</button>
+    </div>
+  </form>
+</aside>
+
+<!-- 桌位：新增／編輯共用 -->
+<div class="ad-modal-mask" id="spTableModalMask" hidden>
+  <div class="ad-modal-card ad-modal-card-form">
+    <div class="ad-modal-title" id="spTableModalTitle">新增桌位</div>
+    <form class="ad-form" id="spTableForm">
+      <input type="hidden" id="spTableId">
+
+      <label class="ad-label" for="spTableNo">桌號</label>
+      <input class="ad-input ad-input-sm" id="spTableNo" type="number" min="1" max="99" step="1" value="1">
+      <div class="ad-hint">畫面上一律顯示成兩位數（1 → 01）。桌號不可以重複。</div>
+
+      <label class="ad-label" for="spTableName">桌名</label>
+      <input class="ad-input" id="spTableName" type="text" maxlength="20" placeholder="主桌（沒填就只顯示桌號）">
+
+      <label class="ad-label" for="spTableCap">容量（人）</label>
+      <input class="ad-input ad-input-sm" id="spTableCap" type="number" min="1" max="30" step="1" value="10">
+
+      <label class="ad-label" for="spTableType">桌位類型</label>
+      <select class="ad-input" id="spTableType"></select>
+
+      <div id="spTableTypeCustomBox" hidden>
+        <label class="ad-label" for="spTableTypeCustom">自訂類型名稱</label>
+        <input class="ad-input" id="spTableTypeCustom" type="text" maxlength="10" placeholder="招待桌">
+      </div>
+
+      <div class="ad-modal-actions">
+        <button class="btn small ghost" id="spTableDeleteBtn" type="button" hidden>刪除這一桌</button>
+        <button class="btn small ghost" id="spTableCancelBtn" type="button">取消</button>
+        <button class="btn small" type="submit">儲存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 手機／平板用：把賓客移到哪一桌（取代拖曳） -->
+<div class="ad-modal-mask" id="spMoveMask" hidden>
+  <div class="ad-modal-card ad-modal-card-form">
+    <div class="ad-modal-title">移動到桌位</div>
+    <p class="ad-modal-note" id="spMoveWho"></p>
+    <div class="sp-move-list" id="spMoveList"></div>
+    <div class="ad-modal-actions">
+      <button class="btn small ghost" id="spMoveCancel" type="button">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 標籤權重：決定一位多標籤的賓客要被歸到哪一組 -->
+<div class="ad-modal-mask" id="spTagOrderMask" hidden>
+  <div class="ad-modal-card ad-modal-card-form">
+    <div class="ad-modal-title">標籤權重</div>
+    <p class="ad-modal-note">
+      一位賓客可能同時有好幾個標籤（女方好友＋VIP＋素食），分組時只能算在一組裡。
+      這份清單決定<b>哪一個說了算</b>：排序選「優先按照標籤分組」時，
+      <b>由上往下第一個對到的標籤</b>就是他的組，不會重複出現在兩組裡。
+      卡片上原本的標籤都會完整保留，也不會動到任何人的位子。
+    </p>
+    <div class="sp-tagorder" id="spTagOrderList"></div>
+    <div class="ad-modal-actions">
+      <button class="btn small ghost" id="spTagOrderCancel" type="button">關閉</button>
+    </div>
+  </div>
+</div>
+
+<!-- 匯入精靈：五個步驟共用同一個彈窗 -->
+<div class="ad-modal-mask" id="spImportMask" hidden>
+  <div class="ad-modal-card ad-modal-card-form sp-import-card">
+    <div class="ad-modal-title">匯入賓客名單</div>
+
+    <ol class="sp-steps" id="spSteps">
+      <li data-step="1">選擇檔案</li>
+      <li data-step="2">預覽資料</li>
+      <li data-step="3">欄位對應</li>
+      <li data-step="4">檢查資料</li>
+      <li data-step="5">確認匯入</li>
+    </ol>
+
+    <div class="sp-step-body" id="spStepBody"></div>
+
+    <div class="ad-modal-actions">
+      <button class="btn small ghost" id="spImportCancel" type="button">取消</button>
+      <button class="btn small ghost" id="spImportBack" type="button" hidden>上一步</button>
+      <button class="btn small" id="spImportNext" type="button">下一步</button>
+    </div>
+  </div>
+</div>
+
 <!-- 照片裁切器：只有後台用得到，先載好，admin.js 直接呼叫 cropImage() -->
 <script defer src="/js/cropper.js"></script>
 
@@ -935,6 +1248,11 @@
 
 <!-- 故事牆的預設故事與章節（與戀愛時光那一頁共用同一份） -->
 <script defer src="/js/exhibit-defaults.js"></script>
+
+<!-- 排桌管理：Excel 讀寫器與工作台本體。
+     兩支都只在後台用得到，掛在 window 上等 admin.js 登入成功後才叫用 -->
+<script defer src="/js/xlsx-lite.js"></script>
+<script defer src="/js/seating-plan.js"></script>
 
 <!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與本頁 JS -->
 <script type="module" src="/js/site-context.js"></script>
