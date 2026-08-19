@@ -109,7 +109,7 @@
     rsvp: 'all',       /* all / yes / maybe / no */
     tags: new Set(),   /* 多選；空的代表不篩 */
     table: 'all',
-    sort: 'code',
+    sort: 'default',
     tagOrder: [],      /* 分組優先順序（標籤 id），沒設定就照標籤庫的順序 */
   };
 
@@ -505,7 +505,7 @@
      篩選 / 排序 / 分組
   ============================================================ */
 
-  /* 一位多標籤的賓客要被歸到哪一組：照分組順序，第一個對到的就是他的組。
+  /* 一位多標籤的賓客要被歸到哪一組：照標籤權重由上往下，第一個對到的就是他的組。
      原本的標籤全部保留，只是「顯示在哪一群」需要一個唯一答案。 */
   function groupOrder() {
     const lib = tagLib();
@@ -538,6 +538,8 @@
   function sortGuests(list) {
     const arr = list.slice();
     const byCode = (a, b) => String(a.code).localeCompare(String(b.code), 'zh-Hant');
+    /* 預設排序就是編號由小到大 —— 編號是照回覆時間給的，
+       所以「預設」等於「回覆進來的順序」，最接近新人手上那份 Excel */
     if (view.sort === 'name') arr.sort((a, b) => String(a.name).localeCompare(String(b.name), 'zh-Hant'));
     else if (view.sort === 'countDesc') arr.sort((a, b) => b.count - a.count || byCode(a, b));
     else if (view.sort === 'countAsc') arr.sort((a, b) => a.count - b.count || byCode(a, b));
@@ -982,8 +984,8 @@
     $('spTagChips').innerHTML = lib.map((t) => `
       <button class="ad-chip${view.tags.has(t.id) ? ' is-on' : ''}" type="button"
               data-tag="${esc(t.id)}">${esc(t.name)}</button>`).join('');
-    /* 分組順序只有在「優先按照 Tags 分組」時才有作用，
-       其他排序方式下擺著只會讓人不知道它是幹嘛的 */
+    /* 標籤權重只有在「優先按照標籤分組」時才有作用，
+       其他排序方式下擺著只會讓人不知道那顆按鈕是幹嘛的 */
     $('spTagOrderBtn').hidden = !lib.length || view.sort !== 'tag';
 
     const sel = $('spTableFilter');
@@ -1524,7 +1526,7 @@
   }
 
   /* ============================================================
-     分組順序
+     標籤權重（決定多標籤的賓客歸到哪一組）
   ============================================================ */
   function renderTagOrder() {
     const order = groupOrder();
@@ -2062,7 +2064,7 @@
       if (e.key === 'Escape' && !drawer.hidden) closeDrawer();
     });
 
-    /* ---- 分組順序 ---- */
+    /* ---- 標籤權重 ---- */
     $('spTagOrderBtn').addEventListener('click', () => {
       renderTagOrder();
       $('spTagOrderMask').hidden = false;

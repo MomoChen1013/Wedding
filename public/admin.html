@@ -545,11 +545,11 @@
       <!-- 同步狀態、即時統計、儲存／同步收在同一列，
            工作區才拿得回螢幕的高度（窄螢幕會自己拆行） -->
       <div class="sp-bar">
+        <div class="ad-stats sp-stats" id="spStats"></div>
         <div class="sp-bar-status">
           <span class="sp-sync" id="spSyncState" data-state="none">尚未同步</span>
           <span class="sp-sync-note" id="spSyncNote">目前排桌資料尚未同步至桌次查詢系統</span>
         </div>
-        <div class="ad-stats sp-stats" id="spStats"></div>
         <div class="sp-bar-actions">
           <button class="btn small ghost" id="spUndo" type="button" disabled>復原</button>
           <button class="btn small ghost" id="spRedo" type="button" disabled>重做</button>
@@ -564,21 +564,34 @@
       <!-- 搜尋 / 篩選 / 排序 -->
       <div class="sp-tools">
         <div class="sp-tools-row">
-          <input class="ad-filter sp-search" id="spSearch" type="text"
-                 placeholder="搜尋姓名、編號、類別、桌號或標籤…">
-          <label class="sp-select">排序
-            <select class="ad-input" id="spSort">
-              <option value="code">依編號</option>
-              <option value="name">依姓名</option>
-              <option value="countDesc">人數多 → 少</option>
-              <option value="countAsc">人數少 → 多</option>
-              <option value="tag">優先按照 Tags 分組</option>
-            </select>
-          </label>
-          <button class="btn small ghost" id="spTagOrderBtn" type="button">分組順序</button>
-          <button class="btn small ghost" id="spFilterToggle" type="button"
-                  aria-expanded="false" aria-controls="spFilters">篩選</button>
+          <!-- 左邊這一組是「要用什麼順序排桌」，右邊是「找人」。
+               中間一條直線隔開，才不會被當成同一件事 -->
+          <div class="sp-tools-group">
+            <label class="sp-select">未安排排序
+              <select class="ad-input" id="spSort">
+                <option value="default">預設排序（依編號）</option>
+                <option value="name">依姓名</option>
+                <option value="countDesc">人數多 → 少</option>
+                <option value="countAsc">人數少 → 多</option>
+                <option value="tag">優先按照標籤分組</option>
+              </select>
+            </label>
+            <button class="btn small ghost" id="spTagOrderBtn" type="button">標籤權重</button>
+          </div>
+
+          <span class="sp-tools-sep" aria-hidden="true"></span>
+
+          <div class="sp-tools-group sp-tools-find">
+            <input class="ad-filter sp-search" id="spSearch" type="text"
+                   placeholder="搜尋姓名、編號、類別、桌號或標籤…">
+            <button class="btn small ghost" id="spFilterToggle" type="button"
+                    aria-expanded="false" aria-controls="spFilters">篩選</button>
+          </div>
         </div>
+        <p class="sp-tools-note">
+          排序只改變<b>「未安排」那一區的顯示順序</b> ——
+          不會動到任何人的位子，也不需要復原。
+        </p>
 
         <div class="sp-filters" id="spFilters" hidden>
           <div class="sp-filter-line">
@@ -1204,14 +1217,15 @@
   </div>
 </div>
 
-<!-- 分組順序：決定一位多標籤的賓客要被歸到哪一組 -->
+<!-- 標籤權重：決定一位多標籤的賓客要被歸到哪一組 -->
 <div class="ad-modal-mask" id="spTagOrderMask" hidden>
   <div class="ad-modal-card ad-modal-card-form">
-    <div class="ad-modal-title">Tags 分組順序</div>
+    <div class="ad-modal-title">標籤權重</div>
     <p class="ad-modal-note">
-      一位賓客可能同時有好幾個標籤（女方好友＋VIP＋素食）。
-      排序選「優先按照 Tags 分組」時，<b>由上往下第一個對到的標籤</b>就是他的分組，
-      不會重複出現在兩組裡。原本的標籤都會完整保留。
+      一位賓客可能同時有好幾個標籤（女方好友＋VIP＋素食），分組時只能算在一組裡。
+      這份清單決定<b>哪一個說了算</b>：排序選「優先按照標籤分組」時，
+      <b>由上往下第一個對到的標籤</b>就是他的組，不會重複出現在兩組裡。
+      卡片上原本的標籤都會完整保留，也不會動到任何人的位子。
     </p>
     <div class="sp-tagorder" id="spTagOrderList"></div>
     <div class="ad-modal-actions">

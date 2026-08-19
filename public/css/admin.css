@@ -686,10 +686,15 @@ select.ad-input{appearance:none;cursor:pointer;
 .sp-stats .ad-stat-num{font-size:clamp(17px,1.7vw,23px);}
 .sp-stats .ad-stat-lab{margin-top:2px;font-size:10.5px;letter-spacing:.04em;
   white-space:nowrap;}
+/* 窄螢幕拆成兩段：先四個統計，一條線之後才是同步狀態與按鈕。
+   先看「還剩幾個人沒排」，再決定要不要存、要不要同步。 */
 @media(max-width:1180px){
-  .sp-bar-actions{margin-left:0;}
-  .sp-stats{flex:1 1 100%;order:3;padding-top:10px;border-top:1px solid var(--line-soft);}
-  .sp-bar-actions{order:2;}
+  .sp-bar{gap:10px;}
+  .sp-stats{flex:1 1 100%;order:1;}
+  .sp-bar-status{flex:1 1 100%;order:2;
+    padding-top:10px;border-top:1px solid var(--line-soft);}
+  .sp-bar-actions{flex:1 1 100%;order:3;margin-left:0;}
+  .sp-bar-actions .btn{flex:1 1 auto;}
 }
 @media(max-width:430px){
   .sp-stats .ad-stat{padding:2px 2px;}
@@ -731,8 +736,21 @@ select.ad-input{appearance:none;cursor:pointer;
 /* ---------- 工具列 ---------- */
 .sp-tools{margin:20px 0 16px;padding:14px 16px;border:1px solid var(--line-soft);
   border-radius:var(--radius);background:rgba(255,255,255,.6);}
-.sp-tools-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
-.sp-search{flex:1 1 260px;}
+.sp-tools-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+/* 左邊「用什麼順序排桌」，右邊「找人」，中間一條直線隔開 */
+.sp-tools-group{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.sp-tools-find{flex:1 1 320px;min-width:0;}
+.sp-tools-sep{flex:0 0 auto;align-self:center;width:1px;height:30px;
+  background:var(--ink);opacity:.28;}
+.sp-tools-note{margin:10px 0 0;font-size:11.5px;line-height:1.8;
+  letter-spacing:.02em;color:var(--ink-soft);}
+.sp-tools-note b{color:var(--ink);font-weight:500;}
+.sp-search{flex:1 1 240px;min-width:0;}
+@media(max-width:760px){
+  .sp-tools-sep{display:none;}
+  .sp-tools-group{flex:1 1 100%;}
+  .sp-tools-find{padding-top:10px;border-top:1px solid var(--line-soft);}
+}
 .sp-select{display:flex;align-items:center;gap:7px;flex:0 0 auto;
   font-size:11.5px;letter-spacing:.14em;color:var(--ink-soft);}
 .sp-select select{padding:8px 30px 8px 11px;font-size:13px;width:auto;min-width:150px;
@@ -942,7 +960,7 @@ select.ad-input{appearance:none;cursor:pointer;
   font-variant-numeric:tabular-nums;}
 .sp-move-warn{flex:0 0 auto;font-size:11px;color:#a4677a;}
 
-/* ---------- 分組順序 ---------- */
+/* ---------- 標籤權重 ---------- */
 .sp-tagorder{display:flex;flex-direction:column;
   border-top:1px solid var(--line-soft);margin-top:4px;}
 .sp-tagorder-row{display:flex;align-items:center;gap:10px;padding:9px 2px;
