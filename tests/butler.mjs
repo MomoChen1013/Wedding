@@ -161,6 +161,30 @@ function entriesCol(){
   return adb.collection('butlers').doc(BOOK_ID).collection('entries');
 }
 
+/* ---------- 等伺服器追上畫面 ----------
+   瀏覽器端的 onSnapshot 會先送出一份「帶著本地未確認寫入」的快照，
+   所以畫面上的數字比伺服器早一步就變了。
+   但這裡用 Admin SDK 讀的是伺服器狀態 —— 看到畫面變了就直接讀，
+   機器忙的時候會讀到還沒套用的舊資料（閒置時多半剛好會過，
+   於是變成一個「有時候紅」的測試）。
+
+   所以凡是「在瀏覽器裡操作 → 用 adb 驗結果」都要走這裡。
+   最多等 10 秒；真的沒寫進去時仍然會失敗，不會變成永遠會過的測試。 */
+async function waitForServer(read, done, { tries = 40, gap = 250 } = {}){
+  let snap = await read();
+  for(let i = 0; i < tries && !done(snap); i++){
+    await new Promise((r) => setTimeout(r, gap));
+    snap = await read();
+  }
+  return snap;
+}
+
+/* 收禮簿的賓客名單，讀不到就給空陣列 ——
+   斷言才不會因為 undefined[0] 直接炸掉、把後面的測試全部帶走 */
+function guestsOf(snap){
+  return snap.exists && Array.isArray(snap.data().guests) ? snap.data().guests : [];
+}
+
 /* ============================================================
    1. 通行碼
 ============================================================ */
@@ -241,12 +265,8 @@ console.log('\n【記一筆禮金】');
   await page.click('#btSave');
   await page.waitForSelector('#btSheet', { state:'hidden', timeout:10000 });
 
-  /* 真的寫進 Firestore 了嗎 */
-  let snap;
-  for(let i = 0; i < 40 && (!snap || snap.size !== 1); i++){
-    snap = await entriesCol().get();
-    if(snap.size !== 1) await new Promise((r) => setTimeout(r, 250));
-  }
+  /* 真的寫進 Firestore 了嗎（畫面早一步變，要等伺服器追上來） */
+  const snap = await waitForServer(() => entriesCol().get(), (s) => s.size === 1);
   const rec = snap.size === 1 ? snap.docs[0].data() : null;
   ok('收禮寫進 Firestore 了', !!rec, `共 ${snap ? snap.size : 0} 筆`);
   if(rec){
@@ -441,14 +461,21 @@ console.log('\n【後台】');
     null, { timeout:20000 });
   ok('匯入出席回覆，說不來的那位不會被帶進去', true);
 
-  const after = await adb.collection('butlers').doc(derived).get();
+  /* 畫面上的「名單 1 位」來自本地尚未確認的寫入，不能當作伺服器已經收到 */
+  const after = await waitForServer(
+    () => adb.collection('butlers').doc(derived).get(),
+    (s) => guestsOf(s).length === 1);
+  const guests = guestsOf(after);
   ok('名單寫進收禮簿了',
-    after.data().guests.length === 1 && after.data().guests[0].name === '黃美麗');
-  ok('人數跟著回覆走', after.data().guests[0].count === 3);
+    guests.length === 1 && guests[0].name === '黃美麗',
+    `${guests.length} 位`);
+  ok('人數跟著回覆走', guests.length === 1 && guests[0].count === 3);
 
   /* 現場記一筆，後台的統計要跟著動 */
   await adb.collection('butlers').doc(derived).collection('entries').add({
-    guestId: after.data().guests[0].id, name:'黃美麗', code:'', table:'',
+    /* 名單真的沒進來時這裡會是空字串：讓上面的斷言去紅，
+       而不是丟一個 undefined 給 Admin SDK 讓整支測試中斷 */
+    guestId: (guests[0] || {}).id || '', name:'黃美麗', code:'', table:'',
     amount: 3600, gift: true, boxes: 2, people: 3, note:'', by:'阿華',
     createdAt: Date.now(), updatedAt: Date.now(),
   });
