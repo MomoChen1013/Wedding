@@ -11,6 +11,7 @@
 
      public/assets/{slug}/
        cover.jpg              封面大圖（單頁邀請函）
+       share.jpg              社群分享縮圖的來源（選填；沒放就用 cover）
        lobby.jpg              首頁固定背景（圖片）
        lobby.mp4              首頁固定背景（影片；放了就優先用影片）
        lobby-blur.jpg         大廳背景的模糊版（選填）
@@ -54,7 +55,14 @@ const SINGLE_FILES = {
   cover: 'cover',
   lobby: 'lobby',
   'lobby-blur': 'lobbyBlur',
+  /* 社群分享縮圖的來源。沒放就由 build-og.js 沿用 cover，
+     想讓分享出去的圖跟封面不一樣時才需要另外放 */
+  share: 'share',
 };
+
+/* scripts/build-og.js 產生的檔案。
+   不是新人放的素材，所以不列進 manifest，也不該被當成「檔名沒對上」 */
+const GENERATED_FILES = new Set(['og']);
 
 /* 單支影片的「特別檔名」→ manifest 的欄位（首頁固定背景用） */
 const SINGLE_VIDEOS = {
@@ -161,7 +169,8 @@ function buildManifest(slug) {
 
   /* 檔名沒對上的素材會被忽略，這是最容易踩的坑，明確講出來 */
   manifest._ignored = [...rootFiles, ...rootVideos, ...rootAudio]
-    .filter((f) => !used.has(f));
+    .filter((f) => !used.has(f))
+    .filter((f) => !GENERATED_FILES.has(basename(f, extname(f)).toLowerCase()));
 
   /* 子資料夾 */
   for (const [folder, field] of Object.entries(FOLDERS)) {
@@ -212,6 +221,7 @@ function initFolder(slug) {
 把檔案放進來之後，在專案根目錄執行：
 
     npm run sync-assets -- --slug ${slug}
+    npm run build-og -- --slug ${slug}
     npx firebase deploy --only hosting
 
 ## 放這一層（檔名要一模一樣，副檔名不拘）
@@ -219,6 +229,7 @@ function initFolder(slug) {
 | 檔名 | 用途 |
 |---|---|
 | \`cover.jpg\` | 單頁邀請函的封面大圖 |
+| \`share.jpg\` | 分享到 LINE／FB 時的縮圖來源（**選填**，沒放就用 \`cover\`） |
 | \`lobby.jpg\` | 首頁固定背景（圖片） |
 | \`lobby.mp4\` | 首頁固定背景（影片，放了就優先用影片） |
 | \`bgm.mp3\` | 背景音樂，沒放就用內建的預設背景音樂 |
@@ -362,7 +373,8 @@ function main() {
   }
 
   console.log('');
-  console.log('素材清單已更新。記得重新部署才會生效：');
+  console.log('素材清單已更新。接著重新產生社群縮圖，再部署：');
+  console.log('  npm run build-og');
   console.log('  npx firebase deploy --only hosting');
 }
 
