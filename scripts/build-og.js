@@ -105,6 +105,11 @@ const SKIP_SLUGS = new Set(['e2e', 'demo-wedding-2027']);
 const SHARE_PAGES = [
   {
     pageKey: 'lobby',
+    /* 大廳永遠存在（site-pages.js 的 OPTIONAL_PAGES 裡沒有它，
+       resolvePages 也不會寫進 pages map），所以不看開關。
+       萬一某個舊站台的 pages 裡殘留 lobby:false，
+       也不該因此讓最常被分享的那一頁沒有縮圖 */
+    always: true,
     src: 'index.html',
     out: 'index.html',
     path: '',
@@ -566,12 +571,34 @@ function siteInfo(site) {
    主流程
 ============================================================ */
 
-function listSlugs() {
+function listAssetSlugs() {
   if (!existsSync(ASSETS_ROOT)) return [];
   return readdirSync(ASSETS_ROOT)
     .filter((name) => statSync(join(ASSETS_ROOT, name)).isDirectory())
-    .filter((name) => !name.startsWith('.') && !SKIP_SLUGS.has(name))
+    .filter((name) => !name.startsWith('.'))
     .sort();
+}
+
+async function listFirestoreSlugs(db) {
+  if (!db) return [];
+  try {
+    return (await db.collection('slugs').get()).docs.map((d) => d.id).sort();
+  } catch {
+    return [];
+  }
+}
+
+/* 站台清單＝素材資料夾 ∪ Firestore 的 slug。
+   只掃資料夾是不夠的：沒放素材的站台照樣有網址、照樣會被分享出去，
+   漏掉它們等於那組新人的連結永遠停在工作室 logo。
+   這種站台沒有照片可合成，就掛共用的 og-default.jpg。 */
+async function listSlugs(db) {
+  const fromAssets = listAssetSlugs();
+  const fromDb = await listFirestoreSlugs(db);
+  const all = [...new Set([...fromAssets, ...fromDb])]
+    .filter((name) => !SKIP_SLUGS.has(name))
+    .sort();
+  return { all, fromAssets: new Set(fromAssets), fromDb: new Set(fromDb) };
 }
 
 /* --check 用：要寫的內容跟現有檔案不一樣就算過期 */
@@ -624,7 +651,7 @@ async function buildSlug(slug, ctx) {
   const made = [];
   for (const page of SHARE_PAGES) {
     /* pages 沒設定＝全開；明確設成 false 才跳過 */
-    if (info.pages && info.pages[page.pageKey] === false) continue;
+    if (!page.always && info.pages && info.pages[page.pageKey] === false) continue;
 
     const srcHtml = readFileSync(join(PUBLIC_ROOT, page.src), 'utf8');
     const html = buildHtml(srcHtml, page.src, {
@@ -705,20 +732,6 @@ async function main() {
     process.exit(1);
   }
 
-  let slugs = listSlugs();
-  if (values.slug) {
-    if (!slugs.includes(values.slug)) {
-      console.error(`❌ 找不到資料夾：public/assets/${values.slug}/`);
-      console.error(`   目前有：${slugs.join('、') || '（沒有任何站台資料夾）'}`);
-      process.exit(1);
-    }
-    slugs = [values.slug];
-  }
-  if (!slugs.length) {
-    console.log('沒有找到任何站台素材資料夾，先跑 npm run sync-assets -- --init --slug {slug}。');
-    return;
-  }
-
   const state = { check: values.check, stale: [] };
   const base = resolveBaseUrl(values.base);
   const { fontfile, mode: textMode } = await resolveTypeface({
@@ -726,7 +739,26 @@ async function main() {
     noDownload: values['no-download'],
     textMode: values.text,
   });
+  /* Firestore 要先連，站台清單才問得到（它是清單的來源之一） */
   const db = connectFirestore(values.project);
+
+  const { all, fromAssets, fromDb } = await listSlugs(db);
+  let slugs = all;
+  if (values.slug) {
+    if (!slugs.includes(values.slug)) {
+      console.error(`❌ 不認得這個站台：${values.slug}`);
+      console.error(`   目前有：${slugs.join('、') || '（一個都沒有）'}`);
+      console.error('   站台清單來自 public/assets/ 的資料夾名稱，以及 Firestore 的 slugs 集合。');
+      process.exit(1);
+    }
+    slugs = [values.slug];
+  }
+  if (!slugs.length) {
+    console.log('沒有找到任何站台。');
+    console.log('先跑 npm run sync-assets -- --init --slug {slug} 建素材資料夾，');
+    console.log('或設好 Admin 憑證讓這支讀得到 Firestore 的 slugs。');
+    return;
+  }
 
   /* 共用預設圖：沒有照片的站台都指向它，所以一定要先有 */
   const defaultBytes = await buildDefaultOg();
@@ -741,6 +773,15 @@ async function main() {
   };
   console.log(`網址前綴：${base}`);
   console.log(`圖上文字：${TEXT_LABEL[textMode]}`);
+
+  /* 只有素材資料夾、Firestore 裡卻沒有的 slug，多半是資料夾名字打錯 ——
+     這種站台產出來的檔案掛在一個沒人走得到的網址上，要講出來 */
+  const orphanFolders = [...fromAssets].filter((x) => !SKIP_SLUGS.has(x) && fromDb.size && !fromDb.has(x));
+  if (orphanFolders.length) {
+    console.log('');
+    console.log(`⚠️  這些素材資料夾在 Firestore 裡找不到對應的 slug：${orphanFolders.join('、')}`);
+    console.log('    資料夾名稱必須跟 slug 一模一樣，否則賓客走的網址不會命中產出來的檔案。');
+  }
   console.log('');
 
   const siteImages = new Map();
