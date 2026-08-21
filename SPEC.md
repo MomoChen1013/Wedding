@@ -714,6 +714,8 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
 | 位置 | 用途 |
 |---|---|
 | `cover.*` | 封面大圖（單頁邀請函） |
+| `share.*` | 社群分享縮圖的來源（選填；沒放就用 `cover`） |
+| `og.jpg` | ⚙️ 由 `build-og.js` 合成的社群縮圖，不是新人放的素材 |
 | `bgm.*` | 背景音樂；沒放則用內建預設 `/audio/bgm.mp3`，載不起來才退到合成的〈愛的禮讚〉 |
 | `lobby.*` / `lobby-blur.*` | 大廳背景與其模糊版 |
 | `gallery/` | 照片牆 |
@@ -732,6 +734,33 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
 **為什麼需要掃描步驟**：瀏覽器無法列出伺服器上的目錄，
 所以由建置端掃一次寫成 manifest，前端再讀 manifest。
 不引入建置工具，也不需要 Cloud Functions。
+
+### 11.1 社群分享縮圖
+
+分享到 LINE／FB 時，對方的爬蟲**不執行 JS**，
+所以 `site-context.js` 在瀏覽器端填的新人資料，`og:` 標籤一個都讀不到；
+而 `/w/{slug}/...` 又全部 rewrite 到同一份 HTML，
+等於所有站台共用同一組標籤 —— 沒有 `og:image` 時就退回 `favicon.png`。
+
+`scripts/build-og.js` 在建置時把 HTML 實際產出來，繞開這個限制：
+
+| 產物 | 對應網址 |
+|---|---|
+| `public/assets/{slug}/og.jpg` | 合成的縮圖：照片 → 漸層遮罩 → 圓形 logo → 姓名／日期 |
+| `public/og-default.jpg` | 沒放照片的站台共用（品牌底色 ＋ 置中 logo） |
+| `public/w/{slug}/index.html` | `/w/{slug}/` |
+| `public/w/{slug}/invitation.html` | `/w/{slug}/invitation` |
+| `public/s/{code}.html` | `/s/{code}` |
+
+**能成立的關鍵是 Hosting 的靜態檔優先權高於 rewrite。**
+有實體檔就命中它，沒產過的站台自動落回 `/w/**` 的共用 HTML，
+所以這是漸進的，不會動到既有站台。
+
+- 縮圖來源：`share.*` → `cover.*` → 都沒有就用 `og-default.jpg`
+- 姓名與日期讀 Firestore；讀不到只是不壓字，不會失敗
+- `og:image` 帶內容雜湊當版本號，換照片時繞開 LINE／FB 的縮圖快取
+- 只產大廳與邀請函兩頁：其他頁沒有分享情境
+- 與 `sync-assets` 相同的取捨 —— 建置期算好，執行期不需要 Cloud Functions
 
 ---
 

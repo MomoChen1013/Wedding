@@ -106,6 +106,9 @@
 │   ├─ shortlink.html         # 短連結轉址頁
 │   ├─ 404.html
 │   ├─ favicon.png            # 全站共用的分頁圖示 ＋ iOS 主畫面圖示（512×512）
+│   ├─ og-default.jpg         # ⚙️ 共用的社群縮圖（沒放照片的站台用這張）
+│   ├─ w/{slug}/              # ⚙️ 每個站台專屬的大廳／邀請函 HTML（只為了 og 標籤）
+│   ├─ s/{code}.html          # ⚙️ 每個短連結專屬的轉址頁（只為了 og 標籤）
 │   ├─ assets/{slug}/         # 每組新人的照片
 │   ├─ audio/bgm.mp3          # 全站共用的預設背景音樂（新人沒放自己的就播這首）
 │   ├─ css/
@@ -125,8 +128,13 @@
 │   ├─ create-site.js         # 建立客戶站台（slug transaction）
 │   ├─ site-pages.js          # 頁面／後台功能開關的共用定義
 │   ├─ set-pages.js           # 改已建站台的開關
+│   ├─ sync-assets.js         # 掃描素材資料夾產生 manifest.json
+│   ├─ build-og.js            # 產生社群分享縮圖與各站專屬的 og 標籤
+│   ├─ check-site.js          # 檢查某站台為什麼打不開
 │   ├─ export-rsvps.js        # 匯出某站台的 RSVP 成 CSV
 │   └─ create-short-link.js
+
+⚙️ ＝ 由指令產生的檔案，不要手改（改來源再重跑指令）
 └─ tests/
     ├─ rules.test.mjs         # Security Rules 測試
     ├─ e2e.mjs                # 出席回覆那一頁的瀏覽器測試
@@ -308,6 +316,10 @@ short/{code}                # 6 碼短連結
 >
 > 只改 Firestore 裡的資料（例如 `status`、`pages`）則**不需要**部署，
 > 重整網頁就生效。
+
+> 改過 `public/*.html`、換過照片、或新增站台之後，
+> deploy 之前要先重跑 **`npm run build-og`**（見〈社群分享縮圖〉），
+> 否則分享出去的縮圖與標題會停在舊的那一版。
 
 ```bash
 # 部署安全規則（改完 firestore.rules 一定要跑）
@@ -1227,6 +1239,8 @@ npm run sync-assets -- --init --slug ginny-one-20260919
 ```
 public/assets/{slug}/
 ├─ cover.jpg          封面大圖（單頁邀請函）
+├─ share.jpg          社群分享縮圖的來源（選填；沒放就用 cover）
+├─ og.jpg             ⚙️ 合成好的社群縮圖，由 build-og 產生，不要手改
 ├─ lobby.jpg          首頁固定背景（圖片）
 ├─ lobby.mp4          首頁固定背景（影片，選填；放了就優先用影片）
 ├─ lobby-blur.jpg     大廳背景的模糊版（選填）
@@ -1293,11 +1307,14 @@ npm run sync-assets -- --slug chen-lin-0315   # 只掃一組
    封面、大廳背景、照片牆 12 張、戀愛時光 8 張、囍卡 20 張、甜點桌 6 張
 ```
 
-### 4. 部署
+### 4. 產生社群縮圖並部署
 
 ```bash
+npm run build-og
 npx firebase deploy --only hosting
 ```
+
+`build-og` 是**分享到 LINE／FB 時看到的那張縮圖**，細節見下一節。
 
 網頁載入時會自動抓 `manifest.json`，把封面、大廳背景、照片牆、
 展品、囍卡、甜點全部換成這組新人的素材。
@@ -1353,6 +1370,130 @@ Firestore 裡有填就用填的，沒填才用素材資料夾。
 ### 保留字
 
 以下 slug 不能使用：`admin`、`api`、`www`、`app`、`w`、`s`、`assets`、`static`
+
+---
+
+## 社群分享縮圖（分享到 LINE／FB 時的那張圖）
+
+### 為什麼原本都是工作室的 logo
+
+分享連結時，對方的 App 會派一隻爬蟲來抓 `og:` 標籤，**而爬蟲不執行 JS**。
+我們的站台是多租戶的：`firebase.json` 把 `/w/{slug}/...` 全部 rewrite 到
+同一份 `index.html`／`invitation.html`，新人資料是 `site-context.js`
+在瀏覽器端才填進去的 —— 爬蟲完全看不到。
+
+再加上原本這幾頁沒有 `og:image`，LINE 抓不到圖就退而用 `favicon.png`，
+也就是工作室的 logo。所有站台長得一模一樣。
+
+### 解法：建置時就把 HTML 產出來
+
+`npm run build-og` 會針對每個站台，實際寫出
+
+```
+public/w/{slug}/index.html        ← /w/{slug}/
+public/w/{slug}/invitation.html   ← /w/{slug}/invitation
+public/s/{code}.html              ← /s/{code}（短連結也要有，不然前面都白做）
+```
+
+各自帶正確的 `og:image`／`og:title`／`og:url`。
+**Firebase Hosting 的靜態檔優先權高於 rewrite**，有實體檔就命中它；
+沒產過的站台自動走回原本的 `/w/**`，維持現狀不會壞掉。
+
+> 只做大廳與邀請函兩頁 —— 其他頁是進站之後才點的，沒有分享情境。
+
+### 縮圖怎麼決定
+
+| 站台資料夾裡有 | 縮圖 |
+|---|---|
+| `share.jpg` | 用它合成 → `og.jpg` |
+| 只有 `cover.jpg` | 用封面合成 → `og.jpg` |
+| 都沒有 | 指向全站共用的 `/og-default.jpg`（品牌底色 ＋ 置中 logo） |
+
+**`share.jpg` 是給新人指定「跟封面不一樣的分享圖」用的。**
+封面常常是直式人像，硬裁成 1200×630 容易切到頭；
+想要分享圖用另一張橫式的，就放 `share.jpg`。
+
+合成出來的 1200×630 長這樣：
+
+```
+照片鋪底（智慧裁切，會自動對焦到人臉那一區）
+  └ 疊一層漸層遮罩壓暗（上淺下深 ＋ 左側再壓一層）
+      └ 左下角：文字（見下面「圖上的字」）
+      └ 右下角：工作室 logo，切成圓形、外圈一道半透明白邊
+```
+
+### 圖上的字：`--text`
+
+```bash
+npm run build-og                    # couple（預設）
+npm run build-og -- --text latin
+npm run build-og -- --text none
+```
+
+| 模式 | 圖上的字 | 需要中文字型 | og.jpg 實測大小 |
+|---|---|---|---|
+| `couple`（預設） | 新人姓名 ＋ `2026.09.19（六）` | 要 | 93,378 bytes |
+| `latin` | `WEDDING` ＋ `2026.09.19` | **不用** | 91,393 bytes |
+| `none` | 不壓字 | 不用 | 86,669 bytes |
+
+**三種差不到 3KB，所以這是版面問題、不是容量問題。**
+真正的差別在建置端：`couple` 需要一份中文字型，
+`build-og` 會自動從 Google Fonts 抓 Noto Serif TC（約 10MB）快取在
+`scripts/.fontcache/`，只下載一次、不進 git、也不會被部署。
+`--text latin` 全是西文與數字，系統內建的襯線字型就夠，**完全不連網**。
+
+> 選 `latin` 不代表看不到新人姓名 —— LINE／FB 的預覽卡本來就會把
+> `og:title`（含姓名與日期）顯示在縮圖旁邊。
+
+找不到中文字型時不會整個失敗，會自動降級成 `latin` 並提示。
+想指定自己的字型：
+
+```bash
+npm run build-og -- --font /path/to/NotoSerifTC.otf
+# 或設環境變數 WEDDING_OG_FONT
+```
+
+### 新人姓名與日期從哪來
+
+從 Firestore 的 `sites` 文件讀（`groomName`／`brideName`／`coupleTitle`／
+`eventDate`／`venueName`），連線方式跟 `create-site.js` 一樣。
+
+**讀不到也不會停下來**：圖與 og 標籤照樣產生，只是不帶姓名，
+標題沿用通用文案。要帶姓名就先設好 Admin 憑證：
+
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS=/path/to/serviceAccountKey.json
+```
+
+`pages.rsvp` 被關掉的站台不會產邀請函那一份。
+
+### ⚠️ LINE／FB 會把縮圖快取很久
+
+換了照片但網址沒變的話，賓客看到的還是舊圖。
+`og:image` 已經自動帶上內容雜湊當版本號（`og.jpg?v=975795ea`），
+照片一換版本號就跟著換，新的分享會抓到新圖。
+
+> **已經發出去的舊訊息不會跟著更新**，這是平台行為，改不掉。
+> 所以正式發送前先確認縮圖是對的。
+
+### 什麼時候要重跑
+
+- 換了 `share.jpg`／`cover.jpg`
+- 改了 `public/index.html`、`public/invitation.html`、`public/shortlink.html`
+- 新增站台、改了新人姓名／日期／場地、開關了邀請函那一頁
+- 建了新的短連結
+
+不確定的話用 `--check`，它只比對不寫檔，有東西過期就列出來並回傳 exit code 1：
+
+```bash
+npm run build-og -- --check
+```
+
+### 換掉共用的預設縮圖或 logo
+
+`og-default.jpg` 與圓形 logo 都是從 `public/favicon.png` 現產的，
+換掉 `favicon.png` 再重跑 `npm run build-og` 就整批換好，
+沒有第二個地方要改。
 
 ---
 

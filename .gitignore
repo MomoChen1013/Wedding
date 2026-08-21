@@ -5,3 +5,6 @@ ui-debug.log
 .firebase/
 serviceAccountKey.json
 *-serviceAccount*.json
+
+# build-og.js 下載回來的中文字型快取（約 10MB，不進版控）
+scripts/.fontcache/
