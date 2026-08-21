@@ -85,13 +85,14 @@ function esc(s) {
 
 function toast(msg, isError) {
   const el = document.createElement('div');
-  el.className = 'bt-toast' + (isError ? ' is-error' : '');
-  el.textContent = msg;
+  el.className = 'ad-toast' + (isError ? ' is-error' : '');
+  el.innerHTML = '<span class="ad-toast-msg"></span>';
+  el.querySelector('.ad-toast-msg').textContent = msg;
   $('btToasts').appendChild(el);
   setTimeout(() => {
     el.classList.add('is-out');
     setTimeout(() => el.remove(), 220);
-  }, isError ? 4200 : 2000);
+  }, isError ? 4200 : 2200);
 }
 
 function showFatal(title, msg) {
@@ -175,14 +176,20 @@ function gateError(msg) {
   $('btPass').select();
 }
 
+/* 頂列的第二行：這場婚禮 ・ 這組連結的名稱 */
+function paintBrand() {
+  $('btCouple').textContent = book.couple || '';
+  $('btLabel').textContent = book.label
+    ? (book.couple ? `・${book.label}` : book.label)
+    : '';
+}
+
 function enterApp() {
   $('btGate').hidden = true;
   $('btFatal').hidden = true;
   $('btApp').hidden = false;
 
-  $('btCouple').textContent = book.couple || '收禮小幫手';
-  $('btLabel').textContent = book.label || '';
-
+  paintBrand();
   meName = loadLocal().name || '';
   renderWho();
 
@@ -197,8 +204,7 @@ function enterApp() {
       showFatal('這個連結已經停用', '新人已經把這組連結收起來了');
       return;
     }
-    $('btCouple').textContent = book.couple || '收禮小幫手';
-    $('btLabel').textContent = book.label || '';
+    paintBrand();
     renderAll();
   }, (err) => console.warn('[butler] 名單訂閱中斷', err));
 
@@ -276,14 +282,14 @@ function renderList() {
 
   const host = $('btList');
   if (!all.length) {
-    host.innerHTML = `<div class="bt-empty">
-      這本收禮簿還沒有賓客名單。<br>
-      請新人在後台按「匯入賓客名單」，或直接用上面的「＋ 名單外」記帳。</div>`;
+    host.innerHTML = `<div class="ad-empty">
+      這本收禮簿還沒有賓客名單<br>
+      請新人在後台按「匯入賓客名單」，或直接用上面的「＋ 名單外的賓客」記帳</div>`;
     return;
   }
   if (!rows.length) {
-    host.innerHTML = `<div class="bt-empty">沒有符合的賓客<br>
-      名單上沒有的人可以用「＋ 名單外」直接記</div>`;
+    host.innerHTML = `<div class="ad-empty">沒有符合的賓客<br>
+      名單上沒有的人可以用「＋ 名單外的賓客」直接記</div>`;
     return;
   }
 
@@ -291,25 +297,24 @@ function renderList() {
     const es = map.get(g.id) || [];
     const sum = es.reduce((n, e) => n + (Number(e.amount) || 0), 0);
     const box = es.reduce((n, e) => n + (Number(e.boxes) || 0), 0);
-    const sub = [
-      g.table ? `${g.table}` : '',
-      g.count ? `${g.count} 位` : '',
-      g.cat || '',
-    ].filter(Boolean).join('・');
+    const sub = [g.table, g.count ? `${g.count} 位` : '', g.cat]
+      .filter(Boolean).join('・');
 
     const side = es.length
-      ? `<span class="bt-row-amt">${money(sum)}</span>
-         <span class="bt-row-tag">${box ? `禮餅 ${box} 盒` : '沒領禮餅'}${
+      ? `<span class="bt-amt">${money(sum)}</span>
+         <span class="bt-sub">${box ? `禮餅 ${box} 盒` : '沒領禮餅'}${
            es.length > 1 ? `・${es.length} 筆` : ''}</span>`
-      : `<span class="bt-row-go">收禮</span>`;
+      : `<span class="bt-sub">點一下收禮</span>`;
 
-    return `<button class="bt-row${es.length ? ' is-done' : ''}" type="button"
+    return `<button class="ad-item bt-row${es.length ? ' is-done' : ''}" type="button"
               data-guest="${esc(g.id)}">
-      <span class="bt-row-main">
-        <span class="bt-row-name">${g.code ? `<i class="bt-code">${esc(g.code)}</i>` : ''}${esc(g.name)}</span>
-        ${sub ? `<span class="bt-row-sub">${esc(sub)}</span>` : ''}
+      <span class="ad-item-main">
+        <span class="ad-item-title">${
+          g.code ? `<i class="bt-code">${esc(g.code)}</i>` : ''}${esc(g.name)}</span>
+        ${es.length ? '<span class="ad-tag ad-tag-yes">已收</span>' : ''}
+        ${sub ? `<span class="ad-item-sub">${esc(sub)}</span>` : ''}
       </span>
-      <span class="bt-row-side">${side}</span>
+      <span class="ad-item-actions bt-side">${side}</span>
     </button>`;
   }).join('');
 }
@@ -323,30 +328,33 @@ function renderLog() {
     || normKey(`${e.name}${e.code || ''}${e.table || ''}${e.note || ''}${e.by || ''}`).includes(q));
 
   const host = $('btLog');
+  $('btLogCount').textContent = `目前 ${rows.length} 筆`;
+
   if (!entries.length) {
-    host.innerHTML = `<div class="bt-empty">還沒有任何紀錄<br>從「收禮台」開始收第一筆吧</div>`;
+    host.innerHTML = `<div class="ad-empty">還沒有任何紀錄<br>從「收禮台」開始收第一筆吧</div>`;
     return;
   }
   if (!rows.length) {
-    host.innerHTML = `<div class="bt-empty">沒有符合的紀錄</div>`;
+    host.innerHTML = `<div class="ad-empty">沒有符合的紀錄</div>`;
     return;
   }
 
   host.innerHTML = rows.map((e) => {
     const sub = [
-      e.table || '',
+      e.table,
       e.gift ? `禮餅 ${Number(e.boxes) || 0} 盒` : '沒領禮餅',
       e.people ? `${e.people} 位` : '',
-      e.note || '',
+      e.note,
     ].filter(Boolean).join('・');
-    return `<button class="bt-row" type="button" data-entry="${esc(e.id)}">
-      <span class="bt-row-main">
-        <span class="bt-row-name">${e.code ? `<i class="bt-code">${esc(e.code)}</i>` : ''}${esc(e.name)}</span>
-        <span class="bt-row-sub">${esc(sub)}</span>
+    return `<button class="ad-item bt-row" type="button" data-entry="${esc(e.id)}">
+      <span class="ad-item-main">
+        <span class="ad-item-title">${
+          e.code ? `<i class="bt-code">${esc(e.code)}</i>` : ''}${esc(e.name)}</span>
+        <span class="ad-item-sub">${esc(sub)}</span>
       </span>
-      <span class="bt-row-side">
-        <span class="bt-row-amt">${money(e.amount)}</span>
-        <span class="bt-row-tag">${esc(e.by || '—')}・${fmtTime(e.createdAt)}</span>
+      <span class="ad-item-actions bt-side">
+        <span class="bt-amt">${money(e.amount)}</span>
+        <span class="bt-sub">${esc(e.by || '—')}・${fmtTime(e.createdAt)}</span>
       </span>
     </button>`;
   }).join('');
@@ -361,18 +369,20 @@ function renderStat() {
   const left = guests().filter((g) => !(map.get(g.id) || []).length).length;
 
   $('btSumMoney').textContent = money(t.amount);
-  $('btSumSub').textContent = `共 ${t.count} 筆`;
+  $('btSumSub').textContent = t.count
+    ? `共 ${t.count} 筆・平均 ${money(Math.round(t.amount / t.count))}`
+    : '還沒有任何紀錄';
 
+  /* 四格，和新人後台那一排看到的是同一組數字 */
   const tiles = [
     ['禮餅總盒數', t.boxes],
     ['發出禮餅', `${t.gifted} 筆`],
     ['到場人數', `${t.people} 位`],
-    ['名單人數', `${guests().length} 位`],
     ['名單未收', `${left} 位`],
-    ['名單外', `${entries.filter((e) => !e.guestId).length} 筆`],
   ];
   $('btTiles').innerHTML = tiles.map(([label, v]) =>
-    `<div class="bt-tile"><b>${esc(String(v))}</b><small>${label}</small></div>`).join('');
+    `<div class="ad-stat"><div class="ad-stat-num">${esc(String(v))}</div>
+     <div class="ad-stat-lab">${label}</div></div>`).join('');
 
   /* 誰記了多少：四五個人分頭收，事後對帳看的就是這一份 */
   const byWho = new Map();
@@ -387,17 +397,17 @@ function renderStat() {
 
   const host = $('btByWho');
   if (!byWho.size) {
-    host.innerHTML = `<div class="bt-empty">還沒有人記過</div>`;
+    host.innerHTML = `<div class="ad-empty">還沒有人記過</div>`;
     return;
   }
   host.innerHTML = [...byWho.entries()]
     .sort((a, b) => b[1].amount - a[1].amount)
-    .map(([who, v]) => `<div class="bt-row">
-      <span class="bt-row-main">
-        <span class="bt-row-name">${esc(who)}</span>
-        <span class="bt-row-sub">${v.count} 筆・禮餅 ${v.boxes} 盒</span>
-      </span>
-      <span class="bt-row-side"><span class="bt-row-amt">${money(v.amount)}</span></span>
+    .map(([who, v]) => `<div class="ad-item">
+      <div class="ad-item-main">
+        <span class="ad-item-title">${esc(who)}</span>
+        <span class="ad-item-sub">${v.count} 筆・禮餅 ${v.boxes} 盒</span>
+      </div>
+      <div class="ad-item-actions"><span class="bt-amt">${money(v.amount)}</span></div>
     </div>`).join('');
 }
 
@@ -435,6 +445,7 @@ function openSheet(state) {
   $('btFormBy').textContent = meName
     ? `這一筆會記成「${meName}」收的`
     : '還沒設定你的名字，右上角可以填';
+  $('btSave').textContent = e ? '更新' : '儲存';
 
   $('btSheet').hidden = false;
   /* 名單上的賓客直接把游標放到金額；名單外的先問名字 */
@@ -449,7 +460,7 @@ function closeSheet() {
 }
 
 function setGift(on) {
-  $('btGiftSeg').querySelectorAll('button').forEach((b) => {
+  $('btGiftSeg').querySelectorAll('[data-gift]').forEach((b) => {
     b.classList.toggle('is-on', (b.dataset.gift === '1') === !!on);
   });
   $('btBoxField').hidden = !on;
@@ -593,8 +604,8 @@ $('btTabbar').addEventListener('click', (ev) => {
   const btn = ev.target.closest('[data-go]');
   if (!btn) return;
   const go = btn.dataset.go;
-  document.querySelectorAll('.bt-view').forEach((v) => {
-    v.hidden = v.dataset.view !== go;
+  document.querySelectorAll('.ad-subpanel[data-view]').forEach((v) => {
+    v.classList.toggle('is-on', v.dataset.view === go);
   });
   $('btTabbar').querySelectorAll('button').forEach((b) => {
     b.classList.toggle('is-on', b === btn);
@@ -607,10 +618,11 @@ $('btSearch').addEventListener('input', (e) => { listQuery = e.target.value; ren
 $('btLogSearch').addEventListener('input', (e) => { logQuery = e.target.value; renderLog(); });
 
 $('btChips').addEventListener('click', (ev) => {
-  const chip = ev.target.closest('.bt-chip');
+  const chip = ev.target.closest('[data-filter]');
   if (!chip) return;
   filter = chip.dataset.filter;
-  $('btChips').querySelectorAll('.bt-chip').forEach((c) => c.classList.toggle('is-on', c === chip));
+  $('btChips').querySelectorAll('[data-filter]')
+    .forEach((c) => c.classList.toggle('is-on', c === chip));
   renderList();
 });
 
@@ -641,7 +653,7 @@ $('btForm').addEventListener('submit', (ev) => { ev.preventDefault(); saveEntry(
 $('btDelete').addEventListener('click', removeEntry);
 
 $('btSheet').addEventListener('click', (ev) => {
-  if (ev.target.closest('[data-close]')) closeSheet();
+  if (ev.target === $('btSheet') || ev.target.closest('[data-close]')) closeSheet();
 });
 
 $('btGiftSeg').addEventListener('click', (ev) => {
@@ -662,7 +674,8 @@ document.querySelectorAll('.bt-step').forEach((box) => {
 });
 
 $('btQuick').innerHTML = QUICK_AMOUNTS
-  .map((n) => `<button type="button" data-amt="${n}">${n.toLocaleString('en-US')}</button>`).join('');
+  .map((n) => `<button class="ad-chip" type="button" data-amt="${n}">${
+    n.toLocaleString('en-US')}</button>`).join('');
 $('btQuick').addEventListener('click', (ev) => {
   const b = ev.target.closest('[data-amt]');
   if (!b) return;
@@ -676,7 +689,10 @@ $('btInAmount').addEventListener('input', (e) => {
 /* ---------- 記錄者 ---------- */
 $('btWho').addEventListener('click', openNameSheet);
 $('btNameSheet').addEventListener('click', (ev) => {
-  if (ev.target.closest('[data-close]')) $('btNameSheet').hidden = true;
+  /* 點遮罩本身也算取消（和後台的確認框一致） */
+  if (ev.target === $('btNameSheet') || ev.target.closest('[data-close]')) {
+    $('btNameSheet').hidden = true;
+  }
 });
 $('btNameForm').addEventListener('submit', (ev) => {
   ev.preventDefault();

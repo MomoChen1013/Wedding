@@ -268,6 +268,7 @@ console.log('\n【記一筆禮金】');
   /* 現場是站著單手用手機，畫面橫向跑掉的話按鈕就按不到了 */
   for(const view of ['list', 'log', 'stat']){
     await page.click(`#btTabbar button[data-go="${view}"]`);
+    await page.waitForSelector(`.ad-subpanel[data-view="${view}"].is-on`);
     const over = await page.evaluate(() =>
       document.documentElement.scrollWidth - document.documentElement.clientWidth);
     ok(`${view} 在手機上沒有水平捲動`, over <= 0, `溢出 ${over}px`);
@@ -278,7 +279,7 @@ console.log('\n【記一筆禮金】');
   const sheetOver = await page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth);
   ok('記帳表單也沒有水平捲動', sheetOver <= 0, `溢出 ${sheetOver}px`);
-  await page.click('#btSheet .bt-x');
+  await page.click('#btSheet [data-close]');
 
   ok('沒有 console 錯誤', errors.length === 0, errors.join(' / '));
   await page.close();
