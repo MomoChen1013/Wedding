@@ -438,6 +438,28 @@ service cloud.firestore {
         allow delete: if isSiteOwner(siteId);
       }
 
+      /* ---------- 收禮小幫手的連結簿 ----------
+         新人在後台產生的每一組 butler 連結：網址上的 token、
+         通行碼、以及兩者推導出來的 bookId。
+         這三個湊在一起就是進得了收禮簿的鑰匙，所以整份
+         只有新人本人讀得到（和 rsvps、seatingPlan 同一套身分判斷）。
+         收禮簿本身在最上層的 butlers/{bookId}，不在這裡。 */
+      match /butlerLinks/{linkId} {
+        allow read: if isSiteOwner(siteId);
+        allow create, update: if isSiteOwner(siteId)
+          && request.resource.data.keys().hasOnly(
+               ['bookId', 'token', 'passcode', 'label', 'revoked', 'createdAt'])
+          && isStr(request.resource.data.bookId, 128)
+          && request.resource.data.bookId.size() >= 1
+          && isStr(request.resource.data.token, 64)
+          && request.resource.data.token.size() >= 1
+          && isStr(request.resource.data.passcode, 16)
+          && isStr(request.resource.data.label, 40)
+          && request.resource.data.revoked is bool
+          && request.resource.data.createdAt is number;
+        allow delete: if isSiteOwner(siteId);
+      }
+
       /* 其他 meta 文件一律不開放 */
       match /meta/{docId} {
         allow read: if true;
@@ -515,6 +537,116 @@ service cloud.firestore {
         && sitePublished(siteId)
         && s.rsvpEnabled == true
         && request.time <= s.rsvpDeadline;
+    }
+
+    /* ============================================================
+       收禮小幫手（butler）
+       ------------------------------------------------------------
+       婚宴當天在收禮台用的工具，網址是 /butler#{token}，
+       和站台網址、後台都分開 —— 4～5 位親友同時記帳，
+       每個人只要一個連結加一組通行碼，不必辦 Google 帳號。
+
+       文件 id 是「通行碼 ＋ token」推導出來的雜湊（PBKDF2-SHA256，
+       200,000 次，salt 就是網址上的 token，見 js/butler-key.js 的 derive()）。
+       這是刻意的設計：Firestore 的讀取請求不帶 payload，
+       規則沒有辦法驗證使用者輸入的通行碼（見 SPEC 第 12 節）——
+       但如果「通行碼算得出文件在哪裡」，那把它算進路徑就等於真的驗過了。
+
+         ・只有連結     → 不知道通行碼，算不出 bookId，讀不到任何東西
+         ・只有通行碼   → 不知道 token，同樣算不出來
+         ・兩個都有     → 才走得到這份文件
+
+       所以下面的 get 可以安全地全開，但 list 一定要擋掉 ——
+       允許列出整個 butlers 集合，等於把上面那道門整個拆掉。
+
+       禮金金額仍然是敏感資料，這條路徑的保護強度就是
+       「連結不外流 ＋ 通行碼不外流」。真正需要身分綁定的資料
+       （出席回覆、悄悄話）一律留在 sites/{siteId} 底下，不放這裡。
+    ============================================================ */
+    function butlerBook(bookId) {
+      return get(/databases/$(database)/documents/butlers/$(bookId)).data;
+    }
+
+    /* 這本收禮簿現在收不收得了禮：文件還在、沒有被新人停用、
+       而且這場婚禮有開 butler 這個功能（和其他頁面同一套 pageOn） */
+    function butlerOpen(bookId) {
+      /* exists() 一定要排在最前面：&& 會短路，文件不在的時候
+         就不會去讀一個不存在的文件的欄位 */
+      return exists(/databases/$(database)/documents/butlers/$(bookId))
+        && butlerBook(bookId).revoked != true
+        && pageOn(butlerBook(bookId).siteId, 'butler');
+    }
+
+    /* 收禮簿本身：新人在後台建立，賓客名單以陣列存在同一份文件裡
+       （和 seatingPlan/draft 同一個理由 —— 一次匯入就是完整的一版，
+        規則語言也檢查不了 list 裡每一筆的內容，只擋型別與筆數）。 */
+    function isValidButlerBook() {
+      let d = request.resource.data;
+      return d.keys().hasOnly([
+             'siteId', 'slug', 'couple', 'label', 'guests', 'revoked',
+             'createdAt', 'updatedAt', 'importedAt', 'importedFrom',
+           ])
+        && d.keys().hasAll(['siteId', 'guests', 'revoked', 'createdAt', 'updatedAt'])
+        && isStr(d.siteId, 60) && d.siteId.size() >= 1
+        && (!('slug'   in d) || isStr(d.slug, 40))
+        && (!('couple' in d) || isStr(d.couple, 80))
+        && (!('label'  in d) || isStr(d.label, 40))
+        && d.guests is list && d.guests.size() <= 600
+        && d.revoked is bool
+        && d.createdAt is number
+        && d.updatedAt is number
+        && (!('importedAt'   in d) || d.importedAt is number)
+        && (!('importedFrom' in d) || d.importedFrom in ['plan', 'rsvp', '']);
+    }
+
+    /* 一筆收禮紀錄。誰記的存在 by（小幫手自己填的名字，不是身分驗證），
+       只是為了讓四五個人分頭記帳時對得出來是誰記的。 */
+    function isValidButlerEntry() {
+      let d = request.resource.data;
+      return d.keys().hasOnly([
+             'guestId', 'name', 'code', 'table', 'amount',
+             'gift', 'boxes', 'people', 'note', 'by', 'createdAt', 'updatedAt',
+           ])
+        && d.keys().hasAll(['name', 'amount', 'gift', 'boxes', 'people', 'createdAt', 'updatedAt'])
+        && isStr(d.name, 40) && d.name.size() >= 1
+        && (!('guestId' in d) || isStr(d.guestId, 60))
+        && (!('code'    in d) || isStr(d.code, 12))
+        && (!('table'   in d) || isStr(d.table, 40))
+        && (!('note'    in d) || isStr(d.note, 200))
+        && (!('by'      in d) || isStr(d.by, 40))
+        /* 禮金：整數、不收負數；上限只是防呆，不是業務規則 */
+        && d.amount is int && d.amount >= 0 && d.amount <= 9999999
+        && d.gift is bool
+        && d.boxes  is int && d.boxes  >= 0 && d.boxes  <= 99
+        && d.people is int && d.people >= 0 && d.people <= 99
+        && d.createdAt is number
+        && d.updatedAt is number;
+    }
+
+    match /butlers/{bookId} {
+      /* get 全開（走得到這個路徑就代表通行碼算對了），
+         list 一律拒絕 —— 能列出整個集合就繞過了上面那道門 */
+      allow get: if true;
+      allow list: if false;
+
+      allow create: if isSiteOwner(request.resource.data.siteId)
+        && isValidButlerBook();
+      /* 不讓 siteId 被改掉：改得動就等於把別人的收禮簿掛到自己名下 */
+      allow update: if isSiteOwner(resource.data.siteId)
+        && request.resource.data.siteId == resource.data.siteId
+        && isValidButlerBook();
+      allow delete: if isSiteOwner(resource.data.siteId);
+
+      /* 收禮紀錄：小幫手（未登入）寫得進去，也改得動、刪得掉 ——
+         現場記錯金額是常態，能當場改掉比留一筆錯的有用。
+         誰動過哪一筆看 by 與 updatedAt，不是靠權限擋。 */
+      match /entries/{entryId} {
+        allow read: if true;
+        allow create, update: if butlerOpen(bookId) && isValidButlerEntry();
+        /* 新人本人不受停用影響，收起來的簿子才清得掉 */
+        allow delete: if butlerOpen(bookId)
+          || isSiteOwner(butlerBook(bookId).siteId);
+      }
     }
 
     /* slugs：前端要查 slug → siteId，寫入走 Admin SDK */

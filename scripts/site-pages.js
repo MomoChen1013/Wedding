@@ -27,8 +27,13 @@ export const OPTIONAL_PAGES = [
    seatingPlan（排桌管理）＝把 Excel 排桌搬上線的工作台。
    它產出的結果最後同步進 seating（我的桌次）那一份公開名單，
    所以兩個開關是獨立的：可以先開排桌管理慢慢排，
-   婚禮當天才打開賓客那一頁。 */
-export const ADMIN_PAGES = ['seatingPlan'];
+   婚禮當天才打開賓客那一頁。
+
+   butler（收禮小幫手）＝婚宴當天收禮金、送禮餅的記帳工具。
+   工具本身在 /butler#{token}，和站台網址、後台都分開，
+   由親友拿連結加通行碼進去用；這個開關只決定
+   「後台要不要長出產生連結／看統計的分頁」，以及規則放不放行寫入。 */
+export const ADMIN_PAGES = ['seatingPlan', 'butler'];
 
 /* pages map 裡會出現的所有代號（頁面 ＋ 後台功能） */
 export const ALL_PAGE_KEYS = [...OPTIONAL_PAGES, ...ADMIN_PAGES];
@@ -50,6 +55,7 @@ export const PAGE_LABELS = {
   letter:     '給你的信',
   /* 沒有對外網址，只是新人後台的一個分頁 */
   seatingPlan: '排桌管理（後台）',
+  butler:      '收禮小幫手（後台＋/butler）',
 };
 
 export function labelOf(key) {

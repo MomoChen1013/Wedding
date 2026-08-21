@@ -147,6 +147,15 @@ sites/{siteId}
                          answer(list，正確答案的索引；single 只有 1 個),
                          order, time
 
+  # 收禮小幫手的連結簿（只有新人讀得到；收禮簿本身在最上層的 butlers）
+  butlerLinks/{autoId}
+    bookId   : string   # 收禮簿在 butlers 底下的文件 id（token ＋ 通行碼推導出來的）
+    token    : string   # 網址 /butler#{token} 上的那一段
+    passcode : string   # 六位數通行碼
+    label    : string   # 這組連結的名稱，如「收禮台」
+    revoked  : bool
+    createdAt: number
+
   # 排桌管理的草稿（只有新人讀得到，賓客看不到）
   seatingPlan/draft
     tables   : map[]     # 桌位，≤60；{ id, no(1–99), name(≤20), cap(1–30),
@@ -158,6 +167,27 @@ sites/{siteId}
     assign   : map       # 賓客 id → 桌位 id，≤600（＝ Seating Assignment）
     savedAt  : number    # 上次按「儲存排桌」的時間
     syncedAt : number    # 上次同步到 seating 的時間；和 savedAt 比就是同步狀態
+
+butlers/{bookId}            # 收禮小幫手的收禮簿（見第 13.9 節）
+  # 文件 id ＝ PBKDF2(通行碼, salt='butler:'+token)，所以「算得出位置」＝「通行碼對了」
+  siteId, slug, couple, label
+  guests          : map[]   # 從後台匯過去的賓客名單快照，≤600
+                            # { id, code, name, table, count, cat, note }
+  revoked         : bool    # 新人按「停用」
+  importedAt      : number
+  importedFrom    : string  # 'plan'（排桌名單）| 'rsvp'（出席回覆）
+  createdAt, updatedAt : number
+
+  entries/{autoId}          # 現場記下的每一筆收禮
+    guestId  : string  # 對得回 guests 的 id；'' 代表名單外的賓客
+    name, code, table
+    amount   : int     # 禮金，0–9,999,999
+    gift     : bool    # 禮餅發了沒
+    boxes    : int     # 幾盒，0–99
+    people   : int     # 共幾人，0–99
+    note     : string  # ≤200
+    by       : string  # 記錄者（小幫手自己填的名字，不是身分驗證）
+    createdAt, updatedAt : number
 
 slugs/{slug}                # 網址佔位對照表，文件 ID 就是 slug 本身
   siteId          : string
@@ -220,6 +250,9 @@ short/{code}                # 短連結
 | `sites/{siteId}/quiz/{id}` | 允許 | 新人 | 新人 | 新人 |
 | `sites/{siteId}/quizVotes/{id}` | 允許 | 允許（需通過驗證） | 拒絕 | 新人（重置票數） |
 | `sites/{siteId}/seatingPlan/{id}` | 新人 | 新人 | 新人 | 新人 |
+| `sites/{siteId}/butlerLinks/{id}` | 新人 | 新人 | 新人 | 新人 |
+| `butlers/{bookId}` | 允許（get；**list 拒絕**） | 新人 | 新人 | 新人 |
+| `butlers/{bookId}/entries/{id}` | 允許 | 小幫手 | 小幫手 | 小幫手／新人 |
 | `slugs/{slug}` | 允許 | 拒絕 | 拒絕 | 拒絕 |
 | `short/{code}` | 允許 | 拒絕 | 拒絕 | 拒絕 |
 
@@ -231,7 +264,8 @@ short/{code}                # 短連結
 |---|---|---|---|
 | 賓客要用的內容 | `seating` `seatingImages` `blessings` `explore` `cards` `exhibits` `quiz` | 公開 | 新人 |
 | 賓客交上來的資料 | `rsvps` `letters` | 新人 | 賓客（create only） |
-| 新人自己的整理 | `rsvpTags` `seatingPlan` | 新人 | 新人 |
+| 新人自己的整理 | `rsvpTags` `seatingPlan` `butlerLinks` | 新人 | 新人 |
+| 收禮台的工作紀錄 | `butlers/{bookId}` | 靠不可猜的路徑（見 13.9） | 小幫手 |
 | 賓客的公開投票 | `wishes` `cakes` `quizVotes` | 公開 | 賓客（create only） |
 
 上面那組 **read 必須公開**，因為比對（桌次查名字、祝福信對暗號）在瀏覽器端做——
@@ -358,6 +392,11 @@ node scripts/create-site.js --slug chen-lin-0315 --groom 陳彥廷 --bride 林�
 | `/w/**`（其餘，含 `/w/{slug}/`） | `/index.html`（大廳） |
 | `/s/**` | `/shortlink.html` |
 
+`/butler` **不需要任何 rewrite**：`cleanUrls: true` 會把它對到 `public/butler.html`，
+而且靜態檔案本來就優先於 rewrite。這也正好說明它的定位 ——
+它不是站台的一頁，是一個和 slug 無關的獨立工具（見第 13.9 節），
+`site-context.js` 完全不參與。
+
 前端流程由 `js/site-context.js` 統一處理：
 從 `location.pathname` 解析 slug 與頁面代號 → 查 `slugs/{slug}` 取得 siteId →
 讀 `sites/{siteId}` → 檢查 `status` 與 `pages` → 建立 `window.SITE`／`window.WED` →
@@ -398,6 +437,7 @@ slug 不存在、格式不合法、站台非 `published`、或連線失敗時，
 ├─ firestore.indexes.json
 ├─ public/
 │   ├─ invitation.html
+│   ├─ butler.html          # 收禮小幫手（獨立網址 /butler，不吃 site-context）
 │   ├─ shortlink.html
 │   ├─ 404.html
 │   └─ assets/
@@ -407,12 +447,16 @@ slug 不存在、格式不合法、站台非 `published`、或連線失敗時，
 │   └─ create-short-link.js
 └─ tests/
     ├─ rules.test.mjs
-    └─ e2e.mjs
+    ├─ e2e.mjs
+    └─ butler.mjs
 ```
 
 `public/` 底下另有既有的 Ethan & Momo 單場客製婚禮站，與本模板獨立並存。
 
 `public/js/cropper.js` 是後台專用的照片裁切器，只有 `admin.html` 會載入它。
+
+`public/js/butler-key.js` 是收禮簿位置的推導，`butler.html` 與 `admin.html`
+都會載入它 —— 兩邊要算出同一個位置，那份推導只能有一份（見第 13.9 節）。
 
 ---
 
@@ -598,6 +642,12 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
 | 代號 | 位置 | 功能 | 預設 |
 |---|---|---|---|
 | `seatingPlan` | 後台「排桌管理」分頁 | 把賓客排進桌位（見第 13.8 節） | ⛔ 關 |
+| `butler` | 後台「收禮小幫手」分頁 ＋ 獨立網址 `/butler` | 婚宴當天收禮金、發禮餅（見第 13.9 節） | ⛔ 關 |
+
+`butler` 是這一組裡唯一有自己網址的：工具本身在 `/butler#{token}`，
+但那個網址不在 `/w/{slug}/` 底下、也不吃 `site-context.js` ——
+對 `pages` 來說它一樣只是「後台要不要長出那個分頁」＋
+「規則放不放行收禮紀錄的寫入」兩件事。
 
 它和頁面共用同一個 map，所以 `set-pages.js` 的 `--enable seatingPlan`
 就打得開；但它不是一頁，不會出現在導覽列，`isEnabled('seatingPlan')`
@@ -742,6 +792,7 @@ allow read: if request.auth != null
 | 婚禮小卡 | `draw` |
 | 新人故事牆 | `exhibition` |
 | 新人熟悉測驗 | `quiz` |
+| 收禮小幫手 | `butler`（工具本身在 `/butler`，這個分頁只管連結、名單與統計） |
 
 預設開著的那一頁（出席回覆）剛好被關掉時，會自動改開第一個還在的分頁。
 
@@ -754,6 +805,7 @@ allow read: if request.auth != null
 | 婚禮資訊 | 婚禮資訊／當日流程／自訂內容 |
 | 桌次 | 桌次圖／桌次搜尋及名單 |
 | 排桌管理 | 排桌工作區／桌位管理／匯入匯出 |
+| 收禮小幫手 | 收禮統計／連結與名單 |
 
 子分頁也可以被開關收起來（目前只有「設定賓客標籤」）：沒開 `guestTagsEnabled`
 的站台連那顆子分頁鈕都不會出現，`#rsvp/tags` 這個網址會退回第一個看得到的子分頁。
@@ -1114,3 +1166,156 @@ Guest（賓客）── SeatingAssignment（排桌關係）── Table（桌位
 **這份草稿賓客讀不到**（規則只開給 `ownerEmails`）：
 上面有姓名、備註、飲食與聯絡整理，和 `rsvps`、`rsvpTags` 同一個等級。
 賓客看得到的只有同步之後的 `seating`，那一份本來就等同會場門口的座位表。
+
+---
+
+### 13.9 收禮小幫手（後台開關 `pages.butler` ＋ 獨立網址 `/butler`）
+
+婚宴當天在收禮台收禮金、發禮餅用的工具，**四到五位親友同時使用**。
+
+它和前面每一個模組都不一樣：**不是站台的一頁**。
+網址是 `/butler#{token}`，不在 `/w/{slug}/` 底下、不吃 `site-context.js`、
+不會出現在導覽列，也不需要 slug —— 拿到連結與通行碼就能用。
+和後台之間只有兩條線：
+
+| 方向 | 內容 |
+|---|---|
+| 後台 → butler | 賓客名單（**一份快照**，不是接上去的即時資料） |
+| butler → 後台 | 現場記下的每一筆與統計（即時） |
+
+#### 為什麼名單是「匯過去」而不是「接過去」
+
+兩個理由，缺一個這個設計都不成立：
+
+1. **當天要的是「現在這一版」。** 直接讀排桌草稿的話，
+   新人在休息室調一下桌次，收禮台的畫面就跟著跳。
+2. **權限。** 排桌草稿與 `rsvps` 都是 `ownerEmails` 才讀得到的資料，
+   拿著連結的親友本來就不該讀得到整份出席回覆
+   （聯絡方式、飲食禁忌、給新人的話都在裡面）。
+
+所以匯入是「複製必要欄位過去」：編號、姓名、桌次、人數、類別、備註。
+來源兩種，匯入時選（沒開排桌管理的站台只出現第二種）：
+`seatingPlan` 的排桌名單（有編號與桌號，核對最快）／`rsvps` 的出席回覆
+（沒有桌號，會盡量拿 `seating` 那份公開名單比對補上）。
+說了不來的人不會被匯進去。
+
+#### 通行碼為什麼能算是保護
+
+第 12 節說過：Firestore 的讀取請求不帶 payload，
+規則沒有辦法驗證使用者輸入的密碼，**純前端的密碼框只是遮住畫面**。
+
+這裡沒有推翻那個結論，而是換掉問題 —— **讓通行碼算得出資料在哪裡**：
+
+```
+bookId = PBKDF2-SHA256(通行碼, salt = 'butler:' + token, 200000 次, 32 bytes)
+```
+
+| 手上有什麼 | 結果 |
+|---|---|
+| 只有連結（token） | 少了通行碼，算不出 bookId |
+| 只有通行碼 | 少了 token，同樣算不出來 |
+| 兩個都有 | 才走得到 `butlers/{bookId}` |
+
+規則那一側只要做一件對應的事：
+
+```
+match /butlers/{bookId} {
+  allow get: if true;      // 走得到這個路徑就代表通行碼算對了
+  allow list: if false;    // ← 少了這一行，上面那道門整個白做
+```
+
+`list` 是這整套設計唯一的單點。能列出 `butlers` 集合的話，
+不必知道任何 token 或通行碼就拿得到每一場婚禮的禮金資料。
+
+20 萬次迭代不是為了防 token 被猜到（22 字 × 5 bits ≒ 110 bits，猜不到），
+而是為了讓「拿到連結之後再逐一試六位數通行碼」不划算：
+每一次嘗試都要先付一次 PBKDF2 的代價，還要打一趟 Firestore。
+
+**保護強度就是「連結與通行碼都不外流」，這是刻意接受的取捨。**
+四五位臨時幫忙的親友，要他們各辦一組 Google 帳號、還要新人一個個加進白名單，
+在婚禮當天是行不通的。所以真正需要綁身分才讀得到的資料
+（`rsvps`、`letters`、`seatingPlan`）一律不放進這條路徑，
+這裡只有「收禮台當下需要的那幾欄」。
+兩份鑰匙都存在 `sites/{siteId}/butlerLinks`，只有新人讀得到。
+
+#### 資料模型
+
+```
+butlers/{bookId}                      # 最上層，不在 sites 底下
+  siteId, slug, couple, label
+  guests      : map[] ≤600            # 匯過去的名單快照
+                                      # { id, code, name, table, count, cat, note }
+  revoked     : bool                  # 新人按「停用」
+  importedAt  : number
+  importedFrom: 'plan' | 'rsvp'
+  createdAt, updatedAt : number
+
+  entries/{autoId}                    # 現場記下的每一筆
+    guestId  : string   # 對得回 guests 裡的 id；'' 代表名單外的賓客
+    name, code, table
+    amount   : int 0–9,999,999        # 禮金
+    gift     : bool                   # 禮餅發了沒
+    boxes    : int 0–99               # 幾盒
+    people   : int 0–99               # 共幾人
+    note     : string ≤200
+    by       : string ≤40             # 記錄者（小幫手自己填的名字，不是身分驗證）
+    createdAt, updatedAt : number
+
+sites/{siteId}/butlerLinks/{autoId}   # 連結簿，只有新人讀得到
+  bookId, token, passcode, label, revoked, createdAt
+```
+
+**為什麼每一筆收禮是自己一份文件**，而不是像 `seatingPlan/draft` 收在一份裡：
+排桌是一個人慢慢改、覺得可以了才存；收禮是四五個人**同時**寫。
+收在同一份文件裡，兩個人同時儲存就會互相蓋掉。
+
+**為什麼名單是陣列而不是子集合**：名單整份匯入、整份換掉，
+一次寫一份文件才是原子的；小幫手那一側也只要一次讀取就拿得到整份。
+
+#### 權限
+
+| 路徑 | get | list | create | update | delete |
+|---|---|---|---|---|---|
+| `butlers/{bookId}` | 允許 | **拒絕** | 新人 | 新人（`siteId` 改不動） | 新人 |
+| `butlers/{bookId}/entries/{id}` | 允許 | 允許 | 小幫手 | 小幫手 | 小幫手／新人 |
+| `sites/{siteId}/butlerLinks/{id}` | 新人 | 新人 | 新人 | 新人 | 新人 |
+
+「小幫手」＝ `butlerOpen(bookId)`：收禮簿存在、`revoked != true`、
+而且這場婚禮的 `pages.butler` 是開的（和其他頁面同一套 `pageOn()`）。
+
+`entries` 的 `list` 開著沒有問題：要列出它得先走到 `butlers/{bookId}`，
+而那個位置本身就是通行碼算出來的。
+
+**現場記錯金額是常態，所以 `update` 與 `delete` 都開給小幫手** ——
+能當場改掉比留一筆錯的有用。誰動過哪一筆看 `by` 與 `updatedAt`，不是靠權限擋。
+這和 `rsvps`「賓客送出的紀錄一個字都不能改」是相反的取捨，
+因為性質不同：`rsvps` 是別人寫給新人看的，`entries` 是自己人的工作紀錄。
+
+`siteId` 不可修改：改得動就等於把別人的收禮簿掛到自己名下。
+
+#### 現場的介面
+
+這一頁刻意不長得像婚禮網站的其他頁面（自帶 `css/butler.css`，不吃 `common.css`）。
+賓客那些頁面是襯線字、細線條、大量留白；這一頁是站在收禮台、
+單手拿手機、旁邊還有人在排隊時用的：字大、按鈕最小 44px、對比夠、
+金額用等寬數字、主要操作固定在畫面底部。
+
+| 分頁 | 內容 |
+|---|---|
+| 收禮台 | 名單。搜尋名字／編號／桌次，全部／未收／已收三個篩選；已收的那幾列變色並直接寫著收了多少 |
+| 紀錄 | 所有人記過的每一筆，新的在前，可搜尋、可改、可刪 |
+| 統計 | 禮金總額、禮餅總盒數、發出禮餅筆數、到場人數、名單未收，以及**誰記了多少** |
+
+記帳表單上有一排常見金額（1200／1600／2000／2200／2600／3600／6000／12000）
+點一下就填好 —— 收禮台最花時間的就是打數字。
+盒數與人數是加減按鈕，不必叫鍵盤出來。
+
+**離線**：Firestore SDK 會把寫入排進本機佇列，斷線時照樣按得下「儲存」，
+恢復連線自己送出去。頂列的連線點只是告知，不擋任何操作。
+會場的網路本來就不能指望。
+
+**記錄者的名字存在自己手機**（`localStorage`，key 帶 token），
+第一次要儲存時問一次。事後對帳時「誰手上該有多少現金」就是靠這一欄。
+
+同一支手機開過一次就記住算好的 `bookId`，不必再輸入通行碼 ——
+存的是推導結果，不是通行碼本身。

@@ -72,6 +72,7 @@
       <button class="ad-tab" type="button" data-tab="lobby">婚禮資訊</button>
       <button class="ad-tab" type="button" data-tab="seating">桌次</button>
       <button class="ad-tab" type="button" data-tab="seatingPlan">排桌管理</button>
+      <button class="ad-tab" type="button" data-tab="butler">收禮小幫手</button>
       <button class="ad-tab" type="button" data-tab="letters">感謝信</button>
       <button class="ad-tab" type="button" data-tab="cards">婚禮小卡</button>
       <button class="ad-tab" type="button" data-tab="exhibits">新人故事牆</button>
@@ -702,6 +703,111 @@
   </div>
 
   <!-- ============================================================
+       分頁 3c：收禮小幫手（butler）
+       ------------------------------------------------------------
+       婚宴當天收禮金、送禮餅用的工具。工具本身不在這裡，
+       而是一個獨立的網址 /butler#{token}，交給幫忙收禮的親友用
+       （不必辦 Google 帳號、不必進後台）。
+
+       這個分頁只負責兩件事：
+         ・產生／收回那些連結，並把賓客名單匯過去
+         ・把現場記下來的每一筆與統計，接回新人自己看得到的地方
+  ============================================================ -->
+  <div class="ad-panel" data-panel="butler">
+
+    <nav class="ad-subtabs" data-subtabs="butler">
+      <button class="ad-subtab is-on" type="button" data-subtab="stats">收禮統計</button>
+      <button class="ad-subtab" type="button" data-subtab="links">連結與名單</button>
+    </nav>
+
+    <!-- 3c-1 收禮統計 -->
+    <div class="ad-subpanel is-on" data-subpanel="stats">
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">收禮統計</h2>
+
+      <div class="ad-hero-stat">
+        <div class="ad-hero-num" id="adBtSum">$0</div>
+        <div class="ad-hero-lab">禮金總額</div>
+        <div class="ad-hero-sub" id="adBtSumSub">還沒有任何紀錄</div>
+      </div>
+
+      <div class="ad-stats" id="adBtStats"></div>
+
+      <p class="ad-sec-note">
+        數字是<b>即時</b>的：現場四五個人各自用手機記，這裡看到的永遠是加起來的結果，
+        不必等誰把資料交回來。金額與盒數都直接取自每一筆紀錄。
+      </p>
+    </section>
+
+    <section class="ad-sec">
+      <div class="ad-sec-head">
+        <h2 class="ad-sec-title">收禮明細</h2>
+        <div class="ad-sec-head-actions">
+          <button class="btn small ghost" id="adBtExport" type="button">匯出 CSV</button>
+        </div>
+      </div>
+      <p class="ad-sec-note" id="adBtNoLink" hidden>
+        還沒有任何收禮連結。到「<b>連結與名單</b>」產生一組，
+        再把網址與通行碼交給幫忙收禮的親友。
+      </p>
+
+      <div class="ad-list-head">
+        <span id="adBtCount">目前 0 筆</span>
+        <input class="ad-filter" id="adBtFilter" type="text" placeholder="找名字、備註、記錄者…">
+      </div>
+
+      <div class="ad-tablewrap">
+        <table class="ad-table">
+          <thead>
+            <tr>
+              <th>編號</th><th>姓名</th><th>桌次</th><th>禮金</th>
+              <th>禮餅</th><th>盒數</th><th>人數</th><th>備註</th>
+              <th>記錄者</th><th>時間</th>
+            </tr>
+          </thead>
+          <tbody id="adBtRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">誰記了多少</h2>
+      <p class="ad-sec-note">
+        每一筆都會記下是誰收的（小幫手自己在工具裡填的名字）。
+        事後對帳時，這一份就是「哪一位親友手上該有多少現金」。
+      </p>
+      <div class="ad-list" id="adBtByWho"></div>
+    </section>
+    </div>
+
+    <!-- 3c-2 連結與名單 -->
+    <div class="ad-subpanel" data-subpanel="links">
+    <section class="ad-sec">
+      <div class="ad-sec-head">
+        <h2 class="ad-sec-title">收禮連結</h2>
+        <div class="ad-sec-head-actions">
+          <button class="btn small" id="adBtNewLink" type="button">產生新連結</button>
+        </div>
+      </div>
+      <p class="ad-sec-note">
+        一組連結配一組通行碼，幫忙收禮的親友<b>兩個都要有</b>才進得去 ——
+        通行碼不只是畫面上的一道門，收禮簿真正的位置是用它算出來的，
+        少了它連資料在哪裡都找不到。
+        <b>通常一場婚禮只要一組</b>：四五個人共用同一組，統計才會加在一起。
+      </p>
+      <p class="ad-sec-note">
+        名單是<b>匯過去的一份快照</b>，不是接上去的即時資料 ——
+        婚禮當天收禮台要的是「現在這一版」，不該因為你回頭調桌次就跟著跳。
+        改了名單就再按一次匯入，已經記好的收禮不會受影響。
+      </p>
+
+      <div class="ad-list" id="adBtLinks"></div>
+    </section>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
        分頁 4：感謝信
   ============================================================ -->
   <div class="ad-panel" data-panel="letters">
@@ -1313,6 +1419,9 @@
      兩支都只在後台用得到，掛在 window 上等 admin.js 登入成功後才叫用 -->
 <script defer src="/js/xlsx-lite.js"></script>
 <script defer src="/js/seating-plan.js"></script>
+
+<!-- 收禮小幫手的鑰匙推導：後台產生連結、butler.html 進場，兩邊要算出同一個位置 -->
+<script defer src="/js/butler-key.js"></script>
 
 <!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與本頁 JS -->
 <script type="module" src="/js/site-context.js"></script>

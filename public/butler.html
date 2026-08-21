@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- 婚宴當天現場用的工具，不對外連結、不要被搜尋到 -->
+<meta name="robots" content="noindex,nofollow">
+<!-- token 在 # 後面，但保險起見連 referrer 都不送 -->
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#1D2129">
+<title>收禮小幫手</title>
+
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="/favicon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="收禮小幫手">
+
+<link rel="stylesheet" href="/css/butler.css">
+</head>
+<body>
+
+<!-- ============================================================
+     通行碼畫面
+     ============================================================ -->
+<section class="bt-gate" id="btGate" hidden>
+  <div class="bt-gate-card">
+    <div class="bt-mark">✦</div>
+    <h1>收禮小幫手</h1>
+    <p class="bt-gate-sub" id="btGateSub">請輸入新人給你的通行碼</p>
+
+    <form id="btGateForm" autocomplete="off">
+      <input class="bt-pass" id="btPass" type="text" inputmode="numeric"
+             pattern="[0-9]*" maxlength="6" placeholder="000000"
+             aria-label="通行碼" autocomplete="one-time-code">
+      <button class="bt-btn bt-btn-primary" id="btEnter" type="submit">進入</button>
+    </form>
+
+    <p class="bt-gate-err" id="btGateErr" role="alert">&nbsp;</p>
+    <p class="bt-gate-note">通行碼只有這場婚禮的收禮台會用到，請不要轉傳這個連結。</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     連結本身有問題（沒有 token、或瀏覽器不支援）
+     ============================================================ -->
+<section class="bt-gate" id="btFatal" hidden>
+  <div class="bt-gate-card">
+    <div class="bt-mark">✦</div>
+    <h1 id="btFatalTitle">連結不完整</h1>
+    <p class="bt-gate-sub" id="btFatalMsg">請跟新人再要一次完整的連結</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     主畫面
+     ============================================================ -->
+<div class="bt-app" id="btApp" hidden>
+
+  <header class="bt-top">
+    <div class="bt-top-id">
+      <strong id="btCouple">收禮小幫手</strong>
+      <span id="btLabel"></span>
+    </div>
+    <button class="bt-who" id="btWho" type="button">
+      <span class="bt-dot" id="btNet" title="連線狀態"></span>
+      <span id="btWhoName">設定名字</span>
+    </button>
+  </header>
+
+  <main class="bt-main">
+
+    <!-- ---------- 收禮台：核對名單 ---------- -->
+    <!-- 三個 view 用 hidden 切換（見 css 的 [hidden]），預設停在收禮台 -->
+    <section class="bt-view" data-view="list">
+      <div class="bt-strip" id="btStrip">
+        <div><b id="btStripDone">0</b><small>已收</small></div>
+        <div><b id="btStripLeft">0</b><small>未收</small></div>
+        <div class="bt-strip-money"><b id="btStripSum">$0</b><small>總金額</small></div>
+      </div>
+
+      <div class="bt-tools">
+        <input class="bt-search" id="btSearch" type="search"
+               placeholder="搜尋名字、編號、桌次" aria-label="搜尋賓客">
+        <button class="bt-btn bt-btn-ghost" id="btAddManual" type="button">＋ 名單外</button>
+      </div>
+
+      <div class="bt-chips" id="btChips" role="tablist">
+        <button class="bt-chip is-on" data-filter="all" type="button">全部</button>
+        <button class="bt-chip" data-filter="todo" type="button">未收</button>
+        <button class="bt-chip" data-filter="done" type="button">已收</button>
+      </div>
+
+      <div class="bt-rows" id="btList"></div>
+    </section>
+
+    <!-- ---------- 紀錄：所有人記過的每一筆 ---------- -->
+    <section class="bt-view" data-view="log" hidden>
+      <div class="bt-tools">
+        <input class="bt-search" id="btLogSearch" type="search"
+               placeholder="搜尋名字、備註、記錄者" aria-label="搜尋紀錄">
+      </div>
+      <div class="bt-rows" id="btLog"></div>
+    </section>
+
+    <!-- ---------- 統計 ---------- -->
+    <section class="bt-view" data-view="stat" hidden>
+      <div class="bt-hero">
+        <small>禮金總額</small>
+        <b id="btSumMoney">$0</b>
+        <span id="btSumSub">共 0 筆</span>
+      </div>
+
+      <div class="bt-tiles" id="btTiles"></div>
+
+      <h2 class="bt-h2">誰記了多少</h2>
+      <div class="bt-rows" id="btByWho"></div>
+
+      <button class="bt-btn bt-btn-ghost bt-wide" id="btExport" type="button">匯出 CSV</button>
+      <p class="bt-foot-note">統計是即時的：四五個人各自記，這裡看到的永遠是加起來的結果。</p>
+    </section>
+
+  </main>
+
+  <nav class="bt-tabbar" id="btTabbar">
+    <button data-go="list" class="is-on" type="button"><span>収</span>收禮台</button>
+    <button data-go="log" type="button"><span>録</span>紀錄</button>
+    <button data-go="stat" type="button"><span>計</span>統計</button>
+  </nav>
+</div>
+
+<!-- ============================================================
+     記帳表單（由下往上推出來）
+     ============================================================ -->
+<div class="bt-sheet-wrap" id="btSheet" hidden>
+  <div class="bt-sheet-bg" data-close="1"></div>
+  <form class="bt-sheet" id="btForm" autocomplete="off">
+
+    <div class="bt-sheet-head">
+      <button class="bt-x" type="button" data-close="1" aria-label="關閉">✕</button>
+      <div class="bt-sheet-title">
+        <strong id="btFormName">賓客</strong>
+        <span id="btFormMeta"></span>
+      </div>
+    </div>
+
+    <div class="bt-sheet-body">
+
+      <!-- 名單外的賓客才需要自己打名字 -->
+      <label class="bt-field" id="btNameField" hidden>
+        <span>賓客姓名</span>
+        <input id="btInName" type="text" maxlength="40" placeholder="例：王小明">
+      </label>
+
+      <label class="bt-field">
+        <span>禮金金額</span>
+        <div class="bt-money">
+          <i>$</i>
+          <input id="btInAmount" type="text" inputmode="numeric" pattern="[0-9]*"
+                 placeholder="0" aria-label="禮金金額">
+        </div>
+      </label>
+      <div class="bt-quick" id="btQuick"></div>
+
+      <div class="bt-field">
+        <span>禮餅</span>
+        <div class="bt-seg" id="btGiftSeg">
+          <button type="button" data-gift="0" class="is-on">沒有發</button>
+          <button type="button" data-gift="1">已發送</button>
+        </div>
+      </div>
+
+      <div class="bt-field" id="btBoxField" hidden>
+        <span>共幾盒</span>
+        <div class="bt-step" data-step="boxes">
+          <button type="button" data-d="-1" aria-label="減少">－</button>
+          <input id="btInBoxes" type="text" inputmode="numeric" pattern="[0-9]*" value="1" aria-label="盒數">
+          <button type="button" data-d="1" aria-label="增加">＋</button>
+        </div>
+      </div>
+
+      <div class="bt-field">
+        <span>共幾人</span>
+        <div class="bt-step" data-step="people">
+          <button type="button" data-d="-1" aria-label="減少">－</button>
+          <input id="btInPeople" type="text" inputmode="numeric" pattern="[0-9]*" value="0" aria-label="人數">
+          <button type="button" data-d="1" aria-label="增加">＋</button>
+        </div>
+      </div>
+
+      <label class="bt-field">
+        <span>備註</span>
+        <input id="btInNote" type="text" maxlength="200" placeholder="選填，例：紅包袋要留、代收">
+      </label>
+
+      <p class="bt-by" id="btFormBy"></p>
+      <button class="bt-btn bt-btn-danger bt-wide" id="btDelete" type="button" hidden>刪除這一筆</button>
+    </div>
+
+    <div class="bt-sheet-foot">
+      <button class="bt-btn bt-btn-primary bt-wide" id="btSave" type="submit">儲存</button>
+    </div>
+  </form>
+</div>
+
+<!-- 記錄者名字 -->
+<div class="bt-sheet-wrap" id="btNameSheet" hidden>
+  <div class="bt-sheet-bg" data-close="1"></div>
+  <form class="bt-sheet bt-sheet-sm" id="btNameForm" autocomplete="off">
+    <div class="bt-sheet-head">
+      <button class="bt-x" type="button" data-close="1" aria-label="關閉">✕</button>
+      <div class="bt-sheet-title"><strong>你是誰</strong><span>每一筆會記下是誰收的，之後對得起來</span></div>
+    </div>
+    <div class="bt-sheet-body">
+      <label class="bt-field">
+        <span>你的名字</span>
+        <input id="btInWho" type="text" maxlength="40" placeholder="例：阿明">
+      </label>
+    </div>
+    <div class="bt-sheet-foot">
+      <button class="bt-btn bt-btn-primary bt-wide" type="submit">好了</button>
+    </div>
+  </form>
+</div>
+
+<div class="bt-toasts" id="btToasts"></div>
+
+<script defer src="/js/butler-key.js"></script>
+<script type="module" src="/js/butler.js"></script>
+</body>
+</html>

@@ -1,0 +1,358 @@
+/* ============================================================
+   butler.css — 收禮小幫手
+   ------------------------------------------------------------
+   這一頁刻意不長得像婚禮網站的其他頁面。
+   其他頁面是給賓客看的（襯線字、細線條、大量留白），
+   這一頁是婚宴當天站在收禮台、單手拿手機、旁邊還有人在排隊時用的：
+
+     ・字要大、按鈕要大（最小 44px，拇指按得到）
+     ・對比要夠（宴會廳的燈光通常偏暗，手機還會自動降亮度）
+     ・重要的數字用等寬數字，金額對齊才看得出差異
+     ・主要操作固定在畫面底部，不必伸手到頂端
+
+   所以它自帶一整套樣式，不吃 common.css，也沒有主題色切換。
+============================================================ */
+
+:root{
+  --ink:#1D2129;
+  --ink-2:#4A5361;
+  --ink-3:#7C8797;
+  --line:#E2E1DD;
+  --paper:#F4F3F0;
+  --card:#FFFFFF;
+  --gold:#B98A28;
+  --gold-soft:#FBF3E0;
+  --ok:#256B4E;
+  --ok-soft:#E7F2EC;
+  --danger:#B0413A;
+  --danger-soft:#FBECEA;
+  --tap:48px;
+  --safe-b:env(safe-area-inset-bottom, 0px);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",
+              "PingFang TC","Microsoft JhengHei",sans-serif;
+  font-size:16px;              /* 小於 16px 的輸入框在 iOS 上會觸發縮放 */
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  -webkit-text-size-adjust:100%;
+  overscroll-behavior-y:none;
+}
+[hidden]{display:none !important}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+h1,h2{margin:0;font-weight:600}
+.num{font-variant-numeric:tabular-nums}
+
+/* ============================================================
+   通行碼／錯誤畫面
+============================================================ */
+.bt-gate{
+  min-height:100svh;display:flex;align-items:center;justify-content:center;
+  padding:32px 20px;
+}
+.bt-gate-card{
+  width:100%;max-width:360px;text-align:center;
+  background:var(--card);border:1px solid var(--line);border-radius:18px;
+  padding:34px 24px 26px;
+}
+.bt-mark{font-size:1.9rem;line-height:1;color:var(--gold)}
+.bt-gate-card h1{font-size:1.3rem;margin:10px 0 6px;letter-spacing:.04em}
+.bt-gate-sub{margin:0 0 20px;color:var(--ink-2);font-size:.92rem}
+.bt-pass{
+  width:100%;height:60px;text-align:center;
+  font-size:1.9rem;font-weight:600;letter-spacing:.42em;text-indent:.42em;
+  font-variant-numeric:tabular-nums;
+  border:1px solid var(--line);border-radius:12px;background:#fff;
+  margin-bottom:12px;
+}
+.bt-pass:focus{outline:2px solid var(--gold);outline-offset:1px}
+.bt-pass::placeholder{color:#CFD3D9;font-weight:400}
+.bt-gate-err{min-height:1.4em;margin:12px 0 0;color:var(--danger);font-size:.88rem}
+.bt-gate-note{margin:16px 0 0;color:var(--ink-3);font-size:.78rem;line-height:1.7}
+
+/* ============================================================
+   按鈕
+============================================================ */
+.bt-btn{
+  min-height:var(--tap);padding:0 18px;border-radius:12px;
+  font-size:1rem;font-weight:600;letter-spacing:.03em;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  transition:transform .08s ease,background .15s ease;
+}
+.bt-btn:active{transform:scale(.97)}
+.bt-btn-primary{background:var(--ink);color:#fff}
+.bt-btn-ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.bt-btn-danger{background:var(--danger-soft);color:var(--danger)}
+.bt-btn[disabled]{opacity:.5;pointer-events:none}
+.bt-wide{width:100%}
+
+/* ============================================================
+   主畫面骨架：頂列固定、內容捲、底部分頁固定
+============================================================ */
+.bt-app{
+  min-height:100svh;display:flex;flex-direction:column;
+  padding-bottom:calc(62px + var(--safe-b));
+}
+.bt-top{
+  position:sticky;top:0;z-index:20;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 14px;background:var(--ink);color:#fff;
+}
+.bt-top-id{display:flex;flex-direction:column;min-width:0}
+.bt-top-id strong{font-size:.98rem;font-weight:600;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.bt-top-id span{font-size:.74rem;color:#A8B0BC;letter-spacing:.06em}
+.bt-who{
+  display:flex;align-items:center;gap:7px;flex:none;
+  height:38px;padding:0 13px;border-radius:19px;
+  background:rgba(255,255,255,.12);color:#fff;font-size:.85rem;
+  max-width:46vw;
+}
+.bt-who span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bt-dot{
+  width:8px;height:8px;border-radius:50%;background:#5FCF9B;flex:none;
+}
+.bt-dot.is-off{background:#E8A93C}
+
+.bt-main{flex:1;padding:14px 14px 22px;max-width:720px;width:100%;margin:0 auto}
+.bt-view{display:block}
+
+/* ---------- 收禮台上方的摘要 ---------- */
+.bt-strip{
+  display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:1px;
+  background:var(--line);border:1px solid var(--line);border-radius:14px;
+  overflow:hidden;margin-bottom:12px;
+}
+.bt-strip > div{
+  background:var(--card);padding:11px 8px;text-align:center;
+  display:flex;flex-direction:column;gap:1px;
+}
+.bt-strip b{font-size:1.24rem;font-weight:600;font-variant-numeric:tabular-nums}
+.bt-strip small{font-size:.72rem;color:var(--ink-3);letter-spacing:.08em}
+.bt-strip-money b{color:var(--gold)}
+
+/* ---------- 搜尋與篩選 ---------- */
+.bt-tools{display:flex;gap:8px;margin-bottom:10px}
+.bt-search{
+  flex:1;min-width:0;height:var(--tap);padding:0 14px;
+  border:1px solid var(--line);border-radius:12px;background:#fff;
+}
+.bt-search:focus{outline:2px solid var(--gold);outline-offset:-1px}
+.bt-tools .bt-btn{flex:none;padding:0 14px;font-size:.9rem}
+
+.bt-chips{display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap}
+.bt-chip{
+  height:36px;padding:0 15px;border-radius:18px;
+  background:#fff;border:1px solid var(--line);
+  font-size:.87rem;color:var(--ink-2);
+}
+.bt-chip.is-on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+
+/* ---------- 清單 ---------- */
+.bt-rows{display:flex;flex-direction:column;gap:8px}
+.bt-row{
+  display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:12px 14px;min-height:64px;
+}
+.bt-row:active{background:#FAF9F7}
+.bt-row.is-done{border-color:#CDE2D7;background:var(--ok-soft)}
+.bt-row-main{flex:1;min-width:0}
+.bt-row-name{
+  font-size:1.03rem;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.bt-row-sub{
+  font-size:.79rem;color:var(--ink-3);margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.bt-row-side{text-align:right;flex:none}
+.bt-row-amt{
+  font-size:1.05rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ok);
+}
+.bt-row-tag{
+  font-size:.74rem;color:var(--ink-3);display:block;margin-top:1px;
+}
+.bt-row-go{
+  font-size:.83rem;font-weight:600;color:var(--gold);
+  border:1px solid var(--gold);border-radius:16px;padding:6px 13px;
+}
+.bt-code{
+  font-size:.72rem;font-weight:700;letter-spacing:.06em;color:var(--ink-3);
+  border:1px solid var(--line);border-radius:6px;padding:1px 5px;margin-right:5px;
+}
+
+.bt-empty{
+  text-align:center;color:var(--ink-3);font-size:.9rem;
+  padding:44px 20px;line-height:1.9;
+}
+
+/* ---------- 統計 ---------- */
+.bt-hero{
+  background:var(--ink);color:#fff;border-radius:16px;
+  padding:22px 20px;text-align:center;margin-bottom:12px;
+}
+.bt-hero small{display:block;font-size:.76rem;color:#A8B0BC;letter-spacing:.14em}
+.bt-hero b{
+  display:block;font-size:2.5rem;font-weight:700;line-height:1.2;
+  font-variant-numeric:tabular-nums;margin:2px 0;
+}
+.bt-hero span{font-size:.82rem;color:#A8B0BC}
+.bt-tiles{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:22px;
+}
+.bt-tile{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:13px 14px;
+}
+.bt-tile b{
+  display:block;font-size:1.4rem;font-weight:600;
+  font-variant-numeric:tabular-nums;line-height:1.3;
+}
+.bt-tile small{font-size:.76rem;color:var(--ink-3);letter-spacing:.04em}
+.bt-h2{font-size:.82rem;color:var(--ink-3);letter-spacing:.14em;margin:0 0 8px}
+.bt-foot-note{
+  color:var(--ink-3);font-size:.78rem;line-height:1.8;margin:14px 0 0;text-align:center;
+}
+#btExport{margin-top:20px}
+
+/* ============================================================
+   底部分頁
+============================================================ */
+.bt-tabbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:30;
+  display:grid;grid-template-columns:repeat(3,1fr);
+  background:rgba(255,255,255,.96);
+  backdrop-filter:saturate(180%) blur(10px);
+  border-top:1px solid var(--line);
+  padding-bottom:var(--safe-b);
+}
+.bt-tabbar button{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  height:62px;font-size:.7rem;letter-spacing:.1em;color:var(--ink-3);
+}
+.bt-tabbar button span{
+  font-size:1rem;font-weight:600;line-height:1.3;
+}
+.bt-tabbar button.is-on{color:var(--ink)}
+.bt-tabbar button.is-on span{color:var(--gold)}
+
+/* ============================================================
+   由下推出的表單
+============================================================ */
+.bt-sheet-wrap{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end}
+.bt-sheet-bg{position:absolute;inset:0;background:rgba(20,22,26,.45)}
+.bt-sheet{
+  position:relative;width:100%;max-height:92svh;
+  display:flex;flex-direction:column;
+  background:var(--paper);border-radius:20px 20px 0 0;
+  animation:btUp .22s cubic-bezier(.2,.8,.3,1);
+}
+@keyframes btUp{from{transform:translateY(14%);opacity:.6}to{transform:none;opacity:1}}
+.bt-sheet-head{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:16px 16px 12px;border-bottom:1px solid var(--line);
+}
+.bt-sheet-title{flex:1;min-width:0}
+.bt-sheet-title strong{display:block;font-size:1.16rem;font-weight:700}
+.bt-sheet-title span{font-size:.79rem;color:var(--ink-3)}
+.bt-x{
+  width:38px;height:38px;border-radius:50%;background:#fff;border:1px solid var(--line);
+  font-size:.95rem;color:var(--ink-2);order:2;flex:none;
+}
+.bt-sheet-body{
+  flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:16px 16px 8px;display:flex;flex-direction:column;gap:14px;
+}
+.bt-sheet-foot{
+  padding:12px 16px calc(12px + var(--safe-b));
+  border-top:1px solid var(--line);background:var(--card);
+}
+.bt-sheet-sm{max-height:60svh}
+
+.bt-field{display:flex;flex-direction:column;gap:6px}
+.bt-field > span{font-size:.8rem;color:var(--ink-2);letter-spacing:.06em;font-weight:600}
+.bt-field input[type=text]{
+  height:var(--tap);padding:0 14px;background:#fff;
+  border:1px solid var(--line);border-radius:12px;width:100%;
+}
+.bt-field input[type=text]:focus{outline:2px solid var(--gold);outline-offset:-1px}
+
+/* 金額：整個畫面最重要的一個欄位，做得比其他都大 */
+.bt-money{display:flex;align-items:center;background:#fff;
+  border:1px solid var(--line);border-radius:12px;padding:0 14px;height:64px}
+.bt-money i{font-style:normal;font-size:1.3rem;color:var(--ink-3);margin-right:6px}
+.bt-money input{
+  flex:1;min-width:0;height:100%;border:0;background:none;
+  font-size:1.85rem;font-weight:700;font-variant-numeric:tabular-nums;
+  padding:0;
+}
+.bt-money input:focus{outline:none}
+.bt-money:focus-within{outline:2px solid var(--gold);outline-offset:-1px}
+
+.bt-quick{display:flex;flex-wrap:wrap;gap:7px;margin-top:-6px}
+.bt-quick button{
+  height:38px;padding:0 13px;border-radius:19px;background:var(--gold-soft);
+  color:#8A6516;font-size:.88rem;font-weight:600;font-variant-numeric:tabular-nums;
+}
+.bt-quick button:active{background:#F4E6C6}
+
+.bt-seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;
+  background:#EDECE8;border-radius:12px;padding:4px}
+.bt-seg button{
+  height:42px;border-radius:9px;font-size:.95rem;color:var(--ink-2);font-weight:600;
+}
+.bt-seg button.is-on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+.bt-step{display:flex;align-items:center;gap:8px}
+.bt-step button{
+  width:52px;height:52px;flex:none;border-radius:12px;
+  background:#fff;border:1px solid var(--line);font-size:1.3rem;color:var(--ink);
+}
+.bt-step button:active{background:#F0EFEC}
+.bt-step input{
+  flex:1;min-width:0;height:52px;text-align:center;
+  font-size:1.25rem;font-weight:600;font-variant-numeric:tabular-nums;
+  border:1px solid var(--line);border-radius:12px;background:#fff;
+}
+.bt-by{margin:0;color:var(--ink-3);font-size:.78rem}
+
+/* ============================================================
+   Toast
+============================================================ */
+.bt-toasts{
+  position:fixed;left:0;right:0;bottom:calc(72px + var(--safe-b));z-index:60;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  padding:0 16px;pointer-events:none;
+}
+.bt-toast{
+  background:var(--ink);color:#fff;border-radius:24px;
+  padding:11px 20px;font-size:.9rem;max-width:100%;
+  animation:btIn .2s ease;
+}
+.bt-toast.is-error{background:var(--danger)}
+.bt-toast.is-out{opacity:0;transition:opacity .2s ease}
+@keyframes btIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ============================================================
+   桌機／平板：一樣的東西攤開來放
+============================================================ */
+@media(min-width:720px){
+  .bt-main{padding:20px 20px 30px}
+  .bt-tiles{grid-template-columns:repeat(3,1fr)}
+  .bt-sheet-wrap{align-items:center;justify-content:center;padding:24px}
+  .bt-sheet{max-width:460px;border-radius:18px;max-height:88svh;animation:none}
+  .bt-sheet-foot{padding-bottom:14px}
+  .bt-toasts{bottom:24px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
