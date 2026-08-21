@@ -2557,5 +2557,30 @@
     return true;
   }
 
-  window.SeatingPlan = { init, syncNow, freezeCodes };
+  /* 排好的名單攤成一份純資料，給「收禮小幫手」匯出去用（見 admin.js 的
+     butlerImport）。回傳的是一份快照，不是接上去的即時資料 ——
+     收禮台在婚宴當天要的是「現在這一版」，不該因為新人回頭調桌次就跟著跳。
+
+     草稿是非同步讀進來的，太早叫會拿到空的，所以先等它讀完。 */
+  async function roster() {
+    if (!started) init();
+    if (loadPromise) await loadPromise;
+    return allGuests()
+      .slice()
+      .sort((a, b) => String(a.code).localeCompare(String(b.code)))
+      .map((g) => {
+        const t = tableById(g.tableId);
+        return {
+          id: g.id,
+          code: g.code || '',
+          name: g.name || '',
+          table: t ? tableLabel(t) : '',
+          count: Number(g.count) || 0,
+          cat: g.cat || '',
+          note: g.note || '',
+        };
+      });
+  }
+
+  window.SeatingPlan = { init, syncNow, freezeCodes, roster };
 })();

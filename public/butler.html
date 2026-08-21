@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- 婚宴當天現場用的工具，不對外連結、不要被搜尋到 -->
+<meta name="robots" content="noindex,nofollow">
+<!-- token 在 # 後面，但保險起見連 referrer 都不送 -->
+<meta name="referrer" content="no-referrer">
+<title>收禮小幫手</title>
+
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="/favicon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="收禮小幫手">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- 和新人後台同一套樣式：同樣的字族、色票、1px 線條與元件。
+     butler.css 只補後台沒有的那幾樣（金額欄、加減鈕的排版）。 -->
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/css/admin.css">
+<link rel="stylesheet" href="/css/butler.css">
+</head>
+<body data-theme="champagne" data-page="butler">
+
+<div class="bg-decor"></div>
+
+<!-- ============================================================
+     通行碼（版型與後台的登入門同一份）
+     ============================================================ -->
+<div class="overlay" id="btGate" hidden>
+  <div class="gate-card">
+    <div class="ribbon">Butler</div>
+    <h1>收禮小幫手</h1>
+    <div class="sub" id="btGateSub">
+      婚宴當天的收禮台<br>請輸入新人給你的通行碼
+    </div>
+
+    <form id="btGateForm" autocomplete="off">
+      <input class="ad-input bt-pass" id="btPass" type="text" inputmode="numeric"
+             pattern="[0-9]*" maxlength="6" placeholder="000000"
+             aria-label="通行碼" autocomplete="one-time-code">
+      <button class="btn" id="btEnter" type="submit">進入</button>
+    </form>
+
+    <div class="pw-err" id="btGateErr">&nbsp;</div>
+    <div class="sub" style="margin:14px 0 0;font-size:12px;opacity:.75">
+      通行碼只有這場婚禮的收禮台會用到，請不要轉傳這個連結
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     連結本身有問題（沒有 token、已停用、瀏覽器不支援）
+     ============================================================ -->
+<div class="overlay" id="btFatal" hidden>
+  <div class="gate-card">
+    <div class="ribbon">Butler</div>
+    <h1 id="btFatalTitle">連結不完整</h1>
+    <div class="sub" id="btFatalMsg" style="margin-bottom:0">請跟新人再要一次完整的連結</div>
+  </div>
+</div>
+
+<!-- ============================================================
+     主畫面
+     ============================================================ -->
+<section class="ad-page" id="btApp" hidden>
+
+  <header class="ad-bar">
+    <div class="ad-bar-left">
+      <div class="ad-bar-brand">
+        <div class="ad-bar-title">收禮小幫手</div>
+        <div class="ad-bar-sub"><span id="btCouple"></span><span id="btLabel"></span></div>
+      </div>
+    </div>
+    <div class="ad-bar-actions">
+      <button class="btn small ghost" id="btWho" type="button">
+        <span class="bt-dot" id="btNet" aria-hidden="true"></span><span id="btWhoName">設定名字</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="ad-layout">
+    <main class="ad-main">
+
+      <nav class="ad-subtabs" id="btTabbar">
+        <button class="ad-subtab is-on" type="button" data-go="list">收禮台</button>
+        <button class="ad-subtab" type="button" data-go="log">紀錄</button>
+        <button class="ad-subtab" type="button" data-go="stat">統計</button>
+      </nav>
+
+      <!-- ---------- 收禮台：核對名單 ---------- -->
+      <div class="ad-subpanel is-on" data-view="list">
+        <section class="ad-sec">
+          <div class="ad-sec-head">
+            <h2 class="ad-sec-title">賓客名單</h2>
+            <div class="ad-sec-head-actions">
+              <button class="btn small" id="btAddManual" type="button">＋ 名單外的賓客</button>
+            </div>
+          </div>
+
+          <div class="ad-stats ad-stats-3">
+            <div class="ad-stat"><div class="ad-stat-num" id="btStripDone">0</div>
+              <div class="ad-stat-lab">已收</div></div>
+            <div class="ad-stat"><div class="ad-stat-num" id="btStripLeft">0</div>
+              <div class="ad-stat-lab">未收</div></div>
+            <div class="ad-stat"><div class="ad-stat-num" id="btStripSum">$0</div>
+              <div class="ad-stat-lab">禮金總額</div></div>
+          </div>
+
+          <div class="ad-list-head">
+            <div class="ad-chips" id="btChips">
+              <button class="ad-chip is-on" data-filter="all" type="button">全部</button>
+              <button class="ad-chip" data-filter="todo" type="button">未收</button>
+              <button class="ad-chip" data-filter="done" type="button">已收</button>
+            </div>
+            <input class="ad-filter" id="btSearch" type="search"
+                   placeholder="找名字、編號、桌次…" aria-label="搜尋賓客">
+          </div>
+
+          <div class="ad-list" id="btList"></div>
+        </section>
+      </div>
+
+      <!-- ---------- 紀錄：所有人記過的每一筆 ---------- -->
+      <div class="ad-subpanel" data-view="log">
+        <section class="ad-sec">
+          <h2 class="ad-sec-title">收禮紀錄</h2>
+          <p class="ad-sec-note">
+            所有小幫手記的都在這裡，新的排在最前面。
+            <b>記錯了就點進去改</b>，現場改掉比留一筆錯的有用。
+          </p>
+
+          <div class="ad-list-head">
+            <span id="btLogCount">目前 0 筆</span>
+            <input class="ad-filter" id="btLogSearch" type="search"
+                   placeholder="找名字、備註、記錄者…" aria-label="搜尋紀錄">
+          </div>
+
+          <div class="ad-list" id="btLog"></div>
+        </section>
+      </div>
+
+      <!-- ---------- 統計 ---------- -->
+      <div class="ad-subpanel" data-view="stat">
+        <section class="ad-sec">
+          <h2 class="ad-sec-title">收禮統計</h2>
+
+          <div class="ad-hero-stat">
+            <div class="ad-hero-num" id="btSumMoney">$0</div>
+            <div class="ad-hero-lab">禮金總額</div>
+            <div class="ad-hero-sub" id="btSumSub">還沒有任何紀錄</div>
+          </div>
+
+          <div class="ad-stats" id="btTiles"></div>
+
+          <p class="ad-sec-note">
+            數字是<b>即時</b>的：幾個人各自用手機記，這裡看到的永遠是加起來的結果。
+            新人在後台看到的也是同一份。
+          </p>
+        </section>
+
+        <section class="ad-sec">
+          <div class="ad-sec-head">
+            <h2 class="ad-sec-title">誰記了多少</h2>
+            <div class="ad-sec-head-actions">
+              <button class="btn small ghost" id="btExport" type="button">匯出 CSV</button>
+            </div>
+          </div>
+          <p class="ad-sec-note">
+            事後對帳看的就是這一份：哪一位手上該有多少現金。
+          </p>
+          <div class="ad-list" id="btByWho"></div>
+        </section>
+      </div>
+
+    </main>
+  </div>
+</section>
+
+<!-- ============================================================
+     記帳表單（後台的表單彈窗同一份版型）
+     ============================================================ -->
+<div class="ad-modal-mask" id="btSheet" hidden>
+  <div class="ad-modal-card ad-modal-card-form">
+    <div class="ad-modal-title" id="btFormName">賓客</div>
+    <div class="ad-modal-msg" id="btFormMeta"></div>
+
+    <form class="ad-form" id="btForm" autocomplete="off">
+
+      <!-- 名單外的賓客才需要自己打名字 -->
+      <div id="btNameField" hidden>
+        <label class="ad-label" for="btInName">賓客姓名</label>
+        <input class="ad-input" id="btInName" type="text" maxlength="40" placeholder="例：王小明">
+      </div>
+
+      <label class="ad-label" for="btInAmount">禮金金額</label>
+      <input class="ad-input bt-amount" id="btInAmount" type="text"
+             inputmode="numeric" pattern="[0-9]*" placeholder="0">
+      <div class="ad-chips bt-quick" id="btQuick"></div>
+
+      <label class="ad-label">禮餅</label>
+      <div class="ad-chips" id="btGiftSeg">
+        <button class="ad-chip is-on" type="button" data-gift="0">沒有發</button>
+        <button class="ad-chip" type="button" data-gift="1">已發送</button>
+      </div>
+
+      <div id="btBoxField" hidden>
+        <label class="ad-label" for="btInBoxes">共幾盒</label>
+        <div class="bt-step" data-step="boxes">
+          <button class="btn small ghost" type="button" data-d="-1" aria-label="減少">－</button>
+          <input class="ad-input" id="btInBoxes" type="text" inputmode="numeric"
+                 pattern="[0-9]*" value="1" aria-label="盒數">
+          <button class="btn small ghost" type="button" data-d="1" aria-label="增加">＋</button>
+        </div>
+      </div>
+
+      <label class="ad-label" for="btInPeople">共幾人</label>
+      <div class="bt-step" data-step="people">
+        <button class="btn small ghost" type="button" data-d="-1" aria-label="減少">－</button>
+        <input class="ad-input" id="btInPeople" type="text" inputmode="numeric"
+               pattern="[0-9]*" value="0" aria-label="人數">
+        <button class="btn small ghost" type="button" data-d="1" aria-label="增加">＋</button>
+      </div>
+
+      <label class="ad-label" for="btInNote">備註</label>
+      <input class="ad-input" id="btInNote" type="text" maxlength="200"
+             placeholder="選填，例：紅包袋要留、代收">
+
+      <div class="ad-hint" id="btFormBy"></div>
+
+      <div class="ad-modal-actions">
+        <button class="ad-del" id="btDelete" type="button" hidden>刪除這一筆</button>
+        <button class="btn small ghost" type="button" data-close="1">取消</button>
+        <button class="btn small" id="btSave" type="submit">儲存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 記錄者名字 -->
+<div class="ad-modal-mask" id="btNameSheet" hidden>
+  <div class="ad-modal-card">
+    <div class="ad-modal-title">你是誰</div>
+    <div class="ad-modal-msg">每一筆會記下是誰收的，事後對帳才對得起來。</div>
+    <form class="ad-form" id="btNameForm" autocomplete="off">
+      <label class="ad-label" for="btInWho">你的名字</label>
+      <input class="ad-input" id="btInWho" type="text" maxlength="40" placeholder="例：阿明">
+      <div class="ad-modal-actions">
+        <button class="btn small ghost" type="button" data-close="1">取消</button>
+        <button class="btn small" type="submit">好了</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="ad-toast-stack" id="btToasts"></div>
+
+<script defer src="/js/butler-key.js"></script>
+<script type="module" src="/js/butler.js"></script>
+</body>
+</html>

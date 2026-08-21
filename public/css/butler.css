@@ -1,0 +1,103 @@
+/* ============================================================
+   butler.css — 收禮小幫手
+   ------------------------------------------------------------
+   這一頁的樣式**跟新人後台是同一套**：載入 common.css ＋ admin.css，
+   用同一組 .ad-* 元件（卡片、清單、chip、彈窗、toast、統計數字）。
+   多一套設計語言就是多一份要維護的東西，而且新人在後台看到的
+   收禮明細，和小幫手在現場看到的，本來就該是同一種畫面。
+
+   所以這支檔案只補後台沒有、而收禮台真的需要的那幾樣：
+     ・頂列：butler 沒有側邊抽屜，窄螢幕不能把動作藏起來
+     ・金額欄：整個工具最重要的一個輸入，字要大到看一眼就知道打對沒
+     ・加減鈕：現場用拇指按比叫鍵盤快
+   其餘一律不要在這裡長出新的視覺。
+============================================================ */
+
+/* common.css 幫賓客頁的導覽列留了 padding-top，這一頁沒有導覽列
+   （同 admin.css 對 body[data-page="admin"] 做的事） */
+body[data-page="butler"]{padding-top:0;}
+
+/* 後台在 <900px 把頂列的動作搬進側邊抽屜，所以那裡 display:none；
+   butler 沒有抽屜，「記錄者是誰」必須一直按得到 */
+body[data-page="butler"] .ad-bar-actions{display:flex;}
+body[data-page="butler"] .ad-layout{display:block;}
+body[data-page="butler"] .ad-main{max-width:820px;margin:0 auto;}
+
+/* common.css 的 .overlay 是 display:flex，會蓋掉瀏覽器對 [hidden] 的
+   display:none —— 後台是用 style.display 開關這一層所以碰不到，
+   但這裡的通行碼／錯誤畫面是用 hidden 切換的。
+   不補這一條，收起來的那一層會變成一片透明的遮罩擋住整頁。
+   （同 admin.css 對 .ad-check[hidden] 做的事） */
+.overlay[hidden]{display:none;}
+
+/* 連線狀態：頂列那顆小圓點。斷線時 Firestore 會把寫入排進本機佇列，
+   所以它只是告知，不擋任何操作 */
+.bt-dot{width:7px;height:7px;border-radius:50%;background:var(--primary-deep);
+  flex:0 0 auto;margin-right:8px;display:inline-block;vertical-align:middle;}
+.bt-dot.is-off{background:#a4677a;}
+
+/* 通行碼：六位數字要一眼看清楚有沒有打錯 */
+.bt-pass{text-align:center;font-size:26px;font-weight:500;
+  letter-spacing:.42em;text-indent:.42em;font-variant-numeric:tabular-nums;
+  padding:14px 12px;margin-bottom:14px;}
+.bt-pass::placeholder{letter-spacing:.42em;opacity:.35;}
+
+/* 統計那一排：後台預設四格，收禮台上面那排只有三格。
+   手機上也維持三欄 —— 折成兩欄會讓最後一格單獨佔一列，
+   反而看不出「已收／未收／總額」是同一組數字 */
+.ad-stats-3{grid-template-columns:repeat(3,1fr);}
+@media(max-width:560px){
+  .ad-stats-3 .ad-stat{padding:16px 6px;}
+  .ad-stats-3 .ad-stat-num{font-size:21px;}
+  .ad-stats-3 .ad-stat-lab{letter-spacing:.06em;}
+}
+
+/* 禮金金額：這個工具最重要的一個欄位 */
+.bt-amount{font-size:30px;font-weight:500;letter-spacing:.06em;
+  font-variant-numeric:tabular-nums;padding:14px;}
+.bt-quick{margin-top:10px;}
+
+/* 盒數與人數：現場用加減鈕比叫鍵盤快 */
+.bt-step{display:flex;align-items:center;gap:8px;}
+.bt-step .btn{flex:0 0 auto;min-width:52px;padding:11px 0;font-size:16px;}
+.bt-step .ad-input{flex:1 1 auto;text-align:center;
+  font-variant-numeric:tabular-nums;font-size:17px;}
+
+/* 名單與紀錄的每一列：沿用 .ad-item，只多右邊那欄金額的排版 */
+.bt-side{display:flex;flex-direction:column;align-items:flex-end;gap:2px;
+  text-align:right;}
+.bt-amt{font-size:15px;letter-spacing:.04em;color:var(--primary-deep);
+  font-variant-numeric:tabular-nums;}
+.bt-sub{font-size:11.5px;color:var(--ink-soft);letter-spacing:.04em;}
+/* 編號（A01）：跟名字分得開，一眼掃得到 */
+.bt-code{font-size:11px;letter-spacing:.12em;color:var(--ink-soft);
+  border:1px solid var(--line-soft);border-radius:var(--radius);
+  padding:1px 6px;margin-right:7px;font-style:normal;}
+
+/* 整列都可以點（.ad-item 本身是 div，這裡當按鈕用）。
+   button 有自己的預設邊框，不歸零的話每一列都會多一個黑框 */
+button.ad-item{width:100%;text-align:left;background:none;cursor:pointer;
+  font-family:var(--font-body);color:inherit;
+  border:0;border-bottom:1px solid var(--line-soft);}
+button.ad-item:hover{background:rgba(255,255,255,.6);}
+
+/* 記帳表單的按鈕列黏在彈窗底部：現場最常做的事就是按「儲存」，
+   捲到哪裡都要按得到（.ad-modal-card-form 本身是可捲的）。
+   手機上兩顆按鈕會堆疊成全寬 —— 那是 admin.css 對所有彈窗
+   本來就有的行為，這裡不覆蓋它。 */
+#btSheet .ad-modal-actions{
+  position:sticky;bottom:0;margin-top:22px;padding:14px 0 2px;
+  background:#fff;border-top:1px solid var(--line-soft);
+  align-items:center;
+}
+#btSheet .ad-del{margin-right:auto;}
+/* 彈窗標題底下那行（編號・桌次）跟第一個欄位拉開 */
+#btSheet .ad-form > .ad-label:first-of-type{margin-top:18px;}
+
+/* 現場是站著單手拿手機，觸控目標要夠大 —— 只加點擊區，不動視覺 */
+@media(pointer:coarse){
+  .ad-chip{padding:9px 16px;font-size:12.5px;}
+  .ad-subtab{padding:13px 20px;}
+  button.ad-item{padding:16px 2px;}
+  .bt-step .btn{padding:14px 0;}
+}

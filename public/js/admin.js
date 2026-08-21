@@ -388,6 +388,9 @@ const TAB_PAGE = {
   /* 排桌管理沒有對外網址，開關同樣放在 pages 裡（見 site-context.js 的
      ADMIN_FEATURES）—— 沒開的站台後台就不會長出這個分頁 */
   seatingPlan: 'seatingPlan',
+  /* 收禮小幫手同樣沒有對外網址（工具在 /butler#{token}，不在 /w/{slug}/ 底下），
+     開關一樣放在 pages 裡 —— 沒開的站台後台就不會長出這個分頁 */
+  butler:   'butler',
   letters:  'letter',
   cards:    'draw',
   exhibits: 'exhibition',
@@ -465,6 +468,12 @@ function openAdmin(){
     if(guestTagsOn()) DataStore.subscribeRsvpTags();
     if(window.SeatingPlan) SeatingPlan.init();
   }
+  /* 收禮小幫手：連結簿在 sites/{siteId}/butlerLinks，收禮紀錄在最上層的
+     butlers/{bookId}。名單匯出要用到排桌與出席回覆，所以連它們一起訂閱 */
+  if(tabEnabled('butler')){
+    DataStore.subscribeRsvps();
+    Butler.init();
+  }
   if(tabEnabled('letters')){ DataStore.subscribeBlessings(); renderLetters(); }
   if(tabEnabled('cards')){ DataStore.subscribeCards(); renderCards(); }
   if(tabEnabled('exhibits')){ DataStore.subscribeExhibits(); renderExhibits(); }
@@ -534,6 +543,7 @@ const SUBTABS = {
   lobby:   ['info', 'schedule', 'explore'],
   seating: ['map', 'list'],
   seatingPlan: ['board', 'tables', 'io'],
+  butler:  ['stats', 'links'],
   quiz:    ['questions', 'votes'],
 };
 
@@ -3275,3 +3285,512 @@ document.getElementById('adQuizWipe').addEventListener('click', async ()=>{
     toast(`已清空 ${removed} 筆作答紀錄`);
   }catch(err){ writeFailed(err); }
 });
+
+/* ============================================================
+   收禮小幫手（後台這一側）
+   ------------------------------------------------------------
+   工具本身是另一個網址：/butler#{token}，交給婚宴當天幫忙收禮的
+   親友用（見 public/js/butler.js）。後台只做兩件事：
+
+     1. 產生／收回那些連結，並把賓客名單「匯」過去
+     2. 把現場記下來的每一筆與統計接回來給新人看
+
+   為什麼名單是匯過去而不是接過去
+   ------------------------------------------------------------
+   收禮台在婚宴當天要的是「現在這一版」名單。如果直接讀排桌草稿，
+   新人在休息室調一下桌次，收禮台的畫面就會跟著跳 ——
+   而且排桌草稿與出席回覆都是 ownerEmails 才讀得到的資料，
+   拿著連結的親友本來就不該讀得到整份 RSVP。
+   所以匯入是「複製一份必要欄位過去」，兩件事因此都成立。
+
+   連結與通行碼存在 sites/{siteId}/butlerLinks（只有新人讀得到），
+   收禮簿本身在最上層的 butlers/{bookId}——
+   bookId 是 token 與通行碼推導出來的（見 js/butler-key.js）。
+============================================================ */
+const Butler = (() => {
+  const el = {
+    sum:      document.getElementById('adBtSum'),
+    sumSub:   document.getElementById('adBtSumSub'),
+    stats:    document.getElementById('adBtStats'),
+    rows:     document.getElementById('adBtRows'),
+    count:    document.getElementById('adBtCount'),
+    filter:   document.getElementById('adBtFilter'),
+    byWho:    document.getElementById('adBtByWho'),
+    links:    document.getElementById('adBtLinks'),
+    newLink:  document.getElementById('adBtNewLink'),
+    exportBtn:document.getElementById('adBtExport'),
+    noLink:   document.getElementById('adBtNoLink'),
+  };
+
+  let started = false;
+  let links = [];                 /* butlerLinks 的內容 */
+  const books = new Map();        /* bookId → butlers/{bookId} 的內容 */
+  const entriesOf = new Map();    /* bookId → 那一本的收禮紀錄 */
+  const subscribed = new Set();   /* 已經訂閱過的 bookId */
+  let filterText = '';
+
+  const fb = () => window.fb;
+  const siteId = () => window.SITE.siteId;
+
+  function money(n){ return '$' + (Number(n) || 0).toLocaleString('en-US'); }
+
+  /* 所有連結的紀錄合起來看：四五個人共用同一組連結時就是同一本，
+     真的分了兩組（收禮台／送客桌）也要加在一起才是這場婚禮的總數 */
+  function allEntries(){
+    const out = [];
+    links.forEach(l => (entriesOf.get(l.bookId) || []).forEach(e => out.push(e)));
+    return out.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  }
+
+  function totals(list){
+    let amount = 0, boxes = 0, people = 0, gifted = 0;
+    list.forEach(e => {
+      amount += Number(e.amount) || 0;
+      boxes  += Number(e.boxes)  || 0;
+      people += Number(e.people) || 0;
+      if(e.gift === true) gifted += 1;
+    });
+    return { amount, boxes, people, gifted, count: list.length };
+  }
+
+  /* ---------- 訂閱 ---------- */
+  function init(){
+    if(started) return;
+    started = true;
+
+    const { db, collection, query, orderBy, onSnapshot } = fb();
+    onSnapshot(
+      query(collection(db, 'sites', siteId(), 'butlerLinks'), orderBy('createdAt', 'asc')),
+      snap => {
+        links = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        links.forEach(watchBook);
+        renderAll();
+      },
+      err => {
+        console.warn('[admin] 收禮連結讀取失敗', err.code || err);
+        el.links.innerHTML = `<div class="ad-empty">讀不到收禮連結，請重新整理一次</div>`;
+      },
+    );
+  }
+
+  /* 一組連結配一本收禮簿，兩份都要盯著：
+     簿子本身有名單與停用狀態，entries 才是現場記下來的每一筆 */
+  function watchBook(link){
+    if(!link.bookId || subscribed.has(link.bookId)) return;
+    subscribed.add(link.bookId);
+    const { db, doc, collection, query, orderBy, onSnapshot } = fb();
+
+    onSnapshot(doc(db, 'butlers', link.bookId), s => {
+      if(s.exists()) books.set(link.bookId, s.data());
+      else books.delete(link.bookId);
+      renderAll();
+    }, err => console.warn('[admin] 收禮簿讀取失敗', err.code || err));
+
+    onSnapshot(
+      query(collection(db, 'butlers', link.bookId, 'entries'), orderBy('createdAt', 'desc')),
+      s => {
+        entriesOf.set(link.bookId, s.docs.map(d => ({ id: d.id, bookId: link.bookId, ...d.data() })));
+        renderAll();
+      },
+      err => console.warn('[admin] 收禮紀錄讀取失敗', err.code || err),
+    );
+  }
+
+  /* ---------- 統計 ---------- */
+  function renderAll(){
+    renderStats();
+    renderRows();
+    renderByWho();
+    renderLinks();
+  }
+
+  function renderStats(){
+    const list = allEntries();
+    const t = totals(list);
+    const rosterSize = links.reduce((n, l) => {
+      const b = books.get(l.bookId);
+      return n + ((b && Array.isArray(b.guests)) ? b.guests.length : 0);
+    }, 0);
+    const done = new Set(list.filter(e => e.guestId).map(e => e.guestId)).size;
+
+    el.sum.textContent = money(t.amount);
+    el.sumSub.textContent = t.count
+      ? `共 ${t.count} 筆・平均 ${money(Math.round(t.amount / t.count))}`
+      : '還沒有任何紀錄';
+
+    const tiles = [
+      ['禮餅總盒數', t.boxes],
+      ['發出禮餅', `${t.gifted} 筆`],
+      ['到場人數', `${t.people} 位`],
+      ['名單未收', `${Math.max(0, rosterSize - done)} 位`],
+    ];
+    el.stats.innerHTML = tiles.map(([lab, v]) =>
+      `<div class="ad-stat"><div class="ad-stat-num">${escapeHtml(String(v))}</div>
+       <div class="ad-stat-lab">${lab}</div></div>`).join('');
+
+    el.noLink.hidden = links.length > 0;
+  }
+
+  function renderRows(){
+    const q = normKey(filterText);
+    const list = allEntries().filter(e => !q
+      || normKey(`${e.name}${e.code || ''}${e.table || ''}${e.note || ''}${e.by || ''}`).includes(q));
+
+    el.count.textContent = `目前 ${list.length} 筆`;
+
+    if(!list.length){
+      el.rows.innerHTML = `<tr><td class="ad-td-empty" colspan="10">${
+        allEntries().length ? '沒有符合的紀錄' : '現場還沒有記下任何一筆'
+      }</td></tr>`;
+      return;
+    }
+
+    el.rows.innerHTML = list.map(e => `<tr>
+      <td>${escapeHtml(e.code || '—')}</td>
+      <td>${escapeHtml(e.name || '')}</td>
+      <td>${escapeHtml(e.table || '—')}</td>
+      <td>${money(e.amount)}</td>
+      <td>${e.gift ? '已發送' : '沒有發'}</td>
+      <td>${Number(e.boxes) || 0}</td>
+      <td>${Number(e.people) || 0}</td>
+      <td class="ad-td-lines">${escapeHtml(e.note || '')}</td>
+      <td>${escapeHtml(e.by || '—')}</td>
+      <td class="ad-td-sub">${fmtTime(e.createdAt)}</td>
+    </tr>`).join('');
+  }
+
+  function renderByWho(){
+    const map = new Map();
+    allEntries().forEach(e => {
+      const who = e.by || '（沒署名）';
+      const cur = map.get(who) || { count:0, amount:0, boxes:0 };
+      cur.count += 1;
+      cur.amount += Number(e.amount) || 0;
+      cur.boxes += Number(e.boxes) || 0;
+      map.set(who, cur);
+    });
+
+    if(!map.size){
+      el.byWho.innerHTML = `<div class="ad-empty">還沒有人記過</div>`;
+      return;
+    }
+    el.byWho.innerHTML = [...map.entries()]
+      .sort((a, b) => b[1].amount - a[1].amount)
+      .map(([who, v]) => `<div class="ad-item">
+        <div class="ad-item-main">
+          <span class="ad-item-title">${escapeHtml(who)}</span>
+          <span class="ad-item-sub">${v.count} 筆・禮餅 ${v.boxes} 盒</span>
+        </div>
+        <div class="ad-item-actions"><b>${money(v.amount)}</b></div>
+      </div>`).join('');
+  }
+
+  /* ---------- 連結 ---------- */
+  function renderLinks(){
+    if(!links.length){
+      el.links.innerHTML = `<div class="ad-empty">
+        還沒有收禮連結
+        <div class="ad-row" style="justify-content:center">
+          <button class="btn small ghost" id="adBtEmptyNew" type="button">產生第一組連結</button>
+        </div>
+      </div>`;
+      return;
+    }
+
+    el.links.innerHTML = links.map(l => {
+      const book = books.get(l.bookId);
+      const roster = (book && Array.isArray(book.guests)) ? book.guests.length : 0;
+      const got = (entriesOf.get(l.bookId) || []).length;
+      const url = window.ButlerKey.urlFor(l.token);
+      const dead = l.revoked === true || (book && book.revoked === true);
+      const missing = !book;
+
+      const state = missing
+        ? '<span class="ad-tag ad-tag-no">收禮簿不見了</span>'
+        : (dead ? '<span class="ad-tag ad-tag-no">已停用</span>'
+                : '<span class="ad-tag ad-tag-yes">使用中</span>');
+
+      const from = book && book.importedFrom === 'rsvp' ? '出席回覆'
+        : (book && book.importedFrom === 'plan' ? '排桌名單' : '');
+
+      return `<div class="ad-item ad-bt-link">
+        <div class="ad-item-main">
+          <span class="ad-item-title">${escapeHtml(l.label || '收禮台')}</span>
+          ${state}
+          <span class="ad-item-sub">
+            名單 ${roster} 位${from ? `（來自${from}${
+              book.importedAt ? '・' + fmtTime(book.importedAt) : ''}）` : '・還沒匯入'}
+            ・已記 ${got} 筆
+          </span>
+
+          <div class="ad-bt-key">
+            <label class="ad-label">連結</label>
+            <div class="ad-row">
+              <input class="ad-input" type="text" readonly value="${escapeHtml(url)}"
+                     data-url="${escapeHtml(l.id)}">
+              <button class="btn small ghost" data-copy-url="${escapeHtml(l.id)}" type="button">複製</button>
+            </div>
+            <label class="ad-label">通行碼</label>
+            <div class="ad-row">
+              <span class="ad-bt-pass">${escapeHtml(l.passcode || '')}</span>
+              <button class="btn small ghost" data-copy-both="${escapeHtml(l.id)}" type="button">複製連結＋通行碼</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="ad-item-actions ad-bt-acts">
+          <button class="btn small" data-import-plan="${escapeHtml(l.id)}" type="button">匯入排桌名單</button>
+          <button class="btn small ghost" data-import-rsvp="${escapeHtml(l.id)}" type="button">匯入出席回覆</button>
+          <button class="btn small ghost" data-toggle="${escapeHtml(l.id)}" type="button">${dead ? '重新啟用' : '停用'}</button>
+          <button class="ad-del" data-drop="${escapeHtml(l.id)}" type="button">刪除</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    /* 沒開排桌管理就沒有「排桌名單」這回事，那顆按鈕不要出現 */
+    if(!tabEnabled('seatingPlan')){
+      el.links.querySelectorAll('[data-import-plan]').forEach(b => b.remove());
+    }
+  }
+
+  /* ---------- 產生連結 ---------- */
+  async function createLink(){
+    if(!window.ButlerKey || !window.ButlerKey.available()){
+      toast('這個瀏覽器不支援產生連結（需要 https）', true);
+      return;
+    }
+    const label = await confirmModal({
+      title: '產生收禮連結',
+      message: '幫這組連結取個名字，之後在清單上分得出來。'
+        + '通常一場婚禮只要一組，四五個人共用同一組，統計才會加在一起。',
+      confirmText: '產生',
+      input: { placeholder: '例：收禮台', maxLength: 40, value: '收禮台' },
+    });
+    if(!label) return;
+
+    const btn = el.newLink;
+    btn.disabled = true;
+    try{
+      const token = window.ButlerKey.newToken();
+      const passcode = window.ButlerKey.newPasscode();
+      const bookId = await window.ButlerKey.derive(token, passcode);
+      const now = Date.now();
+      const { db, doc, setDoc, collection, addDoc } = fb();
+      const wed = window.WED || {};
+
+      /* 先建收禮簿本身，再登記連結 —— 反過來的話，
+         中間斷掉會留下一組指向空氣的連結 */
+      await setDoc(doc(db, 'butlers', bookId), {
+        siteId: siteId(),
+        slug: window.SITE.slug || '',
+        couple: (wed.couple || '').slice(0, 80),
+        label: String(label).slice(0, 40),
+        guests: [],
+        revoked: false,
+        createdAt: now,
+        updatedAt: now,
+      });
+      await addDoc(collection(db, 'sites', siteId(), 'butlerLinks'), {
+        bookId, token, passcode,
+        label: String(label).slice(0, 40),
+        revoked: false,
+        createdAt: now,
+      });
+      toast('連結產生好了，記得順手匯入賓客名單');
+    }catch(err){ writeFailed(err); }
+    btn.disabled = false;
+  }
+
+  /* ---------- 匯入名單 ---------- */
+
+  /* 排桌名單有編號與桌號，收禮台核對最快；沒開排桌管理的站台就用出席回覆。
+     出席回覆沒有桌號，但如果桌次名單已經整理好了，順手比對一下補上去。 */
+  function rosterFromRsvps(){
+    const RELATION = { groom:'男方親友', bride:'女方親友', both:'雙方親友', other:'其他' };
+    const seats = new Map();
+    (DataStore.getSeating() || []).forEach(s => {
+      const k = normKey(s.name);
+      if(k && !seats.has(k)) seats.set(k, s.table || '');
+    });
+
+    return DataStore.getRSVPs()
+      .filter(r => DataStore.rsvpStatus(r) !== 'no')   /* 說了不來的人不會出現在收禮台 */
+      .map(r => ({
+        id: r.id,
+        code: '',
+        name: r.name || '（沒有名字）',
+        table: seats.get(normKey(r.name)) || '',
+        count: Number(r.guestCount) || 1,
+        cat: RELATION[r.relation] || '',
+        note: r.note || r.dietaryNote || '',
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'));
+  }
+
+  async function importRoster(link, source){
+    let list = [];
+    try{
+      list = source === 'plan'
+        ? await window.SeatingPlan.roster()
+        : rosterFromRsvps();
+    }catch(err){
+      console.warn('[admin] 取名單失敗', err);
+      toast('讀不到名單，請先到那一個分頁看一下', true);
+      return;
+    }
+
+    list = list.filter(g => g.name && String(g.name).trim());
+    if(!list.length){
+      toast(source === 'plan' ? '排桌名單目前是空的' : '還沒有任何出席回覆', true);
+      return;
+    }
+
+    /* 規則擋 600 筆（和排桌草稿同一個上限），超過的話講清楚而不是整筆被拒 */
+    const over = list.length - 600;
+    if(over > 0) list = list.slice(0, 600);
+
+    const book = books.get(link.bookId);
+    const had = (book && Array.isArray(book.guests)) ? book.guests.length : 0;
+    const ok = await confirmModal({
+      title: '匯入賓客名單',
+      message: `把「${source === 'plan' ? '排桌名單' : '出席回覆'}」的 ${list.length} 位賓客`
+        + `匯到「${link.label || '收禮台'}」。`
+        + (had ? `原本那 ${had} 位會被整份換掉，` : '')
+        + '已經記好的收禮紀錄不受影響。'
+        + (over > 0 ? `（超過上限，只會匯前 600 位，還有 ${over} 位沒帶進去）` : ''),
+      confirmText: '匯入',
+    });
+    if(!ok) return;
+
+    try{
+      const { db, doc, updateDoc } = fb();
+      const now = Date.now();
+      await updateDoc(doc(db, 'butlers', link.bookId), {
+        guests: list.map(g => ({
+          id: String(g.id || '').slice(0, 60),
+          code: String(g.code || '').slice(0, 12),
+          name: String(g.name || '').slice(0, 40),
+          table: String(g.table || '').slice(0, 40),
+          count: Math.max(0, Math.min(99, Number(g.count) || 0)),
+          cat: String(g.cat || '').slice(0, 20),
+          note: String(g.note || '').slice(0, 100),
+        })),
+        importedAt: now,
+        importedFrom: source,
+        updatedAt: now,
+      });
+      toast(`已匯入 ${list.length} 位賓客`);
+    }catch(err){ writeFailed(err); }
+  }
+
+  /* ---------- 停用／刪除 ---------- */
+  async function toggleLink(link){
+    const book = books.get(link.bookId);
+    const dead = link.revoked === true || (book && book.revoked === true);
+    if(!dead){
+      const ok = await confirmModal({
+        title: '停用這組連結',
+        message: '停用之後，拿著連結與通行碼的人會看到「已停用」，也記不進新的資料。'
+          + '已經記好的紀錄與統計都留著，隨時可以重新啟用。',
+        confirmText: '停用',
+        danger: true,
+      });
+      if(!ok) return;
+    }
+    try{
+      const { db, doc, updateDoc } = fb();
+      /* 兩份都要改：規則看的是收禮簿上的 revoked，
+         連結簿上的那一份只是後台自己列清單時看的 */
+      await updateDoc(doc(db, 'butlers', link.bookId), { revoked: !dead, updatedAt: Date.now() });
+      await updateDoc(doc(db, 'sites', siteId(), 'butlerLinks', link.id), { revoked: !dead });
+      toast(dead ? '已重新啟用' : '已停用這組連結');
+    }catch(err){ writeFailed(err); }
+  }
+
+  async function dropLink(link){
+    const got = (entriesOf.get(link.bookId) || []).length;
+    const ok = await confirmModal({
+      title: '刪除這組連結',
+      message: got
+        ? `這組連結底下有 ${got} 筆收禮紀錄，刪掉就一起沒了，救不回來。`
+          + '只是不想再讓人用的話，選「停用」就好。'
+        : '這組連結會整個刪掉，之後打開會顯示找不到。',
+      danger: true,
+      requirePhrase: '刪除',
+      confirmText: '刪除',
+    });
+    if(!ok) return;
+
+    try{
+      const { db, doc, collection, getDocs, deleteDoc } = fb();
+      /* 先清紀錄再刪簿子：規則靠簿子上的 siteId 判斷身分，
+         簿子先不見的話那些紀錄就變成誰也刪不掉的孤兒 */
+      const snap = await getDocs(collection(db, 'butlers', link.bookId, 'entries'));
+      for(const d of snap.docs){
+        await deleteDoc(doc(db, 'butlers', link.bookId, 'entries', d.id));
+      }
+      await deleteDoc(doc(db, 'butlers', link.bookId));
+      await deleteDoc(doc(db, 'sites', siteId(), 'butlerLinks', link.id));
+      subscribed.delete(link.bookId);
+      books.delete(link.bookId);
+      entriesOf.delete(link.bookId);
+      toast('已刪除這組連結');
+    }catch(err){ writeFailed(err); }
+  }
+
+  /* ---------- 匯出 ---------- */
+  function exportCsv(){
+    const list = allEntries();
+    if(!list.length){ toast('現場還沒有記下任何一筆', true); return; }
+    const t = totals(list);
+    const rows = list.slice().reverse().map(e => [
+      e.code || '', e.name || '', e.table || '',
+      Number(e.amount) || 0,
+      e.gift ? '已發送' : '沒有發',
+      Number(e.boxes) || 0,
+      Number(e.people) || 0,
+      e.note || '', e.by || '', fmtTime(e.createdAt),
+    ]);
+    rows.push(['', '總計', '', t.amount, '', t.boxes, t.people, `${t.count} 筆`, '', '']);
+    downloadCsv('收禮紀錄',
+      ['編號', '姓名', '桌次', '禮金', '禮餅', '盒數', '人數', '備註', '記錄者', '時間'],
+      rows);
+  }
+
+  /* ---------- 事件 ---------- */
+  function linkOf(id){ return links.find(l => l.id === id) || null; }
+
+  async function copyText(text, msg){
+    try{
+      await navigator.clipboard.writeText(text);
+      toast(msg);
+    }catch{
+      /* iOS 沒有使用者手勢或非安全環境時會失敗，退回「選起來讓他自己複製」 */
+      toast('複製不了，請長按網址自己複製', true);
+    }
+  }
+
+  el.newLink.addEventListener('click', createLink);
+  el.exportBtn.addEventListener('click', exportCsv);
+  el.filter.addEventListener('input', e => { filterText = e.target.value; renderRows(); });
+
+  el.links.addEventListener('click', (e)=>{
+    if(e.target.id === 'adBtEmptyNew'){ createLink(); return; }
+
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    const d = btn.dataset;
+    const link = linkOf(d.copyUrl || d.copyBoth || d.importPlan || d.importRsvp || d.toggle || d.drop);
+    if(!link) return;
+
+    const url = window.ButlerKey.urlFor(link.token);
+    if(d.copyUrl)    copyText(url, '連結複製好了');
+    if(d.copyBoth)   copyText(`收禮小幫手\n${url}\n通行碼：${link.passcode}`, '連結與通行碼複製好了');
+    if(d.importPlan) importRoster(link, 'plan');
+    if(d.importRsvp) importRoster(link, 'rsvp');
+    if(d.toggle)     toggleLink(link);
+    if(d.drop)       dropLink(link);
+  });
+
+  return { init };
+})();

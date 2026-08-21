@@ -1428,3 +1428,166 @@ describe('賓客標籤', () => {
       { tags: ['t1'], updatedAt: Date.now() }));
   });
 });
+
+/* ============================================================
+   收禮小幫手（butlers/{bookId}）
+   ------------------------------------------------------------
+   這一組規則的重點只有兩件事：
+     1. get 全開、list 必須關 —— 整份保護就是「走得到這個路徑」，
+        能列出集合的話那道門就白做了
+     2. 拿著連結的親友寫得進收禮紀錄，但只限這一本、
+        而且新人一停用就寫不進去
+============================================================ */
+describe('butlers/{bookId}（收禮小幫手）', () => {
+  const OWNER = 'couple@example.com';
+  const BOOK = 'a'.repeat(64);          /* 正式環境是 PBKDF2 算出來的 hex */
+
+  const ownerDb = () => testEnv
+    .authenticatedContext('couple', { email: OWNER, email_verified: true })
+    .firestore();
+
+  function bookPayload(overrides = {}) {
+    return {
+      siteId: SITE_ID,
+      slug: 'chen-lin-0315',
+      couple: '陳彥廷 & 林佳蓉',
+      label: '收禮台',
+      guests: [{ id: 'g1', code: 'A01', name: '王小明', table: '01', count: 2, cat: '', note: '' }],
+      revoked: false,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      ...overrides,
+    };
+  }
+
+  function entryPayload(overrides = {}) {
+    return {
+      guestId: 'g1',
+      name: '王小明',
+      code: 'A01',
+      table: '01',
+      amount: 3600,
+      gift: true,
+      boxes: 2,
+      people: 2,
+      note: '',
+      by: '阿明',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      ...overrides,
+    };
+  }
+
+  async function seedBook(overrides = {}) {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), `butlers/${BOOK}`), bookPayload(overrides));
+    });
+  }
+
+  beforeEach(async () => {
+    await seedSite(SITE_ID, {
+      ownerEmails: [OWNER],
+      pages: { butler: true, rsvp: true },
+    });
+  });
+
+  it('知道 bookId 就讀得到收禮簿（通行碼算對了才走得到這個路徑）', async () => {
+    await seedBook();
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(getDoc(doc(db, `butlers/${BOOK}`)));
+  });
+
+  it('不准列出整個 butlers 集合', async () => {
+    await seedBook();
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(getDocs(collection(db, 'butlers')));
+  });
+
+  it('只有新人建得了收禮簿，未登入的人不行', async () => {
+    const anon = testEnv.unauthenticatedContext().firestore();
+    await assertFails(setDoc(doc(anon, `butlers/${BOOK}`), bookPayload()));
+    await assertSucceeds(setDoc(doc(ownerDb(), `butlers/${BOOK}`), bookPayload()));
+  });
+
+  it('別的站台的新人建不了掛在這個站台底下的收禮簿', async () => {
+    await seedSite('other-site', { ownerEmails: ['other@example.com'] });
+    const db = testEnv
+      .authenticatedContext('other', { email: 'other@example.com', email_verified: true })
+      .firestore();
+    await assertFails(setDoc(doc(db, `butlers/${BOOK}`), bookPayload()));
+  });
+
+  it('賓客名單最多 600 位', async () => {
+    const guests = Array.from({ length: 601 }, (_, i) => ({ id: `g${i}`, name: `賓客${i}` }));
+    await assertFails(setDoc(doc(ownerDb(), `butlers/${BOOK}`), bookPayload({ guests })));
+  });
+
+  it('拿著連結的親友記得了收禮，也改得動、刪得掉', async () => {
+    await seedBook();
+    const db = testEnv.unauthenticatedContext().firestore();
+    const ref = await addDoc(collection(db, `butlers/${BOOK}/entries`), entryPayload());
+    await assertSucceeds(getDocs(collection(db, `butlers/${BOOK}/entries`)));
+    await assertSucceeds(updateDoc(doc(db, `butlers/${BOOK}/entries/${ref.id}`),
+      { ...entryPayload(), amount: 6000 }));
+    await assertSucceeds(deleteDoc(doc(db, `butlers/${BOOK}/entries/${ref.id}`)));
+  });
+
+  it('金額必須是不小於 0 的整數，盒數與人數有上限', async () => {
+    await seedBook();
+    const db = testEnv.unauthenticatedContext().firestore();
+    const col = collection(db, `butlers/${BOOK}/entries`);
+    await assertFails(addDoc(col, entryPayload({ amount: -100 })));
+    await assertFails(addDoc(col, entryPayload({ amount: 1200.5 })));
+    await assertFails(addDoc(col, entryPayload({ amount: '3600' })));
+    await assertFails(addDoc(col, entryPayload({ boxes: 100 })));
+    await assertFails(addDoc(col, entryPayload({ people: 100 })));
+    await assertFails(addDoc(col, entryPayload({ name: '' })));
+  });
+
+  it('夾帶名單外的欄位會被整筆拒絕', async () => {
+    await seedBook();
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(addDoc(collection(db, `butlers/${BOOK}/entries`),
+      entryPayload({ isAdmin: true })));
+  });
+
+  it('停用之後就記不進新的資料，但已經記的還讀得到', async () => {
+    await seedBook({ revoked: true });
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(getDoc(doc(db, `butlers/${BOOK}`)));
+    await assertFails(addDoc(collection(db, `butlers/${BOOK}/entries`), entryPayload()));
+  });
+
+  it('站台沒開 butler 這個功能時，寫入一樣被擋下來', async () => {
+    await seedSite(SITE_ID, { ownerEmails: [OWNER], pages: { butler: false } });
+    await seedBook();
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(addDoc(collection(db, `butlers/${BOOK}/entries`), entryPayload()));
+  });
+
+  it('拿著連結的人改不動收禮簿本身（名單、停用狀態都不行）', async () => {
+    await seedBook();
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(updateDoc(doc(db, `butlers/${BOOK}`), { revoked: false, guests: [] }));
+    await assertFails(deleteDoc(doc(db, `butlers/${BOOK}`)));
+  });
+
+  it('新人改不了收禮簿掛在哪一個站台底下', async () => {
+    await seedBook();
+    await seedSite('other-site', { ownerEmails: [OWNER] });
+    await assertFails(updateDoc(doc(ownerDb(), `butlers/${BOOK}`), { siteId: 'other-site' }));
+  });
+
+  it('連結簿只有新人讀得到', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), `sites/${SITE_ID}/butlerLinks/l1`), {
+        bookId: BOOK, token: 'abc123xyz', passcode: '123456',
+        label: '收禮台', revoked: false, createdAt: Date.now(),
+      });
+    });
+    const anon = testEnv.unauthenticatedContext().firestore();
+    await assertFails(getDoc(doc(anon, `sites/${SITE_ID}/butlerLinks/l1`)));
+    await assertFails(getDocs(collection(anon, `sites/${SITE_ID}/butlerLinks`)));
+    await assertSucceeds(getDoc(doc(ownerDb(), `sites/${SITE_ID}/butlerLinks/l1`)));
+  });
+});
