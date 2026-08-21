@@ -342,7 +342,16 @@ h1,h2{margin:0;font-weight:600}
 @keyframes btIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
 /* ============================================================
-   桌機／平板：一樣的東西攤開來放
+   桌機／平板
+   ------------------------------------------------------------
+   收禮台主要是站著用手機，但櫃台上放一台筆電或平板看總數也很常見。
+   內容本來就有 720px 的上限，所以桌機要處理的其實只有兩條
+   「貼著視窗邊」的橫條：頂列與底部分頁。
+
+   ・頂列   用 padding 把內容縮到和主欄同一條中線上，
+            名字與記錄者才不會分別黏在 1440px 的兩端
+   ・分頁列 從整條變成置中的一顆膠囊 —— 拇指構得到的那條邊
+            是手機才有的限制，桌機上把它撐滿只會像放大的手機
 ============================================================ */
 @media(min-width:720px){
   .bt-main{padding:20px 20px 30px}
@@ -350,7 +359,20 @@ h1,h2{margin:0;font-weight:600}
   .bt-sheet-wrap{align-items:center;justify-content:center;padding:24px}
   .bt-sheet{max-width:460px;border-radius:18px;max-height:88svh;animation:none}
   .bt-sheet-foot{padding-bottom:14px}
-  .bt-toasts{bottom:24px}
+
+  .bt-top{padding-left:max(14px, calc(50% - 360px));
+          padding-right:max(14px, calc(50% - 360px));}
+
+  .bt-app{padding-bottom:104px}
+  .bt-tabbar{
+    left:50%;right:auto;bottom:22px;transform:translateX(-50%);
+    width:auto;grid-template-columns:repeat(3,minmax(116px,1fr));
+    border:1px solid var(--line);border-radius:999px;overflow:hidden;
+    padding-bottom:0;
+    box-shadow:0 8px 28px rgba(20,22,26,.13);
+  }
+  .bt-tabbar button{height:58px}
+  .bt-toasts{bottom:98px}
 }
 
 @media(prefers-reduced-motion:reduce){
