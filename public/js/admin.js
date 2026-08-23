@@ -1043,10 +1043,12 @@ function activateTab(tab, subtab){
   closeDrawer();
   window.scrollTo({ top:0, behavior:'instant' });
 
-  /* 換了分頁＝換了一組子分頁列與表格，sticky 的高度與捲動提示都要重算 */
+  /* 換了分頁＝換了一組子分頁列與表格，sticky 的高度、捲動提示、
+     標籤那一排「要不要長出展開鈕」都得等它真的顯示出來才量得到 */
   requestAnimationFrame(()=>{
     syncStickyMetrics();
     refreshScrollHints();
+    if(!tagFilterRowEl.hidden) syncTagChipsClamp();
   });
 
   if(location.hash !== wantHash) history.replaceState(null, '', wantHash);
@@ -1277,7 +1279,7 @@ function renderRsvps(){
      新人看到的就是一個大大的「0」加「還沒有人回覆」，和真的沒人一模一樣。 */
   if(!loadedOnce.has('rsvps')){
     rsvpTotalEl.textContent = '—';
-    rsvpSubEl.textContent = '讀取中…';
+    rsvpSubEl.innerHTML = '<li class="ad-hero-item is-note">讀取中…</li>';
     rsvpMetaEl.hidden = true;
     renderRsvpCharts('loading');
     rsvpListEl.innerHTML = skeletonHtml(4);
@@ -1290,9 +1292,17 @@ function renderRsvps(){
   const tally = DataStore.getRsvpTally();
 
   rsvpTotalEl.textContent = total;
-  rsvpSubEl.textContent = total
-    ? `確定出席 ${head} 位・熱情出席 ${tally.yes} 筆・視情況而定 ${tally.maybe} 筆・無法出席 ${tally.no} 筆`
-    : '還沒有人回覆';
+  /* 四個數字各自佔一列（右邊）。擠成一段長句的話會換行三次，
+     而且「12 位」和「5 筆」混在同一行讀不出來誰是誰 */
+  rsvpSubEl.innerHTML = total
+    ? [
+        ['確定出席', `${head} 位`],
+        ['熱情出席', `${tally.yes} 筆`],
+        ['視情況而定', `${tally.maybe} 筆`],
+        ['無法出席', `${tally.no} 筆`],
+      ].map(([lab, val]) =>
+        `<li class="ad-hero-item"><span>${lab}</span><b>${val}</b></li>`).join('')
+    : '<li class="ad-hero-item is-note">還沒有人回覆</li>';
 
   renderRsvpMeta(total);
   renderRsvpCharts(total ? '' : 'empty');
@@ -1541,21 +1551,26 @@ function rsvpCardsHtml(list){
       row('備註', r.note || ''),
     ].filter(Boolean).join('');
 
+    /* 兩行就好：
+         第一行  姓名 …………………… 填表時間 ＋ 出席狀態
+         第二行  N 位・葷 X／素 Y ……… ＋ 展開更多（有標籤才多一行）
+       時間本來自己佔一整行，而「展開更多」原本畫成圓角膠囊，
+       和旁邊的標籤長得幾乎一樣 —— 所以改成帶 ＋／－ 的純文字按鈕。 */
     return `<li class="ad-rcard" data-rsvp="${r.id}">
       <div class="ad-rcard-head">
         <span class="ad-rcard-name">${escapeHtml(`${r.icon || ''} ${r.name || '（沒有名字）'}`.trim())}</span>
+        <span class="ad-rcard-time">${t ? escapeHtml(fmtTime(t)) : '時間未知'}</span>
         <span class="ad-tag ad-tag-${st}">${RSVP_LABEL[st]}</span>
       </div>
-      ${keyBits
-        ? `<div class="ad-rcard-key">${escapeHtml(keyBits)}</div>`
-        : `<div class="ad-rcard-key is-off">${escapeHtml(rsvpLabel('relation', r.relation) || '—')}</div>`}
+      <div class="ad-rcard-line">
+        ${keyBits
+          ? `<span class="ad-rcard-key">${escapeHtml(keyBits)}</span>`
+          : `<span class="ad-rcard-key is-off">${escapeHtml(rsvpLabel('relation', r.relation) || '—')}</span>`}
+        <button class="ad-rcard-more" type="button" data-rcard-more="${r.id}"
+                aria-expanded="false"><i aria-hidden="true">＋</i>展開更多</button>
+      </div>
       ${tags.length ? `<div class="ad-rcard-tags">${tags.map(id =>
         `<span class="ad-tag ad-tag-guest">${escapeHtml(guestTagName(id))}</span>`).join('')}</div>` : ''}
-      <div class="ad-rcard-foot">
-        <span class="ad-rcard-time">${t ? escapeHtml(fmtTime(t)) : '時間未知'}</span>
-        <button class="ad-rcard-more" type="button" data-rcard-more="${r.id}"
-                aria-expanded="false">展開更多</button>
-      </div>
       <div class="ad-rcard-rest" hidden>
         ${rest || '<div class="ad-rcard-row"><span>其他</span><b>沒有其他內容</b></div>'}
         <div class="ad-rcard-acts">
@@ -1628,7 +1643,9 @@ rsvpListEl.addEventListener('click', (e)=>{
     const open = rest.hidden;
     rest.hidden = !open;
     more.setAttribute('aria-expanded', String(open));
-    more.textContent = open ? '收起來' : '展開更多';
+    more.innerHTML = open
+      ? '<i aria-hidden="true">－</i>收起來'
+      : '<i aria-hidden="true">＋</i>展開更多';
     return;
   }
   const del = e.target.closest('[data-del-rsvp]');
@@ -1667,7 +1684,7 @@ rsvpChartsEl.addEventListener('click', async (e)=>{
 });
 
 document.addEventListener('data:rsvps:denied', ()=>{
-  document.getElementById('adRsvpSub').textContent = '目前讀不到回覆';
+  rsvpSubEl.innerHTML = '<li class="ad-hero-item is-note">目前讀不到回覆</li>';
   document.getElementById('adRsvpTotal').textContent = '—';
   rsvpMetaEl.hidden = true;
   rsvpChartsEl.classList.remove('ad-donuts');
@@ -2078,9 +2095,40 @@ function renderRsvpTagChips(){
   tagChipsEl.innerHTML = chips
     .map(c => `<button class="ad-chip${c.id === rsvpTagFilter ? ' is-on' : ''}" type="button"
              data-tag="${escapeHtml(c.id)}">${escapeHtml(c.name)}</button>`).join('')
-    + `<button class="ad-chip ad-chip-link" type="button" data-tag-setup="1"
-               title="到「設定賓客標籤」新增或修改標籤">設定標籤 ↗</button>`;
+    + `<button class="ad-chip ad-chip-link" type="button" data-tag-setup="1">設定標籤 ↗</button>`;
+  syncTagChipsClamp();
 }
+
+/* ---------- 標籤只先露兩排 ----------
+   標籤數量沒有上限（新人可以一直加），全部攤開的話光是篩選列就佔掉半個螢幕。
+   量一下實際高度：真的超過兩排才長出「展開全部標籤」。 */
+const tagMoreBtn = document.getElementById('adRsvpTagMore');
+let tagChipsOpen = false;
+
+function syncTagChipsClamp(){
+  tagChipsEl.classList.toggle('is-open', tagChipsOpen);
+  /* 先讓它回到收起來的高度才量得準 */
+  const clamped = tagChipsEl.classList.contains('is-open');
+  if(clamped) tagChipsEl.classList.remove('is-open');
+  const boxH = tagChipsEl.clientHeight;
+  const overflow = tagChipsEl.scrollHeight - boxH > 2;
+  if(clamped) tagChipsEl.classList.add('is-open');
+
+  /* 這一排住在「回覆資訊」子分頁裡，而預設打開的是「總覽」——
+     子分頁還沒顯示時量到的高度全是 0，這時候什麼都不要判斷，
+     等 activateTab 切過來再量一次（見那裡的 requestAnimationFrame） */
+  if(!boxH) return;
+
+  tagMoreBtn.hidden = !overflow;
+  tagMoreBtn.textContent = tagChipsOpen ? '收起標籤' : '展開全部標籤';
+  tagMoreBtn.setAttribute('aria-expanded', String(tagChipsOpen));
+}
+
+tagMoreBtn.addEventListener('click', ()=>{
+  tagChipsOpen = !tagChipsOpen;
+  syncTagChipsClamp();
+});
+window.addEventListener('resize', ()=>{ if(!tagFilterRowEl.hidden) syncTagChipsClamp(); });
 
 tagChipsEl.addEventListener('click', (e)=>{
   const chip = e.target.closest('.ad-chip');
@@ -3359,19 +3407,22 @@ function siteSchedule(){
    要調順序只能整列重打。這裡補上 ↑↓（32px 的方形按鈕，拇指按得到）。 */
 function schRowHtml(item){
   const it = item || {};
+  /* ↑↓ 放在時間欄左邊：這一列在講「第幾個發生」，
+     排序鈕就該和時間站在一起，而不是躲在最右邊的刪除旁邊 */
   return `
     <div class="ad-sch-row">
+      <div class="ad-sch-move">
+        <button class="ad-edit" type="button" data-sch-move="up"   aria-label="往上移">↑</button>
+        <button class="ad-edit" type="button" data-sch-move="down" aria-label="往下移">↓</button>
+      </div>
       <input class="ad-input ad-sch-time"  type="text" maxlength="20"
              value="${escapeHtml(it.time || '')}"  placeholder="11:30">
       <input class="ad-input ad-sch-title" type="text" maxlength="40"
              value="${escapeHtml(it.title || '')}" placeholder="入場迎賓">
       <input class="ad-input ad-sch-desc"  type="text" maxlength="80"
              value="${escapeHtml(it.desc || '')}"  placeholder="說明（選填）">
-      <div class="ad-sch-acts">
-        <button class="ad-edit" type="button" data-sch-move="up"   aria-label="往上移">↑</button>
-        <button class="ad-edit" type="button" data-sch-move="down" aria-label="往下移">↓</button>
-        <button class="ad-del"  type="button" data-sch-del="1" aria-label="刪除這一列">刪除</button>
-      </div>
+      <button class="ad-del ad-sch-del" type="button" data-sch-del="1"
+              aria-label="刪除這一列">刪除</button>
     </div>`;
 }
 

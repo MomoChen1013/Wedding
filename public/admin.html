@@ -116,10 +116,14 @@
       <h2 class="ad-sec-title">出席回覆總覽</h2>
 
       <!-- 最大的那個數字：一眼看到收到幾份回覆 -->
-      <div class="ad-hero-stat">
-        <div class="ad-hero-num" id="adRsvpTotal">0</div>
-        <div class="ad-hero-lab">總回覆人數</div>
-        <div class="ad-hero-sub" id="adRsvpSub">還沒有人回覆</div>
+      <!-- 左邊一個大數字，右邊一列一項。
+           原本是一段會換行三次的長句，四個數字混在一起讀不出來 -->
+      <div class="ad-hero-stat ad-hero-split">
+        <div class="ad-hero-main">
+          <div class="ad-hero-num" id="adRsvpTotal">0</div>
+          <div class="ad-hero-lab">總回覆人數</div>
+        </div>
+        <ul class="ad-hero-list" id="adRsvpSub"></ul>
         <div class="ad-hero-meta" id="adRsvpMeta" hidden></div>
       </div>
 
@@ -148,26 +152,36 @@
         同一個人重複填了好幾次時，可以把多的那幾筆<b>刪掉</b>（要連按兩次確認）。
       </p>
 
-      <!-- 出席狀態、標籤、搜尋收在同一塊，看起來就是同一組篩選工具 -->
+      <!-- 出席狀態、標籤、搜尋收在同一塊，看起來就是同一組篩選工具。
+           搜尋放最上面：找特定一個人比按條件篩常見得多 -->
       <div class="ad-filterbar">
         <div class="ad-filterbar-row">
-          <span class="ad-filterbar-lab">出席</span>
-          <div class="ad-chips" id="adRsvpChips">
-            <button class="ad-chip is-on" type="button" data-filter="all">全部</button>
-            <button class="ad-chip" type="button" data-filter="yes">熱情出席</button>
-            <button class="ad-chip" type="button" data-filter="maybe">視情況而定</button>
-            <button class="ad-chip" type="button" data-filter="no">無法出席</button>
-          </div>
           <input class="ad-filter ad-filterbar-search" id="adRsvpFilter" type="search"
                  inputmode="search" enterkeyhint="search" autocomplete="off"
                  placeholder="搜尋名字、留言或備註…" aria-label="搜尋回覆">
         </div>
 
+        <!-- 出席只有四顆、而且不會再多，所以固定排成一行（放不下就左右滑），
+             不要為了四顆按鈕折成兩排 -->
+        <div class="ad-filterbar-row">
+          <span class="ad-filterbar-lab">出席</span>
+          <div class="ad-chips ad-chips-oneline" id="adRsvpChips">
+            <button class="ad-chip is-on" type="button" data-filter="all">全部</button>
+            <button class="ad-chip" type="button" data-filter="yes">熱情出席</button>
+            <button class="ad-chip" type="button" data-filter="maybe">視情況而定</button>
+            <button class="ad-chip" type="button" data-filter="no">無法出席</button>
+          </div>
+        </div>
+
         <!-- 標籤篩選：由 js/admin.js 依標籤庫產生（最後一顆是「設定標籤 ↗」）；
-             沒開標籤功能就整排收起來 -->
+             沒開標籤功能就整排收起來。標籤數量沒有上限，所以先只露兩排 -->
         <div class="ad-filterbar-row" id="adRsvpTagRow" hidden>
           <span class="ad-filterbar-lab">標籤</span>
-          <div class="ad-chips" id="adRsvpTagChips"></div>
+          <div class="ad-filterbar-tags">
+            <div class="ad-chips ad-chips-clamp" id="adRsvpTagChips"></div>
+            <button class="ad-chips-more" id="adRsvpTagMore" type="button"
+                    aria-expanded="false" hidden>展開全部標籤</button>
+          </div>
         </div>
       </div>
 
@@ -455,9 +469,9 @@
         <!-- 這一頁在手機上要捲 5–6 個螢幕高才會走到底，所以儲存自己浮在底部。
              有沒存的變更時，右邊那行字會變色（.btn.is-dirty 的紅點也會亮） -->
         <div class="ad-savebar">
-          <button class="btn small" id="adSiteSave" type="submit">儲存婚禮資訊</button>
-          <button class="btn small ghost" id="adSiteReset" type="button">還原成目前的內容</button>
           <span class="ad-savebar-note" id="adSiteDirty">目前沒有未儲存的變更</span>
+          <button class="btn small ghost" id="adSiteReset" type="button">還原成目前的內容</button>
+          <button class="btn small" id="adSiteSave" type="submit">儲存婚禮資訊</button>
         </div>
       </form>
     </section>
@@ -619,10 +633,12 @@
       </div>
 
       <!-- 觸控裝置沒有拖曳可用，替代路徑要講清楚，不然第一次用的人只會覺得壞掉 -->
-      <p class="sp-touch-tip">
+      <p class="sp-touch-tip" id="spTouchTip">
         <span aria-hidden="true">☝</span>
         <span>手機／平板：<b>點賓客卡右邊的 ⇄</b> 就能選要坐哪一桌；
-          點卡片本身會展開完整資料。桌位順序到「桌位管理」用 ↑↓ 調。</span>
+          點卡片本身會展開完整資料。桌位順序到「桌位管理」調。</span>
+        <button class="sp-touch-tip-close" id="spTouchTipClose" type="button"
+                aria-label="知道了，不再提醒">✕</button>
       </p>
 
       <!-- 提醒（不擋操作，只提醒） -->
@@ -1394,12 +1410,14 @@
      其餘（送出、復原、重做、四個統計）收進「⋮」。
      一場 30 桌的婚禮，「捲回最上面按儲存」這條路要走幾十遍 -->
 <div class="sp-mobilebar" id="spMobileBar" hidden>
+  <!-- 「⋮」是固定寬高的方形，擺最左邊當錨點；
+       剩下兩顆依畫面寬度平分，字多字少都不會把版面推歪 -->
+  <button class="btn small ghost sp-mobilebar-more" id="spMbMore" type="button"
+          aria-label="更多排桌工具">⋮</button>
   <button class="sp-mobilebar-pool" id="spMbPool" type="button">
     <b id="spMbPoolCount">0</b><span>未安排</span>
   </button>
   <button class="btn small" id="spMbSave" type="button">儲存排桌</button>
-  <button class="btn small ghost sp-mobilebar-more" id="spMbMore" type="button"
-          aria-label="更多排桌工具">⋮</button>
 </div>
 
 <!-- 「⋮ 更多」：統計與其餘三顆按鈕 -->

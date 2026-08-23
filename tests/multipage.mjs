@@ -1046,9 +1046,12 @@ console.log('\n[14b] 後台看得到出席回覆');
   ok('總回覆人數正確',
     Number(await page.textContent('#adRsvpTotal')) === rows.length,
     `應為 ${rows.length}`);
+  /* 四個數字改成右邊一列一項（不再是一段長句），所以逐項比對 */
+  const heroRows = await page.$$eval('#adRsvpSub .ad-hero-item', (els) =>
+    els.map((e) => [...e.children].map((c) => c.textContent.trim()).join(' ')));
   ok('副標帶出確定出席人數',
-    (await page.textContent('#adRsvpSub')).includes(`確定出席 ${expectHead} 位`),
-    await page.textContent('#adRsvpSub'));
+    heroRows.some((t) => t === `確定出席 ${expectHead} 位`),
+    heroRows.join('｜'));
 
   /* 圖表區塊在載入中會換成 skeleton，剛畫好的那一刻可能還在 scInF 的
      淡入動畫裡 —— innerText 是看版面算出來的，會受這個影響。

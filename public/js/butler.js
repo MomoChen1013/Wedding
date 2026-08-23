@@ -347,12 +347,16 @@ function renderList() {
            es.length > 1 ? `・${es.length} 筆` : ''}</span>`
       : `<span class="bt-sub">點一下收禮</span>`;
 
+    /* 現場是「一個一個核對過去」，所以每一列前面就是一個勾選框：
+       打了勾＝這位已經收過了，整列跟著淡下去，剩下沒勾的一眼就掃得出來。
+       框本身不是 <input>：整列都可以點，點哪裡都是打開記帳表單，
+       多一個真的 checkbox 只會讓人以為勾了就等於收到（金額還沒填）。 */
     return `<button class="ad-item bt-row${es.length ? ' is-done' : ''}" type="button"
-              data-guest="${esc(g.id)}">
+              data-guest="${esc(g.id)}" aria-pressed="${es.length ? 'true' : 'false'}">
+      <span class="bt-check" aria-hidden="true">${es.length ? '✓' : ''}</span>
       <span class="ad-item-main">
         <span class="ad-item-title">${
           g.code ? `<i class="bt-code">${esc(g.code)}</i>` : ''}${esc(g.name)}</span>
-        ${es.length ? '<span class="ad-tag ad-tag-yes">已收</span>' : ''}
         ${sub ? `<span class="ad-item-sub">${esc(sub)}</span>` : ''}
       </span>
       <span class="ad-item-actions bt-side">${side}</span>

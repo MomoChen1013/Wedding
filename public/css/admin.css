@@ -84,8 +84,12 @@ body[data-page="admin"]{padding-top:0;}
 /* ---------- 分頁內部的橫向子分頁 ----------
    後台裡好幾個分頁都是「一個分頁裝好幾件事」，子分頁要一眼看得出有幾個項目：
    所以每一顆都畫成實體的頁籤（有框、有底色），選中的那一顆再加白底與粗底線 */
+/* touch-action:pan-x —— 這一列是橫向捲動的，但手指斜著滑的時候
+   瀏覽器常常把它判成「要捲這一列的上下」，結果整頁跟著卡住。
+   明講只吃左右，垂直的手勢就會直接交還給整頁。 */
 .ad-subtabs{display:flex;gap:6px;margin:0 0 24px;border-bottom:2px solid var(--line);
-  overflow-x:auto;scrollbar-width:none;scroll-padding-inline:12px;}
+  overflow-x:auto;overscroll-behavior-x:contain;touch-action:pan-x;
+  scrollbar-width:none;scroll-padding-inline:12px;}
 .ad-subtabs::-webkit-scrollbar{display:none;}
 /* 捲軸藏起來之後，「右邊還有東西」就完全沒有線索了 ——
    用漸層把邊緣淡掉，捲到底那一側再淡出（class 由 js/admin.js 掛上） */
@@ -363,6 +367,12 @@ select.ad-input{appearance:none;cursor:pointer;
 
 /* 篩選 chip */
 .ad-chips{display:flex;gap:7px;flex-wrap:wrap;}
+/* 顆數固定、而且不會再多的那幾組（出席狀態）排成一行，
+   放不下就左右滑 —— 為了四顆按鈕折成兩排太浪費高度了 */
+.ad-chips-oneline{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;
+  touch-action:pan-x;scrollbar-width:none;padding-bottom:2px;}
+.ad-chips-oneline::-webkit-scrollbar{display:none;}
+.ad-chips-oneline .ad-chip{flex:0 0 auto;}
 .ad-chip{
   background:transparent;border:1px solid var(--line);border-radius:999px;
   padding:5px 14px;cursor:pointer;
@@ -540,10 +550,7 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-sch{display:flex;flex-direction:column;gap:10px;}
 .ad-sch-row{display:grid;grid-template-columns:110px 1fr 1fr auto;gap:8px;align-items:center;}
 .ad-sch-row .ad-input{padding:9px 11px;font-size:13.5px;}
-@media(max-width:560px){
-  .ad-sch-row{grid-template-columns:1fr 1fr;}
-  .ad-sch-row .ad-sch-desc{grid-column:1 / -1;}
-}
+/* 手機的欄位配置見檔案後段「當日流程：↑↓ 在時間欄左邊」那一段 */
 
 /* ============================================================
    囍卡卡池
@@ -904,10 +911,11 @@ select.ad-input{appearance:none;cursor:pointer;
 .sp-card-line{display:flex;align-items:baseline;gap:7px;}
 .sp-card-code{flex:0 0 auto;font-family:var(--font-display);font-size:10.5px;
   letter-spacing:.1em;color:var(--ink-soft);}
-.sp-card-name{flex:1 1 auto;min-width:0;font-size:13.5px;letter-spacing:.04em;
+.sp-card-name{flex:0 1 auto;min-width:0;font-size:13.5px;letter-spacing:.04em;
   color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.sp-card-count{flex:0 0 auto;font-size:11.5px;letter-spacing:.02em;
-  color:var(--primary-deep);font-variant-numeric:tabular-nums;}
+/* 人數緊接在名字後面（原本被推到最右邊，中間隔著一整條空白） */
+.sp-card-count{flex:0 0 auto;margin-left:-2px;font-size:11.5px;letter-spacing:.02em;
+  color:var(--primary-deep);font-variant-numeric:tabular-nums;white-space:nowrap;}
 
 /* 標籤一行排完，放不下就左右滑（不換行、不長高） */
 .sp-card-tags{display:flex;flex-wrap:nowrap;gap:4px;margin-top:4px;
@@ -961,8 +969,9 @@ select.ad-input{appearance:none;cursor:pointer;
 .sp-table.is-full{border:3px solid var(--seat-full);}
 .sp-table.is-over{border:3px solid var(--seat-over);}
 
-.sp-table-head{display:flex;align-items:center;gap:8px;padding:10px 12px;
+.sp-table-head{display:flex;flex-direction:column;gap:6px;padding:10px 12px;
   border-bottom:1px solid var(--line-soft);}
+.sp-table-head-row{display:flex;align-items:center;gap:8px;}
 @media (hover:hover) and (pointer:fine){
   .sp-table-head{cursor:grab;}
   .sp-table-head:active{cursor:grabbing;}
@@ -976,8 +985,9 @@ select.ad-input{appearance:none;cursor:pointer;
   padding:1px 8px;font-size:10.5px;letter-spacing:.06em;color:var(--ink-soft);}
 .sp-table-edit{flex:0 0 auto;}
 
+/* 人數與剩餘位子跟著桌號住在分隔線上方（見 seating-plan.js 的 renderBoard） */
 .sp-table-meta{display:flex;align-items:baseline;justify-content:space-between;gap:8px;
-  padding:8px 12px;font-size:12px;letter-spacing:.04em;}
+  font-size:12px;letter-spacing:.04em;}
 .sp-table-count{color:var(--ink);font-variant-numeric:tabular-nums;}
 .sp-table-left{color:var(--ink-soft);}
 .sp-table.is-full .sp-table-left{color:var(--seat-full);font-weight:500;}
@@ -1496,8 +1506,7 @@ body.ad-lock{position:fixed;left:0;right:0;width:100%;overflow:hidden;}
 }
 .sp-mobilebar-pool b{font-family:var(--font-display);font-size:17px;font-weight:500;
   color:var(--primary-deep);font-variant-numeric:tabular-nums;}
-.sp-mobilebar .btn{flex:1 1 auto;min-height:44px;}
-.sp-mobilebar-more{flex:0 0 auto;min-width:48px;font-size:17px;line-height:1;}
+.sp-mobilebar .btn{min-height:44px;}
 /* 有 sticky 底列時，toast 要讓開，不然兩個疊在一起 */
 body[data-stickybar="1"] .ad-toast-stack{bottom:calc(80px + env(safe-area-inset-bottom));}
 /* 底列會蓋住最後一段內容，整頁多留一點底部空間 */
@@ -1565,21 +1574,16 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
    當日流程：每一列的排序鈕（手機沒有拖曳可用）
 ------------------------------------------------------------ */
 .ad-sch-row{position:relative;}
-.ad-sch-acts{display:flex;align-items:center;gap:2px;flex:0 0 auto;}
-@media(max-width:560px){
-  .ad-sch-row{grid-template-columns:1fr 1fr;}
-  .ad-sch-row .ad-sch-desc{grid-column:1 / -1;}
-  .ad-sch-acts{grid-column:1 / -1;justify-content:flex-end;
-    padding-top:2px;border-bottom:1px solid var(--line-soft);padding-bottom:10px;}
-}
+
 
 /* ------------------------------------------------------------
    ≤899px 的其他收尾
 ------------------------------------------------------------ */
 @media(max-width:899px){
-  /* 篩選列的搜尋框自己佔滿一排，不要擠成第三排的一小格 */
+  /* 搜尋框現在自己就是第一排（見 admin.html），佔滿寬度。
+     「出席」「標籤」那兩個字維持和 chip 同一排 —— 為了兩個字
+     多吃一整排的高度，在手機上太貴了 */
   .ad-filterbar-search{flex:1 1 100%;margin-left:0;}
-  .ad-filterbar-lab{flex:0 0 100%;}
   /* 子分頁列黏在頂列下面：切分頁是最常做的動作 */
   .ad-subtabs{position:sticky;top:var(--ad-stick-top,63px);z-index:7;margin-bottom:18px;
     background:rgba(251,250,248,.96);backdrop-filter:blur(6px);}
@@ -1624,17 +1628,17 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
    手機幾乎按不到。改成 32×32 的方形（觸控再撐到 44）。
    桌位管理與當日流程共用同一個樣子 —— 同一件事就該長得一樣。 */
 .sp-move-btn,
-.ad-sch-acts [data-sch-move]{
+.ad-sch-move [data-sch-move]{
   min-width:32px;min-height:32px;padding:0;
   display:inline-flex;align-items:center;justify-content:center;
   border:1px solid var(--line);border-radius:var(--radius);font-size:13px;
 }
 .sp-move-btn:not([disabled]):hover,
-.ad-sch-acts [data-sch-move]:hover{border-color:var(--ink);}
+.ad-sch-move [data-sch-move]:hover{border-color:var(--ink);}
 .sp-move-btn[disabled]{opacity:.3;}
 @media (pointer:coarse){
   .sp-move-btn,
-  .ad-sch-acts [data-sch-move]{min-width:44px;min-height:44px;}
+  .ad-sch-move [data-sch-move]{min-width:44px;min-height:44px;}
 }
 /* 標籤優先順序那一列的 ↑↓ 同理 */
 .sp-tagorder-row .ad-edit{min-width:32px;min-height:32px;padding:0;
@@ -1665,4 +1669,150 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
    頂列在這個尺寸只留狀態與統計，動作全部交給底列。 */
 @media(max-width:960px){
   .sp-bar-actions{display:none;}
+}
+
+/* ============================================================
+   手機版的第二輪調整
+   ------------------------------------------------------------
+   前一輪把東西放進畫面裡了，這一輪是「一頁能看到多少」與
+   「哪一顆是按鈕、哪一顆只是標籤」——密度與辨識度的問題。
+============================================================ */
+
+/* ---------- 子分頁列黏住時，上下各讓 4px ----------
+   貼著頂列與內容都會顯得很擠，也看不出它是浮在上面的一層 */
+@media(max-width:899px){
+  .ad-subtabs{padding:4px 0;}
+}
+
+/* ---------- 總覽：左邊大數字，右邊一列一項 ----------
+   flex-basis 刻意壓小：390px 的手機扣掉內外距只剩 ~314px，
+   basis 一大就會折行，那就變回「數字上面、清單下面」了 */
+.ad-hero-split{display:flex;flex-wrap:wrap;align-items:center;gap:14px 18px;
+  text-align:left;padding:24px 16px 20px;}
+.ad-hero-main{flex:1 1 104px;min-width:0;text-align:center;}
+/* 「總回覆人數」在窄欄裡不要被字距撐成三行 */
+.ad-hero-split .ad-hero-lab{letter-spacing:.12em;}
+.ad-hero-list{flex:1 1 150px;min-width:0;list-style:none;margin:0;padding:0;
+  display:flex;flex-direction:column;}
+.ad-hero-item{display:flex;align-items:baseline;gap:10px;
+  padding:7px 0;border-bottom:1px solid var(--line-soft);
+  font-size:12.5px;letter-spacing:.04em;color:var(--ink-soft);}
+.ad-hero-item:last-child{border-bottom:none;}
+.ad-hero-item > span{flex:1 1 auto;min-width:0;}
+.ad-hero-item > b{flex:0 0 auto;font-weight:400;color:var(--ink);
+  font-variant-numeric:tabular-nums;}
+.ad-hero-item.is-note{color:var(--ink-soft);border-bottom:none;}
+.ad-hero-split .ad-hero-meta{flex:1 1 100%;margin-top:0;text-align:center;}
+/* 真的窄到連兩欄都排不下（320px 級的機器）才折成上下 */
+@media(max-width:340px){
+  .ad-hero-main,.ad-hero-list{flex:1 1 100%;}
+}
+
+/* ---------- 標籤篩選：先只露兩排 ---------- */
+.ad-filterbar-tags{flex:1 1 100%;min-width:0;}
+/* 兩排的高度 ＝ 兩顆 chip ＋ 一道 gap。chip 在觸控上是 36px、桌機約 30px，
+   所以用 CSS 變數帶著走，改了 chip 高度這裡不會忘記跟上 */
+.ad-chips-clamp{--chip-h:30px;overflow:hidden;
+  max-height:calc(var(--chip-h) * 2 + 7px);}
+.ad-chips-clamp.is-open{max-height:none;}
+@media (pointer:coarse){ .ad-chips-clamp{--chip-h:36px;} }
+.ad-chips-more{
+  margin-top:8px;background:none;border:none;padding:6px 0;cursor:pointer;
+  font-family:var(--font-body);font-size:11.5px;letter-spacing:.08em;
+  color:var(--primary-deep);border-bottom:1px solid var(--line);
+}
+.ad-chips-more[hidden]{display:none;}
+@media (pointer:coarse){ .ad-chips-more{padding:10px 0;} }
+
+/* ---------- 篩選彙總：浮在名單上的一張卡 ----------
+   原本只是一條有底色的橫槓，捲起來時和名單黏成一片；
+   加上陰影才看得出它是「浮在上面、跟著你走」的那一層 */
+.ad-filtersum{
+  border-color:var(--line-soft);
+  box-shadow:0 6px 18px rgba(43,47,54,.14);
+  background:#fff;
+}
+
+/* ---------- 回覆卡：兩行 ---------- */
+.ad-rcard-head{gap:8px 10px;}
+.ad-rcard-time{flex:0 0 auto;font-size:11px;color:var(--ink-soft);
+  letter-spacing:.02em;font-variant-numeric:tabular-nums;}
+.ad-rcard-line{display:flex;align-items:baseline;gap:10px;margin-top:6px;}
+.ad-rcard-line .ad-rcard-key{flex:1 1 auto;min-width:0;margin-top:0;}
+/* 「展開更多」原本是圓角膠囊，和旁邊的標籤幾乎一樣 ——
+   改成帶 ＋／－ 的純文字按鈕，一眼就分得出誰是按鈕、誰是標籤 */
+.ad-rcard-more{
+  flex:0 0 auto;background:none;border:none;border-radius:0;cursor:pointer;
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--font-body);font-size:12px;letter-spacing:.06em;
+  color:var(--primary-deep);padding:6px 0;min-height:0;
+}
+.ad-rcard-more i{font-style:normal;font-size:13px;line-height:1;}
+.ad-rcard-more[aria-expanded="true"]{color:var(--ink-soft);}
+@media (pointer:coarse){ .ad-rcard-more{padding:11px 0 11px 12px;} }
+.ad-rcard-tags{margin-top:6px;}
+
+/* ---------- 排桌：提示可以關掉 ---------- */
+.sp-touch-tip{position:relative;padding-right:44px;}
+.sp-touch-tip[hidden]{display:none;}
+.sp-touch-tip-close{
+  position:absolute;top:2px;right:2px;width:40px;height:40px;padding:0;
+  background:none;border:none;cursor:pointer;
+  font-family:var(--font-body);font-size:14px;line-height:1;color:var(--ink-soft);
+}
+.sp-touch-tip-close:hover{color:var(--ink);}
+
+/* ---------- 排桌底列：「⋮」在最左邊、固定方形 ----------
+   「⋮」也帶著 .btn，所以這幾條的選擇器要一樣重，
+   不然「其餘兩顆平分」那一條會連它一起撐開 */
+.sp-mobilebar .sp-mobilebar-more{
+  flex:0 0 44px;width:44px;min-width:44px;height:44px;padding:0;
+  display:flex;align-items:center;justify-content:center;font-size:17px;line-height:1;
+}
+/* 其餘兩顆平分剩下的寬度：字多字少都不會把版面推歪 */
+.sp-mobilebar .sp-mobilebar-pool,
+.sp-mobilebar .btn:not(.sp-mobilebar-more){flex:1 1 0;}
+.sp-mobilebar .sp-mobilebar-pool{justify-content:center;}
+
+/* ---------- 桌位管理：手機留「編輯」與「⋮」就好 ----------
+   ↑↓ 一次只能挪一格，30 桌要按很多下；「⋮」裡有「移到最前／最後」 */
+@media (pointer:coarse){
+  .sp-table-row .sp-move-btn{display:none;}
+}
+
+/* ---------- 當日流程：↑↓ 在時間欄左邊 ----------
+   這一列在講「第幾個發生」，排序鈕就該和時間站在一起 */
+.ad-sch-row{grid-template-columns:auto 110px 1fr 1fr auto;align-items:center;}
+.ad-sch-move{display:flex;gap:2px;}
+.ad-sch-del{align-self:center;}
+@media(max-width:560px){
+  /* 第一排是「順序 ＋ 時間 ＋ 刪除」，項目名稱與說明各自佔滿一整排。
+     每一格都指定位置：只寫 grid-column:1/-1 的話，
+     後面的「刪除」會被擠到自己一整排去 */
+  .ad-sch-row{grid-template-columns:auto 1fr auto;}
+  .ad-sch-row .ad-sch-move {grid-area:1 / 1;}
+  .ad-sch-row .ad-sch-time {grid-area:1 / 2;}
+  .ad-sch-row .ad-sch-del  {grid-area:1 / 3;}
+  .ad-sch-row .ad-sch-title{grid-area:2 / 1 / auto / -1;}
+  .ad-sch-row .ad-sch-desc {grid-area:3 / 1 / auto / -1;}
+}
+
+/* ---------- 婚禮小卡：手機兩欄 ----------
+   一欄的話一張卡就吃掉大半個螢幕，捲十下還在看第三張 ---------- */
+@media(max-width:560px){
+  .ad-cards{grid-template-columns:repeat(2,1fr);gap:10px;}
+  .ad-card figcaption{padding:8px;gap:6px;}
+  .ad-card .ad-order{font-size:10.5px;}
+}
+/* 「重新裁切」收進「⋮」裡就好：卡片那一列擺得下的東西有限，
+   而重新裁切是偶爾才做一次的事 */
+@media (hover:none){
+  .ad-card-actions [data-recrop]{display:none;}
+}
+
+/* ---------- 收禮明細：卡片左右留白 ---------- */
+.ad-btcards{padding:0 8px;}
+.ad-btcard{padding:14px 0;}
+@media(max-width:560px){
+  .ad-btcards{padding:0 8px;}
 }

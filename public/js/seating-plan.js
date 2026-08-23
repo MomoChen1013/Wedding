@@ -939,8 +939,11 @@
                aria-label="${esc(g.name)}，${g.count} 位，${RSVP_TEXT[g.rsvp]}">
         <div class="sp-card-line">
           <span class="sp-card-code">${esc(g.code || '—')}</span>
+          <!-- 人數緊接在名字後面（不再推到最右邊）：中間隔一大段空白時，
+               會讓人以為那是另一個人的數字，名字短的時候特別明顯。
+               人數不能被名字的刪節號吃掉，所以是它自己一個元素 -->
           <span class="sp-card-name">${esc(g.name)}</span>
-          <span class="sp-card-count">${g.count} 人</span>
+          <span class="sp-card-count">（${g.count} 人）</span>
         </div>
         ${line2 ? `<div class="sp-card-tags">${line2}</div>` : ''}
         <!-- 觸控裝置拖不動，而且原本要「點卡片 → peek → 移動到桌位」兩下才碰得到。
@@ -1217,17 +1220,21 @@
 
       return `
         <article class="sp-table is-${state}" data-table="${esc(t.id)}">
+          <!-- 桌號、桌名、人數、剩餘位子都在分隔線「上面」：
+               這四件事講的是同一張桌子的狀態，線的下面才是坐在上面的人 -->
           <header class="sp-table-head" draggable="true" data-table-head="${esc(t.id)}">
-            <span class="sp-table-no">${no2(t.no)}</span>
-            <!-- 沒設定桌名就只留桌號，不要生出「（桌名）」這種空殼 -->
-            <span class="sp-table-name">${esc(t.name)}</span>
-            ${type ? `<span class="sp-table-type">${esc(type)}</span>` : ''}
-            <button class="ad-edit sp-table-edit" type="button" data-edit-table="${esc(t.id)}">編輯</button>
+            <div class="sp-table-head-row">
+              <span class="sp-table-no">${no2(t.no)}</span>
+              <!-- 沒設定桌名就只留桌號，不要生出「（桌名）」這種空殼 -->
+              <span class="sp-table-name">${esc(t.name)}</span>
+              ${type ? `<span class="sp-table-type">${esc(type)}</span>` : ''}
+              <button class="ad-edit sp-table-edit" type="button" data-edit-table="${esc(t.id)}">編輯</button>
+            </div>
+            <div class="sp-table-meta">
+              <span class="sp-table-count">${heads} / ${t.cap} 人</span>
+              <span class="sp-table-left">${esc(leftText)}</span>
+            </div>
           </header>
-          <div class="sp-table-meta">
-            <span class="sp-table-count">${heads} / ${t.cap} 人</span>
-            <span class="sp-table-left">${esc(leftText)}</span>
-          </div>
           ${flags ? `<div class="sp-table-flags">${flags}</div>` : ''}
           <div class="sp-table-body" data-drop="${esc(t.id)}">
             ${cards.length
@@ -2698,10 +2705,25 @@
   /* ============================================================
      啟動（admin.js 登入成功後呼叫）
   ============================================================ */
+  /* 提示看過一次就夠了。收起來的狀態記在這台裝置上（以 siteId 分隔），
+     不寫回資料庫 —— 這是「這台手機的使用者知道了」，不是站台設定。 */
+  const TIP_KEY = 'seatPlan.touchTipHidden';
+
+  function bindTouchTip() {
+    const tip = $('spTouchTip');
+    if (!tip) return;
+    if (LS.get(TIP_KEY, false)) { tip.hidden = true; return; }
+    $('spTouchTipClose').addEventListener('click', () => {
+      tip.hidden = true;
+      LS.set(TIP_KEY, true);
+    });
+  }
+
   function init() {
     if (started) return;
     started = true;
     fillTypeSelect();
+    bindTouchTip();
 
     /* 一列的動作收進「⋮」：刪除原本和「編輯」只隔 10px，很容易點錯。
        順序也一起放進來 —— ↑↓ 一次只能挪一格，30 桌要按很多下。 */
