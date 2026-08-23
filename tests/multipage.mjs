@@ -1143,15 +1143,27 @@ console.log('\n[14b] 後台看得到出席回覆');
   const dupRow = page.locator('#adRsvpList tbody tr', { hasText:'重複小明' }).first();
   ok('找得到那筆重複的回覆', (await dupRow.count()) === 1);
 
+  /* 一列的動作收進「⋯」之後，刪除的入口是那顆按鈕裡的最後一項
+     （危險的動作排最後、用危險色，誤觸的代價因此降下來） */
+  async function openRowDelete(){
+    await dupRow.locator('.ad-rowmenu-btn').click();
+    await page.waitForSelector('.ad-rowmenu:not([hidden])', { timeout:5000 });
+    await page.click('.ad-rowmenu .ad-rowmenu-item.is-danger');
+  }
+
+  ok('一列的刪除收進「⋯」裡，不再常駐在表格上',
+    (await dupRow.locator('.ad-rowmenu-btn').count()) === 1
+    && (await dupRow.locator('.ad-del').count()) === 0);
+
   /* 第一關：取消就什麼都不會發生 */
-  await dupRow.locator('[data-del-rsvp]').click();
+  await openRowDelete();
   await page.waitForSelector('#adModalMask:not([hidden])', { timeout:5000 });
   await page.click('#adModalCancel');
   await page.waitForTimeout(600);
   ok('第一關按取消不會刪掉', (await rsvpCol.doc('dupe-1').get()).exists);
 
   /* 再來一次，這次走完兩關 */
-  await dupRow.locator('[data-del-rsvp]').click();
+  await openRowDelete();
   await page.waitForSelector('#adModalMask:not([hidden])', { timeout:5000 });
   await page.click('#adModalConfirm');
   await page.waitForTimeout(400);
@@ -1460,8 +1472,13 @@ console.log('\n[17] 後台只顯示有開的頁面');
   const shown = await page.evaluate(() =>
     Array.from(document.querySelectorAll('.ad-tab'))
       .filter((b) => !b.hidden).map((b) => b.dataset.tab));
+  /* 側欄現在分成三組（婚禮管理／婚禮內容／賓客互動），DOM 順序跟著改了：
+       婚禮管理  rsvp, seating, seatingPlan, butler
+       婚禮內容  lobby, letters, cards, exhibits
+       賓客互動  inbox, quiz
+     minimal-site 只開 rsvp，加上永遠都在的 lobby 與沒有開關的 inbox */
   ok('關掉的頁面不出現編輯分頁',
-    shown.join(',') === 'rsvp,inbox,lobby', shown.join(','));
+    shown.join(',') === 'rsvp,lobby,inbox', shown.join(','));
   ok('大廳內容永遠在', shown.includes('lobby'));
 
   ok('後台分頁無 console 錯誤', realErrors(errors).length === 0,
@@ -1479,12 +1496,18 @@ console.log('\n[17] 後台只顯示有開的頁面');
 
   const onTab = await page.evaluate(() =>
     document.querySelector('.ad-tab.is-on')?.dataset.tab);
-  /* 分頁順序上「悄悄話」排在出席回覆後面，而且沒有對應的頁面開關（永遠都在），
-     所以出席回覆被關掉時，第一個還在的分頁就是它 */
-  ok('出席回覆關掉時自動改開第一個還在的分頁', onTab === 'inbox', String(onTab));
+  /* 分組之後，「婚禮資訊」是第一個沒有頁面開關（永遠都在）的分頁 ——
+     它排在「婚禮內容」那一組的第一顆，而「婚禮管理」整組這時候都關掉了。
+     所以出席回覆被關掉時，第一個還在的分頁就是它。 */
+  ok('出席回覆關掉時自動改開第一個還在的分頁', onTab === 'lobby', String(onTab));
   ok('出席回覆的內容也收起來',
     await page.evaluate(() =>
       !document.querySelector('.ad-panel[data-panel="rsvp"]').classList.contains('is-on')));
+  /* 整組都被關掉時，那一組的標題也要跟著收起來 ——
+     一個什麼都沒有的「婚禮管理」比沒有標題還糟 */
+  ok('整組都關掉時，group label 也一起藏起來',
+    await page.evaluate(() =>
+      document.querySelector('.ad-navgroup[data-navgroup="manage"]').hidden));
   await page.close();
 
   /* 還原，後面的測試還要用這組站台 */
@@ -2398,8 +2421,11 @@ console.log('\n[21] 後台排桌管理');
   await page.waitForTimeout(400);
   await page.fill('#adRsvpFilter', '排桌小明');
   await page.waitForTimeout(400);
+  /* 刪除收在「⋯」裡（危險的動作排最後、用危險色） */
   await page.locator('#adRsvpList tbody tr', { hasText:'排桌小明' }).first()
-    .locator('[data-del-rsvp]').click();
+    .locator('.ad-rowmenu-btn').click();
+  await page.waitForSelector('.ad-rowmenu:not([hidden])', { timeout:5000 });
+  await page.click('.ad-rowmenu .ad-rowmenu-item.is-danger');
   await page.waitForSelector('#adModalMask:not([hidden])', { timeout:5000 });
   await page.click('#adModalConfirm');
   await page.waitForTimeout(300);

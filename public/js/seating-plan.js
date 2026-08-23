@@ -1173,11 +1173,15 @@
     if (!loaded) {
       body.innerHTML = skeletonHtml(3, ['60%', '40%']);
     } else if (!pool.length) {
-      body.innerHTML = `<div class="ad-empty">${
-        anyUnseated ? '沒有符合條件的賓客'
-          : (guests.length ? '所有賓客都排好位子了'
-            : '還沒有賓客<br>等賓客填出席回覆，或先用「＋ 新增賓客」「匯入」把名單放進來')
-      }</div>`;
+      body.innerHTML = anyUnseated
+        ? emptyState({ title:'沒有符合條件的賓客', body:'把篩選放寬一點，或清掉搜尋關鍵字。' })
+        : (guests.length
+            ? emptyState({ title:'都排好位子了', body:'每一位賓客都有桌次了。要調整的話，直接把人從桌上拖回來。' })
+            : emptyState({
+                title: '還沒有賓客',
+                body: '賓客填了出席回覆就會自動出現在這裡；沒填的長輩或臨時加的親友，'
+                    + '用「＋ 新增賓客」或「匯入」放進來。',
+              }));
     } else if (view.sort === 'tag') {
       /* 依標籤分組：同一位賓客只會出現在一組（主要排序 Tag） */
       const order = groupOrder();
@@ -1292,7 +1296,11 @@
     const tables = sortedTables();
     const guests = allGuests();
     if (!tables.length) {
-      el.innerHTML = `<div class="ad-empty">還沒有桌位，按右上角「新增桌位」開始</div>`;
+      el.innerHTML = emptyState({
+        title: '還沒有任何桌位',
+        body: '先把桌子開出來（主桌、男方親友、女方同事…），才有地方可以放人。',
+        action: { label:'新增桌位', id:'spTableEmptyAdd' },
+      });
       return;
     }
     el.innerHTML = tables.map((t, i) => {
@@ -2572,6 +2580,10 @@
     /* ---- 桌位管理 ---- */
     $('spGuestAddBtn').addEventListener('click', addManualGuest);
     $('spTableAddBtn').addEventListener('click', () => openTableModal(''));
+    /* 空狀態上的「新增桌位」指的是同一件事，走同一條路徑 */
+    $('spTableList').addEventListener('click', (e) => {
+      if (e.target.closest('#spTableEmptyAdd')) openTableModal('');
+    });
     $('spTableBatchBtn').addEventListener('click', batchAddTables);
     $('spTableForm').addEventListener('submit', submitTable);
     $('spTableType').addEventListener('change', syncTypeCustom);

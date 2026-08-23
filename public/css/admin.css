@@ -11,6 +11,41 @@
    蓋掉 common.css 幫賓客導覽列留的 padding-top，不然畫面上會空一截 */
 body[data-page="admin"]{padding-top:0;}
 
+/* ============================================================
+   Motion token
+   ------------------------------------------------------------
+   時長本來就落在對的區間（.12s–.28s），問題是它散在二十幾處字面值裡：
+   改一個「hover 要多快」得逐段找。收成五個變數之後，
+   「這是 hover 還是進場」就寫在名字上，而不是靠 .15s / .26s 猜。
+
+   easing 一律 ease-out 或那條 cubic-bezier（起手快、收尾慢）——
+   `ease` 兩頭都慢，短時長下會糊成「有沒有動好像都一樣」。
+   刻意不用 bounce／overshoot：這是婚禮後台，不是遊戲。
+============================================================ */
+:root{
+  --dur-hover:150ms;
+  --dur-btn:180ms;
+  --dur-pop:200ms;
+  --dur-drawer:260ms;
+  --dur-page:200ms;
+  --ease:cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 使用者在系統層說了「不要動畫」——那是前庭系統的需求，不是偏好設定。
+   全部收成 1ms（不是 0s：0s 會讓某些瀏覽器連 transitionend 都不發，
+   靠 transitionend 收尾的程式會卡住）。 */
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto;}
+  *,*::before,*::after{
+    animation-duration:1ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:1ms !important;
+    scroll-behavior:auto !important;
+  }
+  /* shimmer 是「還在載入」的唯一訊號，不能只是停住 —— 換成靜態底色 */
+  .ad-skel-line{background:var(--line-soft);animation:none !important;}
+}
+
 #pwGate{background:var(--bg1);}
 .gate-card{
   width:min(90vw,400px);background:#fff;border:1px solid var(--line);
@@ -67,7 +102,8 @@ body[data-page="admin"]{padding-top:0;}
   background:transparent;border:none;cursor:pointer;border-radius:var(--radius);
   font-family:var(--font-body);font-size:13.5px;letter-spacing:.14em;
   color:var(--ink-soft);padding:11px 14px;border-left:2px solid transparent;
-  transition:color .2s,background .2s,border-color .2s;
+  transition:color var(--dur-hover) ease-out,background var(--dur-hover) ease-out,
+              border-color var(--dur-hover) ease-out,font-weight var(--dur-hover) ease-out;
 }
 @media (hover:hover) and (pointer:fine){
   .ad-tab:hover{color:var(--ink);background:rgba(255,255,255,.6);}
@@ -107,7 +143,7 @@ body[data-page="admin"]{padding-top:0;}
   border-radius:var(--radius) var(--radius) 0 0;
   font-family:var(--font-body);font-size:13px;letter-spacing:.14em;
   color:var(--ink-soft);padding:11px 20px;margin-bottom:-2px;
-  transition:color .2s,background .2s,border-color .2s;
+  transition:color var(--dur-hover) ease-out,background var(--dur-hover) ease-out,border-color var(--dur-hover) ease-out;
 }
 @media (hover:hover) and (pointer:fine){
   .ad-subtab:hover{color:var(--ink);background:#fff;}
@@ -115,10 +151,10 @@ body[data-page="admin"]{padding-top:0;}
 .ad-subtab.is-on{color:var(--ink);background:#fff;font-weight:500;
   border-color:var(--line);border-bottom-color:var(--primary-deep);}
 .ad-subpanel{display:none;}
-.ad-subpanel.is-on{display:block;animation:scInF .3s ease;}
+.ad-subpanel.is-on{display:block;animation:scInF var(--dur-page) var(--ease);}
 
 .ad-panel{display:none;}
-.ad-panel.is-on{display:block;animation:scInF .35s ease;}
+.ad-panel.is-on{display:block;animation:scInF var(--dur-page) var(--ease);}
 
 /* ---------- 窄螢幕：側欄變抽屜（<900px，涵蓋平板直向與手機） ---------- */
 @media(max-width:899px){
@@ -127,9 +163,9 @@ body[data-page="admin"]{padding-top:0;}
   .ad-side{
     position:fixed;top:0;left:0;bottom:0;z-index:1000;
     width:min(78vw,280px);max-height:none;
-    background:var(--bg1);box-shadow:2px 0 18px rgba(0,0,0,.12);
+    background:var(--bg1);box-shadow:2px 0 14px rgba(0,0,0,.09);
     padding:76px 14px 20px;border-right:none;
-    transform:translateX(-100%);transition:transform .28s ease;
+    transform:translateX(-100%);transition:transform var(--dur-drawer) var(--ease);
   }
   .ad-side.is-open{transform:translateX(0);}
   .ad-side-foot{
@@ -140,7 +176,7 @@ body[data-page="admin"]{padding-top:0;}
   .ad-side-backdrop{
     display:block;position:fixed;inset:0;z-index:990;
     background:rgba(20,18,14,.32);opacity:0;pointer-events:none;
-    transition:opacity .22s ease;
+    transition:opacity var(--dur-pop) ease-out;
   }
   .ad-side-backdrop.is-on{opacity:1;pointer-events:auto;}
   .ad-side-backdrop[hidden]{display:none;}
@@ -184,7 +220,7 @@ body[data-page="admin"]{padding-top:0;}
 .ad-input,.ad-textarea{
   width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:var(--radius);
   font-family:var(--font-body);font-size:16px;line-height:1.85;letter-spacing:.04em;
-  color:var(--ink);background:#fff;outline:none;transition:border-color .2s;
+  color:var(--ink);background:#fff;outline:none;transition:border-color var(--dur-hover) ease-out;
 }
 .ad-input:focus,.ad-textarea:focus{border-color:var(--ink);}
 .ad-input::placeholder,.ad-textarea::placeholder{color:var(--ink-soft);opacity:.6;}
@@ -265,7 +301,7 @@ select.ad-input{appearance:none;cursor:pointer;
   display:flex;flex-direction:column;align-items:center;gap:8px;
   padding:38px 20px;border:1px dashed var(--line);border-radius:var(--radius);
   background:rgba(255,255,255,.6);cursor:pointer;text-align:center;
-  transition:border-color .2s,background .2s;
+  transition:border-color var(--dur-hover) ease-out,background var(--dur-hover) ease-out;
 }
 .ad-upload:hover,.ad-upload.is-over{border-color:var(--ink);background:#fff;}
 .ad-upload-mark{font-size:22px;line-height:1;color:var(--primary-deep);}
@@ -377,7 +413,7 @@ select.ad-input{appearance:none;cursor:pointer;
   background:transparent;border:1px solid var(--line);border-radius:999px;
   padding:5px 14px;cursor:pointer;
   font-family:var(--font-body);font-size:12px;letter-spacing:.08em;
-  color:var(--ink-soft);transition:.2s;
+  color:var(--ink-soft);transition:color var(--dur-hover) ease-out,background var(--dur-hover) ease-out,border-color var(--dur-hover) ease-out;
 }
 .ad-chip:hover{border-color:var(--ink);color:var(--ink);}
 .ad-chip.is-on{background:var(--ink);border-color:var(--ink);color:#fff;}
@@ -447,7 +483,7 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-table td{padding:11px 12px;vertical-align:top;color:var(--ink);
   border-bottom:1px solid var(--line-soft);line-height:1.7;}
 @media (hover:hover) and (pointer:fine){
-  .ad-table tbody tr:hover td{background:rgba(0,0,0,.018);}
+  .ad-table tbody tr:hover td{background:rgba(0,0,0,.035);}
 }
 .ad-table .is-num{text-align:center;width:1%;white-space:nowrap;}
 .ad-table .is-name{font-size:13.5px;white-space:nowrap;}
@@ -521,7 +557,7 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-pager-nav{display:flex;align-items:center;gap:10px;}
 .ad-pager-btn{background:none;border:1px solid var(--line);border-radius:var(--radius);
   cursor:pointer;padding:6px 12px;font-family:var(--font-body);font-size:12px;
-  letter-spacing:.06em;color:var(--ink);transition:.2s;}
+  letter-spacing:.06em;color:var(--ink);transition:border-color var(--dur-hover) ease-out,color var(--dur-hover) ease-out;}
 .ad-pager-btn:hover:not(:disabled){border-color:var(--ink);}
 .ad-pager-btn:disabled{opacity:.35;cursor:not-allowed;}
 .ad-pager-size{display:flex;align-items:center;gap:6px;}
@@ -604,7 +640,7 @@ select.ad-input{appearance:none;cursor:pointer;
   background:none;border:none;cursor:grab;color:var(--ink-soft);
   font-size:16px;letter-spacing:.1em;touch-action:none;user-select:none;}
 .ad-drag-handle:hover{color:var(--ink);}
-.ad-quiz-item.is-dragging{opacity:.55;box-shadow:0 4px 14px rgba(0,0,0,.1);position:relative;z-index:2;}
+.ad-quiz-item.is-dragging{opacity:.55;box-shadow:0 4px 12px rgba(0,0,0,.09);position:relative;z-index:2;}
 .ad-quiz-item.is-dragging .ad-drag-handle{cursor:grabbing;}
 .ad-drag-placeholder{border:1px dashed var(--line);border-radius:var(--radius);
   height:52px;margin:2px 0;background:var(--bg2);}
@@ -616,7 +652,7 @@ select.ad-input{appearance:none;cursor:pointer;
    所以要壓在所有彈窗與 toast 上面，不然按不到「用這個範圍」 */
 .cr-mask{position:fixed;inset:0;z-index:1600;background:rgba(43,47,54,.72);
   display:flex;align-items:center;justify-content:center;padding:20px;
-  animation:pop .2s ease;}
+  animation:pop var(--dur-pop) var(--ease);}
 .cr-card{width:min(92vw,380px);max-height:92dvh;overflow:auto;background:#fff;
   border:1px solid var(--line);border-radius:var(--radius);padding:22px 20px 18px;}
 .cr-title{font-family:var(--font-display);font-size:14px;font-weight:500;
@@ -653,7 +689,7 @@ select.ad-input{appearance:none;cursor:pointer;
   border-bottom:1px solid var(--line-soft);}
 .ad-skel-line{height:11px;border-radius:3px;width:var(--w, 60%);
   background:linear-gradient(90deg, var(--line-soft) 25%, rgba(0,0,0,.06) 37%, var(--line-soft) 63%);
-  background-size:400% 100%;animation:ad-skel-pulse 1.4s ease infinite;}
+  background-size:400% 100%;animation:ad-skel-pulse 1.4s linear infinite;}
 .ad-skel-line.short{width:var(--w, 30%);}
 @keyframes ad-skel-pulse{0%{background-position:100% 0}100%{background-position:0 0}}
 
@@ -670,9 +706,9 @@ select.ad-input{appearance:none;cursor:pointer;
   max-width:100%;padding:13px 20px;
   background:var(--ink);color:#fff;border-radius:var(--radius);
   font-size:13px;line-height:1.8;letter-spacing:.06em;text-align:left;
-  animation:pop .28s ease;
+  animation:pop var(--dur-drawer) var(--ease);
 }
-.ad-toast.is-out{animation:adToastOut .2s ease forwards;}
+.ad-toast.is-out{animation:adToastOut var(--dur-hover) ease-out forwards;}
 @keyframes adToastOut{to{opacity:0;transform:translateY(6px);}}
 .ad-toast-msg{flex:1 1 auto;}
 .ad-toast.is-error{background:#8a5765;}
@@ -685,7 +721,7 @@ select.ad-input{appearance:none;cursor:pointer;
 ============================================================ */
 .ad-modal-mask{position:fixed;inset:0;z-index:1450;background:rgba(43,47,54,.72);
   display:flex;align-items:center;justify-content:center;padding:20px;
-  animation:pop .18s ease;}
+  animation:pop var(--dur-btn) var(--ease);}
 .ad-modal-mask[hidden]{display:none;}
 /* 站內統一的確認框可能疊在其他表單彈窗（例如自訂內容編輯）上面，層級要更高 */
 #adModalMask{z-index:1550;}
@@ -823,7 +859,7 @@ select.ad-input{appearance:none;cursor:pointer;
 .sp-warn.is-warn .sp-warn-more:hover{border-bottom-color:#8a5765;}
 
 .sp-warn-rest{display:flex;flex-direction:column;gap:5px;
-  animation:scInF .22s ease;}
+  animation:scInF var(--dur-pop) var(--ease);}
 .sp-warn-rest[hidden]{display:none;}
 
 /* ---------- 「未安排」面板裡的工具列 ----------
@@ -894,7 +930,7 @@ select.ad-input{appearance:none;cursor:pointer;
    真的有滑鼠的機器（iPad 橫向也是觸控，不能只看寬度） */
 .sp-card{position:relative;border:1px solid var(--line);border-radius:var(--radius);
   background:#fff;padding:7px 9px;cursor:pointer;
-  transition:border-color .18s,background .18s;}
+  transition:border-color var(--dur-btn) ease-out,background var(--dur-btn) ease-out;}
 @media (hover:hover) and (pointer:fine){
   .sp-card{cursor:grab;}
   .sp-card:hover{border-color:var(--ink);}
@@ -933,7 +969,7 @@ select.ad-input{appearance:none;cursor:pointer;
 /* ---------- 完整樣貌（peek） ---------- */
 .sp-peek{position:fixed;z-index:1200;background:#fff;border:1px solid var(--ink);
   border-radius:var(--radius);padding:12px 14px 11px;
-  box-shadow:0 6px 22px rgba(43,47,54,.14);animation:pop .14s ease;}
+  box-shadow:0 4px 14px rgba(43,47,54,.10);animation:pop var(--dur-hover) var(--ease);}
 .sp-peek[hidden]{display:none;}
 .sp-peek-head{display:flex;align-items:baseline;gap:7px;padding-bottom:8px;
   border-bottom:1px solid var(--line-soft);}
@@ -965,7 +1001,7 @@ select.ad-input{appearance:none;cursor:pointer;
    綠＝剛剛好坐滿、紅＝超過容量，掃一眼就知道哪幾桌要動。 */
 .sp-table{border:1px solid var(--line);border-radius:var(--radius);background:#fff;
   display:flex;flex-direction:column;position:relative;
-  transition:border-color .18s,border-width .12s,background .18s;}
+  transition:border-color var(--dur-btn) ease-out,border-width var(--dur-hover) ease-out,background var(--dur-btn) ease-out;}
 .sp-table.is-full{border:3px solid var(--seat-full);}
 .sp-table.is-over{border:3px solid var(--seat-over);}
 
@@ -1046,24 +1082,40 @@ select.ad-input{appearance:none;cursor:pointer;
 /* ---------- 桌位管理清單 ---------- */
 .sp-table-row .ad-item-actions .ad-edit[disabled]{opacity:.3;cursor:not-allowed;}
 
-/* ---------- 賓客詳細資料抽屜 ---------- */
-.sp-drawer-mask{position:fixed;inset:0;z-index:1300;background:rgba(43,47,54,.42);}
-.sp-drawer-mask[hidden]{display:none;}
-.sp-drawer{position:fixed;top:0;right:0;bottom:0;z-index:1310;
+/* ---------- Detail drawer（共用元件） ----------
+   ------------------------------------------------------------
+   規格是從排桌的賓客抽屜長出來的，而且它本來就對：
+   min(92vw,400px)、暖白底、左側 1px border、CTA 貼底。
+   所以不要重新設計 —— 把選擇器抽成兩個消費者共用：
+     .sp-drawer  排桌的賓客詳細資料（seating-plan.js）
+     .ad-drawer  出席回覆與收禮明細（admin.js 的 Drawer）
+   兩邊都註冊進 pushLayer()／popLayer()，返回鍵與 Esc 才關得掉、
+   背景才鎖得住捲動。
+
+   遮罩從 .42 降到 .2：「背景頁面保持可見」是這個元件的前提，
+   壓得太黑就跟開一個 modal 沒兩樣了。 */
+.sp-drawer-mask,.ad-drawer-mask{position:fixed;inset:0;z-index:1300;background:rgba(43,47,54,.2);}
+.sp-drawer-mask[hidden],.ad-drawer-mask[hidden]{display:none;}
+.sp-drawer,.ad-drawer{position:fixed;top:0;right:0;bottom:0;z-index:1310;
   width:min(92vw,400px);display:flex;flex-direction:column;
   background:var(--bg1);border-left:1px solid var(--line);
-  animation:spDrawerIn .22s ease;}
-.sp-drawer[hidden]{display:none;}
+  box-shadow:-4px 0 14px rgba(43,47,54,.07);
+  animation:spDrawerIn var(--dur-drawer) var(--ease);}
+.sp-drawer[hidden],.ad-drawer[hidden]{display:none;}
 @keyframes spDrawerIn{from{transform:translateX(18px);opacity:.4}to{transform:none;opacity:1}}
-.sp-drawer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+.sp-drawer-head,.ad-drawer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
   padding:18px 20px 14px;border-bottom:1px solid var(--line);}
-.sp-drawer-title{font-family:var(--font-display);font-size:17px;font-weight:500;
+.sp-drawer-title,.ad-drawer-title{font-family:var(--font-display);font-size:17px;font-weight:500;
   letter-spacing:.12em;color:var(--ink);}
-.sp-drawer-sub{margin-top:5px;font-size:12px;letter-spacing:.04em;color:var(--ink-soft);}
-.sp-drawer-close{background:none;border:none;cursor:pointer;font-size:15px;
-  color:var(--ink-soft);padding:2px 4px;}
-.sp-drawer-close:hover{color:var(--ink);}
-.sp-drawer-body{flex:1 1 auto;overflow-y:auto;padding:18px 20px 30px;}
+.sp-drawer-sub,.ad-drawer-sub{margin-top:5px;font-family:var(--font-ui);font-size:12px;
+  letter-spacing:.04em;color:var(--ink-soft);line-height:1.7;}
+.sp-drawer-close,.ad-drawer-close{background:none;border:none;cursor:pointer;font-size:15px;
+  color:var(--ink-soft);padding:2px 4px;flex:0 0 auto;}
+.sp-drawer-close:hover,.ad-drawer-close:hover{color:var(--ink);}
+.sp-drawer-body,.ad-drawer-body{flex:1 1 auto;overflow-y:auto;padding:18px 20px 30px;}
+@media (pointer:coarse){
+  .ad-drawer-close{min-width:44px;min-height:44px;font-size:19px;}
+}
 .sp-drawer-tags{display:flex;flex-direction:column;gap:2px;margin-top:6px;
   max-height:180px;overflow-y:auto;padding:4px 2px;
   border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);}
@@ -1079,7 +1131,7 @@ select.ad-input{appearance:none;cursor:pointer;
 .sp-move-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;
   cursor:pointer;background:#fff;border:1px solid var(--line);border-radius:var(--radius);
   padding:11px 13px;font-family:var(--font-body);font-size:13.5px;
-  letter-spacing:.05em;color:var(--ink);transition:border-color .18s;}
+  letter-spacing:.05em;color:var(--ink);transition:border-color var(--dur-btn) ease-out;}
 .sp-move-item:hover{border-color:var(--ink);}
 .sp-move-item.is-on{border-color:var(--primary-deep);background:var(--primary-soft);}
 .sp-move-item.is-clear{color:var(--ink-soft);}
@@ -1155,7 +1207,7 @@ select.ad-input{appearance:none;cursor:pointer;
 .sp-pool-add:hover{border-bottom-color:var(--primary-deep);}
 
 /* 從排桌管理跳過來打開「開放桌次功能」時，閃一下讓人看到是哪一個開關 */
-.ad-callout.is-flash{animation:adFlash 1.6s ease;}
+.ad-callout.is-flash{animation:adFlash 1.6s ease-out;}
 @keyframes adFlash{
   0%,100%{background:#fff;}
   15%,55%{background:var(--primary-soft);border-color:var(--primary-deep);}
@@ -1275,7 +1327,7 @@ select.ad-input{appearance:none;cursor:pointer;
   position:fixed;z-index:1400;min-width:190px;max-width:min(84vw,260px);
   background:#fff;border:1px solid var(--ink);border-radius:var(--radius);
   padding:5px;display:flex;flex-direction:column;
-  box-shadow:0 8px 26px rgba(43,47,54,.16);animation:pop .14s ease;
+  box-shadow:0 5px 16px rgba(43,47,54,.11);animation:pop var(--dur-hover) var(--ease);
 }
 .ad-rowmenu[hidden]{display:none;}
 .ad-rowmenu-item{
@@ -1347,7 +1399,7 @@ select.ad-input{appearance:none;cursor:pointer;
 }
 .ad-table th.is-name{z-index:3;background:var(--bg2);}
 @media (hover:hover) and (pointer:fine){
-  .ad-table tbody tr:hover td.is-name{background:#fbfbfa;}
+  .ad-table tbody tr:hover td.is-name{background:#f4f2ef;}
 }
 
 /* 表格容器：右邊還有東西時，邊緣淡出當提示（class 由 js/admin.js 掛上） */
@@ -1455,7 +1507,7 @@ body.ad-lock{position:fixed;left:0;right:0;width:100%;overflow:hidden;}
   .ad-modal-mask{align-items:flex-end;padding:0;}
   .ad-modal-card{width:100%;max-width:none;border-radius:14px 14px 0 0;
     border-bottom:none;padding:14px 18px calc(20px + env(safe-area-inset-bottom));
-    animation:adSheetIn .24s ease;}
+    animation:adSheetIn var(--dur-drawer) var(--ease);}
   .ad-modal-card-form{width:100%;max-height:92dvh;}
   .ad-modal-card::before{
     content:'';display:block;width:38px;height:4px;margin:0 auto 14px;
@@ -1475,13 +1527,14 @@ body.ad-lock{position:fixed;left:0;right:0;width:100%;overflow:hidden;}
 }
 @keyframes adSheetIn{from{transform:translateY(14px);opacity:.6}to{transform:none;opacity:1}}
 
-/* 賓客詳細抽屜：CTA 貼底，不用捲到最後才按得到儲存 */
-.sp-drawer-foot{
+/* 詳細抽屜：CTA 貼底，不用捲到最後才按得到儲存 */
+.sp-drawer-foot,.ad-drawer-foot{
   flex:0 0 auto;display:flex;align-items:center;gap:10px;
   padding:12px 20px calc(12px + env(safe-area-inset-bottom));
   border-top:1px solid var(--line);background:var(--bg1);
 }
-.sp-drawer-foot .btn{flex:1 1 auto;}
+.sp-drawer-foot .btn,.ad-drawer-foot .btn{flex:1 1 auto;}
+.ad-drawer-foot[hidden]{display:none;}
 .sp-drawer-foot #spDrawerDelete{flex:0 0 auto;margin-right:auto;}
 
 /* ------------------------------------------------------------
@@ -1603,7 +1656,7 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
 .ad-progress-text{font-size:12.5px;letter-spacing:.1em;color:var(--primary-deep);}
 .ad-progress-bar{height:3px;border-radius:999px;background:var(--line-soft);overflow:hidden;}
 .ad-progress-bar i{display:block;height:100%;width:0;background:var(--primary-deep);
-  transition:width .25s ease;}
+  transition:width var(--dur-drawer) ease-out;}
 
 /* 收禮明細卡片上的編號（butler.css 的 .bt-code 在後台沒有載入） */
 .ad-btcard-code{font-size:11px;letter-spacing:.12em;color:var(--ink-soft);
@@ -1732,7 +1785,7 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
    加上陰影才看得出它是「浮在上面、跟著你走」的那一層 */
 .ad-filtersum{
   border-color:var(--line-soft);
-  box-shadow:0 6px 18px rgba(43,47,54,.14);
+  box-shadow:0 4px 14px rgba(43,47,54,.10);
   background:#fff;
 }
 
@@ -1819,3 +1872,699 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
 @media(max-width:560px){
   .ad-btcards{padding:0 8px;}
 }
+
+/* ============================================================
+   雙軌字體：Editorial（明朝體）× UI（sans）
+   ------------------------------------------------------------
+   為什麼要分兩軌
+   ・明朝體是這個品牌的樣子，Page title、新人姓名、大數字、
+     空狀態的那一句話都該是它 —— 那是「婚禮」的部分。
+   ・但表格、時間戳、按鈕文字、表單標籤是「工作」的部分：
+     11.5px 的明朝體在密度高的名單裡辨識度會掉一階，
+     襯線在小字級只是噪點。
+
+   為什麼是新增 --font-ui 而不是改 --font-body
+   ・--font-body 定義在 common.css 的 :root，賓客的每一頁都吃它。
+     改掉它 = 婚禮頁面整個變樣。所以只在後台這一層覆寫。
+
+   為什麼不載新的 CJK sans
+   ・繁中字集很大，再加一個家族就是好幾百 KB。
+     目標裝置（台灣的 iPhone／Mac／Windows）本來就有
+     蘋方／微軟正黑，system-ui 直接拿得到，零額外請求、零閃動。
+============================================================ */
+body[data-page="admin"]{
+  --font-ui:system-ui,-apple-system,"PingFang TC","Noto Sans TC",
+            "Microsoft JhengHei","Segoe UI",sans-serif;
+}
+
+/* UI 軌：導覽、表格、表單、按鈕、metadata、時間戳、狀態 */
+body[data-page="admin"] .ad-tab,
+body[data-page="admin"] .ad-subtab,
+body[data-page="admin"] .ad-table,
+body[data-page="admin"] .ad-input,
+body[data-page="admin"] .ad-textarea,
+body[data-page="admin"] .ad-filter,
+body[data-page="admin"] .ad-label,
+body[data-page="admin"] .ad-chip,
+body[data-page="admin"] .ad-tag,
+body[data-page="admin"] .ad-hint,
+body[data-page="admin"] .ad-count,
+body[data-page="admin"] .ad-field-err,
+body[data-page="admin"] .ad-info-name,
+body[data-page="admin"] .ad-info-val,
+body[data-page="admin"] .ad-pager,
+body[data-page="admin"] .ad-pager-btn,
+body[data-page="admin"] .ad-list-head,
+body[data-page="admin"] .ad-filterbar,
+body[data-page="admin"] .ad-filtersum,
+body[data-page="admin"] .ad-item-title,
+body[data-page="admin"] .ad-item-sub,
+body[data-page="admin"] .ad-edit,
+body[data-page="admin"] .ad-del,
+body[data-page="admin"] .ad-rowmenu,
+body[data-page="admin"] .ad-rowmenu-btn,
+body[data-page="admin"] .ad-toast,
+body[data-page="admin"] .ad-modal-msg,
+body[data-page="admin"] .ad-modal-note,
+body[data-page="admin"] .ad-sec-note,
+body[data-page="admin"] .ad-sub-sec-note,
+body[data-page="admin"] .ad-savebar-note,
+body[data-page="admin"] .ad-rcard,
+body[data-page="admin"] .ad-btcard,
+body[data-page="admin"] .ad-msg-time,
+body[data-page="admin"] .ad-msg-name,
+body[data-page="admin"] .ad-offline,
+body[data-page="admin"] .ad-bar-sub,
+body[data-page="admin"] .ad-check,
+body[data-page="admin"] .ad-callout-head,
+body[data-page="admin"] .ad-callout-note,
+body[data-page="admin"] .sp-card,
+body[data-page="admin"] .sp-peek,
+body[data-page="admin"] .sp-warn,
+body[data-page="admin"] .sp-table,
+body[data-page="admin"] .sp-tools,
+body[data-page="admin"] .sp-move-item,
+body[data-page="admin"] .sp-preview,
+body[data-page="admin"] .ad-drawer,
+body[data-page="admin"] .ad-empty,
+body[data-page="admin"] .btn{
+  font-family:var(--font-ui);
+}
+/* 密度高的地方 sans 可以再收一點字距（明朝體需要的呼吸空間比較大） */
+body[data-page="admin"] .ad-table{letter-spacing:0;}
+body[data-page="admin"] .ad-tab{letter-spacing:.08em;}
+body[data-page="admin"] .ad-subtab{letter-spacing:.08em;}
+
+/* Editorial 軌：明朝體留給有份量的那幾個東西。
+   放在 UI 軌後面，蓋回去（例如表格裡的桌號、統計中央的數字）。 */
+body[data-page="admin"] .ad-bar-title,
+body[data-page="admin"] .ad-page-title,
+body[data-page="admin"] .ad-sec-title,
+body[data-page="admin"] .ad-sub-sec-title,
+body[data-page="admin"] .ad-hero-num,
+body[data-page="admin"] .ad-stat-num,
+body[data-page="admin"] .ad-donut-title,
+body[data-page="admin"] .ad-donut-center b,
+body[data-page="admin"] .ad-empty-title,
+body[data-page="admin"] .ad-modal-title,
+body[data-page="admin"] .ad-bt-pass,
+body[data-page="admin"] .ad-btcard-code,
+body[data-page="admin"] .sp-table-no,
+body[data-page="admin"] .sp-pool-title,
+body[data-page="admin"] .sp-card-code,
+body[data-page="admin"] .sp-peek-code,
+body[data-page="admin"] .sp-drawer-title,
+body[data-page="admin"] .ad-drawer-title,
+body[data-page="admin"] .sp-start-title,
+body[data-page="admin"] .ad-msg-body{
+  font-family:var(--font-display);
+}
+
+/* ============================================================
+   Focus：看得見的焦點框
+   ------------------------------------------------------------
+   改版前整份 admin.css 只有一個 :focus-visible（.sp-card）——
+   意思是用鍵盤 Tab 的人在後台幾乎是盲走的。
+
+   用 :focus-visible 而不是 :focus：滑鼠點按不該長出框
+   （那是視覺噪點），鍵盤走到才要。outline-offset 留 2px，
+   細框元件的 1px 邊不會被焦點框壓掉。
+============================================================ */
+body[data-page="admin"] :focus-visible{
+  outline:2px solid var(--primary-deep);
+  outline-offset:2px;
+  border-radius:var(--radius);
+}
+/* 貼著容器邊緣的元件往內收，不然焦點框會被 overflow 裁掉 */
+body[data-page="admin"] .ad-tab:focus-visible,
+body[data-page="admin"] .ad-subtab:focus-visible,
+body[data-page="admin"] .ad-table th:focus-visible,
+body[data-page="admin"] .ad-table td:focus-visible,
+body[data-page="admin"] .ad-rowmenu-item:focus-visible,
+body[data-page="admin"] .ad-table tbody tr:focus-visible{
+  outline-offset:-2px;
+}
+/* 輸入框自己已經有「邊框變深」的焦點語彙，再加一圈會太吵；
+   但只有邊框變深對低視力使用者不夠，所以補一道極細的內光 */
+body[data-page="admin"] .ad-input:focus-visible,
+body[data-page="admin"] .ad-textarea:focus-visible,
+body[data-page="admin"] .ad-filter:focus-visible{
+  outline:none;border-color:var(--ink);
+  box-shadow:0 0 0 2px var(--primary-soft);
+}
+
+/* ============================================================
+   Active（按下）
+   ------------------------------------------------------------
+   改版前只有 .btn:active{opacity:.8}，其餘元件按下去完全沒有反應。
+   統一成「往下沉 .5px ＋ 底色再深一階」——位移刻意極小，
+   要的是「這一下有被接到」，不是動畫。
+============================================================ */
+@media (hover:hover) and (pointer:fine){
+  body[data-page="admin"] .ad-chip:active,
+  body[data-page="admin"] .ad-pager-btn:active,
+  body[data-page="admin"] .ad-rowmenu-btn:active,
+  body[data-page="admin"] .ad-tab:active,
+  body[data-page="admin"] .ad-subtab:active,
+  body[data-page="admin"] .ad-filtersum-clear:active,
+  body[data-page="admin"] .ad-th-link:active{
+    transform:translateY(.5px);
+    background:rgba(47,43,38,.06);
+  }
+}
+body[data-page="admin"] .ad-rowmenu-item:active{background:rgba(47,43,38,.08);}
+
+/* ============================================================
+   拆掉卡片堆疊
+   ------------------------------------------------------------
+   普通資訊靠 typography ＋ spacing ＋ divider 就分得開，
+   不需要「框中有格、格旁有框」。改版前有兩處疊起來了：
+
+   1. 出席回覆總覽：.ad-hero-stat（白框）裡是 .ad-hero-split，
+      底下接 .ad-donuts（每個 .ad-donut 又是白底 ＋ 四邊框線），
+      再接 .ad-sec-note —— 三層框。
+   2. 表單類：.ad-sub-sec（白底半透明框）巢狀在 .ad-sec 裡，
+      婚禮資訊那一頁一次疊好幾層。
+
+   作法一樣：把「框」換成「線」。層級靠字級與留白撐，不靠邊界。
+============================================================ */
+
+/* 1a. 大數字那一塊不再是一張卡：留一條底線，數字自己就是層級 */
+.ad-hero-stat{
+  border:none;border-bottom:1px solid var(--line);border-radius:0;
+  background:transparent;padding:26px 8px 22px;
+}
+/* 2. 表單裡的小節：白框 → 左邊一道細線 */
+.ad-sub-sec{
+  margin-top:30px;padding:0 0 0 16px;
+  border:none;border-left:1px solid var(--line);
+  border-radius:0;background:transparent;
+}
+.ad-sub-sec-title{margin-bottom:8px;color:var(--ink);}
+
+/* 1b. 環狀圖群組：格線就是分隔，格子自己不用底色也不用外框 */
+.ad-donuts{
+  margin-top:0;border-top:none;border-left:none;
+  border-bottom:1px solid var(--line-soft);
+}
+.ad-donut{
+  background:transparent;
+  border-right:1px solid var(--line-soft);
+  border-bottom:none;padding:22px 18px;
+}
+/* auto-fit 的格線在最後一欄會多畫一條，收掉 */
+.ad-donut:last-child{border-right:none;}
+@media(max-width:600px){
+  .ad-donut{border-right:none;border-bottom:1px solid var(--line-soft);}
+  .ad-donut:last-child{border-bottom:none;}
+}
+/* 統計方格同理：四個數字之間留線就好 */
+.ad-stats{border-top:none;border-left:none;border-bottom:1px solid var(--line-soft);}
+.ad-stat{background:transparent;border-right:1px solid var(--line-soft);border-bottom:none;}
+/* 篩選工具列也降一階：它是一組控制項，不是一張卡 */
+.ad-filterbar{background:transparent;border-color:var(--line-soft);}
+
+/* ============================================================
+   側欄分組
+   ------------------------------------------------------------
+   Group label 要非常低調：它是給眼睛掃的分隔，不是可點的目標。
+   所以不給背景、不給框，只有 10.5px 的字距與一道極淡的上線。
+   （它其實可以點——收合——但那是次要功能，視覺上不宣傳。）
+============================================================ */
+.ad-navgroup{display:flex;flex-direction:column;}
+.ad-navgroup[hidden]{display:none;}
+.ad-navgroup + .ad-navgroup{margin-top:6px;}
+
+.ad-navgroup-lab{
+  display:flex;align-items:center;gap:8px;width:100%;
+  background:transparent;border:none;cursor:pointer;
+  padding:14px 14px 7px;margin:0;text-align:left;
+  font-family:var(--font-ui);font-size:10.5px;font-weight:400;
+  letter-spacing:.22em;color:var(--ink-soft);text-transform:none;
+  transition:color var(--dur-hover) ease-out;
+}
+.ad-navgroup + .ad-navgroup .ad-navgroup-lab{
+  margin-top:4px;border-top:1px solid var(--line-soft);padding-top:15px;
+}
+.ad-navgroup-lab span{flex:1 1 auto;min-width:0;}
+@media (hover:hover) and (pointer:fine){
+  .ad-navgroup-lab:hover{color:var(--ink);}
+}
+/* 收合指示：一個 4px 的 chevron，不是圖示字體也不是 emoji */
+.ad-navgroup-caret{
+  flex:0 0 auto;width:5px;height:5px;border-right:1px solid currentColor;
+  border-bottom:1px solid currentColor;transform:rotate(45deg) translate(-1px,-1px);
+  opacity:.5;transition:transform var(--dur-pop) var(--ease),opacity var(--dur-hover) ease-out;
+}
+.ad-navgroup-lab:hover .ad-navgroup-caret{opacity:1;}
+.ad-navgroup.is-closed .ad-navgroup-caret{transform:rotate(-45deg) translate(-1px,1px);}
+
+/* height:auto 不能 transition，所以用 grid-template-rows 0fr → 1fr。
+   內層要 overflow:hidden，不然子元素會撐破那一格。 */
+.ad-navgroup-body{
+  display:grid;grid-template-rows:1fr;
+  transition:grid-template-rows var(--dur-pop) var(--ease),
+             opacity var(--dur-hover) ease-out;
+}
+.ad-navgroup.is-closed .ad-navgroup-body{grid-template-rows:0fr;opacity:0;}
+.ad-navgroup-items{
+  overflow:hidden;min-height:0;
+  display:flex;flex-direction:column;gap:1px;
+}
+
+/* Active：白底 ＋ 1px 金線（原本是 2px）＋ 字重變化。
+   收成 1px 之後那道線是「記號」而不是「色塊」，字重才是主要訊號。 */
+.ad-tab.is-on{
+  color:var(--ink);background:#fff;font-weight:500;
+  border-left-color:var(--primary-deep);border-left-width:1px;
+  padding-left:15px;
+}
+.ad-tab{border-left-width:1px;padding-left:15px;}
+/* 「排桌管理」從屬於「桌次」：縮一階，並用一道更淡的線接住 */
+.ad-tab.is-sub{padding-left:27px;}
+.ad-tab.is-sub::before{
+  content:'';position:absolute;left:15px;top:50%;width:6px;height:1px;
+  background:var(--line);transform:translateY(-.5px);
+}
+.ad-tab{position:relative;}
+
+/* ============================================================
+   側欄 tooltip
+   ------------------------------------------------------------
+   .ad-side 是 overflow-y:auto —— tooltip 放在側欄 DOM 裡會被裁掉。
+   所以它 render 到 body、position:fixed，定位邏輯照 .sp-peek 那一套。
+
+   只給真的有滑鼠的機器（JS 端用 matchMedia 判斷）：<900px 時側欄是
+   觸控抽屜，「點一下先跳出說明、再點一次才切分頁」是壞掉的互動。
+============================================================ */
+.ad-nav-tip{
+  position:fixed;z-index:1200;max-width:270px;
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:10px 13px;pointer-events:none;
+  box-shadow:0 4px 14px rgba(43,47,54,.10);
+  opacity:0;transform:translateX(-4px);
+  transition:opacity var(--dur-pop) ease-out,transform var(--dur-pop) var(--ease);
+}
+.ad-nav-tip[hidden]{display:none;}
+.ad-nav-tip.is-on{opacity:1;transform:none;}
+.ad-nav-tip-title{
+  font-family:var(--font-display);font-size:12.5px;font-weight:500;
+  letter-spacing:.14em;color:var(--ink);margin-bottom:5px;
+}
+.ad-nav-tip-body{
+  font-family:var(--font-ui);font-size:11.5px;line-height:1.85;
+  letter-spacing:.02em;color:var(--ink-soft);
+}
+
+/* ============================================================
+   頂列：帳號 popover
+   ------------------------------------------------------------
+   刻意複製一份而不是共用 common.css 的 .nav-user-* ——
+   後台根本不載入賓客導覽列（common.js 在 data-page="admin" 時不注入），
+   共用 class 名稱只會讓兩邊互相污染：改賓客的圓角，後台跟著變。
+============================================================ */
+.ad-bar-actions{align-items:center;}
+.ad-bar-link{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--font-ui);font-size:12.5px;letter-spacing:.08em;
+  color:var(--ink-soft);text-decoration:none;padding:8px 10px;
+  border-radius:var(--radius);border:1px solid transparent;
+  transition:color var(--dur-hover) ease-out,background var(--dur-hover) ease-out;
+}
+.ad-bar-link i{font-style:normal;font-size:11px;opacity:.7;}
+@media (hover:hover) and (pointer:fine){
+  .ad-bar-link:hover{color:var(--ink);background:rgba(47,43,38,.035);}
+}
+
+.ad-acct{position:relative;flex:0 0 auto;}
+.ad-acct-btn{
+  display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+  border:1px solid var(--line);background:transparent;border-radius:999px;
+  padding:5px 12px 5px 6px;
+  font-family:var(--font-ui);font-size:12.5px;letter-spacing:.04em;color:var(--ink);
+  transition:border-color var(--dur-hover) ease-out,background var(--dur-hover) ease-out;
+}
+@media (hover:hover) and (pointer:fine){
+  .ad-acct-btn:hover{border-color:var(--ink);background:rgba(255,255,255,.7);}
+}
+.ad-acct-btn[aria-expanded="true"]{border-color:var(--ink);background:#fff;}
+.ad-acct-ic{
+  width:24px;height:24px;line-height:22px;text-align:center;font-size:11px;
+  border:1px solid var(--line);border-radius:50%;color:var(--primary-deep);
+  font-family:var(--font-display);
+}
+.ad-acct-nm{max-width:8em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ad-acct-caret{
+  width:5px;height:5px;border-right:1px solid var(--ink-soft);
+  border-bottom:1px solid var(--ink-soft);transform:rotate(45deg) translate(-1px,-1px);
+  transition:transform var(--dur-pop) var(--ease);
+}
+.ad-acct-btn[aria-expanded="true"] .ad-acct-caret{transform:rotate(-135deg) translate(-2px,-2px);}
+
+.ad-acct-pop{
+  position:absolute;top:calc(100% + 8px);right:0;min-width:212px;z-index:960;
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:6px;box-shadow:0 4px 14px rgba(43,47,54,.10);
+  animation:pop var(--dur-hover) var(--ease);
+}
+.ad-acct-pop[hidden]{display:none;}
+.ad-acct-head{padding:9px 12px 10px;border-bottom:1px solid var(--line-soft);margin-bottom:4px;}
+.ad-acct-head-nm{
+  font-family:var(--font-display);font-size:13px;letter-spacing:.1em;color:var(--ink);
+}
+.ad-acct-head-em{
+  margin-top:4px;font-family:var(--font-ui);font-size:11px;letter-spacing:.02em;
+  color:var(--ink-soft);word-break:break-all;line-height:1.6;
+}
+.ad-acct-item{
+  display:block;width:100%;text-align:left;border:none;background:transparent;
+  font-family:var(--font-ui);font-size:13px;color:var(--ink);letter-spacing:.06em;
+  padding:10px 12px;border-radius:var(--radius);cursor:pointer;text-decoration:none;
+  transition:background var(--dur-hover) ease-out,color var(--dur-hover) ease-out;
+}
+@media (hover:hover) and (pointer:fine){
+  .ad-acct-item:hover{background:var(--primary-soft);color:var(--primary-deep);}
+}
+/* 頂列的新人姓名：email 拆出去之後這一行只剩身分，可以放大一點點 */
+.ad-bar-sub{font-size:12.5px;letter-spacing:.1em;color:var(--ink-soft);}
+
+/* <900px：頂列的帳號鈕留著（登出仍然按得到），但「查看網站」讓位給漢堡鈕 */
+@media(max-width:899px){
+  .ad-bar-actions{display:flex;}
+  .ad-bar-link{display:none;}
+  .ad-acct-nm{display:none;}
+  .ad-acct-btn{padding:5px 8px 5px 6px;}
+  .ad-side-foot-who{
+    font-family:var(--font-ui);font-size:11px;line-height:1.7;letter-spacing:.02em;
+    color:var(--ink-soft);word-break:break-all;padding:0 2px 6px;
+  }
+}
+
+/* ============================================================
+   Page header system
+   ------------------------------------------------------------
+   改版前的標題階層少了一層：產品名（19px serif）→ 子分頁（15px）→
+   區塊標題（24px serif）。區塊標題比子分頁還大，所以一個 subpanel 裡
+   有三個 .ad-sec 時，看起來像三個平起平坐的頁面。
+
+   改成兩層，而不是把 .ad-sec-title 直接放大：
+     .ad-page-title —— 一個 subpanel 一個，21px 明朝體，這一頁在做什麼
+     .ad-sec-title  —— 降到 13px sans，變成小節分隔（「誰記了多少」）
+
+   按鈕與標題在同一條基線上、共用同一條底線，才不會看起來像兩個系統。
+============================================================ */
+.ad-sec-title.ad-page-title{
+  font-family:var(--font-display);font-size:21px;font-weight:500;
+  letter-spacing:.14em;color:var(--ink);line-height:1.4;
+  padding-bottom:0;border-bottom:none;margin-bottom:0;
+}
+/* 沒有 .ad-sec-head 包著的那幾個（純 h2）自己畫底線 */
+.ad-sec > .ad-sec-title.ad-page-title{
+  padding-bottom:13px;border-bottom:1px solid var(--line);margin-bottom:16px;
+}
+.ad-sec-head:has(.ad-page-title){border-bottom-color:var(--line);padding-bottom:13px;}
+
+/* 標題與它的說明是一組，要一起靠左；動作按鈕才是另一端 */
+.ad-sec-head-main{flex:1 1 auto;min-width:0;}
+.ad-page-sub{
+  margin-top:5px;font-family:var(--font-ui);font-size:12px;line-height:1.7;
+  letter-spacing:.03em;color:var(--ink-soft);font-variant-numeric:tabular-nums;
+}
+.ad-page-sub b{color:var(--ink);font-weight:500;}
+.ad-page-sub:empty{display:none;}
+
+/* 小節標題降階：它現在只是「這幾行是同一件事」的分隔線 */
+.ad-sec-title:not(.ad-page-title){
+  font-family:var(--font-ui);font-size:13px;font-weight:500;
+  letter-spacing:.16em;color:var(--ink-soft);
+  padding-bottom:9px;border-bottom:1px solid var(--line-soft);margin-bottom:13px;
+}
+.ad-sec-head .ad-sec-title:not(.ad-page-title){border-bottom:none;padding-bottom:0;margin-bottom:0;}
+/* 降階之後，區塊之間要靠留白拉開，不能再靠字級 */
+.ad-sec + .ad-sec{margin-top:8px;}
+
+@media(max-width:560px){
+  .ad-sec-title.ad-page-title{font-size:19px;letter-spacing:.1em;}
+}
+/* 純 h2 的那幾頁：說明接在標題底線下面，所以底線由標題自己畫、間距歸說明 */
+.ad-sec > .ad-sec-title.ad-page-title + .ad-page-sub{margin-top:-6px;margin-bottom:16px;}
+
+/* ============================================================
+   空狀態
+   ------------------------------------------------------------
+   .ad-donuts-empty 已經做對了（虛線框 ＋ 兩行說明 ＋ 出口），
+   這裡把同一個樣子抽成通用元件推廣出去。
+   Headline 用明朝體：空畫面是少數還有版面感可以給的地方。
+============================================================ */
+.ad-empty{
+  padding:34px 20px;text-align:center;font-size:13px;
+  letter-spacing:.06em;color:var(--ink-soft);line-height:2;
+}
+.ad-empty.is-rich{
+  border:1px dashed var(--line);border-radius:var(--radius);
+  background:rgba(255,255,255,.5);padding:40px 24px 34px;
+}
+.ad-empty-title{
+  font-family:var(--font-display);font-size:20px;font-weight:500;
+  letter-spacing:.16em;color:var(--ink);line-height:1.5;
+}
+.ad-empty-body{
+  margin:12px auto 0;max-width:30em;
+  font-family:var(--font-ui);font-size:12.5px;line-height:2;
+  letter-spacing:.03em;color:var(--ink-soft);
+}
+.ad-empty-act{margin-top:20px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;}
+@media(max-width:560px){
+  .ad-empty.is-rich{padding:32px 18px 28px;}
+  .ad-empty-title{font-size:18px;letter-spacing:.12em;}
+  .ad-empty-act .btn{width:100%;}
+}
+
+/* ============================================================
+   表格形狀的 skeleton
+   ------------------------------------------------------------
+   欄位的形狀先站好，資料回來就只是「填進去」——
+   而不是把一份兩行清單整個換成一張 16 欄的表。
+============================================================ */
+.ad-tablewrap.is-skel{border-color:var(--line-soft);}
+.ad-skel-table th,.ad-skel-table td{border-bottom-color:var(--line-soft);}
+.ad-skel-table td{padding:13px 12px;}
+.ad-skel-table .ad-skel-line{height:10px;}
+/* 一列一列稍微錯開，看起來像在「一列一列進來」而不是整塊在閃 */
+.ad-skel-table tbody tr:nth-child(2) .ad-skel-line{animation-delay:.12s;}
+.ad-skel-table tbody tr:nth-child(3) .ad-skel-line{animation-delay:.24s;}
+.ad-skel-table tbody tr:nth-child(4) .ad-skel-line{animation-delay:.36s;}
+.ad-skel-table tbody tr:nth-child(5) .ad-skel-line{animation-delay:.48s;}
+
+/* ============================================================
+   漸進揭露：一列的操作預設不出現
+   ------------------------------------------------------------
+   一整欄常駐的「刪除」把最危險的動作變成畫面上最重複的東西。
+   改成 hover／focus 才長出來的「⋯」之後，預設狀態乾淨，
+   要動手時才看得到工具。
+
+   三個必要條件（少一個就會壞掉）：
+   1. 觸控裝置沒有 hover —— (hover:none) 時一律常駐。
+      現況的 .ad-del-inline 已經是這個模式，照抄。
+   2. 鍵盤要能觸發 —— 一起綁 :focus-within，
+      不然 Tab 過去的是一顆隱形按鈕。
+   3. 底色要看得出「現在指著哪一列」—— 原本的 1.8% 幾乎看不見，
+      提到 3.5%（見前面的 .ad-table tbody tr:hover）。
+============================================================ */
+@media (hover:hover) and (pointer:fine){
+  .ad-table .is-act .ad-rowmenu-btn{
+    opacity:0;
+    transition:opacity var(--dur-hover) ease-out,
+               border-color var(--dur-hover) ease-out,
+               color var(--dur-hover) ease-out;
+  }
+  .ad-table tbody tr:hover .is-act .ad-rowmenu-btn,
+  .ad-table tbody tr:focus-within .is-act .ad-rowmenu-btn,
+  .ad-table .is-act .ad-rowmenu-btn:focus-visible,
+  .ad-table .is-act .ad-rowmenu-btn.is-open{opacity:1;}
+}
+
+/* .ad-table 住在一個橫捲的容器裡：「⋯」在最右邊時，
+   使用者要先橫滑三個螢幕才知道它存在 —— 等於不存在。
+   釘在右緣，和 .is-name 的 sticky left 對稱。 */
+.ad-table th.is-act,.ad-table td.is-act{
+  position:sticky;right:0;z-index:1;background:#fff;
+  box-shadow:-1px 0 0 var(--line-soft);
+  padding-left:6px;padding-right:6px;
+}
+.ad-table th.is-act{z-index:3;background:var(--bg2);}
+@media (hover:hover) and (pointer:fine){
+  .ad-table tbody tr:hover td.is-act{background:#f4f2ef;}
+}
+
+/* ---------- 抽屜裡的內容：一列一項 ---------- */
+.ad-drawer-rows{display:flex;flex-direction:column;border-top:1px solid var(--line-soft);}
+.ad-drawer-row{display:flex;gap:12px;align-items:baseline;
+  padding:11px 0;border-bottom:1px solid var(--line-soft);}
+/* 6.4em：最長的欄位名是「給新人的話」（5 個字 ＋ .14em 字距），
+   5.6em 會讓它斷成兩行，那一列就跟著長高、和上下對不齊 */
+.ad-drawer-row > span{flex:0 0 6.4em;font-family:var(--font-ui);font-size:11px;
+  letter-spacing:.14em;color:var(--ink-soft);line-height:1.7;}
+.ad-drawer-row > b{flex:1 1 auto;min-width:0;font-weight:400;
+  font-family:var(--font-ui);font-size:13px;line-height:1.85;color:var(--ink);
+  word-break:break-word;white-space:pre-wrap;}
+.ad-drawer-row > b .is-off{color:var(--ink-soft);}
+.ad-drawer-sec{margin-top:26px;}
+.ad-drawer-sec-title{font-family:var(--font-ui);font-size:11px;letter-spacing:.2em;
+  color:var(--ink-soft);padding-bottom:7px;border-bottom:1px solid var(--line);}
+.ad-drawer-tags{display:flex;flex-wrap:wrap;gap:5px;padding:12px 0 2px;}
+
+/* 桌機才有抽屜：<900px 走的是卡片上的「展開更多」（見 .ad-rcard-rest） */
+@media(max-width:899px){
+  .ad-drawer,.ad-drawer-mask{display:none !important;}
+}
+
+/* 整列可點：游標與 hover 底色要先說清楚「這一列點得動」 */
+@media (hover:hover) and (pointer:fine){
+  .ad-table tbody tr[data-rsvp],
+  .ad-table tbody tr[data-entry]{cursor:pointer;}
+}
+.ad-table tbody tr[data-rsvp]:focus-visible,
+.ad-table tbody tr[data-entry]:focus-visible{outline:2px solid var(--primary-deep);outline-offset:-2px;}
+/* 抽屜開著時，那一列標起來 —— 不然關掉抽屜會忘記剛剛在看誰 */
+.ad-table tbody tr.is-peeking td{background:var(--primary-soft);}
+.ad-table tbody tr.is-peeking td.is-name,
+.ad-table tbody tr.is-peeking td.is-act{background:var(--primary-soft);}
+
+/* ============================================================
+   Feedback 的第一層：就地回饋
+   ------------------------------------------------------------
+   單一欄位存好了不值得一則橫跨畫面的 toast。
+   欄位旁一個「✓ 已更新」，1.5 秒淡掉，不佔任何版面
+   （position:absolute，所以出現與消失都不會把周圍推開）。
+============================================================ */
+.ad-saved{
+  position:absolute;right:8px;top:50%;transform:translateY(-50%) translateX(4px);
+  pointer-events:none;z-index:2;
+  font-family:var(--font-ui);font-size:11px;letter-spacing:.08em;
+  color:var(--primary-deep);background:var(--bg1);padding:2px 6px;border-radius:var(--radius);
+  opacity:0;transition:opacity var(--dur-hover) ease-out,transform var(--dur-pop) var(--ease);
+}
+.ad-saved.is-on{opacity:1;transform:translateY(-50%);}
+.ad-saved.is-out{opacity:0;}
+
+/* ============================================================
+   Feedback 的第二層：Toast
+   ------------------------------------------------------------
+   行為完全不動（重試、復原、離線都還在），只換皮：
+   深色實心在這個品牌裡是唯一一塊「不是暖白」的東西 ——
+   換成暖白底 ＋ 1px 線 ＋ 細字，它才像是這個後台的一部分。
+   錯誤仍然用得出來的顏色，但也收成同一個語彙（淡底 ＋ 邊框）。
+============================================================ */
+.ad-toast{
+  background:var(--bg1);color:var(--ink);
+  border:1px solid var(--ink);
+  box-shadow:0 4px 14px rgba(43,47,54,.10);
+  font-weight:400;
+}
+.ad-toast.is-error{
+  background:#fdf6f7;color:#8a5765;border-color:rgba(164,103,122,.55);
+}
+.ad-toast-action{
+  color:var(--primary-deep);text-decoration:none;
+  border:1px solid var(--line);border-radius:999px;padding:5px 13px;
+  min-height:34px;display:inline-flex;align-items:center;
+  transition:border-color var(--dur-hover) ease-out,background var(--dur-hover) ease-out;
+}
+.ad-toast-action:hover{border-color:var(--primary-deep);background:#fff;}
+.ad-toast.is-error .ad-toast-action{color:#8a5765;border-color:rgba(164,103,122,.45);}
+.ad-toast.is-error .ad-toast-action:hover{border-color:#8a5765;background:#fff;}
+@media (pointer:coarse){ .ad-toast-action{min-height:40px;padding:8px 16px;} }
+
+/* ============================================================
+   就地編輯
+   ------------------------------------------------------------
+   不要走「點編輯 → 開 modal → 修改 → 儲存」四步。
+   欄位就長在抽屜裡，Enter 存、Escape 取消，存完欄位旁邊
+   浮出一個「✓ 已更新」再自己淡掉。
+
+   停用中的收禮簿要一眼看得出來改不動（規則的 butlerOpen 會擋），
+   而不是讓人打完整段字才吃到一句 permission-denied。
+============================================================ */
+.ad-inline-field{position:relative;margin-top:14px;}
+.ad-inline-field .ad-label{margin-top:0;}
+.ad-inline-field .ad-label small{
+  margin-left:6px;font-size:10.5px;letter-spacing:.06em;text-transform:none;opacity:.8;
+}
+.ad-inline-input{font-size:14px;padding:10px 12px;}
+.ad-inline-input:disabled{
+  background:var(--bg2);color:var(--ink-soft);cursor:not-allowed;border-style:dashed;
+}
+textarea.ad-inline-input{min-height:0;}
+@media (pointer:coarse){ .ad-inline-input{font-size:16px;} }
+
+/* ---------- 匯出欄位選擇 ---------- */
+.ad-csv-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
+.ad-csv-count{
+  margin-left:auto;font-family:var(--font-ui);font-size:11.5px;
+  letter-spacing:.06em;color:var(--ink-soft);font-variant-numeric:tabular-nums;
+}
+.ad-csv-cols{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+  gap:0 14px;max-height:46dvh;overflow-y:auto;padding:6px 2px;
+  border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);
+}
+.ad-csv-cols .ad-check{margin-top:6px;font-size:13px;}
+.ad-csv-cols .ad-check + .ad-check{margin-top:6px;}
+@media(max-width:560px){
+  .ad-csv-cols{grid-template-columns:1fr 1fr;}
+}
+
+/* ============================================================
+   對比：小字的次要色要再深一階
+   ------------------------------------------------------------
+   --ink-soft(#7c7267) 在 --bg1(#fbfaf7) 上量到 4.51:1 —— 剛好卡在
+   AA 的 4.5 門檻上，而後台有大量 10.5–11.5px 的 metadata 用它
+   （時間戳、欄位名、統計標籤）。小字級本來就比大字難讀，
+   踩線通過等於沒有餘裕。
+
+   加深到 #6f6459（5.53:1）之後有了餘裕，而且色相沒動 ——
+   還是同一支暖灰，視覺語彙不變。只在後台覆寫：賓客頁的
+   留白與字級都比較寬鬆，維持原本的柔和。
+
+   另外把最小的幾個字級從 10.5px 提到 11px：色票能救的有限，
+   字級本身也是可讀性的一部分。
+============================================================ */
+body[data-page="admin"]{--ink-soft:#6f6459;}
+body[data-page="admin"] .ad-donut-center span,
+body[data-page="admin"] .ad-donut-val small,
+body[data-page="admin"] .sp-card-code,
+body[data-page="admin"] .sp-chip,
+body[data-page="admin"] .sp-flag,
+body[data-page="admin"] .sp-filter-lab,
+body[data-page="admin"] .sp-table-type,
+body[data-page="admin"] .ad-stat-lab{font-size:11px;}
+
+/* ============================================================
+   截圖時發現的兩個實際問題
+============================================================ */
+
+/* 1. 狀態 pill 在表格裡會斷成兩行
+   ------------------------------------------------------------
+   「無法出席」四個字在窄欄裡折成「無法出」＋「席」，
+   而 border-radius:999px 的膠囊一折行就完全不成形。
+   pill 的前提就是一行 —— 欄位擠不下時該讓欄位變寬，不是讓字換行。 */
+.ad-tag{white-space:nowrap;}
+
+/* 2. 表格裡每一列都掛著一顆「標籤」文字鈕
+   ------------------------------------------------------------
+   和常駐的「刪除」是同一個問題：一整欄重複的操作入口。
+   收進 hover／focus-within（觸控仍然常駐，見下面那條）——
+   平常那一格只有標籤本身，要改的時候才長出工具。 */
+@media (hover:hover) and (pointer:fine){
+  .ad-tagcell [data-tag-edit]{
+    opacity:0;
+    transition:opacity var(--dur-hover) ease-out,color var(--dur-hover) ease-out;
+  }
+  .ad-table tbody tr:hover .ad-tagcell [data-tag-edit],
+  .ad-table tbody tr:focus-within .ad-tagcell [data-tag-edit],
+  .ad-tagcell [data-tag-edit]:focus-visible{opacity:1;}
+}
+/* 一格裡一個標籤都沒有時，那一格會變成空白 —— 這時候按鈕要一直在，
+   不然使用者根本不知道這裡可以貼標籤 */
+.ad-tagcell:not(:has(.ad-tag)) [data-tag-edit]{opacity:1 !important;}

@@ -56,12 +56,32 @@
       </button>
       <div class="ad-bar-brand">
         <div class="ad-bar-title">新人後台</div>
+        <!-- 原本是一個字串塞兩件事（`{couple}・{email}`）。
+             新人姓名是身分、email 只是「我現在用哪個帳號登入」——
+             後者降一階，收進帳號選單裡才對得起它的重要性。 -->
         <div class="ad-bar-sub" id="adWho"></div>
       </div>
     </div>
+    <!-- 「登出」不該一直是頂列上最顯眼的兩顆之一：它是一年按一次的動作。
+         收進帳號 popover，頂列只留真正常用的「查看網站」。 -->
     <div class="ad-bar-actions">
-      <a class="btn small ghost" id="adViewBtn" href="/">查看網站</a>
-      <button class="btn small ghost" id="adLock" type="button">登出</button>
+      <a class="ad-bar-link" id="adViewBtn" href="/">查看網站 <i aria-hidden="true">↗</i></a>
+      <div class="ad-acct" id="adAcct">
+        <button class="ad-acct-btn" id="adAcctBtn" type="button"
+                aria-haspopup="true" aria-expanded="false" aria-controls="adAcctPop">
+          <span class="ad-acct-ic" id="adAcctIc" aria-hidden="true"></span>
+          <span class="ad-acct-nm" id="adAcctNm">帳號</span>
+          <i class="ad-acct-caret" aria-hidden="true"></i>
+        </button>
+        <div class="ad-acct-pop" id="adAcctPop" hidden role="menu">
+          <div class="ad-acct-head">
+            <div class="ad-acct-head-nm" id="adAcctPopName"></div>
+            <div class="ad-acct-head-em" id="adAcctPopEmail"></div>
+          </div>
+          <a class="ad-acct-item" id="adViewBtnMobile" href="/" role="menuitem">查看網站</a>
+          <button class="ad-acct-item" id="adLock" type="button" role="menuitem">登出</button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -77,20 +97,67 @@
     <nav class="ad-side" id="adSide">
       <!-- 抽屜的不透明底色會蓋住左上角的漢堡鈕，所以抽屜自己要有出口 -->
       <button class="ad-side-close" id="adSideClose" type="button" aria-label="關閉選單">✕</button>
-      <button class="ad-tab is-on" type="button" data-tab="rsvp">出席回覆</button>
-      <button class="ad-tab" type="button" data-tab="inbox">悄悄話</button>
-      <button class="ad-tab" type="button" data-tab="lobby">婚禮資訊</button>
-      <button class="ad-tab" type="button" data-tab="seating">桌次</button>
-      <button class="ad-tab" type="button" data-tab="seatingPlan">排桌管理</button>
-      <button class="ad-tab" type="button" data-tab="butler">收禮小幫手</button>
-      <button class="ad-tab" type="button" data-tab="letters">感謝信</button>
-      <button class="ad-tab" type="button" data-tab="cards">婚禮小卡</button>
-      <button class="ad-tab" type="button" data-tab="exhibits">新人故事牆</button>
-      <button class="ad-tab" type="button" data-tab="quiz">新人熟悉測驗</button>
+      <!-- ============================================================
+           十顆平鋪的分頁按鈕看不出「哪幾件事是同一類」，
+           分成三組之後才讀得出後台在做什麼：
+             婚禮管理 —— 賓客名單怎麼安排（回覆、桌次、排桌、收禮）
+             婚禮內容 —— 賓客會看到什麼（資訊、感謝信、小卡、故事牆）
+             賓客互動 —— 賓客留給新人的東西（悄悄話、測驗）
 
-      <!-- <900px 才看得到：桌機版這兩顆留在最上面的 ad-bar 裡 -->
+           分組是「多包一層 <div>」，.ad-tab 本身完全沒動 ——
+           點擊是委派的（closest('.ad-tab')）、tabButtons() 是後代選擇器，
+           tests/multipage.mjs 裡那些 .ad-tab[data-tab="…"] 也照樣指得到。
+      ============================================================ -->
+      <div class="ad-navgroup" data-navgroup="manage">
+        <button class="ad-navgroup-lab" type="button"
+                aria-expanded="true" aria-controls="adNavManage">
+          <span>婚禮管理</span><i class="ad-navgroup-caret" aria-hidden="true"></i>
+        </button>
+        <div class="ad-navgroup-body" id="adNavManage">
+          <div class="ad-navgroup-items">
+            <button class="ad-tab is-on" type="button" data-tab="rsvp">出席回覆</button>
+            <button class="ad-tab" type="button" data-tab="seating">桌次</button>
+            <!-- 排桌管理是「桌次」的工作區（桌次名單的同步鈕也依賴它有沒有開），
+                 縮排一階，從屬關係就看得出來 -->
+            <button class="ad-tab is-sub" type="button" data-tab="seatingPlan">排桌管理</button>
+            <button class="ad-tab" type="button" data-tab="butler">收禮小幫手</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ad-navgroup" data-navgroup="content">
+        <button class="ad-navgroup-lab" type="button"
+                aria-expanded="true" aria-controls="adNavContent">
+          <span>婚禮內容</span><i class="ad-navgroup-caret" aria-hidden="true"></i>
+        </button>
+        <div class="ad-navgroup-body" id="adNavContent">
+          <div class="ad-navgroup-items">
+            <button class="ad-tab" type="button" data-tab="lobby">婚禮資訊</button>
+            <button class="ad-tab" type="button" data-tab="letters">感謝信</button>
+            <button class="ad-tab" type="button" data-tab="cards">婚禮小卡</button>
+            <button class="ad-tab" type="button" data-tab="exhibits">新人故事牆</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ad-navgroup" data-navgroup="guests">
+        <button class="ad-navgroup-lab" type="button"
+                aria-expanded="true" aria-controls="adNavGuests">
+          <span>賓客互動</span><i class="ad-navgroup-caret" aria-hidden="true"></i>
+        </button>
+        <div class="ad-navgroup-body" id="adNavGuests">
+          <div class="ad-navgroup-items">
+            <button class="ad-tab" type="button" data-tab="inbox">悄悄話</button>
+            <button class="ad-tab" type="button" data-tab="quiz">新人熟悉測驗</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- <900px 才看得到。「查看網站」與「登出」桌機收在頂列的帳號選單裡，
+           但抽屜開著時那顆按鈕被遮住了，所以窄螢幕在抽屜底部保留一份出口。 -->
       <div class="ad-side-foot">
-        <a class="btn small ghost" id="adViewBtnMobile" href="/">查看網站</a>
+        <div class="ad-side-foot-who" id="adSideWho"></div>
+        <a class="btn small ghost" id="adViewBtnDrawer" href="/">查看網站</a>
         <button class="btn small ghost" id="adLockMobile" type="button">登出</button>
       </div>
     </nav>
@@ -113,7 +180,8 @@
     <!-- 0-1 出席回覆總覽 -->
     <div class="ad-subpanel is-on" data-subpanel="overview">
     <section class="ad-sec">
-      <h2 class="ad-sec-title">出席回覆總覽</h2>
+      <h2 class="ad-sec-title ad-page-title">出席回覆總覽</h2>
+      <p class="ad-page-sub" id="adRsvpOverviewSub"></p>
 
       <!-- 最大的那個數字：一眼看到收到幾份回覆 -->
       <!-- 左邊一個大數字，右邊一列一項。
@@ -142,7 +210,10 @@
     <div class="ad-subpanel" data-subpanel="replies">
     <section class="ad-sec">
       <div class="ad-sec-head">
-        <h2 class="ad-sec-title">回覆名單</h2>
+        <div class="ad-sec-head-main">
+          <h2 class="ad-sec-title ad-page-title">回覆名單</h2>
+          <p class="ad-page-sub" id="adRsvpPageSub"></p>
+        </div>
         <div class="ad-sec-head-actions">
           <button class="btn small ghost" id="adRsvpExport" type="button">匯出 CSV</button>
         </div>
@@ -200,7 +271,7 @@
     <div class="ad-subpanel" data-subpanel="form">
     <section class="ad-sec">
       <div class="ad-sec-head">
-        <h2 class="ad-sec-title">表單設定</h2>
+        <h2 class="ad-sec-title ad-page-title">表單設定</h2>
         <div class="ad-sec-head-actions">
           <!-- 網址由 js/admin.js 填成 /w/{slug}/invitation，就是分享給賓客的那一頁 -->
           <a class="btn small ghost" id="adRsvpViewForm" href="/"
@@ -314,7 +385,10 @@
     <div class="ad-subpanel" data-subpanel="tags">
     <section class="ad-sec" id="adTagSec" hidden>
       <div class="ad-sec-head">
-        <h2 class="ad-sec-title">設定賓客標籤</h2>
+        <div class="ad-sec-head-main">
+          <h2 class="ad-sec-title ad-page-title">設定賓客標籤</h2>
+          <p class="ad-page-sub" id="adTagPageSub"></p>
+        </div>
         <div class="ad-sec-head-actions">
           <button class="btn small" id="adTagAddBtn" type="button">新增標籤</button>
           <button class="btn small ghost" id="adTagPresetBtn" type="button">加入常用標籤</button>
@@ -342,7 +416,8 @@
   ============================================================ -->
   <div class="ad-panel" data-panel="inbox">
     <section class="ad-sec">
-      <h2 class="ad-sec-title">悄悄話信箱</h2>
+      <h2 class="ad-sec-title ad-page-title">悄悄話信箱</h2>
+      <p class="ad-page-sub" id="adInboxPageSub"></p>
       <p class="ad-sec-note">
         賓客透過悄悄話信箱寄送的內容
       </p>
@@ -389,7 +464,7 @@
 
     <div class="ad-subpanel is-on" data-subpanel="info">
     <section class="ad-sec">
-      <h2 class="ad-sec-title">婚禮資訊</h2>
+      <h2 class="ad-sec-title ad-page-title">婚禮資訊</h2>
       <p class="ad-sec-note">
         填寫婚禮基本資訊，如果「交通、Dress Code、禮金、兩人的故事」留白的話，
         就不會出現那一塊資訊。
@@ -479,7 +554,7 @@
 
     <div class="ad-subpanel" data-subpanel="schedule">
     <section class="ad-sec">
-      <h2 class="ad-sec-title">當日流程</h2>
+      <h2 class="ad-sec-title ad-page-title">當日流程</h2>
       <p class="ad-sec-note">
         由上到下就是大廳時間軸的顯示順序，<b>不會依時間重新排</b>。
         時間欄想寫「11:30」或「11:30 起」都可以，說明可以留白。
@@ -496,7 +571,7 @@
 
     <div class="ad-subpanel" data-subpanel="explore">
     <section class="ad-sec">
-      <h2 class="ad-sec-title">自訂內容</h2>
+      <h2 class="ad-sec-title ad-page-title">自訂內容</h2>
       <p class="ad-sec-note">
         出現在首頁 Explore 區的後面。<br>
         可以選「開啟連結」就是點了跳到你給的網址，可以用作上傳照片或是 Line、社群連結<br>
@@ -526,7 +601,7 @@
     <!-- 1-1 桌次圖 -->
     <div class="ad-subpanel is-on" data-subpanel="map">
     <section class="ad-sec">
-      <h2 class="ad-sec-title">桌次圖</h2>
+      <h2 class="ad-sec-title ad-page-title">桌次圖</h2>
       <p class="ad-sec-note">
         可以一次選好幾張。圖片會在上傳前自動縮到適合手機看的大小，
         存進這場婚禮自己的資料庫，不會影響其他新人。
@@ -569,7 +644,10 @@
 
     <section class="ad-sec">
       <div class="ad-sec-head">
-        <h2 class="ad-sec-title">桌次名單</h2>
+        <div class="ad-sec-head-main">
+          <h2 class="ad-sec-title ad-page-title">桌次名單</h2>
+          <p class="ad-page-sub" id="adSeatPageSub"></p>
+        </div>
         <div class="ad-sec-head-actions">
           <!-- 只有開了「排桌管理」的站台才長得出來（見 admin.js 的 applyTabVisibility） -->
           <button class="btn small ghost" id="adSeatSyncPlan" type="button" hidden>同步現在的排桌</button>
@@ -706,7 +784,7 @@
     <div class="ad-subpanel" data-subpanel="tables">
       <section class="ad-sec">
         <div class="ad-sec-head">
-          <h2 class="ad-sec-title">桌位管理</h2>
+          <h2 class="ad-sec-title ad-page-title">桌位管理</h2>
           <div class="ad-sec-head-actions">
             <button class="btn small" id="spTableAddBtn" type="button">新增桌位</button>
             <button class="btn small ghost" id="spTableBatchBtn" type="button">一次加好幾桌</button>
@@ -724,7 +802,7 @@
     <div class="ad-subpanel" data-subpanel="io">
       <section class="ad-sec">
         <div class="ad-sec-head">
-          <h2 class="ad-sec-title">匯入</h2>
+          <h2 class="ad-sec-title ad-page-title">匯入</h2>
           <div class="ad-sec-head-actions">
             <button class="btn small" id="spImportRsvpBtn" type="button">從出席表單匯入</button>
             <button class="btn small ghost" id="spImportBtn" type="button">匯入 Excel／CSV</button>
@@ -779,7 +857,8 @@
     <!-- 3c-1 收禮統計 -->
     <div class="ad-subpanel is-on" data-subpanel="stats">
     <section class="ad-sec">
-      <h2 class="ad-sec-title">收禮統計</h2>
+      <h2 class="ad-sec-title ad-page-title">收禮統計</h2>
+      <p class="ad-page-sub" id="adBtPageSub"></p>
 
       <div class="ad-hero-stat">
         <div class="ad-hero-num" id="adBtSum">$0</div>
@@ -844,7 +923,10 @@
     <div class="ad-subpanel" data-subpanel="links">
     <section class="ad-sec">
       <div class="ad-sec-head">
-        <h2 class="ad-sec-title">收禮連結</h2>
+        <div class="ad-sec-head-main">
+          <h2 class="ad-sec-title ad-page-title">收禮連結</h2>
+          <p class="ad-page-sub" id="adBtLinkPageSub"></p>
+        </div>
         <div class="ad-sec-head-actions">
           <button class="btn small" id="adBtNewLink" type="button">產生新連結</button>
         </div>
@@ -873,7 +955,10 @@
   <div class="ad-panel" data-panel="letters">
     <section class="ad-sec">
       <div class="ad-sec-head">
-        <h2 class="ad-sec-title">新人的感謝與祝福</h2>
+        <div class="ad-sec-head-main">
+          <h2 class="ad-sec-title ad-page-title">新人的感謝與祝福</h2>
+          <p class="ad-page-sub" id="adLetterPageSub"></p>
+        </div>
         <div class="ad-sec-head-actions">
           <button class="btn small" id="adLetterAddBtn" type="button">寫一封信</button>
         </div>
@@ -901,7 +986,7 @@
   ============================================================ -->
   <div class="ad-panel" data-panel="cards">
     <section class="ad-sec">
-      <h2 class="ad-sec-title">上傳婚禮小卡照片</h2>
+      <h2 class="ad-sec-title ad-page-title">上傳婚禮小卡照片</h2>
       <p class="ad-sec-note">
         一次可以選很多張，會一張一張輪流裁切，選好照片會先跳出<b>裁切框</b>，
         拖曳、縮放到滿意再確定 。
@@ -938,7 +1023,10 @@
   <div class="ad-panel" data-panel="exhibits">
     <section class="ad-sec">
       <div class="ad-sec-head">
-        <h2 class="ad-sec-title">新人故事牆</h2>
+        <div class="ad-sec-head-main">
+          <h2 class="ad-sec-title ad-page-title">新人故事牆</h2>
+          <p class="ad-page-sub" id="adExhPageSub"></p>
+        </div>
         <div class="ad-sec-head-actions">
           <button class="btn small" id="adExhAddPhoto" type="button">新增故事</button>
           <button class="btn small ghost" id="adExhAddAct" type="button">新增章節</button>
@@ -966,7 +1054,10 @@
     <div class="ad-subpanel is-on" data-subpanel="questions">
     <section class="ad-sec">
       <div class="ad-sec-head">
-        <h2 class="ad-sec-title">新人熟悉測驗</h2>
+        <div class="ad-sec-head-main">
+          <h2 class="ad-sec-title ad-page-title">新人熟悉測驗</h2>
+          <p class="ad-page-sub" id="adQuizPageSub"></p>
+        </div>
         <div class="ad-sec-head-actions">
           <button class="btn small" id="adQuizAddBtn" type="button">新增題目</button>
         </div>
@@ -984,7 +1075,7 @@
 
     <div class="ad-subpanel" data-subpanel="votes">
     <section class="ad-sec">
-      <h2 class="ad-sec-title">賓客的作答紀錄</h2>
+      <h2 class="ad-sec-title ad-page-title">賓客的作答紀錄</h2>
       <p class="ad-sec-note">
         長條圖的票數就是從這裡來的。測試完想歸零、或婚禮當天想重新開始統計，
         就按下面那顆清空 —— 題目不會被動到。
@@ -1087,6 +1178,40 @@
     <div class="ad-modal-actions">
       <button class="btn small ghost" id="adTagPickCancel" type="button">取消</button>
       <button class="btn small" id="adTagPickSave" type="button">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     匯出 CSV：先問要匯出什麼
+     ------------------------------------------------------------
+     「匯出 CSV」原本一按就下載 23 欄。多數時候新人只要其中三四欄
+     （拿去給飯店的是姓名／人數／葷素，拿去印喜帖的是姓名／地址）。
+     先問一句，比事後在 Excel 裡刪 19 欄快得多。
+
+     欄位清單是動態產生的 —— 出席回覆那一份要照 rsvpColumns() 走
+     （標籤／聯絡資訊／喜帖／喜餅／留言五欄由表單設定決定在不在），
+     寫死六個 checkbox 會匯出根本不存在的欄位。
+
+     沿用 .ad-modal-card-form：它已經有 sticky 底部按鈕列，
+     <560px 也已經是 bottom sheet。
+============================================================ -->
+<div class="ad-modal-mask" id="adCsvMask" hidden>
+  <div class="ad-modal-card ad-modal-card-form">
+    <div class="ad-modal-title">匯出資料</div>
+    <p class="ad-modal-note" id="adCsvNote">選擇要匯出的內容：</p>
+
+    <div class="ad-csv-tools">
+      <button class="ad-chip" id="adCsvAll" type="button">全選</button>
+      <button class="ad-chip" id="adCsvNone" type="button">全部不選</button>
+      <span class="ad-csv-count" id="adCsvCount"></span>
+    </div>
+
+    <div class="ad-csv-cols" id="adCsvCols"></div>
+
+    <div class="ad-modal-actions">
+      <button class="btn small ghost" id="adCsvCancel" type="button">取消</button>
+      <button class="btn small" id="adCsvGo" type="button">匯出 CSV</button>
     </div>
   </div>
 </div>

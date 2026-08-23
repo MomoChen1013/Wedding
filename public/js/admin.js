@@ -141,6 +141,11 @@ async function runSave(btn, fn, opts){
 const narrowMq = window.matchMedia('(max-width: 899px)');
 function isNarrow(){ return narrowMq.matches; }
 
+/* 使用者在系統層關掉動畫時，JS 寫死的那幾段 transition 也要跟著關。
+   CSS 的 @media (prefers-reduced-motion) 蓋不到 element.style。 */
+const reduceMotionMq = window.matchMedia('(prefers-reduced-motion: reduce)');
+function reduceMotion(){ return reduceMotionMq.matches; }
+
 const narrowHandlers = [];
 function onNarrowChange(fn){ narrowHandlers.push(fn); }
 narrowMq.addEventListener('change', ()=> narrowHandlers.forEach(fn => { try{ fn(); }catch{} }));
@@ -358,12 +363,148 @@ new MutationObserver((records)=>{
     if(!card) return;
     const c = card, m = mask, far = moved > 90;
     card = null; mask = null;
-    c.style.transition = 'transform .18s ease';
+    /* CSS 那條 prefers-reduced-motion 管不到這裡（transition 是 JS 寫死的），
+       所以自己問一次 —— 不然「不要動畫」的使用者仍然會看到卡片滑回去 */
+    c.style.transition = reduceMotion() ? 'none' : 'transform var(--dur-btn) var(--ease)';
     c.style.transform = '';
     if(far && m) m.dispatchEvent(new MouseEvent('click', { bubbles:true }));
   }
   document.addEventListener('pointerup', end);
   document.addEventListener('pointercancel', end);
+})();
+
+/* ============================================================
+   就地回饋：欄位旁的「✓ 已更新」
+   ------------------------------------------------------------
+   Feedback 分兩層，不要用同一個元件：
+
+     就地回饋（這裡）  單一欄位存好了 —— 1.5 秒淡出，不佔畫面、
+                       不需要被看見也沒關係（值已經在欄位上了）
+     Toast（保留機制） 錯誤、重試、復原、離線 —— 這幾件事必須可見、
+                       可點、夠久，writeFailed() 的「重試」與
+                       scheduleUndoDelete() 的「復原」都靠它
+
+   文案維持安靜：「已更新」。不要「🎉 成功！您的資料已成功更新！」——
+   一次成功的存檔不值得一次慶祝。
+============================================================ */
+function flashSaved(el, text){
+  if(!el) return;
+  const host = el.parentElement;
+  if(!host) return;
+  if(getComputedStyle(host).position === 'static') host.style.position = 'relative';
+
+  let tip = el._adSavedTip;
+  if(!tip || !tip.isConnected){
+    tip = document.createElement('span');
+    tip.className = 'ad-saved';
+    tip.setAttribute('role', 'status');
+    host.appendChild(tip);
+    el._adSavedTip = tip;
+  }
+  tip.textContent = text || '✓ 已更新';
+  clearTimeout(tip._adTimer);
+  tip.classList.remove('is-out');
+  /* reflow 一下，連續存兩次時動畫才會重新播 */
+  void tip.offsetWidth;
+  tip.classList.add('is-on');
+  tip._adTimer = setTimeout(()=>{
+    tip.classList.remove('is-on');
+    tip.classList.add('is-out');
+  }, 1500);
+}
+
+/* ============================================================
+   Detail drawer（共用元件）
+   ------------------------------------------------------------
+   規格不重新設計：min(92vw,400px)、暖白底、左側 1px border、
+   CTA 貼底 —— 排桌的賓客抽屜（.sp-drawer）本來就是這一套，
+   這裡只是把它抽出來讓出席回覆與收禮明細也用得到（CSS 兩邊共用選擇器）。
+
+   為什麼一定要接進 pushLayer()／popLayer()
+   ・Android 的實體返回鍵、iOS 的邊緣手勢：使用者的直覺是「關掉這一層」，
+     不是「離開後台」。
+   ・背景鎖捲：抽屜是可捲的，不鎖的話手指一滑就變成整頁在動。
+   ・Esc 也走同一條路徑，桌機與手機的關法才是同一件事。
+
+   遮罩只有 .2 —— 這個元件的前提是「背景頁面保持可見」，
+   壓到 .42 就跟開一個 modal 沒兩樣了。
+============================================================ */
+const Drawer = (() => {
+  let mask = null, box = null, titleEl, subEl, bodyEl, footEl;
+  let onCloseCb = null;
+
+  function build(){
+    if(mask) return;
+    mask = document.createElement('div');
+    mask.className = 'ad-drawer-mask';
+    mask.hidden = true;
+
+    box = document.createElement('aside');
+    box.className = 'ad-drawer';
+    box.hidden = true;
+    box.setAttribute('role', 'dialog');
+    box.setAttribute('aria-modal', 'true');
+    box.innerHTML = `
+      <div class="ad-drawer-head">
+        <div>
+          <div class="ad-drawer-title"></div>
+          <div class="ad-drawer-sub"></div>
+        </div>
+        <button class="ad-drawer-close" type="button" aria-label="關閉">✕</button>
+      </div>
+      <div class="ad-drawer-body"></div>
+      <div class="ad-drawer-foot" hidden></div>`;
+
+    document.body.append(mask, box);
+    titleEl = box.querySelector('.ad-drawer-title');
+    subEl   = box.querySelector('.ad-drawer-sub');
+    bodyEl  = box.querySelector('.ad-drawer-body');
+    footEl  = box.querySelector('.ad-drawer-foot');
+
+    mask.addEventListener('click', close);
+    box.querySelector('.ad-drawer-close').addEventListener('click', close);
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape' && !box.hidden) close();
+    });
+  }
+
+  function open(opts){
+    build();
+    const { title, sub, body, foot, onClose } = opts || {};
+    titleEl.textContent = title || '';
+    subEl.innerHTML = sub || '';
+    subEl.hidden = !sub;
+    bodyEl.innerHTML = body || '';
+    footEl.innerHTML = foot || '';
+    footEl.hidden = !foot;
+    box.setAttribute('aria-label', title || '詳細資料');
+    onCloseCb = onClose || null;
+
+    mask.hidden = false;
+    box.hidden = false;
+    bodyEl.scrollTop = 0;
+    pushLayer(box, close);
+    /* 焦點交給關閉鈕：鍵盤使用者一按 Enter 就回得去，
+       也讓螢幕閱讀器把焦點帶進這一層 */
+    box.querySelector('.ad-drawer-close').focus();
+  }
+
+  function close(){
+    if(!box || box.hidden) return;
+    box.hidden = true;
+    mask.hidden = true;
+    popLayer(box);
+    const cb = onCloseCb;
+    onCloseCb = null;
+    if(cb) try{ cb(); }catch(err){ console.warn('[admin] 抽屜收尾失敗', err); }
+  }
+
+  /* 資料變動時就地更新內容，不要整個重開（重開會把捲動位置與焦點都丟掉） */
+  function isOpen(){ return !!box && !box.hidden; }
+  function setBody(html){ if(isOpen()) bodyEl.innerHTML = html; }
+  function bodyEl_(){ return bodyEl; }
+
+  return { open, close, isOpen, setBody, body: bodyEl_ };
 })();
 
 /* ============================================================
@@ -386,6 +527,7 @@ function rowMenuBtn(key, id){
 
 const rowMenuEl = document.createElement('div');
 rowMenuEl.className = 'ad-rowmenu';
+rowMenuEl.setAttribute('role', 'menu');
 rowMenuEl.hidden = true;
 document.body.appendChild(rowMenuEl);
 let rowMenuOwner = null;
@@ -413,7 +555,7 @@ function openRowMenu(btn){
   rowMenuEl.innerHTML = items.map((it, i) => it === '-'
     ? '<div class="ad-rowmenu-sep"></div>'
     : `<button class="ad-rowmenu-item${it.danger ? ' is-danger' : ''}" type="button"
-         data-i="${i}"${it.disabled ? ' disabled' : ''}>${escapeHtml(it.label)}</button>`).join('');
+         role="menuitem" data-i="${i}"${it.disabled ? ' disabled' : ''}>${escapeHtml(it.label)}</button>`).join('');
   rowMenuEl.hidden = false;
 
   /* 貼著按鈕放；下面塞不下就翻到上面，右邊超出畫面就往內收 */
@@ -435,7 +577,10 @@ rowMenuEl.addEventListener('click', (e)=>{
   const btn = e.target.closest('.ad-rowmenu-item');
   if(!btn) return;
   const it = (rowMenuEl._adItems || [])[Number(btn.dataset.i)];
+  const owner = rowMenuOwner;
   closeRowMenu();
+  /* 用鍵盤選的話，焦點現在在一個已經被移除的節點上 —— 交還給原本那顆按鈕 */
+  if(owner && document.activeElement === document.body) owner.focus();
   if(it && it.run) it.run();
 });
 
@@ -443,13 +588,63 @@ document.addEventListener('click', (e)=>{
   const btn = e.target.closest('[data-rowmenu]');
   if(btn){
     e.preventDefault();
-    if(rowMenuOwner === btn) closeRowMenu();
-    else openRowMenu(btn);
+    if(rowMenuOwner === btn){ closeRowMenu(); return; }
+    openRowMenu(btn);
+    /* detail === 0 ＝ 這一下 click 是鍵盤（Enter／空白）合成出來的，
+       不是滑鼠 —— 那就把焦點帶進選單，不然按了等於什麼都沒發生 */
+    if(e.detail === 0) requestAnimationFrame(()=> focusRowMenuItem(0));
     return;
   }
   if(!e.target.closest('.ad-rowmenu')) closeRowMenu();
 });
-document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeRowMenu(); });
+/* ---------- 「⋮」選單的鍵盤導覽 ----------
+   選單打開之後焦點必須進得去，而且方向鍵要能走 ——
+   不然用鍵盤的人只能打開它，卻選不到任何一項（等於這個入口是壞的）。
+   焦點鎖在選單裡（Tab 也在裡面繞），Esc／關閉時交還給原本那顆按鈕。 */
+function rowMenuItems(){
+  return Array.from(rowMenuEl.querySelectorAll('.ad-rowmenu-item:not(:disabled)'));
+}
+function focusRowMenuItem(i){
+  const items = rowMenuItems();
+  if(!items.length) return;
+  const n = items.length;
+  items[((i % n) + n) % n].focus();
+}
+
+document.addEventListener('keydown', (e)=>{
+  if(rowMenuEl.hidden){
+    /* 按鈕上按 Enter／空白／↓ 都是「打開並走進第一項」 */
+    /* Enter／空白鍵在 <button> 上原生就會發一次 click，那條路徑已經會開選單了；
+       這裡再開一次的話，接著那一下 click 會把它當成「再按一次」直接關掉。
+       所以只接 ↓（原生不發 click 的那一顆），其餘交給 click handler。 */
+    const btn = e.target.closest && e.target.closest('[data-rowmenu]');
+    if(btn && e.key === 'ArrowDown'){
+      e.preventDefault();
+      openRowMenu(btn);
+      requestAnimationFrame(()=> focusRowMenuItem(0));
+    }
+    return;
+  }
+
+  const items = rowMenuItems();
+  const at = items.indexOf(document.activeElement);
+
+  if(e.key === 'Escape'){
+    const owner = rowMenuOwner;
+    closeRowMenu();
+    if(owner) owner.focus();
+    return;
+  }
+  if(e.key === 'ArrowDown'){ e.preventDefault(); focusRowMenuItem(at + 1); return; }
+  if(e.key === 'ArrowUp'){   e.preventDefault(); focusRowMenuItem(at - 1); return; }
+  if(e.key === 'Home'){      e.preventDefault(); focusRowMenuItem(0); return; }
+  if(e.key === 'End'){       e.preventDefault(); focusRowMenuItem(items.length - 1); return; }
+  if(e.key === 'Tab'){
+    /* focus trap：選單是一個 menu，Tab 不該把人丟回背後那張表 */
+    e.preventDefault();
+    focusRowMenuItem(at + (e.shiftKey ? -1 : 1));
+  }
+});
 /* 捲動就收起來（選單是 fixed 的，跟著捲會離開它那一列）。
    但「按下去」本身常常會先把那一列捲進畫面，那一下的 scroll 不能算 ——
    不擋的話選單會在打開的同一瞬間又被關掉。 */
@@ -502,6 +697,107 @@ function downloadCsv(name, header, rows){
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+/* ============================================================
+   匯出前先問要匯出什麼
+   ------------------------------------------------------------
+   出席回覆那一份有 23 欄，但多數時候新人只要其中三四欄：
+   給飯店的是姓名／人數／葷素，印喜帖的是姓名／地址。
+   先問一句，比事後在 Excel 裡刪 19 欄快得多。
+
+   ⚠️ 欄位一定要由呼叫端「當下」算出來傳進來 ——
+   出席回覆的欄位是動態的（標籤／聯絡資訊／喜帖／喜餅／留言
+   五欄由表單設定決定在不在），寫死一組 checkbox 會匯出
+   根本不存在的欄位。
+
+   記住上次的選擇（localStorage）：同一場婚禮會匯出很多次，
+   每次都要重勾一遍等於這個功能只幫了第一次。
+============================================================ */
+const csvMaskEl  = document.getElementById('adCsvMask');
+const csvColsEl  = document.getElementById('adCsvCols');
+const csvCountEl = document.getElementById('adCsvCount');
+const csvNoteEl  = document.getElementById('adCsvNote');
+const csvGoBtn   = document.getElementById('adCsvGo');
+
+function csvPrefKey(name){ return `ad:csvcols:${name}`; }
+
+function pickCsvColumns({ name, note, columns }){
+  return new Promise(resolve => {
+    let saved = null;
+    try{
+      const raw = localStorage.getItem(csvPrefKey(name));
+      if(raw) saved = new Set(JSON.parse(raw));
+    }catch{}
+
+    csvNoteEl.textContent = note || '選擇要匯出的內容：';
+    csvColsEl.innerHTML = columns.map((c, i) => {
+      /* 上次沒存過就全選；存過的話照上次，但新增的欄位預設也是勾的
+         （新欄位是新功能，預設不給他反而像壞了） */
+      const on = !saved || saved.has(c.key) || !columns.some(x => saved.has(x.key));
+      return `<label class="ad-check">
+        <input type="checkbox" value="${escapeHtml(c.key)}"${on ? ' checked' : ''}
+               data-i="${i}">
+        <span>${escapeHtml(c.label)}</span>
+      </label>`;
+    }).join('');
+
+    function syncCount(){
+      const n = csvColsEl.querySelectorAll('input:checked').length;
+      csvCountEl.textContent = `已選 ${n} / ${columns.length} 欄`;
+      csvGoBtn.disabled = n === 0;
+    }
+    syncCount();
+
+    function setAll(on){
+      csvColsEl.querySelectorAll('input').forEach(i => { i.checked = on; });
+      syncCount();
+    }
+
+    function finish(keys){
+      csvMaskEl.hidden = true;
+      csvColsEl.removeEventListener('change', syncCount);
+      allBtn.removeEventListener('click', onAll);
+      noneBtn.removeEventListener('click', onNone);
+      csvGoBtn.removeEventListener('click', onGo);
+      cancelBtn.removeEventListener('click', onCancel);
+      csvMaskEl.removeEventListener('click', onMask);
+      resolve(keys);
+    }
+
+    const allBtn    = document.getElementById('adCsvAll');
+    const noneBtn   = document.getElementById('adCsvNone');
+    const cancelBtn = document.getElementById('adCsvCancel');
+
+    const onAll   = ()=> setAll(true);
+    const onNone  = ()=> setAll(false);
+    const onCancel= ()=> finish(null);
+    const onMask  = (e)=>{ if(e.target === csvMaskEl) finish(null); };
+    const onGo = ()=>{
+      const keys = [...csvColsEl.querySelectorAll('input:checked')].map(i => i.value);
+      if(!keys.length) return;
+      try{ localStorage.setItem(csvPrefKey(name), JSON.stringify(keys)); }catch{}
+      finish(keys);
+    };
+
+    csvColsEl.addEventListener('change', syncCount);
+    allBtn.addEventListener('click', onAll);
+    noneBtn.addEventListener('click', onNone);
+    csvGoBtn.addEventListener('click', onGo);
+    cancelBtn.addEventListener('click', onCancel);
+    csvMaskEl.addEventListener('click', onMask);
+
+    csvMaskEl.hidden = false;
+  });
+}
+
+/* 選好的 key 對回欄位定義，只留下被勾的那幾欄 */
+function csvSubset(columns, keys, rows){
+  const keep = columns.map((c, i) => [c, i]).filter(([c]) => keys.includes(c.key));
+  return {
+    header: keep.map(([c]) => c.label),
+    rows: rows.map(r => keep.map(([, i]) => r[i])),
+  };
 }
 
 /* ============================================================
@@ -663,6 +959,69 @@ function skeletonHtml(rows, widths){
       '</div>';
   }
   return out + '</div>';
+}
+
+/* 表格形狀的骨架
+   ------------------------------------------------------------
+   通用的兩行灰條在表格情境是錯的訊號：它長得像清單，
+   但一秒後跳出來的是一張有 16 欄的表 —— 版面整個換掉。
+   骨架要先把欄位的形狀站好，資料回來時只是「填進去」。
+
+   cols 是欄寬（['22%','12%','18%']）；表頭有給就畫真的欄位名，
+   那幾個字在載入時就已經是確定的資訊，沒有理由讓它也是灰條。 */
+function skeletonTableHtml(rows, cols, heads){
+  const body = [];
+  for(let i = 0; i < rows; i++){
+    body.push(`<tr>${cols.map(w =>
+      `<td><div class="ad-skel-line" style="--w:${w}"></div></td>`).join('')}</tr>`);
+  }
+  const head = heads && heads.length
+    ? `<thead><tr>${heads.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>`
+    : `<thead><tr>${cols.map(() =>
+        '<th><div class="ad-skel-line" style="--w:60%"></div></th>').join('')}</tr></thead>`;
+  return `<div class="ad-tablewrap is-skel" aria-hidden="true"><table class="ad-table ad-skel-table">
+    ${head}<tbody>${body.join('')}</tbody>
+  </table></div>`;
+}
+
+/* ============================================================
+   空狀態
+   ------------------------------------------------------------
+   「目前沒有資料」只講了一件已經看得出來的事。一個好的空狀態要回答
+   三個問題：這裡本來會有什麼、為什麼現在沒有、我接下來該做什麼。
+
+   結構刻意做成 { title, body, action } 三格，強迫每個呼叫點都想過
+   那三件事；只傳字串時退回原本的一行灰字（舊呼叫點不會壞）。
+   Headline 用明朝體 20–24px —— 空畫面是少數可以給版面感的地方。
+   不放 SaaS 插畫：這個品牌的空白就是它的樣子。
+============================================================ */
+function emptyState(opts){
+  if(typeof opts === 'string') return `<div class="ad-empty">${opts}</div>`;
+  const { title, body, action } = opts || {};
+  const act = action
+    ? `<div class="ad-empty-act"><button class="btn small ghost" type="button"${
+        action.hash ? ` data-empty-hash="${escapeHtml(action.hash)}"` : ''}${
+        action.id ? ` id="${escapeHtml(action.id)}"` : ''}>${escapeHtml(action.label)}</button></div>`
+    : '';
+  return `<div class="ad-empty is-rich">
+    ${title ? `<div class="ad-empty-title">${escapeHtml(title)}</div>` : ''}
+    ${body ? `<p class="ad-empty-body">${escapeHtml(body)}</p>` : ''}
+    ${act}
+  </div>`;
+}
+
+/* 空狀態上的 CTA 幾乎都是「去另一個分頁」，統一在這裡接住，
+   每個呼叫點就不用各自綁一次 click */
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-empty-hash]');
+  if(btn) location.hash = btn.dataset.emptyHash;
+});
+
+/* 頁面標題底下那一行說明（「共 12 筆回覆」）。
+   節點不在就靜靜跳過 —— 不是每一頁都有 */
+function setPageSub(id, html){
+  const el = document.getElementById(id);
+  if(el) el.innerHTML = html || '';
 }
 
 /* ============================================================
@@ -849,6 +1208,12 @@ function applyTabVisibility(){
   document.querySelectorAll('#adSide .ad-tab').forEach(btn => {
     btn.hidden = !tabEnabled(btn.dataset.tab);
   });
+  /* 某些站台沒開排桌管理／收禮小幫手，那一組可能只剩兩顆、甚至一顆都不剩 ——
+     一個什麼都沒有的「婚禮管理」標題比沒有標題還糟。整組空了就連 label 一起收。 */
+  document.querySelectorAll('#adSide .ad-navgroup').forEach(g => {
+    const tabs = Array.from(g.querySelectorAll('.ad-tab'));
+    g.hidden = tabs.length > 0 && tabs.every(b => b.hidden);
+  });
   /* 子分頁只有「設定賓客標籤」有開關。先在 initRouter 之前決定它在不在，
      #rsvp/tags 這個網址才進得去（進不去的話 activateSubtab 會退回第一個） */
   const tagBtn = document.getElementById('adTagSubtab');
@@ -868,11 +1233,25 @@ function openAdmin(){
   adPage.hidden = false;
 
   const user = window.fb.auth.currentUser;
-  document.getElementById('adWho').textContent =
-    `${(window.WED && window.WED.couple) || ''}・${user ? user.email : ''}`;
-  /* 「查看網站」在桌機留在頂列，<900px 搬進抽屜底部（見 CSS），兩顆都要指到同一個網址 */
-  document.getElementById('adViewBtn').href = sitePath('lobby');
-  document.getElementById('adViewBtnMobile').href = sitePath('lobby');
+  const couple = (window.WED && window.WED.couple) || '';
+  const email  = user ? (user.email || '') : '';
+
+  /* 原本是一個字串塞兩件事。拆成兩個節點之後：
+     新人姓名留在頂列（那是身分），email 降到帳號選單裡（那是「用哪個帳號登入」）。 */
+  document.getElementById('adWho').textContent = couple;
+  document.getElementById('adAcctPopName').textContent = couple || '新人帳號';
+  document.getElementById('adAcctPopEmail').textContent = email;
+  document.getElementById('adSideWho').textContent = [couple, email].filter(Boolean).join('\n');
+  /* 頭像是 email 的第一個字元 —— 不放照片、不放 emoji，維持全站的克制 */
+  document.getElementById('adAcctIc').textContent = (email[0] || '·').toUpperCase();
+  document.getElementById('adAcctNm').textContent = email ? email.split('@')[0] : '帳號';
+  document.getElementById('adAcctBtn').setAttribute('aria-label', `帳號：${email || '未登入'}`);
+
+  /* 「查看網站」現在有三份：頂列、帳號選單裡、抽屜底部。都指到同一個網址 */
+  ['adViewBtn', 'adViewBtnMobile', 'adViewBtnDrawer'].forEach(id => {
+    const a = document.getElementById(id);
+    if(a) a.href = sitePath('lobby');
+  });
   /* 表單設定裡的兩顆按鈕指的都是賓客那一頁（分享出去的就是這個網址） */
   document.getElementById('adRsvpViewForm').href = sitePath('rsvp');
   document.getElementById('adRsvpGalleryView').href = sitePath('rsvp');
@@ -887,6 +1266,7 @@ function openAdmin(){
   });
   document.querySelectorAll('.ad-tablewrap').forEach(bindScrollHints);
   bindAllLayers();
+  restoreNavGroups();
   syncStickyMetrics();
 
   initRouter();
@@ -972,6 +1352,44 @@ async function ownerLogout(){
 document.getElementById('adLock').addEventListener('click', ownerLogout);
 document.getElementById('adLockMobile').addEventListener('click', ownerLogout);
 
+/* ============================================================
+   帳號 popover
+   ------------------------------------------------------------
+   「登出」是一年按一次的動作，卻一直是頂列上最顯眼的兩顆之一。
+   收進這裡之後，頂列剩下的都是每天會用到的東西。
+============================================================ */
+(function bindAcctPop(){
+  const btn = document.getElementById('adAcctBtn');
+  const pop = document.getElementById('adAcctPop');
+  if(!btn || !pop) return;
+
+  function close(){
+    if(pop.hidden) return;
+    pop.hidden = true;
+    btn.setAttribute('aria-expanded', 'false');
+  }
+  function open(){
+    pop.hidden = false;
+    btn.setAttribute('aria-expanded', 'true');
+    /* 打開就把焦點交出去：鍵盤使用者不用再 Tab 一次才進得來 */
+    const first = pop.querySelector('.ad-acct-item');
+    if(first) first.focus();
+  }
+
+  btn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    pop.hidden ? open() : close();
+  });
+  document.addEventListener('click', (e)=>{
+    if(!pop.hidden && !e.target.closest('#adAcct')) close();
+  });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape' && !pop.hidden){ close(); btn.focus(); }
+  });
+  /* 選單裡按下任何一項就收起來（登出會整頁換掉，查看網站會離開） */
+  pop.addEventListener('click', (e)=>{ if(e.target.closest('.ad-acct-item')) close(); });
+})();
+
 if(!ownerEmails().length){
   loginBtn.disabled = true;
   pwErr.textContent = '這個站台還沒設定新人帳號名單（要新增請告訴我們）';
@@ -1035,6 +1453,11 @@ function activateTab(tab, subtab){
   document.querySelectorAll('.ad-panel').forEach(p =>
     p.classList.toggle('is-on', p.dataset.panel === target.dataset.tab));
 
+  /* 收合狀態永遠不能贏過「現在在哪一頁」。
+     activateTab 的 fallback 會在指定分頁被關掉時退回第一個看得到的分頁 ——
+     如果那一組剛好是收起來的，使用者就被丟進一個看不見的群組裡了。 */
+  openGroupOf(target);
+
   let wantHash = `#${target.dataset.tab}`;
   if(SUBTABS[target.dataset.tab]){
     wantHash = `#${target.dataset.tab}/${activateSubtab(target.dataset.tab, subtab)}`;
@@ -1070,6 +1493,153 @@ document.getElementById('adSide').addEventListener('click', (e)=>{
   const tab = btn.dataset.tab;
   location.hash = SUBTABS[tab] ? `${tab}/${SUBTABS[tab][0]}` : tab;
 });
+
+/* ============================================================
+   側欄分組的收合
+   ------------------------------------------------------------
+   height:auto 不能 transition，所以 CSS 用 grid-template-rows 0fr → 1fr
+   （見 .ad-navgroup-body）。這裡只負責掛 class 與記住狀態。
+
+   記在 localStorage：新人一天會進來十幾次，「每次都要再收一遍」
+   就等於這個功能不存在。
+============================================================ */
+const NAVGROUP_KEY = 'ad:navgroups';
+
+function readClosedGroups(){
+  try{
+    const raw = localStorage.getItem(NAVGROUP_KEY);
+    return new Set(raw ? JSON.parse(raw) : []);
+  }catch{ return new Set(); }
+}
+function writeClosedGroups(set){
+  try{ localStorage.setItem(NAVGROUP_KEY, JSON.stringify([...set])); }catch{}
+}
+
+function setGroupOpen(group, open){
+  group.classList.toggle('is-closed', !open);
+  const lab = group.querySelector('.ad-navgroup-lab');
+  if(lab) lab.setAttribute('aria-expanded', String(open));
+  const closed = readClosedGroups();
+  const key = group.dataset.navgroup;
+  open ? closed.delete(key) : closed.add(key);
+  writeClosedGroups(closed);
+}
+
+/* 這一顆分頁所在的群組一定要是展開的（不寫回 localStorage：
+   使用者刻意收起來的那一組，只是這一次被撐開，下次還是收著） */
+function openGroupOf(tabBtn){
+  const g = tabBtn && tabBtn.closest('.ad-navgroup');
+  if(!g || !g.classList.contains('is-closed')) return;
+  g.classList.remove('is-closed');
+  const lab = g.querySelector('.ad-navgroup-lab');
+  if(lab) lab.setAttribute('aria-expanded', 'true');
+}
+
+function restoreNavGroups(){
+  const closed = readClosedGroups();
+  document.querySelectorAll('#adSide .ad-navgroup').forEach(g => {
+    const shut = closed.has(g.dataset.navgroup)
+      && !g.querySelector('.ad-tab.is-on');   /* active 那一組永遠開著 */
+    g.classList.toggle('is-closed', shut);
+    const lab = g.querySelector('.ad-navgroup-lab');
+    if(lab) lab.setAttribute('aria-expanded', String(!shut));
+  });
+}
+
+document.getElementById('adSide').addEventListener('click', (e)=>{
+  const lab = e.target.closest('.ad-navgroup-lab');
+  if(!lab) return;
+  const g = lab.closest('.ad-navgroup');
+  setGroupOpen(g, g.classList.contains('is-closed'));
+});
+
+/* ============================================================
+   側欄 tooltip
+   ------------------------------------------------------------
+   後台的分頁名稱都是兩到五個字（「桌次」「收禮小幫手」），
+   第一次進來的人猜不出裡面裝了什麼。一句話講完就好，不要大型卡片。
+
+   兩個定位前提：
+     1. .ad-side 是 overflow-y:auto —— tooltip 放進側欄會被裁掉，
+        所以 render 到 body 並 position:fixed（照 .sp-peek 那一套）。
+     2. <900px 時側欄是觸控抽屜：整個關掉。
+        「點一下跳出說明、再點一次才切分頁」是壞掉的互動。
+============================================================ */
+const NAV_TIPS = {
+  rsvp:        '賓客填的出席回覆都在這裡：人數、葷素、聯絡方式、喜帖與喜餅的寄送，也能篩選、貼標籤、匯出 CSV。',
+  seating:     '婚宴當天貼在門口的那張桌次表：整理賓客與桌號的對照名單，也可以直接上傳桌次圖。',
+  seatingPlan: '把人拖到桌上的工作區：看得到每一桌坐了幾位、還剩幾個位子，排完再一次同步給桌次名單。',
+  butler:      '婚宴當天收禮金、送禮餅用的工具。產生連結交給幫忙的親友，他們記的每一筆都會即時回到這裡。',
+  lobby:       '賓客會在首頁看見的婚禮重要資訊，可以編輯時間、交通資訊、禮金、Dress Code 等，也能新增自訂連結或內容。',
+  letters:     '寫給賓客的感謝信。可以寫好幾封，賓客抽到的是哪一封由這裡決定。',
+  cards:       '賓客抽卡時會抽到的婚禮小卡：上傳圖片、設定卡名與稀有度。',
+  exhibits:    '新人的故事牆：一張照片配一段文字，賓客可以慢慢看完你們的故事。',
+  inbox:       '賓客留給新人的悄悄話。只有你們讀得到，別人在祝福牆上看不到內容。',
+  quiz:        '賓客玩的「你有多認識新人」小測驗：出題、設定正確答案，也看得到大家答了什麼。',
+};
+
+(function bindNavTips(){
+  /* 能力判斷，不是寬度判斷 —— iPad 橫向有 1194px 但它是觸控裝置 */
+  const fineMq = window.matchMedia('(hover:hover) and (pointer:fine)');
+  const side = document.getElementById('adSide');
+  if(!side) return;
+
+  const tip = document.createElement('div');
+  tip.className = 'ad-nav-tip';
+  tip.hidden = true;
+  document.body.appendChild(tip);
+
+  let openFor = null, timer = 0;
+
+  function hide(){
+    clearTimeout(timer);
+    openFor = null;
+    tip.classList.remove('is-on');
+    /* 等淡出跑完再收起來，不然下一次會從「上一則的位置」閃現 */
+    timer = setTimeout(()=>{ tip.hidden = true; }, 200);
+  }
+
+  function show(btn){
+    const text = NAV_TIPS[btn.dataset.tab];
+    if(!text || openFor === btn) return;
+    clearTimeout(timer);
+    openFor = btn;
+    tip.innerHTML =
+      `<div class="ad-nav-tip-title">${escapeHtml(btn.textContent.trim())}</div>` +
+      `<div class="ad-nav-tip-body">${escapeHtml(text)}</div>`;
+    tip.hidden = false;
+
+    /* 貼著側欄右緣放；下面塞不下就往上收，永遠不要跑出畫面 */
+    const r = btn.getBoundingClientRect();
+    const h = tip.offsetHeight;
+    const w = tip.offsetWidth;
+    let top = r.top - 2;
+    if(top + h > window.innerHeight - 10) top = Math.max(10, window.innerHeight - h - 10);
+    let left = r.right + 12;
+    if(left + w > window.innerWidth - 10) left = Math.max(10, r.left - w - 12);
+    tip.style.top = `${Math.round(top)}px`;
+    tip.style.left = `${Math.round(left)}px`;
+    requestAnimationFrame(()=> tip.classList.add('is-on'));
+  }
+
+  side.addEventListener('pointerover', (e)=>{
+    if(!fineMq.matches || e.pointerType === 'touch') return;
+    const btn = e.target.closest('.ad-tab');
+    if(!btn || btn.hidden){ if(!e.target.closest('.ad-nav-tip')) hide(); return; }
+    show(btn);
+  });
+  side.addEventListener('pointerleave', hide);
+  /* 鍵盤走過去也要看得到說明（focus-within 只給了框，沒給內容） */
+  side.addEventListener('focusin', (e)=>{
+    if(!fineMq.matches) return;
+    const btn = e.target.closest('.ad-tab');
+    if(btn && !btn.hidden) show(btn);
+  });
+  side.addEventListener('focusout', hide);
+  side.addEventListener('click', hide);
+  window.addEventListener('scroll', hide, true);
+  fineMq.addEventListener('change', hide);
+})();
 
 document.querySelectorAll('.ad-subtabs').forEach(nav => {
   nav.addEventListener('click', (e)=>{
@@ -1282,7 +1852,13 @@ function renderRsvps(){
     rsvpSubEl.innerHTML = '<li class="ad-hero-item is-note">讀取中…</li>';
     rsvpMetaEl.hidden = true;
     renderRsvpCharts('loading');
-    rsvpListEl.innerHTML = skeletonHtml(4);
+    /* 桌機等一下會長出一張表，骨架就要先站成表的形狀；
+       手機等一下是卡片，維持原本的兩行灰條 */
+    rsvpListEl.innerHTML = isNarrow()
+      ? skeletonHtml(4)
+      : skeletonTableHtml(5, ['20%','14%','12%','8%','8%','18%','20%'],
+          ['姓名','出席回應','分類','人數','葷','素','填表時間']);
+    setPageSub('adRsvpPageSub', '讀取中…');
     rsvpFilterSumEl.hidden = true;
     return;
   }
@@ -1304,15 +1880,30 @@ function renderRsvps(){
         `<li class="ad-hero-item"><span>${lab}</span><b>${val}</b></li>`).join('')
     : '<li class="ad-hero-item is-note">還沒有人回覆</li>';
 
+  setPageSub('adRsvpOverviewSub', total
+    ? `<b>${head}</b> 位確定出席・共 <b>${total}</b> 筆回覆`
+    : '還沒有人回覆');
   renderRsvpMeta(total);
   renderRsvpCharts(total ? '' : 'empty');
 
   const all = visibleRsvps();
   renderRsvpFilterSum(all.length, total);
+  setPageSub('adRsvpPageSub', all.length === total
+    ? `共 <b>${total}</b> 筆回覆`
+    : `<b>${all.length}</b> 筆符合條件（全部 ${total} 筆）`);
 
   if(!all.length){
-    rsvpListEl.innerHTML = `<div class="ad-empty">${
-      total ? '沒有符合的回覆' : '還沒有人回覆出席'}</div>`;
+    rsvpListEl.innerHTML = total
+      ? emptyState({
+          title: '沒有符合的回覆',
+          body: '把篩選條件放寬一點，或清掉搜尋關鍵字再看一次。',
+        })
+      : emptyState({
+          title: '尚未收到賓客回覆',
+          body: '賓客在邀請函上按下送出之後，回覆就會一筆一筆出現在這裡。'
+              + '現在可以先去確認表單問了哪些問題。',
+          action: { label:'去看表單設定', hash:'rsvp/form' },
+        });
     renderPager(rsvpListEl, rsvpPager, 0, renderRsvps);
     return;
   }
@@ -1465,7 +2056,8 @@ function rsvpTableHtml(list){
       }</div>`;
     };
 
-    return `<tr data-rsvp="${r.id}">
+    return `<tr data-rsvp="${r.id}" tabindex="0" aria-label="${
+      escapeHtml(`${r.name || '（沒有名字）'}的回覆，按 Enter 看完整內容`)}">
       <td class="is-name">${escapeHtml(`${r.icon || ''} ${r.name || '（沒有名字）'}`.trim())}</td>
       ${tagCell}
       <td><span class="ad-tag ad-tag-${st}">${RSVP_LABEL[st]}</span></td>
@@ -1481,7 +2073,7 @@ function rsvpTableHtml(list){
       ${col.message ? td(escapeHtml(r.message || ''), 'is-wide') : ''}
       ${td(escapeHtml(r.note || ''), 'is-wide')}
       <td class="ad-td-sub">${t ? fmtTime(t) : '時間未知'}</td>
-      <td class="is-act"><button class="ad-del" type="button" data-del-rsvp="${r.id}">刪除</button></td>
+      <td class="is-act">${rowMenuBtn('rsvp', r.id)}</td>
     </tr>`;
   }).join('');
 
@@ -1489,6 +2081,108 @@ function rsvpTableHtml(list){
     <thead><tr>${head}</tr></thead>
     <tbody>${rows}</tbody>
   </table></div>`;
+}
+
+/* ============================================================
+   回覆的詳細抽屜
+   ------------------------------------------------------------
+   表格一列有 16 欄，橫著讀完一位賓客要滑三個螢幕。整列可 click、
+   從右邊滑出來，背景名單保持可見 —— 不跳頁，關掉就回到原本的位置。
+
+   只做桌機：<900px 走的是卡片上的「展開更多」（.ad-rcard-more），
+   那已經是就地展開了，再疊一層抽屜只會多一個關法。
+============================================================ */
+function rsvpDrawerRow(label, value, mono){
+  if(value === '' || value == null) return '';
+  return `<div class="ad-drawer-row"><span>${escapeHtml(label)}</span>` +
+    `<b${mono ? ' style="font-variant-numeric:tabular-nums"' : ''}>${value}</b></div>`;
+}
+
+function rsvpDrawerHtml(r){
+  const col = rsvpColumns();
+  const st = DataStore.rsvpStatus(r);
+  const going = st === 'yes';
+  const t = rsvpTime(r);
+
+  const contacts = [
+    r.contactPhone && `電話　${r.contactPhone}`,
+    r.contactLine && `LINE　${r.contactLine}`,
+    r.contactEmail && `Email　${r.contactEmail}`,
+  ].filter(Boolean).join('\n');
+
+  const card = [
+    r.cardType ? rsvpLabel('card', r.cardType)
+      + (r.cardType === 'paper' && r.cardDelivery ? `（${rsvpLabel('cardDelivery', r.cardDelivery)}）` : '') : '',
+    r.cardEmail || '',
+    r.cardAddress ? `${r.cardZip || ''} ${r.cardAddress}`.trim() : '',
+  ].filter(Boolean).join('\n');
+
+  const gift = [
+    r.giftDelivery ? rsvpLabel('gift', r.giftDelivery) : '',
+    r.giftAddress ? `${r.giftZip || ''} ${r.giftAddress}`.trim() : '',
+  ].filter(Boolean).join('\n');
+
+  const tags = col.tags ? rsvpTagIds(r) : [];
+
+  return `
+    <div class="ad-drawer-rows">
+      ${rsvpDrawerRow('出席回應', `<span class="ad-tag ad-tag-${st}">${RSVP_LABEL[st]}</span>`)}
+      ${rsvpDrawerRow('分類', escapeHtml(rsvpLabel('relation', r.relation)))}
+      ${going ? rsvpDrawerRow('人數', `${Number(r.guestCount) || 1} 位`, true) : ''}
+      ${going ? rsvpDrawerRow('葷／素',
+          `葷 ${Number(r.mealMeat) || 0}　素 ${Number(r.mealVeg) || 0}`, true) : ''}
+      ${going && Number(r.childSeat) > 0
+          ? rsvpDrawerRow('兒童椅', `${Number(r.childSeat)} 張`, true) : ''}
+      ${rsvpDrawerRow('飲食習慣', escapeHtml(r.dietaryNote || ''))}
+      ${col.contact ? rsvpDrawerRow('聯絡資訊', escapeHtml(contacts)) : ''}
+      ${col.card ? rsvpDrawerRow('喜帖', escapeHtml(card)) : ''}
+      ${col.gift ? rsvpDrawerRow('喜餅', escapeHtml(gift)) : ''}
+      ${col.message ? rsvpDrawerRow('給新人的話', escapeHtml(r.message || '')) : ''}
+      ${rsvpDrawerRow('其他備註', escapeHtml(r.note || ''))}
+      ${rsvpDrawerRow('填表時間', t ? escapeHtml(fmtTime(t)) : '時間未知')}
+    </div>
+    ${col.tags ? `<div class="ad-drawer-sec">
+      <div class="ad-drawer-sec-title">標籤</div>
+      <div class="ad-drawer-tags">${
+        tags.length
+          ? tags.map(id => `<span class="ad-tag ad-tag-guest">${escapeHtml(guestTagName(id))}</span>`).join('')
+          : '<span class="ad-td-empty">還沒有貼標籤</span>'
+      }</div>
+      <div class="ad-row"><button class="btn small ghost" type="button"
+        data-tag-edit="${escapeHtml(r.id)}">設定標籤</button></div>
+    </div>` : ''}`;
+}
+
+let drawerRsvpId = '';
+
+function markPeekingRow(id){
+  document.querySelectorAll('#adRsvpList tr.is-peeking, #adBtTableWrap tr.is-peeking')
+    .forEach(tr => tr.classList.remove('is-peeking'));
+  if(!id) return;
+  const tr = document.querySelector(`#adRsvpList tr[data-rsvp="${CSS.escape(id)}"]`);
+  if(tr) tr.classList.add('is-peeking');
+}
+
+function openRsvpDrawer(id){
+  const r = DataStore.getRSVPs().find(x => x.id === id);
+  if(!r) return;
+  drawerRsvpId = id;
+  markPeekingRow(id);
+  Drawer.open({
+    title: `${r.icon || ''} ${r.name || '（沒有名字）'}`.trim(),
+    sub: escapeHtml(RSVP_LABEL[DataStore.rsvpStatus(r)]),
+    body: rsvpDrawerHtml(r),
+    onClose(){ drawerRsvpId = ''; markPeekingRow(''); },
+  });
+}
+
+/* 快照回來時抽屜要跟著更新（例如剛在抽屜裡改完標籤），
+   但只換內容、不重開 —— 重開會把捲動位置與焦點都丟掉 */
+function refreshRsvpDrawer(){
+  if(!drawerRsvpId || !Drawer.isOpen()) return;
+  const r = DataStore.getRSVPs().find(x => x.id === drawerRsvpId);
+  if(!r){ Drawer.close(); return; }
+  Drawer.setBody(rsvpDrawerHtml(r));
 }
 
 /* ============================================================
@@ -1636,6 +2330,44 @@ async function deleteRsvp(id){
   }catch(err){ writeFailed(err); }
 }
 
+/* 常駐的「刪除」改成 ⋯ row menu：
+   預設狀態乾淨，滑到那一列（或鍵盤 Tab 進去）才長出操作。
+   婚禮小卡、故事牆、桌次名單早就是這一套，這裡只是換掉入口 —— 
+   registerRowMenu／rowMenuBtn 都是現成的。 */
+registerRowMenu('rsvp', (id)=>{
+  const r = DataStore.getRSVPs().find(x => x.id === id);
+  if(!r) return [];
+  const items = [];
+  if(!isNarrow()) items.push({ label:'看完整內容', run: ()=> openRsvpDrawer(id) });
+  if(guestTagsOn()) items.push({ label:'設定標籤', run: ()=> openTagPick(id) });
+  if(items.length) items.push('-');
+  items.push({ label:'刪除這筆回覆', danger:true, run: ()=> deleteRsvp(id) });
+  return items;
+});
+
+/* ============================================================
+   整列可 click
+   ------------------------------------------------------------
+   四個必要條件，少一個就會變成「明明想做別的事，卻跳出抽屜」：
+
+   1. 列裡本來就有互動元素（標籤欄的按鈕、動作欄的「⋯」）——
+      那幾顆自己 stopPropagation，不能被整列的 handler 接走。
+   2. 使用者會選取儲存格文字 —— 備註、地址、給新人的話都是長文字，
+      拖曳選字之後放開會是一次 click。selection 還在就不要開。
+   3. 這是「看」的動作，不是「改」的動作，所以中鍵、Ctrl/Cmd 點擊
+      （使用者想開新分頁的手勢）一律不接。
+   4. 手機不是表格 —— isNarrow() 時走的是卡片上的「展開更多」。
+============================================================ */
+function rowClickShouldOpen(e){
+  if(e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return false;
+  if(isNarrow()) return false;
+  /* 列裡的按鈕、連結、輸入框各自有自己的事要做 */
+  if(e.target.closest('button, a, input, select, textarea, label')) return false;
+  const sel = window.getSelection && window.getSelection();
+  if(sel && !sel.isCollapsed) return false;
+  return true;
+}
+
 rsvpListEl.addEventListener('click', (e)=>{
   const more = e.target.closest('[data-rcard-more]');
   if(more){
@@ -1650,10 +2382,26 @@ rsvpListEl.addEventListener('click', (e)=>{
   }
   const del = e.target.closest('[data-del-rsvp]');
   if(del){ deleteRsvp(del.dataset.delRsvp); return; }
-  if(e.target.id === 'adRsvpTagSetupHead'){ location.hash = 'rsvp/tags'; }
+  if(e.target.id === 'adRsvpTagSetupHead'){ location.hash = 'rsvp/tags'; return; }
+
+  const tr = e.target.closest('tr[data-rsvp]');
+  if(tr && rowClickShouldOpen(e)) openRsvpDrawer(tr.dataset.rsvp);
 });
 
-document.addEventListener('data:rsvps', ()=>{ renderRsvps(); refreshTagCounts(); });
+/* 鍵盤：走到那一列按 Enter／空白鍵，和用滑鼠點它是同一件事 */
+rsvpListEl.addEventListener('keydown', (e)=>{
+  if(e.key !== 'Enter' && e.key !== ' ') return;
+  const tr = e.target.closest && e.target.closest('tr[data-rsvp]');
+  if(!tr || e.target !== tr) return;
+  e.preventDefault();
+  openRsvpDrawer(tr.dataset.rsvp);
+});
+
+document.addEventListener('data:rsvps', ()=>{
+  renderRsvps();
+  refreshTagCounts();
+  refreshRsvpDrawer();
+});
 rsvpFilterEl.addEventListener('input', ()=>{ rsvpPager.page = 1; renderRsvps(); });
 /* type="search" 的原生清除鈕按下去只會發 input，這裡一起接住 */
 rsvpFilterEl.addEventListener('search', ()=>{ rsvpPager.page = 1; renderRsvps(); });
@@ -1691,52 +2439,72 @@ document.addEventListener('data:rsvps:denied', ()=>{
   rsvpChartsEl.innerHTML = '';
   loadedOnce.add('rsvps');
   rsvpListEl.innerHTML =
-    `<div class="ad-empty">沒有讀取出席回覆的權限<br>請確認這個 Google 帳號在新人帳號名單內</div>`;
+    emptyState({
+      title: '讀不到出席回覆',
+      body: '這個 Google 帳號不在新人帳號名單裡，所以規則擋下了讀取。'
+          + '換一個帳號登入，或告訴我們要加哪一個。',
+    });
 });
 
 /* ---------- 匯出 CSV ----------
    欄位與 scripts/export-rsvps.js 對齊，兩邊拿到的檔案格式一致 */
-document.getElementById('adRsvpExport').addEventListener('click', ()=>{
+/* ⚠️ 欄位是動態的：rsvpColumns() 依表單設定決定標籤／聯絡資訊／
+   喜帖／喜餅／留言這五欄在不在。選擇器一定要從它生成，
+   寫死一組 checkbox 會讓人勾到根本沒有的欄位。 */
+function rsvpCsvColumns(){
+  const col = rsvpColumns();
+  return [
+    { key:'name',     label:'稱呼',        val:(r)=> r.name || '' },
+    { key:'status',   label:'是否出席',    val:(r)=> RSVP_LABEL[DataStore.rsvpStatus(r)] },
+    { key:'relation', label:'與新人關係',  val:(r)=> rsvpLabel('relation', r.relation) },
+    col.tags && { key:'tags', label:'標籤',
+      val:(r)=> rsvpTagIds(r).map(guestTagName).join('／') },
+    col.contact && { key:'phone', label:'電話', val:(r)=> r.contactPhone || '' },
+    col.contact && { key:'line',  label:'LINE',  val:(r)=> r.contactLine || '' },
+    col.contact && { key:'email', label:'Email', val:(r)=> r.contactEmail || '' },
+    { key:'guestCount', label:'人數', val:(r, going)=> going ? (Number(r.guestCount) || 1) : '' },
+    { key:'mealMeat',   label:'葷食', val:(r, going)=> going ? (Number(r.mealMeat) || 0) : '' },
+    { key:'mealVeg',    label:'素食', val:(r, going)=> going ? (Number(r.mealVeg)  || 0) : '' },
+    { key:'childSeat',  label:'兒童座椅', val:(r, going)=> going ? (Number(r.childSeat) || 0) : '' },
+    { key:'dietaryNote', label:'飲食習慣', val:(r)=> r.dietaryNote || '' },
+    col.card && { key:'card',        label:'喜帖', val:(r)=> rsvpLabel('card', r.cardType) },
+    col.card && { key:'cardDelivery', label:'喜帖領取',
+      val:(r)=> r.cardType === 'paper' ? rsvpLabel('cardDelivery', r.cardDelivery) : '' },
+    col.card && { key:'cardZip',     label:'喜帖郵遞區號', val:(r)=> r.cardZip || '' },
+    col.card && { key:'cardAddress', label:'喜帖地址',     val:(r)=> r.cardAddress || '' },
+    col.card && { key:'cardEmail',   label:'喜帖 Email',   val:(r)=> r.cardEmail || '' },
+    col.gift && { key:'gift',        label:'喜餅', val:(r)=> rsvpLabel('gift', r.giftDelivery) },
+    col.gift && { key:'giftZip',     label:'喜餅郵遞區號', val:(r)=> r.giftZip || '' },
+    col.gift && { key:'giftAddress', label:'喜餅地址',     val:(r)=> r.giftAddress || '' },
+    col.message && { key:'message', label:'給新人的話', val:(r)=> r.message || '' },
+    { key:'note', label:'其他備註', val:(r)=> r.note || '' },
+    { key:'time', label:'回覆時間', val:(r)=> { const t = rsvpTime(r); return t ? fmtTime(t) : ''; } },
+  ].filter(Boolean);
+}
+
+document.getElementById('adRsvpExport').addEventListener('click', async ()=>{
   const rows = visibleRsvps();
   if(!rows.length){ toast('目前沒有可以匯出的回覆', true); return; }
 
+  const columns = rsvpCsvColumns();
+  const keys = await pickCsvColumns({
+    name: 'rsvp',
+    note: `要匯出目前篩選出來的 ${rows.length} 筆回覆。選擇要帶哪幾欄：`,
+    columns,
+  });
+  if(!keys) return;
+
+  const keep = columns.filter(c => keys.includes(c.key));
+  /* 欄位與 scripts/export-rsvps.js 對齊，兩邊拿到的檔案格式一致 */
   downloadCsv(
     'rsvps',
-    ['稱呼','是否出席','與新人關係','標籤','電話','LINE','Email','人數','葷食','素食','兒童座椅',
-     '飲食習慣','喜帖','喜帖領取','喜帖郵遞區號','喜帖地址','喜帖 Email',
-     '喜餅','喜餅郵遞區號','喜餅地址','給新人的話','其他備註','回覆時間'],
+    keep.map(c => c.label),
     rows.map(r => {
-      const st = DataStore.rsvpStatus(r);
-      const t  = rsvpTime(r);
-      const going = st === 'yes';
-      return [
-        r.name || '',
-        RSVP_LABEL[st],
-        rsvpLabel('relation', r.relation),
-        guestTagsOn() ? rsvpTagIds(r).map(guestTagName).join('／') : '',
-        r.contactPhone || '',
-        r.contactLine || '',
-        r.contactEmail || '',
-        going ? (Number(r.guestCount) || 1) : '',
-        going ? (Number(r.mealMeat) || 0) : '',
-        going ? (Number(r.mealVeg)  || 0) : '',
-        going ? (Number(r.childSeat) || 0) : '',
-        r.dietaryNote || '',
-        rsvpLabel('card', r.cardType),
-        r.cardType === 'paper' ? rsvpLabel('cardDelivery', r.cardDelivery) : '',
-        r.cardZip || '',
-        r.cardAddress || '',
-        r.cardEmail || '',
-        rsvpLabel('gift', r.giftDelivery),
-        r.giftZip || '',
-        r.giftAddress || '',
-        r.message || '',
-        r.note || '',
-        t ? fmtTime(t) : '',
-      ];
+      const going = DataStore.rsvpStatus(r) === 'yes';
+      return keep.map(c => c.val(r, going));
     }),
   );
-  toast(`已匯出 ${rows.length} 筆回覆`);
+  toast(`已匯出 ${rows.length} 筆回覆・${keep.length} 欄`);
 });
 
 /* ============================================================
@@ -1952,7 +2720,12 @@ function renderTags(){
   const list = guestTagList();
   if(!list.length){
     tagListEl.innerHTML =
-      `<div class="ad-empty">還沒有標籤<br>按「加入常用標籤」可以一次帶入 VIP、長輩、小孩、大學同學…</div>`;
+      emptyState({
+        title: '還沒有任何標籤',
+        body: '標籤是給賓客分類用的（VIP、長輩、小孩、大學同學…），'
+            + '貼上之後名單可以照標籤篩選，排桌也會照著分組。',
+        action: { label:'加入常用標籤', id:'adTagPresetEmptyBtn' },
+      });
     return;
   }
 
@@ -2032,6 +2805,14 @@ tagListEl.addEventListener('click', async (e)=>{
     toast('標籤已刪除');
     renderTagsAndList();
   }catch(err){ writeFailed(err); }
+});
+
+/* 空狀態上的「加入常用標籤」指的是右上角那一顆，走同一條路徑 */
+document.addEventListener('click', (e)=>{
+  if(e.target.id === 'adTagPresetEmptyBtn'){
+    const btn = document.getElementById('adTagPresetBtn');
+    if(btn) btn.click();
+  }
 });
 
 document.getElementById('adTagAddBtn').addEventListener('click', async ()=>{
@@ -2170,9 +2951,13 @@ function openTagPick(rsvpId){
   tagPickMask.hidden = false;
 }
 
-rsvpListEl.addEventListener('click', (e)=>{
-  const id = e.target.dataset.tagEdit;
-  if(id) openTagPick(id);
+/* data-tag-edit 出現在三個地方：表格的標籤欄、手機卡片、詳細抽屜。
+   用 document 委派一次接完，不用每個容器各綁一份 */
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-tag-edit]');
+  if(!btn) return;
+  e.stopPropagation();          /* 不要順便把整列的 click 一起觸發 */
+  openTagPick(btn.dataset.tagEdit);
 });
 
 document.getElementById('adTagPickCancel').addEventListener('click', ()=> closeTagPick());
@@ -2192,6 +2977,7 @@ tagPickSaveBtn.addEventListener('click', async ()=>{
 document.addEventListener('data:rsvpTags', ()=>{
   renderRsvps();
   refreshTagCounts();
+  refreshRsvpDrawer();
 });
 
 /* ============================================================
@@ -2226,6 +3012,9 @@ function renderInbox(){
 
   document.getElementById('adInboxCount').textContent =
     list.length === all.length ? `目前 ${all.length} 封` : `${list.length} / ${all.length} 封`;
+  setPageSub('adInboxPageSub', all.length
+    ? `共 <b>${all.length}</b> 封悄悄話，只有你們讀得到`
+    : '賓客寫給你們的信會出現在這裡');
 
   if(!loadedOnce.has('letters')){
     inboxListEl.innerHTML = skeletonHtml(3, ['50%', '90%']);
@@ -2233,10 +3022,14 @@ function renderInbox(){
   }
 
   if(!list.length){
-    inboxListEl.innerHTML = `<div class="ad-empty">${
-      all.length
-        ? '沒有符合的悄悄話'
-        : '還沒有人投信進來<br>等賓客從祝福牆寫信給你們，這裡就會出現'}</div>`;
+    inboxListEl.innerHTML = all.length
+      ? emptyState({ title:'沒有符合的悄悄話', body:'換個關鍵字再找一次，或把篩選清掉。' })
+      : emptyState({
+          title: '還沒有人投信進來',
+          body: '賓客可以在祝福牆寫一封只有你們讀得到的信。'
+              + '信件內容不會出現在牆上，只會出現在這裡。',
+          action: { label:'去看祝福牆長什麼樣', hash:'lobby/info' },
+        });
     renderPager(inboxListEl, inboxPager, 0, renderInbox);
     return;
   }
@@ -2262,7 +3055,10 @@ inboxFilterEl.addEventListener('input', ()=>{ inboxPager.page = 1; renderInbox()
 document.addEventListener('data:letters:denied', ()=>{
   loadedOnce.add('letters');
   inboxListEl.innerHTML =
-    `<div class="ad-empty">沒有讀取悄悄話的權限<br>請確認這個 Google 帳號在新人帳號名單內</div>`;
+    emptyState({
+      title: '讀不到悄悄話',
+      body: '這個 Google 帳號不在新人帳號名單裡。換一個帳號登入，或告訴我們要加哪一個。',
+    });
 });
 
 document.getElementById('adInboxExport').addEventListener('click', ()=>{
@@ -2501,7 +3297,10 @@ function renderImages(){
   }
   const list = DataStore.getSeatingImages().filter(it => !isPendingDelete('seatingImages', it.id));
   if(!list.length){
-    imgsEl.innerHTML = `<div class="ad-empty">還沒有桌次圖</div>`;
+    imgsEl.innerHTML = emptyState({
+      title: '還沒有桌次圖',
+      body: '把會場給的座位圖上傳上來，賓客在桌次頁就能自己對照著找位子。',
+    });
     return;
   }
   imgsEl.innerHTML = list.map((it, i) => `
@@ -2586,7 +3385,9 @@ imgsEl.addEventListener('change', async (e)=>{
       order: item.order || 0,
       time: item.time || Date.now(),
     });
-    toast('標題已更新');
+    /* 就地編輯就該就地回饋：值已經在欄位上了，
+       一則橫跨畫面的 toast 反而在說「發生了一件大事」 */
+    flashSaved(el);
   }catch(err){ writeFailed(err); }
 });
 
@@ -2704,6 +3505,7 @@ function renderSeatList(){
 
   const all = DataStore.getSeating().filter(r => !isPendingDelete('seating', r.id));
   document.getElementById('adSeatCount').textContent = `目前 ${all.length} 位`;
+  setPageSub('adSeatPageSub', `名單上有 <b>${all.length}</b> 位賓客`);
 
   const q = normKey(seatFilterEl.value);
   const filtered = q
@@ -2712,13 +3514,13 @@ function renderSeatList(){
 
   if(!filtered.length){
     seatListEl.innerHTML = all.length
-      ? `<div class="ad-empty">沒有符合的賓客</div>`
-      : `<div class="ad-empty">
-           還沒有桌次名單
-           <div class="ad-row" style="justify-content:center">
-             <button class="btn small ghost" id="adSeatEmptyImport" type="button">匯入名單</button>
-           </div>
-         </div>`;
+      ? emptyState({ title:'沒有符合的賓客', body:'換個名字或桌次再找一次。' })
+      : emptyState({
+          title: '還沒有桌次名單',
+          body: '賓客在桌次頁輸入自己的名字，就查得到坐第幾桌。'
+              + '名單可以一次貼進來，也可以從排桌管理同步過來。',
+          action: { label:'匯入名單', id:'adSeatEmptyImport' },
+        });
     renderPager(seatListEl, seatPager, 0, renderSeatList);
     return;
   }
@@ -2864,13 +3666,12 @@ function renderLetters(){
   renderLetterChips(all);
 
   if(!all.length){
-    lf.list.innerHTML = `
-      <div class="ad-empty">
-        還沒有寫任何一封感謝信
-        <div class="ad-row" style="justify-content:center">
-          <button class="btn small ghost" id="adLetterEmptyAddBtn" type="button">寫一封信</button>
-        </div>
-      </div>`;
+    lf.list.innerHTML = emptyState({
+      title: '還沒有寫任何一封感謝信',
+      body: '賓客輸入自己的名字或專屬詞彙，就會領到你們留給他的那一封。'
+          + '先寫一封通用信，沒對到詞彙的人也接得住。',
+      action: { label:'寫一封信', id:'adLetterEmptyAddBtn' },
+    });
     return;
   }
 
@@ -2879,18 +3680,16 @@ function renderLetters(){
 
   if(!list.length){
     lf.list.innerHTML = letterKind === 'default'
-      ? `<div class="ad-empty">
-           還沒有通用信<br>沒對到任何詞彙的賓客現在會撲空，寫一封通用信接住他們
-           <div class="ad-row" style="justify-content:center">
-             <button class="btn small ghost" id="adLetterEmptyAddBtn" type="button">寫一封通用信</button>
-           </div>
-         </div>`
-      : `<div class="ad-empty">
-           還沒有指定信<br>指定信要填「專屬詞彙」，賓客輸入對到才領得到
-           <div class="ad-row" style="justify-content:center">
-             <button class="btn small ghost" id="adLetterEmptyAddBtn" type="button">寫一封指定信</button>
-           </div>
-         </div>`;
+      ? emptyState({
+          title: '還沒有通用信',
+          body: '沒對到任何詞彙的賓客現在會撲空 —— 一封通用信就能接住他們。',
+          action: { label:'寫一封通用信', id:'adLetterEmptyAddBtn' },
+        })
+      : emptyState({
+          title: '還沒有指定信',
+          body: '指定信要填「專屬詞彙」，賓客輸入對到才領得到。適合寫給伴郎伴娘、家人。',
+          action: { label:'寫一封指定信', id:'adLetterEmptyAddBtn' },
+        });
     return;
   }
 
@@ -3059,13 +3858,12 @@ function renderExplore(){
   }
   const list = DataStore.getExplore().filter(it => !isPendingDelete('explore', it.id));
   if(!list.length){
-    ef.list.innerHTML = `
-      <div class="ad-empty">
-        目前還沒有自訂內容喔
-        <div class="ad-row" style="justify-content:center">
-          <button class="btn small ghost" id="adExpEmptyAddBtn" type="button">新增自訂內容</button>
-        </div>
-      </div>`;
+    ef.list.innerHTML = emptyState({
+      title: '還沒有自訂內容',
+      body: '想放的東西如果不在既有的欄位裡（停車資訊、包車時刻、電子紅包連結…），'
+          + '就從這裡加上去，它會出現在婚禮資訊頁的最後面。',
+      action: { label:'新增自訂內容', id:'adExpEmptyAddBtn' },
+    });
     return;
   }
   ef.list.innerHTML = list.map(it => `
@@ -3584,7 +4382,11 @@ function renderCards(){
 
   if(!list.length){
     cardListEl.innerHTML =
-      `<div class="ad-empty">還沒有婚禮小卡<br>沒上傳的話，抽卡頁會沿用素材資料夾或內建的範例卡</div>`;
+      emptyState({
+        title: '還沒有婚禮小卡',
+        body: '賓客抽到的就是這裡的卡片。先不上傳也沒關係 ——'
+            + '抽卡頁會沿用素材資料夾裡的圖，或是內建的範例卡。',
+      });
     return;
   }
 
@@ -3646,7 +4448,7 @@ cardListEl.addEventListener('change', async (e)=>{
       order:  item.order || 0,
       time:   item.time || Date.now(),
     });
-    toast('已更新');
+    flashSaved(e.target);
   }catch(err){ writeFailed(err); }
 });
 
@@ -3851,14 +4653,12 @@ function renderExhibits(){
   }
   const list = DataStore.getExhibits().filter(it => !isPendingDelete('exhibits', it.id));
   if(!list.length){
-    xf.list.innerHTML = `
-      <div class="ad-empty">
-        還沒有故事牆內容<br>
-        沒設定的話，戀愛時光會沿用素材資料夾或內建的範例
-        <div class="ad-row" style="justify-content:center">
-          <button class="btn small ghost" id="adExhSeed" type="button">載入預設內容來改</button>
-        </div>
-      </div>`;
+    xf.list.innerHTML = emptyState({
+      title: '還沒有故事牆內容',
+      body: '一張照片配一段文字，賓客可以慢慢看完你們的故事。'
+          + '先不設定也可以 —— 戀愛時光會沿用素材資料夾或內建的範例。',
+      action: { label:'載入預設內容來改', id:'adExhSeed' },
+    });
     return;
   }
   xf.list.innerHTML = list.map(it => `
@@ -4091,14 +4891,12 @@ function renderQuiz(){
     `目前 ${list.length} 題（最多 ${QUIZ_LIMITS.MAX_QUESTIONS} 題）`;
 
   if(!list.length){
-    qz.list.innerHTML = `
-      <div class="ad-empty">
-        還沒有題目<br>
-        賓客那一頁現在用的是 ${QUIZ_DEFAULTS.length} 題預設題目
-        <div class="ad-row" style="justify-content:center">
-          <button class="btn small ghost" id="adQuizSeed" type="button">載入預設題目來改</button>
-        </div>
-      </div>`;
+    qz.list.innerHTML = emptyState({
+      title: '還沒有出題',
+      body: `賓客那一頁現在用的是 ${QUIZ_DEFAULTS.length} 題預設題目。`
+          + '載進來改成你們自己的故事，玩起來才有意思。',
+      action: { label:'載入預設題目來改', id:'adQuizSeed' },
+    });
     return;
   }
 
@@ -4429,7 +5227,10 @@ const Butler = (() => {
       err => {
         console.warn('[admin] 收禮連結讀取失敗', err.code || err);
         loaded = true;
-        el.links.innerHTML = `<div class="ad-empty">讀不到收禮連結，請重新整理一次</div>`;
+        el.links.innerHTML = emptyState({
+          title: '讀不到收禮連結',
+          body: '可能只是網路慢了一拍。重新整理一次；還是不行的話，確認這個帳號在新人帳號名單裡。',
+        });
         renderAll();
       },
     );
@@ -4467,6 +5268,8 @@ const Butler = (() => {
     renderRows();
     renderByWho();
     renderLinks();
+    /* 抽屜開著時也要跟上最新的數字 —— 但正在打字就先不動它（見 guardedRender） */
+    refreshEntryDrawer();
   }
 
   function renderStats(){
@@ -4493,6 +5296,9 @@ const Butler = (() => {
     el.sumSub.textContent = t.count
       ? `共 ${t.count} 筆・平均 ${money(Math.round(t.amount / t.count))}`
       : '還沒有任何紀錄';
+    setPageSub('adBtPageSub', t.count
+      ? `現場已經記下 <b>${t.count}</b> 筆・${links.length} 組連結`
+      : '幫忙收禮的親友記下的每一筆，都會即時出現在這裡');
 
     /* 「數字是即時的」要有證據 —— 現場對帳時沒有這個時間就會懷疑是不是卡住了 */
     const last = list[0];
@@ -4532,9 +5338,16 @@ const Butler = (() => {
     el.count.textContent = `目前 ${all.length} 筆`;
 
     if(!all.length){
-      el.tableWrap.innerHTML = `<div class="ad-empty">${
-        allEntries().length ? '沒有符合的紀錄' : '現場還沒有記下任何一筆'
-      }</div>`;
+      el.tableWrap.innerHTML = allEntries().length
+        ? emptyState({
+            title: '沒有符合的紀錄',
+            body: '換個關鍵字再找一次 —— 姓名、備註、記錄者都找得到。',
+          })
+        : emptyState({
+            title: '現場還沒有記下任何一筆',
+            body: '幫忙收禮的親友在 /butler 記下的每一筆，都會即時出現在這裡。',
+            action: { label:'去產生收禮連結', hash:'butler/links' },
+          });
       renderPager(el.tableWrap, pager, 0, renderRows);
       return;
     }
@@ -4542,9 +5355,13 @@ const Butler = (() => {
     renderPager(el.tableWrap, pager, all.length, renderRows);
     const list = all.slice((pager.page - 1) * pager.size, pager.page * pager.size);
 
-    /* 手機是一筆一張卡（10 欄的表格一樣要橫滑），桌機維持表格 */
-    el.tableWrap.innerHTML = isNarrow() ? btCardsHtml(list) : btTableHtml(list);
-    if(!isNarrow()) bindScrollHints(el.tableWrap);
+    /* 手機是一筆一張卡（10 欄的表格一樣要橫滑），桌機維持表格。
+       走 guardedRender：現場四五個人同時在記，快照一直進來，
+       重畫會把使用者正在改的欄位整個換掉（見 guardedRender 的註解）。 */
+    guardedRender(el.tableWrap, ()=>{
+      el.tableWrap.innerHTML = isNarrow() ? btCardsHtml(list) : btTableHtml(list);
+      if(!isNarrow()) bindScrollHints(el.tableWrap);
+    });
   }
 
   function btTableHtml(list){
@@ -4556,7 +5373,8 @@ const Butler = (() => {
           <th>記錄者</th><th>時間</th>
         </tr>
       </thead>
-      <tbody id="adBtRows">${list.map(e => `<tr>
+      <tbody id="adBtRows">${list.map(e => `<tr data-entry="${escapeHtml(e.id)}" tabindex="0"
+        aria-label="${escapeHtml(`${e.name || '（沒有名字）'} 的收禮紀錄，按 Enter 看細節`)}">
         <td>${escapeHtml(e.code || '—')}</td>
         <td class="is-name">${escapeHtml(e.name || '')}</td>
         <td>${escapeHtml(e.table || '—')}</td>
@@ -4609,7 +5427,10 @@ const Butler = (() => {
     });
 
     if(!map.size){
-      el.byWho.innerHTML = `<div class="ad-empty">還沒有人記過</div>`;
+      el.byWho.innerHTML = emptyState({
+        title: '還沒有人記過',
+        body: '每一筆都會記下是誰收的，事後對帳時這一份就是「哪一位親友手上該有多少現金」。',
+      });
       return;
     }
     el.byWho.innerHTML = [...map.entries()]
@@ -4626,15 +5447,16 @@ const Butler = (() => {
   /* ---------- 連結 ---------- */
   function renderLinks(){
     if(!links.length){
-      el.links.innerHTML = `<div class="ad-empty">
-        還沒有收禮連結
-        <div class="ad-row" style="justify-content:center">
-          <button class="btn small ghost" id="adBtEmptyNew" type="button">產生第一組連結</button>
-        </div>
-      </div>`;
+      el.links.innerHTML = emptyState({
+        title: '還沒有收禮連結',
+        body: '一組連結配一組通行碼，交給婚宴當天幫忙收禮的親友。'
+            + '通常一場婚禮只要一組 —— 四五個人共用，統計才會加在一起。',
+        action: { label:'產生第一組連結', id:'adBtEmptyNew' },
+      });
       return;
     }
 
+    setPageSub('adBtLinkPageSub', `目前有 <b>${links.length}</b> 組連結`);
     el.links.innerHTML = links.map(l => {
       const book = books.get(l.bookId);
       const roster = (book && Array.isArray(book.guests)) ? book.guests.length : 0;
@@ -4877,23 +5699,255 @@ const Butler = (() => {
   }
 
   /* ---------- 匯出 ---------- */
-  function exportCsv(){
+  const BT_CSV_COLUMNS = [
+    { key:'code',   label:'編號',   val:(e)=> e.code || '',  sum:'' },
+    { key:'name',   label:'姓名',   val:(e)=> e.name || '',  sum:'總計' },
+    { key:'table',  label:'桌次',   val:(e)=> e.table || '', sum:'' },
+    { key:'amount', label:'禮金',   val:(e)=> Number(e.amount) || 0, sum:(t)=> t.amount },
+    { key:'gift',   label:'禮餅',   val:(e)=> e.gift ? '已發送' : '沒有發', sum:'' },
+    { key:'boxes',  label:'盒數',   val:(e)=> Number(e.boxes) || 0,  sum:(t)=> t.boxes },
+    { key:'people', label:'人數',   val:(e)=> Number(e.people) || 0, sum:(t)=> t.people },
+    { key:'note',   label:'備註',   val:(e)=> e.note || '',  sum:(t)=> `${t.count} 筆` },
+    { key:'by',     label:'記錄者', val:(e)=> e.by || '',    sum:'' },
+    { key:'time',   label:'時間',   val:(e)=> fmtTime(e.createdAt), sum:'' },
+  ];
+
+  async function exportCsv(){
     const list = allEntries();
     if(!list.length){ toast('現場還沒有記下任何一筆', true); return; }
+
+    const keys = await pickCsvColumns({
+      name: 'butler',
+      note: `要匯出 ${list.length} 筆收禮紀錄。選擇要帶哪幾欄：`,
+      columns: BT_CSV_COLUMNS,
+    });
+    if(!keys) return;
+
+    const keep = BT_CSV_COLUMNS.filter(c => keys.includes(c.key));
     const t = totals(list);
-    const rows = list.slice().reverse().map(e => [
-      e.code || '', e.name || '', e.table || '',
-      Number(e.amount) || 0,
-      e.gift ? '已發送' : '沒有發',
-      Number(e.boxes) || 0,
-      Number(e.people) || 0,
-      e.note || '', e.by || '', fmtTime(e.createdAt),
-    ]);
-    rows.push(['', '總計', '', t.amount, '', t.boxes, t.people, `${t.count} 筆`, '', '']);
-    downloadCsv('收禮紀錄',
-      ['編號', '姓名', '桌次', '禮金', '禮餅', '盒數', '人數', '備註', '記錄者', '時間'],
-      rows);
+    const rows = list.slice().reverse().map(e => keep.map(c => c.val(e)));
+    /* 最後一行是總計 —— 只有被留下來的那幾欄才有總計可以放 */
+    rows.push(keep.map(c => (typeof c.sum === 'function' ? c.sum(t) : c.sum)));
+    downloadCsv('收禮紀錄', keep.map(c => c.label), rows);
+    toast(`已匯出 ${list.length} 筆・${keep.length} 欄`);
   }
+
+  /* ============================================================
+     收禮明細的詳細抽屜 ＋ 就地編輯
+     ------------------------------------------------------------
+     為什麼這一份可以改：規則本來就允許（firestore.rules 的
+     `allow create, update: if butlerOpen(bookId) && isValidButlerEntry()`），
+     註解也明講「現場記錯金額是常態，能當場改掉比留一筆錯的有用」。
+
+     兩個條件不做就會壞掉：
+
+     1. ⚠️ 規則是 butlerOpen(bookId) —— 只在收禮簿「開著」的時候。
+        新人把簿子停用（婚禮結束的常見狀態）之後，寫入會拿到
+        permission-denied。所以 UI 必須先知道這件事，把欄位變唯讀，
+        不要讓人打完一整段字才被退回來。
+     2. ⚠️ isValidButlerEntry() 有型別與範圍檢查（amount/boxes/people
+        是 int、盒數與人數上限 99）。送出前做同樣的驗證，
+        不然使用者只會看到一句 permission-denied，完全不知道哪裡錯。
+
+     還有一個技術陷阱：Firestore 的即時快照會把使用者正在打的字洗掉
+     （guardedRender() 的註解有完整說明）。所以這裡的重畫一律走
+     guardedRender()，不自己接 onSnapshot 直接重畫。
+  ============================================================ */
+  let drawerEntryId = '';
+
+  function entryOf(id){
+    for(const [bookId, list] of entriesOf){
+      const hit = list.find(e => e.id === id);
+      if(hit) return { entry: hit, bookId };
+    }
+    return null;
+  }
+
+  /* 這一本現在收不收得了禮 —— 和規則的 butlerOpen() 是同一組條件 */
+  function bookEditable(bookId){
+    const b = books.get(bookId);
+    const link = links.find(l => l.bookId === bookId);
+    if(!b) return false;
+    if(b.revoked === true) return false;
+    if(link && link.revoked === true) return false;
+    const S = window.SITE;
+    return !!(S && (S.isPageOn ? S.isPageOn('butler') : S.isEnabled('butler')));
+  }
+
+  const ENTRY_FIELDS = {
+    amount: { label:'禮金',   type:'int', max:9999999, unit:'元' },
+    boxes:  { label:'盒數',   type:'int', max:99,      unit:'盒' },
+    people: { label:'人數',   type:'int', max:99,      unit:'位' },
+    note:   { label:'備註',   type:'text', max:200 },
+  };
+
+  function entryDrawerHtml(e, bookId){
+    const editable = bookEditable(bookId);
+    const ro = editable ? '' : ' disabled';
+
+    const field = (key)=>{
+      const f = ENTRY_FIELDS[key];
+      const val = f.type === 'int' ? (Number(e[key]) || 0) : (e[key] || '');
+      const input = f.type === 'int'
+        ? `<input class="ad-input ad-inline-input" type="number" inputmode="numeric"
+             min="0" max="${f.max}" step="1" value="${escapeHtml(String(val))}"
+             data-entry-field="${key}" aria-label="${escapeHtml(f.label)}"${ro}>`
+        : `<textarea class="ad-textarea ad-inline-input" maxlength="${f.max}"
+             data-entry-field="${key}" aria-label="${escapeHtml(f.label)}"${ro}
+             rows="2">${escapeHtml(String(val))}</textarea>`;
+      return `<div class="ad-inline-field">
+        <label class="ad-label">${escapeHtml(f.label)}${f.unit ? `<small>（${f.unit}）</small>` : ''}</label>
+        ${input}
+      </div>`;
+    };
+
+    return `
+      <div class="ad-drawer-rows">
+        ${rsvpDrawerRow('編號', escapeHtml(e.code || '—'))}
+        ${rsvpDrawerRow('桌次', escapeHtml(e.table || '—'))}
+        ${rsvpDrawerRow('禮餅', e.gift ? '已發送' : '沒有發')}
+        ${rsvpDrawerRow('記錄者', escapeHtml(e.by || '—'))}
+        ${rsvpDrawerRow('記錄時間', escapeHtml(fmtTime(e.createdAt)))}
+        ${e.updatedAt && e.updatedAt !== e.createdAt
+            ? rsvpDrawerRow('最後修改', escapeHtml(fmtTime(e.updatedAt))) : ''}
+      </div>
+
+      <div class="ad-drawer-sec" data-entry-edit="${escapeHtml(e.id)}">
+        <div class="ad-drawer-sec-title">就地修改</div>
+        ${editable ? `<p class="ad-hint">現場記錯金額是常態。改完按 Enter 存起來，Escape 放棄這次修改。</p>`
+                   : `<p class="ad-hint">這本收禮簿已經<b>停用</b>了，所以改不動 ——
+                        到「連結與名單」把它重新啟用，才改得回來。</p>`}
+        ${field('amount')}
+        ${field('boxes')}
+        ${field('people')}
+        ${field('note')}
+      </div>`;
+  }
+
+  function openEntryDrawer(id){
+    const hit = entryOf(id);
+    if(!hit) return;
+    drawerEntryId = id;
+    Drawer.open({
+      title: hit.entry.name || '（沒有名字）',
+      sub: `${escapeHtml(money(hit.entry.amount))}${
+        hit.entry.gift ? `・禮餅 ${Number(hit.entry.boxes) || 0} 盒` : ''}`,
+      body: entryDrawerHtml(hit.entry, hit.bookId),
+      onClose(){ drawerEntryId = ''; },
+    });
+  }
+
+  /* 快照回來時就地更新抽屜 —— 但使用者正在打字的話先不要動它。
+     guardedRender() 就是為了這件事寫的：重畫等於把正在編輯的那個
+     DOM 節點整個換掉，打的字會消失、接著的 change 也落在孤兒節點上。 */
+  function refreshEntryDrawer(){
+    if(!drawerEntryId || !Drawer.isOpen()) return;
+    const hit = entryOf(drawerEntryId);
+    if(!hit){ Drawer.close(); return; }
+    guardedRender(Drawer.body(), ()=>{
+      Drawer.setBody(entryDrawerHtml(hit.entry, hit.bookId));
+    });
+  }
+
+  /* 送出前做和規則一樣的驗證：擋在這裡，使用者看到的是
+     「盒數最多 99 盒」，而不是一句 permission-denied */
+  function normalizeEntryValue(key, raw){
+    const f = ENTRY_FIELDS[key];
+    if(!f) return { err:'不認得這個欄位' };
+    if(f.type === 'int'){
+      const n = Math.round(Number(String(raw).trim()));
+      if(!Number.isFinite(n)) return { err:`${f.label}要填數字` };
+      if(n < 0) return { err:`${f.label}不能是負數` };
+      if(n > f.max) return { err:`${f.label}最多 ${f.max}${f.unit || ''}` };
+      return { value:n };
+    }
+    const t = String(raw).slice(0, f.max);
+    return { value:t };
+  }
+
+  async function saveEntryField(input){
+    const sec = input.closest('[data-entry-edit]');
+    if(!sec) return;
+    const id  = sec.dataset.entryEdit;
+    const key = input.dataset.entryField;
+    const hit = entryOf(id);
+    if(!hit) return;
+
+    if(!bookEditable(hit.bookId)){
+      toast('這本收禮簿已經停用了，改不動', true);
+      return;
+    }
+
+    const cur = ENTRY_FIELDS[key].type === 'int'
+      ? (Number(hit.entry[key]) || 0) : (hit.entry[key] || '');
+    const out = normalizeEntryValue(key, input.value);
+    if(out.err){
+      setFieldError(input, out.err);
+      return;
+    }
+    setFieldError(input, '');
+    if(out.value === cur){ input.value = String(cur); return; }
+
+    const { doc, updateDoc } = window.fb;
+    try{
+      await updateDoc(
+        doc(fb().db, 'butlers', hit.bookId, 'entries', id),
+        { [key]: out.value, updatedAt: Date.now() });
+      /* 本機先更新，不要等快照 —— 抽屜上的數字要立刻對得起來 */
+      hit.entry[key] = out.value;
+      hit.entry.updatedAt = Date.now();
+      /* 就地回饋：單一欄位存好了不值得一則橫跨畫面的 toast */
+      flashSaved(input);
+      renderStats();
+      renderRows();
+      renderByWho();
+    }catch(err){
+      /* 規則擋下來多半就是簿子被停用了，講清楚是哪一件事 */
+      if(err && err.code === 'permission-denied'){
+        toast('這本收禮簿已經停用了，改不動', true);
+      }else{
+        writeFailed(err, ()=> saveEntryField(input));
+      }
+      input.value = String(cur);
+    }
+  }
+
+  /* Enter 存、Escape 取消。textarea 的 Enter 是換行，所以它靠 blur 存。 */
+  document.addEventListener('keydown', (e)=>{
+    const input = e.target.closest && e.target.closest('[data-entry-field]');
+    if(!input) return;
+    if(e.key === 'Enter' && input.tagName === 'INPUT'){
+      e.preventDefault();
+      input.blur();                 /* blur 會走 change → saveEntryField */
+    }else if(e.key === 'Escape'){
+      e.preventDefault();
+      const sec = input.closest('[data-entry-edit]');
+      const hit = sec && entryOf(sec.dataset.entryEdit);
+      if(hit){
+        const key = input.dataset.entryField;
+        input.value = ENTRY_FIELDS[key].type === 'int'
+          ? String(Number(hit.entry[key]) || 0) : (hit.entry[key] || '');
+      }
+      setFieldError(input, '');
+      input.blur();
+    }
+  });
+  document.addEventListener('change', (e)=>{
+    const input = e.target.closest && e.target.closest('[data-entry-field]');
+    if(input) saveEntryField(input);
+  });
+
+  el.tableWrap.addEventListener('click', (e)=>{
+    const tr = e.target.closest('tr[data-entry]');
+    if(tr && rowClickShouldOpen(e)) openEntryDrawer(tr.dataset.entry);
+  });
+  el.tableWrap.addEventListener('keydown', (e)=>{
+    if(e.key !== 'Enter' && e.key !== ' ') return;
+    const tr = e.target.closest && e.target.closest('tr[data-entry]');
+    if(!tr || e.target !== tr) return;
+    e.preventDefault();
+    openEntryDrawer(tr.dataset.entry);
+  });
 
   /* ---------- 事件 ---------- */
   function linkOf(id){ return links.find(l => l.id === id) || null; }
