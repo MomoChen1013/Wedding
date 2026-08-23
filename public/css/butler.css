@@ -101,3 +101,34 @@ button.ad-item:hover{background:rgba(255,255,255,.6);}
   button.ad-item{padding:16px 2px;}
   .bt-step .btn{padding:14px 0;}
 }
+
+/* ============================================================
+   手機／平板
+   ------------------------------------------------------------
+   收禮台是「站著、單手、拿著手機、旁邊有人在等」的情境，
+   所以這裡補的都是同一件事：手構得到、看得到、不用捲。
+============================================================ */
+
+/* admin.css 在 <560px 把彈窗改成貼底的 bottom sheet（卡片自己有 18px 的
+   左右 padding）。這一頁的按鈕列是用 id 選到的，特異性比較高，
+   所以要自己把負邊界補回來，不然那一條會比卡片窄一截。 */
+@media(max-width:560px){
+  #btSheet .ad-modal-actions{
+    margin:20px -18px calc(-20px - env(safe-area-inset-bottom));
+    padding:12px 18px calc(12px + env(safe-area-inset-bottom));
+    bottom:calc(-20px - env(safe-area-inset-bottom));
+  }
+}
+
+/* 賓客名單的每一列：現場是靠拇指按的，熱區要夠大、金額要一眼看得到 */
+@media (pointer:coarse){
+  .bt-step .ad-input{font-size:19px;}
+  /* 加減鈕現場用得比鍵盤多，做大一點 */
+  .bt-step .btn{min-width:60px;min-height:52px;}
+  #btGiftSeg .ad-chip{min-height:44px;padding:11px 18px;}
+  .bt-quick .ad-chip{min-height:44px;}
+}
+
+/* 通行碼與金額欄的字級刻意比 16px 大（不會觸發 iOS 的自動放大） */
+.bt-pass,.bt-amount{font-size:26px;}
+.bt-amount{font-size:30px;}

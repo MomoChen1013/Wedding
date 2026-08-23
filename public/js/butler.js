@@ -21,7 +21,8 @@
 ============================================================ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import {
-  getFirestore, doc, getDoc, onSnapshot, collection, query, orderBy,
+  getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+  doc, getDoc, onSnapshot, collection, query, orderBy,
   addDoc, updateDoc, deleteDoc, connectFirestoreEmulator,
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
@@ -34,7 +35,45 @@ const firebaseConfig = {
   appId: "1:246468418759:web:a2340dabefae916ad0b2e2",
 };
 
-const db = getFirestore(initializeApp(firebaseConfig));
+const app = initializeApp(firebaseConfig);
+
+/* 離線持久化：婚宴會場的收訊常常很差，而這一頁記的是錢。
+   預設的記憶體快取一關掉分頁就沒了 —— 排在佇列裡還沒送出去的那幾筆
+   會直接消失。開了 persistentLocalCache 才撐得過「手機沒電重開」。 */
+let db;
+try {
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+  });
+} catch (err) {
+  console.warn('[butler] 離線快取開不起來，改用記憶體快取', err);
+  db = getFirestore(app);
+}
+
+/* ============================================================
+   寫入逾時
+   ------------------------------------------------------------
+   Firestore 離線時，addDoc／updateDoc 回傳的 Promise
+   **永遠不會 resolve，也不會 reject** —— 它只是排進本機佇列。
+   對資料是好事（不會掉），但按鈕會一直停在「儲存中…」，
+   現場的人只好再按一次、再按一次，結果同一筆記了三遍。
+   所以超過 8 秒就當作「還沒送出去」，把畫面交還給使用者。
+============================================================ */
+const WRITE_TIMEOUT_MS = 8000;
+
+function withWriteTimeout(promise) {
+  let timer;
+  return Promise.race([
+    Promise.resolve(promise).finally(() => clearTimeout(timer)),
+    new Promise((_, reject) => {
+      timer = setTimeout(() => {
+        const err = new Error('網路好像不太穩，這一筆還沒送出去');
+        err.code = 'write-timeout';
+        reject(err);
+      }, WRITE_TIMEOUT_MS);
+    }),
+  ]);
+}
 
 /* 同其他頁面：本機預設連 emulator，?live=1 可強制讀正式資料庫 */
 const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
@@ -188,6 +227,8 @@ function enterApp() {
   $('btGate').hidden = true;
   $('btFatal').hidden = true;
   $('btApp').hidden = false;
+  /* 頂列這時候才量得到高度，下面那幾條 sticky 才對得準 */
+  requestAnimationFrame(syncStickyTop);
 
   paintBrand();
   meName = loadLocal().name || '';
@@ -369,6 +410,9 @@ function renderStat() {
   const left = guests().filter((g) => !(map.get(g.id) || []).length).length;
 
   $('btSumMoney').textContent = money(t.amount);
+  /* 台灣一場婚禮禮金破百萬很常見：$1,280,000 有 10 個字元，
+     在 390px 的手機上會溢出容器、被 body{overflow-x:hidden} 切掉 */
+  $('btSumMoney').classList.toggle('is-long', $('btSumMoney').textContent.length > 8);
   $('btSumSub').textContent = t.count
     ? `共 ${t.count} 筆・平均 ${money(Math.round(t.amount / t.count))}`
     : '還沒有任何紀錄';
@@ -448,6 +492,7 @@ function openSheet(state) {
   $('btSave').textContent = e ? '更新' : '儲存';
 
   $('btSheet').hidden = false;
+  pushSheetLayer($('btSheet'), closeSheet);
   /* 名單上的賓客直接把游標放到金額；名單外的先問名字 */
   setTimeout(() => {
     (manual && !e ? $('btInName') : $('btInAmount')).focus();
@@ -457,7 +502,60 @@ function openSheet(state) {
 function closeSheet() {
   $('btSheet').hidden = true;
   sheet = null;
+  popSheetLayer($('btSheet'));
 }
+
+/* ============================================================
+   彈窗層：背景鎖捲 ＋ 返回鍵
+   ------------------------------------------------------------
+   兩件在手機上一定會踩到的事：
+     1. 彈窗開著時背景照樣捲，關掉之後停在完全不同的位置
+        （iOS 上 overflow:hidden 鎖不住，要 position:fixed）
+     2. 使用者按返回鍵想關掉表單，結果直接離開收禮台 ——
+        婚宴當天最不該發生的事
+============================================================ */
+const sheetStack = [];
+let sheetScrollY = 0;
+let skipSheetPop = false;
+
+function pushSheetLayer(el, close) {
+  if (sheetStack.some((l) => l.el === el)) return;
+  if (!sheetStack.length) {
+    sheetScrollY = window.scrollY || 0;
+    document.body.style.top = `-${sheetScrollY}px`;
+    document.body.classList.add('ad-lock');
+  }
+  sheetStack.push({ el, close });
+  try { history.pushState({ btLayer: sheetStack.length }, ''); } catch {}
+}
+
+function popSheetLayer(el) {
+  const i = sheetStack.findIndex((l) => l.el === el);
+  if (i < 0) return;
+  sheetStack.splice(i, 1);
+  if (!sheetStack.length) {
+    document.body.classList.remove('ad-lock');
+    document.body.style.top = '';
+    window.scrollTo(0, sheetScrollY);
+  }
+  if (history.state && history.state.btLayer === i + 1) {
+    skipSheetPop = true;
+    try { history.back(); } catch { skipSheetPop = false; }
+  }
+}
+
+window.addEventListener('popstate', () => {
+  if (skipSheetPop) { skipSheetPop = false; return; }
+  const top = sheetStack[sheetStack.length - 1];
+  if (!top) return;
+  sheetStack.pop();
+  if (!sheetStack.length) {
+    document.body.classList.remove('ad-lock');
+    document.body.style.top = '';
+    window.scrollTo(0, sheetScrollY);
+  }
+  top.close();
+});
 
 function setGift(on) {
   $('btGiftSeg').querySelectorAll('[data-gift]').forEach((b) => {
@@ -494,15 +592,19 @@ async function saveEntry() {
   };
 
   const btn = $('btSave');
+  const btnText = btn.textContent;
   btn.disabled = true;
+  btn.classList.add('is-saving');
+  btn.textContent = '儲存中…';
   try {
     if (sheet.entry) {
       /* createdAt 留著原本的：那是「這位賓客什麼時候到的」，不該被改動 */
-      await updateDoc(doc(db, 'butlers', bookId, 'entries', sheet.entry.id), payload);
+      await withWriteTimeout(
+        updateDoc(doc(db, 'butlers', bookId, 'entries', sheet.entry.id), payload));
       toast(`已更新 ${name}`);
     } else {
-      await addDoc(collection(db, 'butlers', bookId, 'entries'),
-        { ...payload, createdAt: Date.now() });
+      await withWriteTimeout(addDoc(collection(db, 'butlers', bookId, 'entries'),
+        { ...payload, createdAt: Date.now() }));
       toast(`${name}　${money(payload.amount)}${gift ? `・禮餅 ${payload.boxes} 盒` : ''}`);
     }
     closeSheet();
@@ -510,11 +612,17 @@ async function saveEntry() {
     console.warn('[butler] 寫入失敗', err);
     if (err && err.code === 'permission-denied') {
       toast('存不進去：這個連結可能已經被停用了', true);
+    } else if (err && err.code === 'write-timeout') {
+      /* 逾時 ≠ 失敗：Firestore 已經排進本機佇列，連線回來還是會送出去。
+         現場最怕的是「以為沒存成功又記一次」，所以文案要講清楚 */
+      toast('網路不太穩，這一筆還沒送出去（連線回來會自己補送）', true);
     } else {
       toast('存檔失敗，請再試一次', true);
     }
   }
   btn.disabled = false;
+  btn.classList.remove('is-saving');
+  btn.textContent = btnText;
 }
 
 async function removeEntry() {
@@ -522,19 +630,27 @@ async function removeEntry() {
   const e = sheet.entry;
   if (!confirm(`確定要刪掉「${e.name}　${money(e.amount)}」這一筆嗎？`)) return;
   try {
-    await deleteDoc(doc(db, 'butlers', bookId, 'entries', e.id));
+    await withWriteTimeout(deleteDoc(doc(db, 'butlers', bookId, 'entries', e.id)));
     toast('已刪除');
     closeSheet();
   } catch (err) {
     console.warn('[butler] 刪除失敗', err);
-    toast('刪不掉，請再試一次', true);
+    toast(err && err.code === 'write-timeout'
+      ? '網路不太穩，這一筆還沒刪掉（連線回來會自己補送）'
+      : '刪不掉，請再試一次', true);
   }
 }
 
 /* ---------- 記錄者名字 ---------- */
+function closeNameSheet() {
+  $('btNameSheet').hidden = true;
+  popSheetLayer($('btNameSheet'));
+}
+
 function openNameSheet() {
   $('btInWho').value = meName;
   $('btNameSheet').hidden = false;
+  pushSheetLayer($('btNameSheet'), closeNameSheet);
   setTimeout(() => $('btInWho').focus(), 60);
 }
 
@@ -691,7 +807,7 @@ $('btWho').addEventListener('click', openNameSheet);
 $('btNameSheet').addEventListener('click', (ev) => {
   /* 點遮罩本身也算取消（和後台的確認框一致） */
   if (ev.target === $('btNameSheet') || ev.target.closest('[data-close]')) {
-    $('btNameSheet').hidden = true;
+    closeNameSheet();
   }
 });
 $('btNameForm').addEventListener('submit', (ev) => {
@@ -699,7 +815,7 @@ $('btNameForm').addEventListener('submit', (ev) => {
   meName = $('btInWho').value.trim().slice(0, 40);
   saveLocal({ name: meName });
   renderWho();
-  $('btNameSheet').hidden = true;
+  closeNameSheet();
   renderAll();
   /* 剛剛就是為了補名字才被擋下來的，補完直接接著存 */
   if (sheet && meName) saveEntry();
@@ -709,17 +825,43 @@ $('btExport').addEventListener('click', exportCsv);
 
 /* ---------- 連線狀態 ---------- */
 function paintNet() {
-  $('btNet').classList.toggle('is-off', !navigator.onLine);
-  $('btNet').title = navigator.onLine ? '連線正常' : '離線中，記下的資料會在恢復連線後送出';
+  const off = !navigator.onLine;
+  $('btNet').classList.toggle('is-off', off);
+  $('btNet').title = off ? '離線中，記下的資料會在恢復連線後送出' : '連線正常';
+  /* 現場是站著單手拿手機，頂列那顆 7px 的小圓點看不到 ——
+     真的斷線時要有一條橫的講清楚 */
+  const bar = $('btOffline');
+  if (bar) bar.hidden = !off;
+  syncStickyTop();
 }
 window.addEventListener('online', paintNet);
 window.addEventListener('offline', paintNet);
+
+/* 頂列與離線橫幅都是 sticky，下面那一排篩選要黏在它們下面，
+   高度寫死一定會對不準（婚禮名稱換一行就變了），所以量出來 */
+function syncStickyTop() {
+  const bar = document.querySelector('#btApp .ad-bar');
+  const off = $('btOffline');
+  const h = (bar ? bar.getBoundingClientRect().height : 56)
+    + (off && !off.hidden ? off.getBoundingClientRect().height : 0);
+  document.documentElement.style.setProperty('--ad-bar-h',
+    `${bar ? Math.round(bar.getBoundingClientRect().height) : 56}px`);
+  document.documentElement.style.setProperty('--ad-stick-top', `${Math.round(h)}px`);
+  /* 子分頁列在窄螢幕也是 sticky（admin.css），下面那一排要黏在它下面 */
+  const nav = $('btTabbar');
+  const narrow = window.matchMedia('(max-width: 899px)').matches;
+  document.documentElement.style.setProperty('--ad-subtabs-h',
+    `${nav && narrow ? Math.round(nav.getBoundingClientRect().height) : 0}px`);
+}
+window.addEventListener('resize', syncStickyTop);
+window.addEventListener('orientationchange', () => setTimeout(syncStickyTop, 220));
+
 paintNet();
 
 /* Esc 關閉表單（桌機） */
 document.addEventListener('keydown', (ev) => {
   if (ev.key !== 'Escape') return;
-  if (!$('btNameSheet').hidden) { $('btNameSheet').hidden = true; return; }
+  if (!$('btNameSheet').hidden) { closeNameSheet(); return; }
   if (!$('btSheet').hidden) closeSheet();
 });
 

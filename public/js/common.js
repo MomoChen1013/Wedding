@@ -237,6 +237,45 @@ const LS = {
 };
 
 /* ============================================================
+   寫入逾時
+   ------------------------------------------------------------
+   Firestore 在離線時的行為很反直覺：setDoc()／updateDoc() 回傳的
+   Promise **永遠不會 resolve，也不會 reject** —— 它只是靜靜地排進
+   本機佇列，等連線回來才送出去。
+
+   對資料是好事（不會掉），對使用者是災難：
+     ・try/catch 抓不到，成功的 toast 不會出現、失敗的也不會
+     ・按鈕沒有恢復，使用者會連按好幾次
+     ・onSnapshot 的本地樂觀更新讓畫面看起來已經存好了
+
+   所以每一筆寫入都套一層逾時：超過就丟一個看得懂的錯誤出去，
+   讓呼叫端有機會說「網路好像不太穩，這筆還沒送出去」。
+   注意：逾時不代表寫入被取消 —— 佇列仍然在，連線回來還是會送達，
+   所以文案講的是「還沒送出去」，不是「存檔失敗」。
+============================================================ */
+const WRITE_TIMEOUT_MS = 8000;
+
+class WriteTimeoutError extends Error{
+  constructor(){
+    super('網路好像不太穩，這一筆還沒送出去');
+    this.name = 'WriteTimeoutError';
+    this.code = 'write-timeout';
+  }
+}
+window.WriteTimeoutError = WriteTimeoutError;
+
+function withWriteTimeout(promise, ms){
+  let timer;
+  return Promise.race([
+    Promise.resolve(promise).finally(()=> clearTimeout(timer)),
+    new Promise((_, reject)=>{
+      timer = setTimeout(()=> reject(new WriteTimeoutError()), ms || WRITE_TIMEOUT_MS);
+    }),
+  ]);
+}
+window.withWriteTimeout = withWriteTimeout;
+
+/* ============================================================
    資料層（DataStore）— Firestore 版
    ・寫入 → 走 Firestore（非同步）
    ・讀取 → 同步取本地快取，由 onSnapshot 即時推回
@@ -470,15 +509,15 @@ const DataStore = {
   async saveDoc(colName, id, data){
     const { addDoc, setDoc, doc, db } = window.fb;
     if(id){
-      await setDoc(doc(db, 'sites', window.SITE.siteId, colName, id), data);
+      await withWriteTimeout(setDoc(doc(db, 'sites', window.SITE.siteId, colName, id), data));
       return id;
     }
-    const ref = await addDoc(this._col(colName), data);
+    const ref = await withWriteTimeout(addDoc(this._col(colName), data));
     return ref.id;
   },
   async removeDoc(colName, id){
     const { deleteDoc, doc, db } = window.fb;
-    await deleteDoc(doc(db, 'sites', window.SITE.siteId, colName, id));
+    await withWriteTimeout(deleteDoc(doc(db, 'sites', window.SITE.siteId, colName, id)));
   },
 
   /* 站台文件本身的大廳文案（地點、dress code、流程…）。
@@ -487,7 +526,7 @@ const DataStore = {
   async saveSiteFields(patch){
     const { updateDoc, doc, db, serverTimestamp } = window.fb;
     const data = { ...patch, updatedAt: serverTimestamp() };
-    await updateDoc(doc(db, 'sites', window.SITE.siteId), data);
+    await withWriteTimeout(updateDoc(doc(db, 'sites', window.SITE.siteId), data));
     Object.assign(window.SITE.data, patch);
     return patch;
   },

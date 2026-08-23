@@ -6,7 +6,7 @@
      沒有裁切器的話，圖不是被塞歪就是重要的人被切掉 ——
      所以上傳前先讓新人自己決定「要留畫面的哪一塊」。
 
-   用法（回傳 Promise，取消時 resolve(null)）：
+   用法（回傳 Promise，取消時 resolve(null)、圖片讀不開時 reject）：
      const dataUrl = await cropImage(file, {
        aspect: 2/3,        // 寬 / 高
        outWidth: 900,      // 輸出寬度（px）
@@ -31,12 +31,21 @@ function cropImage(source, options){
     hint:     '拖曳移動・滑桿或滾輪縮放',
   }, options || {});
 
-  return new Promise((resolve)=>{
+  return new Promise((resolve, reject)=>{
     const srcUrl = typeof source === 'string' ? source : URL.createObjectURL(source);
     const revoke = () => { if(typeof source !== 'string') URL.revokeObjectURL(srcUrl); };
 
     const img = new Image();
-    img.onerror = ()=>{ revoke(); resolve(null); };
+    /* 解不開 ≠ 使用者按了取消。
+       兩者原本都走 resolve(null)，結果 HEIC 讀不開時被算成「略過」，
+       toast 說「已加入 3 張（略過 2 張）」——上傳的人完全不知道發生了什麼事。
+       所以這裡要 reject，讓呼叫端有機會說清楚是哪一個檔案、為什麼。 */
+    img.onerror = ()=>{
+      revoke();
+      const err = new Error('這個格式瀏覽器讀不開');
+      err.code = 'image-decode-failed';
+      reject(err);
+    };
     img.onload  = ()=> openEditor(img);
     img.src = srcUrl;
 

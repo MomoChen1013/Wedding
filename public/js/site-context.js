@@ -19,7 +19,8 @@
 ============================================================ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import {
-  getFirestore, collection, addDoc, onSnapshot,
+  getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+  collection, addDoc, onSnapshot,
   query, orderBy, where, doc, getDoc, runTransaction, serverTimestamp,
   getDocs, deleteDoc, setDoc, updateDoc, writeBatch, connectFirestoreEmulator
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
@@ -117,7 +118,23 @@ const FILE_TO_KEY = Object.fromEntries(
 
 /* ---------- Firebase ---------- */
 const app  = initializeApp(firebaseConfig);
-const db   = getFirestore(app);
+
+/* 離線持久化：預設的記憶體快取一關掉分頁就沒了 ——
+   新人在捷運上改的東西「看起來存好了」，回到家卻不見。
+   開了 persistentLocalCache 之後，離線期間的改動會排在 IndexedDB 的佇列裡，
+   連線回來自己送出去，關掉分頁也撐得住。
+   ・multipleTab：後台常常同時開好幾個分頁（一邊排桌一邊看回覆）
+   ・無痕視窗、瀏覽器擋 site data 時會開不起來，退回記憶體快取就好 */
+let db;
+try{
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+  });
+}catch(err){
+  console.warn('[site] 離線快取開不起來，改用記憶體快取', err);
+  db = getFirestore(app);
+}
+
 const auth = getAuth(app);
 
 /* 本機開發時連 emulator；?live=1 可強制讀正式資料庫 */

@@ -374,6 +374,7 @@
     if (undoStack.length > UNDO_LIMIT) undoStack.shift();
     redoStack.length = 0;
     dirty = true;
+    scheduleLocalDraft();
     renderAll();
   }
 
@@ -383,6 +384,7 @@
     restore(undoStack.pop());
     redoStack.push(cur);
     dirty = true;
+    scheduleLocalDraft();
     renderAll();
     toast('已復原上一步');
   }
@@ -393,6 +395,7 @@
     restore(redoStack.pop());
     undoStack.push(cur);
     dirty = true;
+    scheduleLocalDraft();
     renderAll();
     toast('已重做');
   }
@@ -403,6 +406,80 @@
   function planDoc() {
     const { db, doc } = window.fb;
     return doc(db, 'sites', window.SITE.siteId, 'seatingPlan', 'draft');
+  }
+
+  /* ============================================================
+     本機草稿
+     ------------------------------------------------------------
+     為什麼需要：
+       undo/redo stack 與還沒存的 plan 都只活在記憶體裡，
+       而 iOS Safari 在背景分頁被系統回收時 **不會觸發 beforeunload**。
+       整個下午的排桌就這樣無聲消失，而且完全沒有跡象。
+
+     所以每次有修改就（debounce 之後）把 planPayload() 寫進 localStorage，
+     下次進來如果草稿比雲端新，就問一句要不要接續。
+     localStorage 由 LS 以 siteId 分隔，不會和別場婚禮互相汙染。
+  ============================================================ */
+  const DRAFT_KEY = 'seatPlan.localDraft';
+  let draftTimer = 0;
+
+  function writeLocalDraft() {
+    clearTimeout(draftTimer);
+    draftTimer = 0;
+    if (!loaded) return;
+    try {
+      LS.set(DRAFT_KEY, { at: Date.now(), dirty, payload: planPayload() });
+    } catch (err) {
+      console.warn('[排桌] 本機草稿寫不進去', err);
+    }
+  }
+
+  function scheduleLocalDraft() {
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(writeLocalDraft, 1500);
+  }
+
+  function clearLocalDraft() {
+    clearTimeout(draftTimer);
+    draftTimer = 0;
+    LS.remove(DRAFT_KEY);
+  }
+
+  /* 雲端讀完之後才問：草稿比雲端新（而且當時真的還沒存）才有意義 */
+  async function offerLocalDraft() {
+    const d = LS.get(DRAFT_KEY, null);
+    if (!d || !d.payload || !d.dirty || d.declined) return;
+
+    /* 已經被別的裝置存過、或這台自己後來存過了 → 草稿沒有價值，收掉 */
+    if (Number(d.payload.savedAt) <= savedAt) { clearLocalDraft(); return; }
+
+    const ok = await confirmModal({
+      title: '有一份還沒存的排桌',
+      message: `這台裝置在 ${fmtTime(d.at)} 有一份排桌還沒存進去。要接續那一份嗎？`
+             + '（選「重新開始」的話，會用雲端上最後存好的那一份。）',
+      confirmText: '接續那一份',
+      cancelText: '重新開始',
+    });
+
+    /* 不接就記一筆「問過了」，但**不要刪掉**草稿 ——
+       誤點遮罩也會走到這裡，而這份草稿可能是整個下午的工作 */
+    if (!ok) { LS.set(DRAFT_KEY, { ...d, declined: true }); return; }
+
+    plan.tables = (Array.isArray(d.payload.tables) ? d.payload.tables : [])
+      .map(readTable).filter(Boolean);
+    plan.meta = {};
+    (Array.isArray(d.payload.guests) ? d.payload.guests : []).forEach((g) => {
+      const m = readGuestMeta(g);
+      if (m) plan.meta[m.id] = m;
+    });
+    plan.assign = {};
+    const a = d.payload.assign && typeof d.payload.assign === 'object' ? d.payload.assign : {};
+    Object.keys(a).forEach((k) => { if (a[k]) plan.assign[k] = String(a[k]); });
+
+    dirty = true;
+    invalidateGuests();
+    renderAll();
+    toast('已接回上次沒存完的排桌，記得按「儲存排桌」');
   }
 
   async function load() {
@@ -427,9 +504,12 @@
     } catch (err) {
       loaded = true;
       console.warn('[排桌] 讀取草稿失敗', err);
-      toast('讀不到排桌資料，請確認這個帳號在 ownerEmails 名單內', true);
+      toast('讀不到排桌資料，請確認這個帳號在新人帳號名單內', true);
+      renderAll();
+      return;
     }
     renderAll();
+    await offerLocalDraft();
   }
 
   /* 讀回來的每一筆都重新收斂一次型別 ——
@@ -492,23 +572,51 @@
     };
   }
 
+  /* 儲存／送出時把對應的按鈕鎖起來並換文案。
+     按下去畫面完全沒反應的話，使用者會再按一次、再按一次 ——
+     排桌這一頁按兩次的代價是整份草稿被送兩遍。 */
+  function setBusy(ids, on, label) {
+    ids.forEach((id) => {
+      const b = $(id);
+      if (!b) return;
+      if (on) {
+        if (b._spText == null) b._spText = b.textContent;
+        b.disabled = true;
+        b.classList.add('is-saving');
+        b.textContent = label;
+      } else {
+        b.disabled = false;
+        b.classList.remove('is-saving');
+        if (b._spText != null) { b.textContent = b._spText; b._spText = null; }
+      }
+    });
+  }
+  const SAVE_BTNS = ['spSaveBtn', 'spMbSave'];
+  const SYNC_BTNS = ['spSyncBtn', 'spMbSync'];
+
   async function save(silent) {
     const payload = planPayload();
     if (payload.guests.length >= MAX_GUESTS) {
       toast(`排桌名單最多 ${MAX_GUESTS} 位，請先整理一下`, true);
       return false;
     }
+    setBusy(SAVE_BTNS, true, '儲存中…');
     try {
-      await window.fb.setDoc(planDoc(), payload);
+      await withWriteTimeout(window.fb.setDoc(planDoc(), payload));
       savedAt = payload.savedAt;
       plan.assign = payload.assign;
       dirty = false;
+      clearLocalDraft();
       renderAll();
       if (!silent) toast('排桌已儲存');
       return true;
     } catch (err) {
-      writeFailed(err);
+      /* 沒送出去的話，本機草稿是最後一道防線 —— 先寫下來再說 */
+      writeLocalDraft();
+      writeFailed(err, () => save(silent));
       return false;
+    } finally {
+      setBusy(SAVE_BTNS, false);
     }
   }
 
@@ -529,10 +637,10 @@
     /* 剛剛才在「排桌已儲存」那一步問過的話，不要連問兩次 */
     if (!skipConfirm) {
       const ok = await confirmModal({
-        title: '同步至桌次查詢系統',
+        title: '送到賓客的查座位頁',
         message: `會把目前排好的 ${guests.length} 位賓客整份送到賓客的「我的桌次」，`
                + '原本那一份桌次名單會被換掉。要繼續嗎？',
-        confirmText: '同步',
+        confirmText: '送出去',
         cancelText: '稍後再說',
       });
       if (!ok) return;
@@ -550,6 +658,7 @@
       };
     }).filter((r) => r.name && r.table);
 
+    setBusy(SYNC_BTNS, true, '送出中…');
     try {
       await DataStore.wipeCollection('seating');
       await DataStore.importSeating(rows);
@@ -557,7 +666,9 @@
       await save(true);
       afterSyncToast(rows.length);
     } catch (err) {
-      writeFailed(err);
+      writeFailed(err, () => syncToSeating(true));
+    } finally {
+      setBusy(SYNC_BTNS, false);
     }
   }
 
@@ -593,9 +704,9 @@
     if (!okSave) return;
     const go = await confirmModal({
       title: '排桌已儲存',
-      message: '是否要同步至桌次查詢系統？同步之後賓客馬上查得到自己的桌次；'
-             + '還在調整的話可以稍後再說，前台不會跟著變動。',
-      confirmText: '同步',
+      message: '要順便送到賓客的查座位頁嗎？送出之後賓客馬上查得到自己的桌次；'
+             + '還在調整的話可以稍後再說，賓客那邊不會跟著變動。',
+      confirmText: '送出去',
       cancelText: '稍後再說',
     });
     if (go) await syncToSeating(true);
@@ -681,11 +792,14 @@
       [heads - seatedHeads, '未安排人數'],
       [plan.tables.length ? avg.toFixed(1) : '—', '平均一桌人數'],
     ];
-    $('spStats').innerHTML = cells.map(([n, lab]) => `
+    const html = cells.map(([n, lab]) => `
       <div class="ad-stat">
         <div class="ad-stat-num">${esc(n)}</div>
         <div class="ad-stat-lab">${esc(lab)}</div>
       </div>`).join('');
+    $('spStats').innerHTML = html;
+    /* 手機把統計收進「⋮ 更多」，底列只留「未安排」與「儲存排桌」 */
+    $('spMoreStats').innerHTML = html;
   }
 
   /* ============================================================
@@ -829,6 +943,10 @@
           <span class="sp-card-count">${g.count} 人</span>
         </div>
         ${line2 ? `<div class="sp-card-tags">${line2}</div>` : ''}
+        <!-- 觸控裝置拖不動，而且原本要「點卡片 → peek → 移動到桌位」兩下才碰得到。
+             這一顆直接把最常做的動作放在手邊（桌機用 CSS 收起來，那裡有拖曳） -->
+        <button class="sp-card-move" type="button" data-move-guest="${esc(g.id)}"
+                aria-label="把 ${esc(g.name)} 移動到桌位">⇄</button>
       </article>`;
   }
 
@@ -1038,6 +1156,7 @@
     const pool = sortGuests(guests.filter(inPool));
     const poolHeads = pool.reduce((n, g) => n + g.count, 0);
     $('spPoolCount').textContent = `${pool.length} 筆・${poolHeads} 人`;
+    $('spMbPoolCount').textContent = String(poolHeads);
 
     const body = $('spPoolBody');
     const anyUnseated = guests.some((g) => !g.tableId
@@ -1113,7 +1232,7 @@
           <div class="sp-table-body" data-drop="${esc(t.id)}">
             ${cards.length
               ? cards.map(guestCard).join('')
-              : `<div class="sp-table-empty">把賓客拖進來</div>`}
+              : `<div class="sp-table-empty"><span class="only-fine">把賓客拖進來</span><span class="only-coarse">點賓客卡右邊的 ⇄，選這一桌</span></div>`}
           </div>
         </article>`;
     }).join('');
@@ -1176,12 +1295,13 @@
               heads > t.cap ? `・超過 ${heads - t.cap} 位` : ''}</span>
           </div>
           <div class="ad-item-actions">
-            <button class="ad-edit" type="button" data-move-table="up" data-id="${esc(t.id)}"
+            <button class="ad-edit sp-move-btn" type="button" data-move-table="up" data-id="${esc(t.id)}"
                     ${i === 0 ? 'disabled' : ''} aria-label="往前移">↑</button>
-            <button class="ad-edit" type="button" data-move-table="down" data-id="${esc(t.id)}"
+            <button class="ad-edit sp-move-btn" type="button" data-move-table="down" data-id="${esc(t.id)}"
                     ${i === tables.length - 1 ? 'disabled' : ''} aria-label="往後移">↓</button>
             <button class="ad-edit" type="button" data-edit-table="${esc(t.id)}">編輯</button>
-            <button class="ad-del" type="button" data-del-table="${esc(t.id)}">刪除</button>
+            <button class="ad-del ad-del-inline" type="button" data-del-table="${esc(t.id)}">刪除</button>
+            ${rowMenuBtn('spTable', t.id)}
           </div>
         </div>`;
     }).join('');
@@ -1221,17 +1341,17 @@
     const btn = $('spSyncBtn');
 
     let state = 'none';
-    let text = '尚未同步';
-    let hint = '目前排桌資料尚未同步至桌次查詢系統';
+    let text = '還沒送出';
+    let hint = '還沒送到賓客的查座位頁';
 
     if (syncedAt && syncedAt >= savedAt) {
       state = 'ok';
-      text = '已同步';
-      hint = `最後同步：${fmtTime(syncedAt)}`;
+      text = '已送出';
+      hint = `最後送出：${fmtTime(syncedAt)}`;
     } else if (syncedAt) {
       state = 'stale';
-      text = '有修改尚未同步';
-      hint = `排桌已修改，尚未同步（最後同步：${fmtTime(syncedAt)}）`;
+      text = '有修改還沒送出';
+      hint = `排桌改過了，還沒重新送出（最後送出：${fmtTime(syncedAt)}）`;
     }
     if (dirty) {
       hint += hint ? '・有還沒儲存的修改' : '有還沒儲存的修改';
@@ -1240,15 +1360,48 @@
     el.dataset.state = state;
     el.textContent = text;
     note.textContent = hint;
-    btn.textContent = syncedAt ? '再次同步' : '同步至桌次查詢';
+    btn.textContent = syncedAt ? '再送一次' : '送到賓客的查座位頁';
 
     $('spSaveBtn').classList.toggle('is-dirty', dirty);
     $('spUndo').disabled = !undoStack.length;
     $('spRedo').disabled = !redoStack.length;
+
+    /* 手機底列與「⋮ 更多」裡的那一組是同一件事，狀態要一起同步 */
+    $('spMbSave').classList.toggle('is-dirty', dirty);
+    $('spMbUndo').disabled = !undoStack.length;
+    $('spMbRedo').disabled = !redoStack.length;
+    $('spMbSync').textContent = btn.textContent;
+    $('spMoreSync').textContent = hint;
+  }
+
+  /* ============================================================
+     手機的固定底列
+     ------------------------------------------------------------
+     .sp-bar 不是 sticky，所以手機上的流程是：捲到最上面看未安排 →
+     往下捲找桌位 → 點卡片 → 移動 → 再捲回最上面按儲存。
+     一場 30 桌的婚禮，這條路要走幾十遍。
+     所以只把兩件事釘在畫面上：還剩幾位沒排、儲存。
+  ============================================================ */
+  const mobileBarMq = window.matchMedia('(max-width: 960px)');
+
+  function syncMobileBar() {
+    const bar = $('spMobileBar');
+    if (!bar) return;
+    const panel = document.querySelector('[data-panel="seatingPlan"]');
+    const board = document.querySelector('[data-subpanel="board"]');
+    const on = mobileBarMq.matches
+      && !!panel && panel.classList.contains('is-on')
+      && !!board && board.classList.contains('is-on');
+
+    bar.hidden = !on;
+    /* toast 與整頁的底部留白都要讓開這一條，不然會互相蓋住 */
+    if (on) document.body.dataset.stickybar = '1';
+    else delete document.body.dataset.stickybar;
   }
 
   function renderAll() {
     if (!started) return;
+    syncMobileBar();
     renderTools();
     renderFilterToggle();
     renderStats();
@@ -1700,9 +1853,16 @@
     /* 回覆來的賓客，標籤仍然寫回既有的 rsvpTags —— 排桌不另外做一套分類。
        賓客自己在表單上選的那一個改不動，這裡只送新人掛的部分。 */
     if (g.src === 'rsvp' && tagsOn()) {
+      /* 這一步是真的會寫進資料庫的（標籤存在 rsvpTags），
+         弱網時可能等好幾秒，所以按鈕要有狀態 */
+      setBusy(['spDrawerSave'], true, '儲存中…');
       try {
         await DataStore.saveRsvpTags(id, tagIds);
-      } catch (err) { writeFailed(err); }
+      } catch (err) {
+        writeFailed(err, () => DataStore.saveRsvpTags(id, tagIds).catch(writeFailed));
+      } finally {
+        setBusy(['spDrawerSave'], false);
+      }
     }
 
     toast('賓客資料已更新（記得按「儲存排桌」）');
@@ -2289,6 +2449,27 @@
     $('spUndo').addEventListener('click', undo);
     $('spRedo').addEventListener('click', redo);
 
+    /* ---- 手機底列 ＋「⋮ 更多」---- */
+    $('spMbSave').addEventListener('click', saveThenAsk);
+    $('spMbPool').addEventListener('click', () => {
+      const pool = $('spPool');
+      if (pool) pool.scrollIntoView({ behavior:'smooth', block:'start' });
+      $('spSearch').focus({ preventScroll:true });
+    });
+    $('spMbMore').addEventListener('click', () => { $('spMoreMask').hidden = false; });
+    $('spMoreClose').addEventListener('click', () => { $('spMoreMask').hidden = true; });
+    registerFormModal($('spMoreMask'));
+    $('spMbUndo').addEventListener('click', undo);
+    $('spMbRedo').addEventListener('click', redo);
+    $('spMbSync').addEventListener('click', () => {
+      $('spMoreMask').hidden = true;
+      syncToSeating();
+    });
+
+    /* 轉向、切分頁都會改變「底列該不該出現」 */
+    mobileBarMq.addEventListener('change', syncMobileBar);
+    window.addEventListener('hashchange', () => setTimeout(syncMobileBar, 0));
+
     /* ---- 搜尋 / 篩選 / 排序 ---- */
     $('spSearch').addEventListener('input', (e) => {
       view.q = normKey(e.target.value);
@@ -2347,6 +2528,14 @@
         /* 標籤庫住在「出席回覆」那一頁，直接帶過去，不用自己找 */
         if (what === 'goto-tags') location.hash = 'rsvp/tags';
         if (what === 'goto-import') location.hash = 'seatingPlan/io';
+        return;
+      }
+
+      /* 卡片右邊那顆「⇄」：觸控裝置的主要動線，不用先開 peek */
+      const moveBtn = e.target.closest('[data-move-guest]');
+      if (moveBtn) {
+        closePeek();
+        openMove(moveBtn.dataset.moveGuest);
         return;
       }
 
@@ -2493,9 +2682,17 @@
     /* 有還沒存的修改時提醒一聲，不要整個下午的排桌被一個關閉分頁弄不見 */
     window.addEventListener('beforeunload', (e) => {
       if (!dirty) return;
+      writeLocalDraft();
       e.preventDefault();
       e.returnValue = '';
     });
+
+    /* beforeunload 在行動裝置上不可靠 —— iOS Safari 回收背景分頁時根本不會發。
+       頁面一切到背景就先把草稿寫下來，這才是手機上真正會走到的那條路。 */
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden' && dirty) writeLocalDraft();
+    });
+    window.addEventListener('pagehide', () => { if (dirty) writeLocalDraft(); });
   }
 
   /* ============================================================
@@ -2505,6 +2702,28 @@
     if (started) return;
     started = true;
     fillTypeSelect();
+
+    /* 一列的動作收進「⋮」：刪除原本和「編輯」只隔 10px，很容易點錯。
+       順序也一起放進來 —— ↑↓ 一次只能挪一格，30 桌要按很多下。 */
+    registerRowMenu('spTable', (id) => {
+      const list = sortedTables();
+      const i = list.findIndex((t) => t.id === id);
+      const moveTo = (to) => mutate(() => {
+        const next = list.slice();
+        const [x] = next.splice(i, 1);
+        next.splice(to, 0, x);
+        next.forEach((t, k) => { tableById(t.id).order = k + 1; });
+      });
+      return [
+        { label:'上移一位',   disabled: i <= 0,                  run: () => moveTo(i - 1) },
+        { label:'下移一位',   disabled: i >= list.length - 1,    run: () => moveTo(i + 1) },
+        { label:'移到最前面', disabled: i <= 0,                  run: () => moveTo(0) },
+        { label:'移到最後面', disabled: i >= list.length - 1,    run: () => moveTo(list.length - 1) },
+        '-',
+        { label:'編輯這一桌', run: () => openTableModal(id) },
+        { label:'刪除這一桌', danger:true, run: () => deleteTable(id) },
+      ];
+    });
     view.tagOrder = LS.get('seatPlan.tagOrder', []) || [];
     bindEvents();
     bindDnd();
