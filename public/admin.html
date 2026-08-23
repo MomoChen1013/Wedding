@@ -2,7 +2,9 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- interactive-widget：鍵盤升起時把 layout viewport 縮起來（Android Chrome），
+     彈窗底部的「儲存」才不會被鍵盤蓋住。刻意不鎖 maximum-scale —— 使用者要放大是他的權利 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <!-- 新人專用後台：不從其他頁面連結過來 / Do not link here from anywhere -->
 <meta name="robots" content="noindex,nofollow">
 <title>新人後台</title>
@@ -38,7 +40,7 @@
     </button>
     <div class="pw-err" id="pwErr">&nbsp;</div>
     <div class="sub" style="margin-top:14px;font-size:.82rem;opacity:.7">
-      只有 ownerEmails 名單內的帳號能修改內容
+      只有<b>新人帳號名單</b>內的 Google 帳號能修改內容（要新增請告訴我們）
     </div>
   </div>
 </div>
@@ -63,10 +65,18 @@
     </div>
   </header>
 
+  <!-- 目前離線：只告知，不擋操作。斷線時 Firestore 的寫入會停在半路，
+       畫面上卻會樂觀地顯示「存好了」，所以這一條一定要看得到 -->
+  <div class="ad-offline" id="adOffline" hidden role="status">
+    <span>目前離線，改動不會存進去</span>
+  </div>
+
   <div class="ad-layout">
     <div class="ad-side-backdrop" id="adSideBackdrop" hidden></div>
 
     <nav class="ad-side" id="adSide">
+      <!-- 抽屜的不透明底色會蓋住左上角的漢堡鈕，所以抽屜自己要有出口 -->
+      <button class="ad-side-close" id="adSideClose" type="button" aria-label="關閉選單">✕</button>
       <button class="ad-tab is-on" type="button" data-tab="rsvp">出席回覆</button>
       <button class="ad-tab" type="button" data-tab="inbox">悄悄話</button>
       <button class="ad-tab" type="button" data-tab="lobby">婚禮資訊</button>
@@ -106,10 +116,15 @@
       <h2 class="ad-sec-title">出席回覆總覽</h2>
 
       <!-- 最大的那個數字：一眼看到收到幾份回覆 -->
-      <div class="ad-hero-stat">
-        <div class="ad-hero-num" id="adRsvpTotal">0</div>
-        <div class="ad-hero-lab">總回覆人數</div>
-        <div class="ad-hero-sub" id="adRsvpSub">還沒有人回覆</div>
+      <!-- 左邊一個大數字，右邊一列一項。
+           原本是一段會換行三次的長句，四個數字混在一起讀不出來 -->
+      <div class="ad-hero-stat ad-hero-split">
+        <div class="ad-hero-main">
+          <div class="ad-hero-num" id="adRsvpTotal">0</div>
+          <div class="ad-hero-lab">總回覆人數</div>
+        </div>
+        <ul class="ad-hero-list" id="adRsvpSub"></ul>
+        <div class="ad-hero-meta" id="adRsvpMeta" hidden></div>
       </div>
 
       <!-- 五張環狀圖，由 js/admin.js 依表單的題目產生 -->
@@ -137,26 +152,44 @@
         同一個人重複填了好幾次時，可以把多的那幾筆<b>刪掉</b>（要連按兩次確認）。
       </p>
 
-      <!-- 出席狀態、標籤、搜尋收在同一塊，看起來就是同一組篩選工具 -->
+      <!-- 出席狀態、標籤、搜尋收在同一塊，看起來就是同一組篩選工具。
+           搜尋放最上面：找特定一個人比按條件篩常見得多 -->
       <div class="ad-filterbar">
         <div class="ad-filterbar-row">
+          <input class="ad-filter ad-filterbar-search" id="adRsvpFilter" type="search"
+                 inputmode="search" enterkeyhint="search" autocomplete="off"
+                 placeholder="搜尋名字、留言或備註…" aria-label="搜尋回覆">
+        </div>
+
+        <!-- 出席只有四顆、而且不會再多，所以固定排成一行（放不下就左右滑），
+             不要為了四顆按鈕折成兩排 -->
+        <div class="ad-filterbar-row">
           <span class="ad-filterbar-lab">出席</span>
-          <div class="ad-chips" id="adRsvpChips">
+          <div class="ad-chips ad-chips-oneline" id="adRsvpChips">
             <button class="ad-chip is-on" type="button" data-filter="all">全部</button>
             <button class="ad-chip" type="button" data-filter="yes">熱情出席</button>
             <button class="ad-chip" type="button" data-filter="maybe">視情況而定</button>
             <button class="ad-chip" type="button" data-filter="no">無法出席</button>
           </div>
-          <input class="ad-filter ad-filterbar-search" id="adRsvpFilter" type="text"
-                 placeholder="搜尋名字、留言或備註…">
         </div>
 
         <!-- 標籤篩選：由 js/admin.js 依標籤庫產生（最後一顆是「設定標籤 ↗」）；
-             沒開標籤功能就整排收起來 -->
+             沒開標籤功能就整排收起來。標籤數量沒有上限，所以先只露兩排 -->
         <div class="ad-filterbar-row" id="adRsvpTagRow" hidden>
-          <span class="ad-filterbar-lab">標籤</span>
-          <div class="ad-chips" id="adRsvpTagChips"></div>
+          <div class="ad-filterbar-head">
+            <span class="ad-filterbar-lab">標籤</span>
+            <button class="ad-chips-more" id="adRsvpTagMore" type="button"
+                    aria-expanded="false" hidden>展開全部</button>
+          </div>
+          <div class="ad-chips ad-chips-clamp" id="adRsvpTagChips"></div>
         </div>
+      </div>
+
+      <!-- 現在篩掉了什麼：手機上三排 chip 會整個捲出畫面，
+           沒有這一條就會以為資料不見了 -->
+      <div class="ad-filtersum" id="adRsvpFilterSum" hidden>
+        <span class="ad-filtersum-text" id="adRsvpFilterSumText"></span>
+        <button class="ad-filtersum-clear" id="adRsvpFilterClear" type="button">清除</button>
       </div>
 
       <div class="ad-list-table" id="adRsvpList"></div>
@@ -269,7 +302,7 @@
         </div>
 
         <div class="ad-row">
-          <button class="btn small" type="submit">儲存表單設定</button>
+          <button class="btn small" id="adRsvpFormSave" type="submit">儲存表單設定</button>
           <button class="btn small ghost" id="adRsvpFormReset" type="button">還原成目前的設定</button>
         </div>
       </form>
@@ -395,7 +428,7 @@
             <img class="ad-img-field-prev" id="adTransportPublicImgPrev" alt="大眾運輸圖片" hidden>
             <label class="btn small ghost">
               選一張圖片
-              <input type="file" id="adTransportPublicImgFile" accept="image/*" hidden>
+              <input type="file" id="adTransportPublicImgFile" accept="image/*,image/heic,image/heif,.heic,.heif" hidden>
             </label>
             <button class="btn small ghost" type="button" id="adTransportPublicImgClear" hidden>移除圖片</button>
           </div>
@@ -407,11 +440,14 @@
             <img class="ad-img-field-prev" id="adTransportParkingImgPrev" alt="停車資訊圖片" hidden>
             <label class="btn small ghost">
               選一張圖片
-              <input type="file" id="adTransportParkingImgFile" accept="image/*" hidden>
+              <input type="file" id="adTransportParkingImgFile" accept="image/*,image/heic,image/heif,.heic,.heif" hidden>
             </label>
             <button class="btn small ghost" type="button" id="adTransportParkingImgClear" hidden>移除圖片</button>
           </div>
-          <div class="ad-hint">圖片和文字太長時，前台會收成「展開更多」，點開才看得到完整內容</div>
+          <div class="ad-hint">
+            <b>這兩張圖片選好就會立刻存起來</b>，不用按下面的「儲存婚禮資訊」（其餘欄位要按才會存）。<br>
+            圖片和文字太長時，前台會收成「展開更多」，點開才看得到完整內容
+          </div>
         </div>
 
         <label class="ad-label" for="adDressCode">Dress Code</label>
@@ -430,9 +466,12 @@
         <input class="ad-input" id="adHashtags" type="text" maxlength="120"
                placeholder="#married #我們結婚了（用空格或逗號分開）">
 
-        <div class="ad-row">
-          <button class="btn small" type="submit">儲存婚禮資訊</button>
+        <!-- 這一頁在手機上要捲 5–6 個螢幕高才會走到底，所以儲存自己浮在底部。
+             有沒存的變更時，右邊那行字會變色（.btn.is-dirty 的紅點也會亮） -->
+        <div class="ad-savebar">
+          <span class="ad-savebar-note" id="adSiteDirty">目前沒有未儲存的變更</span>
           <button class="btn small ghost" id="adSiteReset" type="button">還原成目前的內容</button>
+          <button class="btn small" id="adSiteSave" type="submit">儲存婚禮資訊</button>
         </div>
       </form>
     </section>
@@ -448,7 +487,7 @@
       </p>
 
       <div class="ad-sch" id="adSchList"></div>
-      <div class="ad-row">
+      <div class="ad-savebar">
         <button class="btn small ghost" id="adSchAdd" type="button">＋ 加一列</button>
         <button class="btn small" id="adSchSave" type="button">儲存流程</button>
       </div>
@@ -494,12 +533,19 @@
       </p>
 
       <label class="ad-upload" id="adUploadBox">
-        <input type="file" id="adFile" accept="image/*" multiple hidden>
+        <!-- iOS 從「檔案」App 選 HEIC 回來時 MIME type 常常是空的，
+             accept 要連副檔名一起列，不然那些檔案會被靜默濾掉 -->
+        <input type="file" id="adFile" multiple hidden
+               accept="image/*,image/heic,image/heif,.heic,.heif">
         <span class="ad-upload-mark">＋</span>
-        <span class="ad-upload-text">點這裡選圖片，或把圖片拖進來</span>
+        <!-- 「拖進來」在手機上是無效資訊，只給有滑鼠的機器看 -->
+        <span class="ad-upload-text">點這裡選圖片<span class="only-fine">，或把圖片拖進來</span></span>
         <span class="ad-upload-hint">JPG／PNG／WebP・一張最多約 900KB（會自動壓縮）</span>
       </label>
-      <div class="ad-progress" id="adProgress" hidden></div>
+      <div class="ad-progress" id="adProgress" hidden>
+        <div class="ad-progress-text"></div>
+        <div class="ad-progress-bar"><i></i></div>
+      </div>
 
       <div class="ad-imgs" id="adImgs"></div>
     </section>
@@ -576,15 +622,24 @@
         <div class="ad-stats sp-stats" id="spStats"></div>
         <div class="sp-bar-status">
           <span class="sp-sync" id="spSyncState" data-state="none">尚未同步</span>
-          <span class="sp-sync-note" id="spSyncNote">目前排桌資料尚未同步至桌次查詢系統</span>
+          <span class="sp-sync-note" id="spSyncNote">還沒送到賓客的查座位頁</span>
         </div>
         <div class="sp-bar-actions">
           <button class="btn small ghost" id="spUndo" type="button" disabled>復原</button>
           <button class="btn small ghost" id="spRedo" type="button" disabled>重做</button>
-          <button class="btn small ghost" id="spSyncBtn" type="button">同步至桌次查詢</button>
+          <button class="btn small ghost" id="spSyncBtn" type="button">送到賓客的查座位頁</button>
           <button class="btn small" id="spSaveBtn" type="button">儲存排桌</button>
         </div>
       </div>
+
+      <!-- 觸控裝置沒有拖曳可用，替代路徑要講清楚，不然第一次用的人只會覺得壞掉 -->
+      <p class="sp-touch-tip" id="spTouchTip">
+        <span aria-hidden="true">☝</span>
+        <span>手機／平板：<b>點賓客卡右邊的 ⇄</b> 就能選要坐哪一桌；
+          點卡片本身會展開完整資料。桌位順序到「桌位管理」調。</span>
+        <button class="sp-touch-tip-close" id="spTouchTipClose" type="button"
+                aria-label="知道了，不再提醒">✕</button>
+      </p>
 
       <!-- 提醒（不擋操作，只提醒） -->
       <div class="sp-warns" id="spWarns"></div>
@@ -601,8 +656,9 @@
           <!-- 搜尋／篩選／排序都是在整理這一區，所以就住在這一區裡 -->
           <div class="sp-tools">
             <div class="sp-tools-row">
-              <input class="ad-filter sp-search" id="spSearch" type="text"
-                     placeholder="搜尋姓名、編號、標籤…">
+              <input class="ad-filter sp-search" id="spSearch" type="search"
+                     inputmode="search" enterkeyhint="search" autocomplete="off"
+                     placeholder="搜尋姓名、編號、標籤…" aria-label="搜尋賓客">
               <button class="btn small ghost" id="spFilterToggle" type="button"
                       aria-expanded="false" aria-controls="spFilters">篩選</button>
             </div>
@@ -617,7 +673,7 @@
                   <option value="tag">優先按照標籤分組</option>
                 </select>
               </label>
-              <button class="btn small ghost" id="spTagOrderBtn" type="button">標籤權重</button>
+              <button class="btn small ghost" id="spTagOrderBtn" type="button">標籤優先順序</button>
             </div>
 
             <div class="sp-filters" id="spFilters" hidden>
@@ -729,6 +785,7 @@
         <div class="ad-hero-num" id="adBtSum">$0</div>
         <div class="ad-hero-lab">禮金總額</div>
         <div class="ad-hero-sub" id="adBtSumSub">還沒有任何紀錄</div>
+        <div class="ad-hero-meta" id="adBtMeta" hidden></div>
       </div>
 
       <div class="ad-stats" id="adBtStats"></div>
@@ -751,12 +808,15 @@
         再把網址與通行碼交給幫忙收禮的親友。
       </p>
 
-      <div class="ad-list-head">
+      <!-- 婚宴當天最常做的事就是「找某個人有沒有收到」，所以這一列黏著 -->
+      <div class="ad-list-head is-sticky">
         <span id="adBtCount">目前 0 筆</span>
-        <input class="ad-filter" id="adBtFilter" type="text" placeholder="找名字、備註、記錄者…">
+        <input class="ad-filter" id="adBtFilter" type="search"
+               inputmode="search" enterkeyhint="search" autocomplete="off"
+               placeholder="找名字、備註、記錄者…" aria-label="搜尋收禮紀錄">
       </div>
 
-      <div class="ad-tablewrap">
+      <div class="ad-tablewrap" id="adBtTableWrap">
         <table class="ad-table">
           <thead>
             <tr>
@@ -796,7 +856,7 @@
         <b>通常一場婚禮只要一組</b>：四五個人共用同一組，統計才會加在一起。
       </p>
       <p class="ad-sec-note">
-        名單是<b>匯過去的一份快照</b>，不是接上去的即時資料 ——
+        名單是<b>當下複製一份過去</b>，不是接上去的即時資料 ——
         婚禮當天收禮台要的是「現在這一版」，不該因為你回頭調桌次就跟著跳。
         改了名單就再按一次匯入，已經記好的收禮不會受影響。
       </p>
@@ -848,13 +908,17 @@
       </p>
 
       <label class="ad-upload" id="adCardUpload">
-        <input type="file" id="adCardFile" accept="image/*" multiple hidden>
+        <input type="file" id="adCardFile" multiple hidden
+               accept="image/*,image/heic,image/heif,.heic,.heif">
         <span class="ad-upload-mark">＋</span>
-        <span class="ad-upload-text">點這裡選照片，或把照片拖進來</span>
+        <span class="ad-upload-text">點這裡選照片<span class="only-fine">，或把照片拖進來</span></span>
         <span class="ad-upload-hint">直式 2:3・上傳前可自己裁切・會自動壓縮</span>
         <span class="ad-upload-hint">賓客一進抽卡頁就會載入整個卡池，建議 30 張以內</span>
       </label>
-      <div class="ad-progress" id="adCardProgress" hidden></div>
+      <div class="ad-progress" id="adCardProgress" hidden>
+        <div class="ad-progress-text"></div>
+        <div class="ad-progress-bar"><i></i></div>
+      </div>
     </section>
 
     <section class="ad-sec">
@@ -1120,7 +1184,7 @@
               <button class="btn small ghost" id="adExhPickBtn" type="button">選照片</button>
               <button class="btn small ghost" id="adExhClearImg" type="button">移除照片</button>
             </div>
-            <input type="file" id="adExhFile" accept="image/*" hidden>
+            <input type="file" id="adExhFile" accept="image/*,image/heic,image/heif,.heic,.heif" hidden>
           </div>
         </div>
       </div>
@@ -1299,12 +1363,13 @@
 
     <label class="ad-label" for="spDrawerTable">目前桌號</label>
     <select class="ad-input" id="spDrawerTable"></select>
-
-    <div class="ad-modal-actions">
-      <button class="btn small ghost" id="spDrawerDelete" type="button" hidden>刪除賓客</button>
-      <button class="btn small" type="submit">儲存賓客資料</button>
-    </div>
   </form>
+
+  <!-- 儲存貼在抽屜底部：不用捲到最後才按得到，鍵盤升起也還在 -->
+  <div class="sp-drawer-foot">
+    <button class="btn small ghost" id="spDrawerDelete" type="button" hidden>刪除賓客</button>
+    <button class="btn small" id="spDrawerSave" type="submit" form="spDrawerForm">儲存賓客資料</button>
+  </div>
 </aside>
 
 <!-- 桌位：新增／編輯共用 -->
@@ -1341,6 +1406,37 @@
   </div>
 </div>
 
+<!-- 排桌工作區在手機上的固定底列：只留「還剩幾位沒排」與「儲存排桌」，
+     其餘（送出、復原、重做、四個統計）收進「⋮」。
+     一場 30 桌的婚禮，「捲回最上面按儲存」這條路要走幾十遍 -->
+<div class="sp-mobilebar" id="spMobileBar" hidden>
+  <!-- 「⋮」是固定寬高的方形，擺最左邊當錨點；
+       剩下兩顆依畫面寬度平分，字多字少都不會把版面推歪 -->
+  <button class="btn small ghost sp-mobilebar-more" id="spMbMore" type="button"
+          aria-label="更多排桌工具">⋮</button>
+  <button class="sp-mobilebar-pool" id="spMbPool" type="button">
+    <b id="spMbPoolCount">0</b><span>未安排</span>
+  </button>
+  <button class="btn small" id="spMbSave" type="button">儲存排桌</button>
+</div>
+
+<!-- 「⋮ 更多」：統計與其餘三顆按鈕 -->
+<div class="ad-modal-mask" id="spMoreMask" hidden>
+  <div class="ad-modal-card ad-modal-card-form">
+    <div class="ad-modal-title">排桌工具</div>
+    <div class="ad-stats sp-stats" id="spMoreStats"></div>
+    <div class="ad-row sp-more-acts">
+      <button class="btn small ghost" id="spMbUndo" type="button" disabled>復原上一步</button>
+      <button class="btn small ghost" id="spMbRedo" type="button" disabled>重做</button>
+      <button class="btn small ghost" id="spMbSync" type="button">送到賓客的查座位頁</button>
+    </div>
+    <p class="ad-modal-note" id="spMoreSync" style="margin:16px 0 0"></p>
+    <div class="ad-modal-actions">
+      <button class="btn small ghost" id="spMoreClose" type="button">關閉</button>
+    </div>
+  </div>
+</div>
+
 <!-- 手機／平板用：把賓客移到哪一桌（取代拖曳） -->
 <div class="ad-modal-mask" id="spMoveMask" hidden>
   <div class="ad-modal-card ad-modal-card-form">
@@ -1353,10 +1449,10 @@
   </div>
 </div>
 
-<!-- 標籤權重：決定一位多標籤的賓客要被歸到哪一組 -->
+<!-- 標籤優先順序：決定一位多標籤的賓客要被歸到哪一組 -->
 <div class="ad-modal-mask" id="spTagOrderMask" hidden>
   <div class="ad-modal-card ad-modal-card-form">
-    <div class="ad-modal-title">標籤權重</div>
+    <div class="ad-modal-title">標籤優先順序</div>
     <p class="ad-modal-note">
       一位賓客可能同時有好幾個標籤（女方好友＋VIP＋素食），分組時只能算在一組裡。
       這份清單決定<b>哪一個說了算</b>：排序選「優先按照標籤分組」時，

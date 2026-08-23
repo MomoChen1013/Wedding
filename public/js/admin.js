@@ -67,14 +67,415 @@ function toast(msg, isError){
   return showToast(msg, { isError: !!isError });
 }
 
-/* 寫入失敗多半是規則擋下來的，講清楚原因比丟 code 有用 */
-function writeFailed(err){
+/* 寫入失敗多半是規則擋下來的，講清楚原因比丟 code 有用。
+   retry 有傳進來時，toast 上會多一顆「重試」（弱網最需要的就是這一顆）。 */
+function writeFailed(err, retry){
   console.warn('[admin] 寫入失敗', err);
-  if(err && err.code === 'permission-denied'){
-    toast('沒有寫入權限：這個 Google 帳號不在 ownerEmails 名單裡', true);
-  }else{
-    toast(`存檔失敗：${(err && err.message) || '請再試一次'}`, true);
+
+  /* 逾時 ≠ 失敗：Firestore 把它排進本機佇列了，連線回來還是會送達。
+     所以文案講的是「還沒送出去」，不要嚇到新人以為資料不見了。 */
+  if(err && err.code === 'write-timeout'){
+    showToast('網路好像不太穩，這一筆還沒送出去（連線回來會自己補送）', {
+      isError: true,
+      duration: 7000,
+      actionLabel: retry ? '重試' : '',
+      onAction: retry,
+    });
+    return;
   }
+
+  if(err && err.code === 'permission-denied'){
+    toast('沒有寫入權限：這個 Google 帳號不在新人帳號名單裡', true);
+  }else{
+    showToast(`存檔失敗：${(err && err.message) || '請再試一次'}`, {
+      isError: true,
+      actionLabel: retry ? '重試' : '',
+      onAction: retry,
+    });
+  }
+}
+
+/* ============================================================
+   儲存的狀態
+   ------------------------------------------------------------
+   按下去之後如果畫面完全沒有反應，使用者會再按一次、再按一次。
+   所以每一顆儲存鈕都走這裡：disabled ＋「儲存中…」，回來才恢復。
+   失敗（含逾時）會附一顆「重試」，重試走的是同一段程式。
+============================================================ */
+async function runSave(btn, fn, opts){
+  opts = opts || {};
+  if(btn && btn._adBusy) return false;
+
+  const origText = btn ? btn.textContent : '';
+  if(btn){
+    btn._adBusy = true;
+    btn.disabled = true;
+    btn.classList.add('is-saving');
+    btn.textContent = opts.savingText || '儲存中…';
+  }
+
+  try{
+    const out = await fn();
+    if(opts.okText) toast(opts.okText);
+    return out === undefined ? true : out;
+  }catch(err){
+    writeFailed(err, ()=> runSave(btn, fn, opts));
+    return false;
+  }finally{
+    if(btn){
+      btn._adBusy = false;
+      btn.disabled = false;
+      btn.classList.remove('is-saving');
+      btn.textContent = origText;
+    }
+  }
+}
+
+/* ============================================================
+   目前是不是窄螢幕
+   ------------------------------------------------------------
+   有幾張清單在手機上是完全不同的畫面（表格 → 卡片），
+   不是 CSS 換個排版就好，所以要由 JS 決定畫哪一種，
+   並在轉向／改變視窗大小時重畫。
+============================================================ */
+const narrowMq = window.matchMedia('(max-width: 899px)');
+function isNarrow(){ return narrowMq.matches; }
+
+const narrowHandlers = [];
+function onNarrowChange(fn){ narrowHandlers.push(fn); }
+narrowMq.addEventListener('change', ()=> narrowHandlers.forEach(fn => { try{ fn(); }catch{} }));
+
+/* ============================================================
+   sticky 的位移
+   ------------------------------------------------------------
+   頂列、子分頁列、篩選彙總在手機上是一層疊一層黏著的，
+   高度寫死一定會對不準（頂列的信箱換一行就變了），所以量出來。
+============================================================ */
+function syncStickyMetrics(){
+  const bar = document.getElementById('adBar');
+  const off = document.getElementById('adOffline');
+  const root = document.documentElement.style;
+
+  const barH = bar ? Math.round(bar.getBoundingClientRect().height) : 63;
+  const offH = (off && !off.hidden) ? Math.round(off.getBoundingClientRect().height) : 0;
+  root.setProperty('--ad-bar-h', `${barH}px`);
+  root.setProperty('--ad-stick-top', `${barH + offH}px`);
+
+  const nav = document.querySelector('.ad-panel.is-on .ad-subtabs');
+  root.setProperty('--ad-subtabs-h',
+    `${nav && isNarrow() ? Math.round(nav.getBoundingClientRect().height) : 0}px`);
+}
+window.addEventListener('resize', syncStickyMetrics);
+window.addEventListener('orientationchange', ()=> setTimeout(syncStickyMetrics, 220));
+
+/* ============================================================
+   離線偵測
+   ------------------------------------------------------------
+   navigator.onLine 只看得到「有沒有連上網路介面」，不保證連得到
+   Firestore；但「飛航模式／進電梯」這種最常見的情況它抓得到，
+   剩下的交給寫入逾時。兩層加起來就夠了。
+============================================================ */
+const offlineBarEl = document.getElementById('adOffline');
+
+function syncOnlineState(){
+  const off = !navigator.onLine;
+  if(offlineBarEl) offlineBarEl.hidden = !off;
+  syncStickyMetrics();
+}
+window.addEventListener('online', ()=>{
+  syncOnlineState();
+  toast('網路回來了，剛才排隊的改動會自己送出去');
+});
+window.addEventListener('offline', syncOnlineState);
+syncOnlineState();
+
+/* ============================================================
+   橫向捲動的提示
+   ------------------------------------------------------------
+   子分頁列與寬表格都把捲軸藏起來了，「右邊還有東西」就沒有線索。
+   捲得動的那一側掛上 class，由 CSS 把邊緣淡掉。
+============================================================ */
+function bindScrollHints(el){
+  if(!el || el._adScrollHint) return;
+  el._adScrollHint = true;
+  el.classList.add('ad-scrollx');
+  const sync = ()=>{
+    const max = el.scrollWidth - el.clientWidth;
+    el.classList.toggle('can-left', el.scrollLeft > 4);
+    el.classList.toggle('can-right', el.scrollLeft < max - 4);
+  };
+  el.addEventListener('scroll', sync, { passive:true });
+  window.addEventListener('resize', sync);
+  el._adSyncScrollHint = sync;
+  requestAnimationFrame(sync);
+}
+function refreshScrollHints(root){
+  (root || document).querySelectorAll('.ad-scrollx').forEach(el => {
+    if(el._adSyncScrollHint) el._adSyncScrollHint();
+  });
+}
+
+/* ============================================================
+   彈窗層（背景鎖捲 ＋ 返回鍵）
+   ------------------------------------------------------------
+   兩件在手機上一定會踩到的事：
+     1. 彈窗開著時背景照樣捲，關掉之後停在完全不同的位置
+        （iOS 上 overflow:hidden 鎖不住，要 position:fixed）
+     2. 使用者按返回鍵想關掉彈窗，結果直接離開後台，填到一半的表單全沒了
+
+   實作刻意用 MutationObserver 監看 [hidden]／class，而不是去改
+   十幾處 `mask.hidden = false`：開關彈窗的地方太多，漏掉一處就會
+   留下一個鎖住的畫面。看「現在到底開著沒」最不會錯。
+============================================================ */
+const layerStack = [];       /* [{ el, close }]，最上面那一層在最後 */
+let lockScrollY = 0;
+let skipNextPop = false;
+
+function lockBodyScroll(){
+  lockScrollY = window.scrollY || window.pageYOffset || 0;
+  document.body.style.top = `-${lockScrollY}px`;
+  document.body.classList.add('ad-lock');
+}
+function unlockBodyScroll(){
+  if(!document.body.classList.contains('ad-lock')) return;
+  document.body.classList.remove('ad-lock');
+  document.body.style.top = '';
+  window.scrollTo(0, lockScrollY);
+}
+
+function pushLayer(el, close){
+  if(layerStack.some(l => l.el === el)) return;
+  if(!layerStack.length) lockBodyScroll();
+  layerStack.push({ el, close });
+  try{ history.pushState({ adLayer: layerStack.length }, ''); }catch{}
+}
+
+function popLayer(el){
+  const i = layerStack.findIndex(l => l.el === el);
+  if(i < 0) return;
+  layerStack.splice(i, 1);
+  if(!layerStack.length) unlockBodyScroll();
+  /* 彈窗是被自己的按鈕關掉的 → 把當初推進去的那一格歷史紀錄退掉，
+     不然使用者要按兩次返回才離得開這一頁。
+     但只有在那一格仍然是「現在這一格」時才退 —— 中途換過分頁（hash 又推了
+     一格）的話，退回去等於把使用者的分頁切換一起撤銷。 */
+  if(history.state && history.state.adLayer === i + 1){
+    skipNextPop = true;
+    try{ history.back(); }catch{ skipNextPop = false; }
+  }
+}
+
+window.addEventListener('popstate', ()=>{
+  if(skipNextPop){ skipNextPop = false; return; }
+  const top = layerStack[layerStack.length - 1];
+  if(!top) return;
+  /* 使用者按了返回鍵：關掉最上面那一層就好，不要離開後台。
+     真正的關閉交給彈窗自己的 close（該問的還是會問） */
+  layerStack.pop();
+  if(!layerStack.length) unlockBodyScroll();
+  try{ top.close(); }catch(err){ console.warn('[admin] 關閉彈窗失敗', err); }
+});
+
+/* el 顯示出來時推一層、收起來時退一層。
+   isOpen 預設看 [hidden]，抽屜那種用 class 的自己傳。 */
+function watchLayer(el, close, isOpen){
+  if(!el || el._adLayerWatched) return;
+  el._adLayerWatched = true;
+  const open = isOpen || (() => !el.hidden);
+  let was = open();
+  const obs = new MutationObserver(()=>{
+    const now = open();
+    if(now === was) return;
+    was = now;
+    if(now) pushLayer(el, close);
+    else popLayer(el);
+  });
+  obs.observe(el, { attributes:true, attributeFilter:['hidden', 'class', 'style'] });
+  if(was) pushLayer(el, close);
+}
+
+/* 讓「按遮罩就關」的彈窗也能被返回鍵關掉：
+   直接在遮罩上補一次 click，走的是它原本註冊的那條關閉路徑
+   （該先問一句的（例如貼了一半的桌次名單）仍然會問） */
+function closeViaMask(mask){
+  return ()=> mask.dispatchEvent(new MouseEvent('click', { bubbles:true }));
+}
+
+/* 全站的彈窗都掛上去。cropper 是動態插入的，另外用一個 observer 接。 */
+function bindAllLayers(){
+  document.querySelectorAll('.ad-modal-mask').forEach(mask => {
+    watchLayer(mask, closeViaMask(mask));
+  });
+  const spDrawer = document.getElementById('spDrawer');
+  const spClose  = document.getElementById('spDrawerClose');
+  if(spDrawer && spClose) watchLayer(spDrawer, ()=> spClose.click());
+}
+
+/* 裁切器（cropper.js）是 document.body.appendChild 進來的 */
+new MutationObserver((records)=>{
+  records.forEach(rec => {
+    rec.addedNodes.forEach(node => {
+      if(node.nodeType !== 1 || !node.classList.contains('cr-mask')) return;
+      const cancel = node.querySelector('#crCancel');
+      watchLayer(node, ()=>{ if(cancel) cancel.click(); });
+    });
+    rec.removedNodes.forEach(node => {
+      if(node.nodeType !== 1 || !node.classList.contains('cr-mask')) return;
+      popLayer(node);
+    });
+  });
+}).observe(document.body, { childList:true });
+
+/* ---------- 往下滑關掉 bottom sheet ----------
+   手機上的彈窗是貼著底部出現的，那個手勢就該是「往下推走」。
+   只從卡片最上緣那一段（drag handle 所在的 44px）起手 ——
+   從內容區起手的話，會和表單本身的捲動、輸入打架。 */
+(function bindSheetSwipe(){
+  const sheetMq = window.matchMedia('(max-width: 560px)');
+  let card = null, startY = 0, moved = 0, mask = null;
+
+  document.addEventListener('pointerdown', (e)=>{
+    if(!sheetMq.matches || e.pointerType === 'mouse') return;
+    const c = e.target.closest('.ad-modal-card, .cr-card');
+    if(!c) return;
+    const r = c.getBoundingClientRect();
+    if(e.clientY - r.top > 44) return;      /* 只認最上緣那一條 */
+    if(c.scrollTop > 0) return;             /* 內容捲到一半時不接手 */
+    card = c;
+    mask = c.closest('.ad-modal-mask, .cr-mask');
+    startY = e.clientY;
+    moved = 0;
+  }, true);
+
+  document.addEventListener('pointermove', (e)=>{
+    if(!card) return;
+    moved = Math.max(0, e.clientY - startY);
+    card.style.transform = `translateY(${moved}px)`;
+    card.style.transition = 'none';
+  }, { passive:true });
+
+  function end(){
+    if(!card) return;
+    const c = card, m = mask, far = moved > 90;
+    card = null; mask = null;
+    c.style.transition = 'transform .18s ease';
+    c.style.transform = '';
+    if(far && m) m.dispatchEvent(new MouseEvent('click', { bubbles:true }));
+  }
+  document.addEventListener('pointerup', end);
+  document.addEventListener('pointercancel', end);
+})();
+
+/* ============================================================
+   一列一顆的「⋮ 更多」選單
+   ------------------------------------------------------------
+   為什麼要有這個東西：
+     ・「編輯」和「刪除」原本只隔 10px，拇指一按很容易點錯
+     ・可排序的清單在觸控裝置上完全沒有排序工具（拖曳觸控用不了）
+   兩件事收在同一顆按鈕裡：危險的動作排最後、用危險色，
+   排序改成「上移／下移／移到最前／移到最後」的選單。
+============================================================ */
+const rowMenuBuilders = {};
+
+function registerRowMenu(key, build){ rowMenuBuilders[key] = build; }
+
+function rowMenuBtn(key, id){
+  return `<button class="ad-rowmenu-btn" type="button" data-rowmenu="${key}:${escapeHtml(id)}"
+    aria-label="更多操作" aria-haspopup="true">⋮</button>`;
+}
+
+const rowMenuEl = document.createElement('div');
+rowMenuEl.className = 'ad-rowmenu';
+rowMenuEl.hidden = true;
+document.body.appendChild(rowMenuEl);
+let rowMenuOwner = null;
+let rowMenuAt = 0;
+
+function closeRowMenu(){
+  rowMenuEl.hidden = true;
+  rowMenuEl.innerHTML = '';
+  if(rowMenuOwner) rowMenuOwner.classList.remove('is-open');
+  rowMenuOwner = null;
+}
+
+function openRowMenu(btn){
+  const [key, ...rest] = String(btn.dataset.rowmenu).split(':');
+  const id = rest.join(':');
+  const build = rowMenuBuilders[key];
+  if(!build) return;
+  const items = build(id) || [];
+  if(!items.length) return;
+
+  closeRowMenu();
+  rowMenuOwner = btn;
+  rowMenuAt = Date.now();
+  btn.classList.add('is-open');
+  rowMenuEl.innerHTML = items.map((it, i) => it === '-'
+    ? '<div class="ad-rowmenu-sep"></div>'
+    : `<button class="ad-rowmenu-item${it.danger ? ' is-danger' : ''}" type="button"
+         data-i="${i}"${it.disabled ? ' disabled' : ''}>${escapeHtml(it.label)}</button>`).join('');
+  rowMenuEl.hidden = false;
+
+  /* 貼著按鈕放；下面塞不下就翻到上面，右邊超出畫面就往內收 */
+  const r = btn.getBoundingClientRect();
+  const w = rowMenuEl.offsetWidth;
+  const h = rowMenuEl.offsetHeight;
+  let top = r.bottom + 4;
+  if(top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 4);
+  let left = r.right - w;
+  if(left < 8) left = 8;
+  if(left + w > window.innerWidth - 8) left = window.innerWidth - w - 8;
+  rowMenuEl.style.top = `${Math.round(top)}px`;
+  rowMenuEl.style.left = `${Math.round(left)}px`;
+
+  rowMenuEl._adItems = items;
+}
+
+rowMenuEl.addEventListener('click', (e)=>{
+  const btn = e.target.closest('.ad-rowmenu-item');
+  if(!btn) return;
+  const it = (rowMenuEl._adItems || [])[Number(btn.dataset.i)];
+  closeRowMenu();
+  if(it && it.run) it.run();
+});
+
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-rowmenu]');
+  if(btn){
+    e.preventDefault();
+    if(rowMenuOwner === btn) closeRowMenu();
+    else openRowMenu(btn);
+    return;
+  }
+  if(!e.target.closest('.ad-rowmenu')) closeRowMenu();
+});
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeRowMenu(); });
+/* 捲動就收起來（選單是 fixed 的，跟著捲會離開它那一列）。
+   但「按下去」本身常常會先把那一列捲進畫面，那一下的 scroll 不能算 ——
+   不擋的話選單會在打開的同一瞬間又被關掉。 */
+window.addEventListener('scroll', ()=>{
+  if(Date.now() - rowMenuAt < 350) return;
+  closeRowMenu();
+}, true);
+
+/* 一份清單的「上移／下移／移到最前／移到最後」。
+   list 是目前的順序、id 是這一列，apply(newIds) 負責寫回去。 */
+function reorderMenuItems(list, id, apply){
+  const ids = list.map(x => (typeof x === 'string' ? x : x.id));
+  const i = ids.indexOf(id);
+  if(i < 0) return [];
+  const move = (to)=>{
+    const next = ids.slice();
+    const [x] = next.splice(i, 1);
+    next.splice(to, 0, x);
+    apply(next, ids);
+  };
+  return [
+    { label:'上移一位',   disabled: i === 0,                 run: ()=> move(i - 1) },
+    { label:'下移一位',   disabled: i === ids.length - 1,    run: ()=> move(i + 1) },
+    { label:'移到最前面', disabled: i === 0,                 run: ()=> move(0) },
+    { label:'移到最後面', disabled: i === ids.length - 1,    run: ()=> move(ids.length - 1) },
+  ];
 }
 
 function fmtTime(ts){
@@ -212,11 +613,46 @@ function renderPager(listEl, state, total, onChange){
 ============================================================ */
 const loadedOnce = new Set();
 ['rsvps', 'letters', 'seating', 'seatingImages', 'blessings', 'explore', 'cards', 'exhibits', 'quiz',
- 'rsvpTags']
+ 'quizVotes', 'rsvpTags']
   .forEach(key => {
     document.addEventListener(`data:${key}`, ()=> loadedOnce.add(key));
     document.addEventListener(`data:${key}:denied`, ()=> loadedOnce.add(key));
   });
+
+/* ============================================================
+   正在打字時不要重畫
+   ------------------------------------------------------------
+   有幾份清單（婚禮小卡、桌次圖、標籤庫）是「欄位就長在清單上、
+   離開欄位就存」。這種清單只要有任何一筆 snapshot 回來就會整份重畫 ——
+   而重畫等於把使用者打到一半的那個 input 換成一個新的 DOM 節點：
+   打的字沒了，接下來的 blur 也落在一個已經被丟掉的節點上，
+   那一筆修改就這樣消失。手機上更明顯（改一個欄位就會觸發一次重畫）。
+
+   所以：焦點還在這份清單的欄位裡時先不畫，等他離開欄位再補上。
+============================================================ */
+function guardedRender(hostEl, render){
+  const typing = ()=>{
+    const a = document.activeElement;
+    return !!a && hostEl.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
+  };
+  if(!typing()){ render(); return; }
+  if(hostEl._adPendingRender) return;
+
+  /* 等到焦點真的離開整份清單為止。
+     只等「這一個欄位」的 blur 是不夠的 —— 使用者從卡名 tab 到說明時
+     也會 blur，那時候重畫等於把他正要打的下一個欄位換掉，
+     接著的 change 就落在一個已經被丟掉的節點上，那一筆修改直接消失。
+     setTimeout(0) 是為了讓 activeElement 更新成新的焦點之後再判斷；
+     欄位的 change 也已經在這之前同步跑完（值都是同步讀出來的）。 */
+  hostEl._adPendingRender = true;
+  const check = ()=> setTimeout(()=>{
+    if(typing()) return;                       /* 還在這份清單裡打字，繼續等 */
+    hostEl.removeEventListener('focusout', check);
+    hostEl._adPendingRender = false;
+    render();
+  }, 0);
+  hostEl.addEventListener('focusout', check);
+}
 
 function skeletonHtml(rows, widths){
   widths = widths || ['70%', '40%'];
@@ -442,6 +878,17 @@ function openAdmin(){
   document.getElementById('adRsvpGalleryView').href = sitePath('rsvp');
 
   applyTabVisibility();
+
+  /* 子分頁列：捲得動就把邊緣淡掉當提示；只有兩三顆時排成等寬的 segmented control，
+     手機上就不用捲了（原本第三、四顆會被切在畫面外，而且沒有任何線索） */
+  document.querySelectorAll('.ad-subtabs').forEach(nav => {
+    nav.dataset.count = String(nav.querySelectorAll('.ad-subtab:not([hidden])').length);
+    bindScrollHints(nav);
+  });
+  document.querySelectorAll('.ad-tablewrap').forEach(bindScrollHints);
+  bindAllLayers();
+  syncStickyMetrics();
+
   initRouter();
 
   /* 訂閱各份資料，畫面隨著資料變動重畫。
@@ -494,6 +941,8 @@ function openAdmin(){
   syncSeatFeatureUI();
   fillSiteForm();
   renderSchedule(siteSchedule());
+  /* 上次沒存完的婚禮資訊（填完表單之後才問，不然會被 fillSiteForm 蓋掉） */
+  offerSiteDraft();
 }
 
 loginBtn.addEventListener('click', async ()=>{
@@ -525,7 +974,7 @@ document.getElementById('adLockMobile').addEventListener('click', ownerLogout);
 
 if(!ownerEmails().length){
   loginBtn.disabled = true;
-  pwErr.textContent = '這個站台還沒設定新人的 Google 信箱（ownerEmails）';
+  pwErr.textContent = '這個站台還沒設定新人帳號名單（要新增請告訴我們）';
 }else{
   window.fb.onAuthStateChanged(window.fb.auth, ()=>{
     if(isSiteOwner()) openAdmin();
@@ -594,6 +1043,14 @@ function activateTab(tab, subtab){
   closeDrawer();
   window.scrollTo({ top:0, behavior:'instant' });
 
+  /* 換了分頁＝換了一組子分頁列與表格，sticky 的高度、捲動提示、
+     標籤那一排「要不要長出展開鈕」都得等它真的顯示出來才量得到 */
+  requestAnimationFrame(()=>{
+    syncStickyMetrics();
+    refreshScrollHints();
+    if(!tagFilterRowEl.hidden) syncTagChipsClamp();
+  });
+
   if(location.hash !== wantHash) history.replaceState(null, '', wantHash);
 }
 
@@ -632,6 +1089,8 @@ function openDrawer(){
   adBackdropEl.hidden = false;
   requestAnimationFrame(()=> adBackdropEl.classList.add('is-on'));
   adMenuBtn.setAttribute('aria-expanded', 'true');
+  /* 返回鍵＝關掉抽屜（Android 的實體返回、iOS 的邊緣手勢都是這個直覺） */
+  pushLayer(adSideEl, closeDrawer);
 }
 function closeDrawer(){
   if(!adSideEl.classList.contains('is-open')) return;
@@ -639,11 +1098,13 @@ function closeDrawer(){
   adBackdropEl.classList.remove('is-on');
   adMenuBtn.setAttribute('aria-expanded', 'false');
   setTimeout(()=>{ adBackdropEl.hidden = true; }, 220);
+  popLayer(adSideEl);
 }
 adMenuBtn.addEventListener('click', ()=>{
   adSideEl.classList.contains('is-open') ? closeDrawer() : openDrawer();
 });
 adBackdropEl.addEventListener('click', closeDrawer);
+document.getElementById('adSideClose').addEventListener('click', closeDrawer);
 document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeDrawer(); });
 
 /* ============================================================
@@ -772,7 +1233,27 @@ function donutCard(chart){
     </figure>`;
 }
 
-function renderRsvpCharts(){
+function renderRsvpCharts(state){
+  /* 載入中畫 skeleton，不要先畫五個空圓環 —— 那和「真的沒人回覆」長得一模一樣 */
+  if(state === 'loading'){
+    rsvpChartsEl.classList.remove('ad-donuts');
+    rsvpChartsEl.innerHTML = skeletonHtml(2, ['46%', '70%', '58%']);
+    return;
+  }
+  /* 一筆都還沒進來：與其畫一排 0，不如給下一步的入口 */
+  if(state === 'empty'){
+    rsvpChartsEl.classList.remove('ad-donuts');
+    rsvpChartsEl.innerHTML = `
+      <div class="ad-donuts-empty">
+        等第一份回覆進來，這裡就會出現出席、飲食、兒童座椅的分布圖
+        <div class="ad-row">
+          <button class="btn small ghost" id="adRsvpCopyInvite" type="button">複製邀請函連結</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  rsvpChartsEl.classList.add('ad-donuts');
   const c = DataStore.getRsvpCharts();
   const cfg = rsvpConfig();
   const cards = [
@@ -788,24 +1269,47 @@ function renderRsvpCharts(){
   rsvpChartsEl.innerHTML = cards.map(donutCard).join('');
 }
 
+const rsvpTotalEl = document.getElementById('adRsvpTotal');
+const rsvpSubEl   = document.getElementById('adRsvpSub');
+const rsvpMetaEl  = document.getElementById('adRsvpMeta');
+
 function renderRsvps(){
+  /* 載入中的畫面要和「真的沒人回覆」分得開。
+     這個檢查一定要在最前面 —— 先把 0 寫上去再檢查的話，行動網路的那 1–3 秒裡
+     新人看到的就是一個大大的「0」加「還沒有人回覆」，和真的沒人一模一樣。 */
+  if(!loadedOnce.has('rsvps')){
+    rsvpTotalEl.textContent = '—';
+    rsvpSubEl.innerHTML = '<li class="ad-hero-item is-note">讀取中…</li>';
+    rsvpMetaEl.hidden = true;
+    renderRsvpCharts('loading');
+    rsvpListEl.innerHTML = skeletonHtml(4);
+    rsvpFilterSumEl.hidden = true;
+    return;
+  }
+
   const total = DataStore.getRSVPCount();
   const head  = DataStore.getAttendingCount();
   const tally = DataStore.getRsvpTally();
 
-  document.getElementById('adRsvpTotal').textContent = total;
-  document.getElementById('adRsvpSub').textContent = total
-    ? `確定出席 ${head} 位・熱情出席 ${tally.yes} 筆・視情況而定 ${tally.maybe} 筆・無法出席 ${tally.no} 筆`
-    : '還沒有人回覆';
+  rsvpTotalEl.textContent = total;
+  /* 四個數字各自佔一列（右邊）。擠成一段長句的話會換行三次，
+     而且「12 位」和「5 筆」混在同一行讀不出來誰是誰 */
+  rsvpSubEl.innerHTML = total
+    ? [
+        ['確定出席', `${head} 位`],
+        ['熱情出席', `${tally.yes} 筆`],
+        ['視情況而定', `${tally.maybe} 筆`],
+        ['無法出席', `${tally.no} 筆`],
+      ].map(([lab, val]) =>
+        `<li class="ad-hero-item"><span>${lab}</span><b>${val}</b></li>`).join('')
+    : '<li class="ad-hero-item is-note">還沒有人回覆</li>';
 
-  renderRsvpCharts();
-
-  if(!loadedOnce.has('rsvps')){
-    rsvpListEl.innerHTML = skeletonHtml(4);
-    return;
-  }
+  renderRsvpMeta(total);
+  renderRsvpCharts(total ? '' : 'empty');
 
   const all = visibleRsvps();
+  renderRsvpFilterSum(all.length, total);
+
   if(!all.length){
     rsvpListEl.innerHTML = `<div class="ad-empty">${
       total ? '沒有符合的回覆' : '還沒有人回覆出席'}</div>`;
@@ -815,8 +1319,62 @@ function renderRsvps(){
 
   renderPager(rsvpListEl, rsvpPager, all.length, renderRsvps);
   const list = all.slice((rsvpPager.page - 1) * rsvpPager.size, rsvpPager.page * rsvpPager.size);
-  rsvpListEl.innerHTML = rsvpTableHtml(list);
+  /* 手機是一位一張卡，桌機是表格 —— 16 欄的表格在 390px 上要左右滑 3–4 個螢幕，
+     而「人數／葷／素」正好排在最後面 */
+  rsvpListEl.innerHTML = isNarrow() ? rsvpCardsHtml(list) : rsvpTableHtml(list);
+  refreshScrollHints(rsvpListEl);
+  document.querySelectorAll('#adRsvpList .ad-tablewrap').forEach(bindScrollHints);
 }
+onNarrowChange(renderRsvps);
+
+/* 「這是到目前為止的全部回覆」要明講，並附上最後一筆進來的時間 ——
+   現場對帳時，沒有這個時間就會開始懷疑是不是卡住了 */
+function renderRsvpMeta(total){
+  if(!total){ rsvpMetaEl.hidden = true; return; }
+  const list = DataStore.getRSVPs();
+  const times = list.map(rsvpTime).filter(Boolean);
+  const last = times.length ? Math.max(...times) : 0;
+  const weekAgo = Date.now() - 7 * 24 * 3600 * 1000;
+  const fresh = times.filter(t => t >= weekAgo).length;
+
+  rsvpMetaEl.innerHTML =
+    `統計區間：<b>全部回覆</b>`
+    + (last ? `・最後更新 <b>${escapeHtml(fmtTime(last))}</b>` : '')
+    + (fresh ? `<br>近 7 天新增 <b>${fresh}</b> 筆` : '');
+  rsvpMetaEl.hidden = false;
+}
+
+/* ---------- 篩選彙總 ----------
+   手機上出席 chips、標籤 chips、搜尋框分三排，捲下去看名單時全部離開畫面，
+   很容易忘記自己還開著篩選，然後以為資料不見了。 */
+const rsvpFilterSumEl  = document.getElementById('adRsvpFilterSum');
+const rsvpFilterSumTxt = document.getElementById('adRsvpFilterSumText');
+
+function renderRsvpFilterSum(shown, total){
+  const bits = [];
+  if(rsvpFilter !== 'all') bits.push(RSVP_LABEL[rsvpFilter]);
+  if(guestTagsOn() && rsvpTagFilter !== 'all'){
+    bits.push(rsvpTagFilter === 'none' ? '沒有標籤' : `標籤「${guestTagName(rsvpTagFilter)}」`);
+  }
+  const q = rsvpFilterEl.value.trim();
+  if(q) bits.push(`搜尋「${q}」`);
+
+  if(!bits.length){ rsvpFilterSumEl.hidden = true; return; }
+  rsvpFilterSumTxt.innerHTML =
+    `目前顯示：${bits.map(escapeHtml).join(' ・ ')} — <b>${shown}</b> / ${total} 筆`;
+  rsvpFilterSumEl.hidden = false;
+}
+
+document.getElementById('adRsvpFilterClear').addEventListener('click', ()=>{
+  rsvpFilter = 'all';
+  rsvpTagFilter = 'all';
+  rsvpFilterEl.value = '';
+  document.querySelectorAll('#adRsvpChips .ad-chip')
+    .forEach(c => c.classList.toggle('is-on', c.dataset.filter === 'all'));
+  renderRsvpTagChips();
+  rsvpPager.page = 1;
+  renderRsvps();
+});
 
 /* ============================================================
    回覆名單的表格
@@ -846,9 +1404,11 @@ function td(html, cls){
 function rsvpTableHtml(list){
   const col = rsvpColumns();
 
+  /* 姓名放第一欄並且 sticky：欄位多到一定會橫向捲，
+     捲到「喜餅」那一欄時還看得到現在讀的是誰 */
   const head = [
-    col.tags ? `<th>標籤<button class="ad-th-link" type="button" id="adRsvpTagSetupHead">設定標籤</button></th>` : '',
     '<th class="is-name">姓名</th>',
+    col.tags ? `<th>標籤<button class="ad-th-link" type="button" id="adRsvpTagSetupHead">設定標籤</button></th>` : '',
     '<th>出席回應</th>',
     '<th>分類</th>',
     col.contact ? '<th>聯絡資訊</th>' : '',
@@ -906,8 +1466,8 @@ function rsvpTableHtml(list){
     };
 
     return `<tr data-rsvp="${r.id}">
-      ${tagCell}
       <td class="is-name">${escapeHtml(`${r.icon || ''} ${r.name || '（沒有名字）'}`.trim())}</td>
+      ${tagCell}
       <td><span class="ad-tag ad-tag-${st}">${RSVP_LABEL[st]}</span></td>
       ${td(escapeHtml(rsvpLabel('relation', r.relation)))}
       ${col.contact ? td(stack(contacts, [])) : ''}
@@ -929,6 +1489,97 @@ function rsvpTableHtml(list){
     <thead><tr>${head}</tr></thead>
     <tbody>${rows}</tbody>
   </table></div>`;
+}
+
+/* ============================================================
+   回覆名單的卡片（手機）
+   ------------------------------------------------------------
+   16 欄的表格在 390px 的手機上實寬約 1400px：要左右滑 3–4 個螢幕寬
+   才看得到「人數／葷／素」，而那正是新人最常看的三欄。
+   所以手機改成一位一張卡：
+     第一行 姓名 ＋ 出席狀態
+     第二行 N 位・葷 X／素 Y・兒童椅 Z   ← 最常看的三個數字
+   其餘（聯絡、喜帖、喜餅、留言、備註、時間）收進「展開更多」。
+============================================================ */
+function rsvpCardsHtml(list){
+  const col = rsvpColumns();
+
+  return `<ul class="ad-rcards">${list.map(r => {
+    const st = DataStore.rsvpStatus(r);
+    const going = st === 'yes';
+    const t = rsvpTime(r);
+
+    const keyBits = going
+      ? [
+          `${Number(r.guestCount) || 1} 位`,
+          `葷 ${Number(r.mealMeat) || 0}／素 ${Number(r.mealVeg) || 0}`,
+          Number(r.childSeat) > 0 ? `兒童椅 ${Number(r.childSeat)}` : '',
+        ].filter(Boolean).join('・')
+      : '';
+
+    const tags = col.tags ? rsvpTagIds(r) : [];
+
+    const contacts = [
+      r.contactPhone && `電話 ${r.contactPhone}`,
+      r.contactLine && `LINE ${r.contactLine}`,
+      r.contactEmail && r.contactEmail,
+    ].filter(Boolean).join('\n');
+
+    const cardText = !col.card ? '' : [
+      r.cardType ? rsvpLabel('card', r.cardType)
+        + (r.cardType === 'paper' && r.cardDelivery
+            ? `（${rsvpLabel('cardDelivery', r.cardDelivery)}）` : '') : '',
+      r.cardEmail || '',
+      r.cardAddress ? `${r.cardZip || ''} ${r.cardAddress}`.trim() : '',
+    ].filter(Boolean).join('\n');
+
+    const giftText = !col.gift ? '' : [
+      r.giftDelivery ? rsvpLabel('gift', r.giftDelivery) : '',
+      r.giftAddress ? `${r.giftZip || ''} ${r.giftAddress}`.trim() : '',
+    ].filter(Boolean).join('\n');
+
+    const row = (name, value) => value
+      ? `<div class="ad-rcard-row"><span>${name}</span><b>${escapeHtml(value)}</b></div>` : '';
+
+    const rest = [
+      row('分類', rsvpLabel('relation', r.relation)),
+      row('聯絡', contacts),
+      row('飲食習慣', r.dietaryNote || ''),
+      row('喜帖', cardText),
+      row('喜餅', giftText),
+      col.message ? row('給新人的話', r.message || '') : '',
+      row('備註', r.note || ''),
+    ].filter(Boolean).join('');
+
+    /* 兩行就好：
+         第一行  姓名 …………………… 填表時間 ＋ 出席狀態
+         第二行  N 位・葷 X／素 Y ……… ＋ 展開更多（有標籤才多一行）
+       時間本來自己佔一整行，而「展開更多」原本畫成圓角膠囊，
+       和旁邊的標籤長得幾乎一樣 —— 所以改成帶 ＋／－ 的純文字按鈕。 */
+    return `<li class="ad-rcard" data-rsvp="${r.id}">
+      <div class="ad-rcard-head">
+        <span class="ad-rcard-name">${escapeHtml(`${r.icon || ''} ${r.name || '（沒有名字）'}`.trim())}</span>
+        <span class="ad-rcard-time">${t ? escapeHtml(fmtTime(t)) : '時間未知'}</span>
+        <span class="ad-tag ad-tag-${st}">${RSVP_LABEL[st]}</span>
+      </div>
+      <div class="ad-rcard-line">
+        ${keyBits
+          ? `<span class="ad-rcard-key">${escapeHtml(keyBits)}</span>`
+          : `<span class="ad-rcard-key is-off">${escapeHtml(rsvpLabel('relation', r.relation) || '—')}</span>`}
+        <button class="ad-rcard-more" type="button" data-rcard-more="${r.id}"
+                aria-expanded="false"><i aria-hidden="true">＋</i>展開更多</button>
+      </div>
+      ${tags.length ? `<div class="ad-rcard-tags">${tags.map(id =>
+        `<span class="ad-tag ad-tag-guest">${escapeHtml(guestTagName(id))}</span>`).join('')}</div>` : ''}
+      <div class="ad-rcard-rest" hidden>
+        ${rest || '<div class="ad-rcard-row"><span>其他</span><b>沒有其他內容</b></div>'}
+        <div class="ad-rcard-acts">
+          ${col.tags ? `<button class="ad-edit" type="button" data-tag-edit="${r.id}">設定標籤</button>` : ''}
+          <button class="ad-del" type="button" data-del-rsvp="${r.id}">刪除這一筆</button>
+        </div>
+      </div>
+    </li>`;
+  }).join('')}</ul>`;
 }
 
 /* ============================================================
@@ -986,6 +1637,17 @@ async function deleteRsvp(id){
 }
 
 rsvpListEl.addEventListener('click', (e)=>{
+  const more = e.target.closest('[data-rcard-more]');
+  if(more){
+    const rest = more.closest('.ad-rcard').querySelector('.ad-rcard-rest');
+    const open = rest.hidden;
+    rest.hidden = !open;
+    more.setAttribute('aria-expanded', String(open));
+    more.innerHTML = open
+      ? '<i aria-hidden="true">－</i>收起來'
+      : '<i aria-hidden="true">＋</i>展開更多';
+    return;
+  }
   const del = e.target.closest('[data-del-rsvp]');
   if(del){ deleteRsvp(del.dataset.delRsvp); return; }
   if(e.target.id === 'adRsvpTagSetupHead'){ location.hash = 'rsvp/tags'; }
@@ -993,6 +1655,8 @@ rsvpListEl.addEventListener('click', (e)=>{
 
 document.addEventListener('data:rsvps', ()=>{ renderRsvps(); refreshTagCounts(); });
 rsvpFilterEl.addEventListener('input', ()=>{ rsvpPager.page = 1; renderRsvps(); });
+/* type="search" 的原生清除鈕按下去只會發 input，這裡一起接住 */
+rsvpFilterEl.addEventListener('search', ()=>{ rsvpPager.page = 1; renderRsvps(); });
 
 document.getElementById('adRsvpChips').addEventListener('click', (e)=>{
   const chip = e.target.closest('.ad-chip');
@@ -1007,13 +1671,27 @@ document.getElementById('adRsvpChips').addEventListener('click', (e)=>{
 /* 規則拒絕讀取時（例如帳號被移出 ownerEmails）講清楚，不要留一個空名單。
    統計也一起收起來 —— 一排 0 和五個空圓圈看起來像「真的沒人回覆」，
    但實際上是讀不到，兩件事不能長得一樣。 */
+/* 空狀態變成下一步的入口：把邀請函連結複製起來去發給還沒回的人 */
+rsvpChartsEl.addEventListener('click', async (e)=>{
+  if(!e.target.closest('#adRsvpCopyInvite')) return;
+  const url = new URL(sitePath('rsvp'), location.origin).href;
+  try{
+    await navigator.clipboard.writeText(url);
+    toast('邀請函連結已複製');
+  }catch{
+    toast(url, { duration: 8000 });
+  }
+});
+
 document.addEventListener('data:rsvps:denied', ()=>{
-  document.getElementById('adRsvpSub').textContent = '目前讀不到回覆';
+  rsvpSubEl.innerHTML = '<li class="ad-hero-item is-note">目前讀不到回覆</li>';
   document.getElementById('adRsvpTotal').textContent = '—';
+  rsvpMetaEl.hidden = true;
+  rsvpChartsEl.classList.remove('ad-donuts');
   rsvpChartsEl.innerHTML = '';
   loadedOnce.add('rsvps');
   rsvpListEl.innerHTML =
-    `<div class="ad-empty">沒有讀取出席回覆的權限<br>請確認這個帳號在 ownerEmails 名單內</div>`;
+    `<div class="ad-empty">沒有讀取出席回覆的權限<br>請確認這個 Google 帳號在新人帳號名單內</div>`;
 });
 
 /* ---------- 匯出 CSV ----------
@@ -1208,17 +1886,12 @@ document.getElementById('adRsvpForm').addEventListener('submit', async (e)=>{
     .filter(([id]) => document.getElementById(id).checked)
     .map(([, key]) => key);
 
-  const btn = e.target.querySelector('button[type="submit"]');
-  btn.disabled = true;
-  try{
+  await runSave(document.getElementById('adRsvpFormSave'), async ()=>{
     await DataStore.saveSiteFields(patch);
     toast('表單設定已更新');
     /* 圖表跟著題目開關增減，存完就重畫 */
     renderRsvps();
-  }catch(err){
-    writeFailed(err);
-  }
-  btn.disabled = false;
+  });
 });
 
 /* ============================================================
@@ -1422,9 +2095,40 @@ function renderRsvpTagChips(){
   tagChipsEl.innerHTML = chips
     .map(c => `<button class="ad-chip${c.id === rsvpTagFilter ? ' is-on' : ''}" type="button"
              data-tag="${escapeHtml(c.id)}">${escapeHtml(c.name)}</button>`).join('')
-    + `<button class="ad-chip ad-chip-link" type="button" data-tag-setup="1"
-               title="到「設定賓客標籤」新增或修改標籤">設定標籤 ↗</button>`;
+    + `<button class="ad-chip ad-chip-link" type="button" data-tag-setup="1">設定標籤 ↗</button>`;
+  syncTagChipsClamp();
 }
+
+/* ---------- 標籤只先露兩排 ----------
+   標籤數量沒有上限（新人可以一直加），全部攤開的話光是篩選列就佔掉半個螢幕。
+   量一下實際高度：真的超過兩排才長出「展開全部標籤」。 */
+const tagMoreBtn = document.getElementById('adRsvpTagMore');
+let tagChipsOpen = false;
+
+function syncTagChipsClamp(){
+  tagChipsEl.classList.toggle('is-open', tagChipsOpen);
+  /* 先讓它回到收起來的高度才量得準 */
+  const clamped = tagChipsEl.classList.contains('is-open');
+  if(clamped) tagChipsEl.classList.remove('is-open');
+  const boxH = tagChipsEl.clientHeight;
+  const overflow = tagChipsEl.scrollHeight - boxH > 2;
+  if(clamped) tagChipsEl.classList.add('is-open');
+
+  /* 這一排住在「回覆資訊」子分頁裡，而預設打開的是「總覽」——
+     子分頁還沒顯示時量到的高度全是 0，這時候什麼都不要判斷，
+     等 activateTab 切過來再量一次（見那裡的 requestAnimationFrame） */
+  if(!boxH) return;
+
+  tagMoreBtn.hidden = !overflow;
+  tagMoreBtn.textContent = tagChipsOpen ? '收起來' : '展開全部';
+  tagMoreBtn.setAttribute('aria-expanded', String(tagChipsOpen));
+}
+
+tagMoreBtn.addEventListener('click', ()=>{
+  tagChipsOpen = !tagChipsOpen;
+  syncTagChipsClamp();
+});
+window.addEventListener('resize', ()=>{ if(!tagFilterRowEl.hidden) syncTagChipsClamp(); });
 
 tagChipsEl.addEventListener('click', (e)=>{
   const chip = e.target.closest('.ad-chip');
@@ -1558,7 +2262,7 @@ inboxFilterEl.addEventListener('input', ()=>{ inboxPager.page = 1; renderInbox()
 document.addEventListener('data:letters:denied', ()=>{
   loadedOnce.add('letters');
   inboxListEl.innerHTML =
-    `<div class="ad-empty">沒有讀取悄悄話的權限<br>請確認這個帳號在 ownerEmails 名單內</div>`;
+    `<div class="ad-empty">沒有讀取悄悄話的權限<br>請確認這個 Google 帳號在新人帳號名單內</div>`;
 });
 
 document.getElementById('adInboxExport').addEventListener('click', ()=>{
@@ -1680,22 +2384,85 @@ async function shrinkImage(file, maxBytes, startEdge){
   }
 }
 
+/* ============================================================
+   圖片上傳的共用零件
+   ------------------------------------------------------------
+   三件在手機上一定會踩到的事：
+     1. iOS 從「檔案」App 選 HEIC 回來時 file.type 常常是空字串，
+        `type.startsWith('image/')` 會把它靜默濾掉，只丟一句「請選圖片檔」
+     2. 失敗只說「N 張失敗（可能是檔案太大或格式不支援）」——
+        不說是哪一個檔案、也不說到底是哪一種原因
+     3. 只有文字「處理中… 3 / 8」，沒有進度條；裁切完到下一張之間
+        的 Firestore 寫入（弱網可能好幾秒）完全沒有指示
+============================================================ */
+const IMAGE_EXT_RE = /\.(heic|heif|jpe?g|png|webp|gif|bmp|avif)$/i;
+
+function pickImageFiles(files){
+  return Array.from(files).filter(f =>
+    (f.type && f.type.startsWith('image/')) || IMAGE_EXT_RE.test(f.name || ''));
+}
+
+/* 失敗原因翻成人話。HEIC 是最常見的一種，所以直接告訴他怎麼改設定。 */
+function uploadErrorText(file, err){
+  const name = file && file.name ? file.name : '這個檔案';
+  const heic = /\.(heic|heif)$/i.test(name);
+  if(heic || (err && err.code === 'image-decode-failed')){
+    return heic
+      ? `${name}：這個格式瀏覽器讀不開。iPhone 可以到「設定 → 相機 → 格式」改成「最相容」後重拍，或先轉存成 JPG`
+      : `${name}：這個檔案不是瀏覽器讀得懂的圖片`;
+  }
+  if(err && err.code === 'write-timeout') return `${name}：網路不穩，還沒送出去`;
+  if(err && err.code === 'permission-denied') return `${name}：沒有寫入權限`;
+  return `${name}：${(err && err.message) || '上傳失敗'}`;
+}
+
+/* 失敗清單 ＋「重新上傳這 N 張」。整批重來對 8 張照片來說太貴了 */
+function reportUploadFails(fails, retry){
+  if(!fails.length) return;
+  const first = fails[0].text;
+  showToast(
+    fails.length === 1 ? first : `${first}（另外還有 ${fails.length - 1} 個檔案也失敗了）`,
+    {
+      isError: true,
+      duration: 9000,
+      actionLabel: retry ? `重新上傳這 ${fails.length} 張` : '',
+      onAction: retry,
+    },
+  );
+  fails.forEach(f => console.warn('[admin] 上傳失敗', f.text, f.err));
+}
+
+/* 進度：文字 ＋ 一條細長條。step 是「第幾個」，phase 是現在在做什麼 */
+function setProgress(el, i, total, phase){
+  if(!el) return;
+  el.hidden = false;
+  const txt = el.querySelector('.ad-progress-text');
+  const bar = el.querySelector('.ad-progress-bar i');
+  if(txt) txt.textContent = `${phase}　${i} / ${total}`;
+  if(bar) bar.style.width = `${Math.round((i / Math.max(1, total)) * 100)}%`;
+}
+
 const fileInput  = document.getElementById('adFile');
 const uploadBox  = document.getElementById('adUploadBox');
 const progressEl = document.getElementById('adProgress');
 
 async function uploadFiles(files){
-  const list = Array.from(files).filter(f => f.type.startsWith('image/'));
-  if(!list.length){ toast('請選圖片檔', true); return; }
+  const list = pickImageFiles(files);
+  if(!list.length){
+    toast('這幾個檔案不是圖片（支援 JPG／PNG／WebP／HEIC）', true);
+    return;
+  }
 
-  progressEl.hidden = false;
-  let done = 0, failed = 0;
+  let done = 0;
+  const fails = [];
   const base = DataStore.getSeatingImages().length;
 
-  for(const file of list){
-    progressEl.textContent = `處理中… ${done + failed + 1} / ${list.length}`;
+  for(let i = 0; i < list.length; i++){
+    const file = list[i];
+    setProgress(progressEl, i + 1, list.length, '處理中…');
     try{
       const img = await shrinkImage(file);
+      setProgress(progressEl, i + 1, list.length, '儲存中…');
       await DataStore.saveDoc('seatingImages', null, {
         img,
         title: file.name.replace(/\.[^.]+$/, '').slice(0, 60),
@@ -1704,15 +2471,14 @@ async function uploadFiles(files){
       });
       done++;
     }catch(err){
-      failed++;
-      console.warn('[admin] 上傳失敗', file.name, err);
+      fails.push({ file, err, text: uploadErrorText(file, err) });
     }
   }
 
   progressEl.hidden = true;
   fileInput.value = '';
-  if(failed) toast(`上傳 ${done} 張，${failed} 張失敗（可能是檔案太大或格式不支援）`, true);
-  else toast(`已上傳 ${done} 張桌次圖`);
+  if(done) toast(`已上傳 ${done} 張桌次圖`);
+  reportUploadFails(fails, ()=> uploadFiles(fails.map(f => f.file)));
 }
 
 fileInput.addEventListener('change', ()=> uploadFiles(fileInput.files));
@@ -1738,17 +2504,66 @@ function renderImages(){
     imgsEl.innerHTML = `<div class="ad-empty">還沒有桌次圖</div>`;
     return;
   }
-  imgsEl.innerHTML = list.map(it => `
+  imgsEl.innerHTML = list.map((it, i) => `
     <figure class="ad-img">
       <img src="${escapeHtml(it.img)}" alt="${escapeHtml(it.title || '')}">
       <figcaption>
+        <span class="ad-order">#${i + 1}</span>
         <input class="ad-img-title" data-id="${it.id}" type="text" maxlength="60"
                value="${escapeHtml(it.title || '')}" placeholder="這張圖的標題">
-        <button class="ad-del" data-del-img="${it.id}" type="button">刪除</button>
+        <button class="ad-del ad-del-inline" type="button" data-del-img="${it.id}">刪除</button>
+        ${rowMenuBtn('seatImg', it.id)}
       </figcaption>
     </figure>`).join('');
 }
-document.addEventListener('data:seatingImages', renderImages);
+
+/* 桌次圖原本只能刪不能排序（賓客看到的順序就是這裡的順序）。
+   拖曳在觸控上用不了，所以直接給選單。 */
+function seatImgList(){
+  return DataStore.getSeatingImages().filter(it => !isPendingDelete('seatingImages', it.id));
+}
+
+async function saveOrder(col, list, idsInOrder, rerender){
+  const byId = new Map(list.map(it => [it.id, it]));
+  /* Firestore 不收 undefined，而 DataStore 讀回來的每一筆都多掛了一個 id
+     （那是文件本身的 id，不是欄位），寫回去之前要拿掉 */
+  const fieldsOf = (it, order)=>{
+    const out = { ...it, order };
+    delete out.id;
+    return out;
+  };
+  try{
+    /* 只寫真的變了的那幾份，不必整包重寫 */
+    await Promise.all(idsInOrder.map((id, k) => {
+      const it = byId.get(id);
+      if(!it || it.order === k + 1) return null;
+      return DataStore.saveDoc(col, id, fieldsOf(it, k + 1));
+    }).filter(Boolean));
+    toast('順序已更新', {
+      /* 排錯了就按一下退回去 —— 順序是很容易一口氣改壞的東西 */
+      actionLabel: '復原',
+      duration: 5000,
+      onAction: ()=> saveOrder(col, list, list.map(x => x.id), rerender),
+    });
+  }catch(err){
+    writeFailed(err, ()=> saveOrder(col, list, idsInOrder, rerender));
+    rerender();
+  }
+}
+
+registerRowMenu('seatImg', (id)=>{
+  const list = seatImgList();
+  return [
+    ...reorderMenuItems(list, id, (next)=> saveOrder('seatingImages', list, next, renderImages)),
+    '-',
+    { label:'刪除這張圖', danger:true, run: async ()=>{
+      const ok = await confirmModal({ title:'刪除桌次圖', message:'確定要刪掉這張桌次圖嗎？' });
+      if(!ok) return;
+      scheduleUndoDelete('seatingImages', id, '桌次圖', renderImages);
+    } },
+  ];
+});
+document.addEventListener('data:seatingImages', ()=> guardedRender(imgsEl, renderImages));
 
 imgsEl.addEventListener('click', async (e)=>{
   const id = e.target.dataset.delImg;
@@ -2370,21 +3185,32 @@ function setupTransportImageField(key, fileId, prevId, clearId){
     const file = fileEl.files && fileEl.files[0];
     fileEl.value = '';
     if(!file) return;
-    if(!file.type.startsWith('image/')){ toast('請選圖片檔', true); return; }
-    try{
+    if(!pickImageFiles([file]).length){
+      toast('這不是圖片檔（支援 JPG／PNG／WebP／HEIC）', true);
+      return;
+    }
+    /* 這一顆是 <label>，裡面包著 <input type="file">，
+       不能像一般按鈕那樣換 textContent（會把 input 一起砍掉），
+       所以狀態走 toast 與欄位本身的 is-saving 樣式 */
+    const field = fileEl.closest('.ad-img-field');
+    if(field) field.classList.add('is-saving');
+    const busy = showToast('圖片上傳中…', { duration: 60000 });
+    await runSave(null, async ()=>{
       const img = await shrinkImage(file, TRANSPORT_IMG_MAX_BYTES, 1000);
       await DataStore.saveSiteFields({ [key]: img });
       render();
-      toast('圖片已更新');
-    }catch(err){ writeFailed(err); }
+      toast('圖片已更新（這一欄不用按下面的儲存，選好就存起來了）');
+    });
+    busy.dismiss();
+    if(field) field.classList.remove('is-saving');
   });
 
-  clearEl.addEventListener('click', async ()=>{
-    try{
+  clearEl.addEventListener('click', async (e)=>{
+    await runSave(e.currentTarget, async ()=>{
       await DataStore.saveSiteFields({ [key]: '' });
       render();
       toast('已移除圖片');
-    }catch(err){ writeFailed(err); }
+    }, { savingText:'移除中…' });
   });
 
   return render;
@@ -2427,8 +3253,101 @@ function fillSiteForm(){
 
   /* 出席回覆的「表單資訊」列的就是這些欄位，改完要跟著重畫 */
   renderRsvpFormInfo();
+  siteFormBaseline = siteFormSnapshot();
+  syncSiteDirtyUI();
 }
-document.getElementById('adSiteReset').addEventListener('click', fillSiteForm);
+document.getElementById('adSiteReset').addEventListener('click', ()=>{
+  fillSiteForm();
+  markSiteFormClean();
+});
+
+/* ---------- 有沒有還沒存的變更 ----------
+   這一頁在手機上要捲 5–6 個螢幕高，中途沒有自動存檔，
+   切到別的分頁、重新整理都會直接消失。所以：
+     1. 底部的儲存列會說「有 N 處還沒儲存」
+     2. 切分頁／關頁面前問一句
+     3. 每 1.5 秒把草稿寫進 localStorage，回來時可以接續
+   （交通圖片是例外：選了就立刻上傳存檔，欄位旁邊有寫。） */
+const SITE_DRAFT_KEY = 'siteForm.draft';
+const siteFields = ()=> [sf.title, sf.venue, sf.addr, sf.map, sf.eventTime,
+  sf.transitPub, sf.transitPark, sf.dress, sf.gift, sf.story, sf.tags];
+
+let siteFormBaseline = '';
+let siteDraftTimer = 0;
+
+function siteFormSnapshot(){
+  return JSON.stringify(siteFields().map(el => (el ? el.value : '')));
+}
+function siteFormDirty(){ return siteFormSnapshot() !== siteFormBaseline; }
+
+function markSiteFormClean(){
+  siteFormBaseline = siteFormSnapshot();
+  LS.remove(SITE_DRAFT_KEY);
+  syncSiteDirtyUI();
+}
+
+function syncSiteDirtyUI(){
+  const note = document.getElementById('adSiteDirty');
+  const btn  = document.getElementById('adSiteSave');
+  const d = siteFormDirty();
+  if(note){
+    note.textContent = d ? '有還沒儲存的變更' : '目前沒有未儲存的變更';
+    note.classList.toggle('is-dirty', d);
+  }
+  if(btn) btn.classList.toggle('is-dirty', d);
+}
+
+sf.form.addEventListener('input', ()=>{
+  syncSiteDirtyUI();
+  clearTimeout(siteDraftTimer);
+  siteDraftTimer = setTimeout(()=>{
+    if(siteFormDirty()) LS.set(SITE_DRAFT_KEY, { at: Date.now(), values: siteFormSnapshot() });
+  }, 1500);
+});
+
+/* 切到別的分頁時提醒一聲 —— activateTab 原本只是換個 class，
+   走掉就是走掉，一句話都沒有 */
+window.addEventListener('hashchange', ()=>{
+  if(!siteFormDirty()) return;
+  /* 還留在同一頁（例如只是切到「當日流程」再切回來）就不用囉嗦 */
+  const h = parseHash();
+  if(h.tab === 'lobby' && h.subtab === 'info') return;
+  showToast('婚禮資訊還有沒儲存的變更，回到那一頁按「儲存婚禮資訊」才會存進去', {
+    isError: true,
+    duration: 6000,
+    actionLabel: '回去存',
+    onAction(){ location.hash = 'lobby/info'; },
+  });
+});
+window.addEventListener('beforeunload', (e)=>{
+  if(!siteFormDirty()) return;
+  e.preventDefault();
+  e.returnValue = '';
+});
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'hidden' && siteFormDirty()){
+    LS.set(SITE_DRAFT_KEY, { at: Date.now(), values: siteFormSnapshot() });
+  }
+});
+
+/* 上次沒存完的內容：填完表單之後才問，不然會被 fillSiteForm 蓋掉 */
+async function offerSiteDraft(){
+  const d = LS.get(SITE_DRAFT_KEY, null);
+  if(!d || !d.values || d.values === siteFormBaseline) return;
+  const ok = await confirmModal({
+    title: '有一份沒存完的婚禮資訊',
+    message: `這台裝置在 ${fmtTime(d.at)} 改過婚禮資訊但沒有儲存。要接回那一份嗎？`,
+    confirmText: '接回來',
+    cancelText: '用目前存好的',
+  });
+  if(!ok){ LS.remove(SITE_DRAFT_KEY); return; }
+  try{
+    const vals = JSON.parse(d.values);
+    siteFields().forEach((el, i) => { if(el) el.value = vals[i] ?? el.value; });
+  }catch{ return; }
+  syncSiteDirtyUI();
+  toast('已接回上次沒存完的內容，記得按「儲存婚禮資訊」');
+}
 
 sf.form.addEventListener('submit', async (e)=>{
   e.preventDefault();
@@ -2466,11 +3385,13 @@ sf.form.addEventListener('submit', async (e)=>{
     patch.eventDate = zonedTimeToDate(+dp.year, +dp.month, +dp.day, hh, mm, tz);
   }
 
-  try{
+  const btn = document.getElementById('adSiteSave');
+  await runSave(btn, async ()=>{
     await DataStore.saveSiteFields(patch);
     fillSiteForm();
+    markSiteFormClean();
     toast('婚禮資訊已更新，重新整理大廳就看得到');
-  }catch(err){ writeFailed(err); }
+  });
 });
 
 /* ---------- 當日流程 ----------
@@ -2482,17 +3403,26 @@ function siteSchedule(){
   return Array.isArray(s) ? s : [];
 }
 
+/* 「由上到下就是大廳時間軸的顯示順序」—— 但原本完全沒有排序工具，
+   要調順序只能整列重打。這裡補上 ↑↓（32px 的方形按鈕，拇指按得到）。 */
 function schRowHtml(item){
   const it = item || {};
+  /* ↑↓ 放在時間欄左邊：這一列在講「第幾個發生」，
+     排序鈕就該和時間站在一起，而不是躲在最右邊的刪除旁邊 */
   return `
     <div class="ad-sch-row">
+      <div class="ad-sch-move">
+        <button class="ad-edit" type="button" data-sch-move="up"   aria-label="往上移">↑</button>
+        <button class="ad-edit" type="button" data-sch-move="down" aria-label="往下移">↓</button>
+      </div>
       <input class="ad-input ad-sch-time"  type="text" maxlength="20"
              value="${escapeHtml(it.time || '')}"  placeholder="11:30">
       <input class="ad-input ad-sch-title" type="text" maxlength="40"
              value="${escapeHtml(it.title || '')}" placeholder="入場迎賓">
       <input class="ad-input ad-sch-desc"  type="text" maxlength="80"
              value="${escapeHtml(it.desc || '')}"  placeholder="說明（選填）">
-      <button class="ad-del" type="button" data-sch-del="1">刪除</button>
+      <button class="ad-del ad-sch-del" type="button" data-sch-del="1"
+              aria-label="刪除這一列">刪除</button>
     </div>`;
 }
 
@@ -2500,17 +3430,48 @@ function renderSchedule(list){
   schListEl.innerHTML = (list && list.length)
     ? list.map(schRowHtml).join('')
     : schRowHtml(null);
+  schBaseline = schSnapshot();
+  syncSchDirty();
 }
 
 document.getElementById('adSchAdd').addEventListener('click', ()=>{
   schListEl.insertAdjacentHTML('beforeend', schRowHtml(null));
+  syncSchDirty();
 });
 
 schListEl.addEventListener('click', (e)=>{
-  if(!e.target.dataset.schDel) return;
+  const move = e.target.closest('[data-sch-move]');
+  if(move){
+    const row = move.closest('.ad-sch-row');
+    if(move.dataset.schMove === 'up' && row.previousElementSibling){
+      schListEl.insertBefore(row, row.previousElementSibling);
+    }else if(move.dataset.schMove === 'down' && row.nextElementSibling){
+      schListEl.insertBefore(row.nextElementSibling, row);
+    }
+    /* 順序是在畫面上改的，還沒寫進資料庫 —— 要按「儲存流程」 */
+    syncSchDirty();
+    return;
+  }
+
+  if(!e.target.closest('[data-sch-del]')) return;
   e.target.closest('.ad-sch-row').remove();
   if(!schListEl.children.length) renderSchedule([]);
+  syncSchDirty();
 });
+
+/* 流程也是「按了儲存才算數」，所以要看得出來還沒存 */
+function schSnapshot(){
+  return JSON.stringify(Array.from(schListEl.querySelectorAll('.ad-sch-row')).map(row => [
+    row.querySelector('.ad-sch-time').value,
+    row.querySelector('.ad-sch-title').value,
+    row.querySelector('.ad-sch-desc').value,
+  ]));
+}
+let schBaseline = '';
+function syncSchDirty(){
+  document.getElementById('adSchSave').classList.toggle('is-dirty', schSnapshot() !== schBaseline);
+}
+schListEl.addEventListener('input', syncSchDirty);
 
 document.getElementById('adSchSave').addEventListener('click', async ()=>{
   /* 整列都空白的就當作沒填，新人不用先刪乾淨才存得起來 */
@@ -2526,11 +3487,11 @@ document.getElementById('adSchSave').addEventListener('click', async ()=>{
     return;
   }
 
-  try{
+  await runSave(document.getElementById('adSchSave'), async ()=>{
     await DataStore.saveSiteFields({ schedule: rows });
     renderSchedule(rows);
     toast(rows.length ? `已儲存 ${rows.length} 個流程項目` : '流程已清空');
-  }catch(err){ writeFailed(err); }
+  });
 });
 
 /* ============================================================
@@ -2553,16 +3514,19 @@ const cardUpload  = document.getElementById('adCardUpload');
 const cardProgEl  = document.getElementById('adCardProgress');
 
 async function uploadCards(files){
-  const list = Array.from(files).filter(f => f.type.startsWith('image/'));
-  if(!list.length){ toast('請選圖片檔', true); return; }
+  const list = pickImageFiles(files);
+  if(!list.length){
+    toast('這幾個檔案不是圖片（支援 JPG／PNG／WebP／HEIC）', true);
+    return;
+  }
 
-  cardProgEl.hidden = false;
-  let done = 0, skipped = 0, failed = 0;
+  let done = 0, skipped = 0;
+  const fails = [];
   let order = DataStore.getCards().length;
 
   for(let i = 0; i < list.length; i++){
     const file = list[i];
-    cardProgEl.textContent = `裁切中… ${i + 1} / ${list.length}`;
+    setProgress(cardProgEl, i + 1, list.length, '裁切中…');
     try{
       const img = await cropImage(file, {
         aspect:   CARD_ASPECT,
@@ -2573,6 +3537,8 @@ async function uploadCards(files){
       });
       if(!img){ skipped++; continue; }     /* 新人自己按了取消 */
 
+      /* 裁切確認到下一張之間就是這一段 Firestore 寫入，弱網可能好幾秒 */
+      setProgress(cardProgEl, i + 1, list.length, '儲存中…');
       order += 1;
       await DataStore.saveDoc('cards', null, {
         img,
@@ -2584,16 +3550,15 @@ async function uploadCards(files){
       });
       done++;
     }catch(err){
-      failed++;
-      console.warn('[admin] 婚禮小卡上傳失敗', file.name, err);
+      fails.push({ file, err, text: uploadErrorText(file, err) });
     }
   }
 
   cardProgEl.hidden = true;
   cardFileEl.value = '';
-  if(failed) toast(`已加入 ${done} 張，${failed} 張失敗（可能是格式不支援）`, true);
-  else if(done) toast(`已加入 ${done} 張婚禮小卡${skipped ? `（略過 ${skipped} 張）` : ''}`);
-  else if(skipped) toast('沒有加入任何一張');
+  if(done) toast(`已加入 ${done} 張婚禮小卡${skipped ? `（略過 ${skipped} 張）` : ''}`);
+  else if(skipped && !fails.length) toast('沒有加入任何一張');
+  reportUploadFails(fails, ()=> uploadCards(fails.map(f => f.file)));
 }
 
 cardFileEl.addEventListener('change', ()=> uploadCards(cardFileEl.files));
@@ -2638,12 +3603,31 @@ function renderCards(){
         <div class="ad-card-actions">
           <span class="ad-order">#${c.order ?? 0}</span>
           <button class="ad-edit" type="button" data-recrop="${c.id}">重新裁切</button>
-          <button class="ad-del"  type="button" data-del-card="${c.id}">刪除</button>
+          <button class="ad-del ad-del-inline" type="button" data-del-card="${c.id}">刪除</button>
+          ${rowMenuBtn('card', c.id)}
         </div>
       </figcaption>
     </figure>`).join('');
 }
-document.addEventListener('data:cards', renderCards);
+document.addEventListener('data:cards', ()=> guardedRender(cardListEl, renderCards));
+
+/* 小卡原本的 #order 是唯讀的，完全沒辦法重排。抽卡頁看的就是這個順序。 */
+registerRowMenu('card', (id)=>{
+  const list = DataStore.getCards().filter(c => !isPendingDelete('cards', c.id));
+  return [
+    ...reorderMenuItems(list, id, (next)=> saveOrder('cards', list, next, renderCards)),
+    '-',
+    { label:'重新裁切', run: ()=>{
+      const btn = cardListEl.querySelector(`[data-recrop="${CSS.escape(id)}"]`);
+      if(btn) btn.click();
+    } },
+    { label:'刪除這張小卡', danger:true, run: async ()=>{
+      const ok = await confirmModal({ title:'刪除婚禮小卡', message:'確定要刪掉這張小卡嗎？' });
+      if(!ok) return;
+      scheduleUndoDelete('cards', id, '這張婚禮小卡', renderCards);
+    } },
+  ];
+});
 
 /* 卡名／等級／說明改完（離開欄位）就存回去 */
 cardListEl.addEventListener('change', async (e)=>{
@@ -2674,12 +3658,18 @@ cardListEl.addEventListener('click', async (e)=>{
     const item = DataStore.getCards().find(c => c.id === recropId);
     if(!item) return;
     /* 拿現有的圖再裁一次：只能往內縮，但對「當初切歪了」很夠用 */
-    const img = await cropImage(item.img, {
-      aspect:   CARD_ASPECT,
-      outWidth: CARD_OUTWIDTH,
-      maxBytes: CARD_MAX_BYTES,
-      title:    '重新裁切婚禮小卡',
-    });
+    let img;
+    try{
+      img = await cropImage(item.img, {
+        aspect:   CARD_ASPECT,
+        outWidth: CARD_OUTWIDTH,
+        maxBytes: CARD_MAX_BYTES,
+        title:    '重新裁切婚禮小卡',
+      });
+    }catch(err){
+      toast(uploadErrorText({ name:item.name || '這張小卡' }, err), true);
+      return;
+    }
     if(!img) return;
     try{
       await DataStore.saveDoc('cards', item.id, {
@@ -2767,7 +3757,10 @@ xf.file.addEventListener('change', async ()=>{
   const file = xf.file.files && xf.file.files[0];
   xf.file.value = '';
   if(!file) return;
-  if(!file.type.startsWith('image/')){ toast('請選圖片檔', true); return; }
+  if(!pickImageFiles([file]).length){
+    toast('這不是圖片檔（支援 JPG／PNG／WebP／HEIC）', true);
+    return;
+  }
   try{
     const img = await cropImage(file, {
       aspect:   Number(xf.ratio.value) || 0.75,
@@ -2778,7 +3771,7 @@ xf.file.addEventListener('change', async ()=>{
     if(img) setExhPreview(img);
   }catch(err){
     console.warn('[admin] 故事照片裁切失敗', err);
-    toast('這張圖讀不進來，換一張試試', true);
+    toast(uploadErrorText(file, err), true);
   }
 });
 
@@ -3115,7 +4108,7 @@ function renderQuiz(){
       `${answer.includes(oi) ? '✓ ' : ''}${escapeHtml(o)}`).join('　／　');
     return `
       <div class="ad-quiz-item" data-id="${it.id}">
-        <button class="ad-drag-handle" type="button" aria-label="拖曳調整順序" title="拖曳調整順序">⠿</button>
+        <button class="ad-drag-handle" type="button" aria-label="拖曳調整順序">⠿</button>
         <div class="ad-item-main">
           <span class="ad-item-title">${i + 1}. ${escapeHtml(it.q || '（沒有題目）')}</span>
           <span class="ad-tag">${it.type === 'multi' ? '複選' : '單選'}</span>
@@ -3123,11 +4116,30 @@ function renderQuiz(){
         </div>
         <div class="ad-item-actions">
           <button class="ad-edit" type="button" data-edit-quiz="${it.id}">編輯</button>
-          <button class="ad-del"  type="button" data-del-quiz="${it.id}">刪除</button>
+          <button class="ad-del ad-del-inline" type="button" data-del-quiz="${it.id}">刪除</button>
+          ${rowMenuBtn('quiz', it.id)}
         </div>
       </div>`;
   }).join('');
 }
+
+/* 拖曳只有桌機用得順；50 題的清單就算能拖，也不可能把第 40 題拖到第 1 位。
+   所以每一列都補一份「上移／下移／移到最前／移到最後」，
+   刪除也一併收進來（原本它和「編輯」只隔 10px，很容易點錯）。 */
+registerRowMenu('quiz', (id)=>{
+  const list = DataStore.getQuiz().filter(it => !isPendingDelete('quiz', it.id));
+  return [
+    ...reorderMenuItems(list, id, (next)=> saveQuizOrder(next)),
+    '-',
+    { label:'編輯這一題', run: ()=> openQuizModal(DataStore.getQuiz().find(x => x.id === id)) },
+    { label:'刪除這一題', danger:true, run: async ()=>{
+      const ok = await confirmModal({ title:'刪除題目', message:'確定要刪掉這一題嗎？' });
+      if(!ok) return;
+      if(qz.id.value === id){ closeQuizModal(); resetQuizForm(); }
+      scheduleUndoDelete('quiz', id, '這一題', renderQuiz);
+    } },
+  ];
+});
 
 /* 把 order 整批重編成 1…n（只寫真的變了的那幾份，不必整包重寫）。
    拖曳放開時呼叫一次，不是每移動一格就打一次 Firestore。 */
@@ -3140,9 +4152,14 @@ async function saveQuizOrder(idsInOrder){
       if(!it || it.order === k + 1) return null;
       return DataStore.saveDoc('quiz', it.id, quizFields(it, k + 1));
     }));
-    toast('順序已更新');
+    toast('順序已更新', {
+      /* 排錯了就按一下退回去 —— 拖曳很容易一口氣拖過頭 */
+      actionLabel: '復原',
+      duration: 5000,
+      onAction: ()=> saveQuizOrder(list.filter(it => !isPendingDelete('quiz', it.id)).map(it => it.id)),
+    });
   }catch(err){
-    writeFailed(err);
+    writeFailed(err, ()=> saveQuizOrder(idsInOrder));
     renderQuiz();
   }
 }
@@ -3162,8 +4179,31 @@ async function saveQuizOrder(idsInOrder){
     e.preventDefault();
   });
 
+  /* 邊緣自動捲動：不加這個的話，清單一長，拖到畫面邊緣就走不動了 */
+  let edgeTimer = 0, edgeDir = 0, lastY = 0;
+  function stopEdge(){ if(edgeTimer){ cancelAnimationFrame(edgeTimer); edgeTimer = 0; } edgeDir = 0; }
+  function edgeStep(){
+    edgeTimer = 0;
+    if(!dragEl || !edgeDir) return;
+    const before = window.scrollY;
+    window.scrollBy(0, edgeDir * 12);
+    /* 頁面捲動了多少，拖曳的起點就要補回多少，卡片才不會跟著飛走 */
+    startY -= (window.scrollY - before);
+    dragEl.style.transform = `translateY(${lastY - startY}px)`;
+    edgeTimer = requestAnimationFrame(edgeStep);
+  }
+
   qz.list.addEventListener('pointermove', (e)=>{
     if(!dragEl) return;
+    lastY = e.clientY;
+    const EDGE = 80;
+    const dir = e.clientY < EDGE ? -1
+      : (e.clientY > window.innerHeight - EDGE ? 1 : 0);
+    if(dir !== edgeDir){
+      stopEdge();
+      edgeDir = dir;
+      if(dir) edgeTimer = requestAnimationFrame(edgeStep);
+    }
     dragEl.style.transform = `translateY(${e.clientY - startY}px)`;
 
     /* 拖過相鄰項目的中點就跟它交換位置。
@@ -3189,6 +4229,7 @@ async function saveQuizOrder(idsInOrder){
   });
 
   function endDrag(e){
+    stopEdge();
     if(!dragEl) return;
     const el = dragEl;
     dragEl = null;
@@ -3255,6 +4296,14 @@ qz.list.addEventListener('click', async (e)=>{
 
 /* ---------- 賓客的作答紀錄 ---------- */
 function renderQuizVotes(){
+  /* 第一筆 snapshot 回來之前顯示「—」，不要顯示 0 ——
+     「0 人作答」和「還在讀」長得一樣，新人會以為真的沒人玩 */
+  if(!loadedOnce.has('quizVotes')){
+    qz.voteCnt.textContent = '—';
+    qz.voteAvg.textContent = '—';
+    return;
+  }
+
   const votes = DataStore.getQuizVotes();
   qz.voteCnt.textContent = votes.length;
 
@@ -3312,7 +4361,6 @@ const Butler = (() => {
     sum:      document.getElementById('adBtSum'),
     sumSub:   document.getElementById('adBtSumSub'),
     stats:    document.getElementById('adBtStats'),
-    rows:     document.getElementById('adBtRows'),
     count:    document.getElementById('adBtCount'),
     filter:   document.getElementById('adBtFilter'),
     byWho:    document.getElementById('adBtByWho'),
@@ -3320,7 +4368,16 @@ const Butler = (() => {
     newLink:  document.getElementById('adBtNewLink'),
     exportBtn:document.getElementById('adBtExport'),
     noLink:   document.getElementById('adBtNoLink'),
+    meta:     document.getElementById('adBtMeta'),
+    tableWrap:document.getElementById('adBtTableWrap'),
   };
+
+  /* 婚宴當天 300 筆全部一次畫出來，手機捲起來會卡；
+     回覆名單／桌次名單／悄悄話都有分頁，這裡本來漏了 */
+  const pager = pagerState('butler');
+  /* 第一筆 snapshot 回來之前不要顯示「目前 0 筆」——
+     那和「現場還沒有記下任何一筆」長得一模一樣 */
+  let loaded = false;
 
   let started = false;
   let links = [];                 /* butlerLinks 的內容 */
@@ -3363,14 +4420,21 @@ const Butler = (() => {
       query(collection(db, 'sites', siteId(), 'butlerLinks'), orderBy('createdAt', 'asc')),
       snap => {
         links = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        /* 一組連結都沒有 → 不會有任何 entries snapshot 回來，
+           這時候「目前 0 筆」是真的，不是還在讀 */
+        if(!links.length) loaded = true;
         links.forEach(watchBook);
         renderAll();
       },
       err => {
         console.warn('[admin] 收禮連結讀取失敗', err.code || err);
+        loaded = true;
         el.links.innerHTML = `<div class="ad-empty">讀不到收禮連結，請重新整理一次</div>`;
+        renderAll();
       },
     );
+
+    renderAll();   /* 先畫 skeleton，不要留一張空表 */
   }
 
   /* 一組連結配一本收禮簿，兩份都要盯著：
@@ -3390,6 +4454,7 @@ const Butler = (() => {
       query(collection(db, 'butlers', link.bookId, 'entries'), orderBy('createdAt', 'desc')),
       s => {
         entriesOf.set(link.bookId, s.docs.map(d => ({ id: d.id, bookId: link.bookId, ...d.data() })));
+        loaded = true;
         renderAll();
       },
       err => console.warn('[admin] 收禮紀錄讀取失敗', err.code || err),
@@ -3405,6 +4470,14 @@ const Butler = (() => {
   }
 
   function renderStats(){
+    if(!loaded){
+      el.sum.textContent = '—';
+      el.sumSub.textContent = '讀取中…';
+      el.meta.hidden = true;
+      el.stats.innerHTML = skeletonHtml(1, ['40%', '60%']);
+      return;
+    }
+
     const list = allEntries();
     const t = totals(list);
     const rosterSize = links.reduce((n, l) => {
@@ -3414,9 +4487,23 @@ const Butler = (() => {
     const done = new Set(list.filter(e => e.guestId).map(e => e.guestId)).size;
 
     el.sum.textContent = money(t.amount);
+    /* 台灣一場婚禮禮金破百萬很常見，字一多就會被 body{overflow-x:hidden} 切掉。
+       超過 8 個字元就自動降一級（見 .ad-hero-num.is-long） */
+    el.sum.classList.toggle('is-long', el.sum.textContent.length > 8);
     el.sumSub.textContent = t.count
       ? `共 ${t.count} 筆・平均 ${money(Math.round(t.amount / t.count))}`
       : '還沒有任何紀錄';
+
+    /* 「數字是即時的」要有證據 —— 現場對帳時沒有這個時間就會懷疑是不是卡住了 */
+    const last = list[0];
+    if(last){
+      el.meta.innerHTML = `統計區間：<b>全部紀錄</b>・最後更新 <b>${escapeHtml(fmtTime(last.createdAt))}</b>`
+        + `<br>最近一筆：${escapeHtml(last.name || '（沒有名字）')}`
+        + `${last.by ? `，由 ${escapeHtml(last.by)} 記錄` : ''}`;
+      el.meta.hidden = false;
+    }else{
+      el.meta.hidden = true;
+    }
 
     const tiles = [
       ['禮餅總盒數', t.boxes],
@@ -3432,31 +4519,82 @@ const Butler = (() => {
   }
 
   function renderRows(){
-    const q = normKey(filterText);
-    const list = allEntries().filter(e => !q
-      || normKey(`${e.name}${e.code || ''}${e.table || ''}${e.note || ''}${e.by || ''}`).includes(q));
-
-    el.count.textContent = `目前 ${list.length} 筆`;
-
-    if(!list.length){
-      el.rows.innerHTML = `<tr><td class="ad-td-empty" colspan="10">${
-        allEntries().length ? '沒有符合的紀錄' : '現場還沒有記下任何一筆'
-      }</td></tr>`;
+    if(!loaded){
+      el.count.textContent = '讀取中…';
+      el.tableWrap.innerHTML = skeletonHtml(4);
       return;
     }
 
-    el.rows.innerHTML = list.map(e => `<tr>
-      <td>${escapeHtml(e.code || '—')}</td>
-      <td>${escapeHtml(e.name || '')}</td>
-      <td>${escapeHtml(e.table || '—')}</td>
-      <td>${money(e.amount)}</td>
-      <td>${e.gift ? '已發送' : '沒有發'}</td>
-      <td>${Number(e.boxes) || 0}</td>
-      <td>${Number(e.people) || 0}</td>
-      <td class="ad-td-lines">${escapeHtml(e.note || '')}</td>
-      <td>${escapeHtml(e.by || '—')}</td>
-      <td class="ad-td-sub">${fmtTime(e.createdAt)}</td>
-    </tr>`).join('');
+    const q = normKey(filterText);
+    const all = allEntries().filter(e => !q
+      || normKey(`${e.name}${e.code || ''}${e.table || ''}${e.note || ''}${e.by || ''}`).includes(q));
+
+    el.count.textContent = `目前 ${all.length} 筆`;
+
+    if(!all.length){
+      el.tableWrap.innerHTML = `<div class="ad-empty">${
+        allEntries().length ? '沒有符合的紀錄' : '現場還沒有記下任何一筆'
+      }</div>`;
+      renderPager(el.tableWrap, pager, 0, renderRows);
+      return;
+    }
+
+    renderPager(el.tableWrap, pager, all.length, renderRows);
+    const list = all.slice((pager.page - 1) * pager.size, pager.page * pager.size);
+
+    /* 手機是一筆一張卡（10 欄的表格一樣要橫滑），桌機維持表格 */
+    el.tableWrap.innerHTML = isNarrow() ? btCardsHtml(list) : btTableHtml(list);
+    if(!isNarrow()) bindScrollHints(el.tableWrap);
+  }
+
+  function btTableHtml(list){
+    return `<table class="ad-table">
+      <thead>
+        <tr>
+          <th>編號</th><th class="is-name">姓名</th><th>桌次</th><th>禮金</th>
+          <th>禮餅</th><th>盒數</th><th>人數</th><th>備註</th>
+          <th>記錄者</th><th>時間</th>
+        </tr>
+      </thead>
+      <tbody id="adBtRows">${list.map(e => `<tr>
+        <td>${escapeHtml(e.code || '—')}</td>
+        <td class="is-name">${escapeHtml(e.name || '')}</td>
+        <td>${escapeHtml(e.table || '—')}</td>
+        <td>${money(e.amount)}</td>
+        <td>${e.gift ? '已發送' : '沒有發'}</td>
+        <td>${Number(e.boxes) || 0}</td>
+        <td>${Number(e.people) || 0}</td>
+        <td class="ad-td-lines">${escapeHtml(e.note || '')}</td>
+        <td>${escapeHtml(e.by || '—')}</td>
+        <td class="ad-td-sub">${fmtTime(e.createdAt)}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
+
+  function btCardsHtml(list){
+    return `<ul class="ad-btcards">${list.map(e => {
+      const sub = [
+        /* table 存的已經是桌位的完整標籤（例如「01｜主桌」），
+           不要再包一層「第 … 桌」，會變成「第 01｜主桌 桌」 */
+        e.table || '',
+        e.gift ? `禮餅 ${Number(e.boxes) || 0} 盒` : '',
+        e.by || '',
+        fmtTime(e.createdAt),
+      ].filter(Boolean).join('・');
+      return `<li class="ad-btcard">
+        <div class="ad-btcard-main">
+          <div class="ad-btcard-name">${
+            e.code ? `<i class="ad-btcard-code">${escapeHtml(e.code)}</i>` : ''
+          }${escapeHtml(e.name || '（沒有名字）')}</div>
+          <div class="ad-btcard-sub">${escapeHtml(sub)}</div>
+          ${e.note ? `<div class="ad-btcard-sub">備註：${escapeHtml(e.note)}</div>` : ''}
+        </div>
+        <div class="ad-btcard-side">
+          <div class="ad-btcard-amt">${money(e.amount)}</div>
+          <div class="ad-btcard-people">${Number(e.people) || 0} 位</div>
+        </div>
+      </li>`;
+    }).join('')}</ul>`;
   }
 
   function renderByWho(){
@@ -3772,7 +4910,10 @@ const Butler = (() => {
 
   el.newLink.addEventListener('click', createLink);
   el.exportBtn.addEventListener('click', exportCsv);
-  el.filter.addEventListener('input', e => { filterText = e.target.value; renderRows(); });
+  el.filter.addEventListener('input', e => { filterText = e.target.value; pager.page = 1; renderRows(); });
+  el.filter.addEventListener('search', e => { filterText = e.target.value; pager.page = 1; renderRows(); });
+  /* 轉向或改變視窗大小時，表格與卡片要換過來 */
+  onNarrowChange(()=>{ if(started) renderRows(); });
 
   el.links.addEventListener('click', (e)=>{
     if(e.target.id === 'adBtEmptyNew'){ createLink(); return; }

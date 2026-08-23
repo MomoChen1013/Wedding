@@ -101,3 +101,64 @@ button.ad-item:hover{background:rgba(255,255,255,.6);}
   button.ad-item{padding:16px 2px;}
   .bt-step .btn{padding:14px 0;}
 }
+
+/* ============================================================
+   手機／平板
+   ------------------------------------------------------------
+   收禮台是「站著、單手、拿著手機、旁邊有人在等」的情境，
+   所以這裡補的都是同一件事：手構得到、看得到、不用捲。
+============================================================ */
+
+/* admin.css 在 <560px 把彈窗改成貼底的 bottom sheet（卡片自己有 18px 的
+   左右 padding）。這一頁的按鈕列是用 id 選到的，特異性比較高，
+   所以要自己把負邊界補回來，不然那一條會比卡片窄一截。 */
+@media(max-width:560px){
+  #btSheet .ad-modal-actions{
+    margin:20px -18px calc(-20px - env(safe-area-inset-bottom));
+    padding:12px 18px calc(12px + env(safe-area-inset-bottom));
+    bottom:calc(-20px - env(safe-area-inset-bottom));
+  }
+}
+
+/* 賓客名單的每一列：現場是靠拇指按的，熱區要夠大、金額要一眼看得到 */
+@media (pointer:coarse){
+  .bt-step .ad-input{font-size:19px;}
+  /* 加減鈕現場用得比鍵盤多，做大一點 */
+  .bt-step .btn{min-width:60px;min-height:52px;}
+  #btGiftSeg .ad-chip{min-height:44px;padding:11px 18px;}
+  .bt-quick .ad-chip{min-height:44px;}
+}
+
+/* 通行碼與金額欄的字級刻意比 16px 大（不會觸發 iOS 的自動放大） */
+.bt-pass,.bt-amount{font-size:26px;}
+.bt-amount{font-size:30px;}
+
+/* ============================================================
+   名單改成「一個一個核對過去」
+   ------------------------------------------------------------
+   現場的動作是掃過名單、找到人、收下紅包、再回名單找下一個。
+   所以每一列前面就是一個勾選框：打了勾的整列淡下去，
+   剩下沒勾的那幾個一眼就掃得出來 —— 那才是還沒收的人。
+   框不是真的 <input>：整列都可以點，點哪裡都是打開記帳表單。
+   多一個真的 checkbox 只會讓人以為「勾了就等於收到」（金額還沒填）。
+============================================================ */
+.bt-check{
+  flex:0 0 auto;align-self:center;
+  width:22px;height:22px;margin-right:12px;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--line);border-radius:4px;background:#fff;
+  font-size:13px;line-height:1;color:#fff;
+}
+.bt-row.is-done .bt-check{
+  background:var(--primary-deep);border-color:var(--primary-deep);
+}
+/* .ad-item 是 space-between，前面多了勾選框之後，名字那一塊如果不吃滿
+   剩下的寬度，中間就會被推出一段空白，看起來像縮排 */
+.bt-row .ad-item-main{flex:1 1 auto;}
+/* 已收的整列淡下去。勾勾本身維持滿的 —— 它才是「這一位收過了」的記號，
+   淡掉的是內容，不是狀態 */
+.bt-row.is-done .ad-item-main,
+.bt-row.is-done .bt-side{opacity:.4;}
+@media (pointer:coarse){
+  .bt-check{width:24px;height:24px;}
+}

@@ -1046,14 +1046,21 @@ console.log('\n[14b] 後台看得到出席回覆');
   ok('總回覆人數正確',
     Number(await page.textContent('#adRsvpTotal')) === rows.length,
     `應為 ${rows.length}`);
+  /* 四個數字改成右邊一列一項（不再是一段長句），所以逐項比對 */
+  const heroRows = await page.$$eval('#adRsvpSub .ad-hero-item', (els) =>
+    els.map((e) => [...e.children].map((c) => c.textContent.trim()).join(' ')));
   ok('副標帶出確定出席人數',
-    (await page.textContent('#adRsvpSub')).includes(`確定出席 ${expectHead} 位`),
-    await page.textContent('#adRsvpSub'));
+    heroRows.some((t) => t === `確定出席 ${expectHead} 位`),
+    heroRows.join('｜'));
 
-  const chartTitles = await page.locator('#adRsvpCharts .ad-donut-title').allInnerTexts();
+  /* 圖表區塊在載入中會換成 skeleton，剛畫好的那一刻可能還在 scInF 的
+     淡入動畫裡 —— innerText 是看版面算出來的，會受這個影響。
+     這裡要驗的是「標題是不是這五個」，所以讀 textContent。 */
+  const chartTitles = (await page.locator('#adRsvpCharts .ad-donut-title').allTextContents())
+    .map((t) => t.replace(/依.*$|共需.*$/s, '').trim());
   ok('五張環狀圖：出席、飲食、兒童座椅、喜帖、喜餅',
-    chartTitles.map((t) => t.split('\n')[0].trim()).join(',') === '出席,飲食,兒童座椅,喜帖,喜餅',
-    chartTitles.map((t) => t.split('\n')[0].trim()).join(','));
+    chartTitles.join(',') === '出席,飲食,兒童座椅,喜帖,喜餅',
+    chartTitles.join(','));
   ok('環狀圖有畫出色塊',
     (await page.locator('#adRsvpCharts .ad-donut-seg').count()) > 0,
     String(await page.locator('#adRsvpCharts .ad-donut-seg').count()));
@@ -2296,8 +2303,8 @@ console.log('\n[21] 後台排桌管理');
   ok('沒同步就不會動到賓客的桌次查詢',
     before.docs.every((d) => !String(d.data().name).startsWith('排桌')),
     `${before.size} 筆`);
-  ok('狀態顯示尚未同步',
-    (await page.textContent('#spSyncState')).includes('尚未同步'),
+  ok('狀態顯示還沒送出',
+    (await page.textContent('#spSyncState')).includes('還沒送出'),
     await page.textContent('#spSyncState'));
 
   /* ---- 同步 ---- */
@@ -2314,8 +2321,8 @@ console.log('\n[21] 後台排桌管理');
   ok('同步是整份換掉（舊名單不會殘留）',
     !rows.some((r) => r.name === '王小明' && r.table === '第 3 桌'),
     `${rows.length} 筆`);
-  ok('狀態變成已同步',
-    (await page.textContent('#spSyncState')).includes('已同步'),
+  ok('狀態變成已送出',
+    (await page.textContent('#spSyncState')).includes('已送出'),
     await page.textContent('#spSyncState'));
 
   /* ---- 從出席表單匯入：講清楚現在接進來的是誰 ---- */
@@ -2436,8 +2443,13 @@ console.log('\n[21] 後台排桌管理');
 }
 
 {
-  /* 手機上側欄選單收成抽屜，不能把整頁撐寬；漢堡按鈕要點得開、選得到分頁 */
-  const page = await newPage({ viewport:{ width:375, height:812 } });
+  /* 手機上側欄選單收成抽屜，不能把整頁撐寬；漢堡按鈕要點得開、選得到分頁。
+     hasTouch/isMobile 要開著 —— 後台有一整批規則是靠
+     `@media (pointer:coarse)` / `(hover:none)` 判斷的，
+     不開的話 Playwright 會被當成有滑鼠的桌機，那幾條全部量不到。 */
+  const page = await newPage({
+    viewport:{ width:375, height:812 }, hasTouch:true, isMobile:true,
+  });
   await page.goto(`${BASE}/w/${SLUG}/admin`, { waitUntil:'domcontentloaded' });
   await page.waitForFunction(
     () => document.documentElement.dataset.siteReady === '1', null, { timeout:20000 });
@@ -2458,6 +2470,127 @@ console.log('\n[21] 後台排桌管理');
     await page.evaluate(() => !document.getElementById('adSide').classList.contains('is-open')));
   /* 桌次分頁底下有子分頁（桌次圖／桌次搜尋及名單），網址會帶到第一個子分頁 */
   ok('網址跟著切到 #seating/map', page.url().endsWith('#seating/map'), page.url());
+
+  /* ---------- 以下是「後台在手機上真的用得完」的那幾條 ---------- */
+
+  /* iOS Safari 只要聚焦字級 <16px 的欄位就會把整頁放大。
+     全站所有可輸入元件都必須 >= 16px，這是阻斷級的規則。 */
+  const smallFields = await page.$$eval(
+    '#adPage input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"])'
+    + ':not([type="file"]):not([type="range"]), #adPage textarea, #adPage select',
+    (els) => els
+      .filter((el) => el.offsetParent !== null || el.closest('.ad-panel'))
+      .map((el) => [el.id || el.className, parseFloat(getComputedStyle(el).fontSize)])
+      .filter(([, size]) => size < 16));
+  ok('所有輸入欄位都 >= 16px（iOS 才不會自動放大整頁）',
+    smallFields.length === 0,
+    smallFields.slice(0, 4).map((f) => f.join(':')).join('｜') || '全部合格');
+
+  /* 抽屜的不透明底色會蓋住漢堡鈕，手機也沒有 Esc —— 抽屜自己要有出口 */
+  await page.click('#adMenuBtn');
+  await page.waitForSelector('#adSide.is-open', { timeout:5000 });
+  ok('抽屜裡有自己的關閉鈕', await page.isVisible('#adSideClose'));
+  ok('抽屜開著時背景鎖住不捲',
+    await page.evaluate(() => document.body.classList.contains('ad-lock')));
+  await page.click('#adSideClose');
+  await page.waitForTimeout(300);
+  ok('關掉之後背景解鎖',
+    await page.evaluate(() => !document.body.classList.contains('ad-lock')));
+
+  /* 返回鍵＝關掉最上面那一層，不是離開後台 */
+  await page.click('#adMenuBtn');
+  await page.waitForSelector('#adSide.is-open', { timeout:5000 });
+  await page.goBack();
+  await page.waitForTimeout(300);
+  ok('按返回鍵關掉抽屜、留在後台',
+    await page.evaluate(() => !document.getElementById('adSide').classList.contains('is-open'))
+      && page.url().includes('/admin'),
+    page.url());
+
+  /* 16 欄的表格在 390px 上要左右滑三四個螢幕，手機一律換成卡片 */
+  await page.evaluate(() => { location.hash = 'rsvp/replies'; });
+  await page.waitForTimeout(700);
+  ok('回覆名單在手機是卡片不是表格',
+    await page.evaluate(() => !!document.querySelector('#adRsvpList .ad-rcards')
+      && !document.querySelector('#adRsvpList table')));
+  const rcard = page.locator('#adRsvpList .ad-rcard').first();
+  ok('卡片第一行是姓名 ＋ 出席狀態',
+    await rcard.locator('.ad-rcard-name').count() === 1
+      && await rcard.locator('.ad-tag').count() >= 1);
+  ok('其餘欄位收在「展開更多」裡',
+    await rcard.locator('.ad-rcard-rest[hidden]').count() === 1);
+  await rcard.locator('[data-rcard-more]').click();
+  await page.waitForTimeout(200);
+  ok('點「展開更多」才攤開',
+    await rcard.locator('.ad-rcard-rest:not([hidden])').count() === 1);
+
+  /* 篩選條件會捲出畫面，所以要有一條跟著名單走的彙總 */
+  await page.fill('#adRsvpFilter', '王');
+  await page.waitForTimeout(400);
+  ok('篩選時出現彙總那一條',
+    await page.isVisible('#adRsvpFilterSum')
+      && (await page.textContent('#adRsvpFilterSumText')).includes('搜尋'),
+    await page.textContent('#adRsvpFilterSumText'));
+  await page.click('#adRsvpFilterClear');
+  await page.waitForTimeout(400);
+  ok('「清除」把篩選條件全部歸零',
+    (await page.inputValue('#adRsvpFilter')) === ''
+      && !(await page.isVisible('#adRsvpFilterSum')));
+
+  /* 觸控目標：文字按鈕視覺不變，靠 padding 撐到 44px */
+  const smallHits = await page.$$eval(
+    '.ad-panel.is-on .ad-edit:not([hidden]), .ad-panel.is-on .ad-rowmenu-btn',
+    (els) => els.filter((el) => el.offsetParent !== null)
+      .map((el) => [el.textContent.trim().slice(0, 6), Math.round(el.getBoundingClientRect().height)])
+      .filter(([, h]) => h > 0 && h < 44));
+  ok('行內動作的熱區至少 44px',
+    smallHits.length === 0,
+    smallHits.slice(0, 4).map((h) => h.join(':')).join('｜') || '全部合格');
+
+  /* 長表單的儲存要浮在底部，不用捲五六個螢幕 */
+  await page.evaluate(() => { location.hash = 'lobby/info'; });
+  await page.waitForTimeout(600);
+  ok('婚禮資訊的儲存列是 sticky',
+    await page.$eval('#adSiteForm .ad-savebar',
+      (el) => getComputedStyle(el).position === 'sticky'));
+  await page.fill('#adDressCode', '正式服裝');
+  await page.waitForTimeout(200);
+  ok('改了東西就說「有還沒儲存的變更」',
+    (await page.textContent('#adSiteDirty')).includes('有還沒儲存'),
+    await page.textContent('#adSiteDirty'));
+  await page.click('#adSiteReset');
+  await page.waitForTimeout(200);
+
+  /* 排桌工作區：儲存不能每次都要捲回最上面 */
+  await page.evaluate(() => { location.hash = 'seatingPlan/board'; });
+  await page.waitForTimeout(900);
+  ok('排桌在手機有固定底列', await page.isVisible('#spMobileBar'));
+  ok('底列上就是「儲存排桌」',
+    (await page.textContent('#spMbSave')).includes('儲存排桌'));
+  ok('toast 會讓開底列',
+    await page.evaluate(() => document.body.dataset.stickybar === '1'));
+  await page.click('#spMbMore');
+  await page.waitForSelector('#spMoreMask:not([hidden])', { timeout:5000 });
+  ok('「⋮ 更多」裡有送出、復原、重做與統計',
+    await page.isVisible('#spMbSync') && await page.isVisible('#spMbUndo')
+      && await page.$eval('#spMoreStats', (el) => el.children.length === 4));
+  await page.click('#spMoreClose');
+  await page.waitForTimeout(300);
+
+  /* 離線時要看得到，而且不擋操作 */
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, 'onLine', { value:false, configurable:true });
+    window.dispatchEvent(new Event('offline'));
+  });
+  await page.waitForTimeout(200);
+  ok('斷線時壓一條離線橫幅', await page.isVisible('#adOffline'));
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, 'onLine', { value:true, configurable:true });
+    window.dispatchEvent(new Event('online'));
+  });
+  await page.waitForTimeout(200);
+  ok('連線回來橫幅就收掉', !(await page.isVisible('#adOffline')));
+
   await page.close();
 }
 

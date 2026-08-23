@@ -2,7 +2,9 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- interactive-widget：鍵盤升起時把 layout viewport 縮起來（Android Chrome），
+     記帳表單底部的「儲存」才不會被鍵盤蓋住 -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <!-- 婚宴當天現場用的工具，不對外連結、不要被搜尋到 -->
 <meta name="robots" content="noindex,nofollow">
 <!-- token 在 # 後面，但保險起見連 referrer 都不送 -->
@@ -83,10 +85,15 @@
     </div>
   </header>
 
+  <div class="ad-offline" id="btOffline" hidden role="status">
+    <span>目前離線，記下的資料會排隊等連線回來再送出</span>
+  </div>
+
   <div class="ad-layout">
     <main class="ad-main">
 
-      <nav class="ad-subtabs" id="btTabbar">
+      <!-- 只有三顆，窄螢幕排成等寬的 segmented control（見 admin.css 的 data-count） -->
+      <nav class="ad-subtabs" id="btTabbar" data-count="3">
         <button class="ad-subtab is-on" type="button" data-go="list">收禮台</button>
         <button class="ad-subtab" type="button" data-go="log">紀錄</button>
         <button class="ad-subtab" type="button" data-go="stat">統計</button>
@@ -111,13 +118,14 @@
               <div class="ad-stat-lab">禮金總額</div></div>
           </div>
 
-          <div class="ad-list-head">
+          <div class="ad-list-head is-sticky">
             <div class="ad-chips" id="btChips">
               <button class="ad-chip is-on" data-filter="all" type="button">全部</button>
               <button class="ad-chip" data-filter="todo" type="button">未收</button>
               <button class="ad-chip" data-filter="done" type="button">已收</button>
             </div>
             <input class="ad-filter" id="btSearch" type="search"
+                   inputmode="search" enterkeyhint="search" autocomplete="off"
                    placeholder="找名字、編號、桌次…" aria-label="搜尋賓客">
           </div>
 
@@ -134,9 +142,10 @@
             <b>記錯了就點進去改</b>，現場改掉比留一筆錯的有用。
           </p>
 
-          <div class="ad-list-head">
+          <div class="ad-list-head is-sticky">
             <span id="btLogCount">目前 0 筆</span>
             <input class="ad-filter" id="btLogSearch" type="search"
+                   inputmode="search" enterkeyhint="search" autocomplete="off"
                    placeholder="找名字、備註、記錄者…" aria-label="搜尋紀錄">
           </div>
 
@@ -199,7 +208,8 @@
 
       <label class="ad-label" for="btInAmount">禮金金額</label>
       <input class="ad-input bt-amount" id="btInAmount" type="text"
-             inputmode="numeric" pattern="[0-9]*" placeholder="0">
+             inputmode="numeric" enterkeyhint="done" pattern="[0-9]*"
+             autocomplete="off" placeholder="0">
       <div class="ad-chips bt-quick" id="btQuick"></div>
 
       <label class="ad-label">禮餅</label>
