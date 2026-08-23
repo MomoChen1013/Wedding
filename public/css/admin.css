@@ -1407,6 +1407,9 @@ select.ad-input{appearance:none;cursor:pointer;
     border-top:1px solid var(--line);background:rgba(251,250,248,.97);
     backdrop-filter:blur(6px);}
   .ad-savebar .btn{flex:1 1 auto;}
+  /* 「有還沒儲存的變更」擺在按鈕上面：擠在後面的話會被推到螢幕最底下，
+     剛好是最容易被瀏覽器工具列蓋掉的那一條 */
+  .ad-savebar-note{order:-1;flex:1 1 100%;margin-bottom:2px;}
 }
 
 /* ------------------------------------------------------------
@@ -1617,16 +1620,22 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
   mask-image:linear-gradient(90deg,#000 calc(100% - 14px),transparent 100%);
 }
 
-/* 桌位管理的 ↑↓：原本是單一字元的文字按鈕（寬度只有一個字），
-   手機幾乎按不到。改成 32×32 的方形（觸控再撐到 44） */
-.sp-move-btn{
+/* 排序用的 ↑↓：原本是單一字元的文字按鈕（寬度只有一個字），
+   手機幾乎按不到。改成 32×32 的方形（觸控再撐到 44）。
+   桌位管理與當日流程共用同一個樣子 —— 同一件事就該長得一樣。 */
+.sp-move-btn,
+.ad-sch-acts [data-sch-move]{
   min-width:32px;min-height:32px;padding:0;
   display:inline-flex;align-items:center;justify-content:center;
   border:1px solid var(--line);border-radius:var(--radius);font-size:13px;
 }
-.sp-move-btn:not([disabled]):hover{border-color:var(--ink);}
+.sp-move-btn:not([disabled]):hover,
+.ad-sch-acts [data-sch-move]:hover{border-color:var(--ink);}
 .sp-move-btn[disabled]{opacity:.3;}
-@media (pointer:coarse){ .sp-move-btn{min-width:44px;min-height:44px;} }
+@media (pointer:coarse){
+  .sp-move-btn,
+  .ad-sch-acts [data-sch-move]{min-width:44px;min-height:44px;}
+}
 /* 標籤優先順序那一列的 ↑↓ 同理 */
 .sp-tagorder-row .ad-edit{min-width:32px;min-height:32px;padding:0;
   display:inline-flex;align-items:center;justify-content:center;

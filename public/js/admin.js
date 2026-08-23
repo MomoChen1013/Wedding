@@ -389,6 +389,7 @@ rowMenuEl.className = 'ad-rowmenu';
 rowMenuEl.hidden = true;
 document.body.appendChild(rowMenuEl);
 let rowMenuOwner = null;
+let rowMenuAt = 0;
 
 function closeRowMenu(){
   rowMenuEl.hidden = true;
@@ -407,6 +408,7 @@ function openRowMenu(btn){
 
   closeRowMenu();
   rowMenuOwner = btn;
+  rowMenuAt = Date.now();
   btn.classList.add('is-open');
   rowMenuEl.innerHTML = items.map((it, i) => it === '-'
     ? '<div class="ad-rowmenu-sep"></div>'
@@ -448,7 +450,13 @@ document.addEventListener('click', (e)=>{
   if(!e.target.closest('.ad-rowmenu')) closeRowMenu();
 });
 document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeRowMenu(); });
-window.addEventListener('scroll', closeRowMenu, true);
+/* 捲動就收起來（選單是 fixed 的，跟著捲會離開它那一列）。
+   但「按下去」本身常常會先把那一列捲進畫面，那一下的 scroll 不能算 ——
+   不擋的話選單會在打開的同一瞬間又被關掉。 */
+window.addEventListener('scroll', ()=>{
+  if(Date.now() - rowMenuAt < 350) return;
+  closeRowMenu();
+}, true);
 
 /* 一份清單的「上移／下移／移到最前／移到最後」。
    list 是目前的順序、id 是這一列，apply(newIds) 負責寫回去。 */
@@ -4515,7 +4523,9 @@ const Butler = (() => {
   function btCardsHtml(list){
     return `<ul class="ad-btcards">${list.map(e => {
       const sub = [
-        e.table ? `第 ${e.table} 桌` : '',
+        /* table 存的已經是桌位的完整標籤（例如「01｜主桌」），
+           不要再包一層「第 … 桌」，會變成「第 01｜主桌 桌」 */
+        e.table || '',
         e.gift ? `禮餅 ${Number(e.boxes) || 0} 盒` : '',
         e.by || '',
         fmtTime(e.createdAt),
