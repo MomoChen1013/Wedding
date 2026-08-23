@@ -2120,7 +2120,7 @@ function syncTagChipsClamp(){
   if(!boxH) return;
 
   tagMoreBtn.hidden = !overflow;
-  tagMoreBtn.textContent = tagChipsOpen ? '收起標籤' : '展開全部標籤';
+  tagMoreBtn.textContent = tagChipsOpen ? '收起來' : '展開全部';
   tagMoreBtn.setAttribute('aria-expanded', String(tagChipsOpen));
 }
 

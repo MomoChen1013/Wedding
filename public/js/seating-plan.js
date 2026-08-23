@@ -594,8 +594,13 @@
   const SAVE_BTNS = ['spSaveBtn', 'spMbSave'];
   const SYNC_BTNS = ['spSyncBtn', 'spMbSync'];
 
-  async function save(silent) {
+  /* markSynced：這一次的存檔是「送到查座位頁」的收尾。
+     兩個時間戳一定要來自同一份 payload —— 各自呼叫一次 Date.now() 的話，
+     只要中間差 1 毫秒，savedAt 就會比 syncedAt 新，
+     畫面立刻變回「有修改還沒送出」，但其實什麼都沒改。 */
+  async function save(silent, markSynced) {
     const payload = planPayload();
+    if (markSynced) payload.syncedAt = payload.savedAt;
     if (payload.guests.length >= MAX_GUESTS) {
       toast(`排桌名單最多 ${MAX_GUESTS} 位，請先整理一下`, true);
       return false;
@@ -604,6 +609,7 @@
     try {
       await withWriteTimeout(window.fb.setDoc(planDoc(), payload));
       savedAt = payload.savedAt;
+      syncedAt = payload.syncedAt;
       plan.assign = payload.assign;
       dirty = false;
       clearLocalDraft();
@@ -662,8 +668,7 @@
     try {
       await DataStore.wipeCollection('seating');
       await DataStore.importSeating(rows);
-      syncedAt = Date.now();
-      await save(true);
+      await save(true, /* markSynced */ true);
       afterSyncToast(rows.length);
     } catch (err) {
       writeFailed(err, () => syncToSeating(true));

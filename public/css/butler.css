@@ -155,8 +155,10 @@ button.ad-item:hover{background:rgba(255,255,255,.6);}
 /* .ad-item 是 space-between，前面多了勾選框之後，名字那一塊如果不吃滿
    剩下的寬度，中間就會被推出一段空白，看起來像縮排 */
 .bt-row .ad-item-main{flex:1 1 auto;}
-/* 已收的整列淡下去（金額仍然是滿的 —— 對帳時那是最重要的數字） */
-.bt-row.is-done .ad-item-main{opacity:.7;}
+/* 已收的整列淡下去。勾勾本身維持滿的 —— 它才是「這一位收過了」的記號，
+   淡掉的是內容，不是狀態 */
+.bt-row.is-done .ad-item-main,
+.bt-row.is-done .bt-side{opacity:.4;}
 @media (pointer:coarse){
   .bt-check{width:24px;height:24px;}
 }

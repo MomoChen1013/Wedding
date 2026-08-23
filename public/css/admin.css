@@ -1708,8 +1708,11 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
   .ad-hero-main,.ad-hero-list{flex:1 1 100%;}
 }
 
-/* ---------- 標籤篩選：先只露兩排 ---------- */
-.ad-filterbar-tags{flex:1 1 100%;min-width:0;}
+/* ---------- 標籤篩選：先只露兩排 ----------
+   「展開全部」跟著「標籤」那兩個字站在同一行的右邊，
+   自己佔一行的話，為了一顆按鈕又多吃掉一整排的高度 */
+.ad-filterbar-head{flex:1 1 100%;display:flex;align-items:center;gap:10px;}
+.ad-filterbar-head .ad-filterbar-lab{flex:0 0 auto;}
 /* 兩排的高度 ＝ 兩顆 chip ＋ 一道 gap。chip 在觸控上是 36px、桌機約 30px，
    所以用 CSS 變數帶著走，改了 chip 高度這裡不會忘記跟上 */
 .ad-chips-clamp{--chip-h:30px;overflow:hidden;
@@ -1717,12 +1720,12 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
 .ad-chips-clamp.is-open{max-height:none;}
 @media (pointer:coarse){ .ad-chips-clamp{--chip-h:36px;} }
 .ad-chips-more{
-  margin-top:8px;background:none;border:none;padding:6px 0;cursor:pointer;
+  margin-left:auto;background:none;border:none;padding:6px 0;cursor:pointer;
   font-family:var(--font-body);font-size:11.5px;letter-spacing:.08em;
   color:var(--primary-deep);border-bottom:1px solid var(--line);
 }
 .ad-chips-more[hidden]{display:none;}
-@media (pointer:coarse){ .ad-chips-more{padding:10px 0;} }
+@media (pointer:coarse){ .ad-chips-more{padding:9px 0;} }
 
 /* ---------- 篩選彙總：浮在名單上的一張卡 ----------
    原本只是一條有底色的橫槓，捲起來時和名單黏成一片；
