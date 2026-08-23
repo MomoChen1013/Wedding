@@ -30,7 +30,7 @@
 | **頁面** | 全站所有分頁（最痛：排桌工作區、婚禮小卡、匯入精靈、回覆名單搜尋） |
 | **功能** | 所有 `input` / `textarea` / `select` |
 | **現況** | `.ad-input`／`.ad-textarea` 15px（`admin.css:167`）、`.ad-filter` 13px（`:372`）、`.sp-search` 12.5px（`:801`）、`.ad-card .ad-input` 12.5px（`:531`）、`.ad-quiz-opt .ad-input` 14px（`:557`）、`.sp-map-row select` 13px、`.sp-preview` 12px。<br>viewport 是 `width=device-width, initial-scale=1.0`，沒有 `maximum-scale`（這是對的，不該鎖），所以 **iOS Safari 只要聚焦字級 <16px 的欄位就會把整頁放大**，放大後版面往右偏、使用者要自己雙指縮回來。排桌工作區的搜尋框每打一次字就發生一次。 |
-| **建議** | 1. 把 **所有可輸入元件的 `font-size` 統一提到 16px**（`.ad-input`、`.ad-textarea`、`.ad-filter`、`.sp-search`、`.ad-card .ad-input`、`.ad-quiz-text`、所有 `select`）。<br>2. 如果桌機上覺得 16px 太胖，用 `@media (min-width:900px)` 再降回 13–14px，只讓觸控裝置吃 16px。<br>3. 順手補 `input` 的 `inputmode`（搜尋用 `search`、金額／人數用 `numeric`）與 `enterkeyhint="search"`。 |
+| **建議** | 1. 把 **所有可輸入元件的 `font-size` 統一提到 16px**（`.ad-input`、`.ad-textarea`、`.ad-filter`、`.sp-search`、`.ad-card .ad-input`、`.ad-quiz-text`、所有 `select`）。<br>2. 補 `input` 的 `inputmode`（搜尋用 `search`、金額／人數用 `numeric`）與 `enterkeyhint="search"`。 |
 
 ### P0-2｜離線／弱網時儲存沒有任何回饋，而且可能靜默掉資料
 
@@ -57,7 +57,7 @@
 | **頁面** | 排桌管理 → 排桌工作區 |
 | **功能** | `.sp-bar`（儲存排桌／同步／復原／重做／統計） |
 | **現況** | `.sp-bar`（`admin.css:718`）**沒有 sticky**；≤960px 時 `.sp-pool` 也改成 `position:static`（`:1089`）。<br>所以手機上流程是：捲到最上面看未安排 → 往下捲找桌位 → 點卡片 → 移動 → **再捲回最上面按儲存**。一場 30 桌的婚禮，這條路要走幾十遍。<br>草稿只活在記憶體：`dirty` 旗標 + `beforeunload`（`seating-plan.js:2494`），undo/redo stack 也是純記憶體，**只有 `seatPlan.tagOrder` 存進 localStorage**（`:1781`）。iOS Safari 背景分頁被記憶體回收時 **不會觸發 `beforeunload`** → 整個下午的排桌無聲消失。 |
-| **建議** | 1. **手機把儲存做成 sticky bottom bar**：`position:sticky; bottom:0`（或 fixed + `env(safe-area-inset-bottom)`），只留「儲存排桌」＋一個小小的「未安排 N 位」，其餘（同步／復原／重做／四個統計）收進「⋮ 更多」。注意要留出高度給 `.ad-toast-stack`（`bottom:26px`）不要互相蓋住。<br>2. **加本機草稿**：每次 `dirty=true` 時 debounce 1–2 秒把 `planPayload()` 寫進 `localStorage`（以 siteId 分隔）；下次進來若偵測到比雲端新的草稿，顯示「上次有一份還沒存的排桌，要接續嗎？」。<br>3. 補 `visibilitychange` → 頁面切到背景時先寫一次草稿（`beforeunload` 在行動裝置不可靠）。 |
+| **建議** | 1. **手機把儲存做成 sticky bottom bar**：`position:sticky; bottom:0`（或 fixed + `env(safe-area-inset-bottom)`），只留「儲存排桌」＋一個小小的「未安排 N 位」，點擊 N 可以回到未安排區塊，其餘（同步／復原／重做／四個統計）收進「⋮ 更多」。注意要留出高度給 `.ad-toast-stack`（`bottom:26px`）不要互相蓋住。<br>2. **加本機草稿**：每次 `dirty=true` 時 debounce 1–2 秒把 `planPayload()` 寫進 `localStorage`（以 siteId 分隔）；下次進來若偵測到比雲端新的草稿，顯示「上次有一份還沒存的排桌，要接續嗎？」。<br>3. 補 `visibilitychange` → 頁面切到背景時先寫一次草稿（`beforeunload` 在行動裝置不可靠）。 |
 
 ---
 
@@ -70,7 +70,7 @@
 | **頁面** | 感謝信、故事牆、自訂內容、測驗題目、桌次名單、桌次圖、婚禮小卡、桌位管理、標籤庫 |
 | **功能** | `.ad-edit` / `.ad-del` 行內動作、`.ad-chip` 篩選、`.ad-pager-btn`、`.sp-drawer-close` |
 | **現況** | `.ad-del,.ad-edit{font-size:12px;padding:2px 0;}`（`admin.css:470`）→ **實際高度約 18px**，遠低於 44px。<br>`.ad-item-actions{gap:10px}` → 「編輯」與「刪除」只隔 10px，拇指一按很容易點錯（`admin.css:444`）。<br>桌位管理的 **↑ / ↓ 是單字元的 `.ad-edit`**（`seating-plan.js:1179`），寬度只有一個字，手機幾乎按不到。<br>`.ad-chip` 約 30px 高（`:348`）、`.sp-filters .ad-chip` 只有約 24px（`:818`）、`.sp-drawer-close` 約 24px、`.ad-pager-btn` 約 30px。 |
-| **建議** | 1. `.ad-edit`/`.ad-del` 在 <900px 加 `min-height:44px; min-width:44px; padding:11px 12px;`（視覺上可維持無框，靠 padding 撐開熱區）。<br>2. **刪除與編輯不要並排**：手機把「刪除」移進每一列的「⋮」選單，或改成向左滑動顯示；至少把兩者間距拉到 16px 以上，並把刪除放在最右且加危險色。<br>3. ↑ / ↓ 改成 44×44 的方形按鈕；並依 P1-2 的建議一起改成「⋮ → 上移／下移／移到最前／移到最後」。<br>4. 所有 chip 在 <900px 提到 `min-height:36px`（篩選 chip 密度高，36px 是可接受的下限）。 |
+| **建議** | 1. `.ad-edit`/`.ad-del` 在 <900px 加 `min-height:44px; min-width:44px; padding:11px 12px;`（視覺上可維持無框，靠 padding 撐開熱區）。<br>2. **刪除與編輯不要並排**：手機把「刪除」移進每一列的「⋮」選單；至少把兩者間距拉到 16px 以上，並把刪除放在最右且加危險色。<br>3. ↑ / ↓ 改成 32x32 的方形按鈕；並依 P1-2 的建議一起改成「⋮ → 上移／下移／移到最前／移到最後」。<br>4. 所有 chip 在 <900px 提到 `min-height:36px`（篩選 chip 密度高，36px 是可接受的下限）。 |
 
 ### P1-2｜拖曳在觸控裝置完全失效，UI 卻仍在暗示「可以拖」
 
@@ -79,7 +79,7 @@
 | **頁面** | 排桌工作區、測驗題目、桌次圖上傳、婚禮小卡上傳、當日流程、婚禮小卡清單 |
 | **功能** | 拖曳排序 / 拖放上傳 |
 | **現況** | ① **排桌**：`bindDnd()`（`seating-plan.js:1304`）用的是 HTML5 Drag & Drop，**觸控完全不會觸發**。`.sp-card{cursor:grab}` 只有在 `@media(max-width:960px)` 才改成 `pointer`（`admin.css:1095`）→ **iPad 橫向（1024px / 1194px）仍顯示 grab 游標、桌卡標題也是 `cursor:grab`，但拖不動**。替代路徑（點卡片 → peek → 「移動到桌位」）是有的，但完全沒有被說明，第一次用的人只會覺得壞掉。<br>② **桌位順序**：只能拖曳桌卡標題；`桌位管理` 分頁有 ↑↓ 可以替代（好），但工作區裡沒有任何提示告訴使用者「順序去那邊改」。<br>③ **測驗題目**：`setupQuizDrag()`（`admin.js:3151`）用 Pointer Events，手機可以拖（good），但 **沒有邊緣自動捲動** → 50 題時要把第 40 題拖到第 1 位是做不到的；也沒有任何「上移／下移／移到最前」的替代。<br>④ **當日流程**（`admin.js:2485`）：文案明說「由上到下就是大廳時間軸的顯示順序」，但 **完全沒有排序工具**，要調順序只能整列重打。<br>⑤ **婚禮小卡 / 桌次圖**：清單只顯示唯讀的 `#order`（`admin.js:2639`），**完全無法重新排序**。<br>⑥ 上傳區文案「點這裡選圖片，**或把圖片拖進來**」（`admin.html:499`、`:853`）在手機上是無效資訊。 |
-| **建議** | 1. **每一個可排序的清單都補「⋮ → 上移／下移／移到最前／移到最後／移到第 N 個」**，這是本專案最缺的一塊。拖曳保留給桌機，觸控主打選單。<br>2. **排桌工作區**：<br>　・把 `cursor:grab` 與桌卡標題的拖曳提示改成用 `@media (hover:hover) and (pointer:fine)` 判斷，而不是用寬度斷點 → iPad 橫向就不會出現假的拖曳暗示；<br>　・在工作區頂部（或第一次進來的引導卡）明寫「手機／平板：點賓客卡 → 移動到桌位」；<br>　・每張賓客卡右側直接放一顆 44px 的「移動」小圖示，不要逼使用者先開 peek（現在是 2 tap 才碰得到移動）。<br>3. **測驗題目**：拖曳時加邊緣自動捲動；並補上「移到最前／最後」。<br>4. **當日流程**：每列補 ↑↓（44px），或直接支援 Pointer Events 拖曳把手（可沿用 `.ad-drag-handle` 的實作）。<br>5. **婚禮小卡／桌次圖**：至少讓 `#order` 變成可編輯的數字欄位，或補 ↑↓。<br>6. 上傳區文案改成響應式：`<900px` 顯示「點這裡選照片」，桌機才加「或把照片拖進來」。<br>7. 排序完成後除了 toast「順序已更新」，再補一個 **可 Undo 的 toast**（`showToast` 已支援 `actionLabel`，可直接沿用 `scheduleUndoDelete` 的模式）。 |
+| **建議** | 1. **每一個可排序的清單都補「⋮ → 上移／下移／移到最前／移到最後／移到第 N 個」**，這是本專案最缺的一塊。拖曳保留給桌機，觸控主打選單。<br>2. **排桌工作區**：<br>　・把 `cursor:grab` 與桌卡標題的拖曳提示改成用 `@media (hover:hover) and (pointer:fine)` 判斷，而不是用寬度斷點 → iPad 橫向就不會出現假的拖曳暗示；<br>　・在工作區頂部（或第一次進來的引導卡）明寫「手機／平板：點賓客卡 → 移動到桌位」；<br>　・每張賓客卡右側直接放一顆 32px 的「移動」小圖示，不要逼使用者先開 peek（現在是 2 tap 才碰得到移動）。<br>3. **測驗題目**：拖曳時加邊緣自動捲動；並補上「移到最前／最後」。<br>4. **當日流程**：每列補 ↑↓（32px），或直接支援 Pointer Events 拖曳把手（可沿用 `.ad-drag-handle` 的實作）。<br>5. **婚禮小卡／桌次圖**：至少讓 `#order` 變成可編輯的數字欄位，或補 ↑↓。<br>6. 上傳區文案改成響應式：`<900px` 顯示「點這裡選照片」，桌機才加「或把照片拖進來」。<br>7. 排序完成後除了 toast「順序已更新」，再補一個 **可 Undo 的 toast**（`showToast` 已支援 `actionLabel`，可直接沿用 `scheduleUndoDelete` 的模式）。 |
 
 ### P1-3｜Modal / Drawer 沒有背景鎖捲、沒有接上返回鍵、抽屜蓋住漢堡鈕
 
@@ -88,7 +88,7 @@
 | **頁面** | 全站的彈窗與抽屜（確認框、自訂內容、感謝信、故事牆、測驗、桌位、匯入精靈、標籤權重、移動到桌位、賓客詳細抽屜、側欄抽屜、裁切器） |
 | **功能** | `.ad-modal-mask`、`.sp-drawer`、`.ad-side`、`.cr-mask` |
 | **現況** | ① **沒有任何 body scroll lock**（全專案只有 `common.js:1142` 一處 `body.classList`，與此無關）→ 彈窗開著時背景照樣捲，iOS 上關掉之後停在完全不同的位置。<br>② **返回鍵不會關彈窗**：`openDrawer()`／各 modal 都沒有 `history.pushState`（`admin.js:630`）→ 使用者在手機上直覺按返回，結果是 **跳到上一個分頁、甚至直接離開後台**，正在填的表單全沒了。<br>③ **側欄抽屜蓋住漢堡鈕**：`.ad-side` 開啟時 `position:fixed; top:0; z-index:1000`（`admin.css:110`），而 `.ad-bar` 是 `z-index:950` → 抽屜的不透明底色蓋住左上角的漢堡鈕，而 **抽屜裡沒有任何關閉鈕**，只能點右側遮罩或按 Esc（手機沒有 Esc）。<br>④ Bottom Sheet 一律是置中 modal，沒有下滑關閉的手勢。 |
-| **建議** | 1. 開彈窗／抽屜時鎖背景：記下 `window.scrollY` → `body{position:fixed; top:-Ypx; width:100%}`，關閉時還原（iOS 上 `overflow:hidden` 不夠）。<br>2. 開啟時 `history.pushState({modal:id})`，監聽 `popstate` 關閉 → **返回鍵＝關閉彈窗**，符合 Android 與 iOS 邊緣手勢的預期。<br>3. 抽屜左上角補一顆 44px 的「✕」；或把 `.ad-side` 的 `padding-top` 讓出頂列並把 `.ad-bar` 的 `z-index` 提到 1010，讓漢堡鈕維持可按（變成 toggle）。<br>4. 手機（<560px）把 `.ad-modal-card-form` 改成 bottom sheet：`align-items:flex-end`、`border-radius: 12px 12px 0 0`、上緣加一條 drag handle，支援下滑關閉。 |
+| **建議** | 1. 開彈窗／抽屜時鎖背景：記下 `window.scrollY` → `body{position:fixed; top:-Ypx; width:100%}`，關閉時還原（iOS 上 `overflow:hidden` 不夠）。<br>2. 開啟時 `history.pushState({modal:id})`，監聽 `popstate` 關閉 → **返回鍵＝關閉彈窗**，符合 Android 與 iOS 邊緣手勢的預期。<br>3. 抽屜左上角補一顆 44px 的「✕」；或把 `.ad-side` 的 `padding-top` 讓出頂列並把 `.ad-bar` 的 `z-index` 提到 1010，讓漢堡鈕維持可按（變成 toggle）。<br>4. 手機（<560px）把 `.ad-modal-card-form` 改成 bottom sheet：`align-items:flex-end`、`border-radius: 12px 12px 0 0`、上緣加一條 drag handle，支援下滑關閉。<br>5. 抽屜跟彈窗的CTA都會置底fix 不需要滾動到最後|
 
 ### P1-4｜出席回覆總覽在載入中會顯示假的「0」
 
@@ -137,7 +137,7 @@
 | **頁面** | 出席回覆 → 回覆資訊；排桌工作區；感謝信 |
 | **功能** | `.ad-filterbar`（出席 chips ＋ 標籤 chips ＋ 搜尋）、`.sp-filters` |
 | **現況** | chip 有 `is-on` 樣式（`admin.css:355`），分頁列也有「共 N 筆」（`renderPager`），但**沒有一句彙總告訴使用者「你現在篩掉了什麼」**。手機上出席 chips 與標籤 chips 分兩排，搜尋框又 `margin-left:auto` 換行到第三排，**捲下去看名單時三排篩選條件全部離開畫面**，很容易忘記自己還開著篩選，然後以為資料不見了。<br>沒有「清除全部篩選」。<br>搜尋框是 `type="text"`，**沒有 iOS 的原生清除鈕**，也沒有 `inputmode`／`enterkeyhint`。<br>排桌工作區的篩選收在「篩選」按鈕裡（好），按鈕有 `is-on` 態（好），但同樣沒有「目前套用了幾個條件」的數字徽章。 |
-| **建議** | 1. 篩選列下方（或名單標題列）加一行：`目前顯示：熱情出席 ・ 標籤「大學同學」 ・ 搜尋「王」 — 12 / 86 筆　[清除]`。<br>2. 手機上把這一行做成 **sticky**，跟著名單一起捲。<br>3. 搜尋框改 `type="search" inputmode="search" enterkeyhint="search"`。<br>4. 「篩選」按鈕上加條件數徽章（例如 `篩選 2`）。 |
+| **建議** | 1. 篩選列下方（或名單標題列）加一行：`目前顯示：熱情出席 ・ 標籤「大學同學」 ・ 搜尋「王」 — 12 / 86 筆　[清除]`。<br>2. 手機上把這一行做成 **sticky**，跟著名單一起捲。<br>3. 搜尋框改 `type="search" inputmode="search" enterkeyhint="search"`。<br>4. 「篩選」按鈕上加條件數徽章（ `篩選（2）`）。 |
 
 ### P2-4｜橫向可捲的元件沒有任何「還有東西在右邊」的提示
 
