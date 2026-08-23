@@ -2401,8 +2401,10 @@ body[data-page="admin"] .ad-rowmenu-item:active{background:rgba(47,43,38,.08);}
 .ad-drawer-rows{display:flex;flex-direction:column;border-top:1px solid var(--line-soft);}
 .ad-drawer-row{display:flex;gap:12px;align-items:baseline;
   padding:11px 0;border-bottom:1px solid var(--line-soft);}
-.ad-drawer-row > span{flex:0 0 5.6em;font-family:var(--font-ui);font-size:11px;
-  letter-spacing:.14em;color:var(--ink-soft);}
+/* 6.4em：最長的欄位名是「給新人的話」（5 個字 ＋ .14em 字距），
+   5.6em 會讓它斷成兩行，那一列就跟著長高、和上下對不齊 */
+.ad-drawer-row > span{flex:0 0 6.4em;font-family:var(--font-ui);font-size:11px;
+  letter-spacing:.14em;color:var(--ink-soft);line-height:1.7;}
 .ad-drawer-row > b{flex:1 1 auto;min-width:0;font-weight:400;
   font-family:var(--font-ui);font-size:13px;line-height:1.85;color:var(--ink);
   word-break:break-word;white-space:pre-wrap;}
@@ -2537,3 +2539,32 @@ body[data-page="admin"] .sp-flag,
 body[data-page="admin"] .sp-filter-lab,
 body[data-page="admin"] .sp-table-type,
 body[data-page="admin"] .ad-stat-lab{font-size:11px;}
+
+/* ============================================================
+   截圖時發現的兩個實際問題
+============================================================ */
+
+/* 1. 狀態 pill 在表格裡會斷成兩行
+   ------------------------------------------------------------
+   「無法出席」四個字在窄欄裡折成「無法出」＋「席」，
+   而 border-radius:999px 的膠囊一折行就完全不成形。
+   pill 的前提就是一行 —— 欄位擠不下時該讓欄位變寬，不是讓字換行。 */
+.ad-tag{white-space:nowrap;}
+
+/* 2. 表格裡每一列都掛著一顆「標籤」文字鈕
+   ------------------------------------------------------------
+   和常駐的「刪除」是同一個問題：一整欄重複的操作入口。
+   收進 hover／focus-within（觸控仍然常駐，見下面那條）——
+   平常那一格只有標籤本身，要改的時候才長出工具。 */
+@media (hover:hover) and (pointer:fine){
+  .ad-tagcell [data-tag-edit]{
+    opacity:0;
+    transition:opacity var(--dur-hover) ease-out,color var(--dur-hover) ease-out;
+  }
+  .ad-table tbody tr:hover .ad-tagcell [data-tag-edit],
+  .ad-table tbody tr:focus-within .ad-tagcell [data-tag-edit],
+  .ad-tagcell [data-tag-edit]:focus-visible{opacity:1;}
+}
+/* 一格裡一個標籤都沒有時，那一格會變成空白 —— 這時候按鈕要一直在，
+   不然使用者根本不知道這裡可以貼標籤 */
+.ad-tagcell:not(:has(.ad-tag)) [data-tag-edit]{opacity:1 !important;}

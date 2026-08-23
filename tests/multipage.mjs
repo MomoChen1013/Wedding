@@ -1472,8 +1472,13 @@ console.log('\n[17] 後台只顯示有開的頁面');
   const shown = await page.evaluate(() =>
     Array.from(document.querySelectorAll('.ad-tab'))
       .filter((b) => !b.hidden).map((b) => b.dataset.tab));
+  /* 側欄現在分成三組（婚禮管理／婚禮內容／賓客互動），DOM 順序跟著改了：
+       婚禮管理  rsvp, seating, seatingPlan, butler
+       婚禮內容  lobby, letters, cards, exhibits
+       賓客互動  inbox, quiz
+     minimal-site 只開 rsvp，加上永遠都在的 lobby 與沒有開關的 inbox */
   ok('關掉的頁面不出現編輯分頁',
-    shown.join(',') === 'rsvp,inbox,lobby', shown.join(','));
+    shown.join(',') === 'rsvp,lobby,inbox', shown.join(','));
   ok('大廳內容永遠在', shown.includes('lobby'));
 
   ok('後台分頁無 console 錯誤', realErrors(errors).length === 0,
@@ -1491,12 +1496,18 @@ console.log('\n[17] 後台只顯示有開的頁面');
 
   const onTab = await page.evaluate(() =>
     document.querySelector('.ad-tab.is-on')?.dataset.tab);
-  /* 分頁順序上「悄悄話」排在出席回覆後面，而且沒有對應的頁面開關（永遠都在），
-     所以出席回覆被關掉時，第一個還在的分頁就是它 */
-  ok('出席回覆關掉時自動改開第一個還在的分頁', onTab === 'inbox', String(onTab));
+  /* 分組之後，「婚禮資訊」是第一個沒有頁面開關（永遠都在）的分頁 ——
+     它排在「婚禮內容」那一組的第一顆，而「婚禮管理」整組這時候都關掉了。
+     所以出席回覆被關掉時，第一個還在的分頁就是它。 */
+  ok('出席回覆關掉時自動改開第一個還在的分頁', onTab === 'lobby', String(onTab));
   ok('出席回覆的內容也收起來',
     await page.evaluate(() =>
       !document.querySelector('.ad-panel[data-panel="rsvp"]').classList.contains('is-on')));
+  /* 整組都被關掉時，那一組的標題也要跟著收起來 ——
+     一個什麼都沒有的「婚禮管理」比沒有標題還糟 */
+  ok('整組都關掉時，group label 也一起藏起來',
+    await page.evaluate(() =>
+      document.querySelector('.ad-navgroup[data-navgroup="manage"]').hidden));
   await page.close();
 
   /* 還原，後面的測試還要用這組站台 */
