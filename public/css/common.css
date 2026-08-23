@@ -21,6 +21,10 @@
   --font-display:'Noto Serif TC',serif;
   --font-body:'Noto Serif TC',serif;
   --font-hand:'Noto Serif TC',serif;
+  /* UI 字（導覽、表格、按鈕、時間戳）。賓客頁刻意維持 --font-body ——
+     婚禮頁面的每一個字都該是明朝體，那是這個品牌的樣子。
+     只有後台會把它覆寫成 sans（見 admin.css 的雙軌字體）。 */
+  --font-ui:var(--font-body);
 }
 /* 香檳金（預設） */
 body[data-theme="champagne"]{
@@ -53,6 +57,19 @@ body[data-theme="dusk"]{
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html{scroll-behavior:smooth;}
+
+/* 系統層說了「不要動畫」就整站照辦：那是前庭系統的需求，不是外觀偏好。
+   收成 1ms 而不是 0s —— 0s 在某些瀏覽器連 transitionend 都不發，
+   靠它收尾的程式會停在半路。 */
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto;}
+  *,*::before,*::after{
+    animation-duration:1ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:1ms !important;
+    scroll-behavior:auto !important;
+  }
+}
 body{
   font-family:var(--font-body);
   font-weight:400;
@@ -145,16 +162,20 @@ body.nav-off{padding-top:0;}
 .overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;}
 @keyframes pop{from{transform:translateY(6px);opacity:0}to{transform:none;opacity:1}}
 
-.btn{font-family:var(--font-body);font-weight:500;font-size:15px;cursor:pointer;
+.btn{font-family:var(--font-ui);font-weight:500;font-size:15px;cursor:pointer;
   padding:14px 22px;border-radius:var(--radius);width:100%;letter-spacing:.14em;
   color:#fff;background:var(--ink);border:1px solid var(--ink);
-  transition:background .2s,color .2s,border-color .2s;}
-.btn:hover{background:transparent;color:var(--ink);}
-.btn:active{opacity:.8;}
+  transition:background .18s ease-out,color .18s ease-out,border-color .18s ease-out;}
+/* hover 是「我知道你指到我了」，不是換一顆按鈕：
+   原本深色實心 hover 會整顆翻成透明，那是最大幅度的視覺跳動 ——
+   跟旁邊所有元件「微幅變深」的語彙完全相反。改成亮度往上挪一階。 */
+.btn:hover{background:#413c35;border-color:#413c35;color:#fff;}
+.btn:active{background:#232019;border-color:#232019;transform:translateY(.5px);}
 .btn:disabled{opacity:.35;cursor:not-allowed;}
 .btn.small{width:auto;padding:11px 20px;font-size:13.5px;}
 .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line);}
-.btn.ghost:hover{border-color:var(--ink);}
+.btn.ghost:hover{background:rgba(47,43,38,.035);border-color:var(--ink);color:var(--ink);}
+.btn.ghost:active{background:rgba(47,43,38,.07);}
 
 .divider-div{height:40px;}
 

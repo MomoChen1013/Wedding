@@ -1143,15 +1143,27 @@ console.log('\n[14b] 後台看得到出席回覆');
   const dupRow = page.locator('#adRsvpList tbody tr', { hasText:'重複小明' }).first();
   ok('找得到那筆重複的回覆', (await dupRow.count()) === 1);
 
+  /* 一列的動作收進「⋯」之後，刪除的入口是那顆按鈕裡的最後一項
+     （危險的動作排最後、用危險色，誤觸的代價因此降下來） */
+  async function openRowDelete(){
+    await dupRow.locator('.ad-rowmenu-btn').click();
+    await page.waitForSelector('.ad-rowmenu:not([hidden])', { timeout:5000 });
+    await page.click('.ad-rowmenu .ad-rowmenu-item.is-danger');
+  }
+
+  ok('一列的刪除收進「⋯」裡，不再常駐在表格上',
+    (await dupRow.locator('.ad-rowmenu-btn').count()) === 1
+    && (await dupRow.locator('.ad-del').count()) === 0);
+
   /* 第一關：取消就什麼都不會發生 */
-  await dupRow.locator('[data-del-rsvp]').click();
+  await openRowDelete();
   await page.waitForSelector('#adModalMask:not([hidden])', { timeout:5000 });
   await page.click('#adModalCancel');
   await page.waitForTimeout(600);
   ok('第一關按取消不會刪掉', (await rsvpCol.doc('dupe-1').get()).exists);
 
   /* 再來一次，這次走完兩關 */
-  await dupRow.locator('[data-del-rsvp]').click();
+  await openRowDelete();
   await page.waitForSelector('#adModalMask:not([hidden])', { timeout:5000 });
   await page.click('#adModalConfirm');
   await page.waitForTimeout(400);
@@ -2398,8 +2410,11 @@ console.log('\n[21] 後台排桌管理');
   await page.waitForTimeout(400);
   await page.fill('#adRsvpFilter', '排桌小明');
   await page.waitForTimeout(400);
+  /* 刪除收在「⋯」裡（危險的動作排最後、用危險色） */
   await page.locator('#adRsvpList tbody tr', { hasText:'排桌小明' }).first()
-    .locator('[data-del-rsvp]').click();
+    .locator('.ad-rowmenu-btn').click();
+  await page.waitForSelector('.ad-rowmenu:not([hidden])', { timeout:5000 });
+  await page.click('.ad-rowmenu .ad-rowmenu-item.is-danger');
   await page.waitForSelector('#adModalMask:not([hidden])', { timeout:5000 });
   await page.click('#adModalConfirm');
   await page.waitForTimeout(300);
