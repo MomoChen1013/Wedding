@@ -860,6 +860,21 @@ select.ad-input{appearance:none;cursor:pointer;
   .ad-toast-stack{width:calc(100vw - 24px);}
 }
 
+/* ---------- 匯入匯出：按鈕文字都不短，三顆擠在一起窄螢幕放不下 ----------
+   讓「＋新增桌位」那種一兩顆按鈕自己折行沒問題，但這裡三顆一長排，
+   折行只會把整頁往下推得更長。改成這一排自己左右滑，頁面寬度不受影響。 */
+@media(max-width:560px){
+  [data-subpanel="io"] .ad-sec-head-actions{
+    flex-wrap:nowrap;flex:1 1 100%;min-width:0;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;scroll-snap-type:x proximity;
+  }
+  [data-subpanel="io"] .ad-sec-head-actions::-webkit-scrollbar{display:none;}
+  [data-subpanel="io"] .ad-sec-head-actions .btn{
+    flex:0 0 auto;scroll-snap-align:start;
+  }
+}
+
 /* ============================================================
    排桌管理
    ------------------------------------------------------------
@@ -1041,8 +1056,10 @@ select.ad-input{appearance:none;cursor:pointer;
 .sp-card.is-dragging{opacity:.45;cursor:grabbing;}
 /* 搜尋命中：已經坐在桌上的人也標起來，「王小明在第 06 桌」一眼看到 */
 .sp-card.is-hit{border-color:var(--ink);background:var(--primary-soft);}
-/* RSVP 狀態不佔一行，改用左邊那道細線表示 */
-.sp-card{border-left:3px solid transparent;}
+/* RSVP 狀態不佔一行，改用左邊那道細線表示。
+   預設也給一條看得到的線（跟卡片外框同色）——
+   透明的話，桌卡裡一排卡片疊在一起時，左邊那條線時有時無，看起來像壞掉了 */
+.sp-card{border-left:3px solid var(--line);}
 .sp-card.is-rsvp-maybe{border-left-color:var(--sun);}
 .sp-card.is-rsvp-no{border-left-color:rgba(164,103,122,.55);opacity:.66;}
 
@@ -1131,12 +1148,16 @@ select.ad-input{appearance:none;cursor:pointer;
 .sp-table.is-full .sp-table-left{color:var(--seat-full);font-weight:500;}
 .sp-table.is-over .sp-table-left{color:var(--seat-over);font-weight:500;}
 
-.sp-table-flags{display:flex;flex-wrap:wrap;gap:5px;padding:0 12px 8px;}
+.sp-table-flags{display:flex;flex-wrap:wrap;gap:5px;padding:8px 12px;}
 .sp-flag{border:1px solid var(--line-soft);border-radius:999px;padding:1px 8px;
   font-size:10.5px;letter-spacing:.04em;color:var(--ink);background:var(--bg2);}
 
 .sp-table-body{flex:1 1 auto;display:flex;flex-direction:column;gap:5px;
   padding:9px 10px 11px;min-height:66px;}
+/* 觸控裝置沒有 hover 可以分隔卡片，行距稍微拉開一點才不會擠成一團 */
+@media (hover:none){
+  .sp-table-body{gap:8px;}
+}
 .sp-table-empty{border:1px dashed var(--line);border-radius:var(--radius);
   padding:16px 8px;text-align:center;font-size:11.5px;letter-spacing:.08em;
   color:var(--ink-soft);}
@@ -1298,11 +1319,94 @@ select.ad-input{appearance:none;cursor:pointer;
 }
 @media(max-width:560px){
   .sp-bar{flex-direction:column;align-items:stretch;}
+  /* 這一列在窄螢幕變成「直的」，主軸也跟著轉了 90 度 ——
+     上面那兩段的 flex-basis（`1 1 300px`、`1 1 100%`）本來的意思是
+     「自己佔滿一整排寬」，轉成直的之後卻變成「基準高度 300px」，
+     統計那一塊就被撐成一大片空白。直的時候一律各自長到內容高度。
+     選擇器要壓得比 `.ad-stats.sp-stats` 重，不然改不動。 */
+  .sp-bar > .ad-stats.sp-stats,
+  .sp-bar > .sp-bar-status,
+  .sp-bar > .sp-bar-actions{flex:0 0 auto;}
   .sp-bar-actions .btn{flex:1 1 auto;}
   .sp-filter-lab{flex:0 0 100%;}
   .sp-tables{grid-template-columns:1fr;}
   .sp-steps li{flex:1 1 40%;}
 }
+
+/* ============================================================
+   匯入匯出：示範圖
+   ------------------------------------------------------------
+   這一頁原本整頁都是字，而字講不清楚「檔案打開來長怎樣」、
+   「五個步驟到底在幹嘛」。改成一句話 ＋ 一張示範圖：
+   句子負責「這是什麼」，圖負責「長什麼樣子」。
+
+   刻意不用截圖檔：PNG 一改版就過期，而且在手機上不是糊掉就是要放大。
+   直接用 DOM 畫，字是真的字（選得起來、讀得出來、跟著字級走）。
+============================================================ */
+.ad-demos{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  align-items:start;margin-top:4px;}
+.ad-demo{margin:0;border:1px solid var(--line);border-radius:var(--radius);
+  background:#fff;overflow:hidden;}
+.ad-demo-cap{display:flex;flex-direction:column;gap:3px;
+  padding:11px 14px;border-bottom:1px solid var(--line-soft);background:var(--bg2);
+  font-size:12.5px;letter-spacing:.08em;color:var(--ink);}
+.ad-demo-cap span{font-size:11px;letter-spacing:.04em;color:var(--ink-soft);}
+.ad-demo-body{padding:12px 14px 14px;}
+.ad-demo-note{margin:10px 0 0;font-size:11.5px;line-height:1.9;
+  letter-spacing:.03em;color:var(--ink-soft);}
+.ad-demo-note b{color:var(--ink);font-weight:500;}
+
+/* ---------- 「這是一張試算表」 ----------
+   灰底表頭＋滿版格線＋等寬數字：三個訊號加起來才像 Excel，
+   少一個就會被當成「後台的又一張清單」。寬了就自己左右滑。 */
+.ad-demo-body:has(.ad-demo-sheet){padding:0;overflow-x:auto;}
+.ad-demo-sheet{border-collapse:collapse;width:100%;font-size:11.5px;
+  font-variant-numeric:tabular-nums;white-space:nowrap;}
+.ad-demo-sheet th,.ad-demo-sheet td{
+  padding:6px 10px;text-align:left;border-bottom:1px solid var(--line-soft);
+  border-right:1px solid var(--line-soft);}
+.ad-demo-sheet th:last-child,.ad-demo-sheet td:last-child{border-right:none;}
+.ad-demo-sheet tr:last-child td{border-bottom:none;}
+.ad-demo-sheet th{background:var(--bg2);color:var(--ink-soft);
+  font-weight:400;letter-spacing:.06em;}
+.ad-demo-sheet td{color:var(--ink);}
+.ad-demo-sheet .is-group td{background:var(--primary-soft);
+  color:var(--primary-deep);letter-spacing:.06em;}
+.ad-demo-sheet .is-total td{color:var(--ink-soft);}
+
+/* ---------- 「A 進到 B」 ---------- */
+.ad-demo-flow{display:flex;align-items:stretch;gap:10px;}
+.ad-demo-node{flex:1 1 0;min-width:0;border:1px solid var(--line-soft);
+  border-radius:var(--radius);padding:10px 11px;background:var(--bg2);}
+.ad-demo-node.is-end{background:#fff;border-color:var(--primary);}
+.ad-demo-node b{display:block;font-size:12px;font-weight:500;letter-spacing:.06em;
+  color:var(--ink);}
+.ad-demo-node.is-end b{color:var(--primary-deep);}
+.ad-demo-node span{display:block;margin-top:5px;font-size:11px;line-height:1.8;
+  letter-spacing:.02em;color:var(--ink-soft);}
+.ad-demo-arrow{flex:0 0 auto;align-self:center;font-size:15px;color:var(--ink-soft);}
+
+/* ---------- 五個步驟 ---------- */
+.ad-demo-steps{list-style:none;display:flex;flex-wrap:wrap;gap:5px;margin:0;padding:0;
+  counter-reset:adstep;}
+.ad-demo-steps li{flex:0 1 auto;counter-increment:adstep;
+  border:1px solid var(--line-soft);border-radius:999px;padding:4px 10px;
+  font-size:10.5px;letter-spacing:.04em;color:var(--ink-soft);background:var(--bg2);}
+.ad-demo-steps li::before{content:counter(adstep) '　';color:var(--primary-deep);}
+
+/* ---------- 逐列的檢查結果 ----------
+   「有問題的那幾筆不會被匯進來」講一百次，不如讓人看到那一列被標起來。
+   不只用顏色分好壞（色盲看不出來）：壞的那一列左邊多一道粗線。 */
+.ad-demo-rows{display:flex;flex-direction:column;gap:4px;margin-top:10px;}
+.ad-demo-row{display:flex;gap:9px;align-items:baseline;
+  border:1px solid var(--line-soft);border-left:3px solid var(--line);
+  border-radius:var(--radius);padding:5px 9px;
+  font-size:11px;letter-spacing:.03em;color:var(--ink);}
+.ad-demo-row span{flex:0 0 auto;font-size:10px;color:var(--ink-soft);
+  font-variant-numeric:tabular-nums;}
+.ad-demo-row.is-bad{border-color:rgba(164,103,122,.35);
+  border-left-color:#a4677a;background:rgba(164,103,122,.06);color:#8a5765;}
+.ad-demo-row.is-bad span{color:#8a5765;}
 
 /* 未安排區右上角的「＋ 新增賓客」（沒填回覆的長輩、臨時加的親友） */
 .sp-pool-add{flex:0 0 100%;text-align:left;color:var(--primary-deep);}
@@ -1366,20 +1470,17 @@ select.ad-input{appearance:none;cursor:pointer;
 }
 .ad-eye:hover{border-color:var(--ink);color:var(--ink);}
 .ad-eye.is-on{border-color:var(--primary-deep);color:var(--primary-deep);}
-/* 眼睛本體：一個橢圓加一顆瞳孔，遮住時再加一條斜線（純 CSS，不用圖檔） */
+/* 眼睛本體：Feather Icons 的 eye / eye-off（MIT 授權，路徑直接內嵌，
+   不連 CDN、不多一個請求）。兩組圖形都在同一個 <svg> 裡，
+   由 .is-on 決定露出哪一組 —— 換圖時不會有「先消失再出現」的閃動。 */
 .ad-eye-ic{
-  position:relative;flex:0 0 auto;width:16px;height:10px;
-  border:1px solid currentColor;border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;
+  flex:0 0 auto;width:15px;height:15px;
+  fill:none;stroke:currentColor;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round;
 }
-.ad-eye-ic::before{
-  content:'';position:absolute;top:50%;left:50%;width:4px;height:4px;
-  margin:-2px 0 0 -2px;border-radius:50%;background:currentColor;
-}
-.ad-eye-ic::after{
-  content:'';position:absolute;top:50%;left:-2px;width:20px;height:1px;
-  background:currentColor;transform:rotate(-32deg);transform-origin:left center;
-}
-.ad-eye.is-on .ad-eye-ic::after{display:none;}
+.ad-eye-ic .ad-eye-open{display:none;}
+.ad-eye.is-on .ad-eye-ic .ad-eye-open{display:inline;}
+.ad-eye.is-on .ad-eye-ic .ad-eye-off{display:none;}
 @media(max-width:560px){
   .ad-eye{margin-left:8px;padding:6px 12px;min-height:36px;}
 }
@@ -1733,17 +1834,23 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
 #spMoreMask .sp-stats .ad-stat{padding:12px 8px;border-right:1px solid var(--line-soft);
   border-bottom:1px solid var(--line-soft);border-left:none;}
 
-/* 賓客卡右側的「移動」：觸控裝置不用先開 peek 才碰得到（原本要 2 tap） */
+/* 賓客卡右側的「移動」：觸控裝置不用先開 peek 才碰得到（原本要 2 tap）。
+   平常不畫外框——卡片本來就窄，一直有一圈框貼著卡片自己的外框，
+   看起來很擠。按下去才浮出框，等於「摸過的地方才有反應」。 */
 .sp-card-move{
-  display:none;position:absolute;top:50%;right:5px;transform:translateY(-50%);
-  width:32px;height:32px;padding:0;border:1px solid var(--line);
-  border-radius:var(--radius);background:#fff;cursor:pointer;
+  display:none;position:absolute;top:50%;right:7px;transform:translateY(-50%);
+  width:32px;height:32px;padding:0;border:1px solid transparent;
+  border-radius:var(--radius);background:transparent;cursor:pointer;
   font-size:14px;line-height:1;color:var(--ink-soft);
+  transition:border-color var(--dur-hover) ease-out,background var(--dur-hover) ease-out;
 }
+.sp-card-move:active,
+.sp-card-move:focus-visible{border-color:var(--line);background:#fff;}
 @media (hover:none){
   .sp-card-move{display:flex;align-items:center;justify-content:center;}
-  /* 讓出按鈕的位置，名字不要被蓋住 */
-  .sp-card-line{padding-right:34px;}
+  /* 讓出按鈕的位置，名字不要被蓋住；卡片本身也拉高一點，摸起來才不擠 */
+  .sp-card-line{padding-right:38px;}
+  .sp-card{padding:9px 11px;}
 }
 
 /* 「拖曳」在觸控裝置是無效資訊：同一句話兩種寫法，由 CSS 決定給誰看 */
