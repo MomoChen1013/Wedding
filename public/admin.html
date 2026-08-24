@@ -171,7 +171,8 @@
 
     <nav class="ad-subtabs" data-subtabs="rsvp">
       <button class="ad-subtab is-on" type="button" data-subtab="overview">出席回覆總覽</button>
-      <button class="ad-subtab" type="button" data-subtab="replies">回覆資訊</button>
+      <!-- 筆數由 js/admin.js 的 renderRsvpSubtabCount() 填，見 renderRsvps() -->
+      <button class="ad-subtab" type="button" data-subtab="replies" id="adRepliesSubtab">回覆</button>
       <button class="ad-subtab" type="button" data-subtab="form">表單設定</button>
       <!-- 賓客標籤整個功能預設是關的（guestTagsEnabled），關著時這一顆連同內容都收起來 -->
       <button class="ad-subtab" type="button" data-subtab="tags" id="adTagSubtab" hidden>設定賓客標籤</button>
@@ -206,7 +207,7 @@
     </section>
     </div>
 
-    <!-- 0-2 回覆資訊 -->
+    <!-- 0-2 回覆（N） -->
     <div class="ad-subpanel" data-subpanel="replies">
     <section class="ad-sec">
       <div class="ad-sec-head">
@@ -417,7 +418,7 @@
         標籤是分類賓客用的（行動不便、大學同學…），
         <b>之後排桌次可以依照標籤排位</b>。<br>
         勾了<b>「當表單選項」</b>，賓客填出席回覆時可以自己選；沒勾的只有在後台出現。<br>
-        一位賓客可以有好幾個標籤，在<b>「回覆資訊」</b>那一頁按「標籤」就能改。
+        一位賓客可以有好幾個標籤，在<b>「回覆」</b>那一頁按「標籤」就能改。
       </p>
 
       <div class="ad-list" id="adTagList"></div>
@@ -832,28 +833,107 @@
           </div>
         </div>
         <p class="ad-sec-note">
-          「賓客明細」是一列一位賓客；「桌位排桌表」依桌位分組，每桌最後附上總人數。
-          Excel 檔一次含這兩張工作表。
+          Excel 檔一次含<b>兩張工作表</b>，下面就是它們長的樣子。
+          只要其中一張的話，用旁邊那兩顆 CSV。
         </p>
+
+        <!-- 「檔案打開來長怎樣」用講的講不清楚，直接把兩張工作表畫出來。
+             刻意做成「看起來像試算表」（灰底表頭、格線、等寬數字），
+             不是又一張後台的清單 —— 一眼就知道這是匯出去之後的檔案。 -->
+        <div class="ad-demos">
+          <figure class="ad-demo">
+            <figcaption class="ad-demo-cap">賓客明細<span>一列一位賓客</span></figcaption>
+            <div class="ad-demo-body">
+              <table class="ad-demo-sheet">
+                <thead>
+                  <tr><th>編號</th><th>姓名</th><th>人數</th><th>桌次</th><th>備註</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>A01</td><td>林俊傑</td><td>2</td><td>01｜主桌</td><td>素食 1</td></tr>
+                  <tr><td>A02</td><td>吳品妍</td><td>1</td><td>01｜主桌</td><td></td></tr>
+                  <tr><td>B01</td><td>陳怡君</td><td>1</td><td>02｜女方親友</td><td>兒童椅 1</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </figure>
+
+          <figure class="ad-demo">
+            <figcaption class="ad-demo-cap">桌位排桌表<span>依桌位分組，每桌附總人數</span></figcaption>
+            <div class="ad-demo-body">
+              <table class="ad-demo-sheet">
+                <thead>
+                  <tr><th>桌次</th><th>姓名</th><th>人數</th></tr>
+                </thead>
+                <tbody>
+                  <tr class="is-group"><td colspan="3">01｜主桌</td></tr>
+                  <tr><td></td><td>林俊傑</td><td>2</td></tr>
+                  <tr><td></td><td>吳品妍</td><td>1</td></tr>
+                  <tr class="is-total"><td></td><td>小計</td><td>3</td></tr>
+                  <tr class="is-group"><td colspan="3">02｜女方親友</td></tr>
+                  <tr><td></td><td>陳怡君</td><td>1</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </figure>
+        </div>
       </section>
 
       <section class="ad-sec">
         <div class="ad-sec-head">
-          <h2 class="ad-sec-title">匯入</h2>
+          <h2 class="ad-sec-title ad-page-title">匯入</h2>
           <div class="ad-sec-head-actions">
             <button class="btn small" id="spImportRsvpBtn" type="button">從出席表單匯入</button>
             <button class="btn small ghost" id="spImportBtn" type="button">匯入 Excel／CSV</button>
           </div>
         </div>
         <p class="ad-sec-note">
-          「<b>從出席表單匯入</b>」抓的是<b>現在收到的出席回覆</b> ——
-          姓名、人數、葷素、兒童座椅、標籤會一起帶進排桌名單，不必先匯出成檔案。
+          兩顆按鈕來源不一樣：一顆抓<b>系統裡已經收到的回覆</b>，
+          一顆吃<b>你手上的檔案</b>。下面各自說明。
         </p>
-        <p class="ad-sec-note">
-          「<b>匯入 Excel／CSV</b>」是給手上那份名單用的（沒填回覆的長輩、公司桌…）。
-          支援 <b>.xlsx</b> 與 <b>.csv</b>，分成五步：選檔案 → 預覽 → 欄位對應 →
-          檢查資料 → 確認匯入。<b>有問題的那幾筆不會被匯進來</b>，會逐筆告訴你是第幾列、哪裡不對。
-        </p>
+
+        <!-- 兩種匯入排成一樣的版型（標題 → 一句話 → 示範圖），
+             讀的人比較的是「我該按哪一顆」，兩塊長得一樣才比得動。 -->
+        <div class="ad-demos">
+          <figure class="ad-demo">
+            <figcaption class="ad-demo-cap">從出席表單匯入<span>賓客自己填的那些回覆</span></figcaption>
+            <div class="ad-demo-body">
+              <div class="ad-demo-flow">
+                <div class="ad-demo-node">
+                  <b>出席回覆</b>
+                  <span>姓名・人數・葷素<br>兒童座椅・標籤</span>
+                </div>
+                <div class="ad-demo-arrow" aria-hidden="true">→</div>
+                <div class="ad-demo-node is-end">
+                  <b>排桌名單</b>
+                  <span>直接出現在<br>「未安排」那一欄</span>
+                </div>
+              </div>
+              <p class="ad-demo-note">不必先匯出成檔案再匯回來。</p>
+            </div>
+          </figure>
+
+          <figure class="ad-demo">
+            <figcaption class="ad-demo-cap">匯入 Excel／CSV<span>沒填回覆的長輩、公司桌…</span></figcaption>
+            <div class="ad-demo-body">
+              <ol class="ad-demo-steps">
+                <li>選檔案</li>
+                <li>預覽</li>
+                <li>欄位對應</li>
+                <li>檢查資料</li>
+                <li>確認匯入</li>
+              </ol>
+              <div class="ad-demo-rows" role="presentation">
+                <div class="ad-demo-row is-ok"><span>第 2 列</span>王柏翔　2 人</div>
+                <div class="ad-demo-row is-ok"><span>第 3 列</span>張雅婷　1 人</div>
+                <div class="ad-demo-row is-bad"><span>第 4 列</span>人數不是數字（「兩位」）</div>
+              </div>
+              <p class="ad-demo-note">
+                支援 <b>.xlsx</b> 與 <b>.csv</b>。<b>有問題的那幾筆不會被匯進來</b>，
+                會像上面這樣逐筆告訴你是第幾列、哪裡不對。
+              </p>
+            </div>
+          </figure>
+        </div>
       </section>
     </div>
   </div>
@@ -895,7 +975,16 @@
           禮金總額
           <button class="ad-eye" data-money-eye type="button"
                   aria-pressed="false" aria-label="顯示金額">
-            <span class="ad-eye-ic" aria-hidden="true"></span>
+            <svg class="ad-eye-ic" viewBox="0 0 24 24" aria-hidden="true">
+              <g class="ad-eye-open">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </g>
+              <g class="ad-eye-off">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </g>
+            </svg>
             <span class="ad-eye-tx">顯示金額</span>
           </button>
         </div>
@@ -936,7 +1025,16 @@
         <div class="ad-sec-head-actions">
           <button class="ad-eye" data-money-eye type="button"
                   aria-pressed="false" aria-label="顯示金額">
-            <span class="ad-eye-ic" aria-hidden="true"></span>
+            <svg class="ad-eye-ic" viewBox="0 0 24 24" aria-hidden="true">
+              <g class="ad-eye-open">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </g>
+              <g class="ad-eye-off">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </g>
+            </svg>
             <span class="ad-eye-tx">顯示金額</span>
           </button>
           <button class="btn small ghost" id="adBtExport" type="button">匯出 CSV</button>
@@ -1020,12 +1118,16 @@
         沒對到詞彙的賓客會拿到其中一封 —— 同一個名字每次拿到的都是同一封。
       </p>
 
+      <!-- 搜尋和悄悄話那一頁同一套：信寫多了（伴郎伴娘、同事、遠道的親友…）
+           就只能一張一張卡片翻。標題、專屬詞彙、內文都吃得到關鍵字。 -->
       <div class="ad-list-head">
         <div class="ad-chips" id="adLetterChips">
           <button class="ad-chip is-on" type="button" data-letter-kind="all">全部</button>
           <button class="ad-chip" type="button" data-letter-kind="default">通用信</button>
           <button class="ad-chip" type="button" data-letter-kind="personal">指定信</button>
         </div>
+        <input class="ad-filter" id="adLetterFilter" type="text"
+               placeholder="搜尋標題、詞彙或內容…">
       </div>
 
       <div class="ad-letter-cards" id="adLetterList"></div>

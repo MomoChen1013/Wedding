@@ -1360,6 +1360,8 @@
     const note = $('spSyncNote');
     const btn = $('spSyncBtn');
 
+    /* hint 只補徽章沒講的事（時間、還有沒存檔的異動）——
+       徽章已經是「有修改還沒送出」了，hint 不用把同一件事再講一次句子版。 */
     let state = 'none';
     let text = '還沒送出';
     let hint = '還沒送到賓客的查座位頁';
@@ -1371,10 +1373,10 @@
     } else if (syncedAt) {
       state = 'stale';
       text = '有修改還沒送出';
-      hint = `排桌改過了，還沒重新送出（最後送出：${fmtTime(syncedAt)}）`;
+      hint = `最後送出：${fmtTime(syncedAt)}`;
     }
     if (dirty) {
-      hint += hint ? '・有還沒儲存的修改' : '有還沒儲存的修改';
+      hint += `（還有修改沒存檔）`;
     }
 
     el.dataset.state = state;
