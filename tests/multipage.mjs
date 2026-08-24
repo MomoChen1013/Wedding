@@ -2140,7 +2140,7 @@ console.log('\n[14e] 後台感謝信（通用信／指定信）');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
   await page.click('.ad-tab[data-tab="letters"]');
   await page.waitForFunction(
-    () => document.querySelectorAll('#adLetterList .ad-item').length >= 3,
+    () => document.querySelectorAll('#adLetterList .ad-letter-card').length >= 3,
     null, { timeout:10000 });
 
   const chipText = await page.innerText('#adLetterChips');

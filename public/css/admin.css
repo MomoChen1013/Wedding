@@ -589,6 +589,47 @@ select.ad-input{appearance:none;cursor:pointer;
 /* 手機的欄位配置見檔案後段「當日流程：↑↓ 在時間欄左邊」那一段 */
 
 /* ============================================================
+   感謝信
+   ------------------------------------------------------------
+   一封一張卡、桌機兩張並排。信是要讀的東西，
+   排成一列一行的清單時每一封都只剩前半句，認不出來是給誰的。
+============================================================ */
+.ad-letter-cards{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:14px;margin-top:16px;
+}
+/* 空狀態與骨架不是卡片，讓它們自己佔滿整列 */
+.ad-letter-cards > :not(.ad-letter-card){grid-column:1 / -1;}
+.ad-letter-card{
+  display:flex;flex-direction:column;
+  border:1px solid var(--line);border-radius:var(--radius);
+  background:#fff;padding:18px 18px 14px;
+}
+/* 通用信是「沒對到詞彙時的那一封」，左邊給一道色帶當記號 */
+.ad-letter-card.is-default{border-left:3px solid var(--primary-deep);}
+.ad-letter-head{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;}
+.ad-letter-title{margin:0;flex:1 1 auto;min-width:0;
+  font-family:var(--font-display);font-weight:500;font-size:15.5px;
+  letter-spacing:.1em;color:var(--ink);word-break:break-word;}
+.ad-letter-terms{margin:9px 0 0;font-size:11.5px;line-height:1.8;
+  letter-spacing:.04em;color:var(--primary-deep);word-break:break-word;}
+.ad-letter-body{
+  margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line-soft);
+  font-size:13px;line-height:1.95;letter-spacing:.02em;color:var(--ink-soft);
+  white-space:pre-wrap;word-break:break-word;
+}
+.ad-letter-foot{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-top:auto;padding-top:12px;
+}
+.ad-letter-time{font-size:11px;letter-spacing:.06em;color:var(--ink-soft);}
+.ad-letter-acts{display:flex;align-items:center;gap:14px;flex:0 0 auto;}
+@media(max-width:560px){
+  .ad-letter-cards{grid-template-columns:1fr;gap:12px;}
+  .ad-letter-card{padding:16px 14px 12px;}
+}
+
+/* ============================================================
    囍卡卡池
 ============================================================ */
 .ad-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
@@ -602,6 +643,7 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-card .ad-input{padding:7px 9px;font-size:12.5px;line-height:1.6;}
 /* 卡片裡的欄位比較矮，下拉箭頭要跟著往上挪 */
 .ad-card select.ad-input{background-position:calc(100% - 16px) 15px, calc(100% - 11px) 15px;}
+/* 現在只剩「#順序」與「⋯」兩樣東西，一左一右 */
 .ad-card-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;}
 
 /* ============================================================
@@ -617,6 +659,62 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-exh-pick-side .ad-label:first-child{margin-top:0;}
 .ad-exh-thumb{flex:0 0 auto;width:46px;height:46px;object-fit:cover;
   border:1px solid var(--line);border-radius:4px;background:var(--bg2);}
+.ad-exh-thumb.is-empty{display:flex;align-items:center;justify-content:center;
+  font-size:10px;letter-spacing:.06em;color:var(--ink-soft);
+  border-style:dashed;}
+
+/* ---------- 故事牆的清單：章節是帶子，故事縮一格掛在底下 ----------
+   賓客那一頁的結構就是「章節 → 底下幾則故事」。後台改版前
+   兩種都畫成同一條 .ad-item，只有一顆小標籤寫著「章節／故事」，
+   十幾則排下來完全看不出分段。現在：
+     ・章節：整條給底色、粗一級的字，自己站成一條帶子
+     ・故事：白底、往內縮一格，看得出來是掛在上面那條底下
+   順序改成拖曳（⠿），做法與測驗題目共用 setupDragSort。 */
+.ad-exh-list{display:flex;flex-direction:column;gap:6px;margin-top:16px;}
+
+.ad-exh-item{
+  display:flex;align-items:flex-start;gap:8px;
+  padding:12px 14px 12px 4px;
+  border:1px solid var(--line-soft);border-radius:var(--radius);
+  background:#fff;
+}
+.ad-exh-item .ad-item-main{flex:1 1 auto;min-width:0;}
+.ad-exh-item .ad-item-actions{align-self:center;}
+
+/* 章節：整條有底色，字也大一級 */
+.ad-exh-item.is-act{
+  background:var(--bg2);
+  border-color:var(--line);
+  border-left:3px solid var(--primary-deep);
+  padding-left:2px;
+}
+.ad-exh-item.is-act .ad-item-title{
+  font-family:var(--font-display);font-weight:500;font-size:16px;letter-spacing:.14em;
+}
+/* 故事：往內縮一格，看得出來是掛在上面那一條章節底下 */
+.ad-exh-item.is-photo{margin-left:22px;}
+
+/* 「章節／故事」不再是一顆和年份長得一樣的 pill：
+   它是這一列的類別，做成一行小字站在標題前面 */
+.ad-exh-kind{
+  flex:0 0 100%;font-size:10.5px;letter-spacing:.2em;color:var(--ink-soft);
+}
+.ad-exh-item.is-act .ad-exh-kind{color:var(--primary-deep);}
+
+.ad-exh-item.is-dragging{
+  opacity:.55;box-shadow:0 4px 12px rgba(0,0,0,.09);position:relative;z-index:2;
+}
+.ad-exh-item.is-dragging .ad-drag-handle{cursor:grabbing;}
+.ad-exh-item .ad-drag-handle{margin:0;}
+
+@media(max-width:560px){
+  .ad-exh-item.is-photo{margin-left:12px;}
+  .ad-exh-item{padding:10px 10px 10px 0;}
+  /* 手機上「編輯／刪除」佔掉的寬度，標題就得換三行才寫得完。
+     兩個都收進 ⋯（那份選單本來就有），標題拿回整列 */
+  .ad-exh-item .ad-edit,
+  .ad-exh-item .ad-del{display:none;}
+}
 
 /* ============================================================
    測驗
@@ -775,12 +873,13 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-panel[data-panel="seatingPlan"]{--seat-full:#6d7f5f;--seat-over:#a4677a;}
 
 /* 工作區要寬（一個螢幕裝得下越多桌越好），
-   但「桌位管理」「匯入匯出」是一般的清單與說明，維持原本的閱讀寬度 */
+   但「桌位管理」「匯入匯出」是一般的清單與說明。
+   拉寬的條件掛在「現在正開著排桌工作區」上，不是整個分頁 ——
+   只把子分頁的內容縮到 860px 的話，子分頁列還是躺在 1360px 的最左邊，
+   標題和內容浮在畫面中間，看起來像沒對齊。整欄一起收窄才會是一頁。 */
 .ad-panel[data-panel="seatingPlan"].is-on{margin:0 auto;}
-.ad-main:has(.ad-panel[data-panel="seatingPlan"].is-on){max-width:1360px;}
-.ad-panel[data-panel="seatingPlan"] .ad-subpanel[data-subpanel="tables"],
-.ad-panel[data-panel="seatingPlan"] .ad-subpanel[data-subpanel="io"]{
-  max-width:860px;}
+.ad-main:has(.ad-panel[data-panel="seatingPlan"].is-on
+             .ad-subpanel[data-subpanel="board"].is-on){max-width:1360px;}
 
 /* ---------- 最上面那一列：狀態 ＋ 統計 ＋ 儲存／同步 ----------
    三塊收在同一列（桌機），工作區才拿得回螢幕的高度。
@@ -807,11 +906,14 @@ select.ad-input{appearance:none;cursor:pointer;
 /* ---------- 統計 ----------
    只留四個一直要盯著的數字。住在頂列裡，所以不用外框，
    靠中間那幾條分隔線就夠了；手機也一列排得完。 */
-.sp-stats{flex:1 1 300px;min-width:0;
-  grid-template-columns:repeat(4,1fr);border:none;}
-.sp-stats .ad-stat{padding:2px 10px;background:transparent;
+/* 選擇器都多壓一層 .ad-stats：後面「資料面板」那一段會把
+   .ad-stats 統一成白底圓角框，頂列這一組要贏過它才留得住 */
+.ad-stats.sp-stats{flex:1 1 300px;min-width:0;
+  grid-template-columns:repeat(4,1fr);
+  gap:0;border:none;border-radius:0;background:transparent;overflow:visible;}
+.ad-stats.sp-stats .ad-stat{padding:2px 10px;background:transparent;
   border:none;border-left:1px solid var(--line-soft);}
-.sp-stats .ad-stat:first-child{border-left:none;}
+.ad-stats.sp-stats .ad-stat:first-child{border-left:none;}
 .sp-stats .ad-stat-num{font-size:clamp(17px,1.7vw,23px);}
 .sp-stats .ad-stat-lab{margin-top:2px;font-size:10.5px;letter-spacing:.04em;
   white-space:nowrap;}
@@ -1220,9 +1322,17 @@ select.ad-input{appearance:none;cursor:pointer;
    兩樣東西（網址與通行碼）。通行碼刻意做大 ——
    它會被唸出來、被抄在紙上，看錯一位數就進不去。
 ============================================================ */
-.ad-bt-link{flex-wrap:wrap;align-items:flex-start;padding:18px 2px;}
-.ad-bt-link .ad-item-main{flex:1 1 320px;}
-.ad-bt-key{flex:1 1 100%;margin-top:10px;}
+.ad-bt-cards{display:flex;flex-direction:column;gap:16px;}
+.ad-bt-link{
+  border:1px solid var(--line);border-radius:var(--radius);
+  background:#fff;padding:20px 20px 18px;
+}
+.ad-bt-link-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.ad-bt-link-title{margin:0;font-family:var(--font-display);font-weight:500;
+  font-size:16px;letter-spacing:.14em;color:var(--ink);}
+.ad-bt-link-meta{margin:8px 0 0;font-size:12px;line-height:1.9;
+  letter-spacing:.03em;color:var(--ink-soft);}
+.ad-bt-key{margin-top:12px;padding-top:4px;border-top:1px solid var(--line-soft);}
 .ad-bt-key .ad-label{margin-top:12px;}
 .ad-bt-key .ad-row{margin-top:6px;flex-wrap:nowrap;align-items:center;}
 .ad-bt-key .ad-input{flex:1 1 auto;min-width:0;font-size:12.5px;}
@@ -1232,13 +1342,53 @@ select.ad-input{appearance:none;cursor:pointer;
   letter-spacing:.34em;text-indent:.34em;color:var(--primary-deep);
   font-variant-numeric:tabular-nums;line-height:1.2;
 }
-.ad-bt-acts{flex:1 1 100%;flex-wrap:wrap;justify-content:flex-end;
-  gap:8px;margin-top:14px;}
+.ad-bt-acts{display:flex;align-items:center;flex-wrap:wrap;
+  justify-content:flex-end;gap:8px;
+  margin-top:16px;padding-top:14px;border-top:1px solid var(--line-soft);}
 
 @media(max-width:560px){
+  .ad-bt-link{padding:16px 14px 14px;}
   .ad-bt-key .ad-row{flex-wrap:wrap;}
   .ad-bt-key .btn{width:100%;}
   .ad-bt-acts{justify-content:flex-start;}
+}
+
+/* ---------- 遮住／顯示金額的那顆眼睛 ----------
+   網路銀行的作法：預設是 [---]，按一下才露出來。
+   做成一顆有框的小膠囊 —— 它會改變畫面上的資訊，不是純裝飾。 */
+.ad-eye{
+  display:inline-flex;align-items:center;gap:7px;vertical-align:middle;
+  margin-left:10px;padding:5px 12px;min-height:32px;
+  border:1px solid var(--line);border-radius:999px;background:#fff;
+  cursor:pointer;font-family:var(--font-body);font-size:11.5px;
+  letter-spacing:.1em;color:var(--ink-soft);
+  transition:border-color var(--dur-hover) ease-out,color var(--dur-hover) ease-out;
+}
+.ad-eye:hover{border-color:var(--ink);color:var(--ink);}
+.ad-eye.is-on{border-color:var(--primary-deep);color:var(--primary-deep);}
+/* 眼睛本體：一個橢圓加一顆瞳孔，遮住時再加一條斜線（純 CSS，不用圖檔） */
+.ad-eye-ic{
+  position:relative;flex:0 0 auto;width:16px;height:10px;
+  border:1px solid currentColor;border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;
+}
+.ad-eye-ic::before{
+  content:'';position:absolute;top:50%;left:50%;width:4px;height:4px;
+  margin:-2px 0 0 -2px;border-radius:50%;background:currentColor;
+}
+.ad-eye-ic::after{
+  content:'';position:absolute;top:50%;left:-2px;width:20px;height:1px;
+  background:currentColor;transform:rotate(-32deg);transform-origin:left center;
+}
+.ad-eye.is-on .ad-eye-ic::after{display:none;}
+@media(max-width:560px){
+  .ad-eye{margin-left:8px;padding:6px 12px;min-height:36px;}
+}
+/* 大數字下面那一行標籤本來只是文字，塞了按鈕就要能換行 */
+.ad-hero-lab:has(.ad-eye){display:flex;align-items:center;
+  justify-content:center;flex-wrap:wrap;gap:4px;}
+/* 站在標題那一列時要和旁邊的 .btn.small 一樣高，不然像掉下去半格 */
+.ad-sec-head-actions .ad-eye{
+  margin-left:0;min-height:42px;padding:9px 16px;font-size:12.5px;
 }
 
 /* ============================================================
@@ -1454,20 +1604,31 @@ select.ad-input{appearance:none;cursor:pointer;
    婚禮資訊在手機上要捲 5–6 個螢幕高才看得到「儲存婚禮資訊」。
    有未儲存的變更時，按鈕自己浮到底部（沿用 .btn.is-dirty 的紅點）。
 ------------------------------------------------------------ */
+/* 底色刻意不用漸層。頁面的底是 linear-gradient(170deg,--bg1,--bg2)，
+   捲到哪裡背後就是哪一段顏色 —— 拿固定的 rgba(251,250,248) 去淡出，
+   捲到下半頁就會看到一塊比背景亮、上緣還糊掉的長方形。
+   改成一條實心的工具列：上面一道 1px 的線交代「這是浮起來的一層」，
+   底色再用 backdrop-filter 把背後的內容糊掉，就不會與頁面底色打架。 */
 .ad-savebar{
   position:sticky;bottom:0;z-index:8;
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;
-  margin-top:20px;padding:12px 0 calc(12px + env(safe-area-inset-bottom));
-  background:linear-gradient(to bottom, rgba(251,250,248,0), rgba(251,250,248,.97) 22%);
+  margin:24px -20px 0;
+  padding:13px 20px calc(13px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--line);
+  background:rgba(250,248,244,.9);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+/* 不支援 backdrop-filter 的瀏覽器就給實心底，寧可稍微亮一點也不要透出字 */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .ad-savebar{background:#faf8f4;}
 }
 .ad-savebar .btn{flex:0 0 auto;}
 .ad-savebar-note{flex:1 1 auto;min-width:0;font-size:11.5px;letter-spacing:.04em;
   color:var(--ink-soft);}
 .ad-savebar-note.is-dirty{color:#8a5765;}
 @media(max-width:899px){
-  .ad-savebar{margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px;
-    border-top:1px solid var(--line);background:rgba(251,250,248,.97);
-    backdrop-filter:blur(6px);}
+  .ad-savebar{margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px;}
   .ad-savebar .btn{flex:1 1 auto;}
   /* 「有還沒儲存的變更」擺在按鈕上面：擠在後面的話會被推到螢幕最底下，
      剛好是最容易被瀏覽器工具列蓋掉的那一條 */
@@ -1713,8 +1874,8 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
 .is-saving{pointer-events:none;}
 .ad-img-field.is-saving{opacity:.55;}
 
-/* 小卡那一列現在有四樣東西（順序、重新裁切、刪除、⋮），
-   180px 寬的卡片放不下就換行，不要擠成一團 */
+/* 小卡那一列只剩「#順序」與「⋯」，180px 的卡片放得下；
+   極端字級下還是允許換行 */
 .ad-card-actions{flex-wrap:wrap;row-gap:4px;}
 
 /* 排桌工作區在 ≤960px 有固定底列了，頂列那四顆就是重複的
@@ -1859,11 +2020,6 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
   .ad-cards{grid-template-columns:repeat(2,1fr);gap:10px;}
   .ad-card figcaption{padding:8px;gap:6px;}
   .ad-card .ad-order{font-size:10.5px;}
-}
-/* 「重新裁切」收進「⋮」裡就好：卡片那一列擺得下的東西有限，
-   而重新裁切是偶爾才做一次的事 */
-@media (hover:none){
-  .ad-card-actions [data-recrop]{display:none;}
 }
 
 /* ---------- 收禮明細：卡片左右留白 ---------- */
@@ -2035,26 +2191,24 @@ body[data-page="admin"] .ad-filter:focus-visible{
 body[data-page="admin"] .ad-rowmenu-item:active{background:rgba(47,43,38,.08);}
 
 /* ============================================================
-   拆掉卡片堆疊
+   什麼時候該是一張「面」，什麼時候只要一條線
    ------------------------------------------------------------
-   普通資訊靠 typography ＋ spacing ＋ divider 就分得開，
-   不需要「框中有格、格旁有框」。改版前有兩處疊起來了：
+   規則只有一條：**要拿來比對的數字**（大數字、環狀圖、統計方格、
+   表格）站在一張白底圓角的面上，其餘一律只留線。
 
-   1. 出席回覆總覽：.ad-hero-stat（白框）裡是 .ad-hero-split，
-      底下接 .ad-donuts（每個 .ad-donut 又是白底 ＋ 四邊框線），
-      再接 .ad-sec-note —— 三層框。
-   2. 表單類：.ad-sub-sec（白底半透明框）巢狀在 .ad-sec 裡，
-      婚禮資訊那一頁一次疊好幾層。
+   為什麼分這兩種：數字要比大小、要對齊、要一眼看出「這幾個是一組」，
+   一張明確的面就是那個「一組」的邊界。而表單欄位、清單項目本來就
+   一列一件事，靠字級與留白排得開 —— 再給它一層框只是
+   「框中有格、格旁有框」，讀起來反而更吃力。
 
-   作法一樣：把「框」換成「線」。層級靠字級與留白撐，不靠邊界。
+   所以：
+     ・.ad-hero-stat／.ad-donuts／.ad-stats／.ad-tablewrap → 一張面
+       （見下面「資料面板」那一段）
+     ・.ad-sub-sec（表單裡的小節）→ 左邊一道細線
+     ・.ad-filterbar（一組控制項）→ 只有一圈淡框，不給底色
 ============================================================ */
 
-/* 1a. 大數字那一塊不再是一張卡：留一條底線，數字自己就是層級 */
-.ad-hero-stat{
-  border:none;border-bottom:1px solid var(--line);border-radius:0;
-  background:transparent;padding:26px 8px 22px;
-}
-/* 2. 表單裡的小節：白框 → 左邊一道細線 */
+/* 表單裡的小節：白框 → 左邊一道細線 */
 .ad-sub-sec{
   margin-top:30px;padding:0 0 0 16px;
   border:none;border-left:1px solid var(--line);
@@ -2062,27 +2216,107 @@ body[data-page="admin"] .ad-rowmenu-item:active{background:rgba(47,43,38,.08);}
 }
 .ad-sub-sec-title{margin-bottom:8px;color:var(--ink);}
 
-/* 1b. 環狀圖群組：格線就是分隔，格子自己不用底色也不用外框 */
+/* 篩選工具列降一階：它是一組控制項，不是一張卡 */
+.ad-filterbar{background:transparent;border-color:var(--line-soft);}
+
+/* ============================================================
+   資料面板：只有「看數字的地方」是一張白底的面
+   ------------------------------------------------------------
+   後台會列數字的地方有四種：大數字（禮金總額、總回覆人數）、
+   環狀圖、統計方格、表格。改版前它們各長各的 ——
+   表格是白底圓角框，統計方格與環狀圖卻是透明只留線，
+   於是同一頁上下兩塊看起來不像同一個東西。
+
+   統一成同一種面：白底 ＋ 1px 外框 ＋ 圓角，
+   格與格之間用 gap:1px 讓底色透出來當分隔線
+   （比在每一格畫 border 可靠：格數是奇數、換行、
+     auto-fit 掉欄的時候都不會少畫或多畫一條）。
+============================================================ */
+.ad-hero-stat,
+.ad-donuts,
+.ad-stats,
+.ad-tablewrap{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+}
+.ad-hero-stat{padding:30px 22px 26px;}
+/* 總覽那一張是左右兩欄的排法，內距自己一套（見 .ad-hero-split） */
+.ad-hero-stat.ad-hero-split{padding:24px 16px 20px;}
+
+/* 環狀圖群組：gap 就是格線，格子自己不用邊框 */
 .ad-donuts{
-  margin-top:0;border-top:none;border-left:none;
-  border-bottom:1px solid var(--line-soft);
+  margin-top:18px;gap:1px;background:var(--line);overflow:hidden;
 }
 .ad-donut{
-  background:transparent;
-  border-right:1px solid var(--line-soft);
-  border-bottom:none;padding:22px 18px;
+  background:#fff;border:none;padding:22px 18px;
 }
-/* auto-fit 的格線在最後一欄會多畫一條，收掉 */
-.ad-donut:last-child{border-right:none;}
+/* 題目數是奇數時，最後一張自己佔滿一整列 ——
+   不這樣的話右下角會空出半格，圓角框就破了一個口 */
+@media(min-width:601px){
+  .ad-donuts{grid-template-columns:repeat(2,1fr);}
+  .ad-donut:last-child:nth-child(odd){grid-column:1 / -1;}
+}
+
+/* 統計方格同理 */
+.ad-stats{gap:1px;background:var(--line);overflow:hidden;}
+.ad-stat{background:#fff;border:none;}
+
+/* 只是「一列一個數字」的讀取用清單（收禮統計的「誰記了多少」）
+   也算同一種面 —— 不然同一頁上兩塊有框、第三塊突然沒有 */
+.ad-list.ad-list-panel{
+  border:1px solid var(--line);border-radius:var(--radius);
+  background:#fff;padding:2px 16px;
+}
+.ad-list.ad-list-panel .ad-item:last-child{border-bottom:none;}
+
+/* ============================================================
+   表單設定的兩大類
+   ------------------------------------------------------------
+   「題目」與「表單資訊」是兩件不同的事，改版前各自只有一行
+   11.5px 的 .ad-label 當開頭，中間又沒有界線 ——
+   整頁看起來就是一長串勾選框。
+
+   一類包一張 .ad-formgroup：標題用明朝體、帶編號，
+   底下的 .ad-sub-sec 維持「左邊一道線」的第三層。
+   勾選框的字也一起放大（13 → 14px）：這一頁全部都是要讀的句子。
+============================================================ */
+.ad-formgroup{
+  margin-top:26px;padding:22px 22px 26px;
+  border:1px solid var(--line);border-radius:var(--radius);
+  background:rgba(255,255,255,.72);
+}
+.ad-formgroup:first-of-type{margin-top:4px;}
+.ad-formgroup-head{
+  padding-bottom:14px;margin-bottom:4px;
+  border-bottom:1px solid var(--line-soft);
+}
+.ad-formgroup-title{
+  display:flex;align-items:center;gap:11px;margin:0;
+  font-family:var(--font-display);font-weight:500;font-size:16.5px;
+  letter-spacing:.16em;color:var(--ink);
+}
+/* 編號只是給眼睛數的，不用搶戲：跟標題同色但小一號、外面一個圈 */
+.ad-formgroup-no{
+  flex:0 0 auto;width:22px;height:22px;border-radius:50%;
+  border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11.5px;letter-spacing:0;color:var(--ink-soft);
+}
+.ad-formgroup-note{
+  margin:10px 0 0;font-size:12.5px;line-height:2;
+  letter-spacing:.04em;color:var(--ink-soft);
+}
+.ad-formgroup-note b{color:var(--ink);font-weight:500;}
+/* 一類的第一個勾選框不要再往下掉 18px，緊接著界線就好 */
+.ad-formgroup > .ad-check:first-of-type{margin-top:14px;}
+.ad-formgroup .ad-sub-sec:first-of-type{margin-top:22px;}
+.ad-formgroup .ad-check{font-size:14px;}
+.ad-formgroup .ad-check small{font-size:12px;}
 @media(max-width:600px){
-  .ad-donut{border-right:none;border-bottom:1px solid var(--line-soft);}
-  .ad-donut:last-child{border-bottom:none;}
+  .ad-formgroup{padding:18px 15px 20px;}
+  .ad-formgroup-title{font-size:15px;letter-spacing:.1em;}
 }
-/* 統計方格同理：四個數字之間留線就好 */
-.ad-stats{border-top:none;border-left:none;border-bottom:1px solid var(--line-soft);}
-.ad-stat{background:transparent;border-right:1px solid var(--line-soft);border-bottom:none;}
-/* 篩選工具列也降一階：它是一組控制項，不是一張卡 */
-.ad-filterbar{background:transparent;border-color:var(--line-soft);}
 
 /* ============================================================
    側欄分組

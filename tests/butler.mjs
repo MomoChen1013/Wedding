@@ -481,13 +481,33 @@ console.log('\n【後台】');
   });
 
   await page.click('.ad-subtab[data-subtab="stats"]');
+
+  /* 金額預設是遮起來的（像網路銀行那樣）——「$ ---」要先出現，
+     按下眼睛才會換成真的數字 */
+  await page.waitForFunction(
+    () => /目前|共 1 筆/.test(document.getElementById('adBtSumSub').textContent),
+    null, { timeout:20000 });
+  /* 遮罩裡夾了 U+2060 word joiner（見 admin.js 的 MONEY_MASK），先拿掉再比 */
+  const masked = (await page.textContent('#adBtSum')).replace(/[\u2060\u00A0]/g, '');
+  ok('金額一開始是遮住的', masked.includes('---'), masked);
+
+  await page.click('.ad-subpanel[data-subpanel="stats"] [data-money-eye]');
   await page.waitForFunction(
     () => document.getElementById('adBtSum').textContent.includes('3,600'),
     null, { timeout:20000 });
-  ok('後台看得到現場記的金額', true, await page.textContent('#adBtSum'));
-  ok('明細列出那一筆',
-    (await page.textContent('#adBtRows')).includes('黃美麗'));
+  ok('按了眼睛就看得到現場記的金額', true, await page.textContent('#adBtSum'));
   ok('看得出是誰收的', (await page.textContent('#adBtByWho')).includes('阿華'));
+
+  /* 明細搬到自己的子分頁了 */
+  await page.click('.ad-subtab[data-subtab="entries"]');
+  await page.waitForFunction(
+    () => /黃美麗/.test(document.getElementById('adBtTableWrap').textContent),
+    null, { timeout:20000 });
+  ok('收禮明細是自己一個子分頁', page.url().endsWith('#butler/entries'), page.url());
+  ok('明細列出那一筆',
+    (await page.textContent('#adBtTableWrap')).includes('黃美麗'));
+  ok('明細的金額跟著眼睛一起顯示',
+    (await page.textContent('#adBtTableWrap')).includes('3,600'));
 
   ok('沒有 console 錯誤', errors.length === 0, errors.join(' / '));
   await page.close();
