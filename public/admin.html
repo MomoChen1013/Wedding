@@ -171,7 +171,8 @@
 
     <nav class="ad-subtabs" data-subtabs="rsvp">
       <button class="ad-subtab is-on" type="button" data-subtab="overview">出席回覆總覽</button>
-      <button class="ad-subtab" type="button" data-subtab="replies">回覆資訊</button>
+      <!-- 筆數由 js/admin.js 的 renderRsvpSubtabCount() 填，見 renderRsvps() -->
+      <button class="ad-subtab" type="button" data-subtab="replies" id="adRepliesSubtab">回覆</button>
       <button class="ad-subtab" type="button" data-subtab="form">表單設定</button>
       <!-- 賓客標籤整個功能預設是關的（guestTagsEnabled），關著時這一顆連同內容都收起來 -->
       <button class="ad-subtab" type="button" data-subtab="tags" id="adTagSubtab" hidden>設定賓客標籤</button>
@@ -206,7 +207,7 @@
     </section>
     </div>
 
-    <!-- 0-2 回覆資訊 -->
+    <!-- 0-2 回覆（N） -->
     <div class="ad-subpanel" data-subpanel="replies">
     <section class="ad-sec">
       <div class="ad-sec-head">
@@ -417,7 +418,7 @@
         標籤是分類賓客用的（行動不便、大學同學…），
         <b>之後排桌次可以依照標籤排位</b>。<br>
         勾了<b>「當表單選項」</b>，賓客填出席回覆時可以自己選；沒勾的只有在後台出現。<br>
-        一位賓客可以有好幾個標籤，在<b>「回覆資訊」</b>那一頁按「標籤」就能改。
+        一位賓客可以有好幾個標籤，在<b>「回覆」</b>那一頁按「標籤」就能改。
       </p>
 
       <div class="ad-list" id="adTagList"></div>
@@ -1117,12 +1118,16 @@
         沒對到詞彙的賓客會拿到其中一封 —— 同一個名字每次拿到的都是同一封。
       </p>
 
+      <!-- 搜尋和悄悄話那一頁同一套：信寫多了（伴郎伴娘、同事、遠道的親友…）
+           就只能一張一張卡片翻。標題、專屬詞彙、內文都吃得到關鍵字。 -->
       <div class="ad-list-head">
         <div class="ad-chips" id="adLetterChips">
           <button class="ad-chip is-on" type="button" data-letter-kind="all">全部</button>
           <button class="ad-chip" type="button" data-letter-kind="default">通用信</button>
           <button class="ad-chip" type="button" data-letter-kind="personal">指定信</button>
         </div>
+        <input class="ad-filter" id="adLetterFilter" type="text"
+               placeholder="搜尋標題、詞彙或內容…">
       </div>
 
       <div class="ad-letter-cards" id="adLetterList"></div>

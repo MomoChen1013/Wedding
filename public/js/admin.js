@@ -1843,11 +1843,25 @@ const rsvpTotalEl = document.getElementById('adRsvpTotal');
 const rsvpSubEl   = document.getElementById('adRsvpSub');
 const rsvpMetaEl  = document.getElementById('adRsvpMeta');
 
+/* 子分頁上直接寫著「回覆（12）」：這一頁最常被問的問題就是「現在幾筆了」，
+   本來要先點進去、捲到清單上方才看得到。
+   載入完成前不掛數字 —— 掛 0 的話和「真的還沒有人回覆」長得一樣。 */
+function renderRepliesSubtabLabel(n){
+  const btn = document.getElementById('adRepliesSubtab');
+  if(!btn) return;
+  const next = Number.isFinite(n) ? `回覆（${n}）` : '回覆';
+  if(btn.textContent === next) return;
+  btn.textContent = next;
+  /* 文字變寬變窄會改變這一列捲不捲得動，邊緣的淡出提示要跟著重算 */
+  refreshScrollHints(btn.closest('.ad-subtabs'));
+}
+
 function renderRsvps(){
   /* 載入中的畫面要和「真的沒人回覆」分得開。
      這個檢查一定要在最前面 —— 先把 0 寫上去再檢查的話，行動網路的那 1–3 秒裡
      新人看到的就是一個大大的「0」加「還沒有人回覆」，和真的沒人一模一樣。 */
   if(!loadedOnce.has('rsvps')){
+    renderRepliesSubtabLabel(null);
     rsvpTotalEl.textContent = '—';
     rsvpSubEl.innerHTML = '<li class="ad-hero-item is-note">讀取中…</li>';
     rsvpMetaEl.hidden = true;
@@ -1867,6 +1881,7 @@ function renderRsvps(){
   const head  = DataStore.getAttendingCount();
   const tally = DataStore.getRsvpTally();
 
+  renderRepliesSubtabLabel(total);
   rsvpTotalEl.textContent = total;
   /* 四個數字各自佔一列（右邊）。擠成一段長句的話會換行三次，
      而且「12 位」和「5 筆」混在同一行讀不出來誰是誰 */
@@ -2245,11 +2260,14 @@ function rsvpCardsHtml(list){
       row('備註', r.note || ''),
     ].filter(Boolean).join('');
 
-    /* 兩行就好：
+    /* 三行：
          第一行  姓名 …………………… 填表時間 ＋ 出席狀態
-         第二行  N 位・葷 X／素 Y ……… ＋ 展開更多（有標籤才多一行）
-       時間本來自己佔一整行，而「展開更多」原本畫成圓角膠囊，
-       和旁邊的標籤長得幾乎一樣 —— 所以改成帶 ＋／－ 的純文字按鈕。 */
+         第二行  N 位・葷 X／素 Y
+         第三行  標籤 ……………………………… ＋ 展開更多
+       「展開更多」本來自己佔一整行（第二行的右邊），底下標籤又佔一行 ——
+       兩行都只用掉左半邊或右半邊，卡片白白長高一截。合成同一行之後，
+       沒有標籤的人那一行也還在（只剩右邊那顆按鈕），
+       每張卡片的高度才一致，掃過去不會忽高忽低。 */
     return `<li class="ad-rcard" data-rsvp="${r.id}">
       <div class="ad-rcard-head">
         <span class="ad-rcard-name">${escapeHtml(`${r.icon || ''} ${r.name || '（沒有名字）'}`.trim())}</span>
@@ -2260,11 +2278,13 @@ function rsvpCardsHtml(list){
         ${keyBits
           ? `<span class="ad-rcard-key">${escapeHtml(keyBits)}</span>`
           : `<span class="ad-rcard-key is-off">${escapeHtml(rsvpLabel('relation', r.relation) || '—')}</span>`}
+      </div>
+      <div class="ad-rcard-tags">
+        ${tags.map(id =>
+          `<span class="ad-tag ad-tag-guest">${escapeHtml(guestTagName(id))}</span>`).join('')}
         <button class="ad-rcard-more" type="button" data-rcard-more="${r.id}"
                 aria-expanded="false"><i aria-hidden="true">＋</i>展開更多</button>
       </div>
-      ${tags.length ? `<div class="ad-rcard-tags">${tags.map(id =>
-        `<span class="ad-tag ad-tag-guest">${escapeHtml(guestTagName(id))}</span>`).join('')}</div>` : ''}
       <div class="ad-rcard-rest" hidden>
         ${rest || '<div class="ad-rcard-row"><span>其他</span><b>沒有其他內容</b></div>'}
         <div class="ad-rcard-acts">
@@ -2895,7 +2915,7 @@ function syncTagChipsClamp(){
   const overflow = tagChipsEl.scrollHeight - boxH > 2;
   if(clamped) tagChipsEl.classList.add('is-open');
 
-  /* 這一排住在「回覆資訊」子分頁裡，而預設打開的是「總覽」——
+  /* 這一排住在「回覆」子分頁裡，而預設打開的是「總覽」——
      子分頁還沒顯示時量到的高度全是 0，這時候什麼都不要判斷，
      等 activateTab 切過來再量一次（見那裡的 requestAnimationFrame） */
   if(!boxH) return;
@@ -3568,6 +3588,7 @@ const lf = {
   isDef:   document.getElementById('adLetterDefault'),
   len:     document.getElementById('adLetterLen'),
   list:    document.getElementById('adLetterList'),
+  filter:  document.getElementById('adLetterFilter'),
 };
 
 lf.body.addEventListener('input', ()=>{ lf.len.textContent = lf.body.value.length; });
@@ -3666,6 +3687,7 @@ function renderLetters(){
   renderLetterChips(all);
 
   if(!all.length){
+    setPageSub('adLetterPageSub', '賓客領到的那一封信，寫在這裡');
     lf.list.innerHTML = emptyState({
       title: '還沒有寫任何一封感謝信',
       body: '賓客輸入自己的名字或專屬詞彙，就會領到你們留給他的那一封。'
@@ -3675,8 +3697,31 @@ function renderLetters(){
     return;
   }
 
-  const list = letterKind === 'all' ? all
+  const byKind = letterKind === 'all' ? all
     : all.filter(b => (letterKind === 'default') === isDefaultLetter(b));
+
+  /* 關鍵字吃三個欄位：標題、專屬詞彙、內文。
+     「詞彙」是最常拿來找的 —— 新人記得寫過給「伴娘」的那一封，
+     但想不起來標題叫什麼。 */
+  const q = normKey(lf.filter ? lf.filter.value : '');
+  const list = !q ? byKind : byKind.filter(b =>
+    normKey(b.title).includes(q)
+    || normKey(b.body).includes(q)
+    || (Array.isArray(b.terms) && b.terms.some(t => normKey(t).includes(q))));
+
+  setPageSub('adLetterPageSub', list.length === all.length
+    ? `共 <b>${all.length}</b> 封信`
+    : `<b>${list.length}</b> 封符合條件（全部 ${all.length} 封）`);
+
+  /* 搜尋沒東西、和這個分類本來就沒東西，是兩件事：
+     前者要說「換個關鍵字」，後者要說「去寫一封」。 */
+  if(!list.length && q){
+    lf.list.innerHTML = emptyState({
+      title: '沒有符合的信',
+      body: '換個關鍵字再找一次，或把搜尋清掉。標題、專屬詞彙、內文都找得到。',
+    });
+    return;
+  }
 
   if(!list.length){
     lf.list.innerHTML = letterKind === 'default'
@@ -3729,6 +3774,8 @@ letterChipsEl.addEventListener('click', (e)=>{
   letterKind = btn.dataset.letterKind;
   renderLetters();
 });
+
+if(lf.filter) lf.filter.addEventListener('input', renderLetters);
 
 lf.list.addEventListener('click', async (e)=>{
   if(e.target.id === 'adLetterEmptyAddBtn'){
@@ -4972,7 +5019,7 @@ function renderQuiz(){
           <span class="ad-item-sub">${opts}</span>
         </div>
         <div class="ad-item-actions">
-          <button class="ad-edit" type="button" data-edit-quiz="${it.id}">編輯</button>
+          <button class="ad-edit ad-edit-inline" type="button" data-edit-quiz="${it.id}">編輯</button>
           <button class="ad-del ad-del-inline" type="button" data-del-quiz="${it.id}">刪除</button>
           ${rowMenuBtn('quiz', it.id)}
         </div>

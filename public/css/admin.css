@@ -258,9 +258,11 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-img-field-prev[hidden]{display:none;}
 .ad-img-field .btn{cursor:pointer;}
 
-.ad-check{display:flex;align-items:flex-start;gap:9px;margin-top:18px;
+/* 勾選框和字要對齊在同一條中線上。原本是 flex-start ＋ margin-top:5px 硬推，
+   字級或行高一改就對不準了（看起來像沒對齊，勾選框浮在文字上緣）。 */
+.ad-check{display:flex;align-items:center;gap:9px;margin-top:18px;
   font-size:13px;line-height:1.8;color:var(--ink);cursor:pointer;}
-.ad-check input{margin-top:5px;flex:0 0 auto;accent-color:var(--primary-deep);}
+.ad-check input{flex:0 0 auto;accent-color:var(--primary-deep);}
 /* display:flex 會蓋掉瀏覽器對 [hidden] 的 display:none，要自己補回來 */
 .ad-check[hidden]{display:none;}
 /* 同一組勾選框連著排時不要each都空 18px，看起來才像一組 */
@@ -438,6 +440,11 @@ select.ad-input{appearance:none;cursor:pointer;
   font-family:var(--font-body);font-size:13px;color:var(--ink);
   background:#fff;outline:none;}
 .ad-filter:focus{border-color:var(--ink);}
+/* 窄螢幕：旁邊的分類 chip／筆數自己已經佔掉一整行了，
+   搜尋框再擠在同一行只剩 170px 左右，看不完自己打的字。獨佔一行。 */
+@media(max-width:560px){
+  .ad-list-head .ad-filter{flex:1 1 100%;}
+}
 
 /* ============================================================
    篩選工具列（回覆名單）
@@ -523,7 +530,6 @@ select.ad-input{appearance:none;cursor:pointer;
   padding:12px 0;border-bottom:1px solid var(--line-soft);}
 .ad-tagrow-name{flex:1 1 180px;min-width:0;padding:9px 12px;font-size:14px;}
 .ad-tagrow-check{margin-top:0;flex:0 0 auto;white-space:nowrap;}
-.ad-tagrow-check input{margin-top:3px;}
 .ad-tagrow-count{flex:0 0 auto;font-size:11.5px;letter-spacing:.1em;color:var(--ink-soft);}
 
 /* 幫某一位賓客勾標籤的彈窗：一列一個，超過就自己捲 */
@@ -1617,21 +1623,32 @@ select.ad-input{appearance:none;cursor:pointer;
    才看得到「人數／葷／素」—— 而那正是新人最常看的三欄。
    桌機維持表格（同一欄上下對得起來，才比得出誰吃素）。
 ------------------------------------------------------------ */
-.ad-rcards{list-style:none;margin:0;padding:0;border-top:1px solid var(--line-soft);}
-.ad-rcard{padding:14px 2px;border-bottom:1px solid var(--line-soft);}
+/* 一筆一張真的卡片（白底、圓角、外框），不是靠一條分隔線隔開的清單。
+   這一頁一次要掃十幾筆，每一筆內部又有三行高低不一的資訊 ——
+   只有一條線的話，眼睛分不出「這三行是同一個人的」。 */
+.ad-rcards{list-style:none;margin:0;padding:0;
+  display:flex;flex-direction:column;gap:10px;}
+.ad-rcard{padding:13px 14px;background:#fff;
+  border:1px solid var(--line);border-radius:var(--radius);}
+/* 沒來的人整張淡掉：名單掃過去時，要找的是「會來的那些人」 */
+.ad-rcard:has(.ad-tag-no){background:var(--bg2);}
 .ad-rcard-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .ad-rcard-name{flex:1 1 auto;min-width:0;font-size:15px;letter-spacing:.05em;
   color:var(--ink);word-break:break-word;}
 .ad-rcard-key{margin-top:6px;font-size:13px;letter-spacing:.04em;color:var(--ink);
   font-variant-numeric:tabular-nums;}
 .ad-rcard-key .is-off{color:var(--ink-soft);}
-.ad-rcard-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;}
+/* 標籤與「展開更多」同一行：標籤靠左長，按鈕永遠靠右。
+   標籤多到要換行時，按鈕自己留在最後一行的右邊（margin-left:auto）。 */
+.ad-rcard-tags{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:9px;}
+.ad-rcard-tags .ad-rcard-more{margin-left:auto;}
 .ad-rcard-foot{display:flex;align-items:center;gap:10px;margin-top:8px;}
 .ad-rcard-time{flex:1 1 auto;min-width:0;font-size:11.5px;color:var(--ink-soft);}
 .ad-rcard-more{
-  background:none;border:1px solid var(--line);border-radius:999px;cursor:pointer;
+  flex:0 0 auto;background:none;border:1px solid var(--line);border-radius:999px;
+  cursor:pointer;
   font-family:var(--font-body);font-size:12px;letter-spacing:.08em;color:var(--ink-soft);
-  padding:8px 14px;min-height:36px;
+  padding:6px 13px;min-height:34px;
 }
 .ad-rcard-more[aria-expanded="true"]{border-color:var(--ink);color:var(--ink);}
 .ad-rcard-rest{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line-soft);}
@@ -1971,9 +1988,14 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
 
 /* 一列裡「看得見的刪除」只給有滑鼠的機器：
    拇指按的時候它離「編輯」太近，改走「⋮」裡那一顆（排最後、危險色）。
-   兩顆指到的是同一段程式，只是入口不同。 */
+   兩顆指到的是同一段程式，只是入口不同。
+
+   .ad-edit-inline 同理 —— 測驗那一份每列本來是「拖曳把手＋編輯＋刪除＋⋮」，
+   刪除收起來之後只剩「編輯」和「⋮」並排，而「⋮」裡本來就有「編輯這一題」。
+   同一件事給兩個入口，在 390px 上只是把題目文字擠掉。 */
 @media (hover:none){
-  .ad-del-inline{display:none;}
+  .ad-del-inline,
+  .ad-edit-inline{display:none;}
 }
 
 /* 正在上傳的那一欄整塊淡掉並擋住重複點擊（.ad-img-field 裡是一顆
