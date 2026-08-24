@@ -2493,9 +2493,13 @@
     window.addEventListener('hashchange', () => setTimeout(syncMobileBar, 0));
 
     /* ---- 搜尋 / 篩選 / 排序 ---- */
-    $('spSearch').addEventListener('input', (e) => {
-      view.q = normKey(e.target.value);
-      renderBoard();
+    /* input ＋ search 兩個都接：type="search" 的原生清除鈕（✕）
+       在 Safari 只發 search。少接一個，按了 ✕ 之後名單不會變回全部。 */
+    ['input', 'search'].forEach((evt) => {
+      $('spSearch').addEventListener(evt, (e) => {
+        view.q = normKey(e.target.value);
+        renderBoard();
+      });
     });
     $('spSort').addEventListener('change', (e) => {
       view.sort = e.target.value;

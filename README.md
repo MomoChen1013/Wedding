@@ -138,7 +138,9 @@
 └─ tests/
     ├─ rules.test.mjs         # Security Rules 測試
     ├─ e2e.mjs                # 出席回覆那一頁的瀏覽器測試
-    └─ multipage.mjs          # 多頁面站台的瀏覽器測試
+    ├─ multipage.mjs          # 多頁面站台的瀏覽器測試
+    ├─ butler.mjs             # 收禮小幫手的瀏覽器測試
+    └─ ui-consistency.mjs     # 後台元件庫的一致性測試（見 docs/UI-SPEC.md）
 ```
 
 ### 一頁是怎麼跑起來的
@@ -1784,6 +1786,29 @@ npm run test:e2e
 [9]  舊的 /rsvp 網址        # 301 導到 /invitation，導過去之後表單正常
 [7]  手機版 RWD（375px）    # 無水平捲動
 ```
+
+### 後台 UI 一致性測試
+
+```bash
+npm run test:ui
+```
+
+新人後台與收禮小幫手用的是**同一組 `.ad-*` 元件**（規格見
+[`docs/UI-SPEC.md`](docs/UI-SPEC.md)）。這一支守的就是那句話：
+
+```
+雙軌字體      # 同一顆 .btn／.ad-filter 在兩頁是同一種字
+--ink-soft    # 對比修正兩頁一致（5.53:1）
+焦點框        # 收禮台也要有，不然鍵盤使用者在那一頁是盲走的
+搜尋框        # 八個地方一份 HTML 樣板（type/inputmode/enterkeyhint/
+              # autocomplete/aria-label/placeholder 格式）
+抽屜          # .sp-drawer 與 .ad-drawer 同一份規格（尺寸、層級、
+              # dialog 語意、遮罩、CTA 貼底）
+遮罩          # 側欄／彈窗／抽屜全部收在同一支冷灰
+```
+
+只需要 hosting emulator，不用 Firestore —— 量的是 CSS 與 HTML 屬性，
+頁面停在登入門也跑得完。
 
 ### 全部一起跑
 

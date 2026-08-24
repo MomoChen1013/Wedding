@@ -9,7 +9,31 @@
 ============================================================ */
 /* 後台完全不用賓客那份頂部導覽列（common.js 在 data-page="admin" 時也不會注入），
    蓋掉 common.css 幫賓客導覽列留的 padding-top，不然畫面上會空一截 */
-body[data-page="admin"]{padding-top:0;}
+body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
+
+/* ============================================================
+   這份檔案服務的是「兩個」頁面
+   ------------------------------------------------------------
+   admin.css 不是「新人後台的樣式」，是**後台元件庫**：
+     ・/admin   （body[data-page="admin"]）新人後台
+     ・/butler  （body[data-page="butler"]）收禮小幫手
+   收禮台從第一天就宣告「跟後台是同一套」（見 butler.css 開頭），
+   用的是同一組 .ad-* 元件。
+
+   所以凡是「元件層」的規則，選擇器一律寫成
+       body:is([data-page="admin"],[data-page="butler"])
+   而不是只掛 admin —— 只掛 admin 的後果是：同一顆 .ad-chip、
+   同一個 .ad-filter、同一張 .ad-modal-card，在後台是 sans、
+   在收禮台是明朝體；後台按 Tab 有焦點框、收禮台沒有。
+   那不是兩個頁面，那是同一個元件長出兩張臉。
+
+   :is() 取最高特異性的那一項，兩項都是 [attr]，
+   所以 body:is(…) 和原本的 body[data-page="admin"] 特異性相同（0,1,1），
+   既有的覆寫順序不會被動到。
+
+   要放「只有後台有、收禮台沒有」的東西（例如側邊抽屜 .ad-side），
+   那些選擇器本來就不掛 data-page，不受這條規則影響。
+============================================================ */
 
 /* ============================================================
    Motion token
@@ -29,6 +53,37 @@ body[data-page="admin"]{padding-top:0;}
   --dur-drawer:260ms;
   --dur-page:200ms;
   --ease:cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* ----------------------------------------------------------
+     遮罩與陰影
+     ----------------------------------------------------------
+     賓客頁全站無陰影；後台是工作介面，需要「這一層浮在上面」的
+     深度訊號，所以只有浮起來的那幾種元件有陰影。
+
+     問題和 motion token 一樣：這些值本來散在十幾處字面值裡，
+     而且已經漂了 —— 側邊抽屜的遮罩是 rgba(20,18,14,.32)，
+     其他遮罩全是 rgba(43,47,54,…)。同一頁上兩層遮罩兩種色溫，
+     沒有人會說得出為什麼。收成三個變數：
+
+       --scrim-drawer  .2   抽屜：前提是「背景要看得見」
+       --scrim-modal   .72  彈窗：背景該退場，只剩這張卡
+       --scrim-nav     .32  側邊選單：介於兩者之間（它蓋掉的是導覽，
+                            不是使用者正在讀的內容）
+     色相一律 43,47,54（那支冷灰），只有濃度不同。
+  ---------------------------------------------------------- */
+  --scrim-drawer:rgba(43,47,54,.2);
+  --scrim-modal:rgba(43,47,54,.72);
+  --scrim-nav:rgba(43,47,54,.32);
+
+  /* --shadow-pop    浮在原地的小東西（選單、tooltip、peek 卡）
+     --shadow-panel  從邊緣滑進來的面（抽屜、側邊選單）：
+                     方向交給各自的第一個值，模糊與濃度同一份 */
+  --shadow-pop:0 4px 14px rgba(43,47,54,.10);
+  /* --shadow-drag  正被拖著走的那一列（故事牆、測驗題）：
+     比 pop 淺一階，因為它同時已經 opacity:.55 了 */
+  --shadow-drag:0 4px 12px rgba(43,47,54,.09);
+  --shadow-panel-blur:14px;
+  --shadow-panel-ink:rgba(43,47,54,.09);
 }
 
 /* 使用者在系統層說了「不要動畫」——那是前庭系統的需求，不是偏好設定。
@@ -163,7 +218,8 @@ body[data-page="admin"]{padding-top:0;}
   .ad-side{
     position:fixed;top:0;left:0;bottom:0;z-index:1000;
     width:min(78vw,280px);max-height:none;
-    background:var(--bg1);box-shadow:2px 0 14px rgba(0,0,0,.09);
+    background:var(--bg1);
+    box-shadow:2px 0 var(--shadow-panel-blur) var(--shadow-panel-ink);
     padding:76px 14px 20px;border-right:none;
     transform:translateX(-100%);transition:transform var(--dur-drawer) var(--ease);
   }
@@ -175,7 +231,7 @@ body[data-page="admin"]{padding-top:0;}
   .ad-side-foot .btn{width:100%;}
   .ad-side-backdrop{
     display:block;position:fixed;inset:0;z-index:990;
-    background:rgba(20,18,14,.32);opacity:0;pointer-events:none;
+    background:var(--scrim-nav);opacity:0;pointer-events:none;
     transition:opacity var(--dur-pop) ease-out;
   }
   .ad-side-backdrop.is-on{opacity:1;pointer-events:auto;}
@@ -435,11 +491,42 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-list-head{display:flex;align-items:center;justify-content:space-between;
   gap:12px;margin:28px 0 10px;font-size:12px;letter-spacing:.1em;color:var(--ink-soft);
   flex-wrap:wrap;}
+/* ---------- 搜尋框（.ad-filter）----------
+   後台只有這一種搜尋框。八個地方都在用它：出席回覆、悄悄話、桌次名單、
+   感謝信、收禮明細（後台）、排桌的未安排名單，以及收禮台的名單與紀錄。
+
+   同一個元件就要同一份規格，HTML 那邊也一樣（缺一個就長得不一樣）：
+     type="search"          右邊有原生清除鈕，語意也對
+     inputmode="search"     手機鍵盤右下角是「搜尋」不是「換行」
+     enterkeyhint="search"  同上
+     autocomplete="off"     不要跳出瀏覽器存的姓名地址蓋住清單
+     aria-label="搜尋…"     placeholder 不是標籤，一打字就消失了
+   JS 那邊則是 input ＋ search 兩個事件都要接（見 admin.js 的說明）。
+
+   尺寸只有兩種：預設，以及 .ad-filter-sm（塞在窄欄裡時用，
+   目前只有排桌工作區那一欄）。除此之外不要再長第三種。 */
 .ad-filter{flex:0 1 220px;min-width:0;padding:8px 12px;
   border:1px solid var(--line);border-radius:var(--radius);
   font-family:var(--font-body);font-size:13px;color:var(--ink);
   background:#fff;outline:none;}
 .ad-filter:focus{border-color:var(--ink);}
+/* type="search" 的原生外觀在各家瀏覽器差很多（iOS 會強制畫成膠囊、
+   桌面 Safari 會多一顆放大鏡）。歸零之後，八個搜尋框才是同一個框。
+   清除鈕（✕）維持原生的 —— 那是使用者認得的東西，只把它縮到與字級相稱。 */
+.ad-filter{-webkit-appearance:none;appearance:none;}
+.ad-filter::-webkit-search-decoration,
+.ad-filter::-webkit-search-results-button,
+.ad-filter::-webkit-search-results-decoration{-webkit-appearance:none;display:none;}
+.ad-filter::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;
+  width:15px;height:15px;margin-left:6px;cursor:pointer;opacity:.45;
+  background:currentColor;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 4l8 8M12 4l-8 8' stroke='%23000' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 4l8 8M12 4l-8 8' stroke='%23000' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;}
+.ad-filter::-webkit-search-cancel-button:hover{opacity:.85;}
+@media (pointer:coarse){
+  /* 現場是拇指在按，✕ 要按得到 */
+  .ad-filter::-webkit-search-cancel-button{width:19px;height:19px;margin-left:8px;}
+}
 /* 窄螢幕：旁邊的分類 chip／筆數自己已經佔掉一整行了，
    搜尋框再擠在同一行只剩 170px 左右，看不完自己打的字。獨佔一行。 */
 @media(max-width:560px){
@@ -708,7 +795,7 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-exh-item.is-act .ad-exh-kind{color:var(--primary-deep);}
 
 .ad-exh-item.is-dragging{
-  opacity:.55;box-shadow:0 4px 12px rgba(0,0,0,.09);position:relative;z-index:2;
+  opacity:.55;box-shadow:var(--shadow-drag);position:relative;z-index:2;
 }
 .ad-exh-item.is-dragging .ad-drag-handle{cursor:grabbing;}
 .ad-exh-item .ad-drag-handle{margin:0;}
@@ -744,7 +831,7 @@ select.ad-input{appearance:none;cursor:pointer;
   background:none;border:none;cursor:grab;color:var(--ink-soft);
   font-size:16px;letter-spacing:.1em;touch-action:none;user-select:none;}
 .ad-drag-handle:hover{color:var(--ink);}
-.ad-quiz-item.is-dragging{opacity:.55;box-shadow:0 4px 12px rgba(0,0,0,.09);position:relative;z-index:2;}
+.ad-quiz-item.is-dragging{opacity:.55;box-shadow:var(--shadow-drag);position:relative;z-index:2;}
 .ad-quiz-item.is-dragging .ad-drag-handle{cursor:grabbing;}
 .ad-drag-placeholder{border:1px dashed var(--line);border-radius:var(--radius);
   height:52px;margin:2px 0;background:var(--bg2);}
@@ -754,7 +841,7 @@ select.ad-input{appearance:none;cursor:pointer;
 ============================================================ */
 /* 裁切器是從表單彈窗裡叫出來的（故事牆的照片就是這樣選的），
    所以要壓在所有彈窗與 toast 上面，不然按不到「用這個範圍」 */
-.cr-mask{position:fixed;inset:0;z-index:1600;background:rgba(43,47,54,.72);
+.cr-mask{position:fixed;inset:0;z-index:1600;background:var(--scrim-modal);
   display:flex;align-items:center;justify-content:center;padding:20px;
   animation:pop var(--dur-pop) var(--ease);}
 .cr-card{width:min(92vw,380px);max-height:92dvh;overflow:auto;background:#fff;
@@ -823,7 +910,7 @@ select.ad-input{appearance:none;cursor:pointer;
 /* ============================================================
    統一的確認 Modal（取代 confirm()）
 ============================================================ */
-.ad-modal-mask{position:fixed;inset:0;z-index:1450;background:rgba(43,47,54,.72);
+.ad-modal-mask{position:fixed;inset:0;z-index:1450;background:var(--scrim-modal);
   display:flex;align-items:center;justify-content:center;padding:20px;
   animation:pop var(--dur-btn) var(--ease);}
 .ad-modal-mask[hidden]{display:none;}
@@ -991,7 +1078,13 @@ select.ad-input{appearance:none;cursor:pointer;
 .sp-tools{padding:9px 11px 10px;border-bottom:1px solid var(--line);}
 .sp-tools-row{display:flex;gap:8px;align-items:center;}
 .sp-tools-row + .sp-tools-row{margin-top:7px;}
-.sp-search{flex:1 1 auto;min-width:0;padding:7px 10px;font-size:12.5px;}
+/* 搜尋框的小尺寸：塞在「未安排」那一欄裡，寬度本來就只有兩百多 px。
+   .sp-search 是它在排桌工作區的位置名（flex 佔滿那一行），
+   .ad-filter-sm 才是設計系統裡的那個尺寸 —— 別的地方要用小號搜尋框，
+   用 .ad-filter-sm，不要再抄一份 padding。 */
+.ad-filter-sm,
+.sp-search{padding:7px 10px;font-size:12.5px;}
+.sp-search{flex:1 1 auto;min-width:0;}
 .sp-tools .btn.small{padding:8px 12px;font-size:12px;letter-spacing:.06em;}
 .sp-tools-sort{justify-content:space-between;}
 .sp-select{display:flex;align-items:center;gap:6px;flex:1 1 auto;min-width:0;
@@ -1094,7 +1187,7 @@ select.ad-input{appearance:none;cursor:pointer;
 /* ---------- 完整樣貌（peek） ---------- */
 .sp-peek{position:fixed;z-index:1200;background:#fff;border:1px solid var(--ink);
   border-radius:var(--radius);padding:12px 14px 11px;
-  box-shadow:0 4px 14px rgba(43,47,54,.10);animation:pop var(--dur-hover) var(--ease);}
+  box-shadow:var(--shadow-pop);animation:pop var(--dur-hover) var(--ease);}
 .sp-peek[hidden]{display:none;}
 .sp-peek-head{display:flex;align-items:baseline;gap:7px;padding-bottom:8px;
   border-bottom:1px solid var(--line-soft);}
@@ -1221,14 +1314,15 @@ select.ad-input{appearance:none;cursor:pointer;
    兩邊都註冊進 pushLayer()／popLayer()，返回鍵與 Esc 才關得掉、
    背景才鎖得住捲動。
 
-   遮罩從 .42 降到 .2：「背景頁面保持可見」是這個元件的前提，
-   壓得太黑就跟開一個 modal 沒兩樣了。 */
-.sp-drawer-mask,.ad-drawer-mask{position:fixed;inset:0;z-index:1300;background:rgba(43,47,54,.2);}
+   遮罩用 --scrim-drawer（.2，見檔案開頭的 token）：「背景頁面保持可見」
+   是這個元件的前提，壓到彈窗那個 .72 就跟開一個 modal 沒兩樣了。 */
+.sp-drawer-mask,.ad-drawer-mask{position:fixed;inset:0;z-index:1300;
+  background:var(--scrim-drawer);}
 .sp-drawer-mask[hidden],.ad-drawer-mask[hidden]{display:none;}
 .sp-drawer,.ad-drawer{position:fixed;top:0;right:0;bottom:0;z-index:1310;
   width:min(92vw,400px);display:flex;flex-direction:column;
   background:var(--bg1);border-left:1px solid var(--line);
-  box-shadow:-4px 0 14px rgba(43,47,54,.07);
+  box-shadow:-4px 0 var(--shadow-panel-blur) var(--shadow-panel-ink);
   animation:spDrawerIn var(--dur-drawer) var(--ease);}
 .sp-drawer[hidden],.ad-drawer[hidden]{display:none;}
 @keyframes spDrawerIn{from{transform:translateX(18px);opacity:.4}to{transform:none;opacity:1}}
@@ -1242,8 +1336,11 @@ select.ad-input{appearance:none;cursor:pointer;
   color:var(--ink-soft);padding:2px 4px;flex:0 0 auto;}
 .sp-drawer-close:hover,.ad-drawer-close:hover{color:var(--ink);}
 .sp-drawer-body,.ad-drawer-body{flex:1 1 auto;overflow-y:auto;padding:18px 20px 30px;}
+/* 兩個抽屜的關閉鈕本來各自宣告了一次一模一樣的熱區（一個在這裡、
+   一個在下面「觸控目標」那一段），改成同一條 —— 這種重複就是
+   哪天只改到其中一個、兩個抽屜的 ✕ 開始不一樣大的起點。 */
 @media (pointer:coarse){
-  .ad-drawer-close{min-width:44px;min-height:44px;font-size:19px;}
+  .sp-drawer-close,.ad-drawer-close{min-width:44px;min-height:44px;font-size:19px;}
 }
 .sp-drawer-tags{display:flex;flex-direction:column;gap:2px;margin-top:6px;
   max-height:180px;overflow-y:auto;padding:4px 2px;
@@ -1518,7 +1615,7 @@ select.ad-input{appearance:none;cursor:pointer;
    桌機（pointer:fine）維持原本比較緊的密度。
 ------------------------------------------------------------ */
 @media (pointer:coarse){
-  .ad-input,.ad-textarea,.ad-filter,.sp-search,
+  .ad-input,.ad-textarea,.ad-filter,.ad-filter-sm,.sp-search,
   .ad-card .ad-input,.ad-quiz-opt .ad-input,
   .ad-tagrow-name,.ad-sch-row .ad-input,
   .ad-bt-key .ad-input,.sp-select select,.sp-map-row select,
@@ -1561,7 +1658,6 @@ select.ad-input{appearance:none;cursor:pointer;
   .sp-filters .ad-chip{min-height:36px;font-size:12px;padding:5px 12px;}
   .ad-pager-btn{min-height:44px;padding:10px 16px;}
   .ad-pager-size select{min-height:40px;}
-  .sp-drawer-close{min-width:44px;min-height:44px;font-size:19px;}
   .ad-th-link{min-height:32px;padding:6px 12px;}
   .sp-warn-more{min-height:36px;display:inline-flex;align-items:center;}
   .ad-callout-head input,.ad-check input{width:20px;height:20px;}
@@ -1584,7 +1680,7 @@ select.ad-input{appearance:none;cursor:pointer;
   position:fixed;z-index:1400;min-width:190px;max-width:min(84vw,260px);
   background:#fff;border:1px solid var(--ink);border-radius:var(--radius);
   padding:5px;display:flex;flex-direction:column;
-  box-shadow:0 5px 16px rgba(43,47,54,.11);animation:pop var(--dur-hover) var(--ease);
+  box-shadow:var(--shadow-pop);animation:pop var(--dur-hover) var(--ease);
 }
 .ad-rowmenu[hidden]{display:none;}
 .ad-rowmenu-item{
@@ -2075,7 +2171,7 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
    加上陰影才看得出它是「浮在上面、跟著你走」的那一層 */
 .ad-filtersum{
   border-color:var(--line-soft);
-  box-shadow:0 4px 14px rgba(43,47,54,.10);
+  box-shadow:var(--shadow-pop);
   background:#fff;
 }
 
@@ -2170,98 +2266,104 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
 
    為什麼是新增 --font-ui 而不是改 --font-body
    ・--font-body 定義在 common.css 的 :root，賓客的每一頁都吃它。
-     改掉它 = 婚禮頁面整個變樣。所以只在後台這一層覆寫。
+     改掉它 = 婚禮頁面整個變樣。所以只在後台元件庫這一層覆寫
+     （admin ＋ butler 兩頁一起，見檔案開頭「這份檔案服務的是兩個頁面」）。
 
    為什麼不載新的 CJK sans
    ・繁中字集很大，再加一個家族就是好幾百 KB。
      目標裝置（台灣的 iPhone／Mac／Windows）本來就有
      蘋方／微軟正黑，system-ui 直接拿得到，零額外請求、零閃動。
 ============================================================ */
-body[data-page="admin"]{
+body:is([data-page="admin"],[data-page="butler"]){
   --font-ui:system-ui,-apple-system,"PingFang TC","Noto Sans TC",
             "Microsoft JhengHei","Segoe UI",sans-serif;
 }
 
 /* UI 軌：導覽、表格、表單、按鈕、metadata、時間戳、狀態 */
-body[data-page="admin"] .ad-tab,
-body[data-page="admin"] .ad-subtab,
-body[data-page="admin"] .ad-table,
-body[data-page="admin"] .ad-input,
-body[data-page="admin"] .ad-textarea,
-body[data-page="admin"] .ad-filter,
-body[data-page="admin"] .ad-label,
-body[data-page="admin"] .ad-chip,
-body[data-page="admin"] .ad-tag,
-body[data-page="admin"] .ad-hint,
-body[data-page="admin"] .ad-count,
-body[data-page="admin"] .ad-field-err,
-body[data-page="admin"] .ad-info-name,
-body[data-page="admin"] .ad-info-val,
-body[data-page="admin"] .ad-pager,
-body[data-page="admin"] .ad-pager-btn,
-body[data-page="admin"] .ad-list-head,
-body[data-page="admin"] .ad-filterbar,
-body[data-page="admin"] .ad-filtersum,
-body[data-page="admin"] .ad-item-title,
-body[data-page="admin"] .ad-item-sub,
-body[data-page="admin"] .ad-edit,
-body[data-page="admin"] .ad-del,
-body[data-page="admin"] .ad-rowmenu,
-body[data-page="admin"] .ad-rowmenu-btn,
-body[data-page="admin"] .ad-toast,
-body[data-page="admin"] .ad-modal-msg,
-body[data-page="admin"] .ad-modal-note,
-body[data-page="admin"] .ad-sec-note,
-body[data-page="admin"] .ad-sub-sec-note,
-body[data-page="admin"] .ad-savebar-note,
-body[data-page="admin"] .ad-rcard,
-body[data-page="admin"] .ad-btcard,
-body[data-page="admin"] .ad-msg-time,
-body[data-page="admin"] .ad-msg-name,
-body[data-page="admin"] .ad-offline,
-body[data-page="admin"] .ad-bar-sub,
-body[data-page="admin"] .ad-check,
-body[data-page="admin"] .ad-callout-head,
-body[data-page="admin"] .ad-callout-note,
-body[data-page="admin"] .sp-card,
-body[data-page="admin"] .sp-peek,
-body[data-page="admin"] .sp-warn,
-body[data-page="admin"] .sp-table,
-body[data-page="admin"] .sp-tools,
-body[data-page="admin"] .sp-move-item,
-body[data-page="admin"] .sp-preview,
-body[data-page="admin"] .ad-drawer,
-body[data-page="admin"] .ad-empty,
-body[data-page="admin"] .btn{
+body:is([data-page="admin"],[data-page="butler"]) .ad-tab,
+body:is([data-page="admin"],[data-page="butler"]) .ad-subtab,
+body:is([data-page="admin"],[data-page="butler"]) .ad-table,
+body:is([data-page="admin"],[data-page="butler"]) .ad-input,
+body:is([data-page="admin"],[data-page="butler"]) .ad-textarea,
+body:is([data-page="admin"],[data-page="butler"]) .ad-filter,
+body:is([data-page="admin"],[data-page="butler"]) .ad-label,
+body:is([data-page="admin"],[data-page="butler"]) .ad-chip,
+body:is([data-page="admin"],[data-page="butler"]) .ad-tag,
+body:is([data-page="admin"],[data-page="butler"]) .ad-hint,
+body:is([data-page="admin"],[data-page="butler"]) .ad-count,
+body:is([data-page="admin"],[data-page="butler"]) .ad-field-err,
+body:is([data-page="admin"],[data-page="butler"]) .ad-info-name,
+body:is([data-page="admin"],[data-page="butler"]) .ad-info-val,
+body:is([data-page="admin"],[data-page="butler"]) .ad-pager,
+body:is([data-page="admin"],[data-page="butler"]) .ad-pager-btn,
+body:is([data-page="admin"],[data-page="butler"]) .ad-list-head,
+body:is([data-page="admin"],[data-page="butler"]) .ad-filterbar,
+body:is([data-page="admin"],[data-page="butler"]) .ad-filtersum,
+body:is([data-page="admin"],[data-page="butler"]) .ad-item-title,
+body:is([data-page="admin"],[data-page="butler"]) .ad-item-sub,
+body:is([data-page="admin"],[data-page="butler"]) .ad-edit,
+body:is([data-page="admin"],[data-page="butler"]) .ad-del,
+body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu,
+body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-btn,
+body:is([data-page="admin"],[data-page="butler"]) .ad-toast,
+body:is([data-page="admin"],[data-page="butler"]) .ad-modal-msg,
+body:is([data-page="admin"],[data-page="butler"]) .ad-modal-note,
+body:is([data-page="admin"],[data-page="butler"]) .ad-sec-note,
+body:is([data-page="admin"],[data-page="butler"]) .ad-sub-sec-note,
+body:is([data-page="admin"],[data-page="butler"]) .ad-savebar-note,
+body:is([data-page="admin"],[data-page="butler"]) .ad-rcard,
+body:is([data-page="admin"],[data-page="butler"]) .ad-btcard,
+body:is([data-page="admin"],[data-page="butler"]) .ad-msg-time,
+body:is([data-page="admin"],[data-page="butler"]) .ad-msg-name,
+body:is([data-page="admin"],[data-page="butler"]) .ad-offline,
+body:is([data-page="admin"],[data-page="butler"]) .ad-bar-sub,
+body:is([data-page="admin"],[data-page="butler"]) .ad-check,
+body:is([data-page="admin"],[data-page="butler"]) .ad-callout-head,
+body:is([data-page="admin"],[data-page="butler"]) .ad-callout-note,
+body:is([data-page="admin"],[data-page="butler"]) .sp-card,
+body:is([data-page="admin"],[data-page="butler"]) .sp-peek,
+body:is([data-page="admin"],[data-page="butler"]) .sp-warn,
+body:is([data-page="admin"],[data-page="butler"]) .sp-table,
+body:is([data-page="admin"],[data-page="butler"]) .sp-tools,
+body:is([data-page="admin"],[data-page="butler"]) .sp-move-item,
+body:is([data-page="admin"],[data-page="butler"]) .sp-preview,
+body:is([data-page="admin"],[data-page="butler"]) .ad-drawer,
+body:is([data-page="admin"],[data-page="butler"]) .ad-empty,
+body:is([data-page="admin"],[data-page="butler"]) .btn{
   font-family:var(--font-ui);
 }
 /* 密度高的地方 sans 可以再收一點字距（明朝體需要的呼吸空間比較大） */
-body[data-page="admin"] .ad-table{letter-spacing:0;}
-body[data-page="admin"] .ad-tab{letter-spacing:.08em;}
-body[data-page="admin"] .ad-subtab{letter-spacing:.08em;}
+body:is([data-page="admin"],[data-page="butler"]) .ad-table{letter-spacing:0;}
+body:is([data-page="admin"],[data-page="butler"]) .ad-tab{letter-spacing:.08em;}
+body:is([data-page="admin"],[data-page="butler"]) .ad-subtab{letter-spacing:.08em;}
 
 /* Editorial 軌：明朝體留給有份量的那幾個東西。
    放在 UI 軌後面，蓋回去（例如表格裡的桌號、統計中央的數字）。 */
-body[data-page="admin"] .ad-bar-title,
-body[data-page="admin"] .ad-page-title,
-body[data-page="admin"] .ad-sec-title,
-body[data-page="admin"] .ad-sub-sec-title,
-body[data-page="admin"] .ad-hero-num,
-body[data-page="admin"] .ad-stat-num,
-body[data-page="admin"] .ad-donut-title,
-body[data-page="admin"] .ad-donut-center b,
-body[data-page="admin"] .ad-empty-title,
-body[data-page="admin"] .ad-modal-title,
-body[data-page="admin"] .ad-bt-pass,
-body[data-page="admin"] .ad-btcard-code,
-body[data-page="admin"] .sp-table-no,
-body[data-page="admin"] .sp-pool-title,
-body[data-page="admin"] .sp-card-code,
-body[data-page="admin"] .sp-peek-code,
-body[data-page="admin"] .sp-drawer-title,
-body[data-page="admin"] .ad-drawer-title,
-body[data-page="admin"] .sp-start-title,
-body[data-page="admin"] .ad-msg-body{
+body:is([data-page="admin"],[data-page="butler"]) .ad-bar-title,
+body:is([data-page="admin"],[data-page="butler"]) .ad-page-title,
+body:is([data-page="admin"],[data-page="butler"]) .ad-sec-title,
+body:is([data-page="admin"],[data-page="butler"]) .ad-sub-sec-title,
+body:is([data-page="admin"],[data-page="butler"]) .ad-hero-num,
+body:is([data-page="admin"],[data-page="butler"]) .ad-stat-num,
+body:is([data-page="admin"],[data-page="butler"]) .ad-donut-title,
+body:is([data-page="admin"],[data-page="butler"]) .ad-donut-center b,
+body:is([data-page="admin"],[data-page="butler"]) .ad-empty-title,
+body:is([data-page="admin"],[data-page="butler"]) .ad-modal-title,
+body:is([data-page="admin"],[data-page="butler"]) .ad-bt-pass,
+body:is([data-page="admin"],[data-page="butler"]) .ad-btcard-code,
+/* 收禮台的同名東西走同一軌：通行碼＝後台的 .ad-bt-pass、
+   編號＝後台的 .ad-btcard-code、金額大數字＝後台的 .ad-hero-num */
+body:is([data-page="admin"],[data-page="butler"]) .bt-pass,
+body:is([data-page="admin"],[data-page="butler"]) .bt-amount,
+body:is([data-page="admin"],[data-page="butler"]) .bt-code,
+body:is([data-page="admin"],[data-page="butler"]) .sp-table-no,
+body:is([data-page="admin"],[data-page="butler"]) .sp-pool-title,
+body:is([data-page="admin"],[data-page="butler"]) .sp-card-code,
+body:is([data-page="admin"],[data-page="butler"]) .sp-peek-code,
+body:is([data-page="admin"],[data-page="butler"]) .sp-drawer-title,
+body:is([data-page="admin"],[data-page="butler"]) .ad-drawer-title,
+body:is([data-page="admin"],[data-page="butler"]) .sp-start-title,
+body:is([data-page="admin"],[data-page="butler"]) .ad-msg-body{
   font-family:var(--font-display);
 }
 
@@ -2270,30 +2372,32 @@ body[data-page="admin"] .ad-msg-body{
    ------------------------------------------------------------
    改版前整份 admin.css 只有一個 :focus-visible（.sp-card）——
    意思是用鍵盤 Tab 的人在後台幾乎是盲走的。
+   收禮台吃的是同一組元件，所以焦點框也是同一份：一個元件不該
+   在 A 頁看得到焦點、在 B 頁看不到。
 
    用 :focus-visible 而不是 :focus：滑鼠點按不該長出框
    （那是視覺噪點），鍵盤走到才要。outline-offset 留 2px，
    細框元件的 1px 邊不會被焦點框壓掉。
 ============================================================ */
-body[data-page="admin"] :focus-visible{
+body:is([data-page="admin"],[data-page="butler"]) :focus-visible{
   outline:2px solid var(--primary-deep);
   outline-offset:2px;
   border-radius:var(--radius);
 }
 /* 貼著容器邊緣的元件往內收，不然焦點框會被 overflow 裁掉 */
-body[data-page="admin"] .ad-tab:focus-visible,
-body[data-page="admin"] .ad-subtab:focus-visible,
-body[data-page="admin"] .ad-table th:focus-visible,
-body[data-page="admin"] .ad-table td:focus-visible,
-body[data-page="admin"] .ad-rowmenu-item:focus-visible,
-body[data-page="admin"] .ad-table tbody tr:focus-visible{
+body:is([data-page="admin"],[data-page="butler"]) .ad-tab:focus-visible,
+body:is([data-page="admin"],[data-page="butler"]) .ad-subtab:focus-visible,
+body:is([data-page="admin"],[data-page="butler"]) .ad-table th:focus-visible,
+body:is([data-page="admin"],[data-page="butler"]) .ad-table td:focus-visible,
+body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:focus-visible,
+body:is([data-page="admin"],[data-page="butler"]) .ad-table tbody tr:focus-visible{
   outline-offset:-2px;
 }
 /* 輸入框自己已經有「邊框變深」的焦點語彙，再加一圈會太吵；
    但只有邊框變深對低視力使用者不夠，所以補一道極細的內光 */
-body[data-page="admin"] .ad-input:focus-visible,
-body[data-page="admin"] .ad-textarea:focus-visible,
-body[data-page="admin"] .ad-filter:focus-visible{
+body:is([data-page="admin"],[data-page="butler"]) .ad-input:focus-visible,
+body:is([data-page="admin"],[data-page="butler"]) .ad-textarea:focus-visible,
+body:is([data-page="admin"],[data-page="butler"]) .ad-filter:focus-visible{
   outline:none;border-color:var(--ink);
   box-shadow:0 0 0 2px var(--primary-soft);
 }
@@ -2306,18 +2410,18 @@ body[data-page="admin"] .ad-filter:focus-visible{
    要的是「這一下有被接到」，不是動畫。
 ============================================================ */
 @media (hover:hover) and (pointer:fine){
-  body[data-page="admin"] .ad-chip:active,
-  body[data-page="admin"] .ad-pager-btn:active,
-  body[data-page="admin"] .ad-rowmenu-btn:active,
-  body[data-page="admin"] .ad-tab:active,
-  body[data-page="admin"] .ad-subtab:active,
-  body[data-page="admin"] .ad-filtersum-clear:active,
-  body[data-page="admin"] .ad-th-link:active{
+  body:is([data-page="admin"],[data-page="butler"]) .ad-chip:active,
+  body:is([data-page="admin"],[data-page="butler"]) .ad-pager-btn:active,
+  body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-btn:active,
+  body:is([data-page="admin"],[data-page="butler"]) .ad-tab:active,
+  body:is([data-page="admin"],[data-page="butler"]) .ad-subtab:active,
+  body:is([data-page="admin"],[data-page="butler"]) .ad-filtersum-clear:active,
+  body:is([data-page="admin"],[data-page="butler"]) .ad-th-link:active{
     transform:translateY(.5px);
     background:rgba(47,43,38,.06);
   }
 }
-body[data-page="admin"] .ad-rowmenu-item:active{background:rgba(47,43,38,.08);}
+body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{background:rgba(47,43,38,.08);}
 
 /* ============================================================
    什麼時候該是一張「面」，什麼時候只要一條線
@@ -2524,7 +2628,7 @@ body[data-page="admin"] .ad-rowmenu-item:active{background:rgba(47,43,38,.08);}
   position:fixed;z-index:1200;max-width:270px;
   background:#fff;border:1px solid var(--line);border-radius:var(--radius);
   padding:10px 13px;pointer-events:none;
-  box-shadow:0 4px 14px rgba(43,47,54,.10);
+  box-shadow:var(--shadow-pop);
   opacity:0;transform:translateX(-4px);
   transition:opacity var(--dur-pop) ease-out,transform var(--dur-pop) var(--ease);
 }
@@ -2587,7 +2691,7 @@ body[data-page="admin"] .ad-rowmenu-item:active{background:rgba(47,43,38,.08);}
 .ad-acct-pop{
   position:absolute;top:calc(100% + 8px);right:0;min-width:212px;z-index:960;
   background:#fff;border:1px solid var(--line);border-radius:var(--radius);
-  padding:6px;box-shadow:0 4px 14px rgba(43,47,54,.10);
+  padding:6px;box-shadow:var(--shadow-pop);
   animation:pop var(--dur-hover) var(--ease);
 }
 .ad-acct-pop[hidden]{display:none;}
@@ -2822,7 +2926,7 @@ body[data-page="admin"] .ad-rowmenu-item:active{background:rgba(47,43,38,.08);}
 .ad-toast{
   background:var(--bg1);color:var(--ink);
   border:1px solid var(--ink);
-  box-shadow:0 4px 14px rgba(43,47,54,.10);
+  box-shadow:var(--shadow-pop);
   font-weight:400;
 }
 .ad-toast.is-error{
@@ -2887,21 +2991,22 @@ textarea.ad-inline-input{min-height:0;}
    踩線通過等於沒有餘裕。
 
    加深到 #6f6459（5.53:1）之後有了餘裕，而且色相沒動 ——
-   還是同一支暖灰，視覺語彙不變。只在後台覆寫：賓客頁的
+   還是同一支暖灰，視覺語彙不變。只在後台元件庫覆寫（admin ＋ butler
+   ——收禮台是站著、單手、在宴會廳的光線下用的，更需要這一階）：賓客頁的
    留白與字級都比較寬鬆，維持原本的柔和。
 
    另外把最小的幾個字級從 10.5px 提到 11px：色票能救的有限，
    字級本身也是可讀性的一部分。
 ============================================================ */
-body[data-page="admin"]{--ink-soft:#6f6459;}
-body[data-page="admin"] .ad-donut-center span,
-body[data-page="admin"] .ad-donut-val small,
-body[data-page="admin"] .sp-card-code,
-body[data-page="admin"] .sp-chip,
-body[data-page="admin"] .sp-flag,
-body[data-page="admin"] .sp-filter-lab,
-body[data-page="admin"] .sp-table-type,
-body[data-page="admin"] .ad-stat-lab{font-size:11px;}
+body:is([data-page="admin"],[data-page="butler"]){--ink-soft:#6f6459;}
+body:is([data-page="admin"],[data-page="butler"]) .ad-donut-center span,
+body:is([data-page="admin"],[data-page="butler"]) .ad-donut-val small,
+body:is([data-page="admin"],[data-page="butler"]) .sp-card-code,
+body:is([data-page="admin"],[data-page="butler"]) .sp-chip,
+body:is([data-page="admin"],[data-page="butler"]) .sp-flag,
+body:is([data-page="admin"],[data-page="butler"]) .sp-filter-lab,
+body:is([data-page="admin"],[data-page="butler"]) .sp-table-type,
+body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:11px;}
 
 /* ============================================================
    截圖時發現的兩個實際問題

@@ -734,8 +734,13 @@ $('btTabbar').addEventListener('click', (ev) => {
 });
 
 /* ---------- 收禮台 ---------- */
-$('btSearch').addEventListener('input', (e) => { listQuery = e.target.value; renderList(); });
-$('btLogSearch').addEventListener('input', (e) => { logQuery = e.target.value; renderLog(); });
+/* input ＋ search 兩個都接（和後台同一條規則）：type="search" 右邊那顆
+   原生清除鈕（✕）在 Safari 只發 search，少接一個就會出現
+   「按了 ✕、字消失了、名單卻還篩著」——現場最不需要的驚嚇。 */
+['input', 'search'].forEach((evt) => {
+  $('btSearch').addEventListener(evt, (e) => { listQuery = e.target.value; renderList(); });
+  $('btLogSearch').addEventListener(evt, (e) => { logQuery = e.target.value; renderLog(); });
+});
 
 $('btChips').addEventListener('click', (ev) => {
   const chip = ev.target.closest('[data-filter]');
