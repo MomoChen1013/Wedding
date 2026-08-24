@@ -284,95 +284,114 @@
         關掉的題目在名單與匯出的 CSV 裡會留白，不會消失。
       </p>
 
+      <!-- 這一頁其實是兩件事：問賓客什麼（題目）、邀請函上還要放什麼（資訊）。
+           改版前兩邊都只用一個 11.5px 的 .ad-label 開頭，看起來像同一串
+           勾選框從頭排到尾。現在各自包成一張 .ad-formgroup，
+           標題用明朝體、給編號，中間那道界線才看得出來。 -->
       <form class="ad-form" id="adRsvpForm">
-        <label class="ad-label">題目</label>
-        <div class="ad-hint">
-          由上到下就是賓客在表單上看到的順序。
-          <b>灰掉、打勾但點不動的是固定題目</b>，每份回覆都要有，不能關。
-        </div>
-
-        <label class="ad-check is-fixed">
-          <input type="checkbox" checked disabled><span>怎麼稱呼你？</span></label>
-        <label class="ad-check is-fixed">
-          <input type="checkbox" checked disabled><span>能來參加嗎？</span></label>
-        <label class="ad-check is-fixed">
-          <input type="checkbox" checked disabled><span>與新人的關係</span></label>
-        <!-- 只有開了標籤功能、而且至少有一個標籤當選項時才看得到 -->
-        <label class="ad-check is-fixed" id="adAskTagRow" hidden>
-          <input type="checkbox" checked disabled>
-          <span>更具體是哪一種？<small>選項在「設定賓客標籤」那一頁</small></span></label>
-        <label class="ad-check is-fixed">
-          <input type="checkbox" checked disabled>
-          <span>包含你，共幾位出席？<small>選「熱情出席」才會出現</small></span></label>
-        <label class="ad-check is-fixed">
-          <input type="checkbox" checked disabled>
-          <span>餐點分配（葷食／素食）<small>選「熱情出席」才會出現</small></span></label>
-        <label class="ad-check is-fixed">
-          <input type="checkbox" checked disabled>
-          <span>兒童座椅<small>選「熱情出席」才會出現</small></span></label>
-        <label class="ad-check is-fixed">
-          <input type="checkbox" checked disabled>
-          <span>飲食習慣補充<small>選「熱情出席」才會出現</small></span></label>
-
-        <label class="ad-check"><input type="checkbox" id="adAskCard"><span>喜帖發送方式</span></label>
-        <label class="ad-check"><input type="checkbox" id="adAskGift"><span>喜餅領取方式</span></label>
-        <label class="ad-check"><input type="checkbox" id="adAskMessage"><span>想對新人說的話</span></label>
-
-        <label class="ad-check is-fixed">
-          <input type="checkbox" checked disabled><span>其他備註</span></label>
-
-        <div class="ad-sub-sec">
-          <div class="ad-sub-sec-title">聯絡方式（可複選）</div>
-          <label class="ad-check"><input type="checkbox" id="adContactPhone"><span>電話號碼</span></label>
-          <label class="ad-check"><input type="checkbox" id="adContactLine"><span>LINE ID</span></label>
-          <label class="ad-check"><input type="checkbox" id="adContactEmail"><span>Email</span></label>
-          <div class="ad-hint">
-            勾了幾種，賓客就要<b>至少填其中一種</b>。三種都不勾就整題不問。
-            有勾 Email 時，賓客選「需要電子喜帖」可以直接勾「同上」帶入同一個信箱。
+        <section class="ad-formgroup">
+          <div class="ad-formgroup-head">
+            <h3 class="ad-formgroup-title">
+              <span class="ad-formgroup-no" aria-hidden="true">1</span>題目
+            </h3>
+            <p class="ad-formgroup-note">
+              由上到下就是賓客在表單上看到的順序。
+              <b>灰掉、打勾但點不動的是固定題目</b>，每份回覆都要有，不能關。
+            </p>
           </div>
-        </div>
 
-        <label class="ad-label">表單資訊</label>
-        <div class="ad-hint">
-          題目以外，邀請函那一頁還會出現這些內容。
-        </div>
+          <label class="ad-check is-fixed">
+            <input type="checkbox" checked disabled><span>怎麼稱呼你？</span></label>
+          <label class="ad-check is-fixed">
+            <input type="checkbox" checked disabled><span>能來參加嗎？</span></label>
+          <label class="ad-check is-fixed">
+            <input type="checkbox" checked disabled><span>與新人的關係</span></label>
+          <!-- 只有開了標籤功能、而且至少有一個標籤當選項時才看得到 -->
+          <label class="ad-check is-fixed" id="adAskTagRow" hidden>
+            <input type="checkbox" checked disabled>
+            <span>更具體是哪一種？<small>選項在「設定賓客標籤」那一頁</small></span></label>
+          <label class="ad-check is-fixed">
+            <input type="checkbox" checked disabled>
+            <span>包含你，共幾位出席？<small>選「熱情出席」才會出現</small></span></label>
+          <label class="ad-check is-fixed">
+            <input type="checkbox" checked disabled>
+            <span>餐點分配（葷食／素食）<small>選「熱情出席」才會出現</small></span></label>
+          <label class="ad-check is-fixed">
+            <input type="checkbox" checked disabled>
+            <span>兒童座椅<small>選「熱情出席」才會出現</small></span></label>
+          <label class="ad-check is-fixed">
+            <input type="checkbox" checked disabled>
+            <span>飲食習慣補充<small>選「熱情出席」才會出現</small></span></label>
 
-        <div class="ad-sub-sec">
-          <div class="ad-sub-sec-title">婚禮資訊</div>
-          <p class="ad-sub-sec-note">
-            在「婚禮資訊」分頁填寫，這裡只是列出目前的內容。
-            <b>留白的那一列不會出現在邀請函上</b>。
-          </p>
-          <div class="ad-info" id="adRsvpInfoList"></div>
-          <div class="ad-row">
-            <button class="btn small ghost" id="adRsvpInfoJump" type="button">去填寫婚禮資訊</button>
+          <label class="ad-check"><input type="checkbox" id="adAskCard"><span>喜帖發送方式</span></label>
+          <label class="ad-check"><input type="checkbox" id="adAskGift"><span>喜餅領取方式</span></label>
+          <label class="ad-check"><input type="checkbox" id="adAskMessage"><span>想對新人說的話</span></label>
+
+          <label class="ad-check is-fixed">
+            <input type="checkbox" checked disabled><span>其他備註</span></label>
+
+          <div class="ad-sub-sec">
+            <div class="ad-sub-sec-title">聯絡方式（可複選）</div>
+            <label class="ad-check"><input type="checkbox" id="adContactPhone"><span>電話號碼</span></label>
+            <label class="ad-check"><input type="checkbox" id="adContactLine"><span>LINE ID</span></label>
+            <label class="ad-check"><input type="checkbox" id="adContactEmail"><span>Email</span></label>
+            <div class="ad-hint">
+              勾了幾種，賓客就要<b>至少填其中一種</b>。三種都不勾就整題不問。
+              有勾 Email 時，賓客選「需要電子喜帖」可以直接勾「同上」帶入同一個信箱。
+            </div>
           </div>
-        </div>
 
-        <div class="ad-sub-sec">
-          <div class="ad-sub-sec-title">兩人的故事</div>
-          <label class="ad-check"><input type="checkbox" id="adShowStory"><span>在邀請函上放「兩人的故事」</span></label>
-          <div class="ad-info" id="adRsvpStoryInfo"></div>
-          <div class="ad-row">
-            <button class="btn small ghost" id="adRsvpStoryJump" type="button">去填寫兩人的故事</button>
-          </div>
-        </div>
+        </section>
 
-        <div class="ad-sub-sec">
-          <div class="ad-sub-sec-title">照片集</div>
-          <label class="ad-check"><input type="checkbox" id="adShowGallery"><span>在邀請函上放「照片集」</span></label>
-          <div class="ad-info" id="adRsvpGalleryInfo"></div>
-          <div class="ad-row">
-            <a class="btn small ghost" id="adRsvpGalleryView" href="/"
-               target="_blank" rel="noopener noreferrer">看看目前的照片集</a>
+        <section class="ad-formgroup">
+          <div class="ad-formgroup-head">
+            <h3 class="ad-formgroup-title">
+              <span class="ad-formgroup-no" aria-hidden="true">2</span>表單資訊
+            </h3>
+            <p class="ad-formgroup-note">
+              題目以外，邀請函那一頁還會出現這些內容。
+              這三塊的內容都在別的地方填，這裡只決定<b>要不要放上去</b>。
+            </p>
           </div>
-          <div class="ad-hint">
-            照片集的照片放在<b>這場婚禮的素材資料夾</b>裡，後台不能自己上傳 ——
-            要新增或更換照片，把檔案給我們就會幫你換上。
-          </div>
-        </div>
 
-        <div class="ad-row">
+          <div class="ad-sub-sec">
+            <div class="ad-sub-sec-title">婚禮資訊</div>
+            <p class="ad-sub-sec-note">
+              在「婚禮資訊」分頁填寫，這裡只是列出目前的內容。
+              <b>留白的那一列不會出現在邀請函上</b>。
+            </p>
+            <div class="ad-info" id="adRsvpInfoList"></div>
+            <div class="ad-row">
+              <button class="btn small ghost" id="adRsvpInfoJump" type="button">去填寫婚禮資訊</button>
+            </div>
+          </div>
+
+          <div class="ad-sub-sec">
+            <div class="ad-sub-sec-title">兩人的故事</div>
+            <label class="ad-check"><input type="checkbox" id="adShowStory"><span>在邀請函上放「兩人的故事」</span></label>
+            <div class="ad-info" id="adRsvpStoryInfo"></div>
+            <div class="ad-row">
+              <button class="btn small ghost" id="adRsvpStoryJump" type="button">去填寫兩人的故事</button>
+            </div>
+          </div>
+
+          <div class="ad-sub-sec">
+            <div class="ad-sub-sec-title">照片集</div>
+            <label class="ad-check"><input type="checkbox" id="adShowGallery"><span>在邀請函上放「照片集」</span></label>
+            <div class="ad-info" id="adRsvpGalleryInfo"></div>
+            <div class="ad-row">
+              <a class="btn small ghost" id="adRsvpGalleryView" href="/"
+                 target="_blank" rel="noopener noreferrer">看看目前的照片集</a>
+            </div>
+            <div class="ad-hint">
+              照片集的照片放在<b>這場婚禮的素材資料夾</b>裡，後台不能自己上傳 ——
+              要新增或更換照片，把檔案給我們就會幫你換上。
+            </div>
+          </div>
+
+        </section>
+
+        <div class="ad-savebar">
           <button class="btn small" id="adRsvpFormSave" type="submit">儲存表單設定</button>
           <button class="btn small ghost" id="adRsvpFormReset" type="button">還原成目前的設定</button>
         </div>
@@ -798,11 +817,29 @@
       </section>
     </div>
 
-    <!-- ---------- 3b-3 匯入匯出 ---------- -->
+    <!-- ---------- 3b-3 匯入匯出 ----------
+         匯出在上面：名單排好之後，來這一頁十次有九次是要把成果拿出去
+         （印給宴會廳、傳給家人）。匯入是一開始才做一次的事。
+         兩塊的排法也刻意一樣 —— 標題與按鈕同一行，說明接在下面。 -->
     <div class="ad-subpanel" data-subpanel="io">
       <section class="ad-sec">
         <div class="ad-sec-head">
-          <h2 class="ad-sec-title ad-page-title">匯入</h2>
+          <h2 class="ad-sec-title ad-page-title">匯出</h2>
+          <div class="ad-sec-head-actions">
+            <button class="btn small" id="spExportXlsx" type="button">匯出 Excel</button>
+            <button class="btn small ghost" id="spExportCsv" type="button">匯出 CSV（賓客明細）</button>
+            <button class="btn small ghost" id="spExportCsvTable" type="button">匯出 CSV（桌位排桌表）</button>
+          </div>
+        </div>
+        <p class="ad-sec-note">
+          「賓客明細」是一列一位賓客；「桌位排桌表」依桌位分組，每桌最後附上總人數。
+          Excel 檔一次含這兩張工作表。
+        </p>
+      </section>
+
+      <section class="ad-sec">
+        <div class="ad-sec-head">
+          <h2 class="ad-sec-title">匯入</h2>
           <div class="ad-sec-head-actions">
             <button class="btn small" id="spImportRsvpBtn" type="button">從出席表單匯入</button>
             <button class="btn small ghost" id="spImportBtn" type="button">匯入 Excel／CSV</button>
@@ -817,21 +854,6 @@
           支援 <b>.xlsx</b> 與 <b>.csv</b>，分成五步：選檔案 → 預覽 → 欄位對應 →
           檢查資料 → 確認匯入。<b>有問題的那幾筆不會被匯進來</b>，會逐筆告訴你是第幾列、哪裡不對。
         </p>
-      </section>
-
-      <section class="ad-sec">
-        <div class="ad-sec-head">
-          <h2 class="ad-sec-title">匯出</h2>
-        </div>
-        <p class="ad-sec-note">
-          「賓客明細」是一列一位賓客；「桌位排桌表」依桌位分組，每桌最後附上總人數。
-          Excel 檔一次含這兩張工作表。
-        </p>
-        <div class="ad-row">
-          <button class="btn small" id="spExportXlsx" type="button">匯出 Excel</button>
-          <button class="btn small ghost" id="spExportCsv" type="button">匯出 CSV（賓客明細）</button>
-          <button class="btn small ghost" id="spExportCsvTable" type="button">匯出 CSV（桌位排桌表）</button>
-        </div>
       </section>
     </div>
   </div>
@@ -849,8 +871,12 @@
   ============================================================ -->
   <div class="ad-panel" data-panel="butler">
 
+    <!-- 統計與明細拆成兩個子分頁：一個是「現在收了多少」（婚宴當天站在
+         門口一直看的那一頁），一個是「第幾筆是誰」（事後對帳才會翻）。
+         擠在同一頁時，大數字下面永遠垂著一張十欄的表。 -->
     <nav class="ad-subtabs" data-subtabs="butler">
       <button class="ad-subtab is-on" type="button" data-subtab="stats">收禮統計</button>
+      <button class="ad-subtab" type="button" data-subtab="entries">收禮明細</button>
       <button class="ad-subtab" type="button" data-subtab="links">連結與名單</button>
     </nav>
 
@@ -860,9 +886,19 @@
       <h2 class="ad-sec-title ad-page-title">收禮統計</h2>
       <p class="ad-page-sub" id="adBtPageSub"></p>
 
+      <!-- 金額預設是遮起來的（見 js/admin.js 的 moneyHidden）：
+           婚宴當天這一頁常常就開在手上、擺在收禮台上，
+           旁邊經過的人不該一眼看到今天收了多少。按眼睛才顯示。 -->
       <div class="ad-hero-stat">
-        <div class="ad-hero-num" id="adBtSum">$0</div>
-        <div class="ad-hero-lab">禮金總額</div>
+        <div class="ad-hero-num" id="adBtSum">$ -⁠-⁠-</div>
+        <div class="ad-hero-lab">
+          禮金總額
+          <button class="ad-eye" data-money-eye type="button"
+                  aria-pressed="false" aria-label="顯示金額">
+            <span class="ad-eye-ic" aria-hidden="true"></span>
+            <span class="ad-eye-tx">顯示金額</span>
+          </button>
+        </div>
         <div class="ad-hero-sub" id="adBtSumSub">還沒有任何紀錄</div>
         <div class="ad-hero-meta" id="adBtMeta" hidden></div>
       </div>
@@ -873,18 +909,42 @@
         數字是<b>即時</b>的：現場四五個人各自用手機記，這裡看到的永遠是加起來的結果，
         不必等誰把資料交回來。金額與盒數都直接取自每一筆紀錄。
       </p>
-    </section>
-
-    <section class="ad-sec">
-      <div class="ad-sec-head">
-        <h2 class="ad-sec-title">收禮明細</h2>
-        <div class="ad-sec-head-actions">
-          <button class="btn small ghost" id="adBtExport" type="button">匯出 CSV</button>
-        </div>
-      </div>
       <p class="ad-sec-note" id="adBtNoLink" hidden>
         還沒有任何收禮連結。到「<b>連結與名單</b>」產生一組，
         再把網址與通行碼交給幫忙收禮的親友。
+      </p>
+    </section>
+
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">誰記了多少</h2>
+      <p class="ad-sec-note">
+        每一筆都會記下是誰收的（小幫手自己在工具裡填的名字）。
+        事後對帳時，這一份就是「哪一位親友手上該有多少現金」。
+      </p>
+      <div class="ad-list ad-list-panel" id="adBtByWho"></div>
+    </section>
+    </div>
+
+    <!-- 3c-2 收禮明細 -->
+    <div class="ad-subpanel" data-subpanel="entries">
+    <section class="ad-sec">
+      <div class="ad-sec-head">
+        <div class="ad-sec-head-main">
+          <h2 class="ad-sec-title ad-page-title">收禮明細</h2>
+          <p class="ad-page-sub" id="adBtEntryPageSub"></p>
+        </div>
+        <div class="ad-sec-head-actions">
+          <button class="ad-eye" data-money-eye type="button"
+                  aria-pressed="false" aria-label="顯示金額">
+            <span class="ad-eye-ic" aria-hidden="true"></span>
+            <span class="ad-eye-tx">顯示金額</span>
+          </button>
+          <button class="btn small ghost" id="adBtExport" type="button">匯出 CSV</button>
+        </div>
+      </div>
+      <p class="ad-sec-note">
+        現場記下來的每一筆都在這裡，點一列可以看完整內容。
+        金額預設遮起來，按「顯示金額」才會露出來（匯出的 CSV 不受影響）。
       </p>
 
       <!-- 婚宴當天最常做的事就是「找某個人有沒有收到」，所以這一列黏著 -->
@@ -908,18 +968,9 @@
         </table>
       </div>
     </section>
-
-    <section class="ad-sec">
-      <h2 class="ad-sec-title">誰記了多少</h2>
-      <p class="ad-sec-note">
-        每一筆都會記下是誰收的（小幫手自己在工具裡填的名字）。
-        事後對帳時，這一份就是「哪一位親友手上該有多少現金」。
-      </p>
-      <div class="ad-list" id="adBtByWho"></div>
-    </section>
     </div>
 
-    <!-- 3c-2 連結與名單 -->
+    <!-- 3c-3 連結與名單 -->
     <div class="ad-subpanel" data-subpanel="links">
     <section class="ad-sec">
       <div class="ad-sec-head">
@@ -943,7 +994,7 @@
         改了名單就再按一次匯入，已經記好的收禮不會受影響。
       </p>
 
-      <div class="ad-list" id="adBtLinks"></div>
+      <div class="ad-bt-cards" id="adBtLinks"></div>
     </section>
     </div>
   </div>
@@ -977,7 +1028,7 @@
         </div>
       </div>
 
-      <div class="ad-list" id="adLetterList"></div>
+      <div class="ad-letter-cards" id="adLetterList"></div>
     </section>
   </div>
 
@@ -1034,10 +1085,12 @@
       </div>
       <p class="ad-sec-note">
         「故事」是時間軸上的一張照片加文字；「章節」是分隔段落，例如
-        <b>第一幕・我們的相遇</b>。兩種都用<b>排序</b>決定先後，數字小的排前面。
+        <b>第一幕・我們的相遇</b>。<b>有底色的那一條就是章節</b>，
+        往內縮的是掛在它底下的故事。
+        順序用左邊的 ⠿ 直接拖曳，或按每一列的 ⋯ 上下移動。
       </p>
 
-      <div class="ad-list" id="adExhList"></div>
+      <div class="ad-exh-list" id="adExhList"></div>
     </section>
   </div>
 

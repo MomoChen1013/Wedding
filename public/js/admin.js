@@ -1410,7 +1410,7 @@ const SUBTABS = {
   lobby:   ['info', 'schedule', 'explore'],
   seating: ['map', 'list'],
   seatingPlan: ['board', 'tables', 'io'],
-  butler:  ['stats', 'links'],
+  butler:  ['stats', 'entries', 'links'],
   quiz:    ['questions', 'votes'],
 };
 
@@ -3693,23 +3693,33 @@ function renderLetters(){
     return;
   }
 
-  lf.list.innerHTML = list.map(b => `
-    <div class="ad-item">
-      <div class="ad-item-main">
-        <span class="ad-item-title">${escapeHtml(b.title || '（沒有標題）')}</span>
+  /* 一封信一張卡、桌機兩張並排。信是要「讀」的東西 ——
+     排成一列一行的清單時，每一封都只剩前半句，
+     根本認不出來哪一封是給誰的。 */
+  lf.list.innerHTML = list.map(b => {
+    const body = String(b.body || '');
+    const excerpt = body.slice(0, 90);
+    return `
+    <article class="ad-letter-card${isDefaultLetter(b) ? ' is-default' : ''}">
+      <header class="ad-letter-head">
+        <h3 class="ad-letter-title">${escapeHtml(b.title || '（沒有標題）')}</h3>
         <span class="ad-tag">${isDefaultLetter(b) ? '通用信' : '指定信'}</span>
-        <span class="ad-item-sub">
-          ${(Array.isArray(b.terms) && b.terms.length)
-            ? `詞彙：${escapeHtml(b.terms.join('、'))}`
-            : (isDefaultLetter(b) ? '不用對詞彙，沒對到的賓客就領這一封' : '沒有專屬詞彙')}
+      </header>
+      <p class="ad-letter-terms">
+        ${(Array.isArray(b.terms) && b.terms.length)
+          ? `詞彙：${escapeHtml(b.terms.join('、'))}`
+          : (isDefaultLetter(b) ? '不用對詞彙，沒對到的賓客就領這一封' : '沒有專屬詞彙')}
+      </p>
+      <p class="ad-letter-body">${escapeHtml(excerpt)}${body.length > 90 ? '…' : ''}</p>
+      <footer class="ad-letter-foot">
+        <span class="ad-letter-time">${fmtTime(b.time)}</span>
+        <span class="ad-letter-acts">
+          <button class="ad-edit" data-edit-letter="${b.id}" type="button">編輯</button>
+          <button class="ad-del"  data-del-letter="${b.id}"  type="button">刪除</button>
         </span>
-        <span class="ad-item-sub">${escapeHtml((b.body || '').slice(0, 48))}…・${fmtTime(b.time)}</span>
-      </div>
-      <div class="ad-item-actions">
-        <button class="ad-edit" data-edit-letter="${b.id}" type="button">編輯</button>
-        <button class="ad-del"  data-del-letter="${b.id}"  type="button">刪除</button>
-      </div>
-    </div>`).join('');
+      </footer>
+    </article>`;
+  }).join('');
 }
 document.addEventListener('data:blessings', renderLetters);
 
@@ -4402,10 +4412,11 @@ function renderCards(){
         </select>
         <input class="ad-input ad-card-desc" type="text" maxlength="200"
                value="${escapeHtml(c.desc || '')}" placeholder="說明（選填）">
+        <!-- 「重新裁切／刪除」收進 ⋯ 裡：卡片本身就窄（桌機 180px、
+             手機半個螢幕），兩顆文字按鈕擠在同一行時很容易點到旁邊那顆，
+             而且它們都不是每天要按的東西 -->
         <div class="ad-card-actions">
           <span class="ad-order">#${c.order ?? 0}</span>
-          <button class="ad-edit" type="button" data-recrop="${c.id}">重新裁切</button>
-          <button class="ad-del ad-del-inline" type="button" data-del-card="${c.id}">刪除</button>
           ${rowMenuBtn('card', c.id)}
         </div>
       </figcaption>
@@ -4419,10 +4430,7 @@ registerRowMenu('card', (id)=>{
   return [
     ...reorderMenuItems(list, id, (next)=> saveOrder('cards', list, next, renderCards)),
     '-',
-    { label:'重新裁切', run: ()=>{
-      const btn = cardListEl.querySelector(`[data-recrop="${CSS.escape(id)}"]`);
-      if(btn) btn.click();
-    } },
+    { label:'重新裁切', run: ()=> recropCard(id) },
     { label:'刪除這張小卡', danger:true, run: async ()=>{
       const ok = await confirmModal({ title:'刪除婚禮小卡', message:'確定要刪掉這張小卡嗎？' });
       if(!ok) return;
@@ -4430,6 +4438,37 @@ registerRowMenu('card', (id)=>{
     } },
   ];
 });
+
+/* 拿現有的圖再裁一次：只能往內縮，但對「當初切歪了」很夠用。
+   只有 ⋯ 選單會叫到它（卡片上不再有「重新裁切」那顆按鈕）。 */
+async function recropCard(id){
+  const item = DataStore.getCards().find(c => c.id === id);
+  if(!item) return;
+  let img;
+  try{
+    img = await cropImage(item.img, {
+      aspect:   CARD_ASPECT,
+      outWidth: CARD_OUTWIDTH,
+      maxBytes: CARD_MAX_BYTES,
+      title:    '重新裁切婚禮小卡',
+    });
+  }catch(err){
+    toast(uploadErrorText({ name:item.name || '這張小卡' }, err), true);
+    return;
+  }
+  if(!img) return;
+  try{
+    await DataStore.saveDoc('cards', item.id, {
+      img,
+      name:   item.name || '',
+      rarity: RARITIES.includes(item.rarity) ? item.rarity : 'N',
+      desc:   item.desc || '',
+      order:  item.order || 0,
+      time:   item.time || Date.now(),
+    });
+    toast('已重新裁切');
+  }catch(err){ writeFailed(err); }
+}
 
 /* 卡名／等級／說明改完（離開欄位）就存回去 */
 cardListEl.addEventListener('change', async (e)=>{
@@ -4450,48 +4489,6 @@ cardListEl.addEventListener('change', async (e)=>{
     });
     flashSaved(e.target);
   }catch(err){ writeFailed(err); }
-});
-
-cardListEl.addEventListener('click', async (e)=>{
-  const recropId = e.target.dataset.recrop;
-  const delId    = e.target.dataset.delCard;
-
-  if(recropId){
-    const item = DataStore.getCards().find(c => c.id === recropId);
-    if(!item) return;
-    /* 拿現有的圖再裁一次：只能往內縮，但對「當初切歪了」很夠用 */
-    let img;
-    try{
-      img = await cropImage(item.img, {
-        aspect:   CARD_ASPECT,
-        outWidth: CARD_OUTWIDTH,
-        maxBytes: CARD_MAX_BYTES,
-        title:    '重新裁切婚禮小卡',
-      });
-    }catch(err){
-      toast(uploadErrorText({ name:item.name || '這張小卡' }, err), true);
-      return;
-    }
-    if(!img) return;
-    try{
-      await DataStore.saveDoc('cards', item.id, {
-        img,
-        name:   item.name || '',
-        rarity: RARITIES.includes(item.rarity) ? item.rarity : 'N',
-        desc:   item.desc || '',
-        order:  item.order || 0,
-        time:   item.time || Date.now(),
-      });
-      toast('已重新裁切');
-    }catch(err){ writeFailed(err); }
-    return;
-  }
-
-  if(delId){
-    const ok = await confirmModal({ title:'刪除婚禮小卡', message:'確定要刪掉這張小卡嗎？' });
-    if(!ok) return;
-    scheduleUndoDelete('cards', delId, '這張婚禮小卡', renderCards);
-  }
 });
 
 /* ============================================================
@@ -4661,26 +4658,88 @@ function renderExhibits(){
     });
     return;
   }
-  xf.list.innerHTML = list.map(it => `
-    <div class="ad-item">
-      ${it.kind === 'photo' && it.img
-        ? `<img class="ad-exh-thumb" src="${escapeHtml(it.img)}" alt="">`
+  /* 章節與故事長得要不一樣：章節是分段的標題（賓客那一頁會看到
+     「第一幕・我們的相遇」整頁翻過去），故事是掛在它底下的一則。
+     章節給底色與粗一級的字自己站成一條帶子，故事往內縮一格 ——
+     這樣不用讀那顆「章節／故事」的標籤，掃過去就看得出結構。
+     順序改用拖曳（和測驗題目同一套 setupDragSort）。 */
+  xf.list.innerHTML = list.map(it => {
+    const isAct = it.kind === 'act';
+    const desc = String(it.desc || '');
+    return `
+    <div class="ad-exh-item ${isAct ? 'is-act' : 'is-photo'}" data-id="${it.id}">
+      <button class="ad-drag-handle" type="button" aria-label="拖曳調整順序">⠿</button>
+      ${!isAct
+        ? (it.img
+            ? `<img class="ad-exh-thumb" src="${escapeHtml(it.img)}" alt="">`
+            : '<span class="ad-exh-thumb is-empty" aria-hidden="true">無圖</span>')
         : ''}
       <div class="ad-item-main">
+        <span class="ad-exh-kind">${isAct ? '章節' : '故事'}</span>
         <span class="ad-item-title">${escapeHtml(it.title || '（沒有標題）')}</span>
-        <span class="ad-tag">${it.kind === 'act' ? '章節' : '故事'}</span>
         ${it.year ? `<span class="ad-tag">${escapeHtml(it.year)}</span>` : ''}
         ${it.sub ? `<span class="ad-item-sub">${escapeHtml(it.sub)}</span>` : ''}
-        ${it.desc ? `<span class="ad-item-sub">${escapeHtml(it.desc.slice(0, 60))}${
-          it.desc.length > 60 ? '…' : ''}</span>` : ''}
+        ${desc ? `<span class="ad-item-sub">${escapeHtml(desc.slice(0, 60))}${
+          desc.length > 60 ? '…' : ''}</span>` : ''}
       </div>
       <div class="ad-item-actions">
-        <span class="ad-order">#${it.order ?? 0}</span>
         <button class="ad-edit" type="button" data-edit-exh="${it.id}">編輯</button>
-        <button class="ad-del"  type="button" data-del-exh="${it.id}">刪除</button>
+        <button class="ad-del ad-del-inline" type="button" data-del-exh="${it.id}">刪除</button>
+        ${rowMenuBtn('exh', it.id)}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
+
+/* 拖曳只有桌機用得順，所以每一列也給一份「上移／下移／移到最前／最後」
+   （做法與測驗題目相同） */
+registerRowMenu('exh', (id)=>{
+  const list = DataStore.getExhibits().filter(it => !isPendingDelete('exhibits', it.id));
+  return [
+    ...reorderMenuItems(list, id, (next)=> saveExhOrder(next)),
+    '-',
+    { label:'編輯這一則', run: ()=>{
+      const it = DataStore.getExhibits().find(x => x.id === id);
+      if(it) openExhModal(it.kind, it);
+    } },
+    { label:'刪除這一則', danger:true, run: async ()=>{
+      const ok = await confirmModal({ title:'刪除故事牆內容', message:'確定要刪掉這一則嗎？' });
+      if(!ok) return;
+      if(xf.id.value === id){ closeExhModal(); resetExhForm(); }
+      scheduleUndoDelete('exhibits', id, '這一則', renderExhibits);
+    } },
+  ];
+});
+
+/* 把 order 整批重編成 1…n（只寫真的變了的那幾份）。
+   不能用通用的 saveOrder()：規則只放行 exhibitFields() 那幾個欄位。 */
+async function saveExhOrder(idsInOrder){
+  const list = DataStore.getExhibits();
+  const byId = new Map(list.map(it => [it.id, it]));
+  try{
+    await Promise.all(idsInOrder.map((id, k) => {
+      const it = byId.get(id);
+      if(!it || it.order === k + 1) return null;
+      return DataStore.saveDoc('exhibits', it.id, exhibitFields(it, k + 1));
+    }).filter(Boolean));
+    toast('順序已更新', {
+      actionLabel: '復原',
+      duration: 5000,
+      onAction: ()=> saveExhOrder(
+        list.filter(it => !isPendingDelete('exhibits', it.id)).map(it => it.id)),
+    });
+  }catch(err){
+    writeFailed(err, ()=> saveExhOrder(idsInOrder));
+    renderExhibits();
+  }
+}
+
+setupDragSort(xf.list, '.ad-exh-item', (newOrder)=>{
+  const oldOrder = DataStore.getExhibits()
+    .filter(it => !isPendingDelete('exhibits', it.id))
+    .map(it => it.id);
+  if(newOrder.join() !== oldOrder.join()) saveExhOrder(newOrder);
+});
 
 /* 規則只放行這幾個欄位，預設內容也走這裡組出來的物件（finale 這類旗標會被丟掉） */
 function exhibitFields(it, order){
@@ -4962,14 +5021,18 @@ async function saveQuizOrder(idsInOrder){
   }
 }
 
-/* ---------- 拖曳排序（Pointer Events，滑鼠與觸控通用） ---------- */
-(function setupQuizDrag(){
+/* ---------- 拖曳排序（Pointer Events，滑鼠與觸控通用） ----------
+   測驗題目與故事牆共用同一套。呼叫時給三樣東西：
+   清單容器、一列的選擇器、放開時要做什麼（新順序、有沒有真的變）。 */
+function setupDragSort(listEl, itemSel, onDrop){
   let dragEl = null, startY = 0;
 
-  qz.list.addEventListener('pointerdown', (e)=>{
+  const rowsNow = ()=> Array.from(listEl.querySelectorAll(itemSel));
+
+  listEl.addEventListener('pointerdown', (e)=>{
     const handle = e.target.closest('.ad-drag-handle');
-    if(!handle) return;
-    dragEl = handle.closest('.ad-quiz-item');
+    if(!handle || !listEl.contains(handle)) return;
+    dragEl = handle.closest(itemSel);
     if(!dragEl) return;
     startY = e.clientY;
     dragEl.classList.add('is-dragging');
@@ -4991,7 +5054,7 @@ async function saveQuizOrder(idsInOrder){
     edgeTimer = requestAnimationFrame(edgeStep);
   }
 
-  qz.list.addEventListener('pointermove', (e)=>{
+  listEl.addEventListener('pointermove', (e)=>{
     if(!dragEl) return;
     lastY = e.clientY;
     const EDGE = 80;
@@ -5009,41 +5072,43 @@ async function saveQuizOrder(idsInOrder){
        所以交換的當下要把 startY 補回相同的量，讓 transform 疊上新的位置後
        視覺上不會跳一下 —— 也因為這樣，才不會在同一個 pointermove 裡
        因為「沒補償、位置估計爆掉」而一次連環跨過好幾列。 */
-    const siblings = Array.from(qz.list.querySelectorAll('.ad-quiz-item')).filter(el => el !== dragEl);
+    const siblings = rowsNow().filter(el => el !== dragEl);
     for(const sib of siblings){
       const dragRect = dragEl.getBoundingClientRect();
       const dragMid = dragRect.top + dragRect.height / 2;
       const rect = sib.getBoundingClientRect();
       const sibMid = rect.top + rect.height / 2;
       if(dragEl.compareDocumentPosition(sib) & Node.DOCUMENT_POSITION_FOLLOWING && dragMid > sibMid){
-        qz.list.insertBefore(sib, dragEl);
+        listEl.insertBefore(sib, dragEl);
         startY += rect.height;
       }else if(dragEl.compareDocumentPosition(sib) & Node.DOCUMENT_POSITION_PRECEDING && dragMid < sibMid){
-        qz.list.insertBefore(dragEl, sib);
+        listEl.insertBefore(dragEl, sib);
         startY -= rect.height;
       }
       dragEl.style.transform = `translateY(${e.clientY - startY}px)`;
     }
   });
 
-  function endDrag(e){
+  function endDrag(){
     stopEdge();
     if(!dragEl) return;
     const el = dragEl;
     dragEl = null;
     el.classList.remove('is-dragging');
     el.style.transform = '';
-
-    const newOrder = Array.from(qz.list.querySelectorAll('.ad-quiz-item')).map(x => x.dataset.id);
-    const oldOrder = DataStore.getQuiz()
-      .filter(it => !isPendingDelete('quiz', it.id))
-      .map(it => it.id);
-    if(newOrder.join() !== oldOrder.join()) saveQuizOrder(newOrder);
-    else renderQuiz(); // 位置沒變也要把題號（1. 2. 3.…）重畫回原狀
+    onDrop(rowsNow().map(x => x.dataset.id));
   }
-  qz.list.addEventListener('pointerup', endDrag);
-  qz.list.addEventListener('pointercancel', endDrag);
-})();
+  listEl.addEventListener('pointerup', endDrag);
+  listEl.addEventListener('pointercancel', endDrag);
+}
+
+setupDragSort(qz.list, '.ad-quiz-item', (newOrder)=>{
+  const oldOrder = DataStore.getQuiz()
+    .filter(it => !isPendingDelete('quiz', it.id))
+    .map(it => it.id);
+  if(newOrder.join() !== oldOrder.join()) saveQuizOrder(newOrder);
+  else renderQuiz(); // 位置沒變也要把題號（1. 2. 3.…）重畫回原狀
+});
 
 /* 第一次打開、題目還空著 → 把預設題目寫進來當起點。
    quizSeeded 記在 localStorage（以 siteId 分隔）：
@@ -5184,10 +5249,42 @@ const Butler = (() => {
   const subscribed = new Set();   /* 已經訂閱過的 bookId */
   let filterText = '';
 
+  /* 金額預設遮起來（網路銀行的作法）。婚宴當天這一頁常常就開著擺在
+     收禮台上，或是新人拿在手上給家人看桌次 —— 旁邊經過的人不該
+     一眼看到今天收了多少。刻意「不」記進 localStorage：
+     每次重新打開都回到遮住的狀態才有意義。 */
+  let moneyHidden = true;
+  /* 遮住時的樣子。字元之間夾 U+2060 word joiner、錢字號後面用不斷行空格 ——
+     不然「$ ---」在窄欄位（手機的禮金欄）會被拆成「$ --」＋「-」兩行 */
+  const MONEY_MASK = '$\u00A0-\u2060-\u2060-';
+
   const fb = () => window.fb;
   const siteId = () => window.SITE.siteId;
 
-  function money(n){ return '$' + (Number(n) || 0).toLocaleString('en-US'); }
+  function money(n){
+    if(moneyHidden) return MONEY_MASK;
+    return '$' + (Number(n) || 0).toLocaleString('en-US');
+  }
+
+  /* 兩顆眼睛（統計、明細）共用同一個狀態，按哪一顆都一樣 */
+  function eyeButtons(){ return Array.from(document.querySelectorAll('[data-money-eye]')); }
+
+  function syncEyes(){
+    eyeButtons().forEach(btn => {
+      const on = !moneyHidden;
+      btn.classList.toggle('is-on', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      btn.setAttribute('aria-label', on ? '遮住金額' : '顯示金額');
+      const tx = btn.querySelector('.ad-eye-tx');
+      if(tx) tx.textContent = on ? '遮住金額' : '顯示金額';
+    });
+  }
+
+  function toggleMoney(){
+    moneyHidden = !moneyHidden;
+    syncEyes();
+    renderAll();
+  }
 
   /* 所有連結的紀錄合起來看：四五個人共用同一組連結時就是同一本，
      真的分了兩組（收禮台／送客桌）也要加在一起才是這場婚禮的總數 */
@@ -5327,6 +5424,7 @@ const Butler = (() => {
   function renderRows(){
     if(!loaded){
       el.count.textContent = '讀取中…';
+      setPageSub('adBtEntryPageSub', '讀取中…');
       el.tableWrap.innerHTML = skeletonHtml(4);
       return;
     }
@@ -5336,6 +5434,9 @@ const Butler = (() => {
       || normKey(`${e.name}${e.code || ''}${e.table || ''}${e.note || ''}${e.by || ''}`).includes(q));
 
     el.count.textContent = `目前 ${all.length} 筆`;
+    setPageSub('adBtEntryPageSub', allEntries().length
+      ? `現場已經記下 <b>${allEntries().length}</b> 筆`
+      : '現場記下來的每一筆都會出現在這裡');
 
     if(!all.length){
       el.tableWrap.innerHTML = allEntries().length
@@ -5473,38 +5574,41 @@ const Butler = (() => {
       const from = book && book.importedFrom === 'rsvp' ? '出席回覆'
         : (book && book.importedFrom === 'plan' ? '排桌名單' : '');
 
-      return `<div class="ad-item ad-bt-link">
-        <div class="ad-item-main">
-          <span class="ad-item-title">${escapeHtml(l.label || '收禮台')}</span>
+      /* 一組連結＝一張卡。這一頁上的東西（網址、通行碼、名單、四顆動作）
+         全都是「這一組連結的」，混在一條 .ad-item 的分隔線裡時，
+         第二組開始就看不出來上一組到哪裡結束了。 */
+      return `<article class="ad-bt-link">
+        <header class="ad-bt-link-head">
+          <h3 class="ad-bt-link-title">${escapeHtml(l.label || '收禮台')}</h3>
           ${state}
-          <span class="ad-item-sub">
-            名單 ${roster} 位${from ? `（來自${from}${
-              book.importedAt ? '・' + fmtTime(book.importedAt) : ''}）` : '・還沒匯入'}
-            ・已記 ${got} 筆
-          </span>
+        </header>
+        <p class="ad-bt-link-meta">
+          名單 ${roster} 位${from ? `（來自${from}${
+            book.importedAt ? '・' + fmtTime(book.importedAt) : ''}）` : '・還沒匯入'}
+          ・已記 ${got} 筆
+        </p>
 
-          <div class="ad-bt-key">
-            <label class="ad-label">連結</label>
-            <div class="ad-row">
-              <input class="ad-input" type="text" readonly value="${escapeHtml(url)}"
-                     data-url="${escapeHtml(l.id)}">
-              <button class="btn small ghost" data-copy-url="${escapeHtml(l.id)}" type="button">複製</button>
-            </div>
-            <label class="ad-label">通行碼</label>
-            <div class="ad-row">
-              <span class="ad-bt-pass">${escapeHtml(l.passcode || '')}</span>
-              <button class="btn small ghost" data-copy-both="${escapeHtml(l.id)}" type="button">複製連結＋通行碼</button>
-            </div>
+        <div class="ad-bt-key">
+          <label class="ad-label">連結</label>
+          <div class="ad-row">
+            <input class="ad-input" type="text" readonly value="${escapeHtml(url)}"
+                   data-url="${escapeHtml(l.id)}">
+            <button class="btn small ghost" data-copy-url="${escapeHtml(l.id)}" type="button">複製</button>
+          </div>
+          <label class="ad-label">通行碼</label>
+          <div class="ad-row">
+            <span class="ad-bt-pass">${escapeHtml(l.passcode || '')}</span>
+            <button class="btn small ghost" data-copy-both="${escapeHtml(l.id)}" type="button">複製連結＋通行碼</button>
           </div>
         </div>
 
-        <div class="ad-item-actions ad-bt-acts">
+        <footer class="ad-bt-acts">
           <button class="btn small" data-import-plan="${escapeHtml(l.id)}" type="button">匯入排桌名單</button>
           <button class="btn small ghost" data-import-rsvp="${escapeHtml(l.id)}" type="button">匯入出席回覆</button>
           <button class="btn small ghost" data-toggle="${escapeHtml(l.id)}" type="button">${dead ? '重新啟用' : '停用'}</button>
           <button class="ad-del" data-drop="${escapeHtml(l.id)}" type="button">刪除</button>
-        </div>
-      </div>`;
+        </footer>
+      </article>`;
     }).join('');
 
     /* 沒開排桌管理就沒有「排桌名單」這回事，那顆按鈕不要出現 */
@@ -5964,6 +6068,9 @@ const Butler = (() => {
 
   el.newLink.addEventListener('click', createLink);
   el.exportBtn.addEventListener('click', exportCsv);
+  /* 兩顆眼睛（統計、明細）都是同一個開關 */
+  eyeButtons().forEach(btn => btn.addEventListener('click', toggleMoney));
+  syncEyes();
   el.filter.addEventListener('input', e => { filterText = e.target.value; pager.page = 1; renderRows(); });
   el.filter.addEventListener('search', e => { filterText = e.target.value; pager.page = 1; renderRows(); });
   /* 轉向或改變視窗大小時，表格與卡片要換過來 */
