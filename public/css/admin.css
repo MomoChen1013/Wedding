@@ -157,12 +157,16 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
   background:transparent;border:none;cursor:pointer;border-radius:var(--radius);
   font-family:var(--font-body);font-size:13.5px;letter-spacing:.14em;
   color:var(--ink-soft);padding:11px 14px;border-left:2px solid transparent;
+  /* font-weight 也在裡面：.ad-tab.is-on 會變 500（見下面「側欄導覽」那一段，
+     那道線收成 1px 之後，字重才是「現在在這一頁」的主要訊號） */
   transition:color var(--dur-hover) ease-out,background var(--dur-hover) ease-out,
               border-color var(--dur-hover) ease-out,font-weight var(--dur-hover) ease-out;
 }
 @media (hover:hover) and (pointer:fine){
   .ad-tab:hover{color:var(--ink);background:rgba(255,255,255,.6);}
 }
+/* 注意：這一條會被後面「側欄導覽」那一段覆寫（線收成 1px、加上 font-weight:500）。
+   要改 active 的樣子請改那一條，不是這一條。 */
 .ad-tab.is-on{color:var(--ink);background:#fff;border-left-color:var(--primary-deep);}
 .ad-tab[hidden]{display:none;}
 .ad-side-backdrop{display:none;}
@@ -378,7 +382,7 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-img figcaption{display:flex;gap:8px;align-items:center;padding:9px 10px;
   border-top:1px solid var(--line-soft);}
 .ad-img-title{flex:1 1 auto;min-width:0;border:none;outline:none;background:transparent;
-  font-family:var(--font-body);font-size:12.5px;color:var(--ink);padding:3px 0;
+  font-family:var(--font-ui);font-size:12.5px;color:var(--ink);padding:3px 0;
   border-bottom:1px solid transparent;}
 .ad-img-title:focus{border-bottom-color:var(--line);}
 
@@ -587,9 +591,11 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-td-lines{display:flex;flex-direction:column;gap:2px;}
 .ad-td-sub{font-size:11.5px;color:var(--ink-soft);}
 /* 表頭裡那顆「設定標籤」：跟著表頭走，不要比欄位名還搶眼 */
+/* 表頭裡的 pill：11.5px 是「嵌在一行文字裡」那一階
+   （原本 10.5px 低於本專案自己訂的最小字級 11px） */
 .ad-th-link{margin-left:8px;background:transparent;border:1px solid var(--line);
   border-radius:999px;padding:2px 9px;cursor:pointer;
-  font-family:var(--font-body);font-size:10.5px;letter-spacing:.06em;
+  font-family:var(--font-ui);font-size:11.5px;letter-spacing:.06em;
   color:var(--primary-deep);}
 .ad-th-link:hover{border-color:var(--primary-deep);}
 .ad-tagcell{display:flex;flex-wrap:wrap;gap:4px;align-items:center;min-width:120px;}
@@ -655,7 +661,7 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-pager-btn:disabled{opacity:.35;cursor:not-allowed;}
 .ad-pager-size{display:flex;align-items:center;gap:6px;}
 .ad-pager-size select{padding:5px 8px;border:1px solid var(--line);border-radius:var(--radius);
-  font-family:var(--font-body);font-size:12px;color:var(--ink);background:#fff;cursor:pointer;}
+  font-family:var(--font-ui);font-size:12px;color:var(--ink);background:#fff;cursor:pointer;}
 
 /* ============================================================
    悄悄話
@@ -904,7 +910,7 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-toast-msg{flex:1 1 auto;}
 .ad-toast.is-error{background:#8a5765;}
 .ad-toast-action{flex:0 0 auto;background:none;border:none;cursor:pointer;
-  color:#fff;font-family:var(--font-body);font-size:13px;letter-spacing:.1em;
+  color:#fff;font-family:var(--font-ui);font-size:13px;letter-spacing:.1em;
   text-decoration:underline;text-underline-offset:3px;padding:0;}
 
 /* ============================================================
@@ -1059,7 +1065,7 @@ select.ad-input{appearance:none;cursor:pointer;
 /* 第一條後面掛著展開鈕，收起來時整塊就這一行 */
 .sp-warn-head .sp-warn-more{flex:0 0 auto;margin-left:auto;padding-right:2px;}
 .sp-warn-more{position:relative;background:none;border:none;cursor:pointer;padding:1px 0;
-  font-family:var(--font-body);font-size:11.5px;letter-spacing:.06em;
+  font-family:var(--font-ui);font-size:11.5px;letter-spacing:.06em;
   color:var(--ink-soft);border-bottom:1px solid var(--line);white-space:nowrap;}
 /* 收起來的那幾項裡還有「要處理」的，點一下紅點就知道值得展開 */
 .sp-warn-more.has-warn::after{content:'';position:absolute;top:-1px;right:-7px;
@@ -1339,8 +1345,16 @@ select.ad-input{appearance:none;cursor:pointer;
 /* 兩個抽屜的關閉鈕本來各自宣告了一次一模一樣的熱區（一個在這裡、
    一個在下面「觸控目標」那一段），改成同一條 —— 這種重複就是
    哪天只改到其中一個、兩個抽屜的 ✕ 開始不一樣大的起點。 */
+/* ---------- 圖示按鈕的觸控熱區 ----------
+   後台的圖示按鈕（✕、☰、⋮）視覺大小各有各的理由，但在觸控裝置上
+   熱區一律 44×44、✕ 的字級一律 19px —— 一顆按不到的關閉鈕，
+   等於這一層關不掉。 */
 @media (pointer:coarse){
-  .sp-drawer-close,.ad-drawer-close{min-width:44px;min-height:44px;font-size:19px;}
+  .sp-drawer-close,.ad-drawer-close,.ad-side-close{
+    min-width:44px;min-height:44px;font-size:19px;
+  }
+  /* 漢堡鈕是窄螢幕唯一的導覽入口，卻只有 34×34 */
+  .ad-menu-btn{width:44px;height:44px;}
 }
 .sp-drawer-tags{display:flex;flex-direction:column;gap:2px;margin-top:6px;
   max-height:180px;overflow-y:auto;padding:4px 2px;
@@ -1567,7 +1581,7 @@ select.ad-input{appearance:none;cursor:pointer;
   display:inline-flex;align-items:center;gap:7px;vertical-align:middle;
   margin-left:10px;padding:5px 12px;min-height:32px;
   border:1px solid var(--line);border-radius:999px;background:#fff;
-  cursor:pointer;font-family:var(--font-body);font-size:11.5px;
+  cursor:pointer;font-family:var(--font-ui);font-size:11.5px;
   letter-spacing:.1em;color:var(--ink-soft);
   transition:border-color var(--dur-hover) ease-out,color var(--dur-hover) ease-out;
 }
@@ -1676,20 +1690,39 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-rowmenu-btn.is-open{border-color:var(--ink);color:var(--ink);}
 @media (pointer:coarse){ .ad-rowmenu-btn{width:44px;height:44px;font-size:18px;} }
 
-.ad-rowmenu{
-  position:fixed;z-index:1400;min-width:190px;max-width:min(84vw,260px);
+/* ---------- 下拉選單（共用元件）----------
+   ------------------------------------------------------------
+   後台有兩個下拉選單，做的是同一件事（點一顆按鈕、掉出一疊可以選的動作）：
+     .ad-rowmenu   一列尾端的「⋮ 更多」（admin.js 動態定位，position:fixed）
+     .ad-acct-pop  頂列的帳號選單（掛在按鈕下面，position:absolute）
+
+   它們本來各長各的：一個 --ink 框、一個 --line 框；一個 44px 熱區、
+   一個沒有；一個 hover 變 --bg2、一個 hover 變主題色。同一頁上兩顆
+   下拉選單長得不一樣，使用者不會說「這裡不一致」，只會覺得這個後台很雜。
+
+   所以「面」與「項」的規格抽出來共用，只留真正不同的那兩件事
+   （定位方式與層級）各自宣告。
+
+   框用 --ink 而不是 --line：可以點的浮層要比背景重一階，
+   使用者才知道「現在焦點在這一疊上」。純讀的浮層（.ad-nav-tip）維持 --line。
+------------------------------------------------------------ */
+.ad-rowmenu,.ad-acct-pop{
   background:#fff;border:1px solid var(--ink);border-radius:var(--radius);
   padding:5px;display:flex;flex-direction:column;
   box-shadow:var(--shadow-pop);animation:pop var(--dur-hover) var(--ease);
 }
+.ad-rowmenu{position:fixed;z-index:1400;min-width:190px;max-width:min(84vw,260px);}
 .ad-rowmenu[hidden]{display:none;}
-.ad-rowmenu-item{
+
+.ad-rowmenu-item,.ad-acct-item{
   background:none;border:none;border-radius:var(--radius);cursor:pointer;
-  text-align:left;font-family:var(--font-body);font-size:14px;letter-spacing:.06em;
+  text-align:left;font-family:var(--font-ui);font-size:14px;letter-spacing:.06em;
   color:var(--ink);padding:12px 13px;min-height:44px;
   display:flex;align-items:center;gap:10px;
+  transition:background var(--dur-hover) ease-out,color var(--dur-hover) ease-out;
 }
-.ad-rowmenu-item:hover:not(:disabled){background:var(--bg2);}
+.ad-rowmenu-item:hover:not(:disabled),
+.ad-acct-item:hover{background:var(--bg2);}
 .ad-rowmenu-item:disabled{opacity:.32;cursor:not-allowed;}
 .ad-rowmenu-item.is-danger{color:#a4677a;}
 .ad-rowmenu-sep{height:1px;margin:4px 6px;background:var(--line-soft);}
@@ -1743,8 +1776,8 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-rcard-more{
   flex:0 0 auto;background:none;border:1px solid var(--line);border-radius:999px;
   cursor:pointer;
-  font-family:var(--font-body);font-size:12px;letter-spacing:.08em;color:var(--ink-soft);
-  padding:6px 13px;min-height:34px;
+  font-family:var(--font-ui);font-size:12px;letter-spacing:.08em;color:var(--ink-soft);
+  padding:6px 13px;min-height:36px;
 }
 .ad-rcard-more[aria-expanded="true"]{border-color:var(--ink);color:var(--ink);}
 .ad-rcard-rest{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line-soft);}
@@ -1805,7 +1838,7 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-filtersum-text b{color:var(--ink);font-weight:500;}
 .ad-filtersum-clear{
   flex:0 0 auto;background:none;border:1px solid var(--line);border-radius:999px;
-  cursor:pointer;font-family:var(--font-body);font-size:12px;letter-spacing:.08em;
+  cursor:pointer;font-family:var(--font-ui);font-size:12px;letter-spacing:.08em;
   color:var(--primary-deep);padding:7px 14px;min-height:36px;
 }
 .ad-filtersum-clear:hover{border-color:var(--primary-deep);}
@@ -1861,7 +1894,7 @@ body.ad-lock{position:fixed;left:0;right:0;width:100%;overflow:hidden;}
   display:none;position:absolute;top:14px;left:12px;
   width:44px;height:44px;padding:0;border:1px solid var(--line);
   border-radius:var(--radius);background:#fff;cursor:pointer;
-  font-family:var(--font-body);font-size:17px;line-height:1;color:var(--ink);
+  font-family:var(--font-ui);font-size:15px;line-height:1;color:var(--ink);
 }
 @media(max-width:899px){ .ad-side-close{display:block;} }
 
@@ -1930,7 +1963,7 @@ body.ad-lock{position:fixed;left:0;right:0;width:100%;overflow:hidden;}
   flex:0 0 auto;display:flex;align-items:baseline;gap:6px;
   background:none;border:1px solid var(--line);border-radius:var(--radius);
   cursor:pointer;padding:9px 13px;min-height:44px;
-  font-family:var(--font-body);font-size:12px;letter-spacing:.08em;color:var(--ink-soft);
+  font-family:var(--font-ui);font-size:12px;letter-spacing:.08em;color:var(--ink-soft);
 }
 .sp-mobilebar-pool b{font-family:var(--font-display);font-size:17px;font-weight:500;
   color:var(--primary-deep);font-variant-numeric:tabular-nums;}
@@ -2160,7 +2193,7 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
 @media (pointer:coarse){ .ad-chips-clamp{--chip-h:36px;} }
 .ad-chips-more{
   margin-left:auto;background:none;border:none;padding:6px 0;cursor:pointer;
-  font-family:var(--font-body);font-size:11.5px;letter-spacing:.08em;
+  font-family:var(--font-ui);font-size:11.5px;letter-spacing:.08em;
   color:var(--primary-deep);border-bottom:1px solid var(--line);
 }
 .ad-chips-more[hidden]{display:none;}
@@ -2186,7 +2219,7 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
 .ad-rcard-more{
   flex:0 0 auto;background:none;border:none;border-radius:0;cursor:pointer;
   display:inline-flex;align-items:center;gap:5px;
-  font-family:var(--font-body);font-size:12px;letter-spacing:.06em;
+  font-family:var(--font-ui);font-size:12px;letter-spacing:.06em;
   color:var(--primary-deep);padding:6px 0;min-height:0;
 }
 .ad-rcard-more i{font-style:normal;font-size:13px;line-height:1;}
@@ -2197,10 +2230,11 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
 /* ---------- 排桌：提示可以關掉 ---------- */
 .sp-touch-tip{position:relative;padding-right:44px;}
 .sp-touch-tip[hidden]{display:none;}
+/* 這一顆只在 (hover:none) 出現，也就是永遠在觸控裝置上 —— 直接給 44 */
 .sp-touch-tip-close{
-  position:absolute;top:2px;right:2px;width:40px;height:40px;padding:0;
+  position:absolute;top:2px;right:2px;width:44px;height:44px;padding:0;
   background:none;border:none;cursor:pointer;
-  font-family:var(--font-body);font-size:14px;line-height:1;color:var(--ink-soft);
+  font-family:var(--font-ui);font-size:19px;line-height:1;color:var(--ink-soft);
 }
 .sp-touch-tip-close:hover{color:var(--ink);}
 
@@ -2688,11 +2722,9 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
 }
 .ad-acct-btn[aria-expanded="true"] .ad-acct-caret{transform:rotate(-135deg) translate(-2px,-2px);}
 
+/* 面與項的規格見上面「下拉選單（共用元件）」，這裡只放它自己的定位 */
 .ad-acct-pop{
   position:absolute;top:calc(100% + 8px);right:0;min-width:212px;z-index:960;
-  background:#fff;border:1px solid var(--line);border-radius:var(--radius);
-  padding:6px;box-shadow:var(--shadow-pop);
-  animation:pop var(--dur-hover) var(--ease);
 }
 .ad-acct-pop[hidden]{display:none;}
 .ad-acct-head{padding:9px 12px 10px;border-bottom:1px solid var(--line-soft);margin-bottom:4px;}
@@ -2703,15 +2735,8 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
   margin-top:4px;font-family:var(--font-ui);font-size:11px;letter-spacing:.02em;
   color:var(--ink-soft);word-break:break-all;line-height:1.6;
 }
-.ad-acct-item{
-  display:block;width:100%;text-align:left;border:none;background:transparent;
-  font-family:var(--font-ui);font-size:13px;color:var(--ink);letter-spacing:.06em;
-  padding:10px 12px;border-radius:var(--radius);cursor:pointer;text-decoration:none;
-  transition:background var(--dur-hover) ease-out,color var(--dur-hover) ease-out;
-}
-@media (hover:hover) and (pointer:fine){
-  .ad-acct-item:hover{background:var(--primary-soft);color:var(--primary-deep);}
-}
+/* <a> 也吃這個 class，把底線拿掉；其餘規格與 .ad-rowmenu-item 共用 */
+.ad-acct-item{width:100%;text-decoration:none;}
 /* 頂列的新人姓名：email 拆出去之後這一行只剩身分，可以放大一點點 */
 .ad-bar-sub{font-size:12.5px;letter-spacing:.1em;color:var(--ink-soft);}
 

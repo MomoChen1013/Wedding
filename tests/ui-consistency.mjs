@@ -11,6 +11,11 @@
      4. 搜尋框：八個地方，一份 HTML 樣板
      5. 抽屜：兩個實作（.sp-drawer／.ad-drawer）同一份規格
      6. 遮罩：全部收在同一支冷灰
+     7. 選單：兩個下拉選單（.ad-rowmenu／.ad-acct-pop）面與項同一份規格
+     8. 圖示按鈕：✕ 只有兩個字級、每一顆都有 aria-label
+     9. Pill 按鈕：只有 36／32 兩階
+    10. Tab：兩種 tab 共用「白底 ＋ 字重 500 ＋ --primary-deep 定位線」
+    11. 卡片：白底 ＋ 1px --line ＋ --radius
 
    這一支不需要 Firestore，只要 hosting 起得來就跑得動
    （頁面停在登入門也沒關係 —— 要量的是 CSS 與 HTML 屬性）。
@@ -198,6 +203,173 @@ for(const [name, want] of [['側欄', 'rgba(43, 47, 54, 0.32)'],
                            ['抽屜', 'rgba(43, 47, 54, 0.2)']]){
   const got = scrims[{ 側欄:'nav', 彈窗:'modal', 抽屜:'drawer' }[name]];
   ok(`${name}遮罩`, got === want, got);
+}
+
+/* ------------------------------------------------------------
+   7. 選單：兩個下拉選單同一份規格
+   ------------------------------------------------------------
+   .ad-rowmenu（⋮）與 .ad-acct-pop（帳號）做的是同一件事。
+   它們本來一個 --ink 框一個 --line 框、一個 44px 熱區一個沒有、
+   一個 hover 變 --bg2 一個變主題色。
+------------------------------------------------------------ */
+console.log('\n【選單：兩個下拉選單同一份規格】');
+await page.setViewportSize({ width:1280, height:900 });
+await go(ADMIN);
+const menus = await page.evaluate(() => {
+  const read = (sel) => {
+    const el = document.querySelector(sel);
+    if(!el) return null;
+    const was = el.hidden;
+    el.hidden = false;
+    const cs = getComputedStyle(el);
+    const out = { border:cs.borderTopWidth + ' ' + cs.borderTopColor, pad:cs.padding,
+                  bg:cs.backgroundColor, shadow:cs.boxShadow, role:el.getAttribute('role') };
+    el.hidden = was;
+    return out;
+  };
+  /* .ad-rowmenu 是 admin.js 動態插入的，先確保它存在 */
+  const item = (sel) => {
+    const el = document.querySelector(sel);
+    if(!el) return null;
+    const pop = el.closest('[hidden]');
+    const was = pop && pop.hidden;
+    if(pop) pop.hidden = false;
+    const cs = getComputedStyle(el);
+    const out = { font:cs.fontFamily, size:cs.fontSize, pad:cs.padding,
+                  minH:cs.minHeight, role:el.getAttribute('role') };
+    if(pop) pop.hidden = was;
+    return out;
+  };
+  return { acctPop:read('.ad-acct-pop'), acctItem:item('.ad-acct-item') };
+});
+ok('找得到帳號選單', !!menus.acctPop && !!menus.acctItem);
+if(menus.acctPop && menus.acctItem){
+  /* --ink = #2f2b26 = rgb(47, 43, 38)。用 --ink 而不是 --line：
+     可以點的浮層要比背景重一階（規範 3.9） */
+  ok('選單的面用 --ink 框',
+     menus.acctPop.border === '1px rgb(47, 43, 38)', menus.acctPop.border);
+  ok('選單的面有 --shadow-pop', menus.acctPop.shadow !== 'none', menus.acctPop.shadow);
+  ok('選單項熱區 ≥44px', parseFloat(menus.acctItem.minH) >= 44, menus.acctItem.minH);
+  ok('選單項字級 14px（與 .ad-rowmenu-item 同一份）',
+     menus.acctItem.size === '14px', menus.acctItem.size);
+  ok('選單項走 UI 軌', /system-ui|PingFang|Noto Sans/.test(menus.acctItem.font));
+  ok('選單有 menu／menuitem 語意',
+     menus.acctPop.role === 'menu' && menus.acctItem.role === 'menuitem',
+     `${menus.acctPop.role} / ${menus.acctItem.role}`);
+}
+
+/* ------------------------------------------------------------
+   8. 圖示按鈕
+------------------------------------------------------------ */
+console.log('\n【圖示按鈕：aria-label ＋ ✕ 的字級】');
+await go(ADMIN);
+const icons = await page.evaluate(() => {
+  const sels = ['#adMenuBtn', '#adSideClose', '#spDrawerClose'];
+  return sels.map((sel) => {
+    const el = document.querySelector(sel);
+    if(!el) return { sel, missing:true };
+    const holder = el.closest('[hidden]');
+    const was = holder && holder.hidden;
+    if(holder) holder.hidden = false;
+    const cs = getComputedStyle(el);
+    const out = { sel, label:el.getAttribute('aria-label'), size:cs.fontSize };
+    if(holder) holder.hidden = was;
+    return out;
+  });
+});
+for(const ic of icons){
+  if(ic.missing){ ok(`找得到 ${ic.sel}`, false); continue; }
+  ok(`${ic.sel} 有 aria-label`, !!ic.label, ic.label);
+}
+const closeSizes = icons.filter(i => i.sel !== '#adMenuBtn' && !i.missing).map(i => i.size);
+ok('✕ 的字級只有 15px 一種（桌機）',
+   closeSizes.every(v => v === '15px'), closeSizes.join(' / '));
+
+/* ------------------------------------------------------------
+   9. Pill 按鈕：只有 36／32 兩階
+------------------------------------------------------------ */
+console.log('\n【Pill 按鈕：只有 36／32 兩階】');
+await go(ADMIN);
+const pills = await page.evaluate(() => {
+  /* .ad-th-link 由 admin.js 依標籤資料產生，登入門下不存在 —— 有才驗 */
+  const want = { '#adRsvpFilterClear':36, '.ad-eye':32, '.ad-th-link':null };
+  const out = [];
+  for(const sel of Object.keys(want)){
+    const el = document.querySelector(sel);
+    if(!el){ out.push({ sel, absent:true }); continue; }
+    const holder = el.closest('[hidden]');
+    const was = holder && holder.hidden;
+    if(holder) holder.hidden = false;
+    const cs = getComputedStyle(el);
+    out.push({ sel, minH:cs.minHeight, size:cs.fontSize, radius:cs.borderTopLeftRadius,
+               want:want[sel] });
+    if(holder) holder.hidden = was;
+  }
+  return out;
+});
+for(const p of pills){
+  if(p.absent) continue;
+  ok(`${p.sel} 是膠囊`, parseFloat(p.radius) >= 999 || p.radius === '999px', p.radius);
+  if(p.want) ok(`${p.sel} min-height ${p.want}px`, parseFloat(p.minH) === p.want, p.minH);
+  ok(`${p.sel} 字級是 12 或 11.5`, ['12px','11.5px'].includes(p.size), p.size);
+}
+
+/* ------------------------------------------------------------
+   10. Tab：兩種 tab 共用同一套「選中」語彙
+------------------------------------------------------------ */
+console.log('\n【Tab：白底 ＋ 字重 500 ＋ --primary-deep 定位線】');
+await go(ADMIN);
+const tabs = await page.evaluate(() => {
+  const on = (sel) => {
+    const el = document.querySelector(sel);
+    if(!el) return null;
+    el.classList.add('is-on');
+    const cs = getComputedStyle(el);
+    return { bg:cs.backgroundColor, weight:cs.fontWeight,
+             left:cs.borderLeftWidth + ' ' + cs.borderLeftColor,
+             bottom:cs.borderBottomWidth + ' ' + cs.borderBottomColor };
+  };
+  return { tab:on('.ad-tab'), subtab:on('.ad-subtab') };
+});
+ok('找得到兩種 tab', !!tabs.tab && !!tabs.subtab);
+if(tabs.tab && tabs.subtab){
+  /* 選中的語彙是同一套：白底 ＋ 字重 500 ＋ 一道 --primary-deep 的定位線。
+     線寬刻意不同 —— 側欄 1px（字重才是主訊號）、子分頁 2px（要接上那條底線）。 */
+  ok('.ad-tab.is-on 白底 ＋ 字重 500 ＋ 左邊 1px 定位線',
+     tabs.tab.bg === 'rgb(255, 255, 255)' && tabs.tab.weight === '500'
+       && tabs.tab.left.startsWith('1px'),
+     `${tabs.tab.bg} / ${tabs.tab.weight} / ${tabs.tab.left}`);
+  ok('.ad-subtab.is-on 白底 ＋ 字重 500 ＋ 下面 2px 定位線',
+     tabs.subtab.bg === 'rgb(255, 255, 255)' && tabs.subtab.weight === '500'
+       && tabs.subtab.bottom.startsWith('2px'),
+     `${tabs.subtab.bg} / ${tabs.subtab.weight} / ${tabs.subtab.bottom}`);
+  ok('兩條定位線是同一個顏色',
+     tabs.tab.left.split(' ').slice(1).join(' ') === tabs.subtab.bottom.split(' ').slice(1).join(' '),
+     tabs.subtab.bottom.split(' ').slice(1).join(' '));
+}
+
+/* ------------------------------------------------------------
+   11. 卡片：白底 ＋ 1px --line ＋ --radius
+------------------------------------------------------------ */
+console.log('\n【卡片：同一種面】');
+await go(ADMIN);
+const cards = await page.evaluate(() =>
+  ['.ad-modal-card', '.ad-letter-card', '.ad-callout'].map((sel) => {
+    const el = document.querySelector(sel);
+    if(!el) return { sel, absent:true };
+    const holder = el.closest('[hidden]');
+    const was = holder && holder.hidden;
+    if(holder) holder.hidden = false;
+    const cs = getComputedStyle(el);
+    const out = { sel, bg:cs.backgroundColor, bw:cs.borderTopWidth, radius:cs.borderTopLeftRadius };
+    if(holder) holder.hidden = was;
+    return out;
+  }));
+for(const c of cards){
+  if(c.absent) continue;   // 該分頁沒開就沒有這張卡，不算失敗
+  ok(`${c.sel} 白底 ＋ 1px 框 ＋ ${'2px'} 圓角`,
+     c.bg === 'rgb(255, 255, 255)' && c.bw === '1px' && c.radius === '2px',
+     `${c.bg} / ${c.bw} / ${c.radius}`);
 }
 
 await browser.close();

@@ -168,6 +168,30 @@ sticky 的位置不能寫死（婚禮名稱換一行、離線橫幅出現，高�
 
 ## 3. 元件目錄
 
+先看這張表：**要做的事** → **該用的元件**。找不到對應的再往下讀規格。
+
+| 要做的事 | 元件 |
+|---|---|
+| 送出、取消、匯出 | `.btn`（3.1） |
+| 只有一個圖示的動作（✕ ☰ ⋮ ↑↓） | 圖示按鈕（3.2） |
+| 一列尾端的編輯／刪除 | `.ad-edit` `.ad-del`（3.3） |
+| 「展開全部」「清除」「顯示金額」 | pill／底線文字按鈕（3.3） |
+| 篩選、切換一組互斥選項 | `.ad-chip`（3.4） |
+| 顯示唯讀狀態 | `.ad-tag`（3.5） |
+| 收集輸入 | 表單（3.6） |
+| 在清單裡找東西 | `.ad-filter`（3.7） |
+| 切換畫面 | Tab（3.8） |
+| 點一顆按鈕掉出一疊動作 | 選單（3.9） |
+| 把一筆資料包成一塊 | 卡片（3.10） |
+| 一行一件事 | `.ad-item`（3.11） |
+| 多欄要對齊比較 | `.ad-table`（3.12） |
+| 給數字一張面 | 數字面板（3.13） |
+| 看一筆的完整內容／就地修改 | 抽屜（3.16） |
+| 需要當下回答的問題 | 彈窗（3.18） |
+| 告知結果 | Toast（3.19） |
+
+---
+
 ### 3.1 按鈕 `.btn`
 
 ```html
@@ -178,24 +202,80 @@ sticky 的位置不能寫死（婚禮名稱換一行、離線橫幅出現，高�
 
 | 變體 | 樣子 | 用在哪 |
 |---|---|---|
-| `.btn` | 實心 `--ink`、全寬、15px | 登入門、表單唯一的送出 |
-| `.btn.small` | 自動寬、13.5px | 區塊標題列、彈窗、抽屜底部 |
+| `.btn` | 實心 `--ink`、全寬、15px、padding 14/22 | 登入門、表單唯一的送出 |
+| `.btn.small` | 自動寬、13.5px、padding 11/20 | 區塊標題列、彈窗、抽屜底部 |
 | `.btn.ghost` | 透明底、`--line` 框 | 取消、匯出、次要動作 |
 | `.btn.btn-google` | 白底 | 只有登入門 |
 | `.btn.is-dirty` | 右上角一點 | 有未儲存的變更 |
+| `.btn.is-saving` | `opacity:.55` ＋ `cursor:progress` | 寫入中 |
 
 - hover 是「亮度往上挪一階」（`#413c35`），**不是換一顆按鈕**。
+- `:active` 往下沉 `.5px`。位移刻意極小，要的是「這一下有被接到」。
 - `≤560px` 彈窗裡的按鈕全寬堆疊；危險動作永遠在最右／最下。
 
-### 3.2 文字按鈕 `.ad-edit` / `.ad-del`
+---
 
-一列尾端的「編輯／刪除」。視覺是無框文字，`(pointer:coarse)` 時靠 padding 把
-熱區撐到 **44×44**，看起來一樣、按起來完全不同。
+### 3.2 圖示按鈕
 
-> 同一列有三個以上動作時，改用 `.ad-rowmenu-btn`（⋮），
-> 不要並排三顆文字按鈕。
+只有一個字元、沒有文字標籤的按鈕。**每一顆都必須有 `aria-label`。**
 
-### 3.3 Chip `.ad-chip`（膠囊選擇器）
+| 元件 | 圖示 | 桌機 | 觸控 | 框 |
+|---|---|---|---|---|
+| `.ad-menu-btn` | ☰（三條 16×1px 線） | 34×34 | **44×44** | 1px `--line` ＋ radius |
+| `.ad-side-close` | ✕ | 44×44／15px | 44×44／19px | 1px `--line` ＋ radius |
+| `.ad-drawer-close` `.sp-drawer-close` | ✕ | padding 2/4・15px | 44×44／19px | 無框 |
+| `.sp-touch-tip-close` | ✕ | —（只在觸控出現） | 44×44／19px | 無框 |
+| `.ad-rowmenu-btn` | ⋮ | 34×34／16px | 44×44／18px | 透明框，hover 才顯 `--line` |
+| `.sp-move-btn` `.ad-sch-move [data-sch-move]` | ↑ ↓ ⇤ ⇥ | 32×32／13px | **44×44** | 1px `--line` ＋ radius |
+| `.ad-drag-handle` | ⠿ | 16px | — | 無框，`cursor:grab`／`grabbing` |
+
+三條規則：
+
+1. **觸控一律 44×44。** 視覺大小可以不同（頂列的 ☰ 和列內的 ⋮ 本來就該不同重量），
+   熱區不行 —— 一顆按不到的關閉鈕等於這一層關不掉。
+2. **✕ 的字級只有兩個值**：桌機 15px、觸控 19px。四顆 ✕ 都吃這一組。
+3. **框的有無看它站在哪**：站在一張面上（抽屜的 head、選單列）不用框，
+   站在內容上（頂列的 ☰、抽屜左上的 ✕、排序的 ↑↓）要框，不然看不出是按鈕。
+
+> `.sp-move-btn` 與 `.ad-sch-move` 已經共用同一條宣告 —— 桌位管理和當日流程
+> 的排序鈕做的是同一件事，就該長得一樣。新加的排序鈕請併進那一條，
+> 不要再抄一份 32×32。
+
+---
+
+### 3.3 文字按鈕
+
+沒有實心底的按鈕，分三種。**選錯一種，使用者就分不出「這是動作」還是「這是狀態」。**
+
+#### (a) 底線文字按鈕 `.ad-edit` / `.ad-del`
+
+一列尾端的「編輯／刪除」。12px、`--ink-soft`、`border-bottom:1px solid transparent`；
+hover 時線與字一起變深（刪除變 `#a4677a`），觸控沒有 hover 所以改成 `:active` 給回饋。
+`(pointer:coarse)` 靠 padding 把熱區撐到 **44×44**，視覺不變。
+
+> 同一列有三個以上動作時，改用 `.ad-rowmenu-btn`（⋮），不要並排三顆。
+> `.ad-item-actions` 在觸控時 `gap:16px`；已經收進 ⋮ 的那幾份反而收緊到 `gap:4px`。
+
+#### (b) 底線「展開」按鈕 `.ad-chips-more` / `.sp-warn-more`
+
+無框、`border-bottom:1px solid var(--line)`、11.5px。
+用在「還有更多、點開來看」——它不是動作，是**視野的開關**。
+`.sp-warn-more.has-warn` 右上角補一顆紅點：收起來的那幾項裡有要處理的。
+
+#### (c) Pill 文字按鈕
+
+膠囊外框（`999px` ＋ 1px `--line`），用在**一個獨立的小開關**。尺寸只有兩階：
+
+| 階 | 字級 | min-height | 誰在用 |
+|---|---|---|---|
+| 獨立 | 12px | **36px** | `.ad-filtersum-clear`（清除篩選）、`.ad-rcard-more`（展開更多）、`.ad-chip`（觸控時 36） |
+| 嵌在一行文字裡 | 11.5px | **32px** | `.ad-eye`（顯示金額，永遠 32）、`.ad-th-link`（表頭的「標籤」，觸控時 32） |
+
+> 不要再發明第三階。要一顆新的 pill，先問它是獨立的還是嵌在一行字裡。
+
+---
+
+### 3.4 Chip `.ad-chip`（膠囊選擇器）
 
 ```html
 <div class="ad-chips" id="…">
@@ -210,17 +290,23 @@ sticky 的位置不能寫死（婚禮名稱換一行、離線橫幅出現，高�
   `.ad-chips-clamp` ＋ `.ad-chips-more`（數量無上限，先露兩排）、
   `.ad-chips-sub`（次級一排，字小一號）
 - `.ad-chip-link` 是虛線框 —— 它是**出口**（「設定標籤 ↗」），不是篩選條件
-- `(pointer:coarse)` 最小高度 36px
 
 Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發送」、金額捷徑）。
+和 Tab 的分工：**Chip 篩的是同一份清單的內容，Tab 換的是整個畫面。**
 
-### 3.4 標籤 `.ad-tag`（唯讀狀態 pill）
+---
+
+### 3.5 標籤 `.ad-tag`（唯讀狀態 pill）
 
 `.ad-tag-yes` `.ad-tag-maybe` `.ad-tag-no` `.ad-tag-guest`。
-**永遠 `white-space:nowrap`** —— 膠囊一折行就完全不成形，
-欄位擠不下時該讓欄位變寬。
+**永遠 `white-space:nowrap`** —— 膠囊一折行就完全不成形，欄位擠不下時該讓欄位變寬。
 
-### 3.5 表單
+> 和 pill 按鈕長得像，但**不可點**。可點的東西一定要有 hover／active 反應，
+> `.ad-tag` 一個都沒有 —— 那就是兩者唯一的區別，不要弄反。
+
+---
+
+### 3.6 表單
 
 ```html
 <label class="ad-label" for="xxx">欄位名</label>
@@ -245,7 +331,7 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 
 ---
 
-### 3.6 搜尋框 `.ad-filter`
+### 3.7 搜尋框 `.ad-filter`
 
 **後台只有這一種搜尋框。** 八個地方在用它：
 
@@ -293,20 +379,17 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 - 比對一律經過 `normKey()`（去空白、全形轉半形、英文轉小寫）。
   butler 不載入 `common.js`，自己有一份**完全相同**的實作。
 - 有分頁的清單，搜尋後 `pager.page = 1`。
-- 尺寸只有兩種：預設（8px 12px／13px）與 `.ad-filter-sm`（7px 10px／12.5px，
-  塞在窄欄裡時用）。**不要再長第三種。**
-- 原生外觀已在 CSS 歸零（iOS 會強制畫成膠囊、桌面 Safari 會多一顆放大鏡），
-  清除鈕維持原生但縮到與字級相稱，`(pointer:coarse)` 時放大到 19px。
+- 尺寸只有兩種：預設（8px 12px／13px）與 `.ad-filter-sm`（7px 10px／12.5px）。
+- 原生外觀已在 CSS 歸零，清除鈕維持原生但縮到與字級相稱，觸控放大到 19px。
 - 文案格式：**`搜尋 A、B、C…`**。不要寫「在名單裡找…」這種另一套動詞。
 - `.ad-list-head.is-sticky` 只給「婚宴當天要邊捲邊找人」的三處（見上表）。
-  其餘不要黏 —— 黏太多就等於沒有重點。
 
 #### 三種搜尋容器
 
 | 容器 | 什麼時候用 |
 |---|---|
 | `.ad-list-head` | 只有搜尋（＋筆數或一排 chip）。最常見 |
-| `.ad-filterbar` | 搜尋 ＋ 兩排以上的篩選條件。透明底 ＋ 一圈淡框（它是一組控制項，不是一張卡）；搜尋放**第一排** |
+| `.ad-filterbar` | 搜尋 ＋ 兩排以上的篩選條件。透明底 ＋ 一圈淡框；搜尋放**第一排** |
 | `.ad-filtersum` | 搭配 `.ad-filterbar` 的「現在篩掉了什麼」，sticky ＋ 一顆「清除」 |
 
 > `.ad-filterbar` 的篩選條件超過一排時**一定要**配 `.ad-filtersum`：
@@ -314,7 +397,163 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 
 ---
 
-### 3.7 清單 `.ad-list` / `.ad-item`
+### 3.8 Tab
+
+兩種，**共用同一套「選中」的語彙**：白底 ＋ 字重 500 ＋ 一道 `--primary-deep` 的定位線。
+
+| | `.ad-tab`（側欄・直式） | `.ad-subtab`（分頁內・橫式） |
+|---|---|---|
+| 位置 | `.ad-side`，≥900px 常駐 | `.ad-subtabs`，緊貼內容上方 |
+| 字級 | 13.5px／`.14em` | 13px／`.14em` |
+| 內距 | 11px 14px（`padding-left:15px` 補回線寬） | 11px 20px |
+| 未選 | 透明底、`--ink-soft`、`border-left:1px transparent` | `rgba(255,255,255,.45)`、1px `--line` 框、`--ink-soft` |
+| hover | `--ink` ＋ 半透明白底 | `--ink` ＋ 白底 |
+| **選中** | 白底 ＋ `font-weight:500` ＋ **左邊 1px** `--primary-deep` | 白底 ＋ `font-weight:500` ＋ **下面 2px** `--primary-deep` |
+| 面板 | `.ad-panel.is-on` | `.ad-subpanel.is-on` |
+
+兩者的選中語彙是同一套：**白底 ＋ 字重 500 ＋ 一道 `--primary-deep` 的定位線**。
+線寬不同是刻意的：
+
+- 側欄是 **1px** —— 收窄之後那道線是「記號」而不是「色塊」，
+  **字重才是「現在在這一頁」的主要訊號**（原本是 2px，改窄的理由就寫在 CSS 裡）。
+  線寬變化由 `padding-left:15px` 吸收，字不會左右跳。
+- 橫式子分頁是 **2px** —— 它要接上 `.ad-subtabs` 那條 2px 的底線，
+  1px 會在那條線上看不出來。
+
+> `.ad-tab` 的 `transition` 含 `font-weight`，不要當成沒用到的屬性刪掉。
+> `.ad-tab.is-on` 在檔案裡出現兩次：前面那條是基礎，**真正生效的是
+> 「側欄導覽」那一段的覆寫**。改 active 的樣子要改後面那一條。
+
+- 兩者的 hover 都包在 `@media (hover:hover) and (pointer:fine)` 裡 ——
+  觸控裝置上 hover 會「黏住」，看起來像選錯了分頁。
+- `.ad-subtabs` 可橫捲，用 `.ad-scrollx` 的遮罩漸層暗示「右邊還有」
+  （捲軸藏起來之後，那是唯一的線索）。
+- `data-count="2"` 或 `"3"` 時，窄螢幕排成**等寬 segmented control**，
+  就不用捲了（收禮台的三顆就是這樣）。
+- 窄螢幕 `.ad-subtabs` sticky 在頂列下面，高度餵給 `--ad-subtabs-h`，
+  下面的 `.ad-list-head.is-sticky` 才黏得準。
+- `.ad-tab.is-sub` 是側欄的第二階（「排桌管理」從屬於「桌次」）：
+  縮排到 27px，並用一道 6×1px 的 `::before` 短線接住。
+  分組用 `.ad-navgroup`（可摺疊，`grid-template-rows: 1fr → 0fr` 做動畫，
+  因為 `height:auto` 沒辦法 transition）。
+
+---
+
+### 3.9 選單
+
+**「點一顆按鈕、掉出一疊可以選的動作」只有一種做法。** 面與項的規格共用：
+
+```css
+.ad-rowmenu,.ad-acct-pop{ /* 面 */
+  background:#fff;border:1px solid var(--ink);border-radius:var(--radius);
+  padding:5px;display:flex;flex-direction:column;
+  box-shadow:var(--shadow-pop);animation:pop var(--dur-hover) var(--ease);
+}
+.ad-rowmenu-item,.ad-acct-item{ /* 項 */
+  background:none;border:none;border-radius:var(--radius);cursor:pointer;
+  text-align:left;font-family:var(--font-ui);font-size:14px;letter-spacing:.06em;
+  color:var(--ink);padding:12px 13px;min-height:44px;
+  display:flex;align-items:center;gap:10px;
+}
+```
+
+各自只保留定位：
+
+| 選單 | 觸發 | 定位 | z-index |
+|---|---|---|---|
+| `.ad-rowmenu` | `.ad-rowmenu-btn`（⋮） | `position:fixed`，由 `admin.js` 算座標 | 1400 |
+| `.ad-acct-pop` | `.ad-acct-btn` | `position:absolute`，掛在按鈕下方 8px | 960 |
+
+#### 項的狀態
+
+| Class | 樣子 |
+|---|---|
+| （預設） | `--ink`，hover `background:var(--bg2)` |
+| `.is-danger` | `#a4677a`。**永遠排最後**，前面用 `.ad-rowmenu-sep` 隔開 |
+| `[disabled]` | `opacity:.32` ＋ `cursor:not-allowed` |
+
+#### 必備
+
+- 面 `role="menu"`，項 `role="menuitem"`（兩個選單都已經有）。
+- 觸發鈕 `aria-expanded` 跟著開關同步。
+- 每一項 `min-height:44px` —— 選單就是為了「拇指按不準」而存在的，
+  它自己不能又做成 34px。
+- `Esc` 與點外面關得掉。
+- 框用 `--ink` 而不是 `--line`：**可以點的浮層要比背景重一階**。
+  純讀的浮層（`.ad-nav-tip` 說明泡泡）維持 `--line`。
+
+> `.ad-rowmenu` 存在的理由：「編輯」和「刪除」原本只隔 10px，拇指一按很容易點錯。
+> 可排序的清單在觸控裝置上也完全沒有排序工具（拖曳用不了），
+> 所以順序也收進這一顆：上移／下移／移到最前／移到最後。
+
+#### 不是選單的兩個東西
+
+| | 是什麼 | 差別 |
+|---|---|---|
+| `.ad-navgroup` | 側欄裡可摺疊的分組 | 它是導覽結構，不是一疊動作 |
+| `.ad-nav-tip` | 側欄項目的說明泡泡 | `pointer-events:none`，只給有滑鼠的機器（`<900px` 側欄是觸控抽屜，「點一下先跳說明、再點一次才切分頁」是壞掉的互動） |
+
+---
+
+### 3.10 卡片
+
+#### 先決定：這一筆該是「卡片」還是「清單列」？
+
+判準只有一條 —— **一筆裡有幾行、行高是否參差**：
+
+| 一筆的樣子 | 用什麼 |
+|---|---|
+| 一到兩行、右邊一個數字，上下對得起來 | **清單列**（`--line-soft` 一條線就夠） |
+| 三行以上、每行高低不一 | **卡片**（白底＋框，眼睛才分得出「這幾行是同一筆」） |
+
+所以名字裡有 card 的東西不一定是卡片，這是這份程式碼裡最容易踩的一個坑：
+
+| Class | 名字 | 實際上是 |
+|---|---|---|
+| `.ad-rcard` | 回覆卡 | **卡片**（一筆三行、高低不一） |
+| `.ad-btcard` | 收禮卡 | **清單列**（姓名＋一行說明＋右邊金額） |
+| `.ad-msg` | 悄悄話 | **清單列** |
+
+#### 真的是卡片的那幾個
+
+一律：白底 ＋ 1px `--line` ＋ `--radius`。差別只在內距，而內距分四階：
+
+| 階 | padding | 誰在用 |
+|---|---|---|
+| 緊 | `7px 9px` | `.sp-card`（排桌的賓客卡，一欄裡要塞幾十張） |
+| 標準 | `10px`／`13px 14px` | `.ad-card figcaption`（小卡）、`.ad-rcard`（回覆卡） |
+| 寬 | `18px 20px`／`20px 20px 18px` | `.ad-callout`、`.ad-letter-card`、`.ad-bt-link` |
+| 對話 | `26px 24px 22px`／`30px 22px 26px`／`44px 34px` | `.ad-modal-card`、`.ad-hero-stat`、`.gate-card` |
+
+> 挑一階，不要再發明第五個數字。
+
+#### 左邊那道 3px 色帶
+
+卡片要標記「這一張不一樣」時，用 `border-left:3px solid …`，**不要換底色**：
+
+| 用法 | 顏色 |
+|---|---|
+| `.ad-callout` | `--primary-deep`（要注意的說明） |
+| `.ad-letter-card.is-default` | `--primary-deep`（沒對到詞彙時的那一封） |
+| `.sp-card.is-rsvp-maybe` | `--sun`（待確認） |
+| `.sp-card.is-rsvp-no` | `rgba(164,103,122,.55)` ＋ `opacity:.66`（無法出席） |
+
+換底色只留給「整張要淡出視野」的情況：`.ad-rcard:has(.ad-tag-no){background:var(--bg2)}`
+—— 名單掃過去時，要找的是會來的那些人。
+
+#### 卡片與表格的關係
+
+`.ad-rcard` 與 `.ad-btcard` 都是**窄螢幕的表格替代品**，由 `onNarrowChange()` 切換：
+
+- 桌機維持 `.ad-table`（同一欄上下對得起來，才比得出誰吃素）
+- 窄螢幕換成卡片／列（16 欄的表格在 390px 手機上實寬約 1400px，
+  要左右滑三四個螢幕才看得到「人數／葷／素」，而那正是最常看的三欄）
+
+新做一份表格時，**同時想好窄螢幕長什麼樣**，不要只加 `overflow-x:auto` 了事。
+
+---
+
+### 3.11 清單 `.ad-list` / `.ad-item`
 
 ```html
 <div class="ad-list">
@@ -328,49 +567,52 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 </div>
 ```
 
-- 一列一件事，`--line-soft` 分隔，**沒有框**。
+- 一列一件事，`--line-soft` 分隔，**沒有框**（要不要給框見 3.10 的判準）。
 - 整列可點時把 `.ad-item` 換成 `<button class="ad-item">`（收禮台就是這樣），
   記得歸零 border 並保持 `font-family: var(--font-ui)`。
 - `.ad-list-panel` 是唯讀數字清單的變體（白底 ＋ 框），
   和統計方格站在一起時才用 —— 不然同一頁上兩塊有框、第三塊突然沒有。
 
-### 3.8 表格 `.ad-table` / `.ad-tablewrap`
+### 3.12 表格 `.ad-table` / `.ad-tablewrap`
 
-- 表頭 sticky、`--bg2` 底、11.5px `--ink-soft`。
+- 表頭 sticky、`--bg2` 底、11.5px `--ink-soft`；`.ad-th-link` 是表頭裡的 pill（3.3c）。
 - `.ad-tablewrap` 是一張白底的面（會列數字的地方才有面）。
-- 窄螢幕改成卡片（`.ad-rcard` 出席回覆／`.ad-btcard` 收禮明細），
-  切換由 JS 的 `onNarrowChange()` 驅動。
+- hover 整列 `rgba(0,0,0,.035)`，只給 `(hover:hover) and (pointer:fine)`。
+- **窄螢幕一定要有替代版**（見 3.10 末段），不要只加 `overflow-x:auto`。
 
-### 3.9 數字面板
+### 3.13 數字面板
 
 **規則只有一條：要拿來比對的數字，站在一張白底圓角的面上；其餘只留線。**
 
 | Class | 用途 |
 |---|---|
-| `.ad-hero-stat` ＋ `.ad-hero-num` | 唯一的主數字（禮金總額、總回覆）。`clamp(34px,11vw,84px)`、`tabular-nums` |
+| `.ad-hero-stat` ＋ `.ad-hero-num` | 唯一的主數字。`clamp(34px,11vw,84px)`、`tabular-nums`、`overflow-wrap:anywhere`（台灣禮金破百萬很常見） |
 | `.ad-stats` ＋ `.ad-stat` | 統計方格。預設四欄，`.ad-stats-2` `.ad-stats-3` 變體；格線是 `gap:1px` 透出底色 |
 | `.ad-donuts` ＋ `.ad-donut` | 環狀圖群組 |
 
-數字一律 `--primary-deep` ＋ `font-variant-numeric: tabular-nums`。
+數字一律 `--primary-deep` ＋ `font-variant-numeric: tabular-nums` ＋ Editorial 軌。
 
-### 3.10 分頁 `.ad-pager`
+### 3.14 分頁器 `.ad-pager`
 
 RSVP／桌次名單／悄悄話／感謝信／收禮明細共用。
-**任何可能長到 100 筆以上的清單都要有** —— 婚宴當天 300 筆一次畫出來，
-手機捲起來會卡。
+**任何可能長到 100 筆以上的清單都要有** —— 婚宴當天 300 筆一次畫出來，手機捲起來會卡。
+搜尋或換篩選條件後一律 `pager.page = 1`。
 
-### 3.11 導覽
+### 3.15 版面骨架
 
 | Class | 說明 |
 |---|---|
 | `.ad-bar` | 頂列，sticky ＋ 毛玻璃。butler 沒有側欄，所以 `.ad-bar-actions` 在窄螢幕**不隱藏**（`butler.css` 覆寫） |
-| `.ad-side` / `.ad-tab` | 側欄選單。≥900px 常駐、<900px 變抽屜（見 3.13） |
-| `.ad-subtabs` / `.ad-subtab` | 分頁內部的橫向子分頁。可橫捲，邊緣用遮罩漸層暗示「右邊還有」；`data-count="2\|3"` 時窄螢幕排成等寬 segmented control |
-| `.ad-navgroup` | 側欄裡的可摺疊群組 |
+| `.ad-layout` / `.ad-main` | 左右兩欄；`.ad-main` 最寬 820px 置中 |
+| `.ad-side` | 側欄，≥900px 常駐、<900px 變抽屜（3.17） |
+| `.ad-sec` / `.ad-sec-head` / `.ad-sec-title` | 區塊。標題列右邊掛動作按鈕 |
+| `.ad-page-title` → `.ad-sec-title` | 兩層標題：一個 subpanel 一個 `.ad-page-title`（21px 明朝體），底下才是小節 |
+| `.ad-savebar` | 長表單的 sticky 儲存列（毛玻璃 ＋ `env(safe-area-inset-bottom)`） |
+| `.ad-offline` | 離線橫幅，sticky 在頂列下面，`role="status"` |
 
 ---
 
-### 3.12 詳細抽屜 `.ad-drawer` / `.sp-drawer`
+### 3.16 詳細抽屜 `.ad-drawer` / `.sp-drawer`
 
 **同一個元件，兩個消費者，一份 CSS。**
 
@@ -389,8 +631,8 @@ RSVP／桌次名單／悄悄話／感謝信／收禮明細共用。
 | 遮罩 | `--scrim-drawer`（.2）—— **背景頁面必須保持可見**，那是這個元件的前提 |
 | 進場 | `translateX(18px)` ＋ 透明度，`--dur-drawer` |
 | 結構 | `-head`（標題／副標／✕）→ `-body`（可捲）→ `-foot`（CTA 貼底） |
-| 關閉鈕 | `✕`，`aria-label="關閉"`，`(pointer:coarse)` 時 44×44 |
-| 底部 | `-foot` 永遠貼底 ＋ `env(safe-area-inset-bottom)`，不用捲到最後才按得到儲存 |
+| 關閉鈕 | `✕`，`aria-label="關閉"`，桌機 15px／觸控 44×44・19px（見 3.2） |
+| 底部 | `-foot` 永遠貼底 ＋ `env(safe-area-inset-bottom)` |
 
 #### 必備行為（缺一個就是 bug）
 
@@ -423,7 +665,7 @@ RSVP／桌次名單／悄悄話／感謝信／收禮明細共用。
 </div>
 ```
 
-### 3.13 側邊選單抽屜 `.ad-side`（<900px）
+### 3.17 側邊選單抽屜 `.ad-side`（<900px）
 
 和詳細抽屜**不是同一個元件**，不要互相抄規格：
 
@@ -436,7 +678,7 @@ RSVP／桌次名單／悄悄話／感謝信／收禮明細共用。
 
 `.ad-side-close` 存在的理由：抽屜的不透明底色會蓋住漢堡鈕，而手機沒有 Esc 可以按。
 
-### 3.14 彈窗 `.ad-modal-*` / bottom sheet
+### 3.18 彈窗 `.ad-modal-*` / bottom sheet
 
 ```html
 <div class="ad-modal-mask" id="xxxMask" hidden>
@@ -461,7 +703,10 @@ RSVP／桌次名單／悄悄話／感謝信／收禮明細共用。
 - `.is-danger` 讓標題轉危險色。
 - 每一個 `.ad-modal-mask` 都由 `bindAllLayers()` 自動註冊 layer。
 
-### 3.15 Toast `.ad-toast`
+**抽屜還是彈窗？** 背景還需要看得到（在名單上點某一筆看細節）→ 抽屜；
+必須先回答才能繼續（刪除確認、新增一筆）→ 彈窗。
+
+### 3.19 Toast `.ad-toast`
 
 `.ad-toast-stack` 固定在底部置中、可疊。白底 ＋ `--ink` 框 ＋ `--shadow-pop`；
 `.is-error` 轉粉底 ＋ 危險色。可帶一顆 `.ad-toast-action`（例如「重試」）。
@@ -469,7 +714,7 @@ RSVP／桌次名單／悄悄話／感謝信／收禮明細共用。
 > 寫入逾時的文案是「**還沒送出去**」不是「存檔失敗」——
 > Firestore 的佇列還在，連線回來會自己補送；講成失敗會害使用者再記一次。
 
-### 3.16 空狀態 `.ad-empty` / 骨架 `.ad-skel`
+### 3.20 空狀態 `.ad-empty` / 骨架 `.ad-skel`
 
 兩者**必須分得開**：
 
@@ -477,34 +722,28 @@ RSVP／桌次名單／悄悄話／感謝信／收禮明細共用。
   （`0 筆` 和「真的還沒有資料」長得一模一樣）。
 - `.ad-empty`：真的沒有資料。`.is-rich` 變體帶虛線框 ＋ 標題 ＋ 一顆 CTA。
 
-### 3.17 行內選單 `.ad-rowmenu`（⋮）
-
-「編輯」和「刪除」原本只隔 10px，拇指一按很容易點錯。
-三個以上的列動作收進這一顆：危險動作排最後、用危險色，
-可排序的清單在這裡提供「上移／下移／移到最前／移到最後」（觸控沒有拖曳可用）。
-
-### 3.18 其他
+### 3.21 其他
 
 | Class | 用途 |
 |---|---|
 | `.ad-callout` | 左邊一道 `--primary-deep` 粗線的說明／開關區塊 |
-| `.ad-savebar` | 長表單的 sticky 儲存列（毛玻璃，含 `env(safe-area-inset-bottom)`） |
-| `.ad-offline` | 離線橫幅，sticky 在頂列下面，`role="status"` |
-| `.ad-eye` | 「顯示／隱藏金額」的開關 pill |
+| `.ad-eye` | 「顯示／隱藏金額」的 pill 開關（3.3c） |
 | `.ad-progress` | 上傳進度 |
 | `.ad-info` | 唯讀的「名稱：值」清單 |
+| `.ad-drag-handle` ＋ `.ad-drag-placeholder` | 拖曳排序（拖曳中的列吃 `--shadow-drag`） |
+| `.sp-peek` | 賓客卡的懸浮預覽（可點，所以是 `--ink` 框） |
 | `.cr-*` | 圖片裁切器（`cropper.js` 動態插入，`≤560px` 一樣貼底） |
-
----
 
 ## 4. 無障礙基準線
 
 | 項目 | 規則 |
 |---|---|
 | 焦點 | `:focus-visible` → 2px `--primary-deep` ＋ 2px offset。輸入框改成邊框轉深 ＋ 2px `--primary-soft` 內光。**兩頁都有**（規則掛 `body:is(admin, butler)`） |
-| 觸控熱區 | `(pointer:coarse)` 一律 ≥44×44（chip／pager 36–40 為例外，它們本身有間距） |
+| 觸控熱區 | 圖示按鈕（✕ ☰ ⋮ ↑↓）與選單項 `(pointer:coarse)` 一律 **44×44**；pill 與 chip 是 36（獨立）／32（嵌在一行字裡），它們本身有間距與周圍文字撐開 |
 | 對比 | 小字的次要色用 `#6f6459`（5.53:1）；最小字級 11px |
-| 圖示按鈕 | 一定要 `aria-label`（`✕` → `關閉`，`⋮` → `更多`） |
+| 圖示按鈕 | 一定要 `aria-label`（`✕` → `關閉`，`☰` → `開啟選單`，`⋮` → `更多`） |
+| 選單 | 面 `role="menu"`、項 `role="menuitem"`、觸發鈕 `aria-expanded` 同步 |
+| 摺疊 | `aria-expanded` ＋ `aria-controls`（`.ad-chips-more`、`.ad-navgroup`、排桌的「篩選」） |
 | 搜尋框 | 一定要 `aria-label`（placeholder 不是標籤） |
 | 浮層 | `role="dialog"` ＋ `aria-modal="true"`，Esc 關得掉，返回鍵關得掉 |
 | 動效 | 尊重 `prefers-reduced-motion` |
@@ -518,7 +757,7 @@ RSVP／桌次名單／悄悄話／感謝信／收禮明細共用。
 npm run test:ui        # tests/ui-consistency.mjs（只需要 hosting emulator）
 ```
 
-擋下最容易默默漂掉的六項：
+擋下最容易默默漂掉的那幾項：
 
 | 檢查 | 為什麼是它 |
 |---|---|
@@ -528,6 +767,11 @@ npm run test:ui        # tests/ui-consistency.mjs（只需要 hosting emulator�
 | 搜尋框 | 八個都在，每一個六項屬性齊全、placeholder 以「搜尋」開頭 |
 | 抽屜 | `.sp-drawer` 的尺寸、層級、dialog 語意、遮罩、CTA 貼底 |
 | 遮罩 | 側欄／彈窗／抽屜三個濃度、同一支冷灰 |
+| 選單 | 兩個下拉選單的面與項規格一致、項 ≥44px、`role="menu"`／`"menuitem"` |
+| 圖示按鈕 | 每一顆都有 `aria-label`；✕ 桌機一律 15px |
+| Pill | 只有 36／32 兩階，字級只有 12／11.5 |
+| Tab | 兩種 tab 的選中語彙（白底 ＋ 字重 500 ＋ 同色定位線） |
+| 卡片 | 白底 ＋ 1px `--line` ＋ 2px 圓角 |
 
 > 測試不需要 Firestore，頁面停在登入門也跑得完 —— 它量的是 CSS 與 HTML 屬性。
 > 加了新元件就順手加一條，不然這份文件會在三個月後變成考古資料。
@@ -557,3 +801,6 @@ npm run test:ui        # tests/ui-consistency.mjs（只需要 hosting emulator�
 | `.ad-side` 的 `inert` | <900px 收起來時只是 transform 移出畫面，內容仍可被 Tab 到 |
 | layer stack 兩份實作 | `admin.js` 的 `pushLayer()` 與 `butler.js` 的 `pushSheetLayer()` 邏輯相同（butler 不載入 `admin.js`）。改一邊要記得改另一邊 |
 | `normKey()` 兩份實作 | 同上（butler 不載入 `common.js`），內容必須保持一字不差 |
+| 排桌還有幾處 10.5px | `.sp-stats .ad-stat-lab`、`.sp-filter-declined small`、`.sp-group-head small`、`.sp-table-hidden`、`.ad-exh-kind` 等仍低於 11px 的最小字級。已經有一條 `10.5 → 11` 的清單，但只涵蓋 8 個選擇器；補齊會動到整個排桌工作區的行高，該獨立一次做 |
+| `.sp-card-move` 熱區 | 32×32，而它只在 `(hover:none)` 出現 —— 也就是永遠在觸控上。放大到 44 需要賓客卡本身跟著長高，那是整個排桌板的版面變動 |
+| `.ad-btcard`／`.ad-msg` 的命名 | 名字有 card，實際是清單列（見 3.10）。改名要動 CSS、JS 與測試，值得做但不該夾在別的改動裡 |
