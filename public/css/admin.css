@@ -199,7 +199,10 @@ body[data-page="admin"]{padding-top:0;}
   gap:12px;flex-wrap:wrap;padding-bottom:11px;margin-bottom:14px;
   border-bottom:1px solid var(--line-soft);}
 .ad-sec-head .ad-sec-title{border-bottom:none;padding-bottom:0;margin-bottom:0;}
-.ad-sec-head-actions{display:flex;gap:8px;flex-wrap:wrap;flex:0 0 auto;}
+/* min-width:0 是關鍵：沒有它的話這一格是 max-content，
+   三顆長按鈕（「匯出 CSV（桌位排桌表）」…）會把整頁撐寬到 1160px，
+   使用者得左右捲整個後台才看得到內容。 */
+.ad-sec-head-actions{display:flex;gap:8px;flex-wrap:wrap;flex:0 1 auto;min-width:0;}
 
 /* 一句話的重點框：開關擺在最上面，說明接在下面 */
 .ad-callout{border:1px solid var(--line);border-left:3px solid var(--primary-deep);
@@ -854,7 +857,30 @@ select.ad-input{appearance:none;cursor:pointer;
   .ad-bar{padding:12px 14px;}
   .ad-subtab{font-size:12.5px;letter-spacing:.08em;padding:10px 14px;}
   .ad-sec-head{align-items:flex-start;}
-  .ad-sec-head-actions .btn{flex:1 1 auto;}
+
+  /* 標題那一列的按鈕：塞不下就在自己這一條裡左右捲，
+     不要換行疊成三層、更不要把整頁拉寬。
+     刻意不加漸層遮罩 —— 底下是整頁的漸層底色，補不出一塊對得上的純色。
+     改成讓最後一顆在右緣被切掉一角：那本來就是「旁邊還有」最好懂的說法。
+     負的 margin ＋ 同寬的 padding 讓捲動區延伸到版心邊緣，
+     第一顆按鈕仍然對齊標題。
+     上下也留 4px：overflow-x:auto 會讓 overflow-y 跟著變成可裁切，
+     沒有這 4px 的話鍵盤 focus 的外框會被切掉一圈。 */
+  .ad-sec-head-actions{
+    flex:1 1 100%;flex-wrap:nowrap;overflow-x:auto;
+    scrollbar-width:none;-webkit-overflow-scrolling:touch;
+    scroll-snap-type:x proximity;overscroll-behavior-x:contain;
+    margin:0 -16px;padding:4px 16px;
+  }
+  .ad-sec-head-actions::-webkit-scrollbar{display:none;}
+  /* flex:1 0 auto 一次講完兩種情況：
+       放得下 —— 有剩餘空間，grow 讓按鈕長滿一整排（拇指好按）
+       放不下 —— 沒有剩餘空間可分，shrink 是 0 所以不會被壓扁，
+                 溢出的部分交給上面的 overflow-x 去捲
+     所以不必事先知道有幾顆按鈕、標籤有多長。 */
+  .ad-sec-head-actions .btn,
+  .ad-sec-head-actions .ad-eye{flex:1 0 auto;scroll-snap-align:start;white-space:nowrap;}
+
   .ad-modal-actions{flex-direction:column-reverse;}
   .ad-modal-actions .btn{width:100%;}
   .ad-toast-stack{width:calc(100vw - 24px);}
@@ -891,12 +917,23 @@ select.ad-input{appearance:none;cursor:pointer;
 .sp-bar-status{display:flex;flex-direction:column;gap:4px;min-width:0;flex:0 1 auto;}
 .sp-bar-actions{display:flex;gap:8px;flex-wrap:wrap;flex:0 0 auto;margin-left:auto;}
 
-.sp-sync{align-self:flex-start;border:1px solid var(--line);border-radius:999px;
+/* 狀態標籤與「未儲存」站在同一排（見 seating-plan.js 的 renderSyncState）：
+   一句話只講一次 —— 標籤說同步到哪了，未儲存說本機還有沒有動過，
+   底下那行只剩「最後送出：時間」，不再把同一件事用三種說法重寫。 */
+.sp-bar-state{display:flex;align-items:center;flex-wrap:wrap;gap:6px;}
+.sp-sync{border:1px solid var(--line);border-radius:999px;
   padding:3px 12px;font-size:11.5px;letter-spacing:.1em;color:var(--ink-soft);
   white-space:nowrap;}
 .sp-sync[data-state="ok"]{color:var(--primary-deep);border-color:var(--primary);}
 .sp-sync[data-state="stale"]{color:#8a5765;border-color:rgba(164,103,122,.45);}
 .sp-sync-note{font-size:11.5px;line-height:1.7;letter-spacing:.02em;color:var(--ink-soft);}
+.sp-sync-note:empty{display:none;}
+/* 未儲存：一顆點 ＋ 三個字，和「儲存排桌」上那顆紅點是同一件事的兩個位置 */
+.sp-dirty{display:inline-flex;align-items:center;gap:6px;
+  font-size:11.5px;letter-spacing:.08em;color:#8a5765;white-space:nowrap;}
+.sp-dirty[hidden]{display:none;}
+.sp-dirty::before{content:'';flex:0 0 auto;width:6px;height:6px;
+  border-radius:50%;background:#a4677a;}
 
 /* 有還沒存的修改時，「儲存排桌」自己站出來 */
 .btn.is-dirty{position:relative;}
@@ -918,9 +955,13 @@ select.ad-input{appearance:none;cursor:pointer;
 .sp-stats .ad-stat-lab{margin-top:2px;font-size:10.5px;letter-spacing:.04em;
   white-space:nowrap;}
 /* 窄螢幕拆成兩段：先四個統計，一條線之後才是同步狀態與按鈕。
-   先看「還剩幾個人沒排」，再決定要不要存、要不要同步。 */
+   先看「還剩幾個人沒排」，再決定要不要存、要不要同步。
+   ⚠️ 這三條 `flex:1 1 100%` 只有在 .sp-bar 仍是 row 的時候才是「換一行」。
+   一旦把 .sp-bar 改成 column，flex-basis 量的就變成「高度的 100%」，
+   三塊會各自撐開一整個容器高 —— 手機上那一大片空白就是這樣來的。
+   所以 .sp-bar 永遠保持 row + wrap，靠 100% 的基準寬自己拆行。 */
 @media(max-width:1180px){
-  .sp-bar{gap:10px;}
+  .sp-bar{gap:10px;align-items:flex-start;}
   .sp-stats{flex:1 1 100%;order:1;}
   .sp-bar-status{flex:1 1 100%;order:2;
     padding-top:10px;border-top:1px solid var(--line-soft);}
@@ -1041,10 +1082,17 @@ select.ad-input{appearance:none;cursor:pointer;
 .sp-card.is-dragging{opacity:.45;cursor:grabbing;}
 /* 搜尋命中：已經坐在桌上的人也標起來，「王小明在第 06 桌」一眼看到 */
 .sp-card.is-hit{border-color:var(--ink);background:var(--primary-soft);}
-/* RSVP 狀態不佔一行，改用左邊那道細線表示 */
-.sp-card{border-left:3px solid transparent;}
+/* RSVP 狀態不佔一行，改用左邊那道細線表示。
+   已確認的人沒有顏色可標，但線本身要留著 —— 之前是 transparent，
+   於是一張卡上下右三邊有框、左邊憑空缺一道，看起來像沒畫完。 */
+.sp-card{border-left:3px solid var(--line);}
 .sp-card.is-rsvp-maybe{border-left-color:var(--sun);}
 .sp-card.is-rsvp-no{border-left-color:rgba(164,103,122,.55);opacity:.66;}
+@media (hover:hover) and (pointer:fine){
+  .sp-card:hover{border-left-color:var(--ink);}
+  .sp-card.is-rsvp-maybe:hover{border-left-color:var(--sun);}
+  .sp-card.is-rsvp-no:hover{border-left-color:rgba(164,103,122,.55);}
+}
 
 .sp-card-line{display:flex;align-items:baseline;gap:7px;}
 .sp-card-code{flex:0 0 auto;font-family:var(--font-display);font-size:10.5px;
@@ -1131,9 +1179,12 @@ select.ad-input{appearance:none;cursor:pointer;
 .sp-table.is-full .sp-table-left{color:var(--seat-full);font-weight:500;}
 .sp-table.is-over .sp-table-left{color:var(--seat-over);font-weight:500;}
 
-.sp-table-flags{display:flex;flex-wrap:wrap;gap:5px;padding:0 12px 8px;}
-.sp-flag{border:1px solid var(--line-soft);border-radius:999px;padding:1px 8px;
-  font-size:10.5px;letter-spacing:.04em;color:var(--ink);background:var(--bg2);}
+/* 標籤是「桌況」的補述，不是桌頭那條線的一部分 ——
+   padding-top 讓它離線一格，才不會看起來黏在上面 */
+.sp-table-flags{display:flex;flex-wrap:wrap;gap:5px;padding:9px 12px 2px;}
+.sp-flag{border:1px solid var(--line-soft);border-radius:999px;padding:2px 9px;
+  font-size:10.5px;line-height:1.6;letter-spacing:.04em;
+  color:var(--ink);background:var(--bg2);}
 
 .sp-table-body{flex:1 1 auto;display:flex;flex-direction:column;gap:5px;
   padding:9px 10px 11px;min-height:66px;}
@@ -1283,6 +1334,84 @@ select.ad-input{appearance:none;cursor:pointer;
   background:rgba(164,103,122,.06);padding:7px 11px;
   font-size:12px;line-height:1.7;color:#8a5765;}
 
+/* ============================================================
+   匯入匯出那一頁
+   ------------------------------------------------------------
+   這一頁的讀者是「還沒做過這件事的人」，所以版面的工作是
+   讓他先看到東西、再讀字：
+     .sp-io-grid   匯出的兩種檔案 —— 直接把表頭與前幾列畫出來
+     .sp-io-way    匯入的兩條路 —— 一條一張卡，按鈕就在標題旁邊
+     .sp-io-steps  五個步驟 —— 每一步一張真的畫面（見 scripts/build-guide-shots.js）
+============================================================ */
+/* align-items:start：兩張卡各自長到自己的高度。拉齊的話，
+   內容少的那一張下面會空出一大塊，看起來像少畫了什麼。 */
+.sp-io-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:14px;margin-top:16px;align-items:start;}
+.sp-io-card{border:1px solid var(--line);border-radius:var(--radius);
+  background:#fff;padding:16px 16px 14px;
+  display:flex;flex-direction:column;min-width:0;}
+.sp-io-card-title{margin:0;font-family:var(--font-display);font-size:14.5px;
+  font-weight:500;letter-spacing:.12em;color:var(--ink);}
+.sp-io-card-note{margin:7px 0 0;font-size:12px;line-height:1.9;
+  letter-spacing:.03em;color:var(--ink-soft);}
+/* 示範表格是「這個檔案長什麼樣」的縮影，不是可以操作的資料 ——
+   壓小一級、關掉游標，讓它看起來就是一張圖 */
+.sp-io-sheet{margin-top:12px;overflow-x:auto;
+  border:1px solid var(--line-soft);border-radius:var(--radius);
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;user-select:none;}
+.sp-io-sheet::-webkit-scrollbar{display:none;}
+.sp-io-sheet .sp-preview{font-size:11px;}
+.sp-io-sheet .sp-preview th,.sp-io-sheet .sp-preview td{padding:5px 8px;}
+.sp-io-sheet .sp-preview tr:last-child td{border-bottom:none;}
+/* 桌位排桌表不是一張平的表，是一桌一段。三種列各自長不一樣，
+   不然那張示範圖看起來就只是一堆姓名，看不出「分組」這件事。 */
+.sp-io-sheet .sp-preview tr.is-group td{
+  font-family:var(--font-display);letter-spacing:.1em;
+  color:var(--primary-deep);background:var(--bg2);}
+.sp-io-sheet .sp-preview tr.is-sub td{color:var(--ink-soft);letter-spacing:.06em;}
+.sp-io-sheet .sp-preview tr.is-sum td{color:var(--ink);font-weight:500;}
+.sp-io-sheet .sp-preview tr.is-gap td{padding:0;height:7px;border-bottom:none;}
+
+.sp-io-way{border:1px solid var(--line);border-left:3px solid var(--primary-deep);
+  border-radius:var(--radius);background:#fff;padding:18px 20px 16px;margin-top:14px;}
+.sp-io-way-head{display:flex;align-items:center;flex-wrap:wrap;gap:10px;}
+.sp-io-way-tag{flex:0 0 auto;border:1px solid var(--line);border-radius:999px;
+  padding:2px 10px;font-size:10.5px;letter-spacing:.14em;color:var(--ink-soft);}
+.sp-io-way-title{flex:1 1 auto;min-width:0;margin:0;
+  font-family:var(--font-display);font-size:16px;font-weight:500;
+  letter-spacing:.14em;color:var(--ink);}
+.sp-io-way-head .btn{flex:0 0 auto;}
+.sp-io-way-note{margin:11px 0 0;font-size:12.5px;line-height:1.95;
+  letter-spacing:.03em;color:var(--ink-soft);}
+.sp-io-way-note b{color:var(--ink);font-weight:500;}
+
+/* 五個步驟：靠左邊那道線串起來，一眼看得出「這是一條流程」 */
+.sp-io-steps{list-style:none;margin:18px 0 0;padding:0 0 0 13px;
+  border-left:1px solid var(--line-soft);
+  display:flex;flex-direction:column;gap:22px;}
+.sp-io-step{position:relative;min-width:0;}
+.sp-io-step-head{display:flex;align-items:center;gap:9px;
+  font-size:13.5px;letter-spacing:.1em;color:var(--ink);}
+.sp-io-step-no{flex:0 0 22px;height:22px;margin-left:-25px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;background:var(--primary-deep);color:#fff;
+  font-family:var(--font-display);font-size:11px;font-weight:500;}
+.sp-io-step-note{margin:7px 0 0;font-size:12.5px;line-height:1.95;
+  letter-spacing:.03em;color:var(--ink-soft);}
+.sp-io-step-note b{color:var(--ink);font-weight:500;}
+
+/* 截圖：本來就是 620px 寬的 1× 圖，放大只會糊，所以只准縮不准放 */
+.sp-io-shot{margin:11px 0 0;}
+.sp-io-shot img{display:block;width:100%;max-width:620px;height:auto;
+  border:1px solid var(--line);border-radius:var(--radius);background:#fff;}
+
+@media(max-width:560px){
+  .sp-io-card{padding:14px 13px 12px;}
+  .sp-io-way{padding:15px 14px 13px;}
+  .sp-io-way-head .btn{flex:1 1 100%;}
+  .sp-io-steps{gap:18px;}
+}
+
 /* ---------- 平板／手機 ----------
    拖曳在觸控裝置上不好用，改成每張卡片自己的「移動到桌位」；
    未安排區改成貼在最上面的一塊，仍然是先看到的東西。 */
@@ -1297,7 +1426,8 @@ select.ad-input{appearance:none;cursor:pointer;
   .sp-pool-body .sp-group-head{grid-column:1 / -1;}
 }
 @media(max-width:560px){
-  .sp-bar{flex-direction:column;align-items:stretch;}
+  /* 不要改成 column —— 見上面 @media(max-width:1180px) 的說明 */
+  .sp-bar{padding:12px 14px;}
   .sp-bar-actions .btn{flex:1 1 auto;}
   .sp-filter-lab{flex:0 0 100%;}
   .sp-tables{grid-template-columns:1fr;}
@@ -1353,6 +1483,11 @@ select.ad-input{appearance:none;cursor:pointer;
   .ad-bt-acts{justify-content:flex-start;}
 }
 
+/* ---------- 圖示 ----------
+   <symbol> 的收納處本身不該佔版面，也不該被螢幕閱讀器讀到。
+   用 display:none 會讓部分瀏覽器連 <use> 都取不到，所以改成收成 0×0。 */
+.ad-icon-sprite{position:absolute;width:0;height:0;overflow:hidden;}
+
 /* ---------- 遮住／顯示金額的那顆眼睛 ----------
    網路銀行的作法：預設是 [---]，按一下才露出來。
    做成一顆有框的小膠囊 —— 它會改變畫面上的資訊，不是純裝飾。 */
@@ -1366,20 +1501,16 @@ select.ad-input{appearance:none;cursor:pointer;
 }
 .ad-eye:hover{border-color:var(--ink);color:var(--ink);}
 .ad-eye.is-on{border-color:var(--primary-deep);color:var(--primary-deep);}
-/* 眼睛本體：一個橢圓加一顆瞳孔，遮住時再加一條斜線（純 CSS，不用圖檔） */
+/* 眼睛本體：Feather 的 eye／eye-off（見 admin.html 最上面的 <symbol> 收納處）。
+   兩顆都畫在 DOM 裡，用 display 換，切換時不會有任何載入或重排。 */
 .ad-eye-ic{
-  position:relative;flex:0 0 auto;width:16px;height:10px;
-  border:1px solid currentColor;border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;
+  flex:0 0 auto;width:15px;height:15px;
+  fill:none;stroke:currentColor;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round;
 }
-.ad-eye-ic::before{
-  content:'';position:absolute;top:50%;left:50%;width:4px;height:4px;
-  margin:-2px 0 0 -2px;border-radius:50%;background:currentColor;
-}
-.ad-eye-ic::after{
-  content:'';position:absolute;top:50%;left:-2px;width:20px;height:1px;
-  background:currentColor;transform:rotate(-32deg);transform-origin:left center;
-}
-.ad-eye.is-on .ad-eye-ic::after{display:none;}
+.ad-eye .ad-eye-ic-on{display:none;}
+.ad-eye.is-on .ad-eye-ic-off{display:none;}
+.ad-eye.is-on .ad-eye-ic-on{display:block;}
 @media(max-width:560px){
   .ad-eye{margin-left:8px;padding:6px 12px;min-height:36px;}
 }
@@ -1733,18 +1864,44 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
 #spMoreMask .sp-stats .ad-stat{padding:12px 8px;border-right:1px solid var(--line-soft);
   border-bottom:1px solid var(--line-soft);border-left:none;}
 
-/* 賓客卡右側的「移動」：觸控裝置不用先開 peek 才碰得到（原本要 2 tap） */
+/* 賓客卡右側的「移動」：觸控裝置不用先開 peek 才碰得到（原本要 2 tap）。
+   ------------------------------------------------------------
+   原本這顆自己有一圈 1px 的框，站在離卡片外框只有 5px 的地方 ——
+   兩條平行線擠在一起，整張卡看起來就是「塞滿了」。
+   改成平常只留箭頭本身（沒有框），按下去的那一刻才浮出外框與底色：
+   框是「你正碰著它」的回饋，不是它一直需要的裝飾。 */
 .sp-card-move{
-  display:none;position:absolute;top:50%;right:5px;transform:translateY(-50%);
-  width:32px;height:32px;padding:0;border:1px solid var(--line);
-  border-radius:var(--radius);background:#fff;cursor:pointer;
-  font-size:14px;line-height:1;color:var(--ink-soft);
+  display:none;position:absolute;top:50%;right:4px;transform:translateY(-50%);
+  width:38px;height:38px;padding:0;border:1px solid transparent;
+  border-radius:var(--radius);background:transparent;cursor:pointer;
+  font-size:15px;line-height:1;color:var(--ink-soft);
+  transition:border-color var(--dur-btn) ease-out,background var(--dur-btn) ease-out,
+             color var(--dur-btn) ease-out;
 }
 @media (hover:none){
   .sp-card-move{display:flex;align-items:center;justify-content:center;}
   /* 讓出按鈕的位置，名字不要被蓋住 */
-  .sp-card-line{padding-right:34px;}
+  .sp-card-line{padding-right:42px;}
+  .sp-card-tags{padding-right:42px;}
+
+  /* 一張卡就是一個要點得到的目標，所以在拇指上放大一格：
+     內距、行距、卡與卡之間都拉開，桌卡才不會擠成一疊格線。
+     桌機維持原本的密度（一個螢幕要塞得下更多桌）。 */
+  .sp-card{padding:10px 11px;border-radius:var(--radius);}
+  .sp-card-line{min-height:24px;}
+  .sp-card-name{font-size:14.5px;}
+  .sp-card-count{font-size:12.5px;}
+  .sp-card-tags{margin-top:6px;}
+  .sp-chip{padding:2px 9px;font-size:11px;}
+  .sp-table-body{gap:8px;padding:10px 11px 12px;}
+  .sp-pool-body{gap:8px;}
+  .sp-pool-body .sp-group{gap:8px;}
 }
+.sp-card-move:active{
+  border-color:var(--primary-deep);background:var(--primary-soft);
+  color:var(--primary-deep);
+}
+.sp-card-move:focus-visible{outline:2px solid var(--primary-deep);outline-offset:1px;}
 
 /* 「拖曳」在觸控裝置是無效資訊：同一句話兩種寫法，由 CSS 決定給誰看 */
 .only-fine{display:none;}

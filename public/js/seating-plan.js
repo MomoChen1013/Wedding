@@ -1360,6 +1360,12 @@
     const note = $('spSyncNote');
     const btn = $('spSyncBtn');
 
+    /* 這裡有兩件互相獨立的事，各自只講一次：
+         同步狀態 —— 賓客那一頁看到的是不是最新的（標籤 ＋ 最後送出時間）
+         未儲存　 —— 這台機器上還有沒有動過但沒存的（「未儲存」那顆點）
+       之前把「有還沒儲存的修改」串在同步說明後面，於是一個角落裡
+       「有修改還沒送出」「還沒重新送出」「有還沒儲存的修改」三句話
+       輪流講同一件事，反而看不出到底哪件事還沒做。 */
     let state = 'none';
     let text = '還沒送出';
     let hint = '還沒送到賓客的查座位頁';
@@ -1371,10 +1377,7 @@
     } else if (syncedAt) {
       state = 'stale';
       text = '有修改還沒送出';
-      hint = `排桌改過了，還沒重新送出（最後送出：${fmtTime(syncedAt)}）`;
-    }
-    if (dirty) {
-      hint += hint ? '・有還沒儲存的修改' : '有還沒儲存的修改';
+      hint = `最後送出：${fmtTime(syncedAt)}`;
     }
 
     el.dataset.state = state;
@@ -1382,16 +1385,22 @@
     note.textContent = hint;
     btn.textContent = syncedAt ? '再送一次' : '送到賓客的查座位頁';
 
+    const dirtyEl = $('spDirty');
+    if (dirtyEl) dirtyEl.hidden = !dirty;
+
     $('spSaveBtn').classList.toggle('is-dirty', dirty);
     $('spUndo').disabled = !undoStack.length;
     $('spRedo').disabled = !redoStack.length;
 
-    /* 手機底列與「⋮ 更多」裡的那一組是同一件事，狀態要一起同步 */
+    /* 手機底列與「⋮ 更多」裡的那一組是同一件事，狀態要一起同步。
+       「⋮ 更多」是另一個畫面，那裡看不到上面的標籤，所以是唯一
+       需要把兩件事併成一句的地方。 */
     $('spMbSave').classList.toggle('is-dirty', dirty);
     $('spMbUndo').disabled = !undoStack.length;
     $('spMbRedo').disabled = !redoStack.length;
     $('spMbSync').textContent = btn.textContent;
-    $('spMoreSync').textContent = hint;
+    $('spMoreSync').textContent =
+      [text, hint, dirty ? '有還沒儲存的修改' : ''].filter(Boolean).join('・');
   }
 
   /* ============================================================

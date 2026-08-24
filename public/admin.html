@@ -21,6 +21,29 @@
 </head>
 <body data-theme="champagne" data-page="admin">
 
+<!-- ============================================================
+     圖示（Feather Icons v4.29 · MIT License · feathericons.com）
+     ------------------------------------------------------------
+     原本這幾顆是用 border-radius ＋ ::before/::after 拼出來的形狀。
+     拼得出「一個橢圓加一顆點」，但拼不出一致的筆畫粗細，
+     字級一變、主題一換就走樣。改成直接放 Feather 的原始路徑：
+     24×24 的框、2px 圓頭線條，跟後台其餘線條同一個語彙。
+
+     用 <symbol> 收在這裡、各處用 <use> 取用 ——
+     同一顆圖示在頁面上出現幾次都只有一份路徑資料。
+     stroke 用 currentColor，所以顏色跟著按鈕的文字狀態走。
+============================================================ -->
+<svg class="ad-icon-sprite" aria-hidden="true" focusable="false"><defs>
+  <symbol id="ic-eye" viewBox="0 0 24 24">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+    <circle cx="12" cy="12" r="3"/>
+  </symbol>
+  <symbol id="ic-eye-off" viewBox="0 0 24 24">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+    <line x1="1" y1="1" x2="23" y2="23"/>
+  </symbol>
+</defs></svg>
+
 <div class="bg-decor"></div>
 
 <!-- ============ 登入門 ============ -->
@@ -717,8 +740,14 @@
            工作區才拿得回螢幕的高度（窄螢幕會自己拆行） -->
       <div class="sp-bar">
         <div class="ad-stats sp-stats" id="spStats"></div>
+        <!-- 兩件事分開講：上面那排是「同步到哪了」＋「本機還有沒有沒存的」，
+             下面那行只剩最後送出的時間。三種說法講同一件事會讓人看不出
+             到底哪一件還沒做（見 js/seating-plan.js 的 renderSyncState）。 -->
         <div class="sp-bar-status">
-          <span class="sp-sync" id="spSyncState" data-state="none">尚未同步</span>
+          <div class="sp-bar-state">
+            <span class="sp-sync" id="spSyncState" data-state="none">尚未同步</span>
+            <span class="sp-dirty" id="spDirty" hidden>未儲存</span>
+          </div>
           <span class="sp-sync-note" id="spSyncNote">還沒送到賓客的查座位頁</span>
         </div>
         <div class="sp-bar-actions">
@@ -820,8 +849,17 @@
     <!-- ---------- 3b-3 匯入匯出 ----------
          匯出在上面：名單排好之後，來這一頁十次有九次是要把成果拿出去
          （印給宴會廳、傳給家人）。匯入是一開始才做一次的事。
-         兩塊的排法也刻意一樣 —— 標題與按鈕同一行，說明接在下面。 -->
+
+         這一頁以前是四段文字。問題不在字數，在於它要人「先讀完、再想像」：
+         「欄位對應」四個字沒有告訴任何人那一步要做什麼決定。
+         所以改成 —— 每一件事都先給看的，字只負責補上圖裡看不出來的部分：
+           匯出　兩種檔案長什麼樣，直接把表頭與前幾列畫出來
+           匯入　兩條路各自一張卡，Excel 那條再附五步的實際畫面
+         截圖由 scripts/build-guide-shots.js 產生（跟後台同一份 CSS 畫的），
+         精靈的樣式改過就重跑一次。 -->
     <div class="ad-subpanel" data-subpanel="io">
+
+      <!-- ===== 匯出 ===== -->
       <section class="ad-sec">
         <div class="ad-sec-head">
           <h2 class="ad-sec-title ad-page-title">匯出</h2>
@@ -832,28 +870,175 @@
           </div>
         </div>
         <p class="ad-sec-note">
-          「賓客明細」是一列一位賓客；「桌位排桌表」依桌位分組，每桌最後附上總人數。
-          Excel 檔一次含這兩張工作表。
+          排好的名單拿出去用：印一份給宴會廳、傳一份給家人、或是自己留底。
+          匯出的一律是<b>整份名單</b>，不受目前的篩選與搜尋影響。
+        </p>
+
+        <!-- 兩種檔案的差別用講的講不清楚，直接把它們的樣子畫出來。
+             欄位與排法都照 seating-plan.js 的 EXPORT_HEAD／exportTableRows()，
+             那邊改了這裡也要跟著改，不然示範會騙人。 -->
+        <div class="sp-io-grid">
+          <article class="sp-io-card">
+            <h3 class="sp-io-card-title">賓客明細</h3>
+            <p class="sp-io-card-note">
+              一列一位賓客，九個欄位最完整。<br>
+              要找人、要排序、要再丟回 Excel 算東西時用這張。
+            </p>
+            <div class="sp-io-sheet" role="img"
+                 aria-label="賓客明細的樣子：類別、編號、桌號、桌名、賓客姓名、人數、RSVP、Tags、備註九個欄位，一列一位賓客。">
+              <table class="sp-preview" aria-hidden="true">
+                <thead><tr>
+                  <th>類別</th><th>編號</th><th>桌號</th><th>桌名</th>
+                  <th>賓客姓名</th><th>人數</th><th>RSVP</th><th>Tags</th><th>備註</th>
+                </tr></thead>
+                <tbody>
+                  <tr><td>男方同事</td><td>A01</td><td>02</td><td>男方同事</td>
+                      <td>王大明</td><td>4</td><td>已確認</td><td>素食</td><td></td></tr>
+                  <tr><td>女方親戚</td><td>A02</td><td></td><td></td>
+                      <td>陳美玲</td><td>2</td><td>待確認</td><td></td><td>會晚到</td></tr>
+                  <tr><td>男方親戚</td><td>A03</td><td>01</td><td>主桌</td>
+                      <td>林建宏</td><td>6</td><td>已確認</td><td>兒童</td><td>兒童椅 ×2</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="sp-io-card">
+            <h3 class="sp-io-card-title">桌位排桌表</h3>
+            <p class="sp-io-card-note">
+              一桌一段，每一段最後結一次總人數。<br>
+              要交給宴會廳、要貼在報到桌時用這張。
+            </p>
+            <div class="sp-io-sheet" role="img"
+                 aria-label="桌位排桌表的樣子：一桌一段，段首是桌號與桌名，接著姓名、人數、備註三欄，段尾一列總人數與該桌容量。沒排到桌的人集中在最後的「未安排」那一段。">
+              <table class="sp-preview" aria-hidden="true">
+                <tbody>
+                  <tr class="is-group"><td colspan="3">01　主桌</td></tr>
+                  <tr class="is-sub"><td>姓名</td><td>人數</td><td>備註</td></tr>
+                  <tr><td>陳爸爸</td><td>2</td><td></td></tr>
+                  <tr><td>林媽媽</td><td>3</td><td>素食</td></tr>
+                  <tr class="is-sum"><td>總人數</td><td>5</td><td>容量 10 人</td></tr>
+                  <tr class="is-gap"><td colspan="3"></td></tr>
+                  <tr class="is-group"><td colspan="3">02　男方同事</td></tr>
+                  <tr class="is-sub"><td>姓名</td><td>人數</td><td>備註</td></tr>
+                  <tr><td>張經理</td><td>5</td><td></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+
+        <p class="ad-hint">
+          <b>Excel（.xlsx）</b>一個檔就含上面兩張工作表，通常選它就好。
+          兩顆 <b>CSV</b> 是分開下載單一張表，給要再進其他系統的時候用。
         </p>
       </section>
 
+      <!-- ===== 匯入 ===== -->
       <section class="ad-sec">
-        <div class="ad-sec-head">
-          <h2 class="ad-sec-title">匯入</h2>
-          <div class="ad-sec-head-actions">
+        <h2 class="ad-sec-title ad-page-title">匯入</h2>
+        <p class="ad-sec-note">
+          兩條路，差別只在<b>名單現在在哪裡</b>。兩條都是「加上去」——
+          原本的名單不會被清掉，匯完不滿意還可以用工作區的「復原」還原。
+        </p>
+
+        <!-- 路一：資料已經在系統裡 -->
+        <article class="sp-io-way">
+          <div class="sp-io-way-head">
+            <span class="sp-io-way-tag">路線一</span>
+            <h3 class="sp-io-way-title">從出席表單匯入</h3>
             <button class="btn small" id="spImportRsvpBtn" type="button">從出席表單匯入</button>
+          </div>
+          <p class="sp-io-way-note">
+            名單已經在系統裡的時候用這條 —— 抓的是<b>現在收到的出席回覆</b>，
+            姓名、人數、葷素、兒童座椅、標籤會一起帶進排桌名單，<b>不必先匯出成檔案</b>。
+            大部分的人只需要這一條。
+          </p>
+        </article>
+
+        <!-- 路二：資料在自己的檔案裡 -->
+        <article class="sp-io-way">
+          <div class="sp-io-way-head">
+            <span class="sp-io-way-tag">路線二</span>
+            <h3 class="sp-io-way-title">匯入 Excel／CSV</h3>
             <button class="btn small ghost" id="spImportBtn" type="button">匯入 Excel／CSV</button>
           </div>
-        </div>
-        <p class="ad-sec-note">
-          「<b>從出席表單匯入</b>」抓的是<b>現在收到的出席回覆</b> ——
-          姓名、人數、葷素、兒童座椅、標籤會一起帶進排桌名單，不必先匯出成檔案。
-        </p>
-        <p class="ad-sec-note">
-          「<b>匯入 Excel／CSV</b>」是給手上那份名單用的（沒填回覆的長輩、公司桌…）。
-          支援 <b>.xlsx</b> 與 <b>.csv</b>，分成五步：選檔案 → 預覽 → 欄位對應 →
-          檢查資料 → 確認匯入。<b>有問題的那幾筆不會被匯進來</b>，會逐筆告訴你是第幾列、哪裡不對。
-        </p>
+          <p class="sp-io-way-note">
+            名單在自己手上那份檔案裡的時候用這條（沒填回覆的長輩、整桌報上來的公司桌…）。
+            支援 <b>.xlsx</b> 與 <b>.csv</b>，<b>只有「姓名」是必填</b>，
+            其餘欄位對得到就帶進來、對不到就留空。
+          </p>
+
+          <!-- 五個步驟：每一步先看到畫面，字只補圖上看不出來的事 -->
+          <ol class="sp-io-steps">
+            <li class="sp-io-step">
+              <div class="sp-io-step-head"><span class="sp-io-step-no">1</span>選擇檔案</div>
+              <p class="sp-io-step-note">
+                點一下選檔，或直接把檔案拖進那個框。
+                <b>.xlsx 只讀第一張工作表</b>，所以名單要放在第一張。
+              </p>
+              <figure class="sp-io-shot">
+                <img src="/assets/guide/import-step-1.png" loading="lazy" decoding="async"
+                     width="620" height="400"
+                     alt="第一步的畫面：一個虛線方框，寫著「點這裡選擇 Excel／CSV，或把檔案拖進來」。">
+              </figure>
+            </li>
+
+            <li class="sp-io-step">
+              <div class="sp-io-step-head"><span class="sp-io-step-no">2</span>預覽資料</div>
+              <p class="sp-io-step-note">
+                先讓你確認一件事：<b>第一列是不是欄位名稱</b>。
+                如果這裡看到的第一列已經是某個人的資料，代表這份檔案沒有表頭，要先補上再匯一次。
+              </p>
+              <figure class="sp-io-shot">
+                <img src="/assets/guide/import-step-2.png" loading="lazy" decoding="async"
+                     width="620" height="473"
+                     alt="第二步的畫面：讀到的前幾列以表格呈現，第一列是「編號、姓名、人數、關係、桌號、標籤、備註」等欄位名稱。">
+              </figure>
+            </li>
+
+            <li class="sp-io-step">
+              <div class="sp-io-step-head"><span class="sp-io-step-no">3</span>欄位對應</div>
+              <p class="sp-io-step-note">
+                這一步是整個流程唯一要動腦的地方：告訴系統<b>你的哪一欄，是它的哪一欄</b>。
+                欄位名稱猜得到的會先幫你選好（「關係」會自己對到「類別」），
+                <b>只有「姓名」非對不可</b>，其餘用不到就留「（不匯入）」。
+              </p>
+              <figure class="sp-io-shot">
+                <img src="/assets/guide/import-step-3.png" loading="lazy" decoding="async"
+                     width="620" height="760"
+                     alt="第三步的畫面：左邊一排是系統欄位（姓名、編號、類別、人數、桌位、Tags、RSVP、備註），右邊各自一個下拉選單，挑檔案裡對應的欄。">
+              </figure>
+            </li>
+
+            <li class="sp-io-step">
+              <div class="sp-io-step-head"><span class="sp-io-step-no">4</span>檢查資料</div>
+              <p class="sp-io-step-note">
+                <b>有問題的那幾筆不會被匯進來</b>，而且會逐筆告訴你是第幾列、哪裡不對
+                （最常見的是那一列根本沒有姓名）。
+                其餘的照樣匯 —— 不會因為一列有問題就整份退回。
+              </p>
+              <figure class="sp-io-shot">
+                <img src="/assets/guide/import-step-4.png" loading="lazy" decoding="async"
+                     width="620" height="523"
+                     alt="第四步的畫面：上面一條粉色提示寫著「第 6 筆資料：沒有姓名」，下面表格列出可以匯入的那幾筆。">
+              </figure>
+            </li>
+
+            <li class="sp-io-step">
+              <div class="sp-io-step-head"><span class="sp-io-step-no">5</span>確認匯入</div>
+              <p class="sp-io-step-note">
+                最後告訴你要新增幾位、其中幾位會<b>直接排進對應的桌位</b>（檔案裡填了桌號的話）。
+                匯進來的算<b>手動賓客</b>，和出席回覆分開存，不會覆蓋賓客自己送出的紀錄。
+              </p>
+              <figure class="sp-io-shot">
+                <img src="/assets/guide/import-step-5.png" loading="lazy" decoding="async"
+                     width="620" height="400"
+                     alt="第五步的畫面：寫著即將新增幾位賓客、其中幾位會直接排進對應的桌位，並提醒匯入是加上去、可以復原。">
+              </figure>
+            </li>
+          </ol>
+        </article>
       </section>
     </div>
   </div>
@@ -895,7 +1080,11 @@
           禮金總額
           <button class="ad-eye" data-money-eye type="button"
                   aria-pressed="false" aria-label="顯示金額">
-            <span class="ad-eye-ic" aria-hidden="true"></span>
+            <!-- 兩顆都在 DOM 裡，由 .ad-eye.is-on 決定露出哪一顆（見 css/admin.css）：
+                 遮著時是劃掉的眼睛（現在看不到），露出來時是完整的眼睛。
+                 圖示講「現在是什麼狀態」，旁邊的字講「按下去會怎樣」。 -->
+            <svg class="ad-eye-ic ad-eye-ic-off" aria-hidden="true" focusable="false"><use href="#ic-eye-off"/></svg>
+            <svg class="ad-eye-ic ad-eye-ic-on" aria-hidden="true" focusable="false"><use href="#ic-eye"/></svg>
             <span class="ad-eye-tx">顯示金額</span>
           </button>
         </div>
@@ -936,7 +1125,11 @@
         <div class="ad-sec-head-actions">
           <button class="ad-eye" data-money-eye type="button"
                   aria-pressed="false" aria-label="顯示金額">
-            <span class="ad-eye-ic" aria-hidden="true"></span>
+            <!-- 兩顆都在 DOM 裡，由 .ad-eye.is-on 決定露出哪一顆（見 css/admin.css）：
+                 遮著時是劃掉的眼睛（現在看不到），露出來時是完整的眼睛。
+                 圖示講「現在是什麼狀態」，旁邊的字講「按下去會怎樣」。 -->
+            <svg class="ad-eye-ic ad-eye-ic-off" aria-hidden="true" focusable="false"><use href="#ic-eye-off"/></svg>
+            <svg class="ad-eye-ic ad-eye-ic-on" aria-hidden="true" focusable="false"><use href="#ic-eye"/></svg>
             <span class="ad-eye-tx">顯示金額</span>
           </button>
           <button class="btn small ghost" id="adBtExport" type="button">匯出 CSV</button>

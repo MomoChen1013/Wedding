@@ -16,6 +16,7 @@
     "test:all": "npm run test:rules && npm run test:e2e && npm run test:multipage && npm run test:butler",
     "sync-assets": "node scripts/sync-assets.js",
     "build-og": "node scripts/build-og.js",
+    "build-guide-shots": "node scripts/build-guide-shots.js",
     "check-site": "node scripts/check-site.js",
     "set-pages": "node scripts/set-pages.js"
   },
