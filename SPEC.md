@@ -31,6 +31,12 @@
 `shortlink.html` 自帶 CSS／JS（它只是一個轉址頁，不屬於任何站台）；
 其餘頁面（含單頁邀請函）共用 `css/` 與 `js/`，由 `js/site-context.js` 統一載入。
 
+> **後台的 UI 規範另開一份：[`docs/UI-SPEC.md`](docs/UI-SPEC.md)。**
+> 新人後台（`/w/{slug}/admin`）與收禮小幫手（`/butler`）載入同一份
+> `common.css` ＋ `admin.css`，用同一組 `.ad-*` 元件 —— token、元件目錄、
+> 搜尋框與抽屜的規格、無障礙基準線都寫在那裡，
+> 由 `npm run test:ui` 把最容易漂掉的幾項擋下來。
+
 ### 寫入的離線行為（每一頁都適用）
 
 Firestore 在離線時的行為很反直覺，而且踩到的人一定會以為是我們的 bug：

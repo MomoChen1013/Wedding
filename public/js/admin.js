@@ -951,7 +951,9 @@ function guardedRender(hostEl, render){
 }
 
 function skeletonHtml(rows, widths){
-  widths = widths || ['70%', '40%'];
+  /* 一列三條（自訂規範 §3.20）：兩條看起來像「標題＋一行」，
+     而真正載進來的每一列大多是三行，骨架和實體要長得像同一件事 */
+  widths = widths || ['70%', '45%', '30%'];
   let out = '<div class="ad-skel">';
   for(let i = 0; i < rows; i++){
     out += '<div class="ad-skel-row">' +
@@ -2422,8 +2424,13 @@ document.addEventListener('data:rsvps', ()=>{
   refreshTagCounts();
   refreshRsvpDrawer();
 });
+/* ---------- 搜尋框：全站同一組事件 ----------
+   後台所有搜尋框都是 type="search"（見 admin.html／butler.html），
+   而 type="search" 右邊那顆原生清除鈕（✕）在 Safari 只發 `search`、
+   不發 `input`。少接一個，就會出現「按了 ✕、字消失了、清單卻沒變回全部」
+   ——使用者會以為資料不見了。
+   所以規則是：**每一個 .ad-filter 都要同時接 input 與 search**。 */
 rsvpFilterEl.addEventListener('input', ()=>{ rsvpPager.page = 1; renderRsvps(); });
-/* type="search" 的原生清除鈕按下去只會發 input，這裡一起接住 */
 rsvpFilterEl.addEventListener('search', ()=>{ rsvpPager.page = 1; renderRsvps(); });
 
 document.getElementById('adRsvpChips').addEventListener('click', (e)=>{
@@ -3070,6 +3077,7 @@ function renderInbox(){
 
 document.addEventListener('data:letters', renderInbox);
 inboxFilterEl.addEventListener('input', ()=>{ inboxPager.page = 1; renderInbox(); });
+inboxFilterEl.addEventListener('search', ()=>{ inboxPager.page = 1; renderInbox(); });
 
 /* 規則拒絕讀取時（例如帳號被移出 ownerEmails）講清楚，不要留一個空信箱 */
 document.addEventListener('data:letters:denied', ()=>{
@@ -3561,6 +3569,7 @@ function renderSeatList(){
 
 document.addEventListener('data:seating', renderSeatList);
 seatFilterEl.addEventListener('input', ()=>{ seatPager.page = 1; renderSeatList(); });
+seatFilterEl.addEventListener('search', ()=>{ seatPager.page = 1; renderSeatList(); });
 
 seatListEl.addEventListener('click', async (e)=>{
   if(e.target.id === 'adSeatEmptyImport'){ openSeatModal(); return; }
@@ -3775,7 +3784,10 @@ letterChipsEl.addEventListener('click', (e)=>{
   renderLetters();
 });
 
-if(lf.filter) lf.filter.addEventListener('input', renderLetters);
+if(lf.filter){
+  lf.filter.addEventListener('input', renderLetters);
+  lf.filter.addEventListener('search', renderLetters);
+}
 
 lf.list.addEventListener('click', async (e)=>{
   if(e.target.id === 'adLetterEmptyAddBtn'){

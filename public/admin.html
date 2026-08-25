@@ -230,7 +230,7 @@
         <div class="ad-filterbar-row">
           <input class="ad-filter ad-filterbar-search" id="adRsvpFilter" type="search"
                  inputmode="search" enterkeyhint="search" autocomplete="off"
-                 placeholder="搜尋名字、留言或備註…" aria-label="搜尋回覆">
+                 placeholder="搜尋名字、留言、備註…" aria-label="搜尋出席回覆">
         </div>
 
         <!-- 出席只有四顆、而且不會再多，所以固定排成一行（放不下就左右滑），
@@ -448,7 +448,9 @@
 
       <div class="ad-list-head">
         <span id="adInboxCount">目前 0 封</span>
-        <input class="ad-filter" id="adInboxFilter" type="text" placeholder="搜尋名字或內容…">
+        <input class="ad-filter" id="adInboxFilter" type="search"
+               inputmode="search" enterkeyhint="search" autocomplete="off"
+               placeholder="搜尋名字、內容…" aria-label="搜尋悄悄話">
       </div>
 
       <div class="ad-msgs" id="adInboxList"></div>
@@ -685,7 +687,9 @@
 
       <div class="ad-list-head">
         <span id="adSeatCount">目前 0 位</span>
-        <input class="ad-filter" id="adSeatFilter" type="text" placeholder="在名單裡找…">
+        <input class="ad-filter" id="adSeatFilter" type="search"
+               inputmode="search" enterkeyhint="search" autocomplete="off"
+               placeholder="搜尋姓名、桌次…" aria-label="搜尋桌次名單">
       </div>
       <div class="ad-list" id="adSeatList"></div>
     </section>
@@ -754,9 +758,9 @@
           <!-- 搜尋／篩選／排序都是在整理這一區，所以就住在這一區裡 -->
           <div class="sp-tools">
             <div class="sp-tools-row">
-              <input class="ad-filter sp-search" id="spSearch" type="search"
+              <input class="ad-filter ad-filter-sm sp-search" id="spSearch" type="search"
                      inputmode="search" enterkeyhint="search" autocomplete="off"
-                     placeholder="搜尋姓名、編號、標籤…" aria-label="搜尋賓客">
+                     placeholder="搜尋姓名、編號、標籤…" aria-label="搜尋未安排賓客">
               <button class="btn small ghost" id="spFilterToggle" type="button"
                       aria-expanded="false" aria-controls="spFilters">篩選</button>
             </div>
@@ -1050,7 +1054,7 @@
         <span id="adBtCount">目前 0 筆</span>
         <input class="ad-filter" id="adBtFilter" type="search"
                inputmode="search" enterkeyhint="search" autocomplete="off"
-               placeholder="找名字、備註、記錄者…" aria-label="搜尋收禮紀錄">
+               placeholder="搜尋名字、備註、記錄者…" aria-label="搜尋收禮紀錄">
       </div>
 
       <div class="ad-tablewrap" id="adBtTableWrap">
@@ -1126,8 +1130,9 @@
           <button class="ad-chip" type="button" data-letter-kind="default">通用信</button>
           <button class="ad-chip" type="button" data-letter-kind="personal">指定信</button>
         </div>
-        <input class="ad-filter" id="adLetterFilter" type="text"
-               placeholder="搜尋標題、詞彙或內容…">
+        <input class="ad-filter" id="adLetterFilter" type="search"
+               inputmode="search" enterkeyhint="search" autocomplete="off"
+               placeholder="搜尋標題、詞彙、內容…" aria-label="搜尋感謝信">
       </div>
 
       <div class="ad-letter-cards" id="adLetterList"></div>
@@ -1583,7 +1588,8 @@
 
 <!-- 賓客詳細資料：從右邊滑出來，可以直接改 -->
 <div class="sp-drawer-mask" id="spDrawerMask" hidden></div>
-<aside class="sp-drawer" id="spDrawer" hidden aria-label="賓客詳細資料">
+<aside class="sp-drawer" id="spDrawer" hidden
+       role="dialog" aria-modal="true" aria-label="賓客詳細資料">
   <div class="sp-drawer-head">
     <div>
       <div class="sp-drawer-title" id="spDrawerName">賓客</div>
