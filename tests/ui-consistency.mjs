@@ -13,7 +13,7 @@
      6. 遮罩：全部收在同一支冷灰
      7. 選單：兩個下拉選單（.ad-rowmenu／.ad-acct-pop）面與項同一份規格
      8. 圖示按鈕：✕ 只有兩個字級、每一顆都有 aria-label
-     9. Pill 按鈕：只有 36／32 兩階
+     9. Pill 按鈕：只有 32／28 兩階
     10. Tab：兩種 tab 共用「白底 ＋ 字重 500 ＋ --primary-deep 定位線」
     11. 卡片：白底 ＋ 1px --line ＋ --radius
 
@@ -89,8 +89,8 @@ const inkOf = async (url) => {
 };
 const inkAdmin = await inkOf(ADMIN);
 const inkButler = await inkOf(BUTLER);
-ok('--ink-soft 兩頁都是後台那一階（5.53:1）',
-   inkAdmin === inkButler && inkAdmin === '#6f6459',
+ok('--ink-soft 兩頁都是後台那一階（5.93:1）',
+   inkAdmin === inkButler && inkAdmin === '#6a5e53',
    `admin=${inkAdmin} butler=${inkButler}`);
 
 /* ------------------------------------------------------------
@@ -282,17 +282,17 @@ for(const ic of icons){
   ok(`${ic.sel} 有 aria-label`, !!ic.label, ic.label);
 }
 const closeSizes = icons.filter(i => i.sel !== '#adMenuBtn' && !i.missing).map(i => i.size);
-ok('✕ 的字級只有 15px 一種（桌機）',
-   closeSizes.every(v => v === '15px'), closeSizes.join(' / '));
+ok('✕ 的字級只有 16px 一種（桌機）',
+   closeSizes.every(v => v === '16px'), closeSizes.join(' / '));
 
 /* ------------------------------------------------------------
-   9. Pill 按鈕：只有 36／32 兩階
+   9. Pill 按鈕：只有 32／28 兩階
 ------------------------------------------------------------ */
-console.log('\n【Pill 按鈕：只有 36／32 兩階】');
+console.log('\n【Pill 按鈕：只有 32／28 兩階】');
 await go(ADMIN);
 const pills = await page.evaluate(() => {
   /* .ad-th-link 由 admin.js 依標籤資料產生，登入門下不存在 —— 有才驗 */
-  const want = { '#adRsvpFilterClear':36, '.ad-eye':32, '.ad-th-link':null };
+  const want = { '#adRsvpFilterClear':32, '.ad-eye':28, '.ad-th-link':null };
   const out = [];
   for(const sel of Object.keys(want)){
     const el = document.querySelector(sel);
@@ -311,7 +311,7 @@ for(const p of pills){
   if(p.absent) continue;
   ok(`${p.sel} 是膠囊`, parseFloat(p.radius) >= 999 || p.radius === '999px', p.radius);
   if(p.want) ok(`${p.sel} min-height ${p.want}px`, parseFloat(p.minH) === p.want, p.minH);
-  ok(`${p.sel} 字級是 12 或 11.5`, ['12px','11.5px'].includes(p.size), p.size);
+  ok(`${p.sel} 字級是 12px`, p.size === '12px', p.size);
 }
 
 /* ------------------------------------------------------------
@@ -335,13 +335,13 @@ ok('找得到兩種 tab', !!tabs.tab && !!tabs.subtab);
 if(tabs.tab && tabs.subtab){
   /* 選中的語彙是同一套：白底 ＋ 字重 500 ＋ 一道 --primary-deep 的定位線。
      線寬刻意不同 —— 側欄 1px（字重才是主訊號）、子分頁 2px（要接上那條底線）。 */
-  ok('.ad-tab.is-on 白底 ＋ 字重 500 ＋ 左邊 1px 定位線',
+  ok('.ad-tab.is-on 白底 ＋ 字重 500 ＋ 左邊 2px 定位線',
      tabs.tab.bg === 'rgb(255, 255, 255)' && tabs.tab.weight === '500'
-       && tabs.tab.left.startsWith('1px'),
+       && tabs.tab.left.startsWith('2px'),
      `${tabs.tab.bg} / ${tabs.tab.weight} / ${tabs.tab.left}`);
-  ok('.ad-subtab.is-on 白底 ＋ 字重 500 ＋ 下面 2px 定位線',
+  ok('.ad-subtab.is-on 白底 ＋ 字重 500 ＋ 下面 3px 定位線',
      tabs.subtab.bg === 'rgb(255, 255, 255)' && tabs.subtab.weight === '500'
-       && tabs.subtab.bottom.startsWith('2px'),
+       && tabs.subtab.bottom.startsWith('3px'),
      `${tabs.subtab.bg} / ${tabs.subtab.weight} / ${tabs.subtab.bottom}`);
   ok('兩條定位線是同一個顏色',
      tabs.tab.left.split(' ').slice(1).join(' ') === tabs.subtab.bottom.split(' ').slice(1).join(' '),
@@ -367,8 +367,8 @@ const cards = await page.evaluate(() =>
   }));
 for(const c of cards){
   if(c.absent) continue;   // 該分頁沒開就沒有這張卡，不算失敗
-  ok(`${c.sel} 白底 ＋ 1px 框 ＋ ${'2px'} 圓角`,
-     c.bg === 'rgb(255, 255, 255)' && c.bw === '1px' && c.radius === '2px',
+  ok(`${c.sel} 白底 ＋ 1px 框 ＋ 4px 圓角`,
+     c.bg === 'rgb(255, 255, 255)' && c.bw === '1px' && c.radius === '4px',
      `${c.bg} / ${c.bw} / ${c.radius}`);
 }
 

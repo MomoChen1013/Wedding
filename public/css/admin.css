@@ -98,7 +98,7 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
     scroll-behavior:auto !important;
   }
   /* shimmer 是「還在載入」的唯一訊號，不能只是停住 —— 換成靜態底色 */
-  .ad-skel-line{background:var(--line-soft);animation:none !important;}
+  .ad-skel-line{background:var(--bg2);animation:none !important;}
 }
 
 #pwGate{background:var(--bg1);}
@@ -134,7 +134,7 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
   background:rgba(251,250,248,.94);backdrop-filter:blur(6px);}
 .ad-bar-left{display:flex;align-items:center;gap:14px;min-width:0;}
 .ad-menu-btn{display:none;flex-direction:column;justify-content:center;gap:4px;
-  width:34px;height:34px;padding:0;border:1px solid var(--line);border-radius:var(--radius);
+  width:36px;height:36px;padding:0;border:1px solid var(--line);border-radius:var(--radius);
   background:#fff;cursor:pointer;flex:0 0 auto;}
 .ad-menu-btn span{display:block;width:16px;height:1px;background:var(--ink);margin:0 auto;}
 .ad-bar-title{font-family:var(--font-display);font-weight:500;font-size:19px;
@@ -155,7 +155,7 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
 .ad-tab{
   display:block;width:100%;text-align:left;white-space:nowrap;
   background:transparent;border:none;cursor:pointer;border-radius:var(--radius);
-  font-family:var(--font-body);font-size:13.5px;letter-spacing:.14em;
+  font-family:var(--font-body);font-size:14px;letter-spacing:.14em;
   color:var(--ink-soft);padding:11px 14px;border-left:2px solid transparent;
   /* font-weight 也在裡面：.ad-tab.is-on 會變 500（見下面「側欄導覽」那一段，
      那道線收成 1px 之後，字重才是「現在在這一頁」的主要訊號） */
@@ -182,7 +182,7 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
 /* touch-action:pan-x —— 這一列是橫向捲動的，但手指斜著滑的時候
    瀏覽器常常把它判成「要捲這一列的上下」，結果整頁跟著卡住。
    明講只吃左右，垂直的手勢就會直接交還給整頁。 */
-.ad-subtabs{display:flex;gap:6px;margin:0 0 24px;border-bottom:2px solid var(--line);
+.ad-subtabs{display:flex;gap:6px;margin:0 0 24px;border-bottom:3px solid var(--line);
   overflow-x:auto;overscroll-behavior-x:contain;touch-action:pan-x;
   scrollbar-width:none;scroll-padding-inline:12px;}
 .ad-subtabs::-webkit-scrollbar{display:none;}
@@ -198,10 +198,10 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
 .ad-subtab{
   flex:0 0 auto;white-space:nowrap;cursor:pointer;
   background:rgba(255,255,255,.45);
-  border:1px solid var(--line);border-bottom:2px solid transparent;
+  border:1px solid var(--line);border-bottom:3px solid transparent;
   border-radius:var(--radius) var(--radius) 0 0;
-  font-family:var(--font-body);font-size:13px;letter-spacing:.14em;
-  color:var(--ink-soft);padding:11px 20px;margin-bottom:-2px;
+  font-family:var(--font-body);font-size:14px;letter-spacing:.14em;
+  color:var(--ink-soft);padding:11px 20px;margin-bottom:-3px;
   transition:color var(--dur-hover) ease-out,background var(--dur-hover) ease-out,border-color var(--dur-hover) ease-out;
 }
 @media (hover:hover) and (pointer:fine){
@@ -262,8 +262,8 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
 .ad-sec-head-actions{display:flex;gap:8px;flex-wrap:wrap;flex:0 0 auto;}
 
 /* 一句話的重點框：開關擺在最上面，說明接在下面 */
-.ad-callout{border:1px solid var(--line);border-left:3px solid var(--primary-deep);
-  border-radius:var(--radius);background:#fff;padding:18px 20px;}
+.ad-callout{border:1px solid var(--line);border-left:4px solid var(--primary-deep);
+  border-radius:var(--radius);background:#fff;padding:18px;}
 .ad-callout-head{display:flex;align-items:flex-start;gap:10px;cursor:pointer;
   font-size:14px;line-height:1.7;letter-spacing:.04em;color:var(--ink);}
 .ad-callout-head input{margin-top:4px;flex:0 0 auto;accent-color:var(--primary-deep);}
@@ -591,11 +591,11 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-td-lines{display:flex;flex-direction:column;gap:2px;}
 .ad-td-sub{font-size:11.5px;color:var(--ink-soft);}
 /* 表頭裡那顆「設定標籤」：跟著表頭走，不要比欄位名還搶眼 */
-/* 表頭裡的 pill：11.5px 是「嵌在一行文字裡」那一階
-   （原本 10.5px 低於本專案自己訂的最小字級 11px） */
+/* 表頭裡的 pill：12px 是「嵌在一行文字裡」那一階（自訂規範 §3.3）。
+   原本 10.5px，低於本專案自己訂的最小字級 11px。 */
 .ad-th-link{margin-left:8px;background:transparent;border:1px solid var(--line);
   border-radius:999px;padding:2px 9px;cursor:pointer;
-  font-family:var(--font-ui);font-size:11.5px;letter-spacing:.06em;
+  font-family:var(--font-ui);font-size:12px;letter-spacing:.06em;
   color:var(--primary-deep);}
 .ad-th-link:hover{border-color:var(--primary-deep);}
 .ad-tagcell{display:flex;flex-wrap:wrap;gap:4px;align-items:center;min-width:120px;}
@@ -652,10 +652,10 @@ select.ad-input{appearance:none;cursor:pointer;
 
 /* ---------- 分頁筆數（RSVP／桌次名單／悄悄話共用） ---------- */
 .ad-pager{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
-  gap:10px;margin-top:14px;padding-top:14px;font-size:12px;color:var(--ink-soft);}
+  gap:10px;margin-top:14px;padding-top:14px;font-size:11px;color:var(--ink-soft);}
 .ad-pager-nav{display:flex;align-items:center;gap:10px;}
 .ad-pager-btn{background:none;border:1px solid var(--line);border-radius:var(--radius);
-  cursor:pointer;padding:6px 12px;font-family:var(--font-body);font-size:12px;
+  cursor:pointer;padding:6px 12px;min-height:36px;font-family:var(--font-body);font-size:11px;
   letter-spacing:.06em;color:var(--ink);transition:border-color var(--dur-hover) ease-out,color var(--dur-hover) ease-out;}
 .ad-pager-btn:hover:not(:disabled){border-color:var(--ink);}
 .ad-pager-btn:disabled{opacity:.35;cursor:not-allowed;}
@@ -702,10 +702,10 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-letter-card{
   display:flex;flex-direction:column;
   border:1px solid var(--line);border-radius:var(--radius);
-  background:#fff;padding:18px 18px 14px;
+  background:#fff;padding:18px;
 }
 /* 通用信是「沒對到詞彙時的那一封」，左邊給一道色帶當記號 */
-.ad-letter-card.is-default{border-left:3px solid var(--primary-deep);}
+.ad-letter-card.is-default{border-left:4px solid var(--primary-deep);}
 .ad-letter-head{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;}
 .ad-letter-title{margin:0;flex:1 1 auto;min-width:0;
   font-family:var(--font-display);font-weight:500;font-size:15.5px;
@@ -737,7 +737,7 @@ select.ad-input{appearance:none;cursor:pointer;
   background:#fff;overflow:hidden;}
 /* 卡片是直式 2:3，縮圖也照著擺，後台看到的就是賓客會看到的構圖 */
 .ad-card img{display:block;width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--bg2);}
-.ad-card figcaption{display:flex;flex-direction:column;gap:7px;padding:10px;
+.ad-card figcaption{display:flex;flex-direction:column;gap:7px;padding:12px;
   border-top:1px solid var(--line-soft);}
 .ad-card .ad-input{padding:7px 9px;font-size:12.5px;line-height:1.6;}
 /* 卡片裡的欄位比較矮，下拉箭頭要跟著往上挪 */
@@ -784,8 +784,8 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-exh-item.is-act{
   background:var(--bg2);
   border-color:var(--line);
-  border-left:3px solid var(--primary-deep);
-  padding-left:2px;
+  border-left:4px solid var(--primary-deep);
+  padding-left:1px;
 }
 .ad-exh-item.is-act .ad-item-title{
   font-family:var(--font-display);font-weight:500;font-size:16px;letter-spacing:.14em;
@@ -884,8 +884,8 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-skel{display:flex;flex-direction:column;gap:10px;padding:14px 2px;}
 .ad-skel-row{display:flex;flex-direction:column;gap:8px;padding:8px 0;
   border-bottom:1px solid var(--line-soft);}
-.ad-skel-line{height:11px;border-radius:3px;width:var(--w, 60%);
-  background:linear-gradient(90deg, var(--line-soft) 25%, rgba(0,0,0,.06) 37%, var(--line-soft) 63%);
+.ad-skel-line{height:11px;border-radius:var(--radius);width:var(--w, 60%);
+  background:linear-gradient(90deg, var(--bg2) 25%, var(--line-soft) 37%, var(--bg2) 63%);
   background-size:400% 100%;animation:ad-skel-pulse 1.4s linear infinite;}
 .ad-skel-line.short{width:var(--w, 30%);}
 @keyframes ad-skel-pulse{0%{background-position:100% 0}100%{background-position:0 0}}
@@ -1000,7 +1000,7 @@ select.ad-input{appearance:none;cursor:pointer;
    窄螢幕自己拆行，順序仍然是狀態 → 統計 → 按鈕。 */
 .sp-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;
   padding:12px 16px;margin-bottom:14px;
-  border:1px solid var(--line);border-left:3px solid var(--primary-deep);
+  border:1px solid var(--line);border-left:4px solid var(--primary-deep);
   border-radius:var(--radius);background:#fff;}
 .sp-bar-status{display:flex;flex-direction:column;gap:4px;min-width:0;flex:0 1 auto;}
 .sp-bar-actions{display:flex;gap:8px;flex-wrap:wrap;flex:0 0 auto;margin-left:auto;}
@@ -1125,7 +1125,7 @@ select.ad-input{appearance:none;cursor:pointer;
    桌卡是白底細框，兩者放在一起一眼就分得出來。 */
 .sp-pool{position:sticky;top:78px;display:flex;flex-direction:column;
   max-height:calc(100svh - 100px);
-  border:1px solid var(--line);border-left:3px solid var(--primary-deep);
+  border:1px solid var(--line);border-left:4px solid var(--primary-deep);
   border-radius:var(--radius);background:var(--bg2);}
 .sp-pool-head{display:flex;align-items:baseline;justify-content:space-between;
   gap:6px 8px;flex-wrap:wrap;padding:11px 13px;
@@ -1151,7 +1151,7 @@ select.ad-input{appearance:none;cursor:pointer;
    HTML5 Drag & Drop 在觸控裝置上完全不會觸發，所以這個承諾只能給
    真的有滑鼠的機器（iPad 橫向也是觸控，不能只看寬度） */
 .sp-card{position:relative;border:1px solid var(--line);border-radius:var(--radius);
-  background:#fff;padding:7px 9px;cursor:pointer;
+  background:#fff;padding:8px;cursor:pointer;
   transition:border-color var(--dur-btn) ease-out,background var(--dur-btn) ease-out;}
 @media (hover:hover) and (pointer:fine){
   .sp-card{cursor:grab;}
@@ -1164,7 +1164,7 @@ select.ad-input{appearance:none;cursor:pointer;
 /* RSVP 狀態不佔一行，改用左邊那道細線表示。
    預設也給一條看得到的線（跟卡片外框同色）——
    透明的話，桌卡裡一排卡片疊在一起時，左邊那條線時有時無，看起來像壞掉了 */
-.sp-card{border-left:3px solid var(--line);}
+.sp-card{border-left:4px solid var(--line);}
 .sp-card.is-rsvp-maybe{border-left-color:var(--sun);}
 .sp-card.is-rsvp-no{border-left-color:rgba(164,103,122,.55);opacity:.66;}
 
@@ -1338,7 +1338,7 @@ select.ad-input{appearance:none;cursor:pointer;
   letter-spacing:.12em;color:var(--ink);}
 .sp-drawer-sub,.ad-drawer-sub{margin-top:5px;font-family:var(--font-ui);font-size:12px;
   letter-spacing:.04em;color:var(--ink-soft);line-height:1.7;}
-.sp-drawer-close,.ad-drawer-close{background:none;border:none;cursor:pointer;font-size:15px;
+.sp-drawer-close,.ad-drawer-close{background:none;border:none;cursor:pointer;font-size:16px;
   color:var(--ink-soft);padding:2px 4px;flex:0 0 auto;}
 .sp-drawer-close:hover,.ad-drawer-close:hover{color:var(--ink);}
 .sp-drawer-body,.ad-drawer-body{flex:1 1 auto;overflow-y:auto;padding:18px 20px 30px;}
@@ -1351,7 +1351,7 @@ select.ad-input{appearance:none;cursor:pointer;
    等於這一層關不掉。 */
 @media (pointer:coarse){
   .sp-drawer-close,.ad-drawer-close,.ad-side-close{
-    min-width:44px;min-height:44px;font-size:19px;
+    min-width:44px;min-height:44px;font-size:24px;
   }
   /* 漢堡鈕是窄螢幕唯一的導覽入口，卻只有 34×34 */
   .ad-menu-btn{width:44px;height:44px;}
@@ -1516,7 +1516,7 @@ select.ad-input{appearance:none;cursor:pointer;
    不只用顏色分好壞（色盲看不出來）：壞的那一列左邊多一道粗線。 */
 .ad-demo-rows{display:flex;flex-direction:column;gap:4px;margin-top:10px;}
 .ad-demo-row{display:flex;gap:9px;align-items:baseline;
-  border:1px solid var(--line-soft);border-left:3px solid var(--line);
+  border:1px solid var(--line-soft);border-left:4px solid var(--line);
   border-radius:var(--radius);padding:5px 9px;
   font-size:11px;letter-spacing:.03em;color:var(--ink);}
 .ad-demo-row span{flex:0 0 auto;font-size:10px;color:var(--ink-soft);
@@ -1546,7 +1546,7 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-bt-cards{display:flex;flex-direction:column;gap:16px;}
 .ad-bt-link{
   border:1px solid var(--line);border-radius:var(--radius);
-  background:#fff;padding:20px 20px 18px;
+  background:#fff;padding:18px;
 }
 .ad-bt-link-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .ad-bt-link-title{margin:0;font-family:var(--font-display);font-weight:500;
@@ -1579,9 +1579,9 @@ select.ad-input{appearance:none;cursor:pointer;
    做成一顆有框的小膠囊 —— 它會改變畫面上的資訊，不是純裝飾。 */
 .ad-eye{
   display:inline-flex;align-items:center;gap:7px;vertical-align:middle;
-  margin-left:10px;padding:5px 12px;min-height:32px;
+  margin-left:10px;padding:4px 12px;min-height:28px;
   border:1px solid var(--line);border-radius:999px;background:#fff;
-  cursor:pointer;font-family:var(--font-ui);font-size:11.5px;
+  cursor:pointer;font-family:var(--font-ui);font-size:12px;
   letter-spacing:.1em;color:var(--ink-soft);
   transition:border-color var(--dur-hover) ease-out,color var(--dur-hover) ease-out;
 }
@@ -1668,11 +1668,11 @@ select.ad-input{appearance:none;cursor:pointer;
   .ad-card-actions:has(.ad-rowmenu-btn),
   .ad-img figcaption:has(.ad-rowmenu-btn){gap:4px;}
   .ad-del{color:#a4677a;}
-  .ad-chip{min-height:36px;display:inline-flex;align-items:center;}
+  .ad-chip{min-height:32px;display:inline-flex;align-items:center;}
   .sp-filters .ad-chip{min-height:36px;font-size:12px;padding:5px 12px;}
   .ad-pager-btn{min-height:44px;padding:10px 16px;}
   .ad-pager-size select{min-height:40px;}
-  .ad-th-link{min-height:32px;padding:6px 12px;}
+  .ad-th-link{min-height:28px;padding:5px 12px;}
   .sp-warn-more{min-height:36px;display:inline-flex;align-items:center;}
   .ad-callout-head input,.ad-check input{width:20px;height:20px;}
 }
@@ -1684,7 +1684,7 @@ select.ad-input{appearance:none;cursor:pointer;
   flex:0 0 auto;background:none;border:1px solid transparent;border-radius:var(--radius);
   cursor:pointer;color:var(--ink-soft);font-family:var(--font-body);
   font-size:16px;line-height:1;letter-spacing:.1em;
-  width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;
+  width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;
 }
 .ad-rowmenu-btn:hover{border-color:var(--line);color:var(--ink);}
 .ad-rowmenu-btn.is-open{border-color:var(--ink);color:var(--ink);}
@@ -1757,7 +1757,7 @@ select.ad-input{appearance:none;cursor:pointer;
    只有一條線的話，眼睛分不出「這三行是同一個人的」。 */
 .ad-rcards{list-style:none;margin:0;padding:0;
   display:flex;flex-direction:column;gap:10px;}
-.ad-rcard{padding:13px 14px;background:#fff;
+.ad-rcard{padding:12px;background:#fff;
   border:1px solid var(--line);border-radius:var(--radius);}
 /* 沒來的人整張淡掉：名單掃過去時，要找的是「會來的那些人」 */
 .ad-rcard:has(.ad-tag-no){background:var(--bg2);}
@@ -1777,7 +1777,7 @@ select.ad-input{appearance:none;cursor:pointer;
   flex:0 0 auto;background:none;border:1px solid var(--line);border-radius:999px;
   cursor:pointer;
   font-family:var(--font-ui);font-size:12px;letter-spacing:.08em;color:var(--ink-soft);
-  padding:6px 13px;min-height:36px;
+  padding:6px 13px;min-height:32px;
 }
 .ad-rcard-more[aria-expanded="true"]{border-color:var(--ink);color:var(--ink);}
 .ad-rcard-rest{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line-soft);}
@@ -1839,7 +1839,7 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-filtersum-clear{
   flex:0 0 auto;background:none;border:1px solid var(--line);border-radius:999px;
   cursor:pointer;font-family:var(--font-ui);font-size:12px;letter-spacing:.08em;
-  color:var(--primary-deep);padding:7px 14px;min-height:36px;
+  color:var(--primary-deep);padding:6px 14px;min-height:32px;
 }
 .ad-filtersum-clear:hover{border-color:var(--primary-deep);}
 /* 篩選按鈕上的條件數徽章（排桌工作區） */
@@ -1894,7 +1894,7 @@ body.ad-lock{position:fixed;left:0;right:0;width:100%;overflow:hidden;}
   display:none;position:absolute;top:14px;left:12px;
   width:44px;height:44px;padding:0;border:1px solid var(--line);
   border-radius:var(--radius);background:#fff;cursor:pointer;
-  font-family:var(--font-ui);font-size:15px;line-height:1;color:var(--ink);
+  font-family:var(--font-ui);font-size:16px;line-height:1;color:var(--ink);
 }
 @media(max-width:899px){ .ad-side-close{display:block;} }
 
@@ -1985,9 +1985,9 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
    看起來很擠。按下去才浮出框，等於「摸過的地方才有反應」。 */
 .sp-card-move{
   display:none;position:absolute;top:50%;right:7px;transform:translateY(-50%);
-  width:32px;height:32px;padding:0;border:1px solid transparent;
+  width:36px;height:36px;padding:0;border:1px solid transparent;
   border-radius:var(--radius);background:transparent;cursor:pointer;
-  font-size:14px;line-height:1;color:var(--ink-soft);
+  font-size:16px;line-height:1;color:var(--ink-soft);
   transition:border-color var(--dur-hover) ease-out,background var(--dur-hover) ease-out;
 }
 .sp-card-move:active,
@@ -2010,7 +2010,7 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
 /* 觸控裝置第一次進工作區的說明 */
 .sp-touch-tip{
   display:none;align-items:baseline;gap:8px;margin:0 0 12px;
-  border:1px solid var(--line);border-left:3px solid var(--primary-deep);
+  border:1px solid var(--line);border-left:4px solid var(--primary-deep);
   border-radius:var(--radius);background:#fff;padding:10px 13px;
   font-size:12.5px;line-height:1.9;letter-spacing:.03em;color:var(--ink-soft);
 }
@@ -2096,7 +2096,7 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
    桌位管理與當日流程共用同一個樣子 —— 同一件事就該長得一樣。 */
 .sp-move-btn,
 .ad-sch-move [data-sch-move]{
-  min-width:32px;min-height:32px;padding:0;
+  min-width:36px;min-height:36px;padding:0;
   display:inline-flex;align-items:center;justify-content:center;
   border:1px solid var(--line);border-radius:var(--radius);font-size:13px;
 }
@@ -2234,7 +2234,7 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
 .sp-touch-tip-close{
   position:absolute;top:2px;right:2px;width:44px;height:44px;padding:0;
   background:none;border:none;cursor:pointer;
-  font-family:var(--font-ui);font-size:19px;line-height:1;color:var(--ink-soft);
+  font-family:var(--font-ui);font-size:24px;line-height:1;color:var(--ink-soft);
 }
 .sp-touch-tip-close:hover{color:var(--ink);}
 
@@ -2365,6 +2365,14 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-drawer,
 body:is([data-page="admin"],[data-page="butler"]) .ad-empty,
 body:is([data-page="admin"],[data-page="butler"]) .btn{
   font-family:var(--font-ui);
+}
+/* 按鈕尺寸（自訂規範 §3.1）。common.css 的 .btn 是賓客頁也在用的，
+   所以只在後台層覆寫，不動賓客頁那一份。 */
+body:is([data-page="admin"],[data-page="butler"]) .btn{
+  font-size:16px;padding:10px 22px;
+}
+body:is([data-page="admin"],[data-page="butler"]) .btn.small{
+  font-size:14px;padding:8px 20px;
 }
 /* 密度高的地方 sans 可以再收一點字距（明朝體需要的呼吸空間比較大） */
 body:is([data-page="admin"],[data-page="butler"]) .ad-table{letter-spacing:0;}
@@ -2633,14 +2641,14 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
   display:flex;flex-direction:column;gap:1px;
 }
 
-/* Active：白底 ＋ 1px 金線（原本是 2px）＋ 字重變化。
-   收成 1px 之後那道線是「記號」而不是「色塊」，字重才是主要訊號。 */
+/* Active：白底 ＋ 2px 金線 ＋ 字重 500（自訂規範 §3.8）。
+   線寬吃在 padding-left 裡（未選時是同寬的透明邊），切分頁時字不會左右跳。 */
 .ad-tab.is-on{
   color:var(--ink);background:#fff;font-weight:500;
-  border-left-color:var(--primary-deep);border-left-width:1px;
-  padding-left:15px;
+  border-left-color:var(--primary-deep);border-left-width:2px;
+  padding-left:14px;
 }
-.ad-tab{border-left-width:1px;padding-left:15px;}
+.ad-tab{border-left-width:2px;padding-left:14px;}
 /* 「排桌管理」從屬於「桌次」：縮一階，並用一道更淡的線接住 */
 .ad-tab.is-sub{padding-left:27px;}
 .ad-tab.is-sub::before{
@@ -2817,7 +2825,7 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
   background:rgba(255,255,255,.5);padding:40px 24px 34px;
 }
 .ad-empty-title{
-  font-family:var(--font-display);font-size:20px;font-weight:500;
+  font-family:var(--font-display);font-size:16px;font-weight:500;
   letter-spacing:.16em;color:var(--ink);line-height:1.5;
 }
 .ad-empty-body{
@@ -2828,7 +2836,7 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
 .ad-empty-act{margin-top:20px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;}
 @media(max-width:560px){
   .ad-empty.is-rich{padding:32px 18px 28px;}
-  .ad-empty-title{font-size:18px;letter-spacing:.12em;}
+  .ad-empty-title{letter-spacing:.12em;}
   .ad-empty-act .btn{width:100%;}
 }
 
@@ -3008,22 +3016,53 @@ textarea.ad-inline-input{min-height:0;}
 }
 
 /* ============================================================
-   對比：小字的次要色要再深一階
+   後台的色票與尺規（自訂規範 §2）
    ------------------------------------------------------------
-   --ink-soft(#7c7267) 在 --bg1(#fbfaf7) 上量到 4.51:1 —— 剛好卡在
-   AA 的 4.5 門檻上，而後台有大量 10.5–11.5px 的 metadata 用它
-   （時間戳、欄位名、統計標籤）。小字級本來就比大字難讀，
-   踩線通過等於沒有餘裕。
+   賓客頁吃 common.css 那一套：色票跟著新人選的主題色（champagne／
+   blush／sage／dusk）走，圓角 2px。後台與收禮台不一樣 ——
+   它們是工作介面，data-theme 永遠寫死 champagne，不需要主題切換，
+   所以整組色票在這一層直接給定值。
 
-   加深到 #6f6459（5.53:1）之後有了餘裕，而且色相沒動 ——
-   還是同一支暖灰，視覺語彙不變。只在後台元件庫覆寫（admin ＋ butler
-   ——收禮台是站著、單手、在宴會廳的光線下用的，更需要這一階）：賓客頁的
-   留白與字級都比較寬鬆，維持原本的柔和。
+   量過的對比（WCAG AA 需要 4.5:1，大字 3:1）：
+     --ink       於 --bg1   13.25:1  ✅
+     --ink-soft  於 --bg1    5.93:1  ✅（比舊的 5.52 再好一階）
+     --ink-soft  於 --bg2    5.39:1  ✅
+     --ink-soft  於 #fff     6.29:1  ✅
 
-   另外把最小的幾個字級從 10.5px 提到 11px：色票能救的有限，
-   字級本身也是可讀性的一部分。
+   ⚠ --primary-deep(#ca9a21) 於白底只有 2.57:1，AA 與 AA Large 都不過。
+     它被用在「所有數字」（禮金總額、統計方格）、通行碼 .ad-bt-pass，
+     以及 .ad-th-link／.ad-filtersum-clear／.ad-chip-link 的文字上。
+     舊值 #8e7748 是 4.30:1（也沒過，但差得少）。
+     這是自訂規範指定的品牌色，所以照用；要補到 AA 的話最小的改法是
+     另外給一支「當文字用」的深一階金色，面與框仍用 #ca9a21。
+     詳見 docs/UI-SPEC.md 的「已知落差」。
+
+   線條從半透明改成定值：舊的 rgba(47,43,38,.18/.09) 會跟著底色變，
+   同一條線在白卡和 --bg2 面板上是兩個深淺；定值就是同一條線。
+   新的 --line 也比舊的深（1.72:1 vs 1.35:1），輪廓更看得出來。
 ============================================================ */
-body:is([data-page="admin"],[data-page="butler"]){--ink-soft:#6f6459;}
+body:is([data-page="admin"],[data-page="butler"]){
+  /* ---- 色票（自訂規範 §2.1）----
+     賓客頁維持 common.css 那套會跟著主題色走的色票；後台與收禮台是
+     工作介面，永遠是 champagne（兩頁的 data-theme 都寫死），
+     所以這裡直接給定值，不再經過主題變數。 */
+  --ink:#2f2b26;
+  --ink-soft:#6a5e53;
+  --primary:#e2bd79;
+  --primary-deep:#ca9a21;
+  --primary-soft:#f0e6d0;
+  --bg1:#faf8f4;
+  --bg2:#f2ede4;
+  /* 線條從半透明改成定值：原本是 rgba(47,43,38,.18/.09)，會跟著底色變；
+     定值在白卡與 --bg2 面板上是同一條線。 */
+  --line:#c8bfb0;
+  --line-soft:#d9d1c4;
+
+  /* ---- 圓角與基礎字級（自訂規範 §2.2）---- */
+  --radius:4px;
+  --radius-sm:4px;
+  font-size:14px;
+}
 body:is([data-page="admin"],[data-page="butler"]) .ad-donut-center span,
 body:is([data-page="admin"],[data-page="butler"]) .ad-donut-val small,
 body:is([data-page="admin"],[data-page="butler"]) .sp-card-code,

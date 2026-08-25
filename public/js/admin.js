@@ -951,7 +951,9 @@ function guardedRender(hostEl, render){
 }
 
 function skeletonHtml(rows, widths){
-  widths = widths || ['70%', '40%'];
+  /* 一列三條（自訂規範 §3.20）：兩條看起來像「標題＋一行」，
+     而真正載進來的每一列大多是三行，骨架和實體要長得像同一件事 */
+  widths = widths || ['70%', '45%', '30%'];
   let out = '<div class="ad-skel">';
   for(let i = 0; i < rows; i++){
     out += '<div class="ad-skel-row">' +
