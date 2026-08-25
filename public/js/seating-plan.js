@@ -1255,7 +1255,7 @@
               <!-- 收合：手機／平板才看得到（桌機要靠桌卡是打開的才拖得進人） -->
               <button class="sp-table-fold" type="button" data-fold-table="${esc(t.id)}"
                       aria-expanded="${folded ? 'false' : 'true'}" aria-controls="${esc(bodyId)}"
-                      aria-label="${folded ? '展開' : '收合'}第 ${no2(t.no)} 桌">▾</button>
+                      aria-label="${folded ? '展開' : '收合'}第 ${no2(t.no)} 桌">▼</button>
             </div>
             <div class="sp-table-meta">
               <span class="sp-table-count">${heads} / ${t.cap} 人</span>
