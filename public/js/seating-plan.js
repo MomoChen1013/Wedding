@@ -103,6 +103,13 @@
      一進來就先看到人和桌子，需要篩再展開。 */
   let filtersOpen = false;
 
+  /* 手機／平板上被收起來的桌子（放桌 id）。
+     排完的桌先關上，螢幕才留得給還沒排完的那幾桌。
+     只是「暫時關起來」的看法，不是資料，所以不進 plan、也不進 localStorage：
+     重整之後每一桌都是打開的。
+     收合鈕只給拖不動的裝置（觸控或 ≤960px，見 admin.css）。 */
+  const foldedTables = new Set();
+
   /* 畫面上的篩選與排序 */
   const view = {
     q: '',
@@ -1227,8 +1234,15 @@
       const cards = rows;
       const type = typeName(t);
 
+      /* 搜尋有命中這一桌的話就自己打開 —— 收起來的桌子裡標了一位「王小明」
+         而畫面上什麼都沒有，看起來會像搜尋壞了。手動收合的狀態留著，
+         關鍵字清掉就會收回去。 */
+      const folded = foldedTables.has(t.id)
+        && !(view.q && rows.some(hitsSearch));
+      const bodyId = `spTableBody-${t.id}`;
+
       return `
-        <article class="sp-table is-${state}" data-table="${esc(t.id)}">
+        <article class="sp-table is-${state}${folded ? ' is-folded' : ''}" data-table="${esc(t.id)}">
           <!-- 桌號、桌名、人數、剩餘位子都在分隔線「上面」：
                這四件事講的是同一張桌子的狀態，線的下面才是坐在上面的人 -->
           <header class="sp-table-head" draggable="true" data-table-head="${esc(t.id)}">
@@ -1238,6 +1252,10 @@
               <span class="sp-table-name">${esc(t.name)}</span>
               ${type ? `<span class="sp-table-type">${esc(type)}</span>` : ''}
               <button class="ad-edit sp-table-edit" type="button" data-edit-table="${esc(t.id)}">編輯</button>
+              <!-- 收合：手機／平板才看得到（桌機要靠桌卡是打開的才拖得進人） -->
+              <button class="sp-table-fold" type="button" data-fold-table="${esc(t.id)}"
+                      aria-expanded="${folded ? 'false' : 'true'}" aria-controls="${esc(bodyId)}"
+                      aria-label="${folded ? '展開' : '收合'}第 ${no2(t.no)} 桌">▾</button>
             </div>
             <div class="sp-table-meta">
               <span class="sp-table-count">${heads} / ${t.cap} 人</span>
@@ -1245,13 +1263,35 @@
             </div>
           </header>
           ${flags ? `<div class="sp-table-flags">${flags}</div>` : ''}
-          <div class="sp-table-body" data-drop="${esc(t.id)}">
+          <div class="sp-table-body" id="${esc(bodyId)}" data-drop="${esc(t.id)}">
             ${cards.length
               ? cards.map(guestCard).join('')
               : `<div class="sp-table-empty"><span class="only-fine">把賓客拖進來</span><span class="only-coarse">點賓客卡右邊的 ⇄，選這一桌</span></div>`}
           </div>
         </article>`;
     }).join('');
+  }
+
+  /* 收合／展開一桌（只有手機、平板按得到這顆鈕）。
+     不重畫整個工作區 —— 收合是「看法」不是「資料」，
+     重畫會把捲動位置和剛剛按下的那顆鈕的焦點一起弄丟。 */
+  function toggleTableFold(id) {
+    const box = [...document.querySelectorAll('.sp-table')]
+      .find((el) => el.dataset.table === id);
+    if (!box) { foldedTables.delete(id); renderBoard(); return; }
+
+    /* 要不要收，看的是「畫面上現在是開的還是關的」，不是 foldedTables ——
+       被搜尋強制打開的那幾桌兩者會不一樣，照著記錄走的話第一下會按不動 */
+    const folded = !box.classList.contains('is-folded');
+    if (folded) foldedTables.add(id); else foldedTables.delete(id);
+
+    box.classList.toggle('is-folded', folded);
+    const btn = box.querySelector('[data-fold-table]');
+    if (!btn) return;
+    const no = box.querySelector('.sp-table-no');
+    btn.setAttribute('aria-expanded', folded ? 'false' : 'true');
+    btn.setAttribute('aria-label',
+      `${folded ? '展開' : '收合'}第 ${no ? no.textContent : ''} 桌`);
   }
 
   /* 一桌要提醒的事，直接寫在桌卡上，不用點進去才看得到。
@@ -2537,6 +2577,9 @@
 
     /* ---- 工作區：點卡片開抽屜、點「移動到桌位」開選單 ---- */
     panel.addEventListener('click', (e) => {
+      const foldTable = e.target.closest('[data-fold-table]');
+      if (foldTable) { toggleTableFold(foldTable.dataset.foldTable); return; }
+
       const editTable = e.target.closest('[data-edit-table]');
       if (editTable) { openTableModal(editTable.dataset.editTable); return; }
 

@@ -982,9 +982,11 @@ select.ad-input{appearance:none;cursor:pointer;
    間距收緊，一個螢幕才裝得下二十幾桌。
 ============================================================ */
 
-/* 桌況的兩個顏色：綠＝坐滿、紅＝超量。
-   全站的語彙沒有綠色，這裡取鼠尾草主題那一支（同一個色感，不會突兀）。 */
-.ad-panel[data-panel="seatingPlan"]{--seat-full:#6d7f5f;--seat-over:#a4677a;}
+/* 桌況的兩個顏色。
+   「坐滿」不再另外給一個綠色 —— 一整片桌卡本來就已經有夠多顏色了，
+   坐滿是好事，不需要跳出來喊，跟字同色（--ink）就夠讀。
+   只有「超量」是真的要被看到的那一種，留一個明確的粉紅。 */
+.ad-panel[data-panel="seatingPlan"]{--seat-full:var(--ink);--seat-over:#E86C93;}
 
 /* 工作區要寬（一個螢幕裝得下越多桌越好），
    但「桌位管理」「匯入匯出」是一般的清單與說明。
@@ -1000,7 +1002,7 @@ select.ad-input{appearance:none;cursor:pointer;
    窄螢幕自己拆行，順序仍然是狀態 → 統計 → 按鈕。 */
 .sp-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;
   padding:12px 16px;margin-bottom:14px;
-  border:1px solid var(--line);border-left:4px solid var(--primary-deep);
+  border:1px solid var(--line);
   border-radius:var(--radius);background:#fff;}
 .sp-bar-status{display:flex;flex-direction:column;gap:4px;min-width:0;flex:0 1 auto;}
 .sp-bar-actions{display:flex;gap:8px;flex-wrap:wrap;flex:0 0 auto;margin-left:auto;}
@@ -1121,11 +1123,11 @@ select.ad-input{appearance:none;cursor:pointer;
 }
 
 /* 「未安排」不是一張桌子，所以刻意長得不一樣：
-   淡色底、左邊一道實心的主題色、標題也比桌卡重一些。
-   桌卡是白底細框，兩者放在一起一眼就分得出來。 */
+   淡色底、標題也比桌卡重一些。桌卡是白底細框，
+   兩者放在一起一眼就分得出來 —— 不用再多一道彩色的粗邊來喊。 */
 .sp-pool{position:sticky;top:78px;display:flex;flex-direction:column;
   max-height:calc(100svh - 100px);
-  border:1px solid var(--line);border-left:4px solid var(--primary-deep);
+  border:1px solid var(--line);
   border-radius:var(--radius);background:var(--bg2);}
 .sp-pool-head{display:flex;align-items:baseline;justify-content:space-between;
   gap:6px 8px;flex-wrap:wrap;padding:11px 13px;
@@ -1237,13 +1239,45 @@ select.ad-input{appearance:none;cursor:pointer;
   .sp-table-head:active{cursor:grabbing;}
 }
 .sp-table-no{font-family:var(--font-display);font-size:17px;font-weight:500;
-  letter-spacing:.08em;color:var(--primary-deep);font-variant-numeric:tabular-nums;}
+  letter-spacing:.08em;color:var(--ink);font-variant-numeric:tabular-nums;}
 .sp-table-name{flex:1 1 auto;min-width:0;font-size:13.5px;letter-spacing:.06em;
   color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .sp-table-name:empty{flex:1 1 auto;}
 .sp-table-type{flex:0 0 auto;border:1px solid var(--line);border-radius:999px;
   padding:1px 8px;font-size:10.5px;letter-spacing:.06em;color:var(--ink-soft);}
 .sp-table-edit{flex:0 0 auto;}
+
+/* ---------- 一桌收起來 ----------
+   手機／平板一次只看得到一兩桌，排完的桌還一直佔著整個螢幕，
+   要捲很久才找得到還沒排完的那幾桌。收起來之後留下的是
+   桌號、桌名、人數／容量、剩餘位子，以及整桌的標籤（素食、兒童椅…）——
+   「這桌到底排完了沒」需要的全部資訊都還在，要動的時候再展開。
+
+   鈕只給拖不動的裝置：觸控（含橫向的 iPad，寬度不比桌機窄）與窄螢幕。
+   桌機是靠把人拖進桌卡排桌的，桌卡必須是打開的才放得進人。
+   收合的效果本身不設條件 —— 在手機收起來的桌子換到桌機看還是收著的，
+   那顆鈕也就跟著留下來（見下面的 .is-folded .sp-table-fold），
+   不然會有一桌永遠打不開。
+
+   平常不畫外框，按下去才浮出來 —— 跟賓客卡的「⇄」同一個做法。 */
+.sp-table-fold{display:none;position:relative;
+  flex:0 0 auto;align-items:center;justify-content:center;
+  width:36px;height:36px;margin:-6px -6px -6px 0;padding:0;
+  border:1px solid transparent;border-radius:var(--radius);background:none;
+  cursor:pointer;font-size:12px;line-height:1;color:var(--ink-soft);
+  transition:border-color var(--dur-hover) ease-out,background var(--dur-hover) ease-out,
+             transform var(--dur-hover) ease-out;}
+.sp-table-fold:active,.sp-table-fold:focus-visible{border-color:var(--line);background:#fff;}
+@media (hover:none),(max-width:960px){
+  .sp-table-fold{display:inline-flex;}
+  /* 觸控的熱區補到 44×44（UI-SPEC §3.2），但框仍然是 36 ——
+     44 的框會壓到下面那一行的「10 / 10 人」 */
+  .sp-table-fold::after{content:'';position:absolute;inset:-4px;}
+}
+.sp-table.is-folded .sp-table-fold{display:inline-flex;transform:rotate(-90deg);}
+.sp-table.is-folded .sp-table-body{display:none;}
+/* 收起來又沒有標籤的話，分隔線下面什麼都沒有，就不要那條線 */
+.sp-table.is-folded:not(:has(.sp-table-flags)) .sp-table-head{border-bottom:none;}
 
 /* 人數與剩餘位子跟著桌號住在分隔線上方（見 seating-plan.js 的 renderBoard） */
 .sp-table-meta{display:flex;align-items:baseline;justify-content:space-between;gap:8px;
@@ -1525,9 +1559,11 @@ select.ad-input{appearance:none;cursor:pointer;
   border-left-color:#a4677a;background:rgba(164,103,122,.06);color:#8a5765;}
 .ad-demo-row.is-bad span{color:#8a5765;}
 
-/* 未安排區右上角的「＋ 新增賓客」（沒填回覆的長輩、臨時加的親友） */
-.sp-pool-add{flex:0 0 100%;text-align:left;color:var(--primary-deep);}
-.sp-pool-add:hover{border-bottom-color:var(--primary-deep);}
+/* 未安排區的「＋ 新增賓客」（沒填回覆的長輩、臨時加的親友）。
+   樣式跟頂列的「查看網站」同一支（.ad-bar-link）：淡色字、方形的點擊區、
+   hover 才浮出底色。左右的負邊距是把 .ad-bar-link 自己的 padding 吃掉，
+   文字才跟上一行的「未安排」對齊，不會多縮排 10px。 */
+.sp-pool-add{flex:0 0 100%;justify-content:flex-start;margin:2px -10px 0;}
 
 /* 從排桌管理跳過來打開「開放桌次功能」時，閃一下讓人看到是哪一個開關 */
 .ad-callout.is-flash{animation:adFlash 1.6s ease-out;}
@@ -2693,11 +2729,14 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
    共用 class 名稱只會讓兩邊互相污染：改賓客的圓角，後台跟著變。
 ============================================================ */
 .ad-bar-actions{align-items:center;}
+/* <a> 與 <button> 共用（排桌的「＋ 新增賓客」也是這一支），
+   所以 background／cursor 要自己寫掉瀏覽器給按鈕的預設值 */
 .ad-bar-link{
   display:inline-flex;align-items:center;gap:5px;
   font-family:var(--font-ui);font-size:12.5px;letter-spacing:.08em;
   color:var(--ink-soft);text-decoration:none;padding:8px 10px;
-  border-radius:var(--radius);border:1px solid transparent;
+  border-radius:var(--radius);border:1px solid transparent;background:none;
+  cursor:pointer;
   transition:color var(--dur-hover) ease-out,background var(--dur-hover) ease-out;
 }
 .ad-bar-link i{font-style:normal;font-size:11px;opacity:.7;}
@@ -2751,7 +2790,9 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
 /* <900px：頂列的帳號鈕留著（登出仍然按得到），但「查看網站」讓位給漢堡鈕 */
 @media(max-width:899px){
   .ad-bar-actions{display:flex;}
-  .ad-bar-link{display:none;}
+  /* 收掉的是「頂列的那一顆」——這個 class 現在也被排桌的
+     「＋ 新增賓客」用著（.sp-pool-add），選擇器要限定在頂列裡 */
+  .ad-bar-actions > .ad-bar-link{display:none;}
   .ad-acct-nm{display:none;}
   .ad-acct-btn{padding:5px 8px 5px 6px;}
   .ad-side-foot-who{
