@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Forest Botanical｜大廳模板示範</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&family=Noto+Serif+TC:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="demo-photo.css">
+<style>
+/* ============================================================
+   Forest Botanical — 照片本身就是整個畫面
+   ------------------------------------------------------------
+   結構主張：Hero 就是一張滿版照片，沒有白紗、沒有白卡，
+   名字直接壓在照片上（漸層暗角負責可讀性）。
+   照片是主角，內容是照片之後才開始的第二章。
+   全頁再出現兩次滿版照片帶（倒數、故事）把這個主張重講一次。
+
+   和 Classic 的差別：Classic 的照片是 fixed 背景、被白紗壓淡；
+   這裡的照片是有邊界的 section，飽和、深、白字壓上去。
+============================================================ */
+:root{
+  --ground:#F2EFE5;
+  --ink:#26382D;
+  --ink-2:#68745C;
+  --sage:#A5AD94;
+  --bark:#806F5C;
+  --line:#D9D5C6;
+  --line-soft:#E6E2D5;
+  --f-en:'Cormorant Garamond',Georgia,serif;
+  --f-cn:'Noto Serif TC',serif;
+  --f-ui:'Noto Sans TC','Noto Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  background:var(--ground);color:var(--ink);
+  font-family:var(--f-ui);font-weight:300;font-size:14.5px;line-height:2;
+  letter-spacing:.03em;-webkit-font-smoothing:antialiased;
+}
+
+/* ---- 導覽：浮在照片上，進內容後轉深 ---- */
+.f-nav{position:absolute;top:0;left:0;right:0;z-index:20;
+  display:flex;align-items:center;gap:24px;padding:22px clamp(20px,5vw,54px);}
+.f-nav .brand{font-family:var(--f-en);font-size:18px;letter-spacing:.18em;color:#fff;margin-right:auto;white-space:nowrap;}
+.f-nav a{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.78);text-decoration:none;}
+.f-nav a:hover{color:#fff;}
+@media(max-width:640px){
+  .f-nav{gap:0;padding:18px 20px;}
+  .f-nav a{display:none;}
+}
+
+/* ============ HERO：照片＝整個畫面 ============ */
+.f-hero{position:relative;height:100svh;min-height:560px;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+  padding:0 24px clamp(56px,10vh,110px);text-align:center;}
+.f-hero .ph{position:absolute;inset:0;z-index:0;
+  background:
+    radial-gradient(3.2% 9.5% at 47% 55%,rgba(230,226,210,.46),rgba(230,226,210,0) 100%),
+    radial-gradient(3% 10% at 52.4% 55.5%,rgba(9,15,10,.66),rgba(9,15,10,0) 100%),
+    radial-gradient(13% 4% at 49.5% 64%,rgba(8,13,9,.50),transparent 72%),
+    linear-gradient(104deg,transparent 18%,rgba(228,222,188,.22) 33%,rgba(228,222,188,.07) 45%,transparent 57%),
+    linear-gradient(91deg,transparent 0 4%,rgba(16,26,19,.55) 4% 7%,transparent 7% 15%,
+      rgba(16,26,19,.38) 15% 17.5%,transparent 17.5% 27%,rgba(16,26,19,.62) 27% 31%,
+      transparent 31% 41%,rgba(16,26,19,.32) 41% 43%,transparent 43% 63%,
+      rgba(16,26,19,.50) 63% 66.5%,transparent 66.5% 74%,rgba(16,26,19,.40) 74% 76.5%,
+      transparent 76.5% 86%,rgba(16,26,19,.58) 86% 90%,transparent 90%),
+    linear-gradient(180deg,rgba(9,16,11,.58) 0%,rgba(9,16,11,.04) 27%,rgba(9,16,11,.34) 63%,rgba(10,16,11,.84) 100%),
+    linear-gradient(180deg,#37502F 0%,#1F2C1E 58%,#0F1711 100%);
+}
+.f-hero > :not(.f-nav):not(.ph):not(.f-fern){position:relative;z-index:2;}
+.f-hero h1{font-family:var(--f-en);font-weight:300;color:#fff;
+  font-size:clamp(34px,8.4vw,86px);line-height:1.1;letter-spacing:.08em;
+  text-shadow:0 2px 26px rgba(10,16,12,.5);}
+.f-hero .amp{font-style:italic;padding:0 .16em;}
+.f-hero .date{margin-top:18px;font-size:clamp(10.5px,2.2vw,13px);letter-spacing:.42em;
+  color:rgba(255,255,255,.9);text-transform:uppercase;text-shadow:0 1px 14px rgba(10,16,12,.6);}
+.f-hero .rule{width:1px;height:44px;background:rgba(255,255,255,.5);margin:26px auto 0;}
+.f-hero .cue{margin-top:14px;font-size:9.5px;letter-spacing:.34em;text-transform:uppercase;color:rgba(255,255,255,.72);}
+.f-fern{position:absolute;z-index:2;color:rgba(255,255,255,.5);
+  right:clamp(10px,4vw,64px);bottom:clamp(40px,9vh,96px);width:clamp(64px,10vw,116px);}
+.f-fern svg{width:100%;height:auto;display:block;}
+
+/* ============ 內容 ============ */
+.f-body{display:block;max-width:840px;margin:0 auto;padding:clamp(56px,9vw,96px) clamp(20px,5vw,44px) 0;}
+.f-sec{padding:0 0 clamp(52px,8vw,84px);text-align:center;}
+.f-sec-title{display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:32px;}
+.f-sec-title .en{font-family:var(--f-en);font-size:clamp(22px,3.6vw,30px);letter-spacing:.14em;}
+.f-sec-title .cn{font-family:var(--f-cn);font-weight:400;font-size:13px;letter-spacing:.26em;color:var(--ink-2);}
+.f-sprig{display:flex;align-items:center;gap:10px;margin-top:10px;color:var(--sage);}
+.f-sprig i{display:block;width:clamp(26px,6vw,52px);height:1px;background:currentColor;}
+.f-sprig b{width:5px;height:5px;border-radius:50%;background:currentColor;}
+
+.f-rows{max-width:420px;margin:0 auto;text-align:left;}
+.f-row{display:grid;grid-template-columns:4.6em 1fr;gap:16px;align-items:baseline;
+  padding:15px 0;border-top:1px solid var(--line-soft);}
+.f-row:first-child{border-top:none;}
+.f-row .lab{font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-2);}
+.f-row .val{font-size:14.5px;}
+.f-row .sub{font-size:12.5px;color:var(--ink-2);margin-top:2px;}
+.f-row .jump{display:inline-block;margin-top:6px;font-size:11.5px;letter-spacing:.14em;color:var(--bark);
+  background:none;border:none;border-bottom:1px solid var(--sage);padding:0 0 2px;cursor:pointer;font-family:var(--f-ui);}
+
+.f-btn{display:inline-block;font-family:var(--f-ui);font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;
+  padding:13px 28px;border:1px solid var(--ink);color:var(--ink);text-decoration:none;background:transparent;cursor:pointer;}
+.f-btn:hover{background:var(--ink);color:var(--ground);}
+.f-btn.fill{background:var(--ink);color:var(--ground);}
+.f-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:30px;}
+
+/* 流程：中線時間軸 */
+.f-tl{max-width:460px;margin:0 auto;text-align:left;}
+.f-tl-item{display:grid;grid-template-columns:4.6em 1px 1fr;gap:18px;align-items:start;}
+.f-tl-time{font-family:var(--f-en);font-size:17px;letter-spacing:.1em;text-align:right;padding-top:2px;}
+.f-tl-line{position:relative;background:var(--line);}
+.f-tl-line::before{content:'';position:absolute;top:8px;left:50%;transform:translate(-50%,-50%);
+  width:7px;height:7px;border-radius:50%;background:var(--sage);border:1px solid var(--ground);}
+.f-tl-item:last-child .f-tl-line{height:8px;}
+.f-tl-body{padding-bottom:28px;}
+.f-tl-t{font-family:var(--f-cn);font-weight:400;font-size:15px;letter-spacing:.06em;}
+.f-tl-d{font-size:12.5px;color:var(--ink-2);margin-top:3px;}
+
+.f-notes{display:grid;grid-template-columns:1fr 1fr;gap:clamp(20px,4vw,44px);text-align:left;}
+@media(max-width:640px){.f-notes{grid-template-columns:1fr;}}
+.f-note .lab{font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--bark);display:block;margin-bottom:10px;}
+.f-note p{white-space:pre-line;font-size:13.5px;line-height:2.1;}
+
+/* 滿版照片帶：把「照片就是畫面」再講一次 */
+.f-band{position:relative;height:clamp(340px,52vh,520px);overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px;}
+.f-band .ph{position:absolute;inset:0;z-index:0;}
+.f-band > *{position:relative;z-index:2;color:#fff;}
+.f-band.story .ph{
+  background:
+    linear-gradient(180deg,rgba(14,22,17,.55),rgba(14,22,17,.68)),
+    radial-gradient(60% 50% at 70% 30%,rgba(214,206,170,.28),transparent 66%),
+    repeating-linear-gradient(88deg,#213125 0 3.4%,#2C3F30 3.4% 6.8%),
+    linear-gradient(180deg,#31462F,#1A2620);
+}
+.f-band.count .ph{
+  background:
+    linear-gradient(180deg,rgba(14,22,17,.62),rgba(14,22,17,.72)),
+    radial-gradient(55% 60% at 26% 40%,rgba(232,226,196,.22),transparent 68%),
+    repeating-linear-gradient(97deg,#1D2C22 0 2.9%,#27392D 2.9% 5.8%),
+    linear-gradient(180deg,#2C4029,#16211A);
+}
+.f-band .band-title{font-family:var(--f-en);font-size:clamp(20px,3.4vw,28px);letter-spacing:.18em;margin-bottom:8px;}
+.f-band .band-sub{font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:rgba(255,255,255,.72);}
+.f-story{font-family:var(--f-cn);font-weight:400;font-size:clamp(14px,2.2vw,16px);line-height:2.4;
+  white-space:pre-line;max-width:30em;margin:22px auto 0;color:rgba(255,255,255,.94);}
+
+.f-cd{display:flex;gap:0;margin-top:26px;}
+.f-cd .cd-unit{flex:1;padding:0 clamp(12px,2.4vw,26px);border-left:1px solid rgba(255,255,255,.28);}
+.f-cd .cd-unit:first-child{border-left:none;}
+.f-cd .cd-num{font-family:var(--f-en);font-size:clamp(30px,6vw,50px);line-height:1;font-variant-numeric:tabular-nums;}
+.f-cd .cd-lab{font-size:9.5px;letter-spacing:.3em;color:rgba(255,255,255,.7);margin-top:10px;}
+
+/* RSVP */
+.f-rsvp{max-width:520px;margin:0 auto;}
+.f-rsvp h3{font-family:var(--f-cn);font-weight:400;font-size:clamp(19px,2.8vw,23px);letter-spacing:.12em;margin-bottom:10px;}
+.f-rsvp p{font-size:13px;color:var(--ink-2);margin-bottom:26px;}
+
+/* Explore：卡片，但用米色底 ＋ 綠細線 */
+.f-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;text-align:left;}
+@media(max-width:640px){.f-grid{grid-template-columns:1fr;}}
+.f-card{display:flex;flex-direction:column;gap:8px;padding:26px 22px;text-decoration:none;color:var(--ink);
+  background:#FBF9F2;border:1px solid var(--line);transition:border-color .25s,transform .25s;}
+.f-card:hover{border-color:var(--ink);transform:translateY(-2px);}
+.f-card .n{font-family:var(--f-en);font-size:12px;letter-spacing:.22em;color:var(--sage);}
+.f-card .t{font-family:var(--f-cn);font-weight:400;font-size:16px;letter-spacing:.08em;}
+.f-card .s{font-size:12.5px;color:var(--ink-2);line-height:1.9;}
+.f-card .g{margin-top:4px;font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--bark);}
+.f-card .flag{position:absolute;}
+.f-card{position:relative;}
+.f-card .flag{right:14px;bottom:14px;width:5px;height:5px;border-radius:50%;background:var(--bark);opacity:.6;}
+
+.f-foot{text-align:center;padding:56px 20px 40px;font-size:10.5px;letter-spacing:.26em;
+  text-transform:uppercase;color:var(--ink-2);border-top:1px solid var(--line-soft);margin-top:40px;}
+</style>
+</head>
+<body data-template="forest-botanical">
+
+<!-- ============ HERO：照片就是整個畫面 ============ -->
+<header class="f-hero">
+  <div class="ph"><span class="ph-note" style="color:#fff">forest ceremony</span></div>
+  <nav class="f-nav">
+    <span class="brand" data-field="couple"></span>
+    <a href="#">Seating</a><a href="#">Wishes</a><a href="#">Letter</a><a href="#">Story</a>
+  </nav>
+  <div class="f-fern" data-fern></div>
+
+  <h1><span data-field="nameA"></span><span class="amp">&amp;</span><span data-field="nameB"></span></h1>
+  <div class="date" data-field="dateEn"></div>
+  <div class="rule"></div>
+  <div class="cue">Scroll</div>
+</header>
+
+<main class="f-body">
+
+  <section class="f-sec" data-section="info">
+    <div class="f-sec-title">
+      <span class="en">Information</span>
+      <span class="cn">婚禮資訊</span>
+      <span class="f-sprig"><i></i><b></b><i></i></span>
+    </div>
+    <div class="f-rows">
+      <template data-list="info">
+        <div class="f-row">
+          <div class="lab" data-field="label"></div>
+          <div>
+            <div class="val" data-field="value"></div>
+            <div class="sub" data-field="sub"></div>
+            <button class="jump" type="button" data-field="jump" data-jump="schedule"></button>
+          </div>
+        </div>
+      </template>
+    </div>
+    <div class="f-actions">
+      <a class="f-btn" href="#">開啟地圖</a>
+      <a class="f-btn" href="#">加入行事曆</a>
+      <a class="f-btn fill" href="#" data-field="seatCta"></a>
+    </div>
+  </section>
+
+  <section class="f-sec" data-section="schedule">
+    <div class="f-sec-title">
+      <span class="en">Schedule</span><span class="cn">當日流程</span>
+      <span class="f-sprig"><i></i><b></b><i></i></span>
+    </div>
+    <div class="f-tl">
+      <template data-list="schedule">
+        <div class="f-tl-item">
+          <div class="f-tl-time" data-field="time"></div>
+          <div class="f-tl-line"></div>
+          <div class="f-tl-body">
+            <div class="f-tl-t" data-field="title"></div>
+            <div class="f-tl-d" data-field="desc"></div>
+          </div>
+        </div>
+      </template>
+    </div>
+  </section>
+
+  <section class="f-sec" data-section="notes">
+    <div class="f-sec-title">
+      <span class="en">Notes</span><span class="cn">出席前的小提醒</span>
+      <span class="f-sprig"><i></i><b></b><i></i></span>
+    </div>
+    <div class="f-notes">
+      <template data-list="notes">
+        <div class="f-note">
+          <span class="lab" data-field="label"></span>
+          <p data-field="text"></p>
+        </div>
+      </template>
+    </div>
+  </section>
+
+  <section class="f-sec" data-section="transport">
+    <div class="f-sec-title">
+      <span class="en">Access</span><span class="cn">交通資訊</span>
+      <span class="f-sprig"><i></i><b></b><i></i></span>
+    </div>
+    <div class="f-notes">
+      <template data-list="transport">
+        <div class="f-note">
+          <span class="lab" data-field="label"></span>
+          <p data-field="text"></p>
+        </div>
+      </template>
+    </div>
+  </section>
+</main>
+
+<!-- 滿版照片帶 ①：倒數 -->
+<section class="f-band count" data-section="countdown">
+  <div class="ph"></div>
+  <div class="band-title">Countdown</div>
+  <div class="band-sub">距離我們的大日子還有</div>
+  <div class="f-cd" data-countdown>
+    <template>
+      <div class="cd-unit" data-unit>
+        <div class="cd-num" data-num></div>
+        <div class="cd-lab" data-label></div>
+      </div>
+    </template>
+  </div>
+</section>
+
+<div class="f-body">
+  <section class="f-sec" data-section="rsvp" style="padding-top:clamp(56px,9vw,90px)">
+    <div class="f-sec-title">
+      <span class="en">R.S.V.P.</span><span class="cn">出席回覆</span>
+      <span class="f-sprig"><i></i><b></b><i></i></span>
+    </div>
+    <div class="f-rsvp">
+      <h3 data-field="rsvp.title"></h3>
+      <p data-field="rsvp.lead"></p>
+      <a class="f-btn fill" href="#" data-field="rsvp.cta"></a>
+    </div>
+  </section>
+
+  </div>
+
+<!-- 滿版照片帶 ②：兩人的故事 -->
+<section class="f-band story" data-section="story">
+  <div class="ph"></div>
+  <div class="band-title">Our Story</div>
+  <div class="band-sub">關於我們這一路</div>
+  <p class="f-story" data-field="story"></p>
+</section>
+
+<div class="f-body">
+  <section class="f-sec" data-section="explore">
+    <div class="f-sec-title">
+      <span class="en">Explore</span><span class="cn">探索其他活動</span>
+      <span class="f-sprig"><i></i><b></b><i></i></span>
+    </div>
+    <div class="f-grid">
+      <template data-list="explore">
+        <a class="f-card" href="#">
+          <span class="n" data-field="_index"></span>
+          <span class="t" data-field="title"></span>
+          <span class="s" data-field="sub"></span>
+          <span class="g" data-field="go"></span>
+          <span class="flag" data-flag="custom"></span>
+        </a>
+      </template>
+    </div>
+  </section>
+</div>
+
+
+<div class="f-foot" data-field="footer"></div>
+
+<script src="demo-data.js"></script>
+<script src="lobby-mount.js"></script>
+</body>
+</html>

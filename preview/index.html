@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>婚禮邀請函模板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Noto+Sans+TC:wght@300;400;500&family=Noto+Serif+TC:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   模板選擇頁 — 三張縮圖，一眼看出三種婚禮氣質
+   ------------------------------------------------------------
+   縮圖刻意只畫 Hero：因為三份模板真正的差別就在
+   「照片怎麼進到畫面裡」，而那件事在 Hero 就決定完了。
+   縮圖不是截圖，是用各自模板的規則現畫的，改模板它就跟著變。
+============================================================ */
+:root{
+  --ground:#F4F2EC; --surface:#FCFBF7; --ink:#232320; --muted:#7E7A72;
+  --line:#DEDACE; --line-soft:#EBE7DC;
+  --f-en:'Cormorant Garamond',Georgia,serif;
+  --f-cn:'Noto Serif TC',serif;
+  --f-ui:'Noto Sans TC','Noto Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--ground);color:var(--ink);font-family:var(--f-ui);font-weight:300;
+  font-size:14.5px;line-height:1.9;letter-spacing:.02em;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1180px;margin:0 auto;padding:clamp(44px,7vw,86px) clamp(20px,5vw,52px) 96px;}
+
+.head{border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:clamp(30px,5vw,52px);}
+.head .kicker{font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.head h1{font-family:var(--f-cn);font-weight:500;font-size:clamp(22px,3.6vw,32px);letter-spacing:.12em;line-height:1.5;}
+.head p{margin-top:12px;max-width:46em;color:var(--muted);font-size:14px;}
+
+.grid{display:grid;gap:clamp(18px,2.6vw,28px);grid-template-columns:1fr;}
+@media(min-width:760px){.grid{grid-template-columns:repeat(3,1fr);}}
+
+.card{background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;}
+.thumb{position:relative;aspect-ratio:4/5;overflow:hidden;border-bottom:1px solid var(--line);}
+.card-body{padding:22px 20px 24px;display:flex;flex-direction:column;gap:12px;flex:1;}
+.card-title{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+.card-title .en{font-family:var(--f-en);font-size:23px;letter-spacing:.08em;}
+.card-title .cn{font-family:var(--f-cn);font-size:12.5px;letter-spacing:.2em;color:var(--muted);}
+.thesis{font-size:13.5px;line-height:1.95;}
+.thesis b{font-weight:500;}
+.mood{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);}
+.swatches{display:flex;gap:6px;margin-top:2px;}
+.swatches i{width:17px;height:17px;border-radius:50%;border:1px solid rgba(0,0,0,.08);display:block;}
+.meta{margin-top:auto;padding-top:14px;border-top:1px solid var(--line-soft);
+  font-size:11px;letter-spacing:.06em;color:var(--muted);}
+.meta code{font-family:ui-monospace,'SFMono-Regular',monospace;font-size:11px;color:var(--ink);}
+
+/* ============ 縮圖 ①　Classic：照片＝背景 ============ */
+.t-classic{background:
+  radial-gradient(26% 30% at 41% 56%,rgba(47,43,38,.30),transparent 72%),
+  radial-gradient(23% 26% at 58% 60%,rgba(47,43,38,.22),transparent 72%),
+  radial-gradient(70% 46% at 30% 16%,rgba(255,253,247,.95),transparent 62%),
+  linear-gradient(158deg,#EDE6DA 0%,#DCD3C4 44%,#BCB2A2 76%,#9C9284 100%);}
+.t-classic .veil{position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(255,255,255,.54),rgba(255,255,255,.70));}
+.t-classic .mid{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:9px;text-align:center;padding:0 16px;
+  font-family:var(--f-cn);color:#2f2b26;}
+.t-classic .tags{display:flex;gap:5px;}
+.t-classic .tags span{font-size:6px;letter-spacing:.18em;color:#7c7267;
+  border:1px solid rgba(47,43,38,.2);border-radius:99px;padding:2px 7px;}
+.t-classic .h{font-size:19px;letter-spacing:.06em;font-weight:400;}
+.t-classic .s{font-size:8px;letter-spacing:.2em;color:#7c7267;}
+/* 白卡浮在照片上 —— 這一版的內容永遠是這樣壓在照片前面 */
+.t-classic .card-peek{position:absolute;left:10%;right:10%;bottom:7%;height:25%;
+  background:rgba(255,255,255,.74);border:1px solid rgba(47,43,38,.12);
+  backdrop-filter:blur(3px);display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:6px;padding:0 14%;}
+.t-classic .card-peek b{font-weight:400;font-size:6.5px;letter-spacing:.3em;color:#7c7267;}
+.t-classic .card-peek i{display:block;width:100%;height:1px;background:rgba(47,43,38,.12);}
+.t-classic .card-peek i:nth-of-type(2){width:72%;}
+
+/* ============ 縮圖 ②　Korean Modern：照片＝版面裡的物件 ============ */
+.t-korean{background:#F7F5F0;}
+.t-korean .nameA,.t-korean .nameB{position:absolute;font-family:var(--f-en);font-weight:300;
+  font-size:44px;line-height:.86;color:#272725;z-index:3;mix-blend-mode:multiply;}
+.t-korean .nameA{top:15%;left:7%;}
+.t-korean .nameB{bottom:19%;left:24%;}
+.t-korean .rule{position:absolute;left:0;right:0;top:50%;height:1px;background:#DCD9D2;z-index:1;}
+.t-korean .bar{position:absolute;left:7%;top:calc(50% - 3px);width:22%;height:6px;background:#A8B8C5;z-index:2;}
+.t-korean .kphoto{position:absolute;z-index:2;left:47%;top:50%;transform:translateY(-50%);
+  height:56%;aspect-ratio:3/4;border:1px solid #DCD9D2;
+  background:
+    radial-gradient(13% 15% at 43% 50%,rgba(35,35,33,.72),transparent 62%),
+    radial-gradient(11.5% 14% at 55% 55%,rgba(74,72,66,.32),transparent 64%),
+    radial-gradient(58% 40% at 20% 8%,rgba(255,253,248,.98),transparent 64%),
+    radial-gradient(50% 40% at 12% 95%,rgba(247,245,240,.96),transparent 68%),
+    linear-gradient(158deg,#EAE4D9 0%,#D8D2C7 42%,#A8B8C5 74%,#8D8A84 100%);}
+.t-korean .date{position:absolute;left:7%;bottom:8%;font-family:var(--f-en);
+  font-size:8px;letter-spacing:.24em;color:#272725;padding-top:7px;border-top:1px solid #DCD9D2;
+  width:38%;z-index:3;}
+
+/* ============ 縮圖 ③　Forest Botanical：照片＝整個畫面 ============ */
+.t-forest{background:
+  radial-gradient(3.4% 9% at 47% 50%,rgba(230,226,210,.46),rgba(230,226,210,0) 100%),
+  radial-gradient(3.2% 9.5% at 52.6% 50.5%,rgba(9,15,10,.66),rgba(9,15,10,0) 100%),
+  radial-gradient(14% 4% at 49.5% 59%,rgba(8,13,9,.5),transparent 72%),
+  linear-gradient(104deg,transparent 18%,rgba(228,222,188,.22) 33%,transparent 55%),
+  linear-gradient(91deg,transparent 0 5%,rgba(16,26,19,.55) 5% 9%,transparent 9% 18%,
+    rgba(16,26,19,.38) 18% 21%,transparent 21% 32%,rgba(16,26,19,.60) 32% 37%,
+    transparent 37% 50%,rgba(16,26,19,.32) 50% 53%,transparent 53% 68%,
+    rgba(16,26,19,.50) 68% 72%,transparent 72% 84%,rgba(16,26,19,.56) 84% 89%,transparent 89%),
+  linear-gradient(180deg,rgba(9,16,11,.55) 0%,rgba(9,16,11,.04) 27%,rgba(9,16,11,.36) 63%,rgba(10,16,11,.86) 100%),
+  linear-gradient(180deg,#37502F 0%,#1F2C1E 58%,#0F1711 100%);}
+.t-forest .mid{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:flex-end;padding:0 14px 16%;text-align:center;color:#fff;}
+.t-forest .h{font-family:var(--f-en);font-weight:300;font-size:25px;letter-spacing:.08em;
+  text-shadow:0 2px 18px rgba(10,16,12,.5);}
+.t-forest .h .amp{font-style:italic;padding:0 .14em;}
+.t-forest .d{margin-top:7px;font-size:7px;letter-spacing:.34em;color:rgba(255,255,255,.9);}
+.t-forest .r{width:1px;height:18px;background:rgba(255,255,255,.5);margin-top:11px;}
+.t-forest .fern{position:absolute;right:9%;bottom:14%;width:16%;color:rgba(255,255,255,.5);}
+.t-forest .fern svg{width:100%;height:auto;display:block;}
+
+.note{margin-top:clamp(28px,4vw,44px);padding-top:22px;border-top:1px solid var(--line);
+  font-size:12.5px;color:var(--muted);max-width:60em;}
+.note b{color:var(--ink);font-weight:500;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="head">
+    <div class="kicker">Minato Studio — Wedding</div>
+    <h1>挑一種婚禮的氣質</h1>
+    <p>同一份婚禮資料，三種版型。內容、連結、後台設定完全不用重做——換的只有「照片怎麼進到畫面裡」，
+       而那件事決定了整張邀請函的個性。</p>
+  </header>
+
+  <div class="grid">
+
+    <!-- ① Classic -->
+    <article class="card">
+      <div class="thumb t-classic">
+        <div class="veil"></div>
+        <div class="mid">
+          <div class="tags"><span>#我們結婚了</span><span>#Married</span></div>
+          <div class="h">We're getting married!</div>
+          <div class="s">SCROLL</div>
+        </div>
+        <div class="card-peek"><b>WEDDING INFO</b><i></i><i></i><i></i></div>
+      </div>
+      <div class="card-body">
+        <div class="card-title"><span class="en">Classic</span><span class="cn">經典・現行版</span></div>
+        <p class="thesis"><b>照片是背景。</b>婚紗照鋪滿整個視窗、滾動時不動，上面壓一層薄紗，
+           內容是一疊白卡浮在照片前面。照片負責氣氛，不搶戲。</p>
+        <div class="mood">Soft · Warm · Timeless</div>
+        <div class="swatches">
+          <i style="background:#FBFAF7"></i><i style="background:#F4F1EA"></i>
+          <i style="background:#B39A6D"></i><i style="background:#8E7748"></i><i style="background:#2F2B26"></i>
+        </div>
+        <div class="meta">Noto Serif TC 單一字族　·　完整示範 <code>preview/classic.html</code></div>
+      </div>
+    </article>
+
+    <!-- ② Korean Modern -->
+    <article class="card">
+      <div class="thumb t-korean">
+        <div class="rule"></div><div class="bar"></div>
+        <div class="nameA">GINNY</div>
+        <div class="kphoto"></div>
+        <div class="nameB">ONE</div>
+        <div class="date">19 SEPTEMBER 2026</div>
+      </div>
+      <div class="card-body">
+        <div class="card-title"><span class="en">Korean Modern</span><span class="cn">韓系現代簡約</span></div>
+        <p class="thesis"><b>照片被設計進版面裡。</b>沒有背景照。名字是一根從上到下的柱子，
+           照片橫切過它的右緣，兩者互相壓過去，再拉一條穿過照片後面的細線把它們鎖在同一個網格上。</p>
+        <div class="mood">Modern · Minimal · Editorial</div>
+        <div class="swatches">
+          <i style="background:#F7F5F0"></i><i style="background:#DCD9D2"></i>
+          <i style="background:#A8B8C5"></i><i style="background:#8D8A84"></i><i style="background:#272725"></i>
+        </div>
+        <div class="meta">Cormorant Garamond ＋ Noto Serif TC　·　完整示範 <code>preview/korean-modern.html</code></div>
+      </div>
+    </article>
+
+    <!-- ③ Forest Botanical -->
+    <article class="card">
+      <div class="thumb t-forest">
+        <div class="fern" data-fern></div>
+        <div class="mid">
+          <div class="h">GINNY<span class="amp">&amp;</span>ONE</div>
+          <div class="d">19 SEPTEMBER 2026</div>
+          <div class="r"></div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-title"><span class="en">Forest Botanical</span><span class="cn">自然森林植物</span></div>
+        <p class="thesis"><b>照片就是整個畫面。</b>Hero 是一張滿版照片，沒有白紗也沒有白卡，
+           名字直接壓在照片上。往下捲，照片還會再滿版出現兩次，把這件事重講一遍。</p>
+        <div class="mood">Organic · Natural · Romantic</div>
+        <div class="swatches">
+          <i style="background:#F2EFE5"></i><i style="background:#C9C5B8"></i>
+          <i style="background:#A5AD94"></i><i style="background:#806F5C"></i><i style="background:#26382D"></i>
+        </div>
+        <div class="meta">Cormorant Garamond ＋ Noto Serif TC　·　完整示範 <code>preview/forest-botanical.html</code></div>
+      </div>
+    </article>
+
+  </div>
+
+  <p class="note">
+    三份模板讀的是<b>同一支 <code style="font-family:ui-monospace,monospace">demo-data.js</code></b>，
+    由<b>同一支 <code style="font-family:ui-monospace,monospace">lobby-mount.js</code></b> 填空——
+    模板只提供 <code style="font-family:ui-monospace,monospace">&lt;template&gt;</code> 骨架與 CSS，
+    一行資料邏輯都沒有。這正是「One Wedding Data → Multiple Visual Templates」要證明的事。
+  </p>
+
+</div>
+<script src="lobby-mount.js"></script>
+<script>/* 縮圖不需要資料，只借用 lobby-mount 的蕨葉線稿 */</script>
+</body>
+</html>

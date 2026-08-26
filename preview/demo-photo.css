@@ -1,0 +1,19 @@
+/* ============================================================
+   demo-photo.css — 只有這份示範用得到
+   ------------------------------------------------------------
+   示範檔沒有真的婚紗照，所以用 CSS 疊出「像照片」的底：
+   光影漸層 ＋ 兩個柔和的人形剪影 ＋ 一層底噪。
+   正式版把 .ph 的 background 換成 url(素材) 就好，
+   結構、比例、疊字位置都不必改 —— 這正是模板要證明的事。
+============================================================ */
+.ph{position:relative;overflow:hidden;background:#cfc9bf;}
+.ph::after{
+  content:'';position:absolute;inset:0;pointer-events:none;opacity:.22;
+  mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.ph > .ph-note{
+  position:absolute;left:0;right:0;bottom:8px;text-align:center;
+  font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;
+  opacity:.42;pointer-events:none;
+}
