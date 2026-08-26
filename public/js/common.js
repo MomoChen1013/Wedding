@@ -1388,7 +1388,10 @@ const DECO_GAP_MS  = 110;    /* 葉與葉之間的間隔 */
 function growDeco(svg){
   const strokes = svg.querySelectorAll('path,ellipse');
   strokes.forEach(el => {
-    const len = el.getTotalLength ? el.getTotalLength() : 0;
+    /* display:none 的子樹（開場字幕期間的 #app）量不到長度，會直接 throw ——
+       量不到就不做生長動畫，線稿以完成狀態顯示，跟 reduced-motion 一樣 */
+    let len = 0;
+    try{ len = el.getTotalLength ? el.getTotalLength() : 0; }catch{ return; }
     if(!len) return;
     const order = +(el.dataset.order || 0);
     /* 一定要帶 px：CSS 的 stroke-dashoffset 沒單位會被當成非法值整條丟掉，

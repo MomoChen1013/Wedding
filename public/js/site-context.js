@@ -113,9 +113,14 @@ const TEMPLATES = {
   'classic-blush': { label:'Classic 霧玫瑰' },
   'classic-sage':  { label:'Classic 鼠尾草綠' },
   'classic-dusk':  { label:'Classic 霧霾藍' },
-  'korean':        { label:'Korean Modern',
+  /* korean／forest 的大廳有自己的版面結構（lobbyFile）：
+     由 scripts/build-og.js 產出 public/w/{slug}/index.html 時選用，
+     Hosting 的靜態檔優先於 /w/** 的 rewrite 所以會命中它；
+     沒跑過 build-og 的站台落回 index.html（Classic 骨架＋版型色票）。
+     其餘子頁全部共用，靠色票與字體換裝。 */
+  'korean':        { label:'Korean Modern', lobbyFile:'lobby-korean.html',
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
-  'forest':        { label:'Forest Botanical',
+  'forest':        { label:'Forest Botanical', lobbyFile:'lobby-forest.html',
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
 };
 const DEFAULT_TEMPLATE = 'classic';

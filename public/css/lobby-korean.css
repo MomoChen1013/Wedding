@@ -1,0 +1,137 @@
+/* ============================================================
+   lobby-korean.css — Korean Modern 版型的大廳（lobby-korean.html 專用）
+   ------------------------------------------------------------
+   疊在 common.css ＋ index.css 之後：index.css 給的是 Classic 的骨架
+   （gate／開場／timeline／countdown／explore 的基本樣式都在那），
+   這一份只負責把版面改成「照片被設計進版面裡」的編排：
+   ・沒有背景照、沒有白卡 —— 內容靠 1px 線與留白分節
+   ・hero 是名字與照片互相咬合的版面
+   ・區塊是「左側編號＋標題、右側內容」的雙欄，編號用 CSS counter
+     自動跳過被收起來的區塊（display:none 不會累加 counter）
+============================================================ */
+
+/* ---- hero：名字是一根柱子，照片橫切過它 ---- */
+.k-hero{min-height:calc(100svh - var(--nav-h));display:flex;flex-direction:column;
+  justify-content:center;align-items:stretch;text-align:left;gap:0;
+  padding:clamp(28px,6vw,72px) clamp(20px,5vw,64px) clamp(40px,6vw,72px);}
+
+.k-pagetitle{display:flex;align-items:center;gap:14px;margin-bottom:clamp(18px,3vw,30px);}
+.k-pagetitle .en{font-family:var(--font-display);font-size:13px;letter-spacing:.34em;
+  text-transform:uppercase;color:var(--ink-soft);}
+.k-pagetitle i{flex:0 0 clamp(28px,5vw,64px);height:1px;background:var(--line);}
+.k-pagetitle .cn{font-family:var(--font-hand);font-size:15px;letter-spacing:.3em;color:var(--ink);}
+
+.k-name{font-family:var(--font-display);font-weight:300;
+  font-size:clamp(44px,12vw,150px);line-height:.9;letter-spacing:.02em;
+  color:var(--ink);position:relative;z-index:3;mix-blend-mode:multiply;}
+.k-nameB{padding-left:clamp(20px,14vw,190px);}
+
+/* 中段：一條穿過照片後面的基準線 ＋ 霧藍重音 ＋ 照片 */
+.k-mid{height:clamp(150px,30svh,260px);position:relative;}
+.k-mid::before{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:var(--line);z-index:0;}
+.k-mid::after{content:'';position:absolute;left:0;top:calc(50% - 5px);
+  width:clamp(56px,9vw,110px);height:10px;background:var(--primary);z-index:2;}
+.k-photo{position:absolute;z-index:1;left:52%;top:50%;transform:translateY(-50%);
+  block-size:clamp(240px,46svh,430px);aspect-ratio:3/4;inline-size:auto;
+  border:1px solid var(--line);
+  background:
+    radial-gradient(58% 40% at 20% 8%,rgba(255,253,248,.98),transparent 64%),
+    linear-gradient(158deg,#EDE9E2 0%,#DBD7CE 42%,var(--primary) 74%,#8A93A6 100%);
+  background-size:cover;background-position:center;}
+
+.k-hero-meta{margin-top:22px;padding-top:16px;border-top:1px solid var(--line);
+  max-width:22em;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;}
+.k-hero-meta .d{font-family:var(--font-display);font-size:16px;letter-spacing:.22em;color:var(--ink);}
+.k-hero-meta .w{font-size:12.5px;letter-spacing:.18em;color:var(--ink-soft);}
+
+/* hashtag：沿用 index.js 填進來的 .tag，換成靠左、無框的安靜樣子 */
+.k-hero .hashtags{justify-content:flex-start;margin-top:14px;}
+.k-hero .hashtags .tag{border:none;padding:0;border-radius:0;font-size:12px;color:var(--ink-soft);}
+
+@media(max-width:760px){
+  .k-hero{padding-top:16px;}
+  .k-name{font-size:clamp(42px,14.5vw,84px);mix-blend-mode:normal;}
+  .k-nameB{padding-left:10px;}
+  .k-mid{height:auto;}
+  .k-mid::before,.k-mid::after{display:none;}
+  .k-photo{position:static;transform:none;inline-size:100%;block-size:auto;
+    aspect-ratio:4/5;margin:16px 0;}
+}
+
+/* ---- 內容：雙欄編排，收掉 Classic 的白卡 ---- */
+.k-body{max-width:1000px;padding-bottom:120px;}
+.k-sec{background:transparent;border:none;border-radius:0;backdrop-filter:none;
+  -webkit-backdrop-filter:none;margin-top:0;padding:clamp(38px,6vw,64px) 0;
+  border-top:1px solid var(--line);
+  display:grid;grid-template-columns:200px 1fr;gap:clamp(20px,4vw,56px);}
+.k-sec[hidden]{display:none;}
+@media(max-width:760px){.k-sec{grid-template-columns:1fr;gap:20px;}}
+
+/* 左欄：編號 ＋ 英文標題 ＋ 中文小標。
+   編號用 counter：被收起來（display:none）的區塊不會累加，不跳號 */
+.k-body{counter-reset:ksec;}
+.k-sec[data-num]{counter-increment:ksec;}
+.k-sec-head .num::before{content:counter(ksec,decimal-leading-zero);}
+.k-sec-head{display:flex;flex-direction:column;gap:2px;}
+.k-sec-head .num{font-family:var(--font-display);font-size:13px;letter-spacing:.2em;color:var(--primary);}
+.k-sec-head .en.block-title{font-family:var(--font-display);font-weight:400;font-size:22px;
+  letter-spacing:.1em;text-transform:none;margin:4px 0 0;color:var(--ink);}
+.k-sec-head .cn.block-sub{font-family:var(--font-hand);font-size:14px;letter-spacing:.18em;
+  color:var(--ink-soft);margin:2px 0 0;}
+
+/* ---- 婚禮資訊：靠左、細線分列 ---- */
+.k-sec .info-card{text-align:left;}
+.k-sec .info-couple{font-size:clamp(20px,3.4vw,26px);letter-spacing:.1em;}
+.k-sec .info-couple-cn{margin:4px 0 22px;letter-spacing:.14em;}
+.k-sec .info-rows{max-width:none;margin:0;}
+.k-sec .info-actions{justify-content:flex-start;margin-top:26px;}
+.k-sec .info-seat{justify-content:flex-start;border-top:1px solid var(--line-soft);}
+.k-sec .info-seat .btn{width:auto;min-width:220px;}
+
+/* 按鈕：細框、uppercase 的安靜樣子（hover 才填色） */
+.k-sec .btn{background:transparent;color:var(--ink);border:1px solid var(--ink);
+  font-family:var(--font-ui);font-size:13px;letter-spacing:.2em;text-transform:uppercase;}
+.k-sec .btn:hover{background:var(--ink);border-color:var(--ink);color:var(--on-ink);}
+.k-sec .btn.ghost{border-color:var(--line);}
+.k-sec .btn.ghost:hover{border-color:var(--ink);background:var(--ink);color:var(--on-ink);}
+
+/* ---- 流程：時間用 display 字、藍點細線 ---- */
+.k-sec .timeline{max-width:none;margin:0;}
+.k-sec .tl-time{font-family:var(--font-display);font-size:16px;color:var(--ink);}
+.k-sec .tl-dot::before{background:var(--primary);}
+
+/* ---- 倒數：一排 display 大字，只有細直線分隔 ---- */
+.k-sec .cd-card{text-align:left;}
+.k-sec .cd-grid{max-width:520px;margin:0;}
+.k-sec .cd-num{font-weight:300;}
+.k-sec .cd-target{text-align:left;}
+
+/* ---- RSVP：整頁唯一的霧藍色塊 ---- */
+.k-sec .rsvp-cta{background:var(--primary);padding:clamp(30px,4.5vw,50px);
+  text-align:left;display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
+.k-sec .rsvp-cta h3{color:#2b3240;}
+.k-sec .rsvp-cta p{color:#3d4750;margin-bottom:18px;}
+.k-sec .rsvp-cta .btn{border-color:#2b3240;color:#2b3240;}
+.k-sec .rsvp-cta .btn:hover{background:#2b3240;border-color:#2b3240;color:#fff;}
+
+/* ---- Explore：編號清單，不是卡片牆 ---- */
+.k-sec .link-grid{display:flex;flex-direction:column;border:none;}
+.k-sec .link-card{display:grid;grid-template-columns:3em 1fr auto;gap:18px;align-items:baseline;
+  padding:20px 0;border:none;border-top:1px solid var(--line-soft);
+  background:transparent;transition:padding-left .2s;}
+.k-sec .link-card:first-child{border-top:none;}
+.k-sec .link-card:hover{background:transparent;color:var(--ink);padding-left:8px;}
+.k-sec .link-card:last-child:nth-child(odd){grid-column:auto;}
+.k-sec .lc-index{font-size:13px;letter-spacing:.16em;}
+.k-sec .lc-title{font-family:var(--font-hand);font-weight:400;font-size:16px;letter-spacing:.08em;}
+.k-sec .link-card:hover .lc-index,.k-sec .link-card:hover .lc-sub{color:var(--ink-soft);}
+.k-sec .lc-sub{grid-column:2;font-size:13px;}
+.k-sec .lc-go{margin-top:0;font-size:12px;color:var(--ink-soft);white-space:nowrap;
+  grid-column:3;grid-row:1;}
+.k-sec .link-card:hover .lc-go{color:var(--ink);}
+/* 自訂卡片（popup 型是 button）跟著同一套清單樣式 */
+.k-sec .link-card.is-custom{font-family:var(--font-body);text-align:left;width:100%;}
+.k-sec .link-card.is-custom::after{position:static;grid-column:3;grid-row:2;justify-self:end;}
+
+/* footer 收成細字 */
+.k-body footer{border-top:1px solid var(--line);text-transform:uppercase;letter-spacing:.24em;}

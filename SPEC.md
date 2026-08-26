@@ -675,7 +675,19 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
 Firebase Console → Firestore → sites/{siteId} → template 欄位 → 填上面的值
 ```
 
-重新整理賓客頁就生效，不必重新部署。
+子頁（桌次、祝福牆、測驗…）重新整理就生效 —— 它們共用同一套結構，
+換的只有色票與字體。**大廳比較特別**：`korean`／`forest` 有自己的
+版面結構（`lobby-korean.html`／`lobby-forest.html`，照片被設計進版面／
+照片就是整個畫面），要再跑一次
+
+```
+npm run build-og -- --slug {slug}
+npx firebase deploy --only hosting
+```
+
+build-og 會依 `template` 挑大廳的來源檔，產出 `public/w/{slug}/index.html`
+（靜態檔優先於 rewrite，所以會命中它）。沒跑 build-og 的站台落回
+`index.html` —— Classic 的版面配上該版型的色票，不會壞，只是沒有專屬結構。
 
 - **開站一律是 `classic`**：`scripts/create-site.js` 預設寫 `classic`，
   沒有這個欄位、值不認得、或是拼錯了，`site-context.js` 都會落回 `classic`，
@@ -689,7 +701,9 @@ Firebase Console → Firestore → sites/{siteId} → template 欄位 → 填上
 
 | 東西 | 位置 |
 |---|---|
-| 版型清單與字檔 | `js/site-context.js` 的 `TEMPLATES` |
+| 版型清單、字檔與大廳版面（lobbyFile） | `js/site-context.js` 的 `TEMPLATES` |
+| korean／forest 的大廳版面 | `lobby-korean.html`＋`css/lobby-korean.css`／`lobby-forest.html`＋`css/lobby-forest.css` |
+| 大廳來源檔的分流 | `scripts/build-og.js` 的 `LOBBY_SRC` |
 | 套用（寫 `<body data-template>`、注入字檔） | `js/site-context.js` 的 `applyTemplate()` |
 | 色票 | `css/common.css` 的 `body[data-template="…"]` |
 | 字體 | 同上，`korean`／`forest` 覆寫 `--font-*` |

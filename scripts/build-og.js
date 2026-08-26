@@ -102,6 +102,14 @@ const SKIP_SLUGS = new Set(['e2e', 'demo-wedding-2027']);
    out      : 產到 public/w/{slug}/ 底下的檔名（配合 cleanUrls）
    path     : 對外網址的片段，用來組 og:url
 ============================================================ */
+/* 大廳的來源檔依 sites.template 分流：korean／forest 有自己的版面結構，
+   其餘（classic 系列、沒設定、認不得的值）都用 index.html。
+   要跟 js/site-context.js 的 TEMPLATES、css/ 的 lobby-*.css 保持同步。 */
+const LOBBY_SRC = {
+  korean: 'lobby-korean.html',
+  forest: 'lobby-forest.html',
+};
+
 const SHARE_PAGES = [
   {
     pageKey: 'lobby',
@@ -551,7 +559,7 @@ function formatEventDate(ts, timezone) {
 }
 
 function siteInfo(site) {
-  if (!site) return { couple: '', dateText: '', dateNumeric: '', venueName: '', pages: null };
+  if (!site) return { couple: '', dateText: '', dateNumeric: '', venueName: '', pages: null, template: '' };
   const groom = (site.groomName || '').trim();
   const bride = (site.brideName || '').trim();
   const couple = (site.coupleTitle || '').trim()
@@ -564,6 +572,8 @@ function siteInfo(site) {
     dateNumeric: dateText.replace(/（.*?）/g, ''),
     venueName: (site.venueName || '').trim(),
     pages: site.pages && typeof site.pages === 'object' ? site.pages : null,
+    /* 版型：決定大廳用哪一份來源 HTML（LOBBY_SRC） */
+    template: typeof site.template === 'string' ? site.template : '',
   };
 }
 
@@ -653,15 +663,20 @@ async function buildSlug(slug, ctx) {
     /* pages 沒設定＝全開；明確設成 false 才跳過 */
     if (!page.always && info.pages && info.pages[page.pageKey] === false) continue;
 
-    const srcHtml = readFileSync(join(PUBLIC_ROOT, page.src), 'utf8');
-    const html = buildHtml(srcHtml, page.src, {
+    /* 大廳依版型選來源檔；其他頁面照舊 */
+    const srcName = page.pageKey === 'lobby'
+      ? (LOBBY_SRC[info.template] || page.src)
+      : page.src;
+    const srcHtml = readFileSync(join(PUBLIC_ROOT, srcName), 'utf8');
+    const html = buildHtml(srcHtml, srcName, {
       title: info.couple ? page.title(info.couple) : page.fallbackTitle,
       description: page.desc(info),
       url: `${ctx.base}/w/${slug}/${page.path}`,
       image: imageUrl,
     });
     writeOrCheck(join(outDir, page.out), html, ctx.state);
-    made.push(page.path || '（大廳）');
+    made.push(page.path || (LOBBY_SRC[info.template]
+      ? `（大廳・${info.template} 版面）` : '（大廳）'));
   }
 
   console.log(`✅ ${slug}`);
