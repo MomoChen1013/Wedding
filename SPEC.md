@@ -6,7 +6,7 @@
 賣給多組新人使用。每組客人有：
 
 - 自己的網址（slug）
-- 自己的內容設定（新人姓名、日期、地點、主題色、照片）
+- 自己的內容設定（新人姓名、日期、地點、版型、照片）
 - 自己的出席回覆（RSVP）資料，彼此不可互看
 
 **核心架構決定：所有客人共用「一個」Firebase 專案，用 `siteId` 做資料分層與權限隔離。**
@@ -82,7 +82,9 @@ sites/{siteId}
   venueName       : string
   venueAddress    : string
   venueMapUrl     : string
-  themeColor      : string   # hex，如 "#3D9AD1"
+  template        : string   # 版型，決定整站的視覺（見下方「版型」一節）
+                             # 沒有這個欄位＝ classic
+  themeColor      : string   # 舊欄位，前端已不再讀（留著不影響既有站台）
   coverImageUrl   : string
   story           : string   # 兩人的故事，支援換行；留白則大廳不出現這一塊
   photos          : string[] # 照片牆，陣列順序即顯示順序
@@ -501,14 +503,14 @@ slug 不存在、格式不合法、站台非 `published`、或連線失敗時，
 - 版型骨架沿用子場景頁：`.scene-hero`（50vh 標題區）→ `.scene-body`
   → `.section-title` ＋ `.cardbox`
 - 字體 `Noto Serif TC` 單一字族、1px 線條、**無陰影**、大量留白
-- 主題色走全站的四組色票（香檳金／霧玫瑰／鼠尾草綠／霧霾藍），
-  右下角浮動控制可即時切換；頂部導覽列與 BGM 控制也和其他頁一樣
+- 視覺走站台設定的版型（`sites.template`），和其他頁同一套；
+  頂部導覽列與 BGM 控制也和其他頁一樣
 - 全站 RWD，手機優先
 - RSVP 表單送出後不跳頁，以 async 寫入 Firestore 並顯示成功狀態
 - 表單有 honeypot 隱藏欄位擋機器人（觸發時畫面照樣顯示成功，但不寫入）
 
 > **`themeColor` 不再套用在這一頁**：多頁面站台的其他頁面本來就只吃
-> `data-theme` 的四組色票，邀請函要「跟其他頁一樣」就得放掉每站一個主色的做法。
+> 版型色票，邀請函要「跟其他頁一樣」就得放掉每站一個主色的做法。
 > 欄位保留在資料模型裡，只是前端不再讀它。
 
 頁面區塊順序：
@@ -633,7 +635,7 @@ HTML 只放一個 `<div id="rsvpFormHost">` —— 題目會依新人在後台�
 | 5 | `guestCount: 99` 會被拒 | `tests/rules.test.mjs` |
 | 6 | 已過 `rsvpDeadline` 的站台，RSVP 寫入會被拒 | `tests/rules.test.mjs`／`tests/e2e.mjs` |
 | 7 | 重複 slug 執行 `create-site.js` 會失敗並回滾，不留孤兒文件 | 手動驗證（見下） |
-| 8 | 兩個不同 slug 的頁面，內容與主題色正確互不干擾 | `tests/e2e.mjs` |
+| 8 | 兩個不同 slug 的頁面，內容與版型正確互不干擾 | `tests/e2e.mjs` |
 | 9 | 存取不存在的 slug 顯示 404 頁面，不是白畫面 | `tests/e2e.mjs` |
 
 測試指令與預期輸出見 `README.md` 的「測試」章節。
@@ -650,6 +652,61 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
 # ❌ 建立站台失敗：slug 「dup-test」已經被使用了，請換一個網址代稱
 # exit code 1，且 sites／slugs 各仍只有 1 筆
 ```
+
+---
+
+## 9.5 版型（`sites.template`）
+
+一份婚禮資料，多套視覺。同一組新人的內容、連結、頁面開關、後台設定
+完全不動，換的只有整站長什麼樣子。
+
+| 值 | 名稱 | 說明 |
+|---|---|---|
+| `classic`（預設） | Classic 香檳金 | 婚紗照鋪滿視窗當背景、上面壓白紗，內容是白卡浮在照片前 |
+| `classic-blush` | Classic 霧玫瑰 | 同上，換配色 |
+| `classic-sage` | Classic 鼠尾草綠 | 同上，換配色 |
+| `classic-dusk` | Classic 霧霾藍 | 同上，換配色 |
+| `korean` | Korean Modern | 暖米白底、近黑的墨、霧藍作重音；英文標題走 Cormorant Garamond |
+| `forest` | Forest Botanical | 米色紙底、深林綠的墨、鼠尾草與樹皮作重音；同一組字體 |
+
+**怎麼切換**
+
+```
+Firebase Console → Firestore → sites/{siteId} → template 欄位 → 填上面的值
+```
+
+重新整理賓客頁就生效，不必重新部署。
+
+- **開站一律是 `classic`**：`scripts/create-site.js` 預設寫 `classic`，
+  沒有這個欄位、值不認得、或是拼錯了，`site-context.js` 都會落回 `classic`，
+  不會出現沒有樣式的白畫面。
+- **新人改不動**：`template` 不在 `firestore.rules` 的可更新白名單裡，
+  和 `pages`、`entryLoginEnabled` 同一個層級 —— 由我們設定。
+- **賓客也沒有切換的入口**：右下角原本那顆「換主題色」已經移除。
+  版型是我們幫這組新人挑好的樣子，不是賓客的偏好。
+
+**實作**
+
+| 東西 | 位置 |
+|---|---|
+| 版型清單與字檔 | `js/site-context.js` 的 `TEMPLATES` |
+| 套用（寫 `<body data-template>`、注入字檔） | `js/site-context.js` 的 `applyTemplate()` |
+| 色票 | `css/common.css` 的 `body[data-template="…"]` |
+| 字體 | 同上，`korean`／`forest` 覆寫 `--font-*` |
+| 對照台（六頁 × 三版型，載入真 CSS） | `preview/pages.html` |
+
+HTML 上寫死 `<body data-template="classic">`，所以在 Firestore 讀回來之前
+畫面是 Classic 而不是沒有樣式；換到別的版型時會有一次短暫的換色。
+要連那一下都省掉的話，得讓 `build-og.js` 產出每個站台的 HTML 時就把
+`data-template` 印進去 —— 那是另一件事，還沒做。
+
+**字體**
+
+`korean` 與 `forest` 的英文標題是 Cormorant Garamond，中文自動落回
+Noto Serif TC —— 不必為了中英混排改任何一行 HTML，瀏覽器的字族 fallback
+本來就是逐字處理的：「Find Your Seat」是 Cormorant，「輸入名字」是明朝體。
+內文與 UI 改用 Noto Sans TC。字檔由 `applyTemplate()` 依版型注入，
+Classic 的站台不會多載這一份。
 
 ---
 

@@ -6,7 +6,12 @@
 ============================================================ */
 
 /* ============================================================
-   主題色票（右下角可即時切換）
+   版型色票
+   ------------------------------------------------------------
+   每一組 = 一個版型。由我們在 Firestore 的 sites.template 指定，
+   site-context.js 讀到之後寫進 <body data-template>。
+   賓客改不動，也沒有切換的入口 —— 這是幫這組新人挑好的樣子。
+   前四組是 Classic 的四種配色，後兩組是完整的版型（連字體一起換）。
 ============================================================ */
 :root{
   /* ---- 版型的基色 ----------------------------------------------
@@ -47,29 +52,29 @@
      只有後台會把它覆寫成 sans（見 admin.css 的雙軌字體）。 */
   --font-ui:var(--font-body);
 }
-/* 香檳金（預設） */
-body[data-theme="champagne"]{
+/* Classic 香檳金（預設） */
+body[data-template="classic"]{
   --primary:#b39a6d; --primary-deep:#8e7748; --primary-soft:#f3eee3;
   --secondary:#c0a87e; --accent:#b3a884; --sun:#e5d7ae;
   --bg1:#fbfaf7; --bg2:#f4f1ea;
   --card:#ffffff;
 }
-/* 霧玫瑰 */
-body[data-theme="blush"]{
+/* Classic 霧玫瑰 */
+body[data-template="classic-blush"]{
   --primary:#c28794; --primary-deep:#a4677a; --primary-soft:#f6ecee;
   --secondary:#cd9c94; --accent:#b39a6d; --sun:#e5d7ae;
   --bg1:#fcf9f9; --bg2:#f5eeee;
   --card:#ffffff;
 }
-/* 鼠尾草綠 */
-body[data-theme="sage"]{
+/* Classic 鼠尾草綠 */
+body[data-template="classic-sage"]{
   --primary:#8b9c7c; --primary-deep:#6d7f5f; --primary-soft:#ecf0e7;
   --secondary:#a5b298; --accent:#b39a6d; --sun:#e2dcb6;
   --bg1:#fafbf8; --bg2:#f0f3ec;
   --card:#ffffff;
 }
-/* 霧霾藍 */
-body[data-theme="dusk"]{
+/* Classic 霧霾藍 */
+body[data-template="classic-dusk"]{
   --primary:#8295ad; --primary-deep:#647890; --primary-soft:#eaeef3;
   --secondary:#9aacc0; --accent:#b39a6d; --sun:#e2dcb6;
   --bg1:#f9fafc; --bg2:#eef1f5;
@@ -79,12 +84,9 @@ body[data-theme="dusk"]{
 /* ============================================================
    版型色票（Korean Modern／Forest Botanical）
    ------------------------------------------------------------
-   上面四組是「主題色」——賓客可以在右下角即時切換，只換 primary 與底色。
-   下面兩組是「版型」：它們連 ink、line、surface 一起換掉，
+   上面四組只換 primary 與底色，骨架仍然是 Classic。
+   下面兩組是完整的版型：連 ink、line、surface、字體一起換掉，
    所以整頁的個性會跟著變，不只是換一個重點色。
-
-   ・不會出現在右下角的切換器裡（THEME_DOTS 仍然只有那四個），
-     版型是我們幫這組新人設定的，不是賓客的偏好。
    ・和 admin.css 的 body:is([data-page="admin"]) 特異性相同 (0,1,1)，
      admin.css 後載入 → 後台永遠是它自己那一套，不受這裡影響。
    ・線條改成定值：Classic 的線要融進背景照所以是半透明；
@@ -92,7 +94,7 @@ body[data-theme="dusk"]{
 ============================================================ */
 
 /* 韓系現代簡約 —— 暖米白底、近黑的墨、霧藍作重音 */
-body[data-theme="korean"]{
+body[data-template="korean"]{
   --ink-rgb:39,39,37;
   --surface-rgb:255,255,255;
   --ink:#272725; --ink-soft:#8d8a84;
@@ -105,8 +107,36 @@ body[data-theme="korean"]{
   --card:#ffffff;
 }
 
+/* ------------------------------------------------------------
+   Korean／Forest 的字體：英文標題走 Cormorant Garamond，
+   中文自動落回 Noto Serif TC —— 不必為了中英混排改任何一行 HTML，
+   瀏覽器的字族 fallback 本來就是逐字處理的：
+   「Find Your Seat」是 Cormorant，「輸入名字」是 Noto Serif TC。
+
+   內文與 UI 改用 Noto Sans TC（風格板上的 BODY / UI）。
+   Classic 不受影響，它仍然是全站單一字族的明朝體。
+
+   字檔由 site-context.js 依版型注入，Classic 的站台不會多載這一份。
+------------------------------------------------------------ */
+body[data-template="korean"],
+body[data-template="forest"]{
+  --font-display:'Cormorant Garamond','Noto Serif TC',serif;
+  --font-body:'Noto Sans TC','Noto Sans',sans-serif;
+  --font-hand:'Noto Serif TC',serif;
+  --font-ui:'Noto Sans TC','Noto Sans',sans-serif;
+
+  /* Cormorant 的 x-height 比中文小一截，同樣字級擺在一起，
+     「Find Your Seat」會比它的中文副標還秀氣 —— 主標小於副標，階層是反的。
+     font-size-adjust 專門解這件事：它只縮放拉丁字，中文完全不動
+     （實測 CJK 在 0.42–0.58 之間寬度一格都沒變）。
+     0.54 ≈ 把 Cormorant 放大 17%，剛好接回中文的視覺重量，
+     又還留著它該有的纖細。
+     舊瀏覽器不支援就整條忽略，退回沒有調整的樣子，不會壞。 */
+  font-size-adjust:0.54;
+}
+
 /* 自然森林植物 —— 米色紙底、深林綠的墨、鼠尾草與樹皮作重音 */
-body[data-theme="forest"]{
+body[data-template="forest"]{
   --ink-rgb:38,56,45;
   --surface-rgb:251,249,242;
   --ink:#26382d; --ink-soft:#68745c;
@@ -321,7 +351,9 @@ body.nav-off{padding-top:0;}
 .ask-name .ask-input:focus{border-color:var(--ink);}
 
 /* ============================================================
-   浮動控制：主題 + BGM（由 js/common.js 注入）
+   浮動控制：BGM（由 js/common.js 注入）
+   ・原本這裡還有一顆「換主題色」——版型改由 sites.template 決定，
+     賓客不再切換，所以那一顆與它的色點都拿掉了
 ============================================================ */
 .floating{position:fixed;right:18px;bottom:18px;z-index:900;
   display:flex;flex-direction:column;gap:10px;align-items:flex-end;}
@@ -332,17 +364,6 @@ body.nav-off{padding-top:0;}
 .fab svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.2;
   stroke-linecap:round;stroke-linejoin:round;}
 .fab.is-on{color:var(--primary-deep);border-color:var(--primary);}
-.theme-pop{display:none;background:var(--surface);border:1px solid var(--line);
-  padding:10px;border-radius:var(--radius);gap:10px;}
-.theme-pop.open{display:flex;}
-.theme-dot{width:22px;height:22px;border-radius:50%;cursor:pointer;
-  border:1px solid var(--line);transition:transform .2s;}
-.theme-dot:hover{transform:scale(1.12);}
-.t-champagne{background:#c9bb9c;}
-.t-blush{background:#d3a9b3;}
-.t-sage{background:#a8b79b;}
-.t-dusk{background:#a2b1c3;}
-
 /* 全畫面特效 canvas */
 #fx{position:fixed;inset:0;z-index:800;pointer-events:none;}
 

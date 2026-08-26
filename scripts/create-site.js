@@ -17,7 +17,9 @@
      --venue          選填，場地名稱
      --address        選填，場地地址
      --map-url        選填，Google Maps 連結
-     --theme-color    選填，主題色 hex，預設 #3D9AD1
+     --template       選填，版型；預設 classic
+                      classic / classic-blush / classic-sage / classic-dusk
+                      / korean / forest（見 js/site-context.js 的 TEMPLATES）
      --cover          選填，封面圖片網址
      --story          選填，兩人的故事
      --photo          選填，照片牆的圖片網址；可重複給多次，順序即顯示順序
@@ -62,6 +64,9 @@ import { resolveBaseUrl } from './site-url.js';
 import { OPTIONAL_PAGES, ADMIN_PAGES, DEFAULT_PAGES, PAGE_LABELS, resolvePages } from './site-pages.js';
 
 /* ---------- 保留字黑名單 ---------- */
+/* 認得的版型，對得上 js/site-context.js 的 TEMPLATES 與 css/common.css 的色票 */
+const TEMPLATES = ['classic','classic-blush','classic-sage','classic-dusk','korean','forest'];
+
 const RESERVED_SLUGS = new Set(['admin', 'api', 'www', 'app', 'w', 's', 'assets', 'static']);
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
@@ -79,7 +84,7 @@ function parseCliArgs(argv) {
       venue:         { type: 'string', default: '' },
       address:       { type: 'string', default: '' },
       'map-url':     { type: 'string', default: '' },
-      'theme-color': { type: 'string', default: '#3D9AD1' },
+      'template':    { type: 'string', default: 'classic' },
       cover:         { type: 'string', default: '' },
       story:         { type: 'string', default: '' },
       'owner-email': { type: 'string', multiple: true },
@@ -206,7 +211,8 @@ async function createSite(values) {
     venueName: values.venue || '',
     venueAddress: values.address || '',
     venueMapUrl: values['map-url'] || '',
-    themeColor: values['theme-color'] || '#3D9AD1',
+    /* 版型。開站一律先給 classic，要換再到 Firestore 改這一欄 */
+    template: TEMPLATES.includes(values.template) ? values.template : 'classic',
     coverImageUrl: values.cover || '',
     story: values.story || '',
     photos: values.photo || [],

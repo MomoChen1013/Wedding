@@ -6,7 +6,7 @@
 <title>版型對照台</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
 
 <!-- ★ 載入的是真正的 public/css/，不是複製品。
      改那裡的任何一行，重新整理這一頁就看得到。 -->
@@ -59,14 +59,14 @@ body{padding-top:0;}
   align-items:center;justify-content:center;margin-top:12px;}
 </style>
 </head>
-<body data-theme="champagne" data-page="preview">
+<body data-template="classic" data-page="preview">
 
 <div class="bg-decor"></div>
 
 <div class="hx-bar">
   <span class="lab">版型</span>
   <div class="hx-sw" id="sw">
-    <button type="button" data-t="champagne" aria-pressed="true">Classic 香檳金</button>
+    <button type="button" data-t="classic" aria-pressed="true">Classic</button>
     <button type="button" data-t="korean" aria-pressed="false">Korean Modern</button>
     <button type="button" data-t="forest" aria-pressed="false">Forest Botanical</button>
   </div>
@@ -77,8 +77,8 @@ body{padding-top:0;}
 
   <div class="hx-top">
     <h1>版型對照台</h1>
-    <p>同一份 CSS、同一組 class，只換 <code style="font-family:ui-monospace,monospace">body[data-theme]</code>。
-       上面三顆按鈕切換的是 token，下面每一塊都是六個賓客頁真正在用的元件。</p>
+    <p>同一份 CSS、同一組 class，只換 <code style="font-family:ui-monospace,monospace">body[data-template]</code>。
+       上面三顆按鈕切換的是 sites.template，下面每一塊都是六個賓客頁真正在用的元件。</p>
     <div class="hx-swatch">
       <div style="background:var(--bg1)">bg1</div>
       <div style="background:var(--bg2)">bg2</div>
@@ -319,7 +319,7 @@ body{padding-top:0;}
 const sw=document.getElementById('sw');
 sw.addEventListener('click',(e)=>{
   const b=e.target.closest('button[data-t]'); if(!b) return;
-  document.body.dataset.theme=b.dataset.t;
+  document.body.dataset.template=b.dataset.t;
   sw.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
 });
 </script>

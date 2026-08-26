@@ -50,10 +50,10 @@
 
 賓客頁與後台吃的是兩套：
 
-- **賓客頁**：`common.css` 的主題色票，由 `<body data-theme="…">` 決定
+- **賓客頁**：`common.css` 的版型色票，由 `<body data-template="…">` 決定
   （`champagne`／`blush`／`sage`／`dusk`），新人可以自己換。
 - **後台與收禮台**：`admin.css` 在 `body:is([data-page="admin"],[data-page="butler"])`
-  這一層給定值。兩頁的 `data-theme` 都寫死 `champagne`、**不提供主題切換**，
+  這一層給定值。兩頁的 `data-template` 都寫死 `classic`、**不跟著版型走**，
   所以工作介面不需要跟著跑，直接定色比較穩。
 
 | Token | 值 | 用途 |

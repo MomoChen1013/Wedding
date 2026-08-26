@@ -890,19 +890,6 @@ function askName(){
 }
 
 /* ============================================================
-   主題切換（記到 localStorage）
-============================================================ */
-function setTheme(t){
-  document.body.dataset.theme = t;
-  LS.set('theme', t);
-}
-function initTheme(){
-  const saved = LS.get('theme', 'champagne');
-  document.body.dataset.theme = saved;
-}
-initTheme();
-
-/* ============================================================
    全畫面特效 canvas（fireworksBurst / confettiRain / firecracker / goldFall / spawnFloat）
 ============================================================ */
 let fx, ctx, parts = [], fxRunning = false;
@@ -1260,25 +1247,15 @@ function syncNavUser(){
 }
 
 /* ============================================================
-   浮動控制（主題 / BGM）— 同樣由這裡注入，線條圖示、無 emoji
+   浮動控制（BGM）— 同樣由這裡注入，線條圖示、無 emoji
+   ・原本旁邊還有一顆「換主題色」：版型現在由 sites.template 決定
+     （見 site-context.js 的 TEMPLATES），賓客不再自己切換，所以拿掉了
 ============================================================ */
-const THEME_DOTS = [
-  ['champagne','香檳金'], ['blush','霧玫瑰'], ['sage','鼠尾草綠'], ['dusk','霧霾藍'],
-];
 function buildFloating(){
   if(document.querySelector('.floating')) return;
   const box = document.createElement('div');
   box.className = 'floating';
   box.innerHTML = `
-    <div class="theme-pop" id="themePop">
-      ${THEME_DOTS.map(([k,t]) =>
-        `<div class="theme-dot t-${k}" data-theme="${k}" title="${t}"></div>`).join('')}
-    </div>
-    <button class="fab" id="themeFab" type="button" title="換主題色" aria-label="換主題色">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17"/>
-      </svg>
-    </button>
     <button class="fab" id="bgmFab" type="button" title="播放背景音樂"
             aria-label="背景音樂" aria-pressed="false">
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -1339,16 +1316,6 @@ function bindCommonUI(){
   if(window.SITE && NO_NAV_PAGES.has(window.SITE.page)) setNavVisible(false);
   else buildSiteNav();
   buildFloating();
-
-  /* 主題切換 */
-  const themeFab = document.getElementById('themeFab');
-  const themePop = document.getElementById('themePop');
-  if(themeFab && themePop){
-    themeFab.addEventListener('click', ()=>themePop.classList.toggle('open'));
-    themePop.querySelectorAll('.theme-dot').forEach(dot=>{
-      dot.addEventListener('click', ()=>setTheme(dot.dataset.theme));
-    });
-  }
 
   /* BGM 按鈕 */
   const bgmFab = document.getElementById('bgmFab');

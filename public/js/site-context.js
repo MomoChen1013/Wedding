@@ -91,6 +91,57 @@ const ADMIN_FEATURES = {
   butler:      { label:'收禮小幫手' },
 };
 
+/* ============================================================
+   版型（sites.template）
+   ------------------------------------------------------------
+   一份婚禮資料，多套視覺。key 就是寫進 <body data-template> 的值，
+   對得上 css/common.css 的 body[data-template="…"] 色票。
+
+   ・**新開的站台一律是 classic**：沒有 template 欄位、值不認得、
+     或是拼錯了，都會落回 classic，不會變成沒有樣式的白畫面。
+   ・要換版型只能到 Firestore 改 sites/{siteId}.template ——
+     它不在 firestore.rules 的可更新白名單裡，新人自己改不動，
+     和 pages、entryLoginEnabled 是同一個層級的設定。
+   ・賓客也沒有切換的入口：原本右下角那顆「換主題色」已經移除，
+     版型是我們幫這組新人挑好的樣子，不是賓客的偏好。
+
+   fonts：只有需要額外字檔的版型才列。Classic 的站台不會多載這一份，
+   省下來的是首屏的一次跨網域請求。
+============================================================ */
+const TEMPLATES = {
+  'classic':       { label:'Classic 香檳金' },
+  'classic-blush': { label:'Classic 霧玫瑰' },
+  'classic-sage':  { label:'Classic 鼠尾草綠' },
+  'classic-dusk':  { label:'Classic 霧霾藍' },
+  'korean':        { label:'Korean Modern',
+                     fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
+  'forest':        { label:'Forest Botanical',
+                     fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
+};
+const DEFAULT_TEMPLATE = 'classic';
+
+/* 套上版型：寫 <body data-template>，需要的話再補字檔。
+   HTML 上本來就寫死 data-template="classic"，所以在這一行跑到之前，
+   畫面是 Classic 而不是沒有樣式 —— 換到別的版型時會有一次短暫的換色。
+   （要連那一下都省掉的話，得在 build-og.js 產出每個站台的 HTML 時
+     就把 data-template 印進去，那是另一件事。） */
+function applyTemplate(name) {
+  /* 用 hasOwn 而不是 TEMPLATES[name] —— 'toString'、'__proto__' 這些
+     原型上的屬性是 truthy，直接判斷會讓它們通過，然後寫出一個
+     CSS 對不上的 data-template，整站只剩 :root 的預設值（沒有 --bg1／
+     --primary），畫面會壞掉。 */
+  const key = Object.hasOwn(TEMPLATES, name) ? name : DEFAULT_TEMPLATE;
+  document.body.dataset.template = key;
+  for (const href of TEMPLATES[key].fonts || []) {
+    if (document.querySelector(`link[href="${href}"]`)) continue;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
+  }
+  return key;
+}
+
 /* 開關代號 → 網址片段 */
 function pathOf(key) {
   return (PAGES[key] && PAGES[key].path) || key;
@@ -368,6 +419,9 @@ async function boot() {
     return;
   }
 
+  /* 版型：越早套上，換色閃一下的時間越短，所以排在讀素材之前 */
+  const template = applyTemplate(site.template);
+
   const assets = await loadAssets(loc.slug);
 
   /* Firestore 沒填的話，就用素材資料夾裡掃到的檔案 */
@@ -382,8 +436,10 @@ async function boot() {
     slug: loc.slug,
     assets,
     page: pageKey,
+    template,
     data: site,
     pages: PAGES,
+    templates: TEMPLATES,
     adminFeatures: ADMIN_FEATURES,
     isEnabled,
     isPageOn,
