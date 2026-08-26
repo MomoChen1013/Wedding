@@ -93,17 +93,21 @@ body[data-template="classic-dusk"]{
      這兩版的內容區是實色底，定值的線在哪裡都是同一條。
 ============================================================ */
 
-/* 韓系現代簡約 —— 暖米白底、近黑的墨、霧藍作重音 */
+/* 韓系現代簡約 —— 近白的紙底、藏青的墨、霧藍作重音
+   ・底色比風格板再白一階（#f7f5f0 → #fbfaf8）：紙質紋理（見下方
+     的 --paper 層）是半透明疊上來的，底越白、紋理越乾淨
+   ・主色從近黑 #272725 改成藏青 #21284f：乾淨、細膩，
+     還帶一點可愛，但整體仍然成熟 */
 body[data-template="korean"]{
-  --ink-rgb:39,39,37;
+  --ink-rgb:33,40,79;
   --surface-rgb:255,255,255;
-  --ink:#272725; --ink-soft:#8d8a84;
+  --ink:#21284f; --ink-soft:#757b8d;
   --line:#dcd9d2; --line-soft:#e8e5de;
   --surface:#ffffff;
-  --ink-hover:#3d3d3a; --ink-active:#141413;
+  --ink-hover:#2c3566; --ink-active:#141a38;
   --primary:#a8b8c5; --primary-deep:#5c7085; --primary-soft:#eaeff3;
   --secondary:#93a3b1; --accent:#a8b8c5; --sun:#dcd9d2;
-  --bg1:#f7f5f0; --bg2:#efece5;
+  --bg1:#fbfaf8; --bg2:#f3f1ec;
   --card:#ffffff;
 }
 
@@ -148,6 +152,65 @@ body[data-template="forest"]{
   --bg1:#f2efe5; --bg2:#e9e5d8;
   --card:#fbf9f2;
 }
+
+/* ============================================================
+   版型的專屬層（Classic 完全不吃這一段）
+============================================================ */
+
+/* ---- korean：紙質紋理 ----
+   素材資料夾放一張 paper.jpg（可平鋪的淡色紋理），
+   common.js 會把它寫進 --paper，這一層才會出現；沒放就什麼都不畫。
+   multiply ＋ 低透明度：紋理是「摸得到的紙」，不是「看得到的圖」。
+   z-index 2 蓋在內容上、導覽列（950）與浮動控制（900）之下。 */
+body[data-template="korean"]::after{
+  content:'';position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:var(--paper,none);background-size:520px auto;
+  mix-blend-mode:multiply;opacity:.35;
+}
+
+/* ---- forest：hero 照片上疊很淡的森林綠 ----
+   Classic 的白紗換成帶綠意的紗。維持偏亮 —— 內容的墨色是深綠，
+   紗太深字就讀不動了；「很淡」才是對的。 */
+body[data-template="forest"] .site-bg::after{
+  background:linear-gradient(180deg,rgba(222,230,220,.50),rgba(206,217,204,.68));
+}
+body[data-template="forest"] .scene-bg::after{
+  background:rgba(233,238,229,.78);
+}
+
+/* ---- korean／forest：字級下限 ----
+   手機上也要讀得動：資訊性的字最小 12px，主要內文至少 14px。
+   純裝飾（SCROLL 提示、英文 ribbon、卡片編號、To／From）不在此列。
+   只掛在這兩個版型上，Classic 一個像素都不動。 */
+body:is([data-template="korean"],[data-template="forest"]) :is(
+  .lobby-hero .tag, .ir-label, .cd-lab, .lc-go, .icon-hint, .gate-sep,
+  .rf-req, .st-card-label, .st-mates-label, .st-letter-go, .st-lb-tip,
+  .draw-info-hint, .cv-hint, .tl-eyebrow, .tl-meta .when, .lb-body .lb-date,
+  .q-type, .q-legend, .q-verdict, .q-bar-badge, .step-dot .d-lb,
+  .wish-note .by, .wl-save-hint){
+  font-size:12px;
+}
+body:is([data-template="korean"],[data-template="forest"]) :is(
+  .inv-lead, .tl-meta .desc, .st-letter-text, .st-miss-body,
+  .q-intro, .q-bar-label, .card-desc, .rsvp-cta p,
+  .step-pane .step-hint, .gate-card .sub){
+  font-size:14px;
+}
+/* 流程時間軸的連接線：這兩版是實色底，線可以實一點，一定看得見 */
+body[data-template="korean"] .tl-dot{background:#c6c2ba;}
+body[data-template="forest"] .tl-dot{background:#c8c4b4;}
+
+/* ---- 植物線稿（由 common.js 注入，只有這兩個版型有） ----
+   korean 是一小枝、forest 是一支蕨葉；素材資料夾放 deco.png/svg
+   的話就用新人自己的圖，不畫預設線稿。 */
+.tpl-deco{position:absolute;pointer-events:none;z-index:1;}
+.tpl-deco svg,.tpl-deco img{width:100%;height:auto;display:block;}
+body[data-template="korean"] .tpl-deco{color:#9aa3b8;opacity:.85;}
+body[data-template="forest"] .tpl-deco{color:var(--secondary);opacity:.9;}
+.lobby-hero .tpl-deco{right:clamp(8px,6vw,72px);bottom:clamp(16px,6vh,56px);
+  width:clamp(64px,9vw,116px);}
+.scene-hero .tpl-deco{right:clamp(8px,5vw,64px);bottom:12px;
+  width:clamp(52px,7vw,92px);}
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html{scroll-behavior:smooth;}

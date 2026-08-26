@@ -708,6 +708,32 @@ Noto Serif TC —— 不必為了中英混排改任何一行 HTML，瀏覽器的
 內文與 UI 改用 Noto Sans TC。字檔由 `applyTemplate()` 依版型注入，
 Classic 的站台不會多載這一份。
 
+**字級下限（只掛在這兩個版型）**
+
+手機上也要讀得動：資訊性的字最小 12px，主要內文至少 14px；
+純裝飾（SCROLL 提示、英文 ribbon、卡片編號、To／From）不在此列。
+規則收在 `common.css` 的 `body:is([data-template="korean"],…)` 區塊，
+Classic 一個像素都不動。
+
+**版型的素材（怎麼換背景與元素）**
+
+素材照舊放 `public/assets/{slug}/`，跑 `npm run sync-assets` 再 deploy。
+兩個版型各多認得幾個檔名：
+
+| 檔名 | 用在哪 | 沒放的話 |
+|---|---|---|
+| `lobby.jpg`／`lobby.mp4` | 首頁固定背景（既有機制） | 純色底 |
+| `cover.jpg` | 各頁背景與邀請函封面（既有機制） | 純色底 |
+| `paper.jpg` | `korean` 整頁的紙質紋理（可平鋪、淡色） | 沒有紋理 |
+| `deco.png`／`deco.svg` | 兩版的植物線稿（透明底） | 用程式畫的預設線稿 |
+
+- `forest` 的首頁背景照會疊一層**很淡的森林綠**（`.site-bg::after`），
+  換照片不用管 overlay，紗是版型自己蓋的。
+- 預設的植物線稿（korean 一小枝、forest 一支蕨葉）有**生長動畫**：
+  莖先畫、葉子一片一片跟上，捲到看得見才開始；
+  `prefers-reduced-motion` 時直接顯示完成的線稿。
+  換成自己的 `deco.png` 時不播動畫（點陣圖畫不了筆劃）。
+
 ---
 
 ## 10. 多頁面與頁面開關
