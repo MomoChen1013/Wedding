@@ -5,7 +5,7 @@
 ============================================================ */
 .tl-sec{position:relative;}
 .tl-pin{position:relative;height:calc(100svh - var(--nav-h));min-height:520px;overflow:hidden;
-  display:flex;align-items:center;background:rgba(255,255,255,.72);}
+  display:flex;align-items:center;background:rgba(var(--surface-rgb),.72);}
 
 /* 巨大年份襯底（隨聚焦卡片切換；無年份時隱藏） */
 .tl-year-back{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
@@ -56,7 +56,7 @@
    拍立得相片框：白邊 + 寬底，依照片原始比例呈現
 ============================================================ */
 .tl-media{
-  background:#fff;
+  background:var(--surface);
   border:1px solid var(--line);
   padding:14px 14px 0;
   border-radius:var(--radius);
@@ -104,7 +104,7 @@
 .tl-act-div{flex:0 0 auto;position:relative;display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:14px;
   padding:36px 30px;min-width:160px;z-index:3;scroll-snap-align:center;
-  background:rgba(255,255,255,.92);
+  background:rgba(var(--surface-rgb),.92);
   border-radius:var(--radius);border:1px solid var(--line);}
 .tl-act-div .ac-label{font-family:var(--font-display);font-weight:400;
   font-size:26px;color:var(--ink);letter-spacing:.42em;
@@ -118,7 +118,7 @@
 
 /* 進度點 */
 .tl-progress{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);z-index:6;
-  display:flex;gap:6px;background:rgba(255,255,255,.86);border:1px solid var(--line);
+  display:flex;gap:6px;background:rgba(var(--surface-rgb),.86);border:1px solid var(--line);
   padding:8px 14px;border-radius:999px;max-width:90vw;flex-wrap:nowrap;}
 .tl-progress .pd{width:6px;height:6px;border-radius:50%;background:var(--line);
   transition:.3s;flex:0 0 auto;padding:0;border:none;cursor:pointer;
@@ -128,7 +128,7 @@
 /* 左右箭頭（桌機用，手機隱藏 —— 直接滑就好） */
 .tl-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:7;
   width:44px;height:44px;border-radius:50%;cursor:pointer;
-  background:rgba(255,255,255,.9);border:1px solid var(--line);
+  background:rgba(var(--surface-rgb),.9);border:1px solid var(--line);
   font-family:var(--font-display);font-size:22px;line-height:1;color:var(--ink);
   display:flex;align-items:center;justify-content:center;
   transition:border-color .25s,opacity .25s;}
@@ -145,7 +145,7 @@
    lightbox（點卡片放大）
 ============================================================ */
 .lb{position:fixed;inset:0;z-index:1100;display:none;align-items:center;justify-content:center;padding:24px;
-  background:rgba(47,43,38,.45);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+  background:rgba(var(--ink-rgb),.45);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
 .lb.open{display:flex;animation:lbFade .3s;}
 @keyframes lbFade{from{opacity:0}to{opacity:1}}
 .lb-card{width:min(92vw,560px);background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;position:relative;animation:lbPop .35s cubic-bezier(.18,1.4,.4,1);
@@ -166,7 +166,7 @@
   text-align:justify;text-justify:inter-ideograph;}
 .lb-body .lb-desc:empty{display:none;}
 .lb-close{position:absolute;top:12px;right:14px;z-index:5;width:36px;height:36px;border:none;border-radius:50%;
-  cursor:pointer;background:rgba(255,255,255,.92);border:1px solid var(--line);font-size:15px;color:var(--ink);}
+  cursor:pointer;background:rgba(var(--surface-rgb),.92);border:1px solid var(--line);font-size:15px;color:var(--ink);}
 
 /* ============================================================
    行動裝置調整

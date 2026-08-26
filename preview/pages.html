@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>版型對照台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- ★ 載入的是真正的 public/css/，不是複製品。
+     改那裡的任何一行，重新整理這一頁就看得到。 -->
+<link rel="stylesheet" href="../public/css/common.css">
+<link rel="stylesheet" href="../public/css/rsvp.css">
+<link rel="stylesheet" href="../public/css/invitation.css">
+<link rel="stylesheet" href="../public/css/seating.css">
+<link rel="stylesheet" href="../public/css/draw.css">
+<link rel="stylesheet" href="../public/css/exhibition.css">
+<link rel="stylesheet" href="../public/css/letter.css">
+<link rel="stylesheet" href="../public/css/quiz.css">
+
+<style>
+/* ============================================================
+   對照台自己的樣式 —— 全部收在 .hx 底下，不影響上面那八份真 CSS
+============================================================ */
+.hx-bar{position:fixed;top:0;left:0;right:0;z-index:1500;
+  background:var(--bg1);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:14px;padding:10px clamp(14px,3vw,26px);flex-wrap:wrap;}
+.hx-bar .lab{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-soft);}
+.hx-bar .sp{margin-left:auto;font-size:11px;color:var(--ink-soft);letter-spacing:.06em;}
+.hx-sw{display:flex;gap:0;border:1px solid var(--line);}
+.hx-sw button{font-family:var(--font-ui);font-size:12.5px;letter-spacing:.1em;
+  padding:8px 16px;background:transparent;border:none;border-left:1px solid var(--line);
+  color:var(--ink-soft);cursor:pointer;}
+.hx-sw button:first-child{border-left:none;}
+.hx-sw button[aria-pressed="true"]{background:var(--ink);color:var(--on-ink);}
+body{padding-top:0;}
+.hx-page{max-width:900px;margin:0 auto;padding:0 clamp(16px,4vw,28px);}
+.hx-top{padding:96px 0 20px;}
+.hx-top h1{font-size:clamp(21px,3.4vw,28px);font-weight:500;letter-spacing:.1em;}
+.hx-top p{color:var(--ink-soft);font-size:13.5px;margin-top:10px;max-width:44em;line-height:1.9;}
+.hx-sec{border-top:1px solid var(--line);margin-top:44px;padding-top:14px;}
+.hx-sec > h2{font-size:12px;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--ink-soft);font-weight:400;margin-bottom:4px;}
+.hx-sec > .file{font-size:11px;color:var(--ink-soft);opacity:.7;letter-spacing:.04em;
+  font-family:ui-monospace,'SFMono-Regular',monospace;margin-bottom:18px;}
+/* 對照台專用：把 50vh 的 hero 壓扁，這一頁要看的是顏色與按鈕，不是版面高度 */
+.hx-sec .scene-hero{height:auto;min-height:0;padding:26px 20px 20px;gap:10px;}
+.hx-sec .scene-body{padding:10px 0 30px;max-width:none;}
+.hx-swatch{display:flex;gap:0;margin:16px 0 6px;border:1px solid var(--line);}
+.hx-swatch div{flex:1;height:44px;display:flex;align-items:flex-end;justify-content:center;
+  padding-bottom:4px;font-size:9px;letter-spacing:.08em;
+  font-family:ui-monospace,monospace;border-left:1px solid var(--line);}
+.hx-swatch div:first-child{border-left:none;}
+.hx-sec .btn{text-decoration:none;}
+.hx-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:14px 0;}
+.hx-note{font-size:12px;color:var(--ink-soft);line-height:1.9;margin:10px 0 0;}
+.hx-dark{background:rgba(var(--ink-rgb),.88);padding:22px;display:flex;gap:12px;
+  align-items:center;justify-content:center;margin-top:12px;}
+</style>
+</head>
+<body data-theme="champagne" data-page="preview">
+
+<div class="bg-decor"></div>
+
+<div class="hx-bar">
+  <span class="lab">版型</span>
+  <div class="hx-sw" id="sw">
+    <button type="button" data-t="champagne" aria-pressed="true">Classic 香檳金</button>
+    <button type="button" data-t="korean" aria-pressed="false">Korean Modern</button>
+    <button type="button" data-t="forest" aria-pressed="false">Forest Botanical</button>
+  </div>
+  <span class="sp">載入的是 public/css/ 的真檔</span>
+</div>
+
+<div class="hx-page">
+
+  <div class="hx-top">
+    <h1>版型對照台</h1>
+    <p>同一份 CSS、同一組 class，只換 <code style="font-family:ui-monospace,monospace">body[data-theme]</code>。
+       上面三顆按鈕切換的是 token，下面每一塊都是六個賓客頁真正在用的元件。</p>
+    <div class="hx-swatch">
+      <div style="background:var(--bg1)">bg1</div>
+      <div style="background:var(--bg2)">bg2</div>
+      <div style="background:var(--surface)">surface</div>
+      <div style="background:var(--line)">line</div>
+      <div style="background:var(--primary)">primary</div>
+      <div style="background:var(--primary-deep);color:var(--on-ink)">primary-deep</div>
+      <div style="background:var(--ink);color:var(--on-ink)">ink</div>
+    </div>
+  </div>
+
+  <!-- ============ 按鈕四族 ============ -->
+  <section class="hx-sec">
+    <h2>按鈕四族</h2>
+    <div class="file">common.css / rsvp.css / quiz.css</div>
+
+    <div class="hx-row">
+      <a class="btn" href="#" style="width:auto">前往出席回覆</a>
+      <a class="btn small" href="#">查詢</a>
+      <a class="btn small ghost" href="#">開啟地圖</a>
+      <button class="btn small" disabled>已送出</button>
+    </div>
+
+    <div class="hx-row">
+      <button class="choice" type="button">熱情出席</button>
+      <button class="choice on" type="button">熱情出席（已選）</button>
+      <button class="choice sm" type="button">大學同學</button>
+      <div class="stepper"><button class="st-btn" type="button">−</button>
+        <span class="st-val">2</span><button class="st-btn" type="button">＋</button></div>
+    </div>
+
+    <div class="hx-row">
+      <button class="q-opt" type="button"><span class="q-opt-letter">A</span><span class="q-opt-text">在研討會上</span></button>
+      <button class="q-opt sel" type="button"><span class="q-opt-letter">B</span><span class="q-opt-text">在咖啡店（已選）</span></button>
+    </div>
+
+    <p class="hx-note">↓ 燈箱／深色遮罩上的白框白字：三個版型都維持純白，只有遮罩的顏色跟著 ink 走。</p>
+    <div class="hx-dark">
+      <button class="cv-close" type="button" style="position:static">✕</button>
+      <span style="color:#fff;font-size:13px;letter-spacing:.1em">桌次圖・點圖可以放大看</span>
+    </div>
+  </section>
+
+  <!-- ============ 邀請函 ============ -->
+  <section class="hx-sec">
+    <h2>邀請函</h2><div class="file">invitation.html ＋ rsvp.css ＋ invitation.css</div>
+    <div class="panel">
+      <header class="scene-hero inv-hero">
+        <div class="inv-kicker">We're getting married</div>
+        <h1 class="sh-title inv-couple">Ginny &amp; One</h1>
+        <div class="sh-rule"></div>
+        <div class="sh-sub">2026.09.19</div>
+      </header>
+      <div class="scene-body">
+        <section class="inv-block">
+          <div class="section-title">Details <small>婚禮資訊</small></div>
+          <div class="cardbox">
+            <div class="inv-rows">
+              <div class="inv-row"><div class="ir-label">日期</div>
+                <div class="ir-body"><div class="ir-val">2026.09.19（六）11:30</div></div></div>
+              <div class="inv-row"><div class="ir-label">地點</div>
+                <div class="ir-body"><div class="ir-val">台北萬豪酒店　三樓宴會廳</div>
+                  <div class="ir-sub">台北市中山區樂群二路 199 號</div>
+                  <a class="ir-jump" href="#">開啟地圖 →</a></div></div>
+              <div class="inv-row"><div class="ir-label">服裝</div>
+                <div class="ir-body"><div class="ir-val inv-note">不用太隆重，淺色系就好</div></div></div>
+            </div>
+            <div class="inv-actions"><button class="btn small ghost" type="button">加入行事曆</button></div>
+          </div>
+        </section>
+        <section class="inv-block">
+          <div class="section-title">R.S.V.P. <small>出席回覆</small></div>
+          <p class="inv-lead">花一分鐘告訴我們你的安排，讓我們把每個細節都準備好</p>
+          <div class="rf-field"><label class="rf-label">你的名字</label>
+            <div class="field"><input type="text" placeholder="請輸入姓名" value="陳小美"></div></div>
+          <div class="rf-field"><label class="rf-label">會出席嗎</label>
+            <div class="choice-row"><button class="choice on" type="button">熱情出席</button>
+              <button class="choice" type="button">視情況而定</button>
+              <button class="choice" type="button">無法參加</button></div></div>
+          <label class="rf-check"><input type="checkbox" checked><span>需要兒童座椅</span></label>
+          <div class="rf-actions" style="margin-top:20px"><button class="btn" type="button">送出回覆</button></div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 桌次 ============ -->
+  <section class="hx-sec">
+    <h2>桌次</h2><div class="file">seating.html ＋ seating.css</div>
+    <div class="panel">
+      <div class="scene-hero"><div class="sh-title">我的桌次</div>
+        <div class="sh-sub">輸入你的名字・幫你找到今天的位子</div></div>
+      <div class="scene-body">
+        <section class="st-search">
+          <div class="section-title">Find Your Seat <small>輸入名字，馬上知道坐哪一桌</small></div>
+          <form class="st-form" onsubmit="return false">
+            <input class="st-input" type="text" placeholder="輸入你的名字" value="陳小美">
+            <button class="btn small" type="submit">查詢</button>
+          </form>
+          <div class="st-hint">輸入邀請卡上的名字就可以了・大小寫、空白都沒關係</div>
+          <div class="st-result">
+            <div class="st-card">
+              <div class="st-card-name">陳小美</div>
+              <div class="st-card-label">你的桌次</div>
+              <div class="st-card-table">第 6 桌</div>
+              <div class="st-card-note">靠窗那一排，看得到台北 101</div>
+            </div>
+            <a class="st-letter" href="#">
+              <span class="st-letter-mark">✉</span>
+              <span class="st-letter-text">新人也寫了一封信給你</span>
+              <span class="st-letter-go">拆開來看</span>
+            </a>
+          </div>
+        </section>
+        <section class="st-charts">
+          <div class="section-title">Seating Chart <small>點圖可以放大看</small></div>
+          <div class="st-blank">桌次圖還在整理，婚禮前會放上來</div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 抽卡 ============ -->
+  <section class="hx-sec">
+    <h2>抽卡</h2><div class="file">draw.html ＋ draw.css</div>
+    <p class="hx-note">全息箔的彩虹與白斜光刻意不跟版型走（你指定的卡點 2）——卡面、外框、按鈕才跟。</p>
+    <div class="panel">
+      <div class="scene-hero"><div class="sh-title">婚禮小卡</div>
+        <div class="sh-sub">抽一張婚禮限定小卡，收進你的收藏</div></div>
+      <div class="scene-body">
+        <div class="cardbox">
+          <div class="section-title">抽婚禮小卡 <small>收藏你的限定卡</small></div>
+          <div class="hx-row" style="justify-content:center">
+            <div class="mini-card">✦</div><div class="mini-card">◇</div>
+            <div class="mini-card">❖</div><div class="mini-card">△</div>
+          </div>
+          <div class="hx-row" style="justify-content:center">
+            <button class="btn small" type="button">抽一張</button>
+            <button class="btn small ghost" type="button">看我的收藏</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 故事 ============ -->
+  <section class="hx-sec">
+    <h2>故事</h2><div class="file">exhibition.html ＋ exhibition.css</div>
+    <div class="panel">
+      <div class="scene-hero"><div class="sh-title">我們的故事</div>
+        <div class="sh-sub">沿著時間線，走過我們一路走來的日子</div></div>
+      <div class="scene-body">
+        <div class="hx-row">
+          <button class="tl-arrow prev" type="button" style="position:static">‹</button>
+          <button class="tl-arrow next" type="button" style="position:static">›</button>
+          <div class="tl-progress" style="position:static">
+            <span class="pd on"></span><span class="pd"></span><span class="pd"></span><span class="pd"></span>
+          </div>
+        </div>
+        <div class="cardbox">
+          <div class="section-title">2021 <small>那一年的第一張照片</small></div>
+          <p style="font-size:14px;line-height:2;color:var(--ink)">他把最後一杯咖啡讓給我，然後在接下來的七年裡，把最後一塊蛋糕、最後一個位子都讓給我。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 感謝信 ============ -->
+  <section class="hx-sec">
+    <h2>感謝信</h2><div class="file">letter.html ＋ letter.css</div>
+    <p class="hx-note">信封的立體感保留（你指定的卡點 3）：陰影還在，只是顏色改成跟著版型的 ink 走，不再是固定的暖褐。</p>
+    <div class="panel">
+      <div class="scene-hero"><div class="sh-title">給你的信</div>
+        <div class="sh-sub">Ginny &amp; One 寫了一封信・在等你來領</div></div>
+      <div class="scene-body wl-body">
+        <div class="wl-stage">
+          <div class="envelope">
+            <div class="env-back"></div><div class="env-paper"></div>
+            <div class="env-front"></div><div class="env-flap"></div>
+            <div class="env-seal"><span class="env-seal-mark">&amp;</span></div>
+            <div class="env-to"><span class="env-to-label">To</span><span class="env-to-name">陳小美</span></div>
+          </div>
+          <form class="wl-form" onsubmit="return false">
+            <label class="wl-label">輸入你的名字，或新人給你的專屬暗號</label>
+            <div class="wl-row">
+              <input class="wl-input" type="text" placeholder="例如：王小明">
+              <button class="btn small" type="submit">領取</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 測驗 ============ -->
+  <section class="hx-sec">
+    <h2>測驗</h2><div class="file">quiz.html ＋ quiz.css</div>
+    <p class="hx-note">答對綠 / 答錯紅維持原樣（你指定的卡點 1），所以在 Forest 底下要留意它和主色的距離。</p>
+    <div class="panel">
+      <div class="scene-hero"><div class="sh-title">看你多了解我們</div>
+        <div class="sh-sub">一份小測驗，看看你有多了解我們</div></div>
+      <div class="scene-body">
+        <div class="cardbox quiz-card">
+          <div class="q-q">Q1・我們是在哪裡認識的？</div>
+          <div class="q-options">
+            <button class="q-opt sel" type="button"><span class="q-opt-letter">A</span><span class="q-opt-text">一場沒有人想去的研討會</span></button>
+            <button class="q-opt" type="button"><span class="q-opt-letter">B</span><span class="q-opt-text">大學的社團</span></button>
+            <button class="q-opt" type="button"><span class="q-opt-letter">C</span><span class="q-opt-text">朋友介紹</span></button>
+          </div>
+          <div class="hx-row"><button class="btn q-submit" type="button" style="width:auto">送出答案</button>
+            <button class="btn ghost small q-reset" type="button">重新作答</button></div>
+        </div>
+        <div class="cardbox" style="margin-top:16px">
+          <div class="q-chart-q">
+            <span class="q-verdict ok">答對了</span>
+            <span class="q-verdict no" style="margin-left:6px">答錯了</span>
+            <div class="q-chart-title" style="margin-top:12px">Q1・我們是在哪裡認識的？</div>
+            <div class="q-bars">
+              <div class="q-bar-row is-answer"><span class="q-bar-letter">✓</span>
+                <div class="q-bar-track"><div class="q-bar-fill" style="width:72%"></div>
+                  <span class="q-bar-label">一場沒有人想去的研討會</span><span class="q-bar-badge">你</span></div>
+                <span class="q-bar-count">18</span></div>
+              <div class="q-bar-row"><span class="q-bar-letter">B</span>
+                <div class="q-bar-track"><div class="q-bar-fill" style="width:28%"></div>
+                  <span class="q-bar-label">大學的社團</span></div>
+                <span class="q-bar-count">7</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div style="height:80px"></div>
+</div>
+
+<script>
+const sw=document.getElementById('sw');
+sw.addEventListener('click',(e)=>{
+  const b=e.target.closest('button[data-t]'); if(!b) return;
+  document.body.dataset.theme=b.dataset.t;
+  sw.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+});
+</script>
+</body>
+</html>
