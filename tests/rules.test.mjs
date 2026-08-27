@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { describe, it, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, beforeAll, afterAll, beforeEach, expect } from 'vitest';
 import {
   initializeTestEnvironment,
   assertSucceeds,
@@ -1426,6 +1426,215 @@ describe('賓客標籤', () => {
     await assertFails(getDocs(collection(db, `sites/${SITE_ID}/rsvpTags`)));
     await assertFails(setDoc(doc(db, `sites/${SITE_ID}/rsvpTags/r3`),
       { tags: ['t1'], updatedAt: Date.now() }));
+  });
+});
+
+/* ============================================================
+   多活動（sites.events ＋ rsvps.events）
+   ------------------------------------------------------------
+   一場婚禮多個活動（文訂／迎娶／證婚／婚宴／派對），
+   每個活動有自己的日期、地點與「要不要請賓客回覆」。
+
+   規則在這一組只做兩件事，其餘（每一欄的長度、值域）在後台送出前切好：
+     1. events 是 list／map，而且筆數不超過 10
+     2. 頂層欄位的語意沒有變 —— 沒有 events 的回覆仍然照樣收得下
+
+   總開關 multiEventEnabled 和 guestTagsEnabled 一樣只能由我們改。
+============================================================ */
+describe('多活動', () => {
+  const OWNER = 'couple@example.com';
+  const ownerDb = () => testEnv
+    .authenticatedContext('couple', { email: OWNER, email_verified: true })
+    .firestore();
+
+  /* 證婚 ＋ 婚宴 ＋ 派對：報告裡的 Case 4 */
+  const THREE_EVENTS = [
+    { id:'ev_ceremony', type:'ceremony', name:'證婚', nameEn:'CEREMONY',
+      date:'2026-03-15', startTime:'14:00', endTime:'',
+      venueName:'台北真理堂', address:'台北市大安區新生南路三段 86 號', mapUrl:'',
+      desc:'', requiresRsvp:true,
+      askCount:true, askMeal:false, askChildSeat:false, askDiet:false, questions:[] },
+    { id:'ev_reception', type:'reception', name:'婚宴', nameEn:'WEDDING RECEPTION',
+      date:'2026-03-15', startTime:'18:00', endTime:'21:00',
+      venueName:'晶華酒店 三樓宴會廳', address:'台北市中山區', mapUrl:'',
+      desc:'', requiresRsvp:true,
+      askCount:true, askMeal:true, askChildSeat:true, askDiet:true, questions:[] },
+    { id:'ev_afterparty', type:'afterparty', name:'派對', nameEn:'AFTER PARTY',
+      date:'2026-03-15', startTime:'21:30', endTime:'',
+      venueName:'某某 Bar', address:'台北市信義區', mapUrl:'',
+      desc:'', requiresRsvp:true,
+      askCount:true, askMeal:false, askChildSeat:false, askDiet:false,
+      /* opts 是「map 的陣列」而不是「陣列的陣列」——
+         Firestore 不接受巢狀陣列（和 quizVotes.picks 是同一個限制），
+         而且存 id 不是文字，新人日後改選項的字，已送出的作答還對得回來。 */
+      questions:[{ id:'q_shuttle', kind:'choice', label:'需要接駁車嗎？',
+                   opts:[{ id:'yes', label:'需要' },
+                         { id:'no',  label:'不需要' }] }] },
+  ];
+
+  beforeEach(async () => {
+    await seedSite(SITE_ID, { ownerEmails: [OWNER], multiEventEnabled: true });
+  });
+
+  /* ---------- 站台文件的 events ---------- */
+
+  it('新人存得進活動清單', async () => {
+    await assertSucceeds(updateDoc(doc(ownerDb(), `sites/${SITE_ID}`), {
+      events: THREE_EVENTS,
+      updatedAt: Timestamp.now(),
+    }));
+  });
+
+  it('活動清單最多 10 個', async () => {
+    const many = Array.from({ length: 11 }, (_, i) => ({
+      id:`ev${i}`, type:'custom', name:`活動${i}`, date:'2026-03-15',
+      requiresRsvp:false,
+    }));
+    await assertFails(updateDoc(doc(ownerDb(), `sites/${SITE_ID}`), { events: many }));
+  });
+
+  it('events 不是 list 就整筆擋下', async () => {
+    await assertFails(updateDoc(doc(ownerDb(), `sites/${SITE_ID}`), {
+      events: { ev1: { name: '婚宴' } },
+    }));
+    await assertFails(updateDoc(doc(ownerDb(), `sites/${SITE_ID}`), { events: '婚宴' }));
+  });
+
+  it('清空活動清單是允許的（退回單一活動）', async () => {
+    await assertSucceeds(updateDoc(doc(ownerDb(), `sites/${SITE_ID}`), { events: [] }));
+  });
+
+  /* 這一條是踩過的坑：Firestore **不接受巢狀陣列**，而且是 SDK 在送出前
+     就同步丟例外，根本走不到規則（所以不能用 assertFails —— 那是在等
+     規則回 permission-denied）。自訂題目的選項因此一定是「map 的陣列」，
+     不能寫成 [['yes','需要'], ...]。
+     同一個限制在 quizVotes.picks 也踩過（見 common.js 的 addQuizVote）。
+     留一個測試釘住，日後不會有人改回去。 */
+  it('活動裡不能出現巢狀陣列（自訂題目的選項只能是 map 的陣列）', () => {
+    const withNestedArray = {
+      events: [{
+        id:'ev_afterparty', type:'afterparty', name:'派對', date:'2026-03-15',
+        requiresRsvp:true,
+        questions:[{ id:'q_shuttle', kind:'choice', label:'需要接駁車嗎？',
+                     opts:[['yes','需要'], ['no','不需要']] }],
+      }],
+    };
+    expect(() => updateDoc(doc(ownerDb(), `sites/${SITE_ID}`), withNestedArray))
+      .toThrow(/Nested arrays are not supported/);
+  });
+
+  it('新人改不動總開關 multiEventEnabled', async () => {
+    await assertFails(updateDoc(doc(ownerDb(), `sites/${SITE_ID}`), {
+      multiEventEnabled: false,
+    }));
+  });
+
+  it('不是這個站台的新人存不進活動清單', async () => {
+    const db = testEnv
+      .authenticatedContext('other', { email:'other@example.com', email_verified: true })
+      .firestore();
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { events: THREE_EVENTS }));
+  });
+
+  /* ---------- 回覆裡的 events ---------- */
+
+  /* 賓客 C：不參加證婚、參加婚宴 2 位、參加派對 2 位。
+     頂層欄位講的是主要活動（婚宴），和 events.ev_reception 是鏡像的。 */
+  const multiRsvp = (overrides = {}) => validRsvpPayload({
+    primaryEventId: 'ev_reception',
+    events: {
+      ev_ceremony:   { going:false, count:0, veg:0, note:'', answers:{} },
+      ev_reception:  { going:true,  count:2, veg:1, note:'', answers:{} },
+      ev_afterparty: { going:true,  count:2, veg:0, note:'',
+                       answers:{ q_shuttle:'yes' } },
+    },
+    mealMeat: 1,
+    mealVeg: 1,
+    ...overrides,
+  });
+
+  it('賓客送得出多活動的回覆', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(addDoc(collection(db, `sites/${SITE_ID}/rsvps`), multiRsvp()));
+  });
+
+  it('events 最多 10 個活動', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    const many = {};
+    for (let i = 0; i < 11; i++) {
+      many[`ev${i}`] = { going:true, count:1, veg:0, note:'', answers:{} };
+    }
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      multiRsvp({ events: many })));
+  });
+
+  it('events 不是 map 就整筆擋下', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      multiRsvp({ events: [{ eventId:'ev_reception', going:true }] })));
+  });
+
+  it('primaryEventId 太長就整筆擋下', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      multiRsvp({ primaryEventId: 'e'.repeat(25) })));
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      multiRsvp({ primaryEventId: 123 })));
+  });
+
+  /* ---------- 相容性：這是整個改版的地基，一定要有測試守著 ---------- */
+
+  it('沒有 events 的回覆照樣收得下（既有站台不受影響）', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      validRsvpPayload()));
+  });
+
+  it('沒開多活動的站台，帶 events 的回覆一樣收得下', async () => {
+    /* events 不是規則的判斷依據（和 tag 不一樣）——
+       總開關只決定後台看不看得到那個分頁，不決定資料收不收。
+       這樣新人把多活動關掉時，已經送出的回覆不會突然變成不合法。 */
+    await seedSite(SITE_ID, { ownerEmails: [OWNER] });
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(addDoc(collection(db, `sites/${SITE_ID}/rsvps`), multiRsvp()));
+  });
+
+  it('多活動的回覆仍然改不動，只有新人刪得掉', async () => {
+    let id;
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const ref = await addDoc(
+        collection(context.firestore(), `sites/${SITE_ID}/rsvps`),
+        multiRsvp({ createdAt: Timestamp.now() })
+      );
+      id = ref.id;
+    });
+    const guest = testEnv.unauthenticatedContext().firestore();
+    await assertFails(updateDoc(doc(guest, `sites/${SITE_ID}/rsvps/${id}`), {
+      events: { ev_reception: { going:false, count:0, veg:0, note:'', answers:{} } },
+    }));
+    await assertFails(updateDoc(doc(ownerDb(), `sites/${SITE_ID}/rsvps/${id}`), {
+      events: {},
+    }));
+    await assertSucceeds(deleteDoc(doc(ownerDb(), `sites/${SITE_ID}/rsvps/${id}`)));
+  });
+
+  it('夾帶未知欄位仍然被拒（白名單沒有因為多活動而變鬆）', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      multiRsvp({ eventResponses: [] })));
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      multiRsvp({ isAdmin: true })));
+  });
+
+  it('多活動不會繞過 rsvpEnabled 與 rsvpDeadline', async () => {
+    await seedSite(SITE_ID, { ownerEmails: [OWNER], multiEventEnabled: true,
+      rsvpEnabled: false });
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`), multiRsvp()));
+
+    await seedSite(SITE_ID, { ownerEmails: [OWNER], multiEventEnabled: true,
+      rsvpDeadline: Timestamp.fromDate(new Date(Date.now() - 24 * 3600 * 1000)) });
+    await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`), multiRsvp()));
   });
 });
 

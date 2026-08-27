@@ -77,3 +77,15 @@
 .inv-tags{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;}
 .inv-tags span{font-size:12.5px;letter-spacing:.1em;color:var(--ink-soft);
   border:1px solid var(--line);border-radius:999px;padding:6px 14px;}
+
+/* ---------- 多活動的資訊列 ----------
+   沿用既有的 .inv-row 兩欄版面，左欄從「日期／地點」換成活動的中文短名。
+   沒有新元件，活動之間的線就是既有的 .inv-row 的 border-bottom。 */
+.inv-row.inv-ev{gap:14px;}
+.inv-ev .ir-label{flex-basis:5em;overflow-wrap:anywhere;line-height:1.7;}
+.inv-ev .ir-when{font-variant-numeric:tabular-nums;letter-spacing:.06em;}
+.inv-ev .ir-when + .ir-val{margin-top:2px;}
+@media(max-width:420px){
+  .inv-row{flex-direction:column;gap:6px;}
+  .ir-label{flex-basis:auto;padding-top:0;}
+}

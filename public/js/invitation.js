@@ -61,8 +61,13 @@ const CFG = rsvpConfig();
   if(tick()) setInterval(tick, 3600000);
 })();
 
-/* ---------- 地點 ---------- */
+/* ---------- 地點 ----------
+   多活動時「日期」與「地點」兩列換成一組活動列，一個活動一個地點。
+   單一活動（＝目前全部的站台）走的還是原本那兩列，一個字都沒改。 */
 (function renderVenue(){
+  const evs = weddingEvents();
+  if(evs.length > 1){ renderEventRows(evs); return; }
+
   if(!W.venue && !W.address) return;
   document.getElementById('venueRow').hidden = false;
   document.getElementById('venueName').textContent = W.venue || '';
@@ -78,6 +83,45 @@ const CFG = rsvpConfig();
     link.hidden = false;
   }
 })();
+
+/* 多活動的資訊列：一個活動一列，左邊放名稱（原本放「日期／地點」的位置）。
+   ★ 不需要回覆的活動（文訂、迎娶）也照樣列出來 ——
+     這一段講的是「這場婚禮有哪些事」，不是「你要回覆什麼」。 */
+function renderEventRows(evs){
+  const rows = document.querySelector('#rsvpBlock') ? document.querySelector('.inv-rows') : null;
+  if(!rows) return;
+
+  /* 全部同一天才在最上面留一列日期，各活動只寫時間；
+     跨日（文訂在前一個月）就收掉，每一列自己寫完整日期 */
+  const sameDay = new Set(evs.map(e => e.date).filter(Boolean)).size === 1
+    && evs.every(e => e.date);
+  const dateRow = document.getElementById('detailDate').closest('.inv-row');
+  if(!sameDay) dateRow.hidden = true;
+
+  const venueRow = document.getElementById('venueRow');
+  const html = evs.map(ev => {
+    const w = eventWhen(ev);
+    const when = sameDay
+      ? w.range
+      : [w.md ? `${w.md}${w.wdTw ? `（${w.wdTw}）` : ''}` : '', w.range]
+          .filter(Boolean).join(' ');
+    const map = eventMapUrl(ev);
+    const addr = ev.address && ev.address !== ev.venueName ? ev.address : '';
+    return `<div class="inv-row inv-ev">
+      <div class="ir-label">${escapeHtml(ev.name)}</div>
+      <div class="ir-body">
+        ${when ? `<div class="ir-val ir-when">${escapeHtml(when)}</div>` : ''}
+        ${ev.venueName ? `<div class="ir-val">${escapeHtml(ev.venueName)}</div>` : ''}
+        ${addr ? `<div class="ir-sub">${escapeHtml(addr)}</div>` : ''}
+        ${map ? `<a class="ir-jump" href="${escapeHtml(map)}" target="_blank"
+                    rel="noopener noreferrer">查看地圖 →</a>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  venueRow.insertAdjacentHTML('beforebegin', html);
+  venueRow.remove();
+}
 
 /* ---------- 服裝／禮金／兩人的故事 ----------
    留白就不出現；兩人的故事另外可以由新人在後台整塊關掉 */

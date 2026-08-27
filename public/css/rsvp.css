@@ -141,3 +141,97 @@
   border-left:1px solid var(--line);padding:2px 0 2px 14px;line-height:1.9;}
 .ol-empty{color:var(--ink-soft);font-size:13.5px;line-height:2;padding:18px 0;}
 .ol-empty code{font-size:12.5px;background:var(--bg2);padding:2px 6px;border-radius:var(--radius);}
+
+/* ============================================================
+   多活動的 RSVP（rsvp-form.js 的 .ev-* ）
+   ------------------------------------------------------------
+   一張卡回答一件事：「這一場你來不來」。
+   語彙全部沿用既有的：1px 線、無陰影、選中＝ --ink 實心。
+   **沒有新的顏色** —— 狀態靠線條、字重與透明度表達。
+
+   活動多的時候，答完的卡片收成一行（.is-folded），
+   五個活動也不會讓頁面一路長到滑不完。
+============================================================ */
+.ev-lead{margin:-2px 0 20px;}
+
+/* 進度 ＋「全部參加」：四個活動以上才出現，更少的時候是噪音 */
+.ev-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin:0 0 16px;padding-bottom:12px;border-bottom:1px solid var(--line-soft);}
+.ev-progress{font-size:12.5px;letter-spacing:.08em;color:var(--ink-soft);
+  font-variant-numeric:tabular-nums;}
+.ev-allyes{background:none;border:none;padding:2px 0;cursor:pointer;
+  font-family:var(--font-body);font-size:12.5px;letter-spacing:.1em;color:var(--ink-soft);
+  border-bottom:1px solid var(--line);transition:color .2s,border-color .2s;}
+.ev-allyes:hover{color:var(--ink);border-bottom-color:var(--ink);}
+
+.rsvp-events{display:flex;flex-direction:column;gap:14px;}
+
+.ev-card{border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--surface);padding:22px 20px 18px;transition:border-color .2s;}
+/* 說了不來的那一場整張淡下去 —— 資訊還在，但不再是視線的重點 */
+.ev-card.is-no .ev-head{opacity:.55;}
+
+/* ---- 收起來的那一行 ---- */
+.ev-fold{display:none;width:100%;align-items:baseline;gap:10px;
+  background:none;border:none;padding:0;cursor:pointer;text-align:left;
+  font-family:var(--font-body);}
+.ev-card.is-folded{padding:16px 20px;}
+.ev-card.is-folded .ev-fold{display:flex;}
+.ev-card.is-folded .ev-body{display:none;}
+.ev-fold-name{font-family:var(--font-display);font-size:16px;letter-spacing:.14em;
+  color:var(--ink);}
+.ev-fold-ans{font-size:13px;letter-spacing:.06em;color:var(--ink-soft);}
+.ev-fold-edit{margin-left:auto;font-size:12.5px;letter-spacing:.1em;color:var(--ink-soft);
+  border-bottom:1px solid var(--line);padding-bottom:2px;}
+.ev-fold:hover .ev-fold-edit{color:var(--ink);border-bottom-color:var(--ink);}
+
+/* ---- 卡片正面 ---- */
+.ev-head{padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid var(--line-soft);}
+.ev-kicker{font-size:11px;letter-spacing:.34em;text-transform:uppercase;
+  color:var(--ink-soft);margin-bottom:8px;}
+.ev-name{font-family:var(--font-display);font-weight:400;font-size:19px;
+  letter-spacing:.16em;color:var(--ink);margin:0 0 10px;}
+.ev-when{font-size:14px;letter-spacing:.1em;color:var(--ink);
+  font-variant-numeric:tabular-nums;margin-bottom:8px;}
+.ev-venue{font-size:15px;line-height:1.8;color:var(--ink);letter-spacing:.04em;}
+.ev-addr{margin-top:3px;font-size:13px;line-height:1.8;color:var(--ink-soft);}
+.ev-desc{margin-top:8px;font-size:13px;line-height:1.9;color:var(--ink-soft);
+  white-space:pre-wrap;}
+/* 「查看地圖 →」和大廳／邀請函資訊列的那一顆長得一樣 */
+.ev-map{display:inline-block;margin-top:10px;font-size:12.5px;letter-spacing:.1em;
+  color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);
+  padding-bottom:2px;transition:.2s;}
+.ev-map:hover{color:var(--ink);border-bottom-color:var(--ink);}
+
+/* 會參加／無法參加：兩顆等寬，拇指按得到 */
+.ev-ask .rf-label:first-child{margin-top:0;}
+.ev-choice .choice{flex:1 1 0;min-width:0;min-height:48px;}
+
+.ev-detail{margin-top:4px;}
+.ev-detail[hidden]{display:none;}
+
+/* 每張卡自己的錯誤訊息 —— 不要把五個錯誤一次列在表單底下 */
+.ev-err{min-height:0;color:#a4677a;font-size:12.5px;letter-spacing:.06em;line-height:1.8;}
+.ev-err:not(:empty){margin-top:12px;}
+
+/* ---- 活動與「你的資料」之間的那道線 ---- */
+.ev-sep{display:flex;align-items:center;gap:14px;margin:34px 0 4px;
+  font-size:12px;letter-spacing:.24em;color:var(--ink-soft);}
+.ev-sep::before,.ev-sep::after{content:'';flex:1 1 auto;height:1px;background:var(--line-soft);}
+
+/* ---- 感謝畫面上的逐場列表 ---- */
+.tk-events{list-style:none;margin:0 0 26px;padding:0;text-align:left;
+  border-top:1px solid var(--line-soft);}
+.tk-events[hidden]{display:none;}
+.tk-ev{display:flex;align-items:baseline;justify-content:space-between;gap:14px;
+  padding:13px 2px;border-bottom:1px solid var(--line-soft);}
+.tk-ev-name{font-size:14.5px;letter-spacing:.08em;color:var(--ink);}
+.tk-ev-ans{font-size:13px;letter-spacing:.06em;color:var(--ink);
+  font-variant-numeric:tabular-nums;}
+.tk-ev.is-no .tk-ev-name,.tk-ev.is-no .tk-ev-ans{color:var(--ink-soft);}
+
+@media(max-width:520px){
+  .ev-card{padding:20px 16px 16px;}
+  .ev-card.is-folded{padding:15px 16px;}
+  .ev-name{font-size:18px;}
+}

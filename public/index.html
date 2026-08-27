@@ -107,10 +107,10 @@
 
           <div class="info-rows">
             <div class="info-row"><div class="ir-label">日期</div><div class="ir-body"><div class="ir-val" id="infoDate">—</div></div></div>
-            <div class="info-row"><div class="ir-label">時間</div><div class="ir-body"><div class="ir-val" id="infoTime">—</div>
+            <div class="info-row" id="infoTimeRow"><div class="ir-label">時間</div><div class="ir-body"><div class="ir-val" id="infoTime">—</div>
               <!-- 有當日流程時才出現（js/index.js 判斷），點了捲到下面的 Schedule -->
               <a class="ir-jump" id="infoTimeJump" href="#scheduleBlock" hidden>看當日流程 →</a></div></div>
-            <div class="info-row"><div class="ir-label">地點</div><div class="ir-body"><div class="ir-val" id="infoVenue">—</div><div class="ir-sub" id="infoAddr"></div>
+            <div class="info-row" id="infoVenueRow"><div class="ir-label">地點</div><div class="ir-body"><div class="ir-val" id="infoVenue">—</div><div class="ir-sub" id="infoAddr"></div>
               <!-- 有交通資訊時才出現（js/index.js 判斷），點了捲到下面的 Transport -->
               <a class="ir-jump" id="infoVenueJump" href="#transportBlock" hidden>看交通資訊 →</a></div></div>
           </div>

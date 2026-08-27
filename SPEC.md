@@ -120,6 +120,15 @@ sites/{siteId}
   # ↓ 賓客標籤（配合排桌次用）。總開關新人改不動，和 pages 一樣由我們設定
   guestTagsEnabled: boolean  # 這個站台要不要用標籤；沒有這個欄位＝關
   guestTags       : map[]    # 標籤庫，陣列順序即顯示順序（見下方說明）
+  # ↓ 多活動（文訂／迎娶／證婚／婚宴／派對）。同樣分兩層開關
+  multiEventEnabled: boolean # 這個站台能不能用多活動；沒有這個欄位＝關
+                             # 新人改不動（規則白名單裡沒有），由我們用
+                             # `npm run set-pages -- --multi-event on` 打開。
+                             # ⚠️ 打開只是讓後台長出「婚禮流程」分頁，
+                             #    新人只留一個活動時前台仍是單一活動的樣子
+  events          : map[]    # 活動清單，≤10；陣列順序即顯示順序（見下方說明）
+                             # 沒有這個欄位或空陣列＝這場婚禮只有一個活動，
+                             # 由 eventDate／venueName 那幾欄合成（不寫回資料庫）
   pages           : map      # 頁面開關，見第 10 節
   ownerEmails     : string[] # 新人的 Google 信箱；規則據此決定誰進得了後台
   createdAt       : timestamp
@@ -154,6 +163,13 @@ sites/{siteId}
     note          : string   # 其他備註，選填
     icon          : string   # 選填，賓客 emoji
     meal          : string   # 選填，舊版表單的單一餐點欄位（保留相容）
+    # ↓ 多活動（見 sites.events）。兩個都是選填，沒有＝這場婚禮只有一個活動
+    primaryEventId: string   # 選填，上面那些欄位在講哪一個活動（≤24）
+    events        : map      # 選填，eventId → {
+                             #   going(bool) count(int) veg(int)
+                             #   note(string) answers(map) }
+                             # ≤10 個 key；用 map 不用 list，
+                             # 「同一個活動只有一筆回應」由結構本身保證
     createdAt     : timestamp
 
   wishes/{autoId}     name, icon, text(≤300), time      # 祝福牆
@@ -265,6 +281,97 @@ short/{code}                # 短連結
 `schedule` 沒有對應的 CLI（`create-site.js` 不會寫入這個欄位），
 改由新人在後台「大廳內容」分頁自己編（見第 13.4 節）。
 
+**`events`（婚禮的活動清單）**：台灣的婚禮常常不只一場 ——
+「文訂＋迎娶＋婚宴」「證婚＋婚宴＋派對」都是常見組合，
+而且**每一場有自己的地點**。陣列裡每一筆是一個 map：
+
+```json
+[
+  {
+    "id": "ev_ceremony", "type": "ceremony",
+    "name": "證婚", "nameEn": "CEREMONY",
+    "date": "2026-03-15", "startTime": "14:00", "endTime": "",
+    "venueName": "台北真理堂",
+    "address": "台北市大安區新生南路三段 86 號",
+    "mapUrl": "", "desc": "",
+    "requiresRsvp": true,
+    "askCount": true, "askMeal": false,
+    "askChildSeat": false, "askDiet": false,
+    "questions": []
+  }
+]
+```
+
+| 欄位 | 說明 |
+|---|---|
+| `id` | ≤24，後台產生後就不再變 —— 已送出的回覆靠它對回來 |
+| `type` | `engagement`(文訂)／`fetching`(迎娶)／`ceremony`(證婚)／`reception`(婚宴)／`afterparty`(派對)／`custom` |
+| `name` | 中文名稱，≤30。**建議 4 個字以內**：大廳資訊卡的左欄只有 `4.5em` 寬 |
+| `nameEn` | 邀請函活動卡上的英文 kicker；大廳不顯示 |
+| `date` | `YYYY-MM-DD`，**婚禮所在時區的牆上日期**（不是 Timestamp，見下方說明） |
+| `startTime`／`endTime` | `HH:mm`，可留白 |
+| `venueName`／`address`／`mapUrl` | 這個活動自己的地點。`mapUrl` 留白時前端用 `address` 組 Google Maps |
+| `desc` | 活動說明，≤300 |
+| `requiresRsvp` | `false` 時出現在婚禮流程／邀請函，**但不出現在 RSVP 表單**（文訂、迎娶通常是這樣） |
+| `askCount`／`askMeal`／`askChildSeat`／`askDiet` | 這個活動的表單要問哪幾題（證婚通常沒有餐） |
+| `questions` | 這個活動的追加題目，≤3；見下方 |
+
+**為什麼日期時間存字串不存 Timestamp**：一來 `schedule[].time` 本來就是字串，
+後台輸入框也是字串；二來婚禮的時間是**牆上時間**（「10/18 14:00 在台北真理堂」），
+站台已經有 `timezone`，牆上時間＋時區才是無歧義的表達。
+需要絕對時間的地方（`.ics`、Google Calendar）在產生時才換算。
+
+**站台文件的 `eventDate`／`venueName`／`venueAddress`／`venueMapUrl` 保留不動**：
+它們代表**主要活動**（婚宴）。倒數計時、`rsvpDeadline` 的比較、OG 分享文字
+都還是讀那一份，所以既有站台不會因為多了 `events` 就變樣。
+
+**`events[].questions`（活動自己的追加題目）**：型態只有兩種、每個活動最多 3 題，
+一律選填。刻意不做通用 form builder —— 規則語言檢查不了陣列裡的內容，
+型態一開放就等於前端說什麼算什麼。
+
+```json
+[
+  { "id": "q_shuttle", "kind": "choice", "label": "需要接駁車嗎？",
+    "opts": [ { "id": "yes", "label": "需要" },
+              { "id": "no",  "label": "不需要" } ] },
+  { "id": "q_note", "kind": "text", "label": "有什麼要提醒我們的嗎？",
+    "hint": "例：需要素食兒童餐" }
+]
+```
+
+> ⚠️ **`opts` 一定是「map 的陣列」，不能是「陣列的陣列」。**
+> Firestore 不接受巢狀陣列，而且是 SDK 在送出前就同步丟例外，
+> 根本走不到規則（`quizVotes.picks` 也踩過同一個坑，見 `common.js`
+> 的 `addQuizVote`）。`tests/rules.test.mjs` 有一條測試釘住這件事。
+> 存 `id` 不存文字則和 `guestTags` 同一個理由：新人日後改選項的字，
+> 已送出的作答還對得回來。
+
+**`rsvps.events`（賓客對各活動的回應）**是 map 不是 list，key 就是 `eventId`：
+
+```json
+{
+  "primaryEventId": "ev_reception",
+  "events": {
+    "ev_ceremony":   { "going": false, "count": 0, "veg": 0, "note": "", "answers": {} },
+    "ev_reception":  { "going": true,  "count": 2, "veg": 1, "note": "", "answers": {} },
+    "ev_afterparty": { "going": true,  "count": 2, "veg": 0, "note": "",
+                       "answers": { "q_shuttle": "yes" } }
+  }
+}
+```
+
+**頂層欄位的語意沒有變**：`attending`／`guestCount`／`mealMeat`／`mealVeg`／
+`childSeat` 永遠代表主要活動，和 `events[primaryEventId]` 是鏡像的。
+所以排桌管理、收禮小幫手、匯出 CSV、後台既有的統計圖表
+讀頂層那一份就好，**完全不必知道多活動這件事存在**。
+
+沒有 `events` 的舊回覆讀成「主要活動照舊解讀，其餘活動未回覆」——
+「未回覆」和「明確說不來」是兩件事，後台統計的「待回覆」欄位靠的就是這個區別。
+
+`events` 沒有對應的 CLI（`create-site.js` 不會寫入這個欄位），
+由新人在後台「婚禮資訊 → 婚禮流程」自己維護。
+我們只負責用 `npm run set-pages -- --slug {slug} --multi-event on` 打開總開關。
+
 ---
 
 ## 3. Security Rules
@@ -346,6 +453,11 @@ rsvpShowStory rsvpShowGallery guestTags
 
 `schedule` 的每一筆是 map，規則語言沒辦法逐筆檢查內容，
 只擋筆數（≤40）與型別；長度上限在後台送出前先切好。
+`events`（≤10）與 `guestTags`（≤30）同一套做法。
+
+**`multiEventEnabled` 不在白名單內**，和 `pages`、`guestTagsEnabled` 同一個層級：
+它不參與任何規則判斷（`events` 本來就只有新人寫得進去），
+但一開就動到整站的用法，所以由我們用 `set-pages.js` 決定哪一組新人要用。
 
 ### RSVP 建立時的驗證條件
 
@@ -363,6 +475,11 @@ rsvpShowStory rsvpShowGallery guestTags
 - `cardZip`／`giftZip` ≤ 10 字，`cardAddress`／`giftAddress` ≤ 200 字
 - `contactPhone` ≤ 30 字、`contactLine` ≤ 60 字、`contactEmail`／`cardEmail` ≤ 120 字
 - `createdAt` 必須等於 `request.time`（防止偽造時間）
+- `primaryEventId` ≤ 24 字；`events` 為 map，key 數 ≤ 10（見第 2 節）。
+  裡面每一筆的內容規則看不到，在 `js/rsvp-form.js` 送出前切好。
+  **`events` 刻意不是規則的判斷依據**（和 `tag` 不一樣）——
+  `multiEventEnabled` 只決定後台看不看得到那個分頁，不決定資料收不收，
+  這樣新人把多活動關掉時，已經送出的回覆不會突然變成不合法
 - 對應的 `sites/{siteId}` 必須存在、`status == "published"`、`rsvpEnabled == true`
 - 若已過 `rsvpDeadline` 則拒絕寫入
 

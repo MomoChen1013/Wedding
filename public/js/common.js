@@ -219,6 +219,308 @@ function guestTagName(id){
   return hit ? hit.name : '';
 }
 
+/* ============================================================
+   婚禮的活動（sites.events）
+   ------------------------------------------------------------
+   台灣的婚禮常常不只一場：「文訂＋迎娶＋婚宴」「證婚＋婚宴＋派對」
+   都是常見組合，而且**每一場有自己的地點**。
+
+   這一整段只做讀取，不寫入任何東西。核心是 weddingEvents()：
+
+     ・站台有 events[]        → 用它
+     ・沒有（＝所有既有站台） → 用站台既有的 eventDate／venueName…
+                              合成一個虛擬活動，**不寫回資料庫**
+
+   所以既有站台在這裡永遠是「一個活動的婚禮」，前台照原本的路徑走，
+   畫面一個字都不會變。新人第一次在後台按「儲存婚禮流程」，
+   才把那一筆真的寫進 events[] —— 那是使用者主動觸發的 migration。
+
+   兩層開關（和 guestTagsEnabled 同一套）：
+     ・multiEventEnabled（站台文件，新人改不動）＝後台看不看得到「婚禮流程」
+     ・events.length     ＝前台實際上有幾個活動
+   ★ 旗標打開不等於前台變複雜：只要新人只留一個活動，
+     大廳與邀請函仍然是單一活動的樣子。
+============================================================ */
+
+const EVENT_MAX = 10;              // 規則也擋同一個數字
+const EVENT_QUESTION_MAX = 3;      // 一個活動最多幾個追加題目
+const EVENT_OPT_MAX = 4;           // 一個單選題最多幾個選項
+const EVENT_ID_MAX = 24;           // 規則也擋同一個長度
+const EVENT_NAME_MAX = 30;
+
+/* 合成出來的那一個活動的 id。存不進資料庫，只在記憶體裡代表
+   「這場婚禮只有一個活動」，讓下游不必到處寫 if (沒有 events) */
+const MAIN_EVENT_ID = 'main';
+
+/* ============================================================
+   活動型別
+   ------------------------------------------------------------
+   新人在後台選了型別，名稱、英文 kicker、要不要 RSVP、要問哪幾題
+   就一次帶好 —— 「證婚 ＋ 婚宴」這種最常見的組合，
+   新人一個勾都不用動，預設就是對的。
+
+   name 一律**兩個字**：大廳資訊卡的左欄只有 4.5em 寬（見 css/index.css
+   的 .info-row），名稱太長會擠壞那一欄。
+
+   文訂與迎娶預設 requiresRsvp:false —— 它們會出現在婚禮流程與邀請函上，
+   但不會出現在賓客的回覆表單裡（那兩場通常只有兩家人）。
+============================================================ */
+const EVENT_TYPES = {
+  engagement: { name:'文訂', nameEn:'ENGAGEMENT',        requiresRsvp:false,
+                ask:{ count:false, meal:false, childSeat:false, diet:false } },
+  fetching:   { name:'迎娶', nameEn:'FETCHING',          requiresRsvp:false,
+                ask:{ count:false, meal:false, childSeat:false, diet:false } },
+  ceremony:   { name:'證婚', nameEn:'CEREMONY',          requiresRsvp:true,
+                ask:{ count:true,  meal:false, childSeat:false, diet:false } },
+  /* 婚宴是唯一四題全開的：要排桌，所以人數、葷素、兒童椅、飲食都要問 */
+  reception:  { name:'婚宴', nameEn:'WEDDING RECEPTION', requiresRsvp:true,
+                ask:{ count:true,  meal:true,  childSeat:true,  diet:true  } },
+  afterparty: { name:'派對', nameEn:'AFTER PARTY',       requiresRsvp:true,
+                ask:{ count:true,  meal:false, childSeat:false, diet:false } },
+  custom:     { name:'',     nameEn:'',                  requiresRsvp:true,
+                ask:{ count:true,  meal:false, childSeat:false, diet:false } },
+};
+const EVENT_TYPE_KEYS = Object.keys(EVENT_TYPES);
+
+function eventTypeDefaults(type){
+  return EVENT_TYPES[type] || EVENT_TYPES.custom;
+}
+
+/* ---------- 清洗 ----------
+   規則只擋得了「events 是 list、筆數 ≤10」，裡面每一欄的長度與值域
+   規則語言看不到（和 schedule、guestTags 同一個限制）。
+   所以讀進來的每一筆都要在這裡切乾淨 —— 沒有 id 或沒有名字的直接略過，
+   畫面才不會出現一張空白的活動卡。 */
+function clampStr(v, max){
+  return String(v == null ? '' : v).trim().slice(0, max);
+}
+
+/* 追加題目：型態只有 choice 與 text 兩種，其餘一律丟掉。
+   ★ opts 是「map 的陣列」不是「陣列的陣列」——
+     Firestore 不接受巢狀陣列，而且是 SDK 在送出前就同步丟例外，
+     根本走不到規則（quizVotes.picks 踩過同一個坑）。 */
+function normalizeQuestion(raw){
+  if(!raw || typeof raw !== 'object') return null;
+  const id = clampStr(raw.id, 40);
+  const label = clampStr(raw.label, 30);
+  if(!id || !label) return null;
+
+  const kind = raw.kind === 'text' ? 'text' : 'choice';
+  if(kind === 'text'){
+    return { id, kind, label, hint: clampStr(raw.hint, 30), opts: [] };
+  }
+  const opts = (Array.isArray(raw.opts) ? raw.opts : [])
+    .map(o => (o && typeof o === 'object'
+      ? { id: clampStr(o.id, 40), label: clampStr(o.label, 20) }
+      : null))
+    .filter(o => o && o.id && o.label)
+    .slice(0, EVENT_OPT_MAX);
+  if(!opts.length) return null;      /* 單選題沒有選項＝壞掉的題目，不要畫出來 */
+  return { id, kind, label, hint:'', opts };
+}
+
+function normalizeEvent(raw){
+  if(!raw || typeof raw !== 'object') return null;
+  const id = clampStr(raw.id, EVENT_ID_MAX);
+  if(!id) return null;
+
+  const type = EVENT_TYPE_KEYS.includes(raw.type) ? raw.type : 'custom';
+  const def = EVENT_TYPES[type];
+  /* 名稱留白時退回型別的預設名；custom 沒有預設名，那就真的是壞資料 */
+  const name = clampStr(raw.name, EVENT_NAME_MAX) || def.name;
+  if(!name) return null;
+
+  /* ask* 沒設定過就用型別的預設 —— 欄位是後來才加的，
+     早期存進去的活動不會因為少了這幾個布林就整題消失 */
+  const ask = (key) => (typeof raw['ask' + key] === 'boolean'
+    ? raw['ask' + key]
+    : def.ask[key.charAt(0).toLowerCase() + key.slice(1)]);
+
+  return {
+    id, type, name,
+    nameEn:    clampStr(raw.nameEn, EVENT_NAME_MAX) || def.nameEn,
+    /* 牆上日期／時間，不是 Timestamp（見 SPEC 第 2 節）。
+       格式不對的一律當成沒填，畫面就不顯示那一段 */
+    date:      /^\d{4}-\d{2}-\d{2}$/.test(raw.date) ? raw.date : '',
+    startTime: /^\d{2}:\d{2}$/.test(raw.startTime) ? raw.startTime : '',
+    endTime:   /^\d{2}:\d{2}$/.test(raw.endTime) ? raw.endTime : '',
+    venueName: clampStr(raw.venueName, 80),
+    address:   clampStr(raw.address, 200),
+    /* 只收 http(s)；留白時由呼叫端用 address 去組 Google Maps（既有做法） */
+    mapUrl:    /^https?:\/\//i.test(raw.mapUrl) ? clampStr(raw.mapUrl, 500) : '',
+    desc:      clampStr(raw.desc, 300),
+    requiresRsvp: typeof raw.requiresRsvp === 'boolean' ? raw.requiresRsvp
+                                                       : def.requiresRsvp,
+    askCount:     ask('Count'),
+    askMeal:      ask('Meal'),
+    askChildSeat: ask('ChildSeat'),
+    askDiet:      ask('Diet'),
+    questions: (Array.isArray(raw.questions) ? raw.questions : [])
+      .map(normalizeQuestion).filter(Boolean).slice(0, EVENT_QUESTION_MAX),
+  };
+}
+
+/* ---------- 合成單一活動 ----------
+   既有站台（沒有 events）在系統裡就是「一個婚宴」。
+   日期與時間取自 WED.dateISO —— 它已經是用婚禮當地時區算好的
+   YYYY-MM-DDTHH:mm:00+08:00，切開就是牆上日期與牆上時間，
+   不必在這裡再處理一次時區。 */
+function mainEventFromSite(){
+  const W = window.WED || {};
+  const iso = typeof W.dateISO === 'string' ? W.dateISO : '';
+  const def = EVENT_TYPES.reception;
+  return {
+    id: MAIN_EVENT_ID,
+    type: 'reception',
+    name: def.name,
+    nameEn: def.nameEn,
+    date:      iso.slice(0, 10),
+    startTime: iso.slice(11, 16),
+    endTime:   '',
+    venueName: W.venue || '',
+    address:   W.address || '',
+    mapUrl:    /^https?:\/\//i.test(W.mapUrl) ? W.mapUrl : '',
+    desc: '',
+    requiresRsvp: true,
+    askCount: true, askMeal: true, askChildSeat: true, askDiet: true,
+    questions: [],
+  };
+}
+
+/* ---------- 活動的日期時間 ----------
+   邀請函（10 / 18　SAT　14:00）與大廳（10/18（六）14:00）各自組合，
+   所以這裡只把零件拆出來，不決定怎麼排。
+
+   ev.date 是牆上日期字串，用 T12:00:00Z 取星期幾 ——
+   跨時區都落在同一天，不會因為觀看者在哪裡而差一天。 */
+const EVENT_WD_EN = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const EVENT_WD_TW = ['日','一','二','三','四','五','六'];
+
+function eventWhen(ev){
+  const out = { md:'', wdEn:'', wdTw:'', time:'', range:'' };
+  if(!ev) return out;
+  if(ev.date){
+    const [y, m, d] = ev.date.split('-');
+    out.md = `${m}/${d}`;
+    const dt = new Date(`${ev.date}T12:00:00Z`);
+    if(!isNaN(dt.getTime())){
+      out.wdEn = EVENT_WD_EN[dt.getUTCDay()];
+      out.wdTw = EVENT_WD_TW[dt.getUTCDay()];
+    }
+    out.year = y;
+  }
+  out.time = ev.startTime || '';
+  out.range = ev.endTime && ev.startTime
+    ? `${ev.startTime}–${ev.endTime}` : (ev.startTime || '');
+  return out;
+}
+
+/* 地圖連結：新人沒填就用地址（沒地址就用場地名）去組 Google Maps。
+   和 invitation.js 既有的 renderVenue() 是同一套規則，收斂成一份。 */
+function eventMapUrl(ev){
+  if(!ev) return '';
+  if(/^https?:\/\//i.test(ev.mapUrl)) return ev.mapUrl;
+  const q = ev.address || ev.venueName;
+  return q ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}` : '';
+}
+
+/* 後台「婚禮流程」要不要出現。純粹是後台的門檻，不影響前台怎麼畫 */
+function multiEventOn(){
+  return !!(window.SITE && window.SITE.data
+            && window.SITE.data.multiEventEnabled === true);
+}
+
+/* 這場婚禮有哪些活動（含不需要回覆的文訂、迎娶）。
+   永遠至少回傳一筆 —— 呼叫端不必再處理「一個活動都沒有」 */
+function weddingEvents(){
+  const raw = (window.SITE && window.SITE.data && window.SITE.data.events) || null;
+  if(!Array.isArray(raw)) return [mainEventFromSite()];
+
+  const seen = new Set();
+  const list = raw.map(normalizeEvent).filter(ev => {
+    /* 同一個 id 出現兩次的話只留第一筆：回覆是用 id 對回來的，
+       重複的 id 會讓兩張卡片共用同一個答案 */
+    if(!ev || seen.has(ev.id)) return false;
+    seen.add(ev.id);
+    return true;
+  }).slice(0, EVENT_MAX);
+
+  return list.length ? list : [mainEventFromSite()];
+}
+
+/* 賓客要回覆的那幾個（文訂、迎娶不在裡面）。
+   可能是空陣列 —— 代表這場婚禮不需要任何人回覆，
+   邀請函要整塊收起來而不是畫一張空表單。 */
+function rsvpEvents(){
+  return weddingEvents().filter(ev => ev.requiresRsvp);
+}
+
+function findEvent(id){
+  return weddingEvents().find(ev => ev.id === id) || null;
+}
+
+/* ---------- 主要活動 ----------
+   回覆的頂層欄位（attending／guestCount／mealMeat／mealVeg／childSeat）
+   永遠代表這一個活動。排桌、收禮、匯出 CSV、後台既有的統計圖表
+   讀的都是頂層那一份，所以它們完全不必知道多活動這件事存在。
+
+   挑選順序：婚宴 → 第一個要回覆的 → 第一個。
+   婚宴排第一是因為它才是要排桌、要算人數的那一場。 */
+function primaryEvent(){
+  const list = weddingEvents();
+  return list.find(ev => ev.type === 'reception')
+      || list.find(ev => ev.requiresRsvp)
+      || list[0];
+}
+
+function primaryEventId(){
+  const ev = primaryEvent();
+  return ev ? ev.id : MAIN_EVENT_ID;
+}
+
+/* ---------- 一筆回覆對某個活動的回應 ----------
+   回傳 null 代表「這個活動沒有回應」——
+   和 going:false（明確說不來）是兩件事，後台統計的「待回覆」靠的就是這個區別。
+
+   舊回覆（沒有 events）只答得出主要活動那一格，其餘一律 null。
+   這就是相容性的全部：不需要 migration，不需要改任何一筆既有資料。 */
+function eventResponse(r, eventId){
+  if(!r || !eventId) return null;
+
+  const map = r.events && typeof r.events === 'object' && !Array.isArray(r.events)
+    ? r.events : null;
+  const hit = map ? map[eventId] : null;
+  if(hit && typeof hit === 'object'){
+    return {
+      going:  hit.going === true,
+      count:  Math.max(0, Number(hit.count) || 0),
+      veg:    Math.max(0, Number(hit.veg) || 0),
+      note:   typeof hit.note === 'string' ? hit.note : '',
+      answers: hit.answers && typeof hit.answers === 'object' ? hit.answers : {},
+      tentative: false,
+      legacy: false,
+    };
+  }
+
+  /* 沒有 events，或這個活動不在裡面 → 只有主要活動答得出來。
+     r.primaryEventId 是送出當下記的；沒有就用現在算出來的主要活動
+     （既有站台永遠是 'main'）。 */
+  const primary = r.primaryEventId || primaryEventId();
+  if(eventId !== primary) return null;
+
+  const going = r.attending === true;
+  return {
+    going,
+    count: going ? Math.max(1, Number(r.guestCount) || 1) : 0,
+    veg:   going ? Math.max(0, Number(r.mealVeg) || 0) : 0,
+    note:  '',
+    answers: {},
+    /* 「視情況而定」在多活動的卡片上沒有這個選項，只有舊回覆會帶 */
+    tentative: r.tentative === true,
+    legacy: true,
+  };
+}
+
 /* ---------- localStorage 包裝 ----------
    key 以 siteId 分隔，同一位賓客逛兩組新人的網站時，
    名字、主題、回覆紀錄不會互相污染 */
@@ -610,6 +912,40 @@ const DataStore = {
     const t = { yes:0, maybe:0, no:0 };
     this._rsvps.forEach(r => { t[this.rsvpStatus(r)]++; });
     return t;
+  },
+
+  /* ===== 一個活動的出席統計 =====
+     多活動的重點就是這個：**每個活動各自算 headcount**。
+     婚宴 126 人不代表證婚 126 人，也不代表派對 126 人。
+
+     分母是「總回覆筆數」，三個桶子加起來一定等於它：
+       yes     這個活動明確說會來
+       no      這個活動明確說不來
+       pending 還沒回答這個活動
+               —— 包含兩種人：新活動加上去之前就回覆過的（舊資料），
+                  以及舊表單選「視情況而定」的那些
+     ★ 「沒回答」和「說不來」是兩件事，不能合併成一個數字：
+       新人看到「待回覆 21」才知道還要去催，看到「不出席 21」則會直接放棄。
+
+     heads／veg 只算會來的那些，單位是人（不是筆）。 */
+  getEventStats(eventId){
+    const out = { total: this._rsvps.length, yes:0, no:0, pending:0, heads:0, veg:0 };
+    this._rsvps.forEach(r => {
+      const res = eventResponse(r, eventId);
+      if(!res || res.tentative){ out.pending++; return; }
+      if(!res.going){ out.no++; return; }
+      out.yes++;
+      out.heads += res.count;
+      out.veg   += res.veg;
+    });
+    return out;
+  },
+
+  /* 後台「各活動出席統計」那張表要的整份資料。
+     只有需要回覆的活動才進得來 —— 文訂、迎娶沒有人要回覆，
+     列進去只會多兩排全是 0 的數字。 */
+  getEventStatsTable(){
+    return rsvpEvents().map(ev => ({ event: ev, ...this.getEventStats(ev.id) }));
   },
 
   /* ===== 後台儀表板用的統計 =====
