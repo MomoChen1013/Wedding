@@ -289,10 +289,25 @@
            勾選框從頭排到尾。現在各自包成一張 .ad-formgroup，
            標題用明朝體、給編號，中間那道界線才看得出來。 -->
       <form class="ad-form" id="adRsvpForm">
+        <!-- 多活動時才出現。這幾題會在每張活動卡上各問一次 -->
+        <section class="ad-formgroup" id="adEvAskGroup" hidden>
+          <div class="ad-formgroup-head">
+            <h3 class="ad-formgroup-title">
+              <span class="ad-formgroup-no" aria-hidden="true">1</span>每個活動各自要問的
+            </h3>
+            <p class="ad-formgroup-note">
+              這幾題會在<b>每張活動卡上各出現一次</b>。
+              活動本身（名稱、日期、地點）在「婚禮資訊 → 婚禮流程」設定。
+            </p>
+          </div>
+          <div class="ad-evask" id="adEvAskList"></div>
+        </section>
+
         <section class="ad-formgroup">
           <div class="ad-formgroup-head">
             <h3 class="ad-formgroup-title">
-              <span class="ad-formgroup-no" aria-hidden="true">1</span>題目
+              <span class="ad-formgroup-no" aria-hidden="true"
+                    id="adFormGroupNoA">1</span><span id="adFormGroupTitleA">題目</span>
             </h3>
             <p class="ad-formgroup-note">
              <b>灰掉、打勾但點不動的是固定題目</b>，每份回覆都要有，不能關。
@@ -309,6 +324,8 @@
           <label class="ad-check is-fixed" id="adAskTagRow" hidden>
             <input type="checkbox" checked disabled>
             <span>更具體是哪一種？<small>選項在「設定賓客標籤」那一頁</small></span></label>
+          <!-- 多活動時這四題移到上面的活動卡上，整組收起來（js/admin.js 判斷） -->
+          <div id="adFixedEventQs">
           <label class="ad-check is-fixed">
             <input type="checkbox" checked disabled>
             <span>包含你，共幾位出席？<small>選「會出席」才會出現</small></span></label>
@@ -321,6 +338,7 @@
           <label class="ad-check is-fixed">
             <input type="checkbox" checked disabled>
             <span>飲食習慣補充<small>選「會出席」才會出現</small></span></label>
+          </div>
 
           <label class="ad-check"><input type="checkbox" id="adAskCard"><span>喜帖發送方式</span></label>
           <label class="ad-check"><input type="checkbox" id="adAskGift"><span>喜餅領取方式</span></label>
@@ -344,7 +362,8 @@
         <section class="ad-formgroup">
           <div class="ad-formgroup-head">
             <h3 class="ad-formgroup-title">
-              <span class="ad-formgroup-no" aria-hidden="true">2</span>表單資訊
+              <span class="ad-formgroup-no" aria-hidden="true"
+                    id="adFormGroupNoB">2</span>表單資訊
             </h3>
             <p class="ad-formgroup-note">
               題目以外，出席表單那一頁還會出現這些內容。
@@ -474,6 +493,9 @@
 
     <nav class="ad-subtabs" data-subtabs="lobby">
       <button class="ad-subtab is-on" type="button" data-subtab="info">婚禮資訊</button>
+      <!-- 多活動的站台才看得到（multiEventEnabled，由我們用 set-pages 打開） -->
+      <button class="ad-subtab" type="button" data-subtab="events"
+              id="adEventsSubtab" hidden>婚禮流程</button>
       <button class="ad-subtab" type="button" data-subtab="schedule">當日流程</button>
       <button class="ad-subtab" type="button" data-subtab="explore">自訂內容</button>
     </nav>
@@ -489,6 +511,18 @@
         <label class="ad-label" for="adCoupleTitle">標題（最多 20 個字）</label>
         <input class="ad-input" id="adCoupleTitle" type="text" maxlength="20">
         <div class="ad-count"><span id="adCoupleTitleLen">0</span> / 20</div>
+
+        <!-- 多活動時，場地改由「婚禮流程」管理，這三欄轉成唯讀的鏡像 -->
+        <div class="ad-callout" id="adVenueManaged" hidden>
+          <p class="ad-callout-note">
+            這場婚禮有多個活動，<b>地點改在「婚禮流程」設定</b>。
+            下面三欄顯示的是<b id="adVenueManagedName">主要活動</b>的地點，改不動。
+          </p>
+          <div class="ad-row">
+            <button class="btn small ghost" id="adVenueManagedJump" type="button">
+              去設定婚禮流程</button>
+          </div>
+        </div>
 
         <label class="ad-label" for="adVenueName">地點名稱</label>
         <input class="ad-input" id="adVenueName" type="text" maxlength="80"
@@ -563,6 +597,33 @@
           <button class="btn small" id="adSiteSave" type="submit">儲存婚禮資訊</button>
         </div>
       </form>
+    </section>
+    </div>
+
+    <div class="ad-subpanel" data-subpanel="events">
+    <section class="ad-sec">
+      <h2 class="ad-sec-title ad-page-title">婚禮流程</h2>
+      <p class="ad-sec-note">
+        一場婚禮可以有好幾個活動（文訂、迎娶、證婚、婚宴、派對），
+        <b>每個活動有自己的日期、時間與地點</b>。<br>
+        「需要賓客回覆」關起來的活動，會出現在邀請函上，但<b>不會出現在出席表單裡</b> ——
+        文訂、迎娶通常是這樣。<br>
+        要問賓客什麼（人數、葷素、兒童椅…）在「出席回覆 → 表單設定」設定。
+      </p>
+
+      <!-- 主日期對不上時的提醒（js/admin.js 判斷） -->
+      <div class="ad-callout" id="adEvDateWarn" hidden>
+        <p class="ad-callout-note" id="adEvDateWarnText"></p>
+      </div>
+
+      <div class="ad-evlist" id="adEvList"></div>
+
+      <div class="ad-savebar">
+        <span class="ad-savebar-note" id="adEvDirty">目前沒有未儲存的變更</span>
+        <button class="btn small ghost" id="adEvAdd" type="button">＋ 新增活動</button>
+        <button class="btn small ghost" id="adEvReset" type="button">還原成目前的內容</button>
+        <button class="btn small" id="adEvSave" type="button">儲存婚禮流程</button>
+      </div>
     </section>
     </div>
 

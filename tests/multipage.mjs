@@ -2078,6 +2078,246 @@ console.log('\n[20b] 賓客做測驗');
   await page.close();
 }
 
+/* ---------- 後台的婚禮流程（多活動） ---------- */
+console.log('\n[14d] 後台婚禮流程');
+{
+  /* 先確認旗標關著時，後台一個新東西都沒有 —— 這是整個 Phase 3 的前提 */
+  const { page } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  ok('旗標關著時看不到「婚禮流程」子分頁',
+    await page.isHidden('#adEventsSubtab'));
+  ok('旗標關著時場地三欄照常可以改',
+    !(await page.getAttribute('#adVenueName', 'readonly')) !== false
+      || !(await page.$eval('#adVenueName', (el) => el.readOnly)));
+  ok('旗標關著時場地不會出現「改在婚禮流程設定」',
+    await page.isHidden('#adVenueManaged'));
+
+  /* 打不進去的網址要退回第一個子分頁，不能卡在空白 */
+  await page.evaluate(() => { location.hash = 'lobby/events'; });
+  await page.waitForTimeout(300);
+  ok('旗標關著時 #lobby/events 退回「婚禮資訊」',
+    await page.$eval('.ad-subpanel[data-subpanel="info"]',
+      (el) => el.classList.contains('is-on')));
+  await page.close();
+}
+
+{
+  /* 打開旗標 */
+  await adb.collection('sites').doc(siteIds[SLUG]).update({ multiEventEnabled: true });
+  const { page, errors } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+
+  await page.click('.ad-tab[data-tab="lobby"]');
+  await page.waitForTimeout(200);
+  ok('旗標開了才看得到「婚禮流程」', await page.isVisible('#adEventsSubtab'));
+
+  await page.click('.ad-subtabs[data-subtabs="lobby"] .ad-subtab[data-subtab="events"]');
+  await page.waitForTimeout(300);
+
+  /* 第一次打開：用既有的婚禮資訊帶出一張填好的婚宴卡（還沒寫進資料庫） */
+  const first = await page.evaluate(() => ({
+    cards: document.querySelectorAll('#adEvList .ad-ev').length,
+    name: document.querySelector('#adEvList .ad-ev-name')?.textContent,
+    flag: document.querySelector('#adEvList .ad-ev-flag')?.textContent,
+    savedEvents: (window.SITE.data.events || []).length,
+  }));
+  ok('第一次打開帶出一張婚宴卡', first.cards === 1 && first.name === '婚宴',
+    `${first.cards} 張 / ${first.name}`);
+  ok('那一張是「需要回覆」', first.flag === '需要回覆', first.flag);
+  ok('這一刻還沒寫進資料庫', first.savedEvents === 0, String(first.savedEvents));
+
+  /* 加兩個活動：證婚（預設就是證婚）＋ 派對 */
+  await page.click('#adEvAdd');
+  await page.waitForTimeout(200);
+  await page.click('#adEvAdd');
+  await page.waitForTimeout(200);
+  ok('加得出第二、三個活動',
+    (await page.locator('#adEvList .ad-ev').count()) === 3,
+    String(await page.locator('#adEvList .ad-ev').count()));
+  ok('加完會說還沒儲存',
+    (await page.innerText('#adEvDirty')).includes('還沒儲存'));
+
+  /* 最後一張改成派對，順便驗「換型別會帶預設」 */
+  const last = page.locator('#adEvList .ad-ev').last();
+  await last.locator('[data-ev-field="type"]').selectOption('afterparty');
+  await page.waitForTimeout(200);
+  ok('換型別會帶出預設名稱',
+    (await last.locator('.ad-ev-name').textContent()) === '派對',
+    await last.locator('.ad-ev-name').textContent());
+
+  /* 中間那張（證婚）填地點與時間 */
+  const mid = page.locator('#adEvList .ad-ev').nth(1);
+  await mid.locator('[data-ev-toggle]').click();
+  await page.waitForTimeout(200);
+  await mid.locator('[data-ev-field="startTime"]').fill('14:00');
+  await mid.locator('[data-ev-field="venueName"]').fill('台北真理堂');
+  await mid.locator('[data-ev-field="address"]').fill('台北市大安區新生南路三段86號');
+  await page.waitForTimeout(200);
+  ok('一次只展開一張卡',
+    (await page.locator('#adEvList .ad-ev.is-open').count()) === 1,
+    String(await page.locator('#adEvList .ad-ev.is-open').count()));
+
+  /* 文訂：換成不需要回覆的型別，flag 要跟著變 */
+  await page.click('#adEvAdd');
+  await page.waitForTimeout(200);
+  const fourth = page.locator('#adEvList .ad-ev').last();
+  await fourth.locator('[data-ev-field="type"]').selectOption('engagement');
+  await page.waitForTimeout(200);
+  ok('文訂自動變成「不用回覆」',
+    (await fourth.locator('.ad-ev-flag').textContent()) === '不用回覆',
+    await fourth.locator('.ad-ev-flag').textContent());
+
+  /* ↑↓ 排序：把文訂一路移到最前面。
+     每一次都要重新抓「文訂」那一張 —— 移動之後它就不是最後一張了 */
+  const engageCard = () => page.locator('#adEvList .ad-ev')
+    .filter({ has: page.locator('.ad-ev-name', { hasText:'文訂' }) });
+  for(let i = 0; i < 3; i++){
+    await engageCard().locator('[data-ev-move="up"]').click();
+    await page.waitForTimeout(150);
+  }
+  ok('↑↓ 排得動',
+    (await page.locator('#adEvList .ad-ev-name').first().textContent()) === '文訂',
+    await page.locator('#adEvList .ad-ev-name').first().textContent());
+  ok('第一張的「往上」是關的',
+    await page.locator('#adEvList .ad-ev').first()
+      .locator('[data-ev-move="up"]').isDisabled());
+
+  await page.click('#adEvSave');
+  await page.waitForTimeout(1500);
+
+  const site = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
+  ok('四個活動寫進 sites.events', (site.events || []).length === 4,
+    String((site.events || []).length));
+  ok('順序照畫面上的',
+    (site.events || []).map((e) => e.name).join(',') === '文訂,婚宴,證婚,派對',
+    (site.events || []).map((e) => e.name).join(','));
+  const evByName = (n) => (site.events || []).find((e) => e.name === n) || {};
+  ok('文訂的 requiresRsvp 是 false',
+    evByName('文訂').requiresRsvp === false && evByName('婚宴').requiresRsvp === true);
+  ok('證婚的地點存進去了',
+    evByName('證婚').venueName === '台北真理堂'
+      && evByName('證婚').startTime === '14:00',
+    `${evByName('證婚').venueName} / ${evByName('證婚').startTime}`);
+  ok('每個活動的 id 都不一樣',
+    new Set(site.events.map((e) => e.id)).size === 4);
+  /* 比的是「有沒有鏡像」這件事本身，不是某一個地點的字面值 ——
+     前面的測試改過站台的地點，寫死字面值只會測到測試順序 */
+  ok('主要活動的地點鏡像回站台文件',
+    site.venueName === evByName('婚宴').venueName
+      && site.venueAddress === evByName('婚宴').address,
+    `${site.venueName} ← ${evByName('婚宴').venueName}`);
+  ok('存完就不再說有未儲存的變更',
+    !(await page.innerText('#adEvDirty')).includes('還沒儲存'));
+
+  /* ---- 場地三欄轉唯讀 ---- */
+  await page.click('.ad-subtabs[data-subtabs="lobby"] .ad-subtab[data-subtab="info"]');
+  await page.waitForTimeout(300);
+  ok('婚禮資訊出現「改在婚禮流程設定」', await page.isVisible('#adVenueManaged'));
+  ok('場地三欄轉成唯讀',
+    await page.evaluate(() => ['adVenueName','adVenueAddress','adVenueMapUrl']
+      .every((id) => document.getElementById(id).readOnly)));
+  await page.click('#adVenueManagedJump');
+  await page.waitForTimeout(300);
+  ok('「去設定婚禮流程」跳得過去',
+    await page.$eval('.ad-subpanel[data-subpanel="events"]',
+      (el) => el.classList.contains('is-on')));
+
+  /* ---- 表單設定：每個活動各自要問的 ---- */
+  await page.click('.ad-tab[data-tab="rsvp"]');
+  await page.waitForTimeout(200);
+  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="form"]');
+  await page.waitForTimeout(300);
+
+  ok('多活動時長出「每個活動各自要問的」', await page.isVisible('#adEvAskGroup'));
+  ok('只列需要回覆的活動（文訂不在裡面）',
+    (await page.locator('#adEvAskList .ad-evask-item').count()) === 3,
+    String(await page.locator('#adEvAskList .ad-evask-item').count()));
+  ok('那四題從「只問一次」那一組收起來', await page.isHidden('#adFixedEventQs'));
+  ok('編號跟著往後挪',
+    (await page.innerText('#adFormGroupNoA')) === '2'
+      && (await page.innerText('#adFormGroupNoB')) === '3');
+  ok('第一組的標題換成「整份回覆只問一次的」',
+    (await page.innerText('#adFormGroupTitleA')) === '整份回覆只問一次的');
+
+  /* 型別預設：證婚不問餐點與兒童椅，婚宴四題全開 */
+  const asks = await page.evaluate(() => {
+    const out = {};
+    document.querySelectorAll('#adEvAskList .ad-evask-item').forEach((item) => {
+      const name = item.querySelector('.ad-evask-name').textContent;
+      out[name] = {};
+      item.querySelectorAll('[data-evask-field]').forEach((el) => {
+        out[name][el.dataset.evaskField] = el.checked;
+      });
+    });
+    return out;
+  });
+  ok('婚宴四題全開',
+    asks['婚宴'].askCount && asks['婚宴'].askMeal
+      && asks['婚宴'].askChildSeat && asks['婚宴'].askDiet,
+    JSON.stringify(asks['婚宴']));
+  ok('證婚只問人數',
+    asks['證婚'].askCount && !asks['證婚'].askMeal
+      && !asks['證婚'].askChildSeat && !asks['證婚'].askDiet,
+    JSON.stringify(asks['證婚']));
+
+  /* 勾掉婚宴的兒童椅 → 立刻存回 events[]，其餘欄位不能被動到 */
+  await page.locator('#adEvAskList .ad-evask-item')
+    .filter({ hasText:'婚宴' }).locator('[data-evask-field="askChildSeat"]').uncheck();
+  await page.waitForTimeout(1500);
+  const site2 = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
+  const banquet = site2.events.find((e) => e.name === '婚宴');
+  ok('勾掉的那一題寫回 events[]', banquet.askChildSeat === false);
+  ok('同一個活動的其他題目沒被動到',
+    banquet.askCount === true && banquet.askMeal === true && banquet.askDiet === true);
+  ok('其他活動與其他欄位都沒被動到',
+    site2.events.length === 4
+      && site2.events.find((e) => e.name === '證婚').venueName === '台北真理堂',
+    String(site2.events.length));
+
+  ok('婚禮流程無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+
+{
+  /* ---- 只剩一個活動時，表單設定要回到原本的樣子 ----
+     「簡單婚禮不能被複雜化」在後台的具體長相 */
+  await adb.collection('sites').doc(siteIds[SLUG]).update({
+    events: [{ id:'ev_only', type:'reception', name:'婚宴', nameEn:'WEDDING RECEPTION',
+               date:'2026-09-19', startTime:'12:00', endTime:'',
+               venueName:'晶華酒店・三樓宴會廳', address:'台北市中山區',
+               mapUrl:'', desc:'', requiresRsvp:true,
+               askCount:true, askMeal:true, askChildSeat:true, askDiet:true, questions:[] }],
+  });
+  const { page } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  await page.click('.ad-tab[data-tab="rsvp"]');
+  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="form"]');
+  await page.waitForTimeout(300);
+
+  ok('只有一個活動時，不長出「每個活動各自要問的」',
+    await page.isHidden('#adEvAskGroup'));
+  ok('那四題留在原本的位置', await page.isVisible('#adFixedEventQs'));
+  ok('編號回到 1 / 2',
+    (await page.innerText('#adFormGroupNoA')) === '1'
+      && (await page.innerText('#adFormGroupNoB')) === '2');
+  ok('標題回到「題目」', (await page.innerText('#adFormGroupTitleA')) === '題目');
+  const fixedQs = '#adRsvpForm .ad-check.is-fixed:not(#adAskTagRow) input:disabled:checked';
+  ok('固定題目仍然是 8 條（和改版前一樣）',
+    (await page.locator(fixedQs).count()) === 8,
+    String(await page.locator(fixedQs).count()));
+  await page.close();
+
+  /* 還原：關掉旗標、清空 events，後面的測試看到的是原本的站台。
+     地點刻意不動 —— 那是前面 [14] 那一段存進去的，不是這一段弄出來的 */
+  await adb.collection('sites').doc(siteIds[SLUG]).update({
+    multiEventEnabled: false, events: [],
+  });
+}
+
 /* ---------- 後台的表單設定 ---------- */
 console.log('\n[14c] 後台開關表單題目');
 {

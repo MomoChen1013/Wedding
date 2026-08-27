@@ -1220,6 +1220,10 @@ function applyTabVisibility(){
      #rsvp/tags 這個網址才進得去（進不去的話 activateSubtab 會退回第一個） */
   const tagBtn = document.getElementById('adTagSubtab');
   if(tagBtn) tagBtn.hidden = !guestTagsOn();
+  /* 「婚禮流程」同理：沒開多活動的站台看不到這一頁，
+     #lobby/events 也進不去（activateSubtab 會退回「婚禮資訊」） */
+  const evBtn = document.getElementById('adEventsSubtab');
+  if(evBtn) evBtn.hidden = !multiEventOn();
   /* 桌次名單的「同步現在的排桌」要有排桌管理才有意義 */
   const seatSyncBtn = document.getElementById('adSeatSyncPlan');
   const seatSyncNote = document.getElementById('adSeatSyncNote');
@@ -1280,6 +1284,7 @@ function openAdmin(){
     /* 沒開標籤功能就連訂閱都省下來 */
     if(guestTagsOn()) DataStore.subscribeRsvpTags();
     fillRsvpFormSettings();
+    renderEventAsk();
     renderTags();
     renderRsvpTagChips();
     renderRsvps();
@@ -1323,6 +1328,13 @@ function openAdmin(){
   syncSeatFeatureUI();
   fillSiteForm();
   renderSchedule(siteSchedule());
+  /* 婚禮流程：沒開多活動的站台連草稿都不用備，那一頁根本不存在 */
+  if(multiEventOn()){
+    evDraft = evStartingDraft();
+    evBaseline = evSnapshot();
+    renderEvents();
+  }
+  syncVenueManagedUI();
   /* 上次沒存完的婚禮資訊（填完表單之後才問，不然會被 fillSiteForm 蓋掉） */
   offerSiteDraft();
 }
@@ -1409,7 +1421,7 @@ if(!ownerEmails().length){
 ============================================================ */
 const SUBTABS = {
   rsvp:    ['overview', 'replies', 'form', 'tags'],
-  lobby:   ['info', 'schedule', 'explore'],
+  lobby:   ['info', 'events', 'schedule', 'explore'],
   seating: ['map', 'list'],
   seatingPlan: ['board', 'tables', 'io'],
   butler:  ['stats', 'entries', 'links'],
@@ -2533,6 +2545,105 @@ document.getElementById('adRsvpExport').addEventListener('click', async ()=>{
   );
   toast(`已匯出 ${rows.length} 筆回覆・${keep.length} 欄`);
 });
+
+/* ============================================================
+   0b. 每個活動各自要問的（多活動時才出現）
+   ------------------------------------------------------------
+   題目分成兩層：
+
+     每個活動各問一次  人數、葷素、兒童椅、飲食補充  → events[].ask*
+     整份回覆只問一次  稱呼、關係、聯絡方式、喜帖、喜餅、想說的話、備註
+
+   喜帖與喜餅刻意留在「只問一次」：那是寄給一個家庭的，
+   不會因為多辦一場證婚就要寄兩份。
+
+   ★ 存的時候讀的是「現在資料庫裡的 events」而不是這一頁畫出來的快照 ——
+     新人可能剛在「婚禮流程」改過活動，用快照會把那邊的改動蓋掉。
+============================================================ */
+const EV_ASK_ROWS = [
+  ['askCount',     '包含你，共幾位出席？'],
+  ['askMeal',      '餐點分配（葷食／素食）'],
+  ['askChildSeat', '兒童座椅'],
+  ['askDiet',      '飲食習慣補充'],
+];
+
+const evAskListEl = document.getElementById('adEvAskList');
+
+function renderEventAsk(){
+  if(!evAskListEl) return;
+  syncRsvpFormGroups();
+
+  /* 這一組收起來的時候要**連 DOM 一起清掉**，不能只是 hidden ——
+     每個活動都帶一條「能來參加嗎」的固定題目勾選框，
+     留在畫面上的話會被「固定題目有幾條」那一類的判斷一起數進去
+     （測試就是這樣抓到的）。看不見的東西不該還算數。 */
+  if(document.getElementById('adEvAskGroup')?.hidden){
+    evAskListEl.innerHTML = '';
+    return;
+  }
+
+  evAskListEl.innerHTML = rsvpEvents().map(ev => `
+    <div class="ad-evask-item" data-evask="${escapeHtml(ev.id)}">
+      <div class="ad-evask-head">
+        <span class="ad-evask-name">${escapeHtml(ev.name)}</span>
+        <span class="ad-evask-when">${escapeHtml(evWhenText(ev) || '時間未定')}</span>
+      </div>
+      <label class="ad-check is-fixed">
+        <input type="checkbox" checked disabled>
+        <span>能來參加嗎<small>固定題目，就是活動卡本身</small></span></label>
+      ${EV_ASK_ROWS.map(([key, label]) => `
+      <label class="ad-check">
+        <input type="checkbox" data-evask-field="${key}"${ev[key] ? ' checked' : ''}>
+        <span>${escapeHtml(label)}</span></label>`).join('')}
+    </div>`).join('');
+
+  syncRsvpFormGroups();
+}
+
+/* 多活動時，「題目」那一組的四題移到上面的活動卡，編號也跟著往後挪 */
+function syncRsvpFormGroups(){
+  const group = document.getElementById('adEvAskGroup');
+  if(!group) return;
+  /* 只有「兩個以上要回覆的活動」才值得拆成兩層 ——
+     只有一場的話，多一個標題只是把同樣的題目搬個位置 */
+  const on = multiEventOn() && rsvpEvents().length > 1;
+
+  group.hidden = !on;
+  const fixed = document.getElementById('adFixedEventQs');
+  if(fixed) fixed.hidden = on;
+  const titleA = document.getElementById('adFormGroupTitleA');
+  if(titleA) titleA.textContent = on ? '整份回覆只問一次的' : '題目';
+  const noA = document.getElementById('adFormGroupNoA');
+  if(noA) noA.textContent = on ? '2' : '1';
+  const noB = document.getElementById('adFormGroupNoB');
+  if(noB) noB.textContent = on ? '3' : '2';
+}
+
+if(evAskListEl){
+  evAskListEl.addEventListener('change', async (e)=>{
+    const el = e.target.closest('[data-evask-field]');
+    if(!el) return;
+    const id = el.closest('[data-evask]').dataset.evask;
+    const key = el.dataset.evaskField;
+
+    /* 讀資料庫現在那一份，只改這一個活動的這一個開關。
+       其餘欄位原封不動帶回去 —— 這一頁看不到的東西不該被它動到。 */
+    const rows = (Array.isArray(siteData().events) ? siteData().events : [])
+      .map(ev => (ev && ev.id === id ? { ...ev, [key]: el.checked } : ev));
+    if(!rows.some(ev => ev && ev.id === id)){
+      toast('這個活動已經不在了，重新整理看看', true);
+      return;
+    }
+
+    el.disabled = true;
+    await runSave(null, async ()=>{
+      await DataStore.saveSiteFields({ events: rows });
+      renderEventAsk();
+      toast('已更新（這一區不用按下面的儲存）');
+    });
+    el.disabled = false;
+  });
+}
 
 /* ============================================================
    0a. 表單與頁面設定
@@ -4359,6 +4470,400 @@ document.getElementById('adSchSave').addEventListener('click', async ()=>{
     renderSchedule(rows);
     toast(rows.length ? `已儲存 ${rows.length} 個流程項目` : '流程已清空');
   });
+});
+
+/* ============================================================
+   4b. 婚禮流程（sites.events）
+   ------------------------------------------------------------
+   一場婚禮多個活動：文訂、迎娶、證婚、婚宴、派對。
+   每個活動有自己的日期、時間與地點 —— 這就是「不限制地址數量」的做法：
+   一個活動一個地點，不是 address1／address2／address3。
+
+   這一頁的操作方式刻意和「當日流程」一模一樣：
+   改在畫面上、**按了儲存才算數**、旁邊那行字會說還沒存。
+   ↑↓、dirty 追蹤、儲存列全部沿用既有元件，新人不用學新的東西。
+
+   ---------- 兩件事要特別小心 ----------
+
+   1. **場地會鏡像回站台文件**：主要活動（婚宴）的地點存好之後，
+      會一起寫回 venueName／venueAddress／venueMapUrl。
+      分享縮圖（build-og）、大廳的既有欄位讀的還是那一份，
+      不鏡像回去的話兩邊會對不起來。
+
+   2. **不碰 eventDate**：婚禮主日期一改，倒數計時、分享縮圖都會跟著跑，
+      所以維持「要透過我們才能改」的既有規矩（見 firestore.rules 的說明）。
+      主要活動的日期和主日期對不上時，這裡只出一句提醒，不自動改。
+============================================================ */
+const evListEl = document.getElementById('adEvList');
+
+/* 畫面上的工作狀態；還沒寫進資料庫，undo／還原都在這一層 */
+let evDraft = [];
+let evBaseline = '';
+let evOpenId = '';        /* 現在展開的是哪一張卡（一次只開一張） */
+
+/* id 一旦產生就不再變 —— 已送出的回覆是靠它對回來的。
+   帶上型別只是為了日後在 Firestore 裡看得懂，隨機碼才是唯一性來源。 */
+function newEventId(type){
+  return `ev_${type}_${Math.random().toString(36).slice(2, 6)}`;
+}
+
+/* 站台目前存好的那一份（清洗過），當成編輯的起點 */
+function savedEvents(){
+  const raw = siteData().events;
+  if(!Array.isArray(raw) || !raw.length) return [];
+  /* weddingEvents() 在沒有 events 時會合成一個婚宴出來，
+     那不是「存好的」，所以這裡自己清洗，不借用它 */
+  return weddingEvents().filter(ev => ev.id !== MAIN_EVENT_ID);
+}
+
+/* 第一次打開這一頁、站台還沒有 events 時，
+   用既有的婚禮資訊帶出一張填好的婚宴卡 ——
+   只辦一場婚宴的新人看到的東西和「婚禮資訊」幾乎一樣，沒有新東西要學。
+   ★ 這一刻還沒寫進資料庫，要按「儲存婚禮流程」才會成真。 */
+function evStartingDraft(){
+  const saved = savedEvents();
+  if(saved.length) return saved;
+  const main = weddingEvents()[0];
+  return [{ ...main, id: newEventId('reception') }];
+}
+
+function evSnapshot(){ return JSON.stringify(evDraft); }
+function evDirty(){ return evSnapshot() !== evBaseline; }
+
+function syncEvDirty(){
+  const note = document.getElementById('adEvDirty');
+  const btn  = document.getElementById('adEvSave');
+  const d = evDirty();
+  if(note){
+    note.textContent = d ? '有還沒儲存的變更' : '目前沒有未儲存的變更';
+    note.classList.toggle('is-dirty', d);
+  }
+  if(btn) btn.classList.toggle('is-dirty', d);
+}
+
+/* ---------- 主日期的提醒 ----------
+   主要活動的日期和站台的 eventDate 不一樣時講一句。
+   不自動改、也不擋儲存 —— 只是讓新人知道倒數計時看的是哪一個。 */
+function syncEvDateWarn(){
+  const box  = document.getElementById('adEvDateWarn');
+  const text = document.getElementById('adEvDateWarnText');
+  if(!box) return;
+  const ev = toJsDate(siteData().eventDate);
+  const primary = evDraft.find(e => e.type === 'reception')
+               || evDraft.find(e => e.requiresRsvp) || evDraft[0];
+  if(!ev || !primary || !primary.date){ box.hidden = true; return; }
+
+  const tz = siteData().timezone || 'Asia/Taipei';
+  const p = {};
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz, year:'numeric', month:'2-digit', day:'2-digit',
+  }).formatToParts(ev).forEach(x => { p[x.type] = x.value; });
+  const siteDate = `${p.year}-${p.month}-${p.day}`;
+
+  if(siteDate === primary.date){ box.hidden = true; return; }
+  text.innerHTML = `婚禮主日期是 <b>${escapeHtml(siteDate)}</b>，`
+    + `和「${escapeHtml(primary.name)}」的 <b>${escapeHtml(primary.date)}</b> 不一樣。<br>`
+    + `倒數計時與分享縮圖仍然以<b>主日期</b>為準。要改主日期請告訴我們。`;
+  box.hidden = false;
+}
+
+/* ---------- 一張活動卡 ---------- */
+function evWhenText(ev){
+  const bits = [];
+  if(ev.date) bits.push(ev.date.slice(5).replace('-', '/'));
+  if(ev.startTime) bits.push(ev.startTime);
+  return bits.join(' ');
+}
+
+function evCardHtml(ev, i, total){
+  const open = ev.id === evOpenId;
+  const typeOpts = Object.entries(EVENT_TYPES).map(([key, def]) =>
+    `<option value="${key}"${key === ev.type ? ' selected' : ''}>${
+      escapeHtml(def.name || '自訂')}</option>`).join('');
+
+  return `
+  <div class="ad-ev${open ? ' is-open' : ''}" data-ev="${escapeHtml(ev.id)}">
+    <div class="ad-ev-head">
+      <div class="ad-ev-move">
+        <button class="ad-edit" type="button" data-ev-move="up"
+                aria-label="往上移"${i === 0 ? ' disabled' : ''}>↑</button>
+        <button class="ad-edit" type="button" data-ev-move="down"
+                aria-label="往下移"${i === total - 1 ? ' disabled' : ''}>↓</button>
+      </div>
+      <button class="ad-ev-toggle" type="button" data-ev-toggle
+              aria-expanded="${open ? 'true' : 'false'}">
+        <span class="ad-ev-name">${escapeHtml(ev.name || '（沒有名稱）')}</span>
+        <span class="ad-ev-when">${escapeHtml(evWhenText(ev) || '時間未定')}</span>
+        <span class="ad-ev-flag${ev.requiresRsvp ? ' is-on' : ''}">${
+          ev.requiresRsvp ? '需要回覆' : '不用回覆'}</span>
+      </button>
+      <button class="ad-del" type="button" data-ev-del aria-label="刪除這個活動">刪除</button>
+    </div>
+
+    <div class="ad-ev-body"${open ? '' : ' hidden'}>
+      <div class="ad-ev-grid">
+        <div>
+          <label class="ad-label">活動類型</label>
+          <select class="ad-input" data-ev-field="type">${typeOpts}</select>
+        </div>
+        <div>
+          <label class="ad-label">名稱<small>（建議 4 個字以內）</small></label>
+          <input class="ad-input" type="text" maxlength="30"
+                 data-ev-field="name" value="${escapeHtml(ev.name)}">
+        </div>
+        <div>
+          <label class="ad-label">日期</label>
+          <input class="ad-input" type="date" data-ev-field="date"
+                 value="${escapeHtml(ev.date)}">
+        </div>
+        <div>
+          <label class="ad-label">開始時間</label>
+          <input class="ad-input ad-input-time" type="time" data-ev-field="startTime"
+                 value="${escapeHtml(ev.startTime)}">
+        </div>
+        <div>
+          <label class="ad-label">結束時間 <small>（選填）</small></label>
+          <input class="ad-input ad-input-time" type="time" data-ev-field="endTime"
+                 value="${escapeHtml(ev.endTime)}">
+        </div>
+      </div>
+
+      <label class="ad-label">地點名稱</label>
+      <input class="ad-input" type="text" maxlength="80" data-ev-field="venueName"
+             value="${escapeHtml(ev.venueName)}" placeholder="台北真理堂">
+
+      <label class="ad-label">地址</label>
+      <input class="ad-input" type="text" maxlength="200" data-ev-field="address"
+             value="${escapeHtml(ev.address)}" placeholder="台北市大安區新生南路三段 86 號">
+
+      <label class="ad-label">地圖連結 <small>（選填）</small></label>
+      <input class="ad-input" type="url" maxlength="500" data-ev-field="mapUrl"
+             value="${escapeHtml(ev.mapUrl)}" placeholder="沒填的話自動用地址開 Google 地圖">
+
+      <label class="ad-label">活動說明 <small>（選填）</small></label>
+      <textarea class="ad-textarea" rows="2" maxlength="300"
+                data-ev-field="desc">${escapeHtml(ev.desc)}</textarea>
+
+      <label class="ad-check">
+        <input type="checkbox" data-ev-field="requiresRsvp"${ev.requiresRsvp ? ' checked' : ''}>
+        <span>需要賓客回覆<small>關起來的話，這個活動不會出現在出席表單裡</small></span>
+      </label>
+    </div>
+  </div>`;
+}
+
+function renderEvents(){
+  if(!evListEl) return;
+  evListEl.innerHTML = evDraft.length
+    ? evDraft.map((ev, i) => evCardHtml(ev, i, evDraft.length)).join('')
+    : `<div class="ad-empty">還沒有任何活動。按「＋ 新增活動」開始。</div>`;
+  syncEvDirty();
+  syncEvDateWarn();
+}
+
+function evIndexOf(el){
+  const card = el.closest('.ad-ev');
+  return card ? evDraft.findIndex(e => e.id === card.dataset.ev) : -1;
+}
+
+/* ---------- 互動 ---------- */
+if(evListEl){
+  evListEl.addEventListener('click', async (e)=>{
+    const i = evIndexOf(e.target);
+    if(i < 0) return;
+
+    const move = e.target.closest('[data-ev-move]');
+    if(move){
+      const to = move.dataset.evMove === 'up' ? i - 1 : i + 1;
+      if(to < 0 || to >= evDraft.length) return;
+      [evDraft[i], evDraft[to]] = [evDraft[to], evDraft[i]];
+      renderEvents();
+      return;
+    }
+
+    if(e.target.closest('[data-ev-toggle]')){
+      /* 一次只開一張：五個活動全部展開的話，這一頁會長到滑不完 */
+      evOpenId = evOpenId === evDraft[i].id ? '' : evDraft[i].id;
+      renderEvents();
+      return;
+    }
+
+    if(e.target.closest('[data-ev-del]')){
+      const ev = evDraft[i];
+      /* 已經存好、而且已經有人回覆過的活動，刪掉之前要講清楚會怎麼樣。
+         回覆本身一個字都不會動（本來就改不動），只是不再顯示。 */
+      const answered = savedEvents().some(x => x.id === ev.id)
+        ? (DataStore.getEventStats(ev.id).yes + DataStore.getEventStats(ev.id).no)
+        : 0;
+      if(answered){
+        const okDel = await confirmModal({
+          title: `刪除「${ev.name}」？`,
+          message: `已經有 ${answered} 筆回覆包含這個活動。`
+            + '刪掉之後那些回覆仍然保留（回覆本來就改不動），只是不會再顯示，'
+            + '統計也不會再算這一場。',
+          confirmText: '還是刪掉',
+          danger: true,
+        });
+        if(!okDel) return;
+      }
+      if(evOpenId === ev.id) evOpenId = '';
+      evDraft.splice(i, 1);
+      renderEvents();
+      toast(`已移除「${ev.name}」，按「儲存婚禮流程」才會生效`);
+    }
+  });
+
+  /* 欄位改動：型別換掉時，名稱與英文 kicker 留白的才跟著換 ——
+     新人自己打過的字不能被覆蓋掉 */
+  const onField = (e)=>{
+    const el = e.target.closest('[data-ev-field]');
+    if(!el) return;
+    const i = evIndexOf(el);
+    if(i < 0) return;
+    const key = el.dataset.evField;
+    const ev = evDraft[i];
+
+    if(key === 'requiresRsvp'){ ev.requiresRsvp = el.checked; renderEvents(); return; }
+
+    if(key === 'type'){
+      const before = EVENT_TYPES[ev.type] || EVENT_TYPES.custom;
+      const after  = EVENT_TYPES[el.value] || EVENT_TYPES.custom;
+      ev.type = el.value;
+      if(!ev.name || ev.name === before.name) ev.name = after.name;
+      if(!ev.nameEn || ev.nameEn === before.nameEn) ev.nameEn = after.nameEn;
+      /* 型別的預設也一起帶：文訂／迎娶換過去就自動變成「不用回覆」 */
+      ev.requiresRsvp  = after.requiresRsvp;
+      ev.askCount      = after.ask.count;
+      ev.askMeal       = after.ask.meal;
+      ev.askChildSeat  = after.ask.childSeat;
+      ev.askDiet       = after.ask.diet;
+      renderEvents();
+      return;
+    }
+
+    ev[key] = el.value;
+    /* 名稱與時間會出現在收合的那一行，改了要跟著更新；
+       但不能整份重畫 —— 那樣每打一個字焦點就跑掉了 */
+    const card = el.closest('.ad-ev');
+    if(key === 'name'){
+      card.querySelector('.ad-ev-name').textContent = ev.name || '（沒有名稱）';
+    }
+    if(key === 'date' || key === 'startTime'){
+      card.querySelector('.ad-ev-when').textContent = evWhenText(ev) || '時間未定';
+      syncEvDateWarn();
+    }
+    syncEvDirty();
+  };
+  evListEl.addEventListener('input', onField);
+  evListEl.addEventListener('change', onField);
+}
+
+document.getElementById('adEvAdd')?.addEventListener('click', ()=>{
+  if(evDraft.length >= EVENT_MAX){
+    toast(`最多 ${EVENT_MAX} 個活動`, true);
+    return;
+  }
+  /* 新的一個預設是「證婚」：會走到這裡的新人已經有婚宴了，
+     再加的多半是證婚或派對，給一個要回覆的型別比較接近實際 */
+  const def = EVENT_TYPES.ceremony;
+  const ev = {
+    id: newEventId('ceremony'), type:'ceremony',
+    name: def.name, nameEn: def.nameEn,
+    date: evDraft[0]?.date || '', startTime:'', endTime:'',
+    venueName:'', address:'', mapUrl:'', desc:'',
+    requiresRsvp: def.requiresRsvp,
+    askCount: def.ask.count, askMeal: def.ask.meal,
+    askChildSeat: def.ask.childSeat, askDiet: def.ask.diet,
+    questions: [],
+  };
+  evDraft.push(ev);
+  evOpenId = ev.id;      /* 新增完直接展開，不用再點一次 */
+  renderEvents();
+  evListEl.lastElementChild?.scrollIntoView({ behavior:'smooth', block:'center' });
+});
+
+document.getElementById('adEvReset')?.addEventListener('click', ()=>{
+  evDraft = evStartingDraft();
+  evOpenId = '';
+  evBaseline = evSnapshot();
+  renderEvents();
+});
+
+document.getElementById('adEvSave')?.addEventListener('click', async ()=>{
+  /* 名稱是收合那一行唯一的線索，空的話整份清單會看不懂 */
+  const bad = evDraft.findIndex(ev => !String(ev.name || '').trim());
+  if(bad >= 0){
+    toast(`第 ${bad + 1} 個活動還沒填名稱`, true);
+    return;
+  }
+
+  const rows = evDraft.slice(0, EVENT_MAX).map(ev => ({
+    id: ev.id,
+    type: ev.type,
+    name: String(ev.name || '').trim().slice(0, 30),
+    nameEn: String(ev.nameEn || '').trim().slice(0, 30),
+    date: ev.date || '',
+    startTime: ev.startTime || '',
+    endTime: ev.endTime || '',
+    venueName: String(ev.venueName || '').trim().slice(0, 80),
+    address: String(ev.address || '').trim().slice(0, 200),
+    mapUrl: String(ev.mapUrl || '').trim().slice(0, 500),
+    desc: String(ev.desc || '').trim().slice(0, 300),
+    requiresRsvp: ev.requiresRsvp === true,
+    askCount: ev.askCount === true,
+    askMeal: ev.askMeal === true,
+    askChildSeat: ev.askChildSeat === true,
+    askDiet: ev.askDiet === true,
+    questions: Array.isArray(ev.questions) ? ev.questions : [],
+  }));
+
+  /* 主要活動的地點鏡像回站台文件：分享縮圖與大廳的既有欄位讀的是那一份 */
+  const primary = rows.find(e => e.type === 'reception')
+               || rows.find(e => e.requiresRsvp) || rows[0];
+  const patch = { events: rows };
+  if(primary){
+    patch.venueName    = primary.venueName;
+    patch.venueAddress = primary.address;
+    patch.venueMapUrl  = primary.mapUrl;
+  }
+
+  await runSave(document.getElementById('adEvSave'), async ()=>{
+    await DataStore.saveSiteFields(patch);
+    evDraft = evStartingDraft();
+    evBaseline = evSnapshot();
+    renderEvents();
+    /* 場地三欄與表單設定都跟著這一份走，存完一起重畫 */
+    fillSiteForm();
+    markSiteFormClean();
+    syncVenueManagedUI();
+    renderEventAsk();
+    toast(rows.length ? `已儲存 ${rows.length} 個活動` : '婚禮流程已清空');
+  });
+});
+
+/* ---------- 婚禮資訊那一頁的場地三欄 ----------
+   多活動時它們是主要活動的鏡像，改要去「婚禮流程」改。
+   轉成 readonly 而不是隱藏 —— 新人要看得到目前是什麼。 */
+function syncVenueManagedUI(){
+  const box = document.getElementById('adVenueManaged');
+  if(!box) return;
+  const on = multiEventOn() && savedEvents().length > 0;
+  box.hidden = !on;
+  [sf.venue, sf.addr, sf.map].forEach(el => {
+    if(!el) return;
+    el.readOnly = on;
+    el.classList.toggle('is-locked', on);
+  });
+  if(on){
+    const primary = weddingEvents().find(e => e.type === 'reception')
+                 || weddingEvents().find(e => e.requiresRsvp) || weddingEvents()[0];
+    document.getElementById('adVenueManagedName').textContent =
+      primary ? `「${primary.name}」` : '主要活動';
+  }
+}
+
+document.getElementById('adVenueManagedJump')?.addEventListener('click', ()=>{
+  location.hash = 'lobby/events';
 });
 
 /* ============================================================

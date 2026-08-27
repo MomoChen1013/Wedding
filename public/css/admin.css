@@ -2131,17 +2131,21 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
    手機幾乎按不到。改成 32×32 的方形（觸控再撐到 44）。
    桌位管理與當日流程共用同一個樣子 —— 同一件事就該長得一樣。 */
 .sp-move-btn,
-.ad-sch-move [data-sch-move]{
+.ad-sch-move [data-sch-move],
+.ad-ev-move [data-ev-move]{
   min-width:36px;min-height:36px;padding:0;
   display:inline-flex;align-items:center;justify-content:center;
   border:1px solid var(--line);border-radius:var(--radius);font-size:13px;
 }
 .sp-move-btn:not([disabled]):hover,
-.ad-sch-move [data-sch-move]:hover{border-color:var(--ink);}
-.sp-move-btn[disabled]{opacity:.3;}
+.ad-sch-move [data-sch-move]:hover,
+.ad-ev-move [data-ev-move]:not([disabled]):hover{border-color:var(--ink);}
+.sp-move-btn[disabled],
+.ad-ev-move [data-ev-move][disabled]{opacity:.3;cursor:not-allowed;}
 @media (pointer:coarse){
   .sp-move-btn,
-  .ad-sch-move [data-sch-move]{min-width:44px;min-height:44px;}
+  .ad-sch-move [data-sch-move],
+  .ad-ev-move [data-ev-move]{min-width:44px;min-height:44px;}
 }
 /* 標籤優先順序那一列的 ↑↓ 同理 */
 .sp-tagorder-row .ad-edit{min-width:32px;min-height:32px;padding:0;
@@ -3141,3 +3145,67 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:11px;}
 /* 一格裡一個標籤都沒有時，那一格會變成空白 —— 這時候按鈕要一直在，
    不然使用者根本不知道這裡可以貼標籤 */
 .ad-tagcell:not(:has(.ad-tag)) [data-tag-edit]{opacity:1 !important;}
+
+
+/* ============================================================
+   婚禮流程（多活動）
+   ------------------------------------------------------------
+   一張卡一個活動，預設收合成一行 —— 五個活動也只有五行。
+   展開的只會有一張：全部攤開的話這一頁會長到滑不完。
+
+   沿用既有語彙：1px 線、無陰影、4px 圓角、↑↓ 和當日流程同一顆。
+   沒有新的顏色，狀態全部靠線條與字重。
+============================================================ */
+.ad-evlist{display:flex;flex-direction:column;gap:10px;}
+
+.ad-ev{border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--surface);overflow:hidden;}
+.ad-ev.is-open{border-color:var(--ink);}
+
+.ad-ev-head{display:flex;align-items:center;gap:10px;padding:10px 12px;}
+.ad-ev-move{display:flex;flex-direction:column;gap:4px;flex:0 0 auto;}
+
+/* 整條標題列都可以點開，不是只有一顆小箭頭 */
+.ad-ev-toggle{flex:1 1 auto;min-width:0;display:flex;flex-wrap:wrap;
+  align-items:baseline;gap:6px 12px;padding:6px 2px;
+  background:none;border:none;cursor:pointer;text-align:left;
+  font-family:var(--font-ui);}
+.ad-ev-name{font-size:14.5px;letter-spacing:.06em;color:var(--ink);}
+.ad-ev-when{font-size:12.5px;color:var(--ink-soft);font-variant-numeric:tabular-nums;}
+/* 「需要回覆／不用回覆」是這張卡最重要的一個狀態，
+   所以給它一個 pill；開著的用實心，關著的只有框 */
+.ad-ev-flag{margin-left:auto;flex:0 0 auto;font-size:11px;letter-spacing:.1em;
+  border:1px solid var(--line);border-radius:999px;padding:2px 9px;color:var(--ink-soft);}
+.ad-ev-flag.is-on{border-color:var(--ink);background:var(--ink);color:var(--on-ink);}
+
+.ad-ev-body{padding:4px 14px 16px;border-top:1px solid var(--line-soft);}
+.ad-ev-body[hidden]{display:none;}
+.ad-ev-body .ad-label:first-of-type{margin-top:14px;}
+/* 型別／名稱／日期／時間排成一列，窄畫面自己折行 */
+.ad-ev-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:10px 12px;padding-top:14px;}
+.ad-ev-grid .ad-label{margin-top:0;}
+
+/* 場地三欄被「婚禮流程」接管時，看得到但改不動 */
+.ad-input.is-locked{background:var(--bg2);color:var(--ink-soft);cursor:not-allowed;}
+
+@media(max-width:899px){
+  /* 刪除在手機上是紅字（和其他列表一致），而且熱區要夠大 */
+  .ad-ev-head{flex-wrap:wrap;}
+  .ad-ev-flag{margin-left:0;}
+  .ad-ev-body{padding:4px 12px 16px;}
+}
+
+/* ============================================================
+   表單設定：每個活動各自要問的
+   ------------------------------------------------------------
+   一個活動一組勾選框。和活動卡不同的是這裡不收合 ——
+   這一頁本來就是「一次看完要問什麼」，收起來反而要多點好幾下。
+============================================================ */
+.ad-evask{display:flex;flex-direction:column;gap:16px;}
+.ad-evask-item{border:1px solid var(--line);border-radius:var(--radius);
+  padding:12px 14px 14px;background:var(--surface);}
+.ad-evask-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+  padding-bottom:10px;margin-bottom:6px;border-bottom:1px solid var(--line-soft);}
+.ad-evask-name{font-size:14px;letter-spacing:.06em;color:var(--ink);}
+.ad-evask-when{font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums;}
