@@ -1446,6 +1446,47 @@ function injectTemplateDeco(){
   });
 }
 
+/* ============================================================
+   大廳的照片：把素材填進模板宣告的 [data-photo] 位置
+   ------------------------------------------------------------
+   模板只負責「這裡要放一張照片、叫什麼名字」，去哪拿由這裡決定。
+   本來寫在 lobby-*.html 的 inline script 裡，但版型改成執行期切換之後，
+   用 innerHTML 塞進來的 <script> 不會執行，所以收進來這裡。
+
+     portrait   korean hero 的直式合照
+     hero       forest hero 的滿版照
+     story      forest「Our Story」照片帶
+     countdown  forest「Countdown」照片帶
+
+   優先序和 Classic 的固定背景一致：lobby → cover → Firestore 的封面；
+   forest 的兩條照片帶優先用照片牆的前兩張，沒有就退回封面。
+============================================================ */
+function applyLobbyPhotos(){
+  const slots = document.querySelectorAll('[data-photo]');
+  if(!slots.length) return;
+
+  const a = (window.SITE && window.SITE.assets) || {};
+  const W = window.WED || {};
+  const pick = (list, i) => {
+    const it = Array.isArray(list) && list[i];
+    return (it && (it.src || it)) || '';
+  };
+  const cover = a.lobby || a.cover || W.coverImageUrl || '';
+  const map = {
+    portrait:  cover,
+    hero:      cover,
+    story:     pick(a.gallery, 0) || cover,
+    countdown: pick(a.gallery, 1) || cover,
+  };
+
+  slots.forEach(el => {
+    const src = map[el.dataset.photo];
+    if(!src) return;                   /* 沒素材就留著 CSS 畫的示意底 */
+    el.style.backgroundImage = `url("${src}")`;
+    el.classList.add('has-photo');
+  });
+}
+
 /* korean 的紙質紋理：素材資料夾有 paper 才把變數寫上去，
    common.css 的 body[data-template="korean"]::after 讀這個變數 */
 function applyPaperTexture(){
@@ -1482,7 +1523,8 @@ function bindCommonUI(){
      ・沒有素材就維持純色底，不去要一張不存在的圖（以免 console 一堆 404） */
   applySceneBg();
 
-  /* korean／forest 版型專屬：紙質紋理 ＋ 會慢慢長出來的植物線稿 */
+  /* korean／forest 版型專屬：大廳照片 ＋ 紙質紋理 ＋ 植物線稿 */
+  applyLobbyPhotos();
   applyPaperTexture();
   injectTemplateDeco();
 }
