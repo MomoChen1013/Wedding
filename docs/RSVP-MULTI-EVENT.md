@@ -1376,12 +1376,38 @@ rsvps/{autoId}                  rsvps/{autoId}
 （順帶讓選項改名時，已送出的作答還對得回來），
 並留了一條測試釘住這件事。`quizVotes.picks` 當年踩的是同一個坑。
 
-### Phase 2 — 讀取層（純函式，對舊站台是 no-op）
+### Phase 2 — 讀取層（純函式，對舊站台是 no-op）✅ 已完成
 
-- `common.js`：`weddingEvents()`、`eventResponse()`、`multiEventOn()`、
-  `EVENT_TYPES` 字典（型別 → 中文名／英文 kicker／requiresRsvp 預設）
-- `common.js`：`getEventStats(eventId)` → `{ yes, pending, no, heads }`
-- **驗收**：既有站台呼叫 `weddingEvents()` 回傳 1 筆合成活動；前後台畫面**零變化**
+`public/js/common.js` 新增一整段「婚禮的活動」，只讀不寫：
+
+| 函式 | 回傳 |
+|---|---|
+| `multiEventOn()` | 後台要不要長出「婚禮流程」（純後台門檻，不影響前台怎麼畫） |
+| `weddingEvents()` | 全部活動（含文訂、迎娶）。**永遠至少一筆** —— 沒有 `events` 就合成一個婚宴 |
+| `rsvpEvents()` | 只有 `requiresRsvp` 的那幾個。可能是空陣列（＝這場婚禮不用回覆） |
+| `findEvent(id)` | 單一活動或 `null` |
+| `primaryEvent()`／`primaryEventId()` | 主要活動：婚宴 → 第一個要回覆的 → 第一個 |
+| `eventResponse(r, eventId)` | 一筆回覆對某個活動的回應；**`null` ＝ 沒有回應**（和「說不來」是兩件事） |
+| `EVENT_TYPES` | 型別字典：中文名（一律兩字）／英文 kicker／`requiresRsvp`／四個 `ask` 預設 |
+| `DataStore.getEventStats(id)` | `{ total, yes, no, pending, heads, veg }`，三個桶子加起來等於 total |
+| `DataStore.getEventStatsTable()` | 後台那張表的整份資料，只列需要回覆的活動 |
+
+清洗（`normalizeEvent`／`normalizeQuestion`）補上規則看不到的那一層：
+沒有 id 或沒有名字的整筆丟掉、id 重複只留第一筆、日期時間格式不對就清空、
+地圖連結只收 `http(s)`、沒有選項的單選題丟掉、`ask*` 沒設定過退回型別預設。
+
+- **驗收**：`tests/multipage.mjs` 新增 `[6c] 多活動的讀取層`，34 條斷言，
+  涵蓋合成單一活動、清洗、型別預設、舊回覆的對應、各活動獨立 headcount，
+  以及「清空 `events` 之後回到原樣、邀請函仍然是原本那份表單」。
+  五個測試套件全綠，**前後台畫面零變化**。
+
+**設計上值得記一筆的兩件事**：
+
+1. `eventResponse()` 回 `null`（沒有回應）與 `going:false`（明確說不來）**必須分開**。
+   新人看到「待回覆 21」才知道還要去催；看到「不出席 21」則會直接放棄。
+   舊表單的「視情況而定」也歸進待回覆（帶 `tentative:true`）。
+2. **一個欄位壞掉不該讓整個活動消失**。日期格式打錯只清掉那一欄，
+   活動本身照常顯示 —— 否則新人在後台打錯一個字，整張卡片就從賓客眼前不見了。
 
 ### Phase 3 — Admin：活動編輯器
 
