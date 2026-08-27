@@ -3209,3 +3209,38 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:11px;}
   padding-bottom:10px;margin-bottom:6px;border-bottom:1px solid var(--line-soft);}
 .ad-evask-name{font-size:14px;letter-spacing:.06em;color:var(--ink);}
 .ad-evask-when{font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums;}
+
+/* ---------- 活動的追加題目 ----------
+   一題一塊，題目文字與型態排一列，選項在下面縮排。
+   刻意不做拖曳排序：最多三題，↑↓ 都嫌多。 */
+.ad-evq-sec{margin-top:18px;}
+.ad-evq{border:1px solid var(--line-soft);border-radius:var(--radius);
+  padding:10px 12px;margin-bottom:10px;}
+.ad-evq-head{display:flex;gap:8px;align-items:center;}
+.ad-evq-label{flex:1 1 auto;min-width:0;}
+.ad-evq-kind{flex:0 0 88px;}
+.ad-evq-hint{margin-top:8px;}
+.ad-evq-opts{margin-top:8px;padding-left:12px;border-left:1px solid var(--line-soft);
+  display:flex;flex-direction:column;gap:6px;align-items:flex-start;}
+.ad-evq-opt{display:flex;gap:6px;align-items:center;width:100%;}
+.ad-evq-opt .ad-input{flex:1 1 auto;min-width:0;}
+.ad-evq-optadd{align-self:flex-start;font-size:12.5px;}
+.ad-evq-empty{font-size:12.5px;color:var(--ink-soft);padding:6px 0 10px;}
+@media(max-width:899px){
+  .ad-evq-head{flex-wrap:wrap;}
+  .ad-evq-label{flex:1 1 100%;}
+}
+
+/* ---------- 各活動出席統計 ----------
+   放在環狀圖上面。就是一張 .ad-table，後台本來就是這個語言 —— 不另造元件。 */
+.ad-evstats{margin-bottom:26px;}
+.ad-evstats[hidden]{display:none;}
+.ad-evstats-title{font-family:var(--font-display);font-weight:400;font-size:15px;
+  letter-spacing:.14em;color:var(--ink);margin:0 0 6px;}
+.ad-evstats-note{font-size:12px;line-height:1.9;color:var(--ink-soft);margin:0 0 12px;}
+.ad-evstats-when{display:block;font-size:11.5px;color:var(--ink-soft);
+  font-variant-numeric:tabular-nums;margin-top:2px;}
+/* 還沒回答的人數是「要去催的那個數字」，給它一點重量（不是警告色） */
+.ad-evstats-table .is-warn{color:var(--ink);font-weight:500;}
+/* 名單上「這一場不來」的叉：和「還沒回答」的破折號要分得出來 */
+.ad-ev-no{color:var(--ink-soft);}

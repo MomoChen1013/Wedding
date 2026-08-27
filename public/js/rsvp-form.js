@@ -108,8 +108,142 @@
     <div class="rf-hint">婚禮前有事要通知你時，我們會用這裡的資料聯絡</div>`;
   }
 
-  function formHtml(cfg) {
+  /* ============================================================
+     多活動的活動卡
+     ------------------------------------------------------------
+     只有「兩個以上需要回覆的活動」才走這一段。
+     一場婚宴的站台走的還是下面那份原本的表單，一個字都沒改 ——
+     這是整個改版的第一原則，靠 mount() 開頭那一行分岔保證。
+
+     一張卡回答一件事：「這一場你來不來」。
+     選了會參加才展開人數、葷素那些細節（和原本表單的
+     detailBox 同一個機制，賓客不用學新的互動）。
+  ============================================================ */
+
+  /* 活動多的時候，答完的卡片收成一行 —— 五個活動全部攤開，
+     手機要滑很久才走得到送出。兩個以下不收：那時候頁面本來就短，
+     收起來反而多一個「要再點開」的動作。 */
+  const FOLD_FROM = 3;
+  /* 四個以上才給進度提示與「全部參加」；更少的時候那兩樣都是噪音 */
+  const HINT_FROM = 4;
+
+  function evWhenLine(ev){
+    const w = eventWhen(ev);
+    return [w.md ? w.md.replace('/', ' / ') : '', w.wdEn, w.range]
+      .filter(Boolean).join('　');
+  }
+
+  /* 這個活動要問的細節。全部關掉時整塊不出現 —— 證婚通常就是這樣，
+     只問「來不來」，卡片短短一張，一眼看完。 */
+  function evDetailHtml(ev){
+    const p = `ev_${ev.id}_`;
+    const bits = [];
+
+    if(ev.askCount){
+      bits.push(`<label class="rf-label">包含你，共幾位出席？</label>
+        ${stepper(p + 'head', '位')}`);
+    }
+    if(ev.askMeal){
+      bits.push(`<label class="rf-label">餐點分配 <small>（依出席人數分配）</small></label>
+      <div class="rf-split">
+        <div class="rf-split-item">
+          <span class="rf-split-name">葷食</span>${stepper(p + 'meat', '位')}
+        </div>
+        <div class="rf-split-item">
+          <span class="rf-split-name">素食</span>${stepper(p + 'veg', '位')}
+        </div>
+      </div>
+      <div class="rf-hint" id="${p}mealHint"></div>`);
+    }
+    if(ev.askChildSeat){
+      bits.push(`<label class="rf-label">兒童座椅</label>
+      <label class="rf-check">
+        <input type="checkbox" id="${p}childOn"><span>需要兒童座椅</span>
+      </label>
+      <div class="rf-sub" id="${p}childBox" hidden>${stepper(p + 'child', '張')}</div>`);
+    }
+    if(ev.askDiet){
+      bits.push(`<label class="rf-label" for="${p}diet">飲食習慣補充 <small>（選填）</small></label>
+      <div class="field">
+        <input type="text" id="${p}diet" maxlength="${MAX.diet}"
+               placeholder="例：不吃牛、海鮮過敏、孕婦餐">
+      </div>`);
+    }
+
+    /* 這個活動自己的追加題目（後台每個活動最多 3 題，一律選填） */
+    ev.questions.forEach(q => {
+      const qid = `${p}q_${q.id}`;
+      if(q.kind === 'text'){
+        bits.push(`<label class="rf-label" for="${qid}">${esc(q.label)} <small>（選填）</small></label>
+        <div class="field">
+          <input type="text" id="${qid}" maxlength="${MAX.note}"
+                 placeholder="${esc(q.hint || '')}">
+        </div>`);
+        return;
+      }
+      bits.push(`<label class="rf-label">${esc(q.label)} <small>（選填）</small></label>
+      <div class="choice-row" id="${qid}" data-ev-q="${esc(q.id)}">${
+        q.opts.map(o =>
+          `<button type="button" class="choice sm" data-val="${esc(o.id)}">${esc(o.label)}</button>`
+        ).join('')}</div>`);
+    });
+
+    if(!bits.length) return '';
+    return `<div class="ev-detail" id="${p}detail" hidden>${bits.join('\n')}</div>`;
+  }
+
+  function evCardHtml(ev){
+    const map = eventMapUrl(ev);
+    const addr = ev.address && ev.address !== ev.venueName ? ev.address : '';
+    return `
+    <article class="ev-card" data-ev="${esc(ev.id)}">
+      <button type="button" class="ev-fold" data-ev-unfold>
+        <span class="ev-fold-name">${esc(ev.name)}</span>
+        <span class="ev-fold-ans" data-ev-ans></span>
+        <span class="ev-fold-edit">修改</span>
+      </button>
+
+      <div class="ev-body">
+        <div class="ev-head">
+          ${ev.nameEn ? `<div class="ev-kicker">${esc(ev.nameEn)}</div>` : ''}
+          <h3 class="ev-name">${esc(ev.name)}</h3>
+          ${evWhenLine(ev) ? `<div class="ev-when">${esc(evWhenLine(ev))}</div>` : ''}
+          ${ev.venueName ? `<div class="ev-venue">${esc(ev.venueName)}</div>` : ''}
+          ${addr ? `<div class="ev-addr">${esc(addr)}</div>` : ''}
+          ${ev.desc ? `<div class="ev-desc">${esc(ev.desc)}</div>` : ''}
+          ${map ? `<a class="ev-map" href="${esc(map)}" target="_blank"
+                      rel="noopener noreferrer">查看地圖 →</a>` : ''}
+        </div>
+
+        <div class="ev-ask">
+          <label class="rf-label">你會參加嗎？<i class="rf-req">必填</i></label>
+          <div class="choice-row ev-choice">
+            <button type="button" class="choice" data-ev-go="yes">會參加</button>
+            <button type="button" class="choice" data-ev-go="no">無法參加</button>
+          </div>
+          ${evDetailHtml(ev)}
+          <div class="ev-err" data-ev-err></div>
+        </div>
+      </div>
+    </article>`;
+  }
+
+  function eventsHtml(evs){
+    const many = evs.length >= HINT_FROM;
+    return `
+    <p class="inv-lead ev-lead">請依照你的安排，告訴我們哪些活動可以與我們一起參與。</p>
+    ${many ? `<div class="ev-bar">
+      <span class="ev-progress" id="evProgress"></span>
+      <button type="button" class="ev-allyes" id="evAllYes">全部參加</button>
+    </div>` : ''}
+    <section class="rsvp-events" id="rsvpEvents">${evs.map(evCardHtml).join('')}</section>
+    <div class="ev-sep"><span>你的資料</span></div>`;
+  }
+
+  function formHtml(cfg, evs) {
     const hasEmail = cfg.contacts.includes('email');
+    /* 兩個以上要回覆的活動才長出活動卡；一場的話下面全部照舊 */
+    const multi = evs.length > 1;
 
     /* 標籤：新人在後台勾了「當表單選項」的那幾個才會出現在這裡。
        賓客只能選一個（後台可以再幫同一位賓客加掛別的標籤），
@@ -154,26 +288,13 @@
       <textarea id="rNote" maxlength="${MAX.message}" placeholder="給 {{couple}} 的悄悄話…"></textarea>
     </div>`;
 
-    return `
-<div class="cardbox rf-card" id="formCard">
-  <div class="section-title">你的出席回覆</div>
-  <form id="rsvpForm" novalidate>
-
-    <label class="rf-label" for="rName">怎麼稱呼你？<i class="rf-req">必填</i></label>
-    <div class="field">
-      <input type="text" id="rName" maxlength="${MAX.name}" autocomplete="name"
-             placeholder="輸入你的名字">
-    </div>
-
+    /* 多活動時「能來參加嗎」變成每張活動卡上的按鈕，這裡就不再問一次 */
+    const attendBlock = multi ? '' : `
     <label class="rf-label">能來參加嗎？<i class="rf-req">必填</i></label>
-    ${choiceRow('attendRow', 'attend')}
+    ${choiceRow('attendRow', 'attend')}`;
 
-    <label class="rf-label">與新人的關係<i class="rf-req">必填</i></label>
-    ${choiceRow('relationRow', 'relation', 'sm')}
-${tagBlock}
-
-    ${contactBlock(cfg.contacts)}
-
+    /* 人數、葷素、兒童椅、飲食也一樣，多活動時掛在各自的活動卡上 */
+    const detailBlock = multi ? '' : `
     <!-- 以下只有「熱情出席」才要填 -->
     <div class="rf-detail" id="detailBox" hidden>
 
@@ -207,7 +328,25 @@ ${tagBlock}
         <input type="text" id="rDiet" maxlength="${MAX.diet}"
                placeholder="例：不吃牛、海鮮過敏、孕婦餐">
       </div>
+    </div>`;
+
+    return `
+<div class="cardbox rf-card" id="formCard">
+  <div class="section-title">你的出席回覆</div>
+  <form id="rsvpForm" novalidate>
+${multi ? eventsHtml(evs) : ''}
+    <label class="rf-label" for="rName">怎麼稱呼你？<i class="rf-req">必填</i></label>
+    <div class="field">
+      <input type="text" id="rName" maxlength="${MAX.name}" autocomplete="name"
+             placeholder="輸入你的名字">
     </div>
+${attendBlock}
+    <label class="rf-label">與新人的關係<i class="rf-req">必填</i></label>
+    ${choiceRow('relationRow', 'relation', 'sm')}
+${tagBlock}
+
+    ${contactBlock(cfg.contacts)}
+${detailBlock}
 ${cardBlock}
 ${giftBlock}
 ${messageBlock}
@@ -230,6 +369,8 @@ ${messageBlock}
 <div class="cardbox thanks-card" id="thanksCard" hidden>
   <h3 id="tkTitle">收到你的回覆囉</h3>
   <p id="tkMsg">謝謝你，我們超期待與你相見</p>
+  <!-- 多活動時逐條列出每一場的答案（單一活動不會出現這一塊） -->
+  <ul class="tk-events" id="tkEvents" hidden></ul>
   <button type="button" class="btn ghost small" id="editBtn">修改我的回覆</button>
 </div>
 
@@ -258,7 +399,12 @@ ${messageBlock}
     if (!host) return null;
 
     const cfg = rsvpConfig();
-    host.innerHTML = formHtml(cfg);
+    /* ★ 整個改版的第一原則就在這一行：
+       只有「兩個以上需要回覆的活動」才長出活動卡。
+       一場婚宴的站台（＝目前全部）走的是原本那份表單，一個字都沒改。 */
+    const evs = rsvpEvents();
+    const multi = evs.length > 1;
+    host.innerHTML = formHtml(cfg, evs);
     if (typeof fillTemplates === 'function') fillTemplates(host);
 
     const $ = (id) => document.getElementById(id);
@@ -320,6 +466,7 @@ ${messageBlock}
     /* 葷素兩格永遠加起來等於出席人數 —— 改一邊，另一邊跟著動，
        賓客才不會分配出一個和人數對不上的組合 */
     function syncCounts() {
+      if(multi) return;      /* 多活動時人數在各張活動卡上，這裡沒有東西可以同步 */
       state.head = clamp(state.head, 1, MAX.guest);
       state.veg = clamp(state.veg, 0, state.head);
       state.childSeat = clamp(state.childSeat, 0, state.head);
@@ -341,17 +488,20 @@ ${messageBlock}
       $('childPlus').disabled = state.childSeat >= state.head;
     }
 
-    wireStepper('head', (d) => { state.head += d; syncCounts(); });
-    /* 葷食加一 = 素食減一（總數固定） */
-    wireStepper('meat', (d) => { state.veg -= d; syncCounts(); });
-    wireStepper('veg', (d) => { state.veg += d; syncCounts(); });
-    wireStepper('child', (d) => { state.childSeat += d; syncCounts(); });
+    /* 這幾個只有單一活動的表單才有；多活動時它們掛在各自的活動卡上 */
+    if(!multi){
+      wireStepper('head', (d) => { state.head += d; syncCounts(); });
+      /* 葷食加一 = 素食減一（總數固定） */
+      wireStepper('meat', (d) => { state.veg -= d; syncCounts(); });
+      wireStepper('veg', (d) => { state.veg += d; syncCounts(); });
+      wireStepper('child', (d) => { state.childSeat += d; syncCounts(); });
 
-    $('childSeatOn').addEventListener('change', (e) => {
-      $('childSeatBox').hidden = !e.target.checked;
-      state.childSeat = e.target.checked ? Math.max(1, state.childSeat) : 0;
-      syncCounts();
-    });
+      $('childSeatOn').addEventListener('change', (e) => {
+        $('childSeatBox').hidden = !e.target.checked;
+        state.childSeat = e.target.checked ? Math.max(1, state.childSeat) : 0;
+        syncCounts();
+      });
+    }
 
     /* ---------- 「同上」：把上面填過的值帶下來 ----------
        ・勾起來時目標欄位轉成唯讀，跟著來源即時更新
@@ -398,7 +548,8 @@ ${messageBlock}
 
     /* ---------- 條件顯示 ---------- */
     function syncAttend() {
-      $('detailBox').hidden = state.attending !== 'yes';
+      const box = $('detailBox');
+      if(box) box.hidden = state.attending !== 'yes';
     }
     function syncCard() {
       if (!cfg.askCard) return;
@@ -440,6 +591,212 @@ ${messageBlock}
     if (refreshCardEmailSame) refreshCardEmailSame();
     if (refreshGiftAddrSame) refreshGiftAddrSame();
 
+
+    /* ============================================================
+       多活動：每張活動卡自己的狀態與互動
+       ------------------------------------------------------------
+       單一活動的站台完全走不到這一段（evs.length <= 1）。
+    ============================================================ */
+    const evState = {};      /* eventId → { going, head, veg, child, answers } */
+    /* 剛剛回答的是哪一張 —— 那一張要留著打開，賓客才填得了人數。
+       其餘答過的收起來（見 syncEvCard 的 is-folded）。 */
+    let evLastId = '';
+
+    function initEvState(){
+      evs.forEach(ev => {
+        evState[ev.id] = { going:null, head:1, veg:0, child:0, answers:{} };
+      });
+    }
+    initEvState();
+
+    function evCard(id){
+      return host.querySelector(`.ev-card[data-ev="${CSS.escape(id)}"]`);
+    }
+
+    /* 這一場的人數／葷素／兒童椅互相連動，規則和單一活動那份一模一樣：
+       葷素加起來永遠等於出席人數，賓客配不出一個對不上的組合 */
+    function syncEvCounts(ev){
+      const st = evState[ev.id];
+      const p = `ev_${ev.id}_`;
+      st.head  = clamp(st.head, 1, MAX.guest);
+      st.veg   = clamp(st.veg, 0, st.head);
+      st.child = clamp(st.child, 0, st.head);
+      const meat = st.head - st.veg;
+
+      const set = (id, v) => { const el = $(id); if(el) el.textContent = v; };
+      const dis = (id, v) => { const el = $(id); if(el) el.disabled = v; };
+      set(p + 'headNum', st.head);
+      set(p + 'meatNum', meat);
+      set(p + 'vegNum', st.veg);
+      set(p + 'childNum', st.child);
+      const hint = $(p + 'mealHint');
+      if(hint) hint.textContent = `葷食 ${meat} 位・素食 ${st.veg} 位，共 ${st.head} 位`;
+
+      dis(p + 'headMinus', st.head <= 1);
+      dis(p + 'headPlus',  st.head >= MAX.guest);
+      dis(p + 'meatMinus', meat <= 0);
+      dis(p + 'meatPlus',  meat >= st.head);
+      dis(p + 'vegMinus',  st.veg <= 0);
+      dis(p + 'vegPlus',   st.veg >= st.head);
+      dis(p + 'childMinus', st.child <= 0);
+      dis(p + 'childPlus',  st.child >= st.head);
+    }
+
+    /* 收合那一行要說的話：「會參加・2 位」／「無法參加」 */
+    function evAnswerText(ev){
+      const st = evState[ev.id];
+      if(st.going === null) return '';
+      if(!st.going) return '無法參加';
+      return ev.askCount ? `會參加・${st.head} 位` : '會參加';
+    }
+
+    function syncEvCard(ev){
+      const card = evCard(ev.id);
+      if(!card) return;
+      const st = evState[ev.id];
+
+      card.querySelectorAll('.ev-choice .choice').forEach(b =>
+        b.classList.toggle('on', st.going !== null
+          && b.dataset.evGo === (st.going ? 'yes' : 'no')));
+
+      const detail = $(`ev_${ev.id}_detail`);
+      if(detail) detail.hidden = st.going !== true;
+
+      card.classList.toggle('is-no', st.going === false);
+      card.classList.toggle('is-done', st.going !== null);
+      /* 活動多的時候答完就收起來，頁面才不會一路長下去。
+         但**剛剛回答的那一張要留著打開** —— 說了「會參加」還要填人數、
+         葷素，一按下去就收起來的話賓客根本填不到（這是實作時撞到的）。
+         說「無法參加」的沒有東西要填，就可以馬上收。 */
+      const fold = st.going !== null && evs.length >= FOLD_FROM
+        && (st.going === false || ev.id !== evLastId);
+      card.classList.toggle('is-folded', fold);
+      const ans = card.querySelector('[data-ev-ans]');
+      if(ans) ans.textContent = evAnswerText(ev);
+      if(st.going !== null) evClearErr(ev.id);
+    }
+
+    function syncEvProgress(){
+      const el = $('evProgress');
+      if(!el) return;
+      const done = evs.filter(ev => evState[ev.id].going !== null).length;
+      el.textContent = done === evs.length
+        ? `${evs.length} 場都回覆好了`
+        : `${done} / ${evs.length} 已回覆`;
+    }
+
+    function evClearErr(id){
+      const card = evCard(id);
+      const el = card && card.querySelector('[data-ev-err]');
+      if(el) el.textContent = '';
+    }
+    function evShowErr(ev, msg){
+      const card = evCard(ev.id);
+      if(!card) return false;
+      card.classList.remove('is-folded');
+      const el = card.querySelector('[data-ev-err]');
+      if(el) el.textContent = msg;
+      card.scrollIntoView({ behavior:'smooth', block:'center' });
+      return false;
+    }
+
+    function setEvGoing(ev, going){
+      evState[ev.id].going = going;
+      evLastId = ev.id;
+      /* 換了一張卡，之前那張答過的就收起來（手風琴） */
+      evs.forEach(syncEvCard);
+      syncEvProgress();
+      clearErr();
+    }
+
+    if(multi){
+      const eventsBox = $('rsvpEvents');
+
+      eventsBox.addEventListener('click', (e) => {
+        const card = e.target.closest('.ev-card');
+        if(!card) return;
+        const ev = evs.find(x => x.id === card.dataset.ev);
+        if(!ev) return;
+
+        /* 收起來的那一行，點了就重新打開 */
+        if(e.target.closest('[data-ev-unfold]')){
+          card.classList.remove('is-folded');
+          return;
+        }
+        const go = e.target.closest('[data-ev-go]');
+        if(go){ setEvGoing(ev, go.dataset.evGo === 'yes'); return; }
+
+        /* 追加題目的單選：再點一次可以取消（和「更具體是哪一種」同一套） */
+        const opt = e.target.closest('.choice-row[data-ev-q] .choice');
+        if(opt){
+          const row = opt.closest('[data-ev-q]');
+          const qid = row.dataset.evQ;
+          const st = evState[ev.id];
+          st.answers[qid] = st.answers[qid] === opt.dataset.val ? '' : opt.dataset.val;
+          row.querySelectorAll('.choice').forEach(b =>
+            b.classList.toggle('on', b.dataset.val === st.answers[qid]));
+        }
+      });
+
+      evs.forEach(ev => {
+        const p = `ev_${ev.id}_`;
+        const st = evState[ev.id];
+        const wire = (id, fn) => {
+          const minus = $(id + 'Minus');
+          const plus  = $(id + 'Plus');
+          if(minus) minus.addEventListener('click', () => { fn(-1); syncEvCounts(ev); });
+          if(plus)  plus.addEventListener('click',  () => { fn(1);  syncEvCounts(ev); });
+        };
+        wire(p + 'head',  (d) => { st.head += d; });
+        /* 葷食加一＝素食減一（總數固定） */
+        wire(p + 'meat',  (d) => { st.veg -= d; });
+        wire(p + 'veg',   (d) => { st.veg += d; });
+        wire(p + 'child', (d) => { st.child += d; });
+
+        const childOn = $(p + 'childOn');
+        if(childOn){
+          childOn.addEventListener('change', (e) => {
+            $(p + 'childBox').hidden = !e.target.checked;
+            st.child = e.target.checked ? Math.max(1, st.child) : 0;
+            syncEvCounts(ev);
+          });
+        }
+        syncEvCounts(ev);
+      });
+
+      const allYes = $('evAllYes');
+      if(allYes){
+        allYes.addEventListener('click', () => {
+          /* 「全部參加」是「就照預設，我都到」——
+             全部收起來是對的，要調人數再點開那一張 */
+          evLastId = '';
+          evs.forEach(ev => { evState[ev.id].going = true; });
+          evs.forEach(syncEvCard);
+          syncEvProgress();
+          clearErr();
+          toastAllYes();
+        });
+      }
+      syncEvProgress();
+    }
+
+    /* 「全部參加」按完給一句話 —— 一次改了五張卡，沒有回饋會讓人以為沒按到。
+       這一頁沒有 toast 元件，所以就用進度那一行講。 */
+    function toastAllYes(){
+      const el = $('evProgress');
+      if(!el) return;
+      el.textContent = '都幫你選好「會參加」了，要改再點單張卡片';
+      setTimeout(syncEvProgress, 2600);
+    }
+
+    /* 這一份回覆的「主要活動」：頂層欄位講的就是它。
+       ★ 一定要從賓客實際看到的那幾張卡裡挑，不能用 common.js 的
+         primaryEventId() —— 那個看的是全部活動，可能挑到一個
+         requiresRsvp:false、根本不在表單上的活動，events 裡就會沒有那一格。 */
+    function formPrimary(){
+      return evs.find(ev => ev.type === 'reception') || evs[0];
+    }
+
     /* ---------- 錯誤訊息 ---------- */
     function clearErr() { errEl.innerHTML = '&nbsp;'; }
     function showErr(msg, focusId) {
@@ -455,7 +812,17 @@ ${messageBlock}
 
     function validate() {
       if (!val('rName')) return showErr('請先填上你的名字～', 'rName');
-      if (!state.attending) return showErr('請選擇能不能出席唷');
+      /* 多活動：一次只指出**第一張**還沒回答的卡，並且捲到它。
+         把五個錯誤一次列出來只會讓人不知道從哪裡開始。 */
+      if (multi) {
+        const miss = evs.find(ev => evState[ev.id].going === null);
+        if (miss) {
+          clearErr();
+          return evShowErr(miss, '這一場還沒回答，來得了嗎？');
+        }
+      } else if (!state.attending) {
+        return showErr('請選擇能不能出席唷');
+      }
       if (!state.relation) return showErr('請選一下你與新人的關係');
 
       /* 聯絡方式：至少一種，填了就要像那麼一回事 */
@@ -500,7 +867,78 @@ ${messageBlock}
     }
 
     /* 欄位必須與 firestore.rules 的白名單完全一致，多一個就整筆被拒 */
+    /* 每個活動的回應。key 就是 eventId —— 同一個活動只會有一筆，
+       這件事由資料結構本身保證，不必自己去重。 */
+    function buildEventMap() {
+      const map = {};
+      evs.forEach(ev => {
+        const st = evState[ev.id];
+        const go = st.going === true;
+        const answers = {};
+        ev.questions.forEach(q => {
+          const qid = `ev_${ev.id}_q_${q.id}`;
+          const v = q.kind === 'text' ? val(qid) : (st.answers[q.id] || '');
+          if (go && v) answers[q.id] = String(v).slice(0, MAX.note);
+        });
+        map[ev.id] = {
+          going: go,
+          count: go && ev.askCount ? st.head : (go ? 1 : 0),
+          veg:   go && ev.askMeal ? st.veg : 0,
+          note:  go && ev.askDiet ? val(`ev_${ev.id}_diet`).slice(0, MAX.diet) : '',
+          answers,
+        };
+      });
+      return map;
+    }
+
     function buildPayload() {
+      /* ---------- 多活動 ----------
+         頂層欄位的語意沒有變：它們永遠代表**主要活動**（婚宴）。
+         排桌、收禮、匯出 CSV、後台既有的統計圖表讀的都是頂層那一份，
+         所以那些地方完全不必知道多活動這件事存在。 */
+      if (multi) {
+        const map = buildEventMap();
+        const primary = formPrimary();
+        const pr = map[primary.id];
+        const pSt = evState[primary.id];
+        const user0 = (typeof me_user !== 'undefined' && me_user) || {};
+        const contact0 = (key) => (cfg.contacts.includes(key)
+          ? val(CONTACT_FIELDS[key].id).slice(0, CONTACT_FIELDS[key].max) : '');
+        const paperMail0 = cfg.askCard && state.card === 'paper' && state.cardDelivery === 'mail';
+        const giftMail0 = cfg.askGift && state.gift === 'mail';
+
+        return {
+          name: val('rName').slice(0, MAX.name),
+          icon: user0.icon || (typeof DEFAULT_ICON !== 'undefined' ? DEFAULT_ICON : '✦'),
+          attending: pr.going,
+          tentative: false,          /* 活動卡只有「會／不會」，沒有「視情況而定」 */
+          guestCount: pr.going ? Math.max(1, pr.count) : 1,
+          relation: state.relation || '',
+          tag: cfg.tagOptions.some((t) => t.id === state.tag) ? state.tag : '',
+          contactPhone: contact0('phone'),
+          contactLine: contact0('line'),
+          contactEmail: contact0('email'),
+          mealMeat: pr.going ? Math.max(1, pr.count) - pr.veg : 0,
+          mealVeg: pr.going ? pr.veg : 0,
+          childSeat: pr.going && primary.askChildSeat ? pSt.child : 0,
+          dietaryNote: pr.note,
+          cardType: cfg.askCard ? state.card : '',
+          cardDelivery: cfg.askCard && state.card === 'paper' ? state.cardDelivery : '',
+          cardZip: paperMail0 ? val('rCardZip').slice(0, MAX.zip) : '',
+          cardAddress: paperMail0 ? val('rCardAddr').slice(0, MAX.address) : '',
+          cardEmail: cfg.askCard && state.card === 'digital'
+            ? val('rCardEmail').slice(0, MAX.email) : '',
+          giftDelivery: cfg.askGift ? state.gift : '',
+          giftZip: giftMail0 ? val('rGiftZip').slice(0, MAX.zip) : '',
+          giftAddress: giftMail0 ? val('rGiftAddr').slice(0, MAX.address) : '',
+          message: cfg.askMessage ? val('rNote').slice(0, MAX.message) : '',
+          note: val('rMemo').slice(0, MAX.note),
+          primaryEventId: primary.id,
+          events: map,
+          createdAt: window.fb.serverTimestamp(),
+        };
+      }
+
       const going = state.attending === 'yes';
       const paperMail = cfg.askCard && state.card === 'paper' && state.cardDelivery === 'mail';
       const giftMail = cfg.askGift && state.gift === 'mail';
@@ -590,7 +1028,21 @@ ${messageBlock}
         giftAddress: payload.giftAddress,
         note: payload.message,
         memo: payload.note,
+        /* 多活動：把每一場的答案也記下來，回訪時整份帶回畫面。
+           存的是「賓客實際選了什麼」，不是送出去的 payload。 */
+        events: multi ? evs.reduce((acc, ev) => {
+          const st = evState[ev.id];
+          acc[ev.id] = { going: st.going, head: st.head, veg: st.veg,
+                         child: st.child, answers: { ...st.answers },
+                         diet: val(`ev_${ev.id}_diet`),
+                         texts: ev.questions.filter(q => q.kind === 'text')
+                           .reduce((a, q) => {
+                             a[q.id] = val(`ev_${ev.id}_q_${q.id}`); return a;
+                           }, {}) };
+          return acc;
+        }, {}) : null,
       };
+      if(multi) mine.attending = payload.attending ? 'yes' : 'no';
       try { LS.set('rsvp.mine', mine); } catch { /* 無痕模式寫不進去，不影響送出 */ }
       try { if (typeof saveUser === 'function') saveUser({ name: payload.name, icon: payload.icon }); } catch { }
 
@@ -615,6 +1067,31 @@ ${messageBlock}
         },
       };
       const info = byAttend[p.attending] || byAttend.maybe;
+
+      /* 多活動：只寫一句「收到回覆」不夠 —— 賓客一次答了三、四件事，
+         要看得到自己到底答了什麼，才敢關掉這一頁。 */
+      const list = $('tkEvents');
+      if(list && multi){
+        const rows = evs.map(ev => {
+          const st = evState[ev.id];
+          const yes = st.going === true;
+          return `<li class="tk-ev${yes ? '' : ' is-no'}">
+            <span class="tk-ev-name">${esc(ev.name)}</span>
+            <span class="tk-ev-ans">${esc(evAnswerText(ev) || '未回覆')}</span>
+          </li>`;
+        }).join('');
+        list.innerHTML = rows;
+        list.hidden = false;
+        const anyYes = evs.some(ev => evState[ev.id].going === true);
+        $('tkTitle').textContent = anyYes ? '收到你的回覆了' : '收到你的回覆了';
+        $('tkMsg').textContent = anyYes
+          ? '下面是你這次的安排，之後有變動隨時回來改'
+          : '雖然這次無法相聚，還是謝謝你的祝福，會想念你的';
+        formCard.hidden = true;
+        thanks.hidden = false;
+        return;
+      }
+
       $('tkTitle').textContent = info.t;
       $('tkMsg').textContent = info.m;
       formCard.hidden = true;
@@ -665,14 +1142,52 @@ ${messageBlock}
       state.veg = mine.veg || 0;
       state.childSeat = mine.childSeat || 0;
 
+      /* 多活動：把每一場答過的內容整份帶回來。
+         活動被新人拿掉、或事後才加的那幾場，就當作沒答過（不硬塞） */
+      if(multi && mine.events && typeof mine.events === 'object'){
+        evs.forEach(ev => {
+          const saved = mine.events[ev.id];
+          if(!saved) return;
+          const st = evState[ev.id];
+          st.going = saved.going === true ? true : (saved.going === false ? false : null);
+          st.head  = Number(saved.head) || 1;
+          st.veg   = Number(saved.veg) || 0;
+          st.child = Number(saved.child) || 0;
+          st.answers = (saved.answers && typeof saved.answers === 'object')
+            ? { ...saved.answers } : {};
+          setVal(`ev_${ev.id}_diet`, saved.diet);
+          ev.questions.forEach(q => {
+            if(q.kind === 'text') setVal(`ev_${ev.id}_q_${q.id}`, (saved.texts || {})[q.id]);
+            else {
+              const row = $(`ev_${ev.id}_q_${q.id}`);
+              if(row) row.querySelectorAll('.choice').forEach(b =>
+                b.classList.toggle('on', b.dataset.val === st.answers[q.id]));
+            }
+          });
+          const childOn = $(`ev_${ev.id}_childOn`);
+          if(childOn){
+            childOn.checked = st.child > 0;
+            const box = $(`ev_${ev.id}_childBox`);
+            if(box) box.hidden = st.child <= 0;
+          }
+          syncEvCounts(ev);
+        });
+        evLastId = '';
+        evs.forEach(syncEvCard);
+        syncEvProgress();
+      }
+
       pick('attendRow', state.attending);
       pick('relationRow', state.relation);
       pick('tagRow', state.tag);
       pick('cardRow', state.card);
       pick('cardDeliveryRow', state.cardDelivery);
       pick('giftRow', state.gift);
-      $('childSeatOn').checked = state.childSeat > 0;
-      $('childSeatBox').hidden = state.childSeat <= 0;
+      /* 這兩個只有單一活動的表單才有；多活動的兒童椅在各張活動卡上（前面已還原） */
+      if(!multi){
+        $('childSeatOn').checked = state.childSeat > 0;
+        $('childSeatBox').hidden = state.childSeat <= 0;
+      }
 
       syncAttend();
       syncCard();

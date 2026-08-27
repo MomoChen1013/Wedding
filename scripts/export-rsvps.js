@@ -31,6 +31,58 @@ const LABELS = {
   giftDelivery: { pickup:'現場領取', mail:'郵寄' },
 };
 
+/* 多活動：每一場多出幾欄（出席／人數／素食／追加題目）。
+   欄位定義與 public/js/admin.js 的 evCsvColumns() 對齊，
+   後台匯出與這支腳本拿到的檔案格式一致。
+
+   ★ 頂層欄位的語意沒有變，所以下面那一整組原本的欄位一個都不用改：
+     它們永遠代表主要活動（婚宴）。 */
+function eventColumns(site) {
+  const evs = (Array.isArray(site.events) ? site.events : [])
+    .filter((e) => e && e.id && e.requiresRsvp !== false);
+  if (evs.length <= 1) return [];
+
+  const cols = [];
+  evs.forEach((ev) => {
+    const name = ev.name || ev.id;
+    cols.push([`ev:${ev.id}:go`, `${name}・出席`]);
+    if (ev.askCount !== false) cols.push([`ev:${ev.id}:n`, `${name}・人數`]);
+    if (ev.askMeal) cols.push([`ev:${ev.id}:veg`, `${name}・素食`]);
+    (Array.isArray(ev.questions) ? ev.questions : []).forEach((q) => {
+      if (q && q.id && q.label) cols.push([`ev:${ev.id}:q:${q.id}`, `${name}・${q.label}`]);
+    });
+  });
+  return cols;
+}
+
+/* 一筆回覆對某個活動的回應。舊回覆（沒有 events）只答得出主要活動，
+   其餘一律回 null ＝「尚未回覆」。與 public/js/common.js 的
+   eventResponse() 同一套判斷。 */
+function eventResponseOf(d, eventId, primaryId) {
+  const map = d.events && typeof d.events === 'object' && !Array.isArray(d.events)
+    ? d.events : null;
+  const hit = map ? map[eventId] : null;
+  if (hit && typeof hit === 'object') {
+    return {
+      going: hit.going === true,
+      count: Math.max(0, Number(hit.count) || 0),
+      veg: Math.max(0, Number(hit.veg) || 0),
+      answers: hit.answers && typeof hit.answers === 'object' ? hit.answers : {},
+      tentative: false,
+    };
+  }
+  const primary = d.primaryEventId || primaryId;
+  if (eventId !== primary) return null;
+  const going = d.attending === true;
+  return {
+    going,
+    count: going ? Math.max(1, Number(d.guestCount) || 1) : 0,
+    veg: going ? Math.max(0, Number(d.mealVeg) || 0) : 0,
+    answers: {},
+    tentative: d.tentative === true,
+  };
+}
+
 const COLUMNS = [
   ['name',         '稱呼'],
   ['attending',    '是否出席'],
@@ -135,7 +187,17 @@ async function exportRsvps(values) {
     ...new Set([String(data.tag || ''), ...(ownerTags.get(docId) || [])].filter(Boolean)),
   ].map((id) => tagNames.get(id)).filter(Boolean).join('／');
 
-  const rows = [COLUMNS.map(([, label]) => label).join(',')];
+  /* 多活動的欄位插在「與新人關係」後面，和後台的排法一致 */
+  const evCols = eventColumns(site);
+  const evList = (Array.isArray(site.events) ? site.events : [])
+    .filter((e) => e && e.id && e.requiresRsvp !== false);
+  const primaryId = (evList.find((e) => e.type === 'reception')
+    || evList[0] || {}).id || 'main';
+  const evById = new Map(evList.map((e) => [e.id, e]));
+  const at = COLUMNS.findIndex(([k]) => k === 'relation') + 1;
+  const columns = [...COLUMNS.slice(0, at), ...evCols, ...COLUMNS.slice(at)];
+
+  const rows = [columns.map(([, label]) => label).join(',')];
   let attendingGroups = 0;
   let totalGuests = 0;
 
@@ -145,7 +207,22 @@ async function exportRsvps(values) {
       attendingGroups += 1;
       totalGuests += Number(d.guestCount) || 0;
     }
-    rows.push(COLUMNS.map(([key]) => {
+    rows.push(columns.map(([key]) => {
+      /* 多活動的欄位：ev:{eventId}:{what} */
+      if (key.startsWith('ev:')) {
+        const [, evId, what, qid] = key.split(':');
+        const res = eventResponseOf(d, evId, primaryId);
+        if (!res || res.tentative) return csvCell(what === 'go' ? '尚未回覆' : '');
+        if (what === 'go') return csvCell(res.going ? '會參加' : '無法參加');
+        if (!res.going) return csvCell('');
+        if (what === 'n') return csvCell(res.count);
+        if (what === 'veg') return csvCell(res.veg);
+        const v = res.answers[qid];
+        if (!v) return csvCell('');
+        const q = ((evById.get(evId) || {}).questions || []).find((x) => x && x.id === qid);
+        const opt = ((q || {}).opts || []).find((o) => o && o.id === v);
+        return csvCell(opt ? opt.label : v);
+      }
       if (key === 'attending') {
         /* tentative=true 代表「視情況而定」（此時 attending 為 false） */
         if (d.attending) return csvCell('熱情出席');

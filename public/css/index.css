@@ -275,3 +275,26 @@
   font-size:15px;line-height:2.1;letter-spacing:.04em;color:var(--ink);
   white-space:pre-wrap;word-break:break-word;
 }
+
+/* ============================================================
+   多活動的資訊列
+   ------------------------------------------------------------
+   沿用既有的 .info-row 兩欄版面（左窄標籤、右內容），
+   只是左欄從「日期／時間／地點」換成活動的中文短名。
+   **沒有新元件**，連活動之間的分隔線都是既有的 .info-row 的 border-top。
+============================================================ */
+/* 活動名稱可能比「日期」長一點（派對、歸寧宴），左欄放寬半格；
+   英文名（Welcome Party）也要斷得掉，不能撐爆那一欄 */
+.info-row.info-ev{grid-template-columns:5em 1fr;}
+.info-ev .ir-label{overflow-wrap:anywhere;line-height:1.7;}
+/* 時間那一行用等寬數字，好幾場排下來對得整齊 */
+.info-ev .ir-when{font-variant-numeric:tabular-nums;letter-spacing:.06em;}
+.info-ev .ir-when + .ir-val{margin-top:2px;}
+
+@media(max-width:420px){
+  /* 窄螢幕右欄只剩 270px 左右，地址會斷成兩行 —— 改成上下堆疊。
+     和 rsvp.css 的 .rf-contact 在同一個斷點做同一件事 */
+  .info-row{grid-template-columns:1fr;gap:6px;}
+  .info-row.info-ev{grid-template-columns:1fr;}
+  .ir-label{letter-spacing:.18em;}
+}

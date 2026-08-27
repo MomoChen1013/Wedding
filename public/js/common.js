@@ -387,6 +387,43 @@ function mainEventFromSite(){
   };
 }
 
+/* ---------- 活動的日期時間 ----------
+   邀請函（10 / 18　SAT　14:00）與大廳（10/18（六）14:00）各自組合，
+   所以這裡只把零件拆出來，不決定怎麼排。
+
+   ev.date 是牆上日期字串，用 T12:00:00Z 取星期幾 ——
+   跨時區都落在同一天，不會因為觀看者在哪裡而差一天。 */
+const EVENT_WD_EN = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const EVENT_WD_TW = ['日','一','二','三','四','五','六'];
+
+function eventWhen(ev){
+  const out = { md:'', wdEn:'', wdTw:'', time:'', range:'' };
+  if(!ev) return out;
+  if(ev.date){
+    const [y, m, d] = ev.date.split('-');
+    out.md = `${m}/${d}`;
+    const dt = new Date(`${ev.date}T12:00:00Z`);
+    if(!isNaN(dt.getTime())){
+      out.wdEn = EVENT_WD_EN[dt.getUTCDay()];
+      out.wdTw = EVENT_WD_TW[dt.getUTCDay()];
+    }
+    out.year = y;
+  }
+  out.time = ev.startTime || '';
+  out.range = ev.endTime && ev.startTime
+    ? `${ev.startTime}–${ev.endTime}` : (ev.startTime || '');
+  return out;
+}
+
+/* 地圖連結：新人沒填就用地址（沒地址就用場地名）去組 Google Maps。
+   和 invitation.js 既有的 renderVenue() 是同一套規則，收斂成一份。 */
+function eventMapUrl(ev){
+  if(!ev) return '';
+  if(/^https?:\/\//i.test(ev.mapUrl)) return ev.mapUrl;
+  const q = ev.address || ev.venueName;
+  return q ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}` : '';
+}
+
 /* 後台「婚禮流程」要不要出現。純粹是後台的門檻，不影響前台怎麼畫 */
 function multiEventOn(){
   return !!(window.SITE && window.SITE.data

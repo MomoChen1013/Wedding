@@ -801,6 +801,297 @@ console.log('\n[6c] 多活動的讀取層');
   await back.page.close();
 }
 
+/* ---------- 賓客端的多活動 RSVP ---------- */
+console.log('\n[6d] 多活動的出席回覆');
+
+const MULTI_EVENTS = [
+  { id:'ev_engage', type:'engagement', name:'文訂', nameEn:'ENGAGEMENT',
+    date:'2026-09-05', startTime:'11:00', endTime:'', venueName:'女方家',
+    address:'', mapUrl:'', desc:'', requiresRsvp:false,
+    askCount:false, askMeal:false, askChildSeat:false, askDiet:false, questions:[] },
+  { id:'ev_ceremony', type:'ceremony', name:'證婚', nameEn:'CEREMONY',
+    date:'2026-09-19', startTime:'14:00', endTime:'', venueName:'台北真理堂',
+    address:'台北市大安區新生南路三段86號', mapUrl:'', desc:'', requiresRsvp:true,
+    askCount:true, askMeal:false, askChildSeat:false, askDiet:false, questions:[] },
+  { id:'ev_reception', type:'reception', name:'婚宴', nameEn:'WEDDING RECEPTION',
+    date:'2026-09-19', startTime:'18:00', endTime:'21:00',
+    venueName:'台北國賓大飯店', address:'台北市中山區中山北路二段63號',
+    mapUrl:'', desc:'', requiresRsvp:true,
+    askCount:true, askMeal:true, askChildSeat:true, askDiet:true, questions:[] },
+  { id:'ev_party', type:'afterparty', name:'派對', nameEn:'AFTER PARTY',
+    date:'2026-09-19', startTime:'21:30', endTime:'', venueName:'某某 Bar',
+    address:'台北市信義區', mapUrl:'', desc:'', requiresRsvp:true,
+    askCount:true, askMeal:false, askChildSeat:false, askDiet:false,
+    questions:[{ id:'q_shuttle', kind:'choice', label:'需要接駁車嗎？',
+                 opts:[{ id:'yes', label:'需要' }, { id:'no', label:'不需要' }] }] },
+];
+
+{
+  await adb.collection('sites').doc(siteIds[SLUG]).update({
+    multiEventEnabled: true, events: MULTI_EVENTS,
+    rsvpAskCard: true, rsvpAskGift: true, rsvpAskMessage: true,
+    rsvpContactMethods: ['phone', 'line', 'email'],
+  });
+
+  const { page, errors } = await visit(`/w/${SLUG}/invitation`);
+  await page.evaluate(() => LS.remove('rsvp.mine'));
+  await page.reload({ waitUntil:'domcontentloaded' });
+  await page.waitForFunction(() => !!document.getElementById('rsvpForm'),
+    null, { timeout:20000 });
+
+  /* 只有需要回覆的三場長成卡片；文訂不在表單裡 */
+  ok('三張活動卡（文訂不在表單裡）',
+    (await page.locator('.ev-card').count()) === 3,
+    String(await page.locator('.ev-card').count()));
+  ok('「能來參加嗎」那一整題不見了（改成每張卡自己問）',
+    (await page.locator('#attendRow').count()) === 0);
+  ok('人數／葷素也不在共用區了',
+    (await page.locator('#detailBox').count()) === 0);
+  ok('英文 kicker 有出現',
+    (await page.locator('.ev-card .ev-kicker').allInnerTexts())
+      .join(',') === 'CEREMONY,WEDDING RECEPTION,AFTER PARTY',
+    (await page.locator('.ev-card .ev-kicker').allInnerTexts()).join(','));
+  ok('每張卡各有自己的地圖連結',
+    (await page.locator('.ev-card .ev-map').count()) === 3);
+  ok('婚宴那張看得到時間區間',
+    (await page.locator('.ev-card').nth(1).locator('.ev-when').innerText())
+      .includes('18:00–21:00'),
+    await page.locator('.ev-card').nth(1).locator('.ev-when').innerText());
+
+  /* 三場（≥HINT_FROM 是 4）→ 不出現進度與「全部參加」 */
+  ok('三場時不出現進度提示與「全部參加」',
+    (await page.locator('#evProgress').count()) === 0
+      && (await page.locator('#evAllYes').count()) === 0);
+
+  /* 沒回答就送出：捲到第一張沒答的卡，而不是列一長串錯誤 */
+  /* 名字刻意和別的測試不一樣：這個站台是共用的，
+     叫「王小明」的話會混進 [16] 標籤那一段的固定資料裡 */
+  await page.fill('#rName', '林多場');
+  await page.click('#submitBtn');
+  await page.waitForTimeout(400);
+  ok('沒回答就送出時，指出第一張沒答的卡',
+    (await page.locator('.ev-card').first().locator('[data-ev-err]').innerText())
+      .includes('還沒回答'),
+    await page.locator('.ev-card').first().locator('[data-ev-err]').innerText());
+
+  /* 賓客 C：證婚不參加、婚宴 4 位（素 1、兒童椅 1）、派對 2 位＋接駁 */
+  const card = (i) => page.locator('.ev-card').nth(i);
+  await card(0).locator('[data-ev-go="no"]').click();
+  await page.waitForTimeout(200);
+  ok('說不來的卡片會淡下去、細節收起來',
+    await card(0).evaluate((el) => el.classList.contains('is-no')));
+
+  await card(1).locator('[data-ev-go="yes"]').click();
+  await page.waitForTimeout(200);
+  ok('說會來才展開細節',
+    await card(1).locator('.ev-detail').isVisible());
+  for(let i = 0; i < 3; i++){
+    await card(1).locator('[id$="_headPlus"]').click();
+    await page.waitForTimeout(80);
+  }
+  await card(1).locator('[id$="_vegPlus"]').click();
+  await page.waitForTimeout(100);
+  await card(1).locator('[id$="_childOn"]').check();
+  await page.waitForTimeout(150);
+  await card(1).locator('[id$="_dietBox"]').count();
+  await card(1).locator('input[id$="_diet"]').fill('不吃牛');
+  ok('葷素加起來等於人數',
+    (await card(1).locator('[id$="_mealHint"]').innerText()).includes('共 4 位'),
+    await card(1).locator('[id$="_mealHint"]').innerText());
+
+  await card(2).locator('[data-ev-go="yes"]').click();
+  await page.waitForTimeout(200);
+  await card(2).locator('[id$="_headPlus"]').click();
+  await page.waitForTimeout(100);
+  await card(2).locator('.choice-row[data-ev-q] .choice').first().click();
+  await page.waitForTimeout(100);
+  ok('活動自己的追加題目選得起來',
+    await card(2).locator('.choice-row[data-ev-q] .choice').first()
+      .evaluate((el) => el.classList.contains('on')));
+
+  /* 三場都答完 → 除了剛剛回答的那一張，其餘收成一行（手風琴）。
+     剛答完的那張一定要留著開 —— 說「會參加」之後還要填人數 */
+  ok('答完的卡片收成一行，剛回答的那張留著開',
+    (await page.locator('.ev-card.is-folded').count()) === 2
+      && !(await card(2).evaluate((el) => el.classList.contains('is-folded'))),
+    String(await page.locator('.ev-card.is-folded').count()));
+  ok('收起來那一行寫著答案',
+    (await card(1).locator('[data-ev-ans]').innerText()) === '會參加・4 位',
+    await card(1).locator('[data-ev-ans]').innerText());
+  await card(1).locator('[data-ev-unfold]').click();
+  await page.waitForTimeout(200);
+  ok('點一下又打得開',
+    !(await card(1).evaluate((el) => el.classList.contains('is-folded'))));
+
+  /* 共用的那幾題照舊 */
+  await page.click('#relationRow .choice[data-val="groom"]');
+  await page.fill('#rPhone', '0912345678');
+  await page.click('#cardRow .choice[data-val="none"]');
+  await page.click('#giftRow .choice[data-val="pickup"]');
+  await page.click('#submitBtn');
+  await page.waitForTimeout(2000);
+
+  const snap = await adb.collection('sites').doc(siteIds[SLUG])
+    .collection('rsvps').orderBy('createdAt', 'desc').limit(1).get();
+  const d = snap.docs[0].data();
+
+  ok('primaryEventId 指向婚宴', d.primaryEventId === 'ev_reception', d.primaryEventId);
+  ok('events 只有需要回覆的三場',
+    Object.keys(d.events).sort().join(',') === 'ev_ceremony,ev_party,ev_reception',
+    Object.keys(d.events).sort().join(','));
+  ok('證婚存成不參加',
+    d.events.ev_ceremony.going === false && d.events.ev_ceremony.count === 0);
+  ok('婚宴存成 4 位、素 1',
+    d.events.ev_reception.going === true && d.events.ev_reception.count === 4
+      && d.events.ev_reception.veg === 1,
+    JSON.stringify(d.events.ev_reception));
+  ok('婚宴的飲食補充存在那一場裡',
+    d.events.ev_reception.note === '不吃牛', d.events.ev_reception.note);
+  ok('派對存成 2 位、接駁選了「需要」',
+    d.events.ev_party.going === true && d.events.ev_party.count === 2
+      && d.events.ev_party.answers.q_shuttle === 'yes',
+    JSON.stringify(d.events.ev_party));
+
+  /* ★ 鏡像：頂層欄位講的是主要活動 —— 這是相容性的地基 */
+  ok('頂層 attending／人數／葷素是婚宴的鏡像',
+    d.attending === true && d.guestCount === 4 && d.mealMeat === 3 && d.mealVeg === 1,
+    JSON.stringify({ a:d.attending, n:d.guestCount, m:d.mealMeat, v:d.mealVeg }));
+  ok('頂層兒童椅也是婚宴那一場的', d.childSeat === 1, String(d.childSeat));
+  ok('頂層飲食補充也是婚宴那一場的', d.dietaryNote === '不吃牛', d.dietaryNote);
+  ok('共用的那幾題照舊存進去',
+    d.name === '林多場' && d.relation === 'groom'
+      && d.contactPhone === '0912345678' && d.cardType === 'none',
+    JSON.stringify({ n:d.name, r:d.relation, p:d.contactPhone, c:d.cardType }));
+
+  /* 感謝畫面逐條列出 */
+  ok('感謝畫面列出每一場的答案',
+    (await page.locator('#tkEvents .tk-ev').count()) === 3,
+    String(await page.locator('#tkEvents .tk-ev').count()));
+  ok('感謝畫面上婚宴寫著 4 位',
+    (await page.locator('#tkEvents .tk-ev').nth(1).innerText()).includes('4 位'),
+    (await page.locator('#tkEvents .tk-ev').nth(1).innerText()).replace(/\n/g, ' '));
+
+  /* 回訪：整份帶回畫面 */
+  await page.reload({ waitUntil:'domcontentloaded' });
+  await page.waitForFunction(() => !!document.getElementById('thanksCard'),
+    null, { timeout:20000 });
+  await page.click('#editBtn');
+  await page.waitForTimeout(400);
+  ok('回訪時每一場的答案都帶回來',
+    (await page.locator('.ev-card.is-done').count()) === 3,
+    String(await page.locator('.ev-card.is-done').count()));
+  ok('回訪時人數也帶回來',
+    (await page.locator('.ev-card').nth(1).locator('[data-ev-ans]').innerText())
+      === '會參加・4 位',
+    await page.locator('.ev-card').nth(1).locator('[data-ev-ans]').innerText());
+
+  ok('多活動表單無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+
+{
+  /* ---- 邀請函的資訊列 ＋ 大廳 ---- */
+  const { page } = await visit(`/w/${SLUG}/invitation`);
+  const inv = await page.evaluate(() => ({
+    rows: [...document.querySelectorAll('.inv-ev .ir-label')].map((e) => e.textContent),
+    hasVenueRow: !!document.getElementById('venueRow'),
+    maps: document.querySelectorAll('.inv-ev .ir-jump').length,
+  }));
+  ok('邀請函資訊列變成四列活動（含文訂）',
+    inv.rows.join(',') === '文訂,證婚,婚宴,派對', inv.rows.join(','));
+  ok('原本那一列「地點」不見了', !inv.hasVenueRow);
+  /* 地址留白時沿用既有規則：拿場地名去搜 Google Maps
+     （見 invitation.js 原本的 renderVenue），所以「女方家」那一場也有一顆 */
+  ok('每個有地點的活動各有一個地圖連結', inv.maps === 4, String(inv.maps));
+  await page.close();
+
+  const lob = await visit(`/w/${SLUG}/`);
+  await lob.page.evaluate(() => {
+    const g = document.getElementById('gate');
+    if(g) g.remove();
+  });
+  const lobby = await lob.page.evaluate(() => ({
+    rows: [...document.querySelectorAll('.info-ev .ir-label')].map((e) => e.textContent),
+    hasTimeRow: !!document.getElementById('infoTimeRow'),
+    hasVenueRow: !!document.getElementById('infoVenueRow'),
+    hasMapBtn: !!document.getElementById('mapBtn'),
+    cdTarget: document.getElementById('cdTarget')?.textContent || '',
+    dateRowHidden: document.getElementById('infoDate')?.closest('.info-row')?.hidden,
+  }));
+  ok('大廳資訊卡也列出四個活動',
+    lobby.rows.join(',') === '文訂,證婚,婚宴,派對', lobby.rows.join(','));
+  ok('原本的「時間」「地點」兩列不見了',
+    !lobby.hasTimeRow && !lobby.hasVenueRow);
+  ok('全域那顆「開啟地圖」拿掉了（每個活動各有一顆）', !lobby.hasMapBtn);
+  ok('跨日活動時最上面那列日期收起來', lobby.dateRowHidden === true);
+  ok('倒數寫明是哪一場', lobby.cdTarget.startsWith('婚宴・'), lobby.cdTarget);
+  await lob.page.close();
+}
+
+{
+  /* ---- 後台：各活動統計、名單欄位、CSV ---- */
+  const { page, errors } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  await page.waitForTimeout(1200);
+
+  ok('總覽長出「各活動出席統計」', await page.isVisible('#adEvStats'));
+  const stats = await page.evaluate(() =>
+    [...document.querySelectorAll('#adEvStats tbody tr')].map((tr) =>
+      [...tr.children].map((td) => td.textContent.trim().replace(/\s+/g, ' '))));
+  ok('統計表三列（文訂不需要回覆，不在裡面）', stats.length === 3,
+    String(stats.length));
+  /* 這個站台在前面的測試已經累積了幾筆舊回覆（沒有 events），
+     所以比的是「各場算出來不一樣」這件事，不是某個絕對值 */
+  const num = (r, i) => Number(String(r[i]).replace(/[^0-9]/g, '')) || 0;
+  ok('婚宴那一列把剛才那 4 位算進去了',
+    stats[1][0].startsWith('婚宴') && num(stats[1], 4) >= 4, stats[1].join(' | '));
+  ok('證婚是「不出席」，婚宴是「已確認」—— 各場獨立計算',
+    num(stats[0], 3) >= 1 && num(stats[0], 1) === 0 && num(stats[1], 1) >= 1,
+    `${stats[0].join(' | ')}　／　${stats[1].join(' | ')}`);
+  ok('舊回覆落在「待回覆」而不是「不出席」',
+    num(stats[0], 2) >= 1, stats[0].join(' | '));
+  ok('三個桶子加起來每一場都一樣（＝總回覆筆數）',
+    new Set(stats.map((r) => num(r, 1) + num(r, 2) + num(r, 3))).size === 1,
+    stats.map((r) => num(r, 1) + num(r, 2) + num(r, 3)).join(','));
+
+  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="replies"]');
+  await page.waitForTimeout(400);
+  const heads = await page.locator('#adRsvpList thead th').allInnerTexts();
+  ok('名單多出每個活動一欄',
+    heads.includes('證婚') && heads.includes('婚宴') && heads.includes('派對'),
+    heads.join(','));
+  const row = await page.locator('#adRsvpList tbody tr').first().allInnerTexts();
+  ok('那幾欄的值是 ✓／✗',
+    row.join('|').includes('✗') && row.join('|').includes('✓ 4'),
+    row.join('|').slice(0, 90));
+
+  ok('後台多活動無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+
+{
+  /* ---- 只剩一個活動時，賓客那一頁要回到原本的表單 ---- */
+  await adb.collection('sites').doc(siteIds[SLUG]).update({
+    multiEventEnabled: false, events: [],
+  });
+  const { page } = await visit(`/w/${SLUG}/invitation`);
+  await page.evaluate(() => LS.remove('rsvp.mine'));
+  await page.reload({ waitUntil:'domcontentloaded' });
+  await page.waitForFunction(() => !!document.getElementById('rsvpForm'),
+    null, { timeout:20000 });
+  ok('回到原本那份表單：沒有活動卡',
+    (await page.locator('.ev-card').count()) === 0);
+  ok('「能來參加嗎」回來了', (await page.locator('#attendRow').count()) === 1);
+  ok('人數／葷素回到共用區', (await page.locator('#detailBox').count()) === 1);
+  ok('資訊列也回到原本的「地點」那一列',
+    (await page.locator('#venueRow').count()) === 1
+      && (await page.locator('.inv-ev').count()) === 0);
+  await page.close();
+}
+
 /* ---------- 不存在的 slug ---------- */
 console.log('\n[7] 不存在的 slug');
 {

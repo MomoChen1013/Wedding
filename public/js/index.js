@@ -263,15 +263,75 @@ setText('infoTime',  W.time || '');
 setText('infoVenue', [W.city, W.venue].filter(Boolean).join('　'));
 setText('infoAddr',  W.address || '');
 
+/* ---------- 多活動：時間與地點兩列換成一組活動列 ----------
+   一個活動一列、各自的地點與地圖連結，這就是「不限制地址數量」
+   在大廳的長相。單一活動（＝目前全部的站台）走的還是上面那兩列。
+
+   ★ 不需要回覆的活動（文訂、迎娶）也照樣列出來 ——
+     大廳講的是「這場婚禮有哪些事」，不是「你要回覆什麼」。 */
+const lobbyEvents = typeof weddingEvents === 'function' ? weddingEvents() : [];
+const lobbyMulti = lobbyEvents.length > 1;
+
+if(lobbyMulti){
+  const timeRow  = document.getElementById('infoTimeRow');
+  const venueRow = document.getElementById('infoVenueRow');
+  const dateRow  = document.getElementById('infoDate')?.closest('.info-row');
+
+  /* 全部同一天才在最上面留那一列日期，各活動只寫時間；
+     跨日（文訂在前一個月）就收掉，每一列自己寫完整日期 */
+  const sameDay = lobbyEvents.every(e => e.date)
+    && new Set(lobbyEvents.map(e => e.date)).size === 1;
+  if(dateRow && !sameDay) dateRow.hidden = true;
+
+  const html = lobbyEvents.map(ev => {
+    const w = eventWhen(ev);
+    const when = sameDay
+      ? w.range
+      : [w.md ? `${w.md}${w.wdTw ? `（${w.wdTw}）` : ''}` : '', w.range]
+          .filter(Boolean).join(' ');
+    const map = eventMapUrl(ev);
+    const addr = ev.address && ev.address !== ev.venueName ? ev.address : '';
+    return `<div class="info-row info-ev">
+      <div class="ir-label">${escapeHtml(ev.name)}</div>
+      <div class="ir-body">
+        ${when ? `<div class="ir-val ir-when">${escapeHtml(when)}</div>` : ''}
+        ${ev.venueName ? `<div class="ir-val">${escapeHtml(ev.venueName)}</div>` : ''}
+        ${addr ? `<div class="ir-sub">${escapeHtml(addr)}</div>` : ''}
+        ${map ? `<a class="ir-jump" href="${escapeHtml(map)}" target="_blank"
+                    rel="noopener noreferrer">開啟地圖 →</a>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  /* 直接插成 .info-rows 的兄弟，不另外包一層容器 ——
+     包起來的話 .info-row:first-child 的 border-top 判斷會跑掉 */
+  if(timeRow){
+    timeRow.insertAdjacentHTML('beforebegin', html);
+    timeRow.remove();
+  }
+  if(venueRow) venueRow.remove();
+}
+
 /* ---------- 日期倒數 ---------- */
 startCountdown(document.getElementById('cdGrid'), W.dateISO, 'grid');
-setText('cdTarget', W.date ? `${W.date}（${W.weekday || ''}）${W.time || ''}` : '');
+/* 倒數永遠對著主要活動（婚宴）。多活動時要寫出是哪一場，
+   不然賓客會不知道這個數字在數什麼 */
+const cdName = lobbyMulti
+  ? (typeof primaryEvent === 'function' ? (primaryEvent()?.name || '') : '') : '';
+setText('cdTarget', W.date
+  ? `${cdName ? cdName + '・' : ''}${W.date}（${W.weekday || ''}）${W.time || ''}` : '');
 
 /* ---------- 地圖連結 ---------- */
 const mapBtn = document.getElementById('mapBtn');
 if(mapBtn){
-  const q = encodeURIComponent(W.address || W.venue || '');
-  mapBtn.href = W.mapUrl || `https://www.google.com/maps/search/?api=1&query=${q}`;
+  /* 多活動時每個活動各有一顆「開啟地圖」，全域這一顆就沒有意義了 ——
+     留著只會讓人問「這是哪一個地點的地圖」 */
+  if(lobbyMulti){
+    mapBtn.remove();
+  }else{
+    const q = encodeURIComponent(W.address || W.venue || '');
+    mapBtn.href = W.mapUrl || `https://www.google.com/maps/search/?api=1&query=${q}`;
+  }
 }
 
 /* ---------- 加入行事曆（Google 日曆）---------- */

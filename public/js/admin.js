@@ -1817,6 +1817,60 @@ function donutCard(chart){
     </figure>`;
 }
 
+/* ============================================================
+   各活動出席統計
+   ------------------------------------------------------------
+   多活動的重點就是這張表：**每個活動各自算 headcount**。
+   婚宴 126 人不代表證婚 126 人，也不代表派對 126 人。
+
+   三個桶子加起來等於總回覆筆數：
+     已確認   這一場明確說會來
+     待回覆   還沒回答這一場（新活動加上去之前就回覆過的舊資料也在這裡）
+     無法出席 這一場明確說不來
+   ★ 「沒回答」和「說不來」一定要分開：新人看到「待回覆 21」才知道
+     還要去催，看到「不出席 21」則會直接放棄。
+============================================================ */
+const evStatsEl = document.getElementById('adEvStats');
+
+function renderEventStats(){
+  if(!evStatsEl) return;
+  const rows = rsvpEvents().length > 1 ? DataStore.getEventStatsTable() : [];
+  if(!rows.length){ evStatsEl.hidden = true; evStatsEl.innerHTML = ''; return; }
+
+  const anyHeads = rows.some(r => r.event.askCount);
+  evStatsEl.hidden = false;
+  evStatsEl.innerHTML = `
+    <h3 class="ad-evstats-title">各活動出席統計</h3>
+    <p class="ad-evstats-note">
+      每一場各自計算。<b>待回覆</b>包含還沒回答這一場的人
+      （活動是後來才加的話，先前的回覆都會落在這裡）。
+    </p>
+    <div class="ad-tablewrap"><table class="ad-table ad-evstats-table">
+      <thead><tr>
+        <th class="is-name">活動</th>
+        <th class="is-num">已確認</th>
+        <th class="is-num">待回覆</th>
+        <th class="is-num">無法出席</th>
+        ${anyHeads ? '<th class="is-num">人數</th>' : ''}
+      </tr></thead>
+      <tbody>${rows.map(r => `
+        <tr>
+          <td class="is-name">
+            ${escapeHtml(r.event.name)}
+            <span class="ad-evstats-when">${escapeHtml(evWhenText(r.event) || '')}</span>
+          </td>
+          <td class="is-num">${r.yes}</td>
+          <td class="is-num${r.pending ? ' is-warn' : ''}">${r.pending}</td>
+          <td class="is-num">${r.no}</td>
+          ${anyHeads ? `<td class="is-num">${
+            r.event.askCount ? `${r.heads} 位` : '<span class="ad-td-empty">—</span>'}</td>` : ''}
+        </tr>`).join('')}
+      </tbody>
+    </table></div>`;
+  refreshScrollHints(evStatsEl);
+  evStatsEl.querySelectorAll('.ad-tablewrap').forEach(bindScrollHints);
+}
+
 function renderRsvpCharts(state){
   /* 載入中畫 skeleton，不要先畫五個空圓環 —— 那和「真的沒人回覆」長得一模一樣 */
   if(state === 'loading'){
@@ -1913,6 +1967,7 @@ function renderRsvps(){
     ? `<b>${head}</b> 位確定出席・共 <b>${total}</b> 筆回覆`
     : '還沒有人回覆');
   renderRsvpMeta(total);
+  renderEventStats();
   renderRsvpCharts(total ? '' : 'empty');
 
   const all = visibleRsvps();
@@ -2015,6 +2070,15 @@ function rsvpColumns(){
   };
 }
 
+/* 一筆回覆對某個活動的那一格。
+   ★ 「—」是「還沒回答這一場」，和「✗ 不來」是兩件事 —— 不能混成一個符號 */
+function evCellText(r, ev){
+  const res = eventResponse(r, ev.id);
+  if(!res || res.tentative) return '<span class="ad-td-empty">—</span>';
+  if(!res.going) return '<span class="ad-ev-no">✗</span>';
+  return ev.askCount ? `✓ ${res.count}` : '✓';
+}
+
 /* 空的格子畫一條短破折號，不要留成一片空白讓人以為是漏讀 */
 function td(html, cls){
   const c = cls ? ` class="${cls}"` : '';
@@ -2026,10 +2090,14 @@ function rsvpTableHtml(list){
 
   /* 姓名放第一欄並且 sticky：欄位多到一定會橫向捲，
      捲到「喜餅」那一欄時還看得到現在讀的是誰 */
+  /* 多活動時每個活動一欄（✓ 2／✗／—），
+     「出席回應」那一欄講的仍然是主要活動，維持既有語意 */
+  const evCols = rsvpEvents().length > 1 ? rsvpEvents() : [];
   const head = [
     '<th class="is-name">姓名</th>',
     col.tags ? `<th>標籤<button class="ad-th-link" type="button" id="adRsvpTagSetupHead">設定標籤</button></th>` : '',
     '<th>出席回應</th>',
+    ...evCols.map(ev => `<th class="is-num">${escapeHtml(ev.name)}</th>`),
     '<th>分類</th>',
     col.contact ? '<th>聯絡資訊</th>' : '',
     '<th class="is-num">人數</th>',
@@ -2090,6 +2158,7 @@ function rsvpTableHtml(list){
       <td class="is-name">${escapeHtml(`${r.icon || ''} ${r.name || '（沒有名字）'}`.trim())}</td>
       ${tagCell}
       <td><span class="ad-tag ad-tag-${st}">${RSVP_LABEL[st]}</span></td>
+      ${evCols.map(ev => `<td class="is-num">${evCellText(r, ev)}</td>`).join('')}
       ${td(escapeHtml(rsvpLabel('relation', r.relation)))}
       ${col.contact ? td(stack(contacts, [])) : ''}
       ${td(going ? String(Number(r.guestCount) || 1) : '', 'is-num')}
@@ -2170,6 +2239,26 @@ function rsvpDrawerHtml(r){
       ${rsvpDrawerRow('其他備註', escapeHtml(r.note || ''))}
       ${rsvpDrawerRow('填表時間', t ? escapeHtml(fmtTime(t)) : '時間未知')}
     </div>
+    ${rsvpEvents().length > 1 ? `<div class="ad-drawer-sec">
+      <div class="ad-drawer-sec-title">各活動出席</div>
+      <div class="ad-drawer-rows">${rsvpEvents().map(ev => {
+        const res = eventResponse(r, ev.id);
+        const ans = !res || res.tentative ? '尚未回覆'
+          : (res.going ? (ev.askCount ? `會參加・${res.count} 位` : '會參加') : '無法參加');
+        const extras = res && res.going ? [
+          ev.askMeal && res.veg ? `素食 ${res.veg} 位` : '',
+          res.note ? res.note : '',
+          ...ev.questions.map(q => {
+            const v = (res.answers || {})[q.id];
+            if(!v) return '';
+            const opt = (q.opts || []).find(o => o.id === v);
+            return `${q.label}：${opt ? opt.label : v}`;
+          }),
+        ].filter(Boolean) : [];
+        return rsvpDrawerRow(ev.name,
+          escapeHtml([ans, ...extras].join('\n')));
+      }).join('')}</div>
+    </div>` : ''}
     ${col.tags ? `<div class="ad-drawer-sec">
       <div class="ad-drawer-sec-title">標籤</div>
       <div class="ad-drawer-tags">${
@@ -2496,6 +2585,9 @@ function rsvpCsvColumns(){
     { key:'name',     label:'稱呼',        val:(r)=> r.name || '' },
     { key:'status',   label:'是否出席',    val:(r)=> RSVP_LABEL[DataStore.rsvpStatus(r)] },
     { key:'relation', label:'與新人關係',  val:(r)=> rsvpLabel('relation', r.relation) },
+    /* 多活動：每一場一欄出席、要問人數的再加一欄人數。
+       欄位定義與 scripts/export-rsvps.js 對齊，兩邊拿到的檔案格式一致。 */
+    ...evCsvColumns(),
     col.tags && { key:'tags', label:'標籤',
       val:(r)=> rsvpTagIds(r).map(guestTagName).join('／') },
     col.contact && { key:'phone', label:'電話', val:(r)=> r.contactPhone || '' },
@@ -2519,6 +2611,44 @@ function rsvpCsvColumns(){
     { key:'note', label:'其他備註', val:(r)=> r.note || '' },
     { key:'time', label:'回覆時間', val:(r)=> { const t = rsvpTime(r); return t ? fmtTime(t) : ''; } },
   ].filter(Boolean);
+}
+
+/* 多活動時多出來的那幾欄。單一活動回傳空陣列 ——
+   CSV 的欄位和改版前逐字相同。 */
+function evCsvColumns(){
+  const evs = rsvpEvents();
+  if(evs.length <= 1) return [];
+  const out = [];
+  evs.forEach(ev => {
+    out.push({ key:`ev_${ev.id}`, label:`${ev.name}・出席`, val:(r)=>{
+      const res = eventResponse(r, ev.id);
+      if(!res || res.tentative) return '尚未回覆';
+      return res.going ? '會參加' : '無法參加';
+    } });
+    if(ev.askCount){
+      out.push({ key:`ev_${ev.id}_n`, label:`${ev.name}・人數`, val:(r)=>{
+        const res = eventResponse(r, ev.id);
+        return res && res.going && !res.tentative ? res.count : '';
+      } });
+    }
+    if(ev.askMeal){
+      out.push({ key:`ev_${ev.id}_veg`, label:`${ev.name}・素食`, val:(r)=>{
+        const res = eventResponse(r, ev.id);
+        return res && res.going && !res.tentative ? res.veg : '';
+      } });
+    }
+    /* 單選題才進 CSV 的固定欄位；文字題也帶，只是不做統計 */
+    ev.questions.forEach(q => {
+      out.push({ key:`ev_${ev.id}_${q.id}`, label:`${ev.name}・${q.label}`, val:(r)=>{
+        const res = eventResponse(r, ev.id);
+        const v = res && res.answers ? res.answers[q.id] : '';
+        if(!v) return '';
+        const opt = (q.opts || []).find(o => o.id === v);
+        return opt ? opt.label : v;
+      } });
+    });
+  });
+  return out;
 }
 
 document.getElementById('adRsvpExport').addEventListener('click', async ()=>{
@@ -4648,8 +4778,74 @@ function evCardHtml(ev, i, total){
         <input type="checkbox" data-ev-field="requiresRsvp"${ev.requiresRsvp ? ' checked' : ''}>
         <span>需要賓客回覆<small>關起來的話，這個活動不會出現在出席表單裡</small></span>
       </label>
+
+      ${ev.requiresRsvp ? evQuestionsHtml(ev) : ''}
     </div>
   </div>`;
+}
+
+/* ---------- 這個活動的追加題目 ----------
+   型態只有「單選」與「文字」兩種，每個活動最多 3 題，一律選填。
+   刻意不做通用 form builder：規則語言檢查不了陣列裡的內容，
+   型態一開放就等於前端說什麼算什麼（見 SPEC 第 2 節）。 */
+function evQuestionsHtml(ev){
+  const qs = Array.isArray(ev.questions) ? ev.questions : [];
+  const rows = qs.map((q, qi) => `
+    <div class="ad-evq" data-evq="${qi}">
+      <div class="ad-evq-head">
+        <input class="ad-input ad-evq-label" type="text" maxlength="30"
+               data-evq-field="label" value="${escapeHtml(q.label || '')}"
+               placeholder="需要接駁車嗎？">
+        <select class="ad-input ad-evq-kind" data-evq-field="kind">
+          <option value="choice"${q.kind === 'choice' ? ' selected' : ''}>單選</option>
+          <option value="text"${q.kind === 'text' ? ' selected' : ''}>文字</option>
+        </select>
+        <button class="ad-del" type="button" data-evq-del aria-label="刪除這一題">刪除</button>
+      </div>
+      ${q.kind === 'text' ? `
+      <input class="ad-input ad-evq-hint" type="text" maxlength="30"
+             data-evq-field="hint" value="${escapeHtml(q.hint || '')}"
+             placeholder="提示文字（選填），例：需要素食兒童餐">`
+      : `
+      <div class="ad-evq-opts">
+        ${(q.opts || []).map((o, oi) => `
+        <div class="ad-evq-opt" data-evq-opt="${oi}">
+          <input class="ad-input" type="text" maxlength="20"
+                 data-evq-optlabel value="${escapeHtml(o.label || '')}"
+                 placeholder="選項${oi + 1}">
+          <button class="ad-del" type="button" data-evq-optdel
+                  aria-label="刪除這個選項">✕</button>
+        </div>`).join('')}
+        ${(q.opts || []).length < EVENT_OPT_MAX
+          ? `<button class="ad-edit ad-evq-optadd" type="button" data-evq-optadd>＋ 加一個選項</button>`
+          : ''}
+      </div>`}
+    </div>`).join('');
+
+  return `
+    <div class="ad-sub-sec ad-evq-sec">
+      <div class="ad-sub-sec-title">追加題目 <small>（最多 ${EVENT_QUESTION_MAX} 題，都是選填）</small></div>
+      <p class="ad-sub-sec-note">
+        只有這一場會問。單選的選項最多 ${EVENT_OPT_MAX} 個；文字題不做統計，
+        只出現在名單與匯出的 CSV 裡。
+      </p>
+      ${rows || '<div class="ad-evq-empty">還沒有追加題目</div>'}
+      ${qs.length < EVENT_QUESTION_MAX
+        ? '<button class="btn small ghost" type="button" data-evq-add>＋ 新增題目</button>'
+        : `<div class="ad-hint">已經到 ${EVENT_QUESTION_MAX} 題的上限了</div>`}
+    </div>`;
+}
+
+/* 選項存的是 id 不是文字 —— 新人日後改選項的字，已送出的作答還對得回來
+   （和賓客標籤同一個理由）。id 從第一次輸入的文字推導，推不出來就給流水號。 */
+function newOptId(label, used){
+  const base = String(label || '').trim().toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 20);
+  let id = base || `o${used.size + 1}`;
+  let n = 2;
+  while(used.has(id)){ id = `${base || 'o'}_${n++}`; }
+  used.add(id);
+  return id;
 }
 
 function renderEvents(){
@@ -4688,6 +4884,47 @@ if(evListEl){
       return;
     }
 
+    /* ---- 追加題目 ---- */
+    const ev0 = evDraft[i];
+    if(!Array.isArray(ev0.questions)) ev0.questions = [];
+
+    if(e.target.closest('[data-evq-add]')){
+      if(ev0.questions.length >= EVENT_QUESTION_MAX) return;
+      ev0.questions.push({
+        id: `q_${Math.random().toString(36).slice(2, 7)}`,
+        kind: 'choice', label: '', hint: '',
+        opts: [{ id:'o1', label:'' }, { id:'o2', label:'' }],
+      });
+      renderEvents();
+      return;
+    }
+    const qDel = e.target.closest('[data-evq-del]');
+    if(qDel){
+      ev0.questions.splice(Number(qDel.closest('[data-evq]').dataset.evq), 1);
+      renderEvents();
+      return;
+    }
+    const optAdd = e.target.closest('[data-evq-optadd]');
+    if(optAdd){
+      const q = ev0.questions[Number(optAdd.closest('[data-evq]').dataset.evq)];
+      if(q && q.opts.length < EVENT_OPT_MAX){
+        q.opts.push({ id: newOptId('', new Set(q.opts.map(o => o.id))), label:'' });
+        renderEvents();
+      }
+      return;
+    }
+    const optDel = e.target.closest('[data-evq-optdel]');
+    if(optDel){
+      const q = ev0.questions[Number(optDel.closest('[data-evq]').dataset.evq)];
+      if(q && q.opts.length > 1){
+        q.opts.splice(Number(optDel.closest('[data-evq-opt]').dataset.evqOpt), 1);
+        renderEvents();
+      }else{
+        toast('單選題至少要有一個選項', true);
+      }
+      return;
+    }
+
     if(e.target.closest('[data-ev-del]')){
       const ev = evDraft[i];
       /* 已經存好、而且已經有人回覆過的活動，刪掉之前要講清楚會怎麼樣。
@@ -4716,6 +4953,44 @@ if(evListEl){
   /* 欄位改動：型別換掉時，名稱與英文 kicker 留白的才跟著換 ——
      新人自己打過的字不能被覆蓋掉 */
   const onField = (e)=>{
+    /* 先處理追加題目的欄位（它們也在同一張卡裡） */
+    const qEl = e.target.closest('[data-evq-field], [data-evq-optlabel]');
+    if(qEl){
+      const qi = evIndexOf(qEl);
+      if(qi < 0) return;
+      const ev = evDraft[qi];
+      const q = ev.questions[Number(qEl.closest('[data-evq]').dataset.evq)];
+      if(!q) return;
+
+      const optEl = qEl.closest('[data-evq-opt]');
+      if(optEl){
+        const o = q.opts[Number(optEl.dataset.evqOpt)];
+        if(o){
+          o.label = qEl.value;
+          /* id 只在第一次有文字時定下來，之後改字不動 id ——
+             改一次名字就把已送出的作答對丟了才是真的糟 */
+          if(/^o\d+$/.test(o.id) && o.label.trim()){
+            o.id = newOptId(o.label, new Set(q.opts.filter(x => x !== o).map(x => x.id)));
+          }
+        }
+        syncEvDirty();
+        return;
+      }
+
+      const f = qEl.dataset.evqField;
+      if(f === 'kind'){
+        q.kind = qEl.value === 'text' ? 'text' : 'choice';
+        if(q.kind === 'choice' && !q.opts.length){
+          q.opts = [{ id:'o1', label:'' }, { id:'o2', label:'' }];
+        }
+        renderEvents();
+        return;
+      }
+      q[f] = qEl.value;
+      syncEvDirty();
+      return;
+    }
+
     const el = e.target.closest('[data-ev-field]');
     if(!el) return;
     const i = evIndexOf(el);
@@ -4724,6 +4999,7 @@ if(evListEl){
     const ev = evDraft[i];
 
     if(key === 'requiresRsvp'){ ev.requiresRsvp = el.checked; renderEvents(); return; }
+    void 0;
 
     if(key === 'type'){
       const before = EVENT_TYPES[ev.type] || EVENT_TYPES.custom;
@@ -4814,7 +5090,21 @@ document.getElementById('adEvSave')?.addEventListener('click', async ()=>{
     askMeal: ev.askMeal === true,
     askChildSeat: ev.askChildSeat === true,
     askDiet: ev.askDiet === true,
-    questions: Array.isArray(ev.questions) ? ev.questions : [],
+    /* 空題目、沒有選項的單選題直接丟掉 —— 賓客看到一題沒有選項的
+       單選只會卡住。清洗規則和 common.js 的 normalizeQuestion 一致。 */
+    questions: (Array.isArray(ev.questions) ? ev.questions : []).map(q => {
+      const label = String(q.label || '').trim().slice(0, 30);
+      if(!label) return null;
+      if(q.kind === 'text'){
+        return { id:q.id, kind:'text', label,
+                 hint:String(q.hint || '').trim().slice(0, 30), opts:[] };
+      }
+      const opts = (q.opts || [])
+        .map(o => ({ id:String(o.id || ''), label:String(o.label || '').trim().slice(0, 20) }))
+        .filter(o => o.id && o.label).slice(0, EVENT_OPT_MAX);
+      if(!opts.length) return null;
+      return { id:q.id, kind:'choice', label, hint:'', opts };
+    }).filter(Boolean).slice(0, EVENT_QUESTION_MAX),
   }));
 
   /* 主要活動的地點鏡像回站台文件：分享縮圖與大廳的既有欄位讀的是那一份 */
