@@ -26,7 +26,7 @@
 <link rel="stylesheet" href="/css/index.css">
 <link rel="stylesheet" href="/css/lobby-korean.css">
 </head>
-<body data-template="korean" data-page="lobby">
+<body data-template="korean" data-page="lobby" data-lobby="korean">
 
 <div class="bg-decor"></div>
 <canvas id="fx"></canvas>
@@ -273,25 +273,7 @@
   </div>
 </div>
 
-<!-- 版型自己的小事：把新人的照片放進 hero 的照片框。
-     素材優先序與 Classic 的固定背景相同（lobby → cover → Firestore 的封面），
-     等 site-context 宣告資料到齊（site:ready）才動手 -->
-<script>
-(function () {
-  function apply() {
-    var a = (window.SITE && window.SITE.assets) || {};
-    var W = window.WED || {};
-    var src = a.lobby || a.cover || W.coverImageUrl || '';
-    if (!src) return;
-    document.querySelectorAll('[data-photo="portrait"]').forEach(function (el) {
-      el.style.backgroundImage = 'url("' + src + '")';
-      el.classList.add('has-photo');
-    });
-  }
-  if (document.documentElement.dataset.siteReady === '1') apply();
-  else document.addEventListener('site:ready', apply);
-})();
-</script>
+<!-- 照片由 js/common.js 的 applyLobbyPhotos() 依 data-photo 填入 -->
 
 <!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與 js/index.js -->
 <script type="module" src="/js/site-context.js"></script>

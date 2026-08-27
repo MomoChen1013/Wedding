@@ -119,8 +119,10 @@ const TEMPLATES = {
      沒跑過 build-og 的站台落回 index.html（Classic 骨架＋版型色票）。
      其餘子頁全部共用，靠色票與字體換裝。 */
   'korean':        { label:'Korean Modern', lobbyFile:'lobby-korean.html',
+                     css:['/css/lobby-korean.css'],
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
   'forest':        { label:'Forest Botanical', lobbyFile:'lobby-forest.html',
+                     css:['/css/lobby-forest.css'],
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
 };
 const DEFAULT_TEMPLATE = 'classic';
@@ -137,7 +139,8 @@ function applyTemplate(name) {
      --primary），畫面會壞掉。 */
   const key = Object.hasOwn(TEMPLATES, name) ? name : DEFAULT_TEMPLATE;
   document.body.dataset.template = key;
-  for (const href of TEMPLATES[key].fonts || []) {
+  const t = TEMPLATES[key];
+  for (const href of [...(t.fonts || []), ...(t.css || [])]) {
     if (document.querySelector(`link[href="${href}"]`)) continue;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
@@ -145,6 +148,38 @@ function applyTemplate(name) {
     document.head.appendChild(link);
   }
   return key;
+}
+
+/* ---------- 大廳骨架：執行期換成版型自己的版面 ----------
+   korean／forest 的大廳結構跟 Classic 不一樣（照片被設計進版面／
+   照片就是整個畫面），光換 data-template 只會換到顏色與字體。
+
+   /w/{slug}/ 由 firebase.json rewrite 到 index.html，Hosting 不可能知道
+   這組新人的版型，所以只能在這裡補：抓版型自己的那份 HTML，
+   把 <body> 的內容整個換掉，之後才載入 common.js 與 index.js
+   —— 它們是在這一步之後才注入的，所以拿到的已經是新骨架。
+
+   ・build-og 產過的站台，命中的檔案本來就是對的（body 上有 data-lobby），
+     這時直接跳過，連 fetch 都不發
+   ・抓不到（網路不穩、檔案被改名）就維持 Classic 骨架 —— 顏色與字體
+     還是對的，只是版面不是專屬的，不會變成空白頁
+   ・模板裡的 <script> 用 innerHTML 塞進來不會執行，所以模板不放邏輯，
+     照片一律由 common.js 的 applyLobbyPhotos() 依 data-photo 處理 */
+async function swapLobbyLayout(templateKey) {
+  const file = TEMPLATES[templateKey].lobbyFile;
+  if (!file) return;                                   /* Classic 系列不用換 */
+  if (document.body.dataset.lobby === templateKey) return;  /* 已經是對的骨架 */
+
+  try {
+    const res = await fetch(`/${file}`, { cache: 'no-cache' });
+    if (!res.ok) return;
+    const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+    if (!doc.body || !doc.body.children.length) return;
+    document.body.innerHTML = doc.body.innerHTML;
+    document.body.dataset.lobby = templateKey;
+  } catch {
+    /* 維持 Classic 骨架 */
+  }
 }
 
 /* 開關代號 → 網址片段 */
@@ -426,6 +461,11 @@ async function boot() {
 
   /* 版型：越早套上，換色閃一下的時間越短，所以排在讀素材之前 */
   const template = applyTemplate(site.template);
+
+  /* 大廳再換一次骨架（korean／forest 的版面結構跟 Classic 不同）。
+     一定要排在載入 common.js／index.js 之前 —— 那兩支一載入就開始
+     抓 DOM，骨架換晚了它們會綁到舊節點上。 */
+  if (pageKey === 'lobby') await swapLobbyLayout(template);
 
   const assets = await loadAssets(loc.slug);
 

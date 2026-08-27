@@ -26,7 +26,7 @@
 <link rel="stylesheet" href="/css/index.css">
 <link rel="stylesheet" href="/css/lobby-forest.css">
 </head>
-<body data-template="forest" data-page="lobby">
+<body data-template="forest" data-page="lobby" data-lobby="forest">
 
 <div class="bg-decor"></div>
 <canvas id="fx"></canvas>
@@ -268,35 +268,7 @@
   </div>
 </div>
 
-<!-- 版型自己的小事：把新人的照片放進 hero 與兩條照片帶。
-     hero 用 lobby → cover，照片帶輪流用照片牆的前幾張，
-     等 site-context 宣告資料到齊（site:ready）才動手 -->
-<script>
-(function () {
-  function pick(list, i) {
-    var it = Array.isArray(list) && list[i];
-    return (it && (it.src || it)) || '';
-  }
-  function apply() {
-    var a = (window.SITE && window.SITE.assets) || {};
-    var W = window.WED || {};
-    var cover = a.lobby || a.cover || W.coverImageUrl || '';
-    var map = {
-      hero: cover,
-      story: pick(a.gallery, 0) || cover,
-      countdown: pick(a.gallery, 1) || cover,
-    };
-    document.querySelectorAll('[data-photo]').forEach(function (el) {
-      var src = map[el.dataset.photo];
-      if (!src) return;
-      el.style.backgroundImage = 'url("' + src + '")';
-      el.classList.add('has-photo');
-    });
-  }
-  if (document.documentElement.dataset.siteReady === '1') apply();
-  else document.addEventListener('site:ready', apply);
-})();
-</script>
+<!-- 照片由 js/common.js 的 applyLobbyPhotos() 依 data-photo 填入 -->
 
 <!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與 js/index.js -->
 <script type="module" src="/js/site-context.js"></script>
