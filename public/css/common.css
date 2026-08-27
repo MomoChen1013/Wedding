@@ -6,18 +6,44 @@
 ============================================================ */
 
 /* ============================================================
-   主題色票（右下角可即時切換）
+   版型色票
+   ------------------------------------------------------------
+   每一組 = 一個版型。由我們在 Firestore 的 sites.template 指定，
+   site-context.js 讀到之後寫進 <body data-template>。
+   賓客改不動，也沒有切換的入口 —— 這是幫這組新人挑好的樣子。
+   前四組是 Classic 的四種配色，後兩組是完整的版型（連字體一起換）。
 ============================================================ */
 :root{
+  /* ---- 版型的基色 ----------------------------------------------
+     半透明的線條、遮罩、陰影全部從 --ink-rgb 推導：換掉這一個值，
+     整套線與影就一起換過去，不必逐條改。
+     刻意保留各處原本不同的透明度（.18／.09／.88／.45…）——
+     那些是各自調過的，收成單一變數反而會壓平層次。 */
+  --ink-rgb:47,43,38;
+  --surface-rgb:255,255,255;
+
   --ink:#2f2b26;           /* 主要文字 */
   --ink-soft:#7c7267;      /* 次要文字 */
-  --line:rgba(47,43,38,.18);      /* 主線條 */
-  --line-soft:rgba(47,43,38,.09); /* 分隔線 */
-  --shadow:transparent;    /* 保留變數名稱，但全站不再有陰影 */
+  /* Classic 的線條刻意維持半透明：大廳的背景是一整張婚紗照，
+     半透明的線會跟著照片的明暗融進去，那是這一版特有的質感。
+     Korean／Forest 覆寫成定值（見下），線在哪裡都是同一條。 */
+  --line:rgba(var(--ink-rgb),.18);      /* 主線條 */
+  --line-soft:rgba(var(--ink-rgb),.09); /* 分隔線 */
+
+  /* ---- 面與反白 ----
+     --surface     卡片、輸入框的實底
+     --on-ink      壓在 ink 實心上的字（按鈕、已選中的選項）
+     --ink-hover   .btn hover：亮度往上挪一階，不是換一顆按鈕 */
+  --surface:#ffffff;
+  --on-ink:#ffffff;
+  --ink-hover:#413c35;
+  --ink-active:#232019;
+
+  --shadow:transparent;    /* 保留變數名稱，但賓客頁只有信封有陰影 */
   --radius:2px;
   --radius-sm:2px;
   --nav-h:54px;
-  --gold:#b39a6d; --gold-deep:#8e7748; --gold-soft:rgba(47,43,38,.14);
+  --gold-soft:rgba(var(--ink-rgb),.14);
   --font-display:'Noto Serif TC',serif;
   --font-body:'Noto Serif TC',serif;
   --font-hand:'Noto Serif TC',serif;
@@ -26,34 +52,165 @@
      只有後台會把它覆寫成 sans（見 admin.css 的雙軌字體）。 */
   --font-ui:var(--font-body);
 }
-/* 香檳金（預設） */
-body[data-theme="champagne"]{
+/* Classic 香檳金（預設） */
+body[data-template="classic"]{
   --primary:#b39a6d; --primary-deep:#8e7748; --primary-soft:#f3eee3;
   --secondary:#c0a87e; --accent:#b3a884; --sun:#e5d7ae;
   --bg1:#fbfaf7; --bg2:#f4f1ea;
   --card:#ffffff;
 }
-/* 霧玫瑰 */
-body[data-theme="blush"]{
+/* Classic 霧玫瑰 */
+body[data-template="classic-blush"]{
   --primary:#c28794; --primary-deep:#a4677a; --primary-soft:#f6ecee;
   --secondary:#cd9c94; --accent:#b39a6d; --sun:#e5d7ae;
   --bg1:#fcf9f9; --bg2:#f5eeee;
   --card:#ffffff;
 }
-/* 鼠尾草綠 */
-body[data-theme="sage"]{
+/* Classic 鼠尾草綠 */
+body[data-template="classic-sage"]{
   --primary:#8b9c7c; --primary-deep:#6d7f5f; --primary-soft:#ecf0e7;
   --secondary:#a5b298; --accent:#b39a6d; --sun:#e2dcb6;
   --bg1:#fafbf8; --bg2:#f0f3ec;
   --card:#ffffff;
 }
-/* 霧霾藍 */
-body[data-theme="dusk"]{
+/* Classic 霧霾藍 */
+body[data-template="classic-dusk"]{
   --primary:#8295ad; --primary-deep:#647890; --primary-soft:#eaeef3;
   --secondary:#9aacc0; --accent:#b39a6d; --sun:#e2dcb6;
   --bg1:#f9fafc; --bg2:#eef1f5;
   --card:#ffffff;
 }
+
+/* ============================================================
+   版型色票（Korean Modern／Forest Botanical）
+   ------------------------------------------------------------
+   上面四組只換 primary 與底色，骨架仍然是 Classic。
+   下面兩組是完整的版型：連 ink、line、surface、字體一起換掉，
+   所以整頁的個性會跟著變，不只是換一個重點色。
+   ・和 admin.css 的 body:is([data-page="admin"]) 特異性相同 (0,1,1)，
+     admin.css 後載入 → 後台永遠是它自己那一套，不受這裡影響。
+   ・線條改成定值：Classic 的線要融進背景照所以是半透明；
+     這兩版的內容區是實色底，定值的線在哪裡都是同一條。
+============================================================ */
+
+/* 韓系現代簡約 —— 近白的紙底、藏青的墨、霧藍作重音
+   ・底色比風格板再白一階（#f7f5f0 → #fbfaf8）：紙質紋理（見下方
+     的 --paper 層）是半透明疊上來的，底越白、紋理越乾淨
+   ・主色從近黑 #272725 改成藏青 #21284f：乾淨、細膩，
+     還帶一點可愛，但整體仍然成熟 */
+body[data-template="korean"]{
+  --ink-rgb:33,40,79;
+  --surface-rgb:255,255,255;
+  --ink:#21284f; --ink-soft:#757b8d;
+  --line:#dcd9d2; --line-soft:#e8e5de;
+  --surface:#ffffff;
+  --ink-hover:#2c3566; --ink-active:#141a38;
+  --primary:#a8b8c5; --primary-deep:#5c7085; --primary-soft:#eaeff3;
+  --secondary:#93a3b1; --accent:#a8b8c5; --sun:#dcd9d2;
+  --bg1:#fbfaf8; --bg2:#f3f1ec;
+  --card:#ffffff;
+}
+
+/* ------------------------------------------------------------
+   Korean／Forest 的字體：英文標題走 Cormorant Garamond，
+   中文自動落回 Noto Serif TC —— 不必為了中英混排改任何一行 HTML，
+   瀏覽器的字族 fallback 本來就是逐字處理的：
+   「Find Your Seat」是 Cormorant，「輸入名字」是 Noto Serif TC。
+
+   內文與 UI 改用 Noto Sans TC（風格板上的 BODY / UI）。
+   Classic 不受影響，它仍然是全站單一字族的明朝體。
+
+   字檔由 site-context.js 依版型注入，Classic 的站台不會多載這一份。
+------------------------------------------------------------ */
+body[data-template="korean"],
+body[data-template="forest"]{
+  --font-display:'Cormorant Garamond','Noto Serif TC',serif;
+  --font-body:'Noto Sans TC','Noto Sans',sans-serif;
+  --font-hand:'Noto Serif TC',serif;
+  --font-ui:'Noto Sans TC','Noto Sans',sans-serif;
+
+  /* Cormorant 的 x-height 比中文小一截，同樣字級擺在一起，
+     「Find Your Seat」會比它的中文副標還秀氣 —— 主標小於副標，階層是反的。
+     font-size-adjust 專門解這件事：它只縮放拉丁字，中文完全不動
+     （實測 CJK 在 0.42–0.58 之間寬度一格都沒變）。
+     0.54 ≈ 把 Cormorant 放大 17%，剛好接回中文的視覺重量，
+     又還留著它該有的纖細。
+     舊瀏覽器不支援就整條忽略，退回沒有調整的樣子，不會壞。 */
+  font-size-adjust:0.54;
+}
+
+/* 自然森林植物 —— 米色紙底、深林綠的墨、鼠尾草與樹皮作重音 */
+body[data-template="forest"]{
+  --ink-rgb:38,56,45;
+  --surface-rgb:251,249,242;
+  --ink:#26382d; --ink-soft:#68745c;
+  --line:#d9d5c6; --line-soft:#e6e2d5;
+  --surface:#fbf9f2;
+  --ink-hover:#354b3c; --ink-active:#16241b;
+  --primary:#a5ad94; --primary-deep:#6b5c49; --primary-soft:#e7e9dc;
+  --secondary:#8d9a7d; --accent:#806f5c; --sun:#c9c5b8;
+  --bg1:#f2efe5; --bg2:#e9e5d8;
+  --card:#fbf9f2;
+}
+
+/* ============================================================
+   版型的專屬層（Classic 完全不吃這一段）
+============================================================ */
+
+/* ---- korean：紙質紋理 ----
+   素材資料夾放一張 paper.jpg（可平鋪的淡色紋理），
+   common.js 會把它寫進 --paper，這一層才會出現；沒放就什麼都不畫。
+   multiply ＋ 低透明度：紋理是「摸得到的紙」，不是「看得到的圖」。
+   z-index 2 蓋在內容上、導覽列（950）與浮動控制（900）之下。 */
+body[data-template="korean"]::after{
+  content:'';position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:var(--paper,none);background-size:520px auto;
+  mix-blend-mode:multiply;opacity:.35;
+}
+
+/* ---- forest：hero 照片上疊很淡的森林綠 ----
+   Classic 的白紗換成帶綠意的紗。維持偏亮 —— 內容的墨色是深綠，
+   紗太深字就讀不動了；「很淡」才是對的。 */
+body[data-template="forest"] .site-bg::after{
+  background:linear-gradient(180deg,rgba(222,230,220,.50),rgba(206,217,204,.68));
+}
+body[data-template="forest"] .scene-bg::after{
+  background:rgba(233,238,229,.78);
+}
+
+/* ---- korean／forest：字級下限 ----
+   手機上也要讀得動：資訊性的字最小 12px，主要內文至少 14px。
+   純裝飾（SCROLL 提示、英文 ribbon、卡片編號、To／From）不在此列。
+   只掛在這兩個版型上，Classic 一個像素都不動。 */
+body:is([data-template="korean"],[data-template="forest"]) :is(
+  .lobby-hero .tag, .ir-label, .cd-lab, .lc-go, .icon-hint, .gate-sep,
+  .rf-req, .st-card-label, .st-mates-label, .st-letter-go, .st-lb-tip,
+  .draw-info-hint, .cv-hint, .tl-eyebrow, .tl-meta .when, .lb-body .lb-date,
+  .q-type, .q-legend, .q-verdict, .q-bar-badge, .step-dot .d-lb,
+  .wish-note .by, .wl-save-hint){
+  font-size:12px;
+}
+body:is([data-template="korean"],[data-template="forest"]) :is(
+  .inv-lead, .tl-meta .desc, .st-letter-text, .st-miss-body,
+  .q-intro, .q-bar-label, .card-desc, .rsvp-cta p,
+  .step-pane .step-hint, .gate-card .sub){
+  font-size:14px;
+}
+/* 流程時間軸的連接線：這兩版是實色底，線可以實一點，一定看得見 */
+body[data-template="korean"] .tl-dot{background:#c6c2ba;}
+body[data-template="forest"] .tl-dot{background:#c8c4b4;}
+
+/* ---- 植物線稿（由 common.js 注入，只有這兩個版型有） ----
+   korean 是一小枝、forest 是一支蕨葉；素材資料夾放 deco.png/svg
+   的話就用新人自己的圖，不畫預設線稿。 */
+.tpl-deco{position:absolute;pointer-events:none;z-index:1;}
+.tpl-deco svg,.tpl-deco img{width:100%;height:auto;display:block;}
+body[data-template="korean"] .tpl-deco{color:#9aa3b8;opacity:.85;}
+body[data-template="forest"] .tpl-deco{color:var(--secondary);opacity:.9;}
+.lobby-hero .tpl-deco{right:clamp(8px,6vw,72px);bottom:clamp(16px,6vh,56px);
+  width:clamp(64px,9vw,116px);}
+.scene-hero .tpl-deco{right:clamp(8px,5vw,64px);bottom:12px;
+  width:clamp(52px,7vw,92px);}
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html{scroll-behavior:smooth;}
@@ -101,14 +258,14 @@ body{
   object-fit:cover;object-position:center;display:block;}
 /* 壓一層薄紗，白字與線條在任何照片上都讀得清楚 */
 .site-bg::after{content:'';position:absolute;inset:0;
-  background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.78));}
+  background:linear-gradient(180deg,rgba(var(--surface-rgb),.62),rgba(var(--surface-rgb),.78));}
 .site-bg.is-empty::after{background:none;}
 
 /* ============================================================
    頂部導覽列（由 js/common.js 注入，每頁都有）
 ============================================================ */
 .site-nav{position:fixed;top:0;left:0;right:0;z-index:950;
-  background:rgba(255,255,255,.86);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  background:rgba(var(--surface-rgb),.86);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
   border-bottom:1px solid var(--line);}
 .site-nav[hidden]{display:none;}
 body.nav-off{padding-top:0;}
@@ -135,7 +292,7 @@ body.nav-off{padding-top:0;}
   border:1px solid var(--line);border-radius:50%;color:var(--primary-deep);}
 .nav-user-nm{max-width:7em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .nav-user-pop{position:absolute;top:calc(100% + 8px);right:0;min-width:180px;display:none;
-  background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:6px;}
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:6px;}
 .nav-user-pop.open{display:block;}
 .nav-user-pop a,
 .nav-user-pop button{display:block;width:100%;text-align:left;border:none;background:transparent;
@@ -164,18 +321,18 @@ body.nav-off{padding-top:0;}
 
 .btn{font-family:var(--font-ui);font-weight:500;font-size:15px;cursor:pointer;
   padding:14px 22px;border-radius:var(--radius);width:100%;letter-spacing:.14em;
-  color:#fff;background:var(--ink);border:1px solid var(--ink);
+  color:var(--on-ink);background:var(--ink);border:1px solid var(--ink);
   transition:background .18s ease-out,color .18s ease-out,border-color .18s ease-out;}
 /* hover 是「我知道你指到我了」，不是換一顆按鈕：
    原本深色實心 hover 會整顆翻成透明，那是最大幅度的視覺跳動 ——
    跟旁邊所有元件「微幅變深」的語彙完全相反。改成亮度往上挪一階。 */
-.btn:hover{background:#413c35;border-color:#413c35;color:#fff;}
-.btn:active{background:#232019;border-color:#232019;transform:translateY(.5px);}
+.btn:hover{background:var(--ink-hover);border-color:var(--ink-hover);color:var(--on-ink);}
+.btn:active{background:var(--ink-active);border-color:var(--ink-active);transform:translateY(.5px);}
 .btn:disabled{opacity:.35;cursor:not-allowed;}
 .btn.small{width:auto;padding:11px 20px;font-size:13.5px;}
 .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line);}
-.btn.ghost:hover{background:rgba(47,43,38,.035);border-color:var(--ink);color:var(--ink);}
-.btn.ghost:active{background:rgba(47,43,38,.07);}
+.btn.ghost:hover{background:rgba(var(--ink-rgb),.035);border-color:var(--ink);color:var(--ink);}
+.btn.ghost:active{background:rgba(var(--ink-rgb),.07);}
 
 .divider-div{height:40px;}
 
@@ -185,7 +342,7 @@ body.nav-off{padding-top:0;}
 .scene-bg{position:fixed;inset:0;z-index:-1;background-size:cover;background-position:center;
   opacity:0;transition:opacity .6s ease;pointer-events:none;}
 .scene-bg.show{opacity:1;}
-.scene-bg::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.72);}
+.scene-bg::after{content:'';position:absolute;inset:0;background:rgba(var(--surface-rgb),.72);}
 
 /* 每頁的標題區：固定 50vh */
 .scene-hero{height:50vh;min-height:280px;display:flex;flex-direction:column;
@@ -212,7 +369,7 @@ body.nav-off{padding-top:0;}
 .section-title .em{display:none;}
 .section-title small{font-weight:400;font-size:12.5px;color:var(--ink-soft);letter-spacing:.1em;}
 
-.cardbox{background:rgba(255,255,255,.9);border:1px solid var(--line);
+.cardbox{background:rgba(var(--surface-rgb),.9);border:1px solid var(--line);
   border-radius:var(--radius);padding:28px 26px;position:relative;}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0;}
 @media(max-width:760px){.grid2{grid-template-columns:1fr;}}
@@ -221,16 +378,16 @@ body.nav-off{padding-top:0;}
    悄悄話信件彈窗（祝福牆用；信件內容只有新人在後台讀得到）
 ============================================================ */
 .letter-modal{position:fixed;inset:0;z-index:1100;display:none;align-items:center;justify-content:center;
-  background:rgba(47,43,38,.4);padding:20px;}
+  background:rgba(var(--ink-rgb),.4);padding:20px;}
 .letter-modal.open{display:flex;}
-.letter-card{width:min(92vw,460px);background:#fff;border:1px solid var(--line);
+.letter-card{width:min(92vw,460px);background:var(--surface);border:1px solid var(--line);
   border-radius:var(--radius);padding:34px 28px 26px;position:relative;animation:pop .3s ease;}
 .letter-card h3{font-family:var(--font-display);font-weight:500;font-size:17px;
   color:var(--ink);text-align:center;letter-spacing:.2em;}
 .letter-card .ltip{font-size:12px;color:var(--ink-soft);text-align:center;margin:6px 0 20px;letter-spacing:.1em;}
 .letter-card textarea{width:100%;min-height:150px;padding:14px 16px;border:1px solid var(--line);
   border-radius:var(--radius);font-family:var(--font-body);font-size:15px;line-height:1.9;
-  color:var(--ink);outline:none;resize:vertical;background:#fff;}
+  color:var(--ink);outline:none;resize:vertical;background:var(--surface);}
 .letter-card textarea:focus{border-color:var(--ink);}
 .letter-actions{display:flex;gap:10px;margin-top:18px;}
 .letter-actions .btn{flex:1;}
@@ -253,32 +410,23 @@ body.nav-off{padding-top:0;}
   border-bottom:1px solid var(--line);}
 .ask-name .ask-input{width:100%;padding:13px 16px;border:1px solid var(--line);
   border-radius:var(--radius);font-family:var(--font-body);font-size:15px;
-  color:var(--ink);outline:none;background:#fff;text-align:center;letter-spacing:.1em;}
+  color:var(--ink);outline:none;background:var(--surface);text-align:center;letter-spacing:.1em;}
 .ask-name .ask-input:focus{border-color:var(--ink);}
 
 /* ============================================================
-   浮動控制：主題 + BGM（由 js/common.js 注入）
+   浮動控制：BGM（由 js/common.js 注入）
+   ・原本這裡還有一顆「換主題色」——版型改由 sites.template 決定，
+     賓客不再切換，所以那一顆與它的色點都拿掉了
 ============================================================ */
 .floating{position:fixed;right:18px;bottom:18px;z-index:900;
   display:flex;flex-direction:column;gap:10px;align-items:flex-end;}
 .fab{width:42px;height:42px;border-radius:50%;cursor:pointer;
-  background:rgba(255,255,255,.9);border:1px solid var(--line);color:var(--ink);
+  background:rgba(var(--surface-rgb),.9);border:1px solid var(--line);color:var(--ink);
   display:flex;align-items:center;justify-content:center;transition:border-color .2s,color .2s;}
 .fab:hover{border-color:var(--ink);}
 .fab svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.2;
   stroke-linecap:round;stroke-linejoin:round;}
 .fab.is-on{color:var(--primary-deep);border-color:var(--primary);}
-.theme-pop{display:none;background:#fff;border:1px solid var(--line);
-  padding:10px;border-radius:var(--radius);gap:10px;}
-.theme-pop.open{display:flex;}
-.theme-dot{width:22px;height:22px;border-radius:50%;cursor:pointer;
-  border:1px solid var(--line);transition:transform .2s;}
-.theme-dot:hover{transform:scale(1.12);}
-.t-champagne{background:#c9bb9c;}
-.t-blush{background:#d3a9b3;}
-.t-sage{background:#a8b79b;}
-.t-dusk{background:#a2b1c3;}
-
 /* 全畫面特效 canvas */
 #fx{position:fixed;inset:0;z-index:800;pointer-events:none;}
 

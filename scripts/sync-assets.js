@@ -15,6 +15,8 @@
        lobby.jpg              首頁固定背景（圖片）
        lobby.mp4              首頁固定背景（影片；放了就優先用影片）
        lobby-blur.jpg         大廳背景的模糊版（選填）
+       paper.jpg              korean 版型的紙質紋理（選填，可平鋪）
+       deco.png               korean／forest 的植物線稿（選填，透明底）
        bgm.mp3                背景音樂（沒放就用內建預設 public/audio/bgm.mp3）
        gallery/               照片牆
          01.jpg  02.jpg …
@@ -58,6 +60,11 @@ const SINGLE_FILES = {
   /* 社群分享縮圖的來源。沒放就由 build-og.js 沿用 cover，
      想讓分享出去的圖跟封面不一樣時才需要另外放 */
   share: 'share',
+  /* korean 版型的紙質紋理（可平鋪的淡色紋理；只有 korean 會用） */
+  paper: 'paper',
+  /* korean／forest 的植物線稿。沒放就用程式畫的預設線稿（會慢慢長出來）；
+     放了就用新人自己的圖（建議透明底 png 或 svg 線稿） */
+  deco: 'deco',
 };
 
 /* scripts/build-og.js 產生的檔案。
@@ -186,6 +193,7 @@ function describe(manifest) {
   for (const [key, label] of [
     ['cover', '封面'], ['lobby', '首頁背景圖'], ['lobbyVideo', '首頁背景影片'],
     ['lobbyBlur', '大廳模糊背景'], ['bgm', '背景音樂'],
+    ['paper', '紙質紋理'], ['deco', '植物線稿'],
   ]) {
     if (manifest[key]) bits.push(label);
   }

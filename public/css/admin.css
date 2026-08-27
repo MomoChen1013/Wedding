@@ -3061,7 +3061,7 @@ textarea.ad-inline-input{min-height:0;}
    ------------------------------------------------------------
    賓客頁吃 common.css 那一套：色票跟著新人選的主題色（champagne／
    blush／sage／dusk）走，圓角 2px。後台與收禮台不一樣 ——
-   它們是工作介面，data-theme 永遠寫死 champagne，不需要主題切換，
+   它們是工作介面，data-template 永遠寫死 classic，不跟著版型走，
    所以整組色票在這一層直接給定值。
 
    量過的對比（WCAG AA 需要 4.5:1，大字 3:1）：
@@ -3085,7 +3085,7 @@ textarea.ad-inline-input{min-height:0;}
 body:is([data-page="admin"],[data-page="butler"]){
   /* ---- 色票（自訂規範 §2.1）----
      賓客頁維持 common.css 那套會跟著主題色走的色票；後台與收禮台是
-     工作介面，永遠是 champagne（兩頁的 data-theme 都寫死），
+     工作介面，永遠是 classic（兩頁的 data-template 都寫死），
      所以這裡直接給定值，不再經過主題變數。 */
   --ink:#2f2b26;
   --ink-soft:#6a5e53;

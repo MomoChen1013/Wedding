@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Korean Modern｜大廳模板示範</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&family=Noto+Serif+TC:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="demo-photo.css">
+<style>
+/* ============================================================
+   Korean Modern — 照片被「設計」進版面裡
+   ------------------------------------------------------------
+   結構主張：沒有背景照。照片是版面中的一個物件，
+   和名字互相咬合 —— GINNY 在照片上緣之前落款，
+   ONE 壓過照片的左下角，日期收在最底的細線上。
+   主角是「編排」，照片是編排的一部分。
+
+   版面骨架：12 欄 grid ＋ 大量留白 ＋ 1px 線
+   內容區沒有卡片底色，靠線與間距分節（和 Classic 的白卡完全相反）
+============================================================ */
+:root{
+  --ground:#F7F5F0;
+  --ink:#272725;
+  --muted:#8D8A84;
+  --blue:#A8B8C5;
+  --line:#DCD9D2;
+  --line-soft:#E8E5DE;
+  --f-en:'Cormorant Garamond',Georgia,serif;
+  --f-cn:'Noto Serif TC',serif;
+  --f-ui:'Noto Sans TC','Noto Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  background:var(--ground);color:var(--ink);
+  font-family:var(--f-ui);font-weight:300;font-size:14.5px;line-height:1.95;
+  letter-spacing:.02em;-webkit-font-smoothing:antialiased;
+}
+.eyebrow{font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:var(--muted);}
+
+/* ---- 導覽：極細，靠右 ---- */
+.k-nav{position:fixed;top:0;left:0;right:0;z-index:90;
+  display:flex;align-items:center;gap:26px;padding:16px clamp(20px,5vw,64px);
+  background:rgba(247,245,240,.9);backdrop-filter:blur(8px);}
+.k-nav .brand{font-family:var(--f-en);font-size:17px;letter-spacing:.16em;margin-right:auto;white-space:nowrap;}
+.k-nav a{font-size:11px;letter-spacing:.2em;color:var(--muted);text-decoration:none;text-transform:uppercase;}
+.k-nav a:hover{color:var(--ink);}
+@media(max-width:640px){
+  .k-nav{gap:0;padding:14px 20px;}
+  .k-nav a{display:none;}
+}
+
+/* ============ HERO：名字與照片咬合 ============ */
+/* 版面骨架：名字是一根從上到下的柱子，照片橫切過它的右緣。
+   兩者互相壓過去（名字 z-index 高、mix-blend-mode:multiply），
+   再拉一條穿過照片後面的細線把兩件事鎖在同一個網格上。 */
+.k-hero{
+  position:relative;min-height:100svh;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:clamp(96px,12vw,150px) clamp(20px,5vw,64px) clamp(48px,7vw,90px);
+}
+.k-nameA,.k-nameB{
+  font-family:var(--f-en);font-weight:300;
+  font-size:clamp(50px,15.5vw,196px);line-height:.86;letter-spacing:.012em;
+  position:relative;z-index:3;mix-blend-mode:multiply;
+}
+.k-nameB{padding-left:clamp(20px,16vw,205px);}
+.k-mid{height:clamp(140px,25svh,230px);position:relative;}
+/* 穿過照片後面的水平線：把名字的左緣與照片鎖在同一條基準上 */
+.k-mid::before{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:var(--line);z-index:0;}
+/* 霧藍的重音：整頁唯一一塊填色，壓在線上 */
+.k-mid::after{content:'';position:absolute;left:0;top:calc(50% - 5px);width:clamp(56px,9vw,110px);
+  height:10px;background:var(--blue);z-index:2;}
+.k-photo{
+  position:absolute;z-index:1;
+  left:52%;top:50%;transform:translateY(-50%);
+  block-size:clamp(300px,58svh,520px);aspect-ratio:3/4;inline-size:auto;
+  border:1px solid var(--line);
+  background:
+    radial-gradient(13% 15% at 43% 50%,rgba(35,35,33,.74),transparent 62%),
+    radial-gradient(11.5% 14% at 55% 55%,rgba(74,72,66,.34),transparent 64%),
+    radial-gradient(30% 20% at 78% 16%,rgba(141,138,132,.22),transparent 70%),
+    radial-gradient(24% 16% at 88% 34%,rgba(141,138,132,.16),transparent 72%),
+    radial-gradient(58% 40% at 20% 8%,rgba(255,253,248,.98),transparent 64%),
+    radial-gradient(50% 40% at 12% 95%,rgba(247,245,240,.96),transparent 68%),
+    linear-gradient(158deg,#EAE4D9 0%,#D8D2C7 42%,#A8B8C5 74%,#8D8A84 100%);
+}
+.k-hero-meta{position:relative;z-index:3;margin-top:26px;padding-top:16px;
+  border-top:1px solid var(--line);max-width:20em;
+  display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;}
+.k-hero-meta .d{font-family:var(--f-en);font-size:16px;letter-spacing:.24em;}
+
+@media(max-width:900px){
+  .k-hero{padding-top:120px;min-height:auto;}
+  .k-nameA,.k-nameB{font-size:clamp(46px,14vw,86px);mix-blend-mode:normal;}
+  .k-nameB{padding-left:10px;}
+  .k-mid{height:auto;}
+  .k-mid::before,.k-mid::after{display:none;}
+  .k-photo{position:static;transform:none;inline-size:100%;block-size:auto;
+    aspect-ratio:4/5;margin:18px 0 22px;}
+}
+
+/* ============ 內容：編排式雙欄，沒有卡片底 ============ */
+.k-body{max-width:1080px;margin:0 auto;padding:0 clamp(20px,5vw,64px) 120px;}
+.k-sec{display:grid;grid-template-columns:180px 1fr;gap:clamp(20px,4vw,56px);
+  padding:clamp(38px,6vw,70px) 0;border-top:1px solid var(--line);}
+.k-sec-head .num{font-family:var(--f-en);font-size:13px;letter-spacing:.2em;color:var(--blue);display:block;margin-bottom:10px;}
+.k-sec-head .en{font-family:var(--f-en);font-size:22px;letter-spacing:.1em;display:block;}
+.k-sec-head .cn{font-family:var(--f-cn);font-size:13.5px;letter-spacing:.18em;color:var(--muted);margin-top:4px;display:block;}
+@media(max-width:760px){.k-sec{grid-template-columns:1fr;gap:22px;}}
+
+/* 日期塊：19 / SEP / 2026 ＋ 兩個時間點（沿用風格板的元件） */
+.k-datecard{display:flex;gap:clamp(18px,3vw,34px);align-items:stretch;margin-bottom:34px;}
+.k-bigdate{font-family:var(--f-en);text-align:center;line-height:1;padding-right:clamp(18px,3vw,34px);border-right:1px solid var(--line);}
+.k-bigdate .dd{font-size:clamp(38px,6vw,54px);display:block;}
+.k-bigdate .mm{font-size:13px;letter-spacing:.3em;display:block;margin-top:8px;}
+.k-bigdate .yy{font-size:13px;letter-spacing:.3em;display:block;color:var(--muted);margin-top:4px;}
+.k-times{display:flex;flex-direction:column;justify-content:center;gap:14px;}
+.k-times div span{display:block;}
+.k-times .t{font-family:var(--f-en);font-size:17px;letter-spacing:.08em;}
+.k-times .l{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);}
+
+.k-rows{display:flex;flex-direction:column;}
+.k-row{display:grid;grid-template-columns:5.5em 1fr;gap:18px;padding:14px 0;border-top:1px solid var(--line-soft);align-items:baseline;}
+.k-row:first-child{border-top:none;}
+.k-row .lab{font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);}
+.k-row .val{font-size:14.5px;}
+.k-row .sub{font-size:12.5px;color:var(--muted);margin-top:2px;}
+.k-row .jump{display:inline-block;margin-top:6px;font-size:11.5px;letter-spacing:.14em;color:var(--ink);
+  background:none;border:none;border-bottom:1px solid var(--blue);padding:0 0 2px;cursor:pointer;font-family:var(--f-ui);}
+
+.k-btn{display:inline-block;font-family:var(--f-ui);font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+  padding:13px 30px;border:1px solid var(--ink);color:var(--ink);background:transparent;text-decoration:none;cursor:pointer;}
+.k-btn:hover{background:var(--ink);color:var(--ground);}
+.k-btn.fill{background:var(--ink);color:var(--ground);}
+.k-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px;}
+
+/* 流程：左細線，時間用 Cormorant */
+.k-tl{display:flex;flex-direction:column;}
+.k-tl-item{display:grid;grid-template-columns:5.5em 1fr;gap:20px;padding:0 0 26px;position:relative;}
+.k-tl-item::before{content:'';position:absolute;left:calc(5.5em + 9px);top:12px;bottom:0;width:1px;background:var(--line);}
+.k-tl-item:last-child::before{display:none;}
+.k-tl-item::after{content:'';position:absolute;left:calc(5.5em + 7px);top:7px;width:5px;height:5px;border-radius:50%;
+  background:var(--blue);}
+.k-tl-time{font-family:var(--f-en);font-size:17px;letter-spacing:.1em;text-align:right;}
+.k-tl-t{font-size:14.5px;}
+.k-tl-d{font-size:12.5px;color:var(--muted);margin-top:3px;}
+
+.k-notes{display:grid;grid-template-columns:1fr 1fr;gap:clamp(20px,3vw,40px);}
+@media(max-width:640px){.k-notes{grid-template-columns:1fr;}}
+.k-note .lab{font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted);
+  padding-bottom:8px;border-bottom:1px solid var(--line);display:block;margin-bottom:12px;}
+.k-note p{white-space:pre-line;font-size:13.5px;line-height:2.05;}
+
+.k-story{font-family:var(--f-cn);font-weight:400;font-size:15px;line-height:2.35;white-space:pre-line;max-width:34em;}
+
+/* 倒數：一排 Cormorant 大字，只有細直線分隔 */
+.k-cd{display:flex;gap:0;}
+.k-cd .cd-unit{flex:1;padding:0 clamp(10px,2vw,22px);border-left:1px solid var(--line);}
+.k-cd .cd-unit:first-child{border-left:none;padding-left:0;}
+.k-cd .cd-num{font-family:var(--f-en);font-size:clamp(32px,6vw,52px);line-height:1;font-variant-numeric:tabular-nums;}
+.k-cd .cd-lab{font-size:10px;letter-spacing:.3em;color:var(--muted);margin-top:10px;}
+
+/* RSVP：唯一一塊用霧藍填色的地方 */
+.k-rsvp{background:var(--blue);padding:clamp(34px,5vw,54px);display:flex;flex-direction:column;align-items:flex-start;gap:14px;}
+.k-rsvp h3{font-family:var(--f-cn);font-weight:400;font-size:clamp(19px,2.6vw,24px);letter-spacing:.1em;}
+.k-rsvp p{font-size:13px;color:#3d4750;}
+.k-rsvp .k-btn{border-color:var(--ink);margin-top:8px;}
+
+/* Explore：編號清單，不是卡片牆 */
+.k-list{display:flex;flex-direction:column;}
+.k-item{display:grid;grid-template-columns:3em 1fr auto;gap:18px;align-items:baseline;
+  padding:20px 0;border-top:1px solid var(--line-soft);text-decoration:none;color:var(--ink);transition:padding-left .2s;}
+.k-item:first-child{border-top:none;}
+.k-item:hover{padding-left:8px;}
+.k-item .n{font-family:var(--f-en);font-size:13px;letter-spacing:.16em;color:var(--muted);}
+.k-item .t{font-family:var(--f-cn);font-weight:400;font-size:16px;letter-spacing:.08em;}
+.k-item .s{display:block;font-size:12.5px;color:var(--muted);margin-top:3px;}
+.k-item .g{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+.k-item .flag{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--blue);margin-left:8px;vertical-align:middle;}
+
+.k-foot{border-top:1px solid var(--line);padding:34px 0 0;margin-top:20px;
+  font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);}
+</style>
+</head>
+<body data-template="korean-modern">
+
+<nav class="k-nav">
+  <span class="brand" data-field="couple"></span>
+  <a href="#">Seating</a><a href="#">Wishes</a><a href="#">Letter</a>
+  <a href="#">Story</a><a href="#">Quiz</a>
+</nav>
+
+<!-- ============ HERO：照片被排進版面 ============ -->
+<header class="k-hero">
+  <h1 class="k-nameA" data-field="nameA"></h1>
+  <div class="k-mid">
+    <div class="k-photo ph"><span class="ph-note">couple portrait</span></div>
+  </div>
+  <h1 class="k-nameB" data-field="nameB"></h1>
+  <div class="k-hero-meta">
+    <span class="d" data-field="dateEn"></span>
+    <span class="eyebrow">Taipei</span>
+  </div>
+</header>
+
+<main class="k-body">
+
+  <!-- 婚禮資訊 -->
+  <section class="k-sec" data-section="info">
+    <div class="k-sec-head">
+      <span class="num">01</span>
+      <span class="en">Information</span>
+      <span class="cn">婚禮資訊</span>
+    </div>
+    <div>
+      <div class="k-datecard">
+        <div class="k-bigdate">
+          <span class="dd" data-field="dateDay"></span>
+          <span class="mm" data-field="dateMonthShort"></span>
+          <span class="yy" data-field="dateYear"></span>
+        </div>
+        <div class="k-times">
+          <div><span class="t">10:30</span><span class="l">Ceremony</span></div>
+          <div><span class="t">11:30</span><span class="l">Reception</span></div>
+        </div>
+      </div>
+      <div class="k-rows">
+        <template data-list="info">
+          <div class="k-row">
+            <div class="lab" data-field="label"></div>
+            <div>
+              <div class="val" data-field="value"></div>
+              <div class="sub" data-field="sub"></div>
+              <button class="jump" type="button" data-field="jump" data-jump="schedule"></button>
+            </div>
+          </div>
+        </template>
+      </div>
+      <div class="k-actions">
+        <a class="k-btn" href="#">Map</a>
+        <a class="k-btn" href="#">Calendar</a>
+        <a class="k-btn" href="#" data-field="seatCta"></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 當日流程 -->
+  <section class="k-sec" data-section="schedule">
+    <div class="k-sec-head">
+      <span class="num">02</span><span class="en">Schedule</span><span class="cn">當日流程</span>
+    </div>
+    <div class="k-tl">
+      <template data-list="schedule">
+        <div class="k-tl-item">
+          <div class="k-tl-time" data-field="time"></div>
+          <div>
+            <div class="k-tl-t" data-field="title"></div>
+            <div class="k-tl-d" data-field="desc"></div>
+          </div>
+        </div>
+      </template>
+    </div>
+  </section>
+
+  <!-- 小提醒 -->
+  <section class="k-sec" data-section="notes">
+    <div class="k-sec-head">
+      <span class="num">03</span><span class="en">Notes</span><span class="cn">出席前的小提醒</span>
+    </div>
+    <div class="k-notes">
+      <template data-list="notes">
+        <div class="k-note">
+          <span class="lab" data-field="label"></span>
+          <p data-field="text"></p>
+        </div>
+      </template>
+    </div>
+  </section>
+
+  <!-- 交通 -->
+  <section class="k-sec" data-section="transport">
+    <div class="k-sec-head">
+      <span class="num">04</span><span class="en">Access</span><span class="cn">交通資訊</span>
+    </div>
+    <div class="k-notes">
+      <template data-list="transport">
+        <div class="k-note">
+          <span class="lab" data-field="label"></span>
+          <p data-field="text"></p>
+        </div>
+      </template>
+    </div>
+  </section>
+
+  <!-- 故事 -->
+  <section class="k-sec" data-section="story">
+    <div class="k-sec-head">
+      <span class="num">05</span><span class="en">Our Story</span><span class="cn">關於我們這一路</span>
+    </div>
+    <p class="k-story" data-field="story"></p>
+  </section>
+
+  <!-- 倒數 -->
+  <section class="k-sec" data-section="countdown">
+    <div class="k-sec-head">
+      <span class="num">06</span><span class="en">Countdown</span><span class="cn">距離大日子還有</span>
+    </div>
+    <div class="k-cd" data-countdown>
+      <template>
+        <div class="cd-unit" data-unit>
+          <div class="cd-num" data-num></div>
+          <div class="cd-lab" data-label></div>
+        </div>
+      </template>
+    </div>
+  </section>
+
+  <!-- RSVP -->
+  <section class="k-sec" data-section="rsvp">
+    <div class="k-sec-head">
+      <span class="num">07</span><span class="en">R.S.V.P.</span><span class="cn">出席回覆</span>
+    </div>
+    <div class="k-rsvp">
+      <h3 data-field="rsvp.title"></h3>
+      <p data-field="rsvp.lead"></p>
+      <a class="k-btn" href="#" data-field="rsvp.cta"></a>
+    </div>
+  </section>
+
+  <!-- Explore -->
+  <section class="k-sec" data-section="explore">
+    <div class="k-sec-head">
+      <span class="num">08</span><span class="en">Explore</span><span class="cn">其他活動</span>
+    </div>
+    <div class="k-list">
+      <template data-list="explore">
+        <a class="k-item" href="#">
+          <span class="n" data-field="_index"></span>
+          <span>
+            <span class="t" data-field="title"></span><span class="flag" data-flag="custom"></span>
+            <span class="s" data-field="sub"></span>
+          </span>
+          <span class="g" data-field="go"></span>
+        </a>
+      </template>
+    </div>
+  </section>
+
+  <div class="k-foot" data-field="footer"></div>
+</main>
+
+<script src="demo-data.js"></script>
+<script src="lobby-mount.js"></script>
+</body>
+</html>

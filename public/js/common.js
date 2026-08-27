@@ -890,19 +890,6 @@ function askName(){
 }
 
 /* ============================================================
-   主題切換（記到 localStorage）
-============================================================ */
-function setTheme(t){
-  document.body.dataset.theme = t;
-  LS.set('theme', t);
-}
-function initTheme(){
-  const saved = LS.get('theme', 'champagne');
-  document.body.dataset.theme = saved;
-}
-initTheme();
-
-/* ============================================================
    全畫面特效 canvas（fireworksBurst / confettiRain / firecracker / goldFall / spawnFloat）
 ============================================================ */
 let fx, ctx, parts = [], fxRunning = false;
@@ -1260,25 +1247,15 @@ function syncNavUser(){
 }
 
 /* ============================================================
-   浮動控制（主題 / BGM）— 同樣由這裡注入，線條圖示、無 emoji
+   浮動控制（BGM）— 同樣由這裡注入，線條圖示、無 emoji
+   ・原本旁邊還有一顆「換主題色」：版型現在由 sites.template 決定
+     （見 site-context.js 的 TEMPLATES），賓客不再自己切換，所以拿掉了
 ============================================================ */
-const THEME_DOTS = [
-  ['champagne','香檳金'], ['blush','霧玫瑰'], ['sage','鼠尾草綠'], ['dusk','霧霾藍'],
-];
 function buildFloating(){
   if(document.querySelector('.floating')) return;
   const box = document.createElement('div');
   box.className = 'floating';
   box.innerHTML = `
-    <div class="theme-pop" id="themePop">
-      ${THEME_DOTS.map(([k,t]) =>
-        `<div class="theme-dot t-${k}" data-theme="${k}" title="${t}"></div>`).join('')}
-    </div>
-    <button class="fab" id="themeFab" type="button" title="換主題色" aria-label="換主題色">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17"/>
-      </svg>
-    </button>
     <button class="fab" id="bgmFab" type="button" title="播放背景音樂"
             aria-label="背景音樂" aria-pressed="false">
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -1322,6 +1299,161 @@ function applySceneBg(){
 }
 
 /* ============================================================
+   版型的植物線稿（korean／forest 才有；Classic 完全不注入）
+   ------------------------------------------------------------
+   ・korean → 一小枝（弧形細莖＋幾片小葉），forest → 一支蕨葉
+   ・線稿是迴圈生出來的，不手刻一長串 path
+   ・生長動畫：stroke-dash 讓每一筆從 0 畫到滿 —— 莖先走，
+     葉子一片一片跟上，像手繪一樣慢慢長出來，不是整棵突然出現。
+     捲到看得見才開始（IntersectionObserver），畫過就不再重畫。
+   ・prefers-reduced-motion：全站的 reduce 規則會把 transition 壓成
+     1ms，等於直接顯示完成的線稿，這裡不必再判斷一次
+   ・素材資料夾放了 deco.png／deco.svg 的話就用新人自己的圖，不畫預設
+============================================================ */
+function buildFernSvg(){
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 120 190');
+  svg.setAttribute('aria-hidden', 'true');
+
+  const stem = document.createElementNS(ns, 'path');
+  stem.setAttribute('d', 'M60 188 C 58 140, 54 90, 62 8');
+  stem.setAttribute('fill', 'none');
+  stem.setAttribute('stroke', 'currentColor');
+  stem.setAttribute('stroke-width', '1.1');
+  svg.appendChild(stem);
+
+  const leaves = 13;
+  for(let i = 0; i < leaves; i++){
+    const t = i / (leaves - 1);
+    const y = 178 - t * 158;
+    const x = 59 + t * 3;
+    const len = 34 * Math.sin(Math.PI * (0.18 + t * 0.72)) + 6;
+    for(const dir of [-1, 1]){
+      const leaf = document.createElementNS(ns, 'ellipse');
+      leaf.setAttribute('cx', String(x + dir * len * 0.5));
+      leaf.setAttribute('cy', String(y - len * 0.16));
+      leaf.setAttribute('rx', String(len * 0.5));
+      leaf.setAttribute('ry', String(3 + len * 0.09));
+      leaf.setAttribute('fill', 'none');
+      leaf.setAttribute('stroke', 'currentColor');
+      leaf.setAttribute('stroke-width', '0.9');
+      leaf.setAttribute('transform', `rotate(${dir * (24 + t * 14)} ${x} ${y})`);
+      /* 由下往上長：越上面的葉子越晚出來 */
+      leaf.dataset.order = String(1 + i * 2 + (dir > 0 ? 1 : 0));
+      svg.appendChild(leaf);
+    }
+  }
+  return svg;
+}
+
+function buildSprigSvg(){
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 120 150');
+  svg.setAttribute('aria-hidden', 'true');
+
+  const stem = document.createElementNS(ns, 'path');
+  stem.setAttribute('d', 'M28 146 C 42 108, 58 74, 92 14');
+  stem.setAttribute('fill', 'none');
+  stem.setAttribute('stroke', 'currentColor');
+  stem.setAttribute('stroke-width', '1');
+  svg.appendChild(stem);
+
+  const leaves = 7;
+  for(let i = 0; i < leaves; i++){
+    const t = (i + 1) / (leaves + 1);
+    /* 沿著莖的弧線取近似點就夠了，裝飾不用精準 */
+    const x = 28 + 40 * t * t + 26 * t;
+    const y = 146 - 130 * t;
+    const dir = i % 2 ? 1 : -1;
+    const len = 15 + 9 * Math.sin(Math.PI * t);
+    const leaf = document.createElementNS(ns, 'path');
+    leaf.setAttribute('d',
+      `M${x} ${y} q ${dir * len * 0.7} ${-len * 0.45} ${dir * len} ${-len * 0.1}` +
+      ` q ${-dir * len * 0.35} ${len * 0.4} ${-dir * len} ${len * 0.1} z`);
+    leaf.setAttribute('fill', 'none');
+    leaf.setAttribute('stroke', 'currentColor');
+    leaf.setAttribute('stroke-width', '0.9');
+    leaf.dataset.order = String(1 + i);
+    svg.appendChild(leaf);
+  }
+  return svg;
+}
+
+const DECO_STEM_MS = 1600;   /* 莖畫完的時間 */
+const DECO_LEAF_MS = 520;    /* 一片葉子的時間 */
+const DECO_GAP_MS  = 110;    /* 葉與葉之間的間隔 */
+
+function growDeco(svg){
+  const strokes = svg.querySelectorAll('path,ellipse');
+  strokes.forEach(el => {
+    /* display:none 的子樹（開場字幕期間的 #app）量不到長度，會直接 throw ——
+       量不到就不做生長動畫，線稿以完成狀態顯示，跟 reduced-motion 一樣 */
+    let len = 0;
+    try{ len = el.getTotalLength ? el.getTotalLength() : 0; }catch{ return; }
+    if(!len) return;
+    const order = +(el.dataset.order || 0);
+    /* 一定要帶 px：CSS 的 stroke-dashoffset 沒單位會被當成非法值整條丟掉，
+       computed 直接落回 0 —— 葉子就不是長出來，是跳出來 */
+    el.style.strokeDasharray  = `${len}px`;
+    el.style.strokeDashoffset = `${len}px`;
+    el.style.transition = `stroke-dashoffset ${order ? DECO_LEAF_MS : DECO_STEM_MS}ms ease-out`;
+    el.style.transitionDelay = order
+      ? `${Math.round(DECO_STEM_MS * 0.45 + order * DECO_GAP_MS)}ms`
+      : '0ms';
+  });
+  /* 初始狀態要先被瀏覽器「看過一次」，transition 才有起點可以走 ——
+     否則起點與終點擠進同一次 style flush，整棵直接跳出來。
+     讀一次版面強制 reflow，開始畫的那一步再包進 rAF 隔開一個 frame。 */
+  void svg.getBoundingClientRect();
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if(!e.isIntersecting) return;
+      io.unobserve(e.target);
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        e.target.querySelectorAll('path,ellipse')
+          .forEach(el => { el.style.strokeDashoffset = '0px'; });
+      }));
+    });
+  }, { threshold: 0.35 });
+  io.observe(svg);
+}
+
+function injectTemplateDeco(){
+  const template = document.body.dataset.template;
+  if(template !== 'korean' && template !== 'forest') return;
+
+  const hosts = document.querySelectorAll('.lobby-hero, .scene-hero');
+  if(!hosts.length) return;
+
+  const custom = (window.SITE && window.SITE.assets && window.SITE.assets.deco) || '';
+  hosts.forEach(host => {
+    if(host.querySelector('.tpl-deco')) return;
+    const box = document.createElement('div');
+    box.className = 'tpl-deco';
+    box.setAttribute('aria-hidden', 'true');
+    if(getComputedStyle(host).position === 'static') host.style.position = 'relative';
+    if(custom){
+      box.innerHTML = `<img src="${custom}" alt="">`;
+      host.appendChild(box);
+    }else{
+      const svg = template === 'forest' ? buildFernSvg() : buildSprigSvg();
+      box.appendChild(svg);
+      host.appendChild(box);
+      growDeco(svg);
+    }
+  });
+}
+
+/* korean 的紙質紋理：素材資料夾有 paper 才把變數寫上去，
+   common.css 的 body[data-template="korean"]::after 讀這個變數 */
+function applyPaperTexture(){
+  const paper = (window.SITE && window.SITE.assets && window.SITE.assets.paper) || '';
+  if(paper) document.body.style.setProperty('--paper', `url("${paper}")`);
+}
+
+/* ============================================================
    共用 UI 綁定（在每頁載入時呼叫一次）
 ============================================================ */
 function bindCommonUI(){
@@ -1340,16 +1472,6 @@ function bindCommonUI(){
   else buildSiteNav();
   buildFloating();
 
-  /* 主題切換 */
-  const themeFab = document.getElementById('themeFab');
-  const themePop = document.getElementById('themePop');
-  if(themeFab && themePop){
-    themeFab.addEventListener('click', ()=>themePop.classList.toggle('open'));
-    themePop.querySelectorAll('.theme-dot').forEach(dot=>{
-      dot.addEventListener('click', ()=>setTheme(dot.dataset.theme));
-    });
-  }
-
   /* BGM 按鈕 */
   const bgmFab = document.getElementById('bgmFab');
   if(bgmFab){
@@ -1359,6 +1481,10 @@ function bindCommonUI(){
   /* 場景背景照：用這組新人自己的素材
      ・沒有素材就維持純色底，不去要一張不存在的圖（以免 console 一堆 404） */
   applySceneBg();
+
+  /* korean／forest 版型專屬：紙質紋理 ＋ 會慢慢長出來的植物線稿 */
+  applyPaperTexture();
+  injectTemplateDeco();
 }
 
 /* 本檔由 site-context.js 動態注入，載入時 DOM 多半已經就緒 */

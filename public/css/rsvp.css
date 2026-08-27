@@ -27,7 +27,7 @@
 .field{position:relative;}
 .field input, .field textarea{
   width:100%;padding:14px 16px;border:1px solid var(--line);border-radius:var(--radius);
-  font-family:var(--font-body);font-size:15px;color:var(--ink);background:#fff;
+  font-family:var(--font-body);font-size:15px;color:var(--ink);background:var(--surface);
   outline:none;transition:.2s;line-height:1.8;
 }
 .field textarea{min-height:96px;resize:vertical;}
@@ -36,11 +36,11 @@
 /* ---- 選項 chip ---- */
 .choice-row{display:flex;gap:10px;flex-wrap:wrap;}
 .choice{flex:1 1 auto;min-width:96px;padding:14px 12px;border-radius:var(--radius);cursor:pointer;
-  border:1px solid var(--line);background:#fff;color:var(--ink-soft);
+  border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);
   font-family:var(--font-body);font-size:14px;letter-spacing:.1em;transition:.18s;}
 .choice.sm{padding:12px 10px;font-size:13.5px;min-width:80px;}
 .choice:hover{border-color:var(--ink);color:var(--ink);}
-.choice.on{border-color:var(--ink);background:var(--ink);color:#fff;}
+.choice.on{border-color:var(--ink);background:var(--ink);color:var(--on-ink);}
 
 /* ---- 條件展開的區塊 ----
    靠左邊一條線表示「這是上一題展開來的」，不再多包一層框 */
@@ -51,7 +51,7 @@
 /* ---- 數量 stepper ---- */
 .stepper{display:flex;align-items:center;gap:14px;}
 .st-btn{width:42px;height:42px;flex:0 0 42px;border-radius:var(--radius);border:1px solid var(--line);
-  background:#fff;color:var(--ink);font-size:20px;line-height:1;cursor:pointer;transition:.15s;}
+  background:var(--surface);color:var(--ink);font-size:20px;line-height:1;cursor:pointer;transition:.15s;}
 .st-btn:hover:not(:disabled){border-color:var(--ink);}
 .st-btn:active{opacity:.7;}
 .st-btn:disabled{opacity:.3;cursor:not-allowed;}
@@ -63,7 +63,7 @@
 .rf-split{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 @media(max-width:520px){.rf-split{grid-template-columns:1fr;}}
 .rf-split-item{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;
-  background:#fff;}
+  background:var(--surface);}
 .rf-split-name{display:block;font-size:12.5px;letter-spacing:.16em;color:var(--ink-soft);
   margin-bottom:10px;}
 .rf-split .stepper{gap:10px;}
@@ -85,7 +85,7 @@
 /* ---- 勾選框 ---- */
 .rf-check{display:flex;align-items:center;gap:10px;cursor:pointer;
   font-size:14px;letter-spacing:.06em;color:var(--ink);
-  border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;background:#fff;
+  border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;background:var(--surface);
   transition:border-color .2s;}
 .rf-check[hidden]{display:none;}
 .rf-check:hover{border-color:var(--ink);}
@@ -113,7 +113,7 @@
 
 /* ---- 回覆已關閉／已截止 ---- */
 .rf-closed{border:1px solid var(--line);border-radius:var(--radius);
-  background:rgba(255,255,255,.9);padding:30px 24px;text-align:center;
+  background:rgba(var(--surface-rgb),.9);padding:30px 24px;text-align:center;
   color:var(--ink-soft);font-size:14px;line-height:2;letter-spacing:.06em;}
 .rf-closed[hidden]{display:none;}
 

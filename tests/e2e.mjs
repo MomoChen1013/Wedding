@@ -236,7 +236,7 @@ console.log('\n[1] /w/chen-lin-0315/invitation');
   ok('邀請函不掛頂部導覽列',
     await page.evaluate(() => !document.getElementById('siteNav')
       && document.body.classList.contains('nav-off')));
-  ok('有共用的主題／音樂浮動控制', await page.isVisible('.floating'));
+  ok('有共用的音樂浮動控制', await page.isVisible('.floating'));
   ok('沿用共用的區塊標題樣式',
     await page.locator('.section-title').count() >= 3,
     String(await page.locator('.section-title').count()));

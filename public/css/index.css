@@ -145,14 +145,17 @@
 /* ---- 當日流程 ---- */
 .timeline{max-width:520px;margin:0 auto;}
 .tl-item{display:grid;grid-template-columns:5em 1px 1fr;gap:20px;align-items:start;}
-.tl-time{font-size:13px;color:var(--primary-deep);letter-spacing:.1em;text-align:right;padding-top:2px;}
+/* 時間（13px）與標題（15px）的第一行行盒統一成 24px：
+   兩邊的字才會坐在同一條線上，圓點再對準這條線的中心（12px）。
+   原本各吃 line-height 1.8 → 行盒 23.4 vs 27，時間會浮高半個字。 */
+.tl-time{font-size:13px;line-height:24px;color:var(--primary-deep);letter-spacing:.1em;text-align:right;}
 .tl-dot{position:relative;background:var(--line);}
-.tl-dot::before{content:'';position:absolute;top:7px;left:50%;transform:translate(-50%,-50%);
+.tl-dot::before{content:'';position:absolute;top:12px;left:50%;transform:translate(-50%,-50%);
   width:5px;height:5px;border-radius:50%;background:var(--ink);}
-.tl-item:first-child .tl-dot{top:7px;}
-.tl-item:last-child .tl-dot{height:7px;}
+.tl-item:first-child .tl-dot{top:12px;}
+.tl-item:last-child .tl-dot{height:12px;}
 .tl-content{padding-bottom:30px;}
-.tl-t{color:var(--ink);font-size:15px;}
+.tl-t{color:var(--ink);font-size:15px;line-height:24px;}
 .tl-d{font-size:13px;color:var(--ink-soft);margin-top:4px;line-height:1.9;}
 .tl-empty{color:var(--ink-soft);font-size:14px;text-align:center;padding:10px 0;}
 

@@ -1,0 +1,118 @@
+/* ============================================================
+   lobby-forest.css — Forest Botanical 版型的大廳（lobby-forest.html 專用）
+   ------------------------------------------------------------
+   疊在 common.css ＋ index.css 之後。結構主張：照片就是整個畫面 ——
+   hero 是滿版照片、白字直接壓上去，往下捲照片帶再滿版出現兩次
+   （故事、倒數），把這個主張重講一遍。內容區置中、草枝分隔線。
+   風格關鍵字：Forest / Organic / Quiet / Earthy。
+============================================================ */
+
+/* ---- Hero：滿版照片 ＋ 很淡的森林綠 tint ---- */
+.f-hero{position:relative;min-height:calc(100svh - var(--nav-h));overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+  gap:0;text-align:center;padding:0 24px clamp(48px,9vh,100px);}
+.f-hero-ph{position:absolute;inset:0;z-index:0;background-size:cover;background-position:center;
+  /* 還沒有照片時的示意底：直條樹影 ＋ 一道斜光 */
+  background-image:
+    linear-gradient(104deg,transparent 18%,rgba(228,222,188,.20) 33%,transparent 55%),
+    linear-gradient(91deg,transparent 0 5%,rgba(16,26,19,.5) 5% 9%,transparent 9% 18%,
+      rgba(16,26,19,.36) 18% 21%,transparent 21% 33%,rgba(16,26,19,.55) 33% 37%,
+      transparent 37% 52%,rgba(16,26,19,.3) 52% 55%,transparent 55% 70%,
+      rgba(16,26,19,.48) 70% 74%,transparent 74% 86%,rgba(16,26,19,.52) 86% 90%,transparent 90%),
+    linear-gradient(180deg,#37502F 0%,#22301F 60%,#141D16 100%);}
+.f-hero-ph.has-photo{background-image:none;} /* 換上真照片時由 inline style 接手 */
+/* 很淡的森林綠 overlay ＋ 底部壓暗（白字要壓在照片上，暗角負責可讀性） */
+.f-hero-tint{position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(38,56,45,.24) 0%,rgba(38,56,45,.18) 42%,rgba(14,22,17,.74) 100%);}
+.f-hero-body{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:0;}
+.f-hero .tpl-deco{z-index:2;color:rgba(255,255,255,.55);}
+
+.f-kicker{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;}
+.f-kicker .en{font-family:var(--font-display);font-size:12px;letter-spacing:.4em;
+  text-transform:uppercase;color:rgba(255,255,255,.85);}
+.f-kicker .cn{font-family:var(--font-hand);font-size:14px;letter-spacing:.3em;color:rgba(255,255,255,.92);}
+.f-names{font-family:var(--font-display);font-weight:300;color:#fff;
+  font-size:clamp(32px,8vw,78px);line-height:1.15;letter-spacing:.07em;
+  text-shadow:0 2px 26px rgba(10,16,12,.5);}
+.f-names .amp{font-style:italic;padding:0 .16em;}
+.f-date{margin-top:14px;font-size:clamp(12px,2.2vw,14px);letter-spacing:.34em;
+  color:rgba(255,255,255,.92);text-shadow:0 1px 14px rgba(10,16,12,.6);}
+.f-rule{width:1px;height:40px;background:rgba(255,255,255,.5);margin:22px auto 0;}
+.f-hero .hashtags{margin-top:16px;}
+.f-hero .hashtags .tag{border-color:rgba(255,255,255,.4);color:rgba(255,255,255,.85);font-size:12px;}
+.f-hero .scroll-cue{margin-top:14px;color:rgba(255,255,255,.72);}
+.f-hero .scroll-cue .arrow{background:rgba(255,255,255,.5);}
+
+/* ---- 內容：置中、草枝分隔線，收掉 Classic 的白卡 ---- */
+.f-body{max-width:860px;padding-bottom:0;}
+.f-sec{background:transparent;border:none;border-radius:0;backdrop-filter:none;
+  -webkit-backdrop-filter:none;margin-top:0;
+  padding:clamp(44px,7vw,76px) clamp(4px,2vw,20px) 0;text-align:center;}
+.f-sec[hidden]{display:none;}
+.f-sec-head{display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:30px;}
+.f-sec-head .en.block-title{font-family:var(--font-display);font-weight:400;
+  font-size:clamp(22px,3.6vw,30px);letter-spacing:.14em;text-transform:none;margin:0;color:var(--ink);}
+.f-sec-head .cn.block-sub{font-family:var(--font-hand);font-size:13px;letter-spacing:.26em;
+  color:var(--ink-soft);margin:0;}
+.f-sprig{display:flex;align-items:center;gap:10px;margin-top:10px;color:var(--secondary);}
+.f-sprig i{display:block;width:clamp(26px,6vw,52px);height:1px;background:currentColor;}
+.f-sprig b{width:5px;height:5px;border-radius:50%;background:currentColor;}
+
+/* 資訊卡：置中窄欄 */
+.f-sec .info-rows{max-width:440px;}
+.f-sec .info-actions .btn,.f-sec .info-seat .btn{
+  font-family:var(--font-ui);font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;}
+.f-sec .btn.ghost{border-color:var(--ink);color:var(--ink);}
+.f-sec .btn.ghost:hover{background:var(--ink);color:var(--on-ink);}
+
+/* 流程：display 字的時間、鼠尾草點 */
+.f-sec .tl-time{font-family:var(--font-display);font-size:16px;color:var(--ink);}
+.f-sec .tl-dot::before{background:var(--secondary);border-radius:50%;}
+
+/* ---- 滿版照片帶（故事、倒數） ---- */
+.f-band{position:relative;overflow:hidden;background:transparent;border:none;border-radius:0;
+  backdrop-filter:none;-webkit-backdrop-filter:none;margin-top:clamp(44px,7vw,76px);
+  padding:clamp(52px,9vw,96px) 24px;text-align:center;}
+.f-band[hidden]{display:none;}
+.f-band-ph{position:absolute;inset:0;z-index:0;background-size:cover;background-position:center;
+  background-image:
+    radial-gradient(60% 50% at 70% 30%,rgba(214,206,170,.24),transparent 66%),
+    repeating-linear-gradient(88deg,#213125 0 3.4%,#2C3F30 3.4% 6.8%),
+    linear-gradient(180deg,#31462F,#1A2620);}
+/* 帶上的森林綠遮罩：照片換了也照樣壓，白字永遠讀得清楚 */
+.f-band-ph::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(14,22,17,.52),rgba(14,22,17,.68));}
+.f-band-body{position:relative;z-index:1;color:#fff;}
+.f-band .band-title{font-family:var(--font-display);font-weight:300;
+  font-size:clamp(20px,3.4vw,28px);letter-spacing:.18em;margin-bottom:6px;}
+.f-band .band-sub{font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:rgba(255,255,255,.72);}
+.f-band .story-text{color:rgba(255,255,255,.94);max-width:30em;margin:22px auto 0;
+  font-family:var(--font-hand);}
+.f-band .cd-grid{margin:26px auto 0;}
+.f-band .cd-unit{border-left-color:rgba(255,255,255,.28);}
+.f-band .cd-num{color:#fff;}
+.f-band .cd-lab{color:rgba(255,255,255,.7);}
+.f-band .cd-target{color:rgba(255,255,255,.72);}
+.f-band .cd-msg{color:#fff;}
+
+/* ---- Explore：米色卡片、綠細線 ---- */
+.f-sec .link-grid{border:none;gap:14px;}
+.f-sec .link-card{text-align:left;background:var(--surface);border:1px solid var(--line);
+  transition:border-color .25s,transform .25s;}
+.f-sec .link-card:hover{background:var(--surface);color:var(--ink);border-color:var(--ink);
+  transform:translateY(-2px);}
+.f-sec .link-card:hover .lc-index{color:var(--secondary);}
+.f-sec .link-card:hover .lc-sub{color:var(--ink-soft);}
+.f-sec .link-card:hover .lc-go{color:var(--accent);}
+.f-sec .lc-index{color:var(--secondary);}
+.f-sec .lc-title{font-family:var(--font-hand);font-weight:400;font-size:16px;}
+.f-sec .lc-go{color:var(--accent);font-size:12px;}
+.f-sec .link-card:last-child:nth-child(odd){grid-column:auto;}
+@media(min-width:641px){.f-sec .link-card:last-child:nth-child(odd){grid-column:1/-1;}}
+
+/* RSVP 置中 */
+.f-sec .rsvp-cta .btn{width:auto;font-family:var(--font-ui);font-size:12.5px;
+  letter-spacing:.22em;text-transform:uppercase;}
+
+.f-body footer{margin-top:clamp(44px,7vw,76px);text-transform:uppercase;letter-spacing:.26em;}

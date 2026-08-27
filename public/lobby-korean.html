@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- 社群預覽文案：與 index.html 同一套備援，build-og 會針對站台換成專屬內容。
+     這一份是 korean 版型的大廳，由 build-og 依 sites.template 選用
+     （見 scripts/build-og.js 的 LOBBY_SRC）；沒跑過 build-og 的站台
+     仍然落在 index.html（Classic 骨架＋korean 色票）。 -->
+<title>我們結婚了｜婚禮邀請函</title>
+<meta name="description" content="誠摯邀請您一起見證我們的大喜之日・婚禮資訊、當日流程與互動小遊戲都在這裡">
+<meta property="og:title" content="我們結婚了｜婚禮邀請函">
+<meta property="og:description" content="誠摯邀請您一起見證我們的大喜之日・婚禮資訊、當日流程與互動小遊戲都在這裡">
+<meta property="og:type" content="website">
+
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- 這一份是 korean 專屬的靜態頁，字檔直接寫在 head（不等 applyTemplate 注入才要）。
+     網址要跟 site-context.js 的 TEMPLATES 一字不差，注入時才會 dedupe -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/css/index.css">
+<link rel="stylesheet" href="/css/lobby-korean.css">
+</head>
+<body data-template="korean" data-page="lobby">
+
+<div class="bg-decor"></div>
+<canvas id="fx"></canvas>
+
+<!-- ============ 入場：填名字 + 抽 icon（與 index.html 同一套，js/index.js 操作） ============ -->
+<div class="overlay" id="gate">
+  <div class="gate-card">
+    <div class="ribbon">We're getting married</div>
+    <h1>{{couple}}</h1>
+    <div class="sub">{{date}}・在進場前，先報上名來</div>
+    <div class="icon-pick" id="iconPick">✦</div>
+    <div class="icon-hint">這是你的專屬記號・<b id="rerollIcon">換一個</b></div>
+    <div class="field"><input id="nameInput" type="text" maxlength="12" placeholder="輸入你的名字"></div>
+    <button class="btn" id="enterBtn">進場觀禮</button>
+    <div class="gate-sep"><span>或</span></div>
+    <button class="btn btn-google" id="googleBtn" type="button">
+      <svg viewBox="0 0 18 18" aria-hidden="true">
+        <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.17-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.61z"/>
+        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.33A9 9 0 0 0 9 18z"/>
+        <path fill="#FBBC05" d="M3.96 10.71A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.17.28-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.04l3-2.33z"/>
+        <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 9 0 9 9 0 0 0 .96 4.96l3 2.33C4.67 5.16 6.66 3.58 9 3.58z"/>
+      </svg>
+      <span>用 Google 帳號登入</span>
+    </button>
+  </div>
+</div>
+
+<!-- 開場字幕 ＋ 開幕簾 ＋ 跳過（js/index.js 操作，缺一顆整頁會掛） -->
+<div class="overlay" id="intro"><div class="intro-line" id="introLine"></div></div>
+<div class="overlay" id="curtain">
+  <div class="curtain-panel left"></div>
+  <div class="curtain-panel right"></div>
+</div>
+<button class="intro-skip" id="introSkip" type="button" hidden>跳過</button>
+
+<!-- ============ 主畫面 ============ -->
+<div id="app">
+  <section class="panel lobby" data-panel="lobby">
+
+    <!-- ===== Hero：名字與照片咬合（照片是版面裡的物件，不是背景） ===== -->
+    <header class="lobby-hero k-hero">
+      <div class="k-pagetitle">
+        <span class="en">Invitation</span><i></i><span class="cn">邀請函</span>
+      </div>
+      <h1 class="k-name k-nameA">{{groom}}</h1>
+      <div class="k-mid">
+        <div class="k-photo" data-photo="portrait" aria-hidden="true"></div>
+      </div>
+      <h1 class="k-name k-nameB">{{bride}}</h1>
+      <div class="k-hero-meta">
+        <span class="d">{{date}}</span>
+        <span class="w">{{weekday}}</span>
+      </div>
+      <div class="hashtags" id="lobbyTags"></div>
+    </header>
+
+    <div class="scene-body k-body">
+
+      <!-- ===== 婚禮資訊 ===== -->
+      <section class="info-block k-sec" data-num>
+        <div class="k-sec-head">
+          <span class="num"></span>
+          <span class="en block-title">Information</span>
+          <span class="cn block-sub">婚禮資訊</span>
+        </div>
+        <div class="k-sec-body">
+          <div class="info-card">
+            <div class="info-couple" id="infoCouple">{{couple}}</div>
+            <div class="info-couple-cn" id="infoCoupleCn"></div>
+            <div class="info-rows">
+              <div class="info-row"><div class="ir-label">日期</div><div class="ir-body"><div class="ir-val" id="infoDate">—</div></div></div>
+              <div class="info-row"><div class="ir-label">時間</div><div class="ir-body"><div class="ir-val" id="infoTime">—</div>
+                <a class="ir-jump" id="infoTimeJump" href="#scheduleBlock" hidden>看當日流程 →</a></div></div>
+              <div class="info-row"><div class="ir-label">地點</div><div class="ir-body"><div class="ir-val" id="infoVenue">—</div><div class="ir-sub" id="infoAddr"></div>
+                <a class="ir-jump" id="infoVenueJump" href="#transportBlock" hidden>看交通資訊 →</a></div></div>
+            </div>
+            <div class="info-actions">
+              <a class="btn small ghost" id="mapBtn" href="#" target="_blank" rel="noopener">Map</a>
+              <a class="btn small ghost" id="calBtn" href="#" target="_blank" rel="noopener">Calendar</a>
+            </div>
+          </div>
+          <div class="info-seat" id="infoSeatCta">
+            <a class="btn" href="seating.html">尋找我的座位</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 當日流程 ===== -->
+      <section class="info-block k-sec" id="scheduleBlock" data-num>
+        <div class="k-sec-head">
+          <span class="num"></span>
+          <span class="en block-title">Schedule</span>
+          <span class="cn block-sub">當日流程</span>
+        </div>
+        <div class="k-sec-body"><div class="timeline" id="schedule"></div></div>
+      </section>
+
+      <!-- ===== 出席前的小提醒（沒填就整塊收起） ===== -->
+      <section class="info-block k-sec" id="noteBlock" data-num hidden>
+        <div class="k-sec-head">
+          <span class="num"></span>
+          <span class="en block-title">Notes</span>
+          <span class="cn block-sub">出席前的小提醒</span>
+        </div>
+        <div class="k-sec-body">
+          <div class="note-grid">
+            <div class="note-item" id="dressCodeItem" hidden>
+              <div class="note-label">Dress Code</div>
+              <p class="info-note" id="dressCode"></p>
+            </div>
+            <div class="note-item" id="giftNoteItem" hidden>
+              <div class="note-label">關於禮金</div>
+              <p class="info-note" id="giftNote"></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 交通資訊 ===== -->
+      <section class="info-block k-sec" id="transportBlock" data-num hidden>
+        <div class="k-sec-head">
+          <span class="num"></span>
+          <span class="en block-title">Access</span>
+          <span class="cn block-sub">交通資訊</span>
+        </div>
+        <div class="k-sec-body">
+          <div class="note-grid">
+            <div class="note-item" id="transportPublicItem" hidden>
+              <div class="note-label">大眾運輸</div>
+              <p class="info-note" id="transportPublic"></p>
+              <button class="ir-jump" id="transportPublicMore" type="button" hidden>展開更多 →</button>
+            </div>
+            <div class="note-item" id="transportParkingItem" hidden>
+              <div class="note-label">停車資訊</div>
+              <p class="info-note" id="transportParking"></p>
+              <button class="ir-jump" id="transportParkingMore" type="button" hidden>展開更多 →</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 兩人的故事 ===== -->
+      <section class="info-block k-sec" id="storyBlock" data-num hidden>
+        <div class="k-sec-head">
+          <span class="num"></span>
+          <span class="en block-title">Our Story</span>
+          <span class="cn block-sub">關於我們這一路</span>
+        </div>
+        <div class="k-sec-body"><p class="story-text" id="storyText"></p></div>
+      </section>
+
+      <!-- ===== 日期倒數 ===== -->
+      <section class="info-block k-sec" data-num>
+        <div class="k-sec-head">
+          <span class="num"></span>
+          <span class="en block-title">Countdown</span>
+          <span class="cn block-sub">距離大日子還有</span>
+        </div>
+        <div class="k-sec-body">
+          <div class="cd-card">
+            <div class="cd-grid" id="cdGrid"></div>
+            <div class="cd-target" id="cdTarget"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== RSVP（整頁唯一的霧藍色塊） ===== -->
+      <section class="info-block k-sec" data-num>
+        <div class="k-sec-head">
+          <span class="num"></span>
+          <span class="en block-title">R.S.V.P.</span>
+          <span class="cn block-sub">出席回覆</span>
+        </div>
+        <div class="k-sec-body">
+          <div class="rsvp-cta">
+            <h3>能來參加我們的婚禮嗎？</h3>
+            <p>花 30 秒回覆出席，讓我們把最好的位置留給你</p>
+            <a class="btn" href="invitation.html">前往出席回覆</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Explore：編號清單（不是卡片牆） ===== -->
+      <section class="link-section k-sec" data-num>
+        <div class="k-sec-head">
+          <span class="num"></span>
+          <span class="en block-title">Explore</span>
+          <span class="cn block-sub">其他活動</span>
+        </div>
+        <div class="k-sec-body">
+          <div class="link-grid" id="linkGrid">
+            <a class="link-card" href="wall.html">
+              <span class="lc-index">02</span>
+              <span class="lc-title">新人祝福牆</span>
+              <span class="lc-sub">寫下想對我們說的話，也讀讀大家的祝福</span>
+              <span class="lc-go">前往</span>
+            </a>
+            <a class="link-card" href="letter.html">
+              <span class="lc-index">03</span>
+              <span class="lc-title">給你的一封信</span>
+              <span class="lc-sub">我們寫了信給你，輸入名字就能拆開來看</span>
+              <span class="lc-go">前往</span>
+            </a>
+            <a class="link-card" href="exhibition.html">
+              <span class="lc-index">04</span>
+              <span class="lc-title">我們的故事</span>
+              <span class="lc-sub">沿著時間線，走過我們一路走來的日子</span>
+              <span class="lc-go">前往</span>
+            </a>
+            <a class="link-card" href="quiz.html">
+              <span class="lc-index">05</span>
+              <span class="lc-title">看你多了解我們</span>
+              <span class="lc-sub">一份小測驗，看看你有多了解我們</span>
+              <span class="lc-go">前往</span>
+            </a>
+            <a class="link-card" href="draw.html">
+              <span class="lc-index">06</span>
+              <span class="lc-title">看你會抽到什麼照片</span>
+              <span class="lc-sub">抽一張婚禮限定小卡，收進你的收藏</span>
+              <span class="lc-go">前往</span>
+            </a>
+            <a class="link-card" href="cake.html">
+              <span class="lc-index">07</span>
+              <span class="lc-title">集氣送祝褔</span>
+              <span class="lc-sub">挑一份甜點放上桌，替我們集氣</span>
+              <span class="lc-go">前往</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <footer>made for {{couple}}・小港製作所 設計製作</footer>
+    </div>
+  </section>
+</div>
+
+<!-- 自訂卡片／交通「展開更多」共用的彈窗 -->
+<div class="lc-modal" id="lcModal">
+  <div class="lc-modal-card" role="dialog" aria-modal="true" aria-labelledby="lcModalTitle">
+    <button class="lc-modal-close" id="lcModalClose" type="button" aria-label="關閉">✕</button>
+    <h3 class="lc-modal-title" id="lcModalTitle"></h3>
+    <div class="lc-modal-sub" id="lcModalSub"></div>
+    <div class="lc-modal-body" id="lcModalBody"></div>
+  </div>
+</div>
+
+<!-- 版型自己的小事：把新人的照片放進 hero 的照片框。
+     素材優先序與 Classic 的固定背景相同（lobby → cover → Firestore 的封面），
+     等 site-context 宣告資料到齊（site:ready）才動手 -->
+<script>
+(function () {
+  function apply() {
+    var a = (window.SITE && window.SITE.assets) || {};
+    var W = window.WED || {};
+    var src = a.lobby || a.cover || W.coverImageUrl || '';
+    if (!src) return;
+    document.querySelectorAll('[data-photo="portrait"]').forEach(function (el) {
+      el.style.backgroundImage = 'url("' + src + '")';
+      el.classList.add('has-photo');
+    });
+  }
+  if (document.documentElement.dataset.siteReady === '1') apply();
+  else document.addEventListener('site:ready', apply);
+})();
+</script>
+
+<!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與 js/index.js -->
+<script type="module" src="/js/site-context.js"></script>
+</body>
+</html>
