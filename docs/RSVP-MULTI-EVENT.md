@@ -420,10 +420,21 @@ events         : map    ≤10    新增。eventId → {
 ```
 questions: [
   { id: 'q_shuttle', kind: 'choice', label: '需要接駁嗎？',
-    opts: [['yes','需要'],['no','不需要']] },     // opts ≤4，每個 ≤20 字
-  { id: 'q_note',    kind: 'text',   label: '有什麼要提醒我們的嗎？' }
+    opts: [ { id:'yes', label:'需要' },          // opts ≤4，label ≤20 字
+            { id:'no',  label:'不需要' } ] },
+  { id: 'q_note',    kind: 'text',   label: '有什麼要提醒我們的嗎？',
+    hint: '例：需要素食兒童餐' }
 ]
 ```
+
+> ⚠️ **`opts` 一定是「map 的陣列」，不能是「陣列的陣列」。**
+> Firestore 不接受巢狀陣列，而且是 SDK 在送出前就同步丟例外，
+> 根本走不到規則 —— `quizVotes.picks` 踩過同一個坑
+> （見 `common.js` 的 `addQuizVote`）。
+> 這一條是 Phase 1 寫測試時實際撞到才發現的，
+> `tests/rules.test.mjs` 已經留了一條測試釘住。
+> 存 `id` 不存文字則和 `guestTags` 同一個理由：
+> 新人日後改選項的字，已送出的作答還對得回來。
 
 作答存在 `events[eventId].answers = { q_shuttle: 'yes' }`。
 
@@ -530,7 +541,7 @@ function eventResponse(r, eventId){
 `null`（未回覆）與 `going:false`（明確說不來）必須分開 ——
 統計表的「待回覆」欄位靠的就是這個區別。
 
-### 4.6 Security Rules 變更（全部加法式）
+### 4.6 Security Rules 變更（全部加法式）— **已實作，見 Phase 1**
 
 **1. 站台文件白名單**（`firestore.rules` L52–118）
 
@@ -1347,13 +1358,23 @@ rsvps/{autoId}                  rsvps/{autoId}
 
 ## 9. Implementation Plan
 
-### Phase 1 — Data model（不碰畫面）
+### Phase 1 — Data model（不碰畫面）✅ 已完成
 
-- `firestore.rules`：`isValidSiteContentUpdate` 加 `events`；`isValidRsvp` 加 `events`／`primaryEventId`
-- `SPEC.md` 第 2 節補 `events[]` 與 RSVP 新欄位
+- `firestore.rules`：`isValidSiteContentUpdate` 加 `events`（list ≤10）；
+  `isValidRsvp` 加 `events`（map ≤10）與 `primaryEventId`（≤24）
+- `SPEC.md` 第 2 節補 `events[]`、`multiEventEnabled` 與 RSVP 的兩個新欄位，
+  第 3 節補規則的說明
 - `scripts/set-pages.js` 加 `--multi-event on|off`
-- `tests/rules.test.mjs` 補測試
-- **驗收**：既有全部測試綠燈；新欄位寫得進去、超量被拒
+  （關掉時如果站台已有多個活動會出警告：資料不會刪，但賓客只看得到婚宴）
+- `tests/rules.test.mjs` 新增「多活動」describe，17 條測試
+- **驗收**：`npm run test:rules` **147 passed**（原本 130，新增 17）
+
+**這一階段撞到的唯一意外**：`events[].questions[].opts` 原本設計成
+`[['yes','需要'],['no','不需要']]`（照抄 `RSVP_OPTIONS` 的 tuple 寫法）——
+**Firestore 不接受巢狀陣列**，而且是 SDK 在送出前就同步丟例外，
+根本走不到規則。已改成 map 的陣列 `[{ id, label }]`
+（順帶讓選項改名時，已送出的作答還對得回來），
+並留了一條測試釘住這件事。`quizVotes.picks` 當年踩的是同一個坑。
 
 ### Phase 2 — 讀取層（純函式，對舊站台是 no-op）
 

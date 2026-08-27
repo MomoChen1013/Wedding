@@ -68,6 +68,15 @@ service cloud.firestore {
                 不在名單內 —— 和 pages 一樣，只能由我們用 Admin SDK／
                 Console 打開，新人不會自己誤觸一個還沒教過的功能。 */
              'guestTags',
+             /* 婚禮的活動清單（文訂／迎娶／證婚／婚宴／派對…）：一場婚禮多個活動，
+                每個活動有自己的日期、時間、地點與「要不要請賓客回覆」。
+                新人在後台「婚禮流程」自己維護 —— 但「這個站台能不能用多活動」
+                的總開關 multiEventEnabled 不在名單內，和 pages、guestTagsEnabled
+                一樣只能由我們打開。
+                注意：站台文件本身的 eventDate／venueName 那幾欄仍然保留，
+                它們代表「主要活動」（婚宴），倒數計時、rsvpDeadline 的比較、
+                OG 分享文字都還是讀那一份。 */
+             'events',
              'seatingSearchEnabled', 'seatingFeatureEnabled', 'eventDate', 'updatedAt',
            ])
         /* 只放行「幾點開始」：後台只送整個 Timestamp 進來（年月日沿用原本設定好的），
@@ -114,7 +123,13 @@ service cloud.firestore {
         /* 標籤庫的每一筆是 map（id／name／onForm），規則語言沒辦法逐筆檢查，
            所以和 schedule 同一套做法：只擋筆數與型別，
            每一筆的內容在後台送出前先切好、擋好。 */
-        && (!('guestTags' in d) || (d.guestTags is list && d.guestTags.size() <= 30));
+        && (!('guestTags' in d) || (d.guestTags is list && d.guestTags.size() <= 30))
+        /* 活動清單的每一筆是 map（id／type／name／date／venueName／requiresRsvp…），
+           和 schedule、guestTags 同一個限制：規則語言逐筆檢查不了，
+           所以只擋筆數與型別，每一欄的長度與值域在後台送出前先切好。
+           上限 10 —— 台灣最複雜的情形（文訂＋迎娶＋證婚＋婚宴＋派對）是 5 個，
+           留一倍餘裕就夠，再多只會讓賓客的回覆表單長到沒人填得完。 */
+        && (!('events' in d) || (d.events is list && d.events.size() <= 10));
     }
 
     /* ---------- sites ---------- */
@@ -489,6 +504,17 @@ service cloud.firestore {
          note         其他備註
          meal         舊版表單的單一餐點欄位，保留相容
 
+       多活動（見 sites.events）另外加兩個欄位，兩個都是選填：
+
+         primaryEventId  上面那些欄位在講哪一個活動；沒有這個欄位代表
+                         「這場婚禮只有一個活動」，一律當成主要活動（婚宴）
+         events          eventId → { going, count, veg, note, answers }
+
+       ★ 頂層欄位的語意沒有變：attending／guestCount／mealMeat／mealVeg／
+         childSeat 永遠代表主要活動。events 裡 primaryEventId 那一筆
+         與頂層欄位是鏡像的 —— 排桌、收禮、匯出 CSV、既有的統計圖表
+         讀頂層那一份就好，完全不必知道多活動這件事存在。
+
        規則只認得「型別、長度、值域」這種結構性條件；
        「選了郵寄就一定要有地址」這種跨欄位的商業邏輯
        在 js/rsvp-form.js 送出前先擋好（規則語言寫得出來，
@@ -501,6 +527,7 @@ service cloud.firestore {
              'contactPhone', 'contactLine', 'contactEmail',
              'cardType', 'cardDelivery', 'cardZip', 'cardAddress', 'cardEmail',
              'giftDelivery', 'giftZip', 'giftAddress', 'note', 'tag',
+             'primaryEventId', 'events',
            ])
         && data.keys().hasAll(['name', 'attending', 'guestCount', 'dietaryNote', 'message', 'createdAt'])
         && data.name is string && data.name.size() >= 1 && data.name.size() <= 40
@@ -534,6 +561,14 @@ service cloud.firestore {
         && (!('tag' in data) || (isStr(data.tag, 40)
              && (data.tag == ''
                  || (('guestTagsEnabled' in s) && s.guestTagsEnabled == true))))
+        /* 多活動的回覆（見上面的說明）。
+           events 用 map 而不是 list，key 就是 eventId ——
+           「同一個活動只會有一筆回應」這件事就由資料結構本身保證，
+           而且規則至少檢查得到 size()（list 連這個都做不到）。
+           上限與 sites.events 一致；每一筆裡面的內容規則看不到，
+           在 js/rsvp-form.js 送出前先切好。 */
+        && (!('primaryEventId' in data) || isStr(data.primaryEventId, 24))
+        && (!('events' in data) || (data.events is map && data.events.size() <= 10))
         && sitePublished(siteId)
         && s.rsvpEnabled == true
         && request.time <= s.rsvpDeadline;

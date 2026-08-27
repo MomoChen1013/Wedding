@@ -32,6 +32,10 @@
      # （只用大廳＋桌次查詢的站台適合關掉，預設是開的）
      node scripts/set-pages.js --slug ginny-one-20260919 --entry-login off
 
+     # 打開「多活動」：這場婚禮不只一場（文訂／迎娶／證婚／婚宴／派對）
+     # 打開之後後台才會長出「婚禮流程」，活動由新人自己維護
+     node scripts/set-pages.js --slug ginny-one-20260919 --multi-event on
+
    參數：
      --slug          必填，要修改的站台代稱
      --pages         逗號分隔的完整清單，沒列到的一律關掉
@@ -42,6 +46,10 @@
      --guest-tags    on／off，賓客標籤功能的總開關（新人自己改不動）
      --entry-login   on／off，大廳入場登入（填名字才進得去）的總開關；
                      關掉時需要名字的動作（寫祝福、送甜點）才會當場問
+     --multi-event   on／off，多活動的總開關（新人自己改不動）；
+                     打開之後後台「婚禮資訊」才會長出「婚禮流程」分頁。
+                     ⚠️ 打開不等於前台變複雜 —— 只要新人只留一個活動，
+                     大廳與邀請函仍然是現在的單一活動樣子
      --dry-run       只印出結果，不寫入資料庫
      --project       覆寫 Firebase 專案 ID
 
@@ -72,6 +80,7 @@ function parseCliArgs(argv) {
       'owner-email': { type: 'string', multiple: true },
       'guest-tags':  { type: 'string' },
       'entry-login': { type: 'string' },
+      'multi-event': { type: 'string' },
       'dry-run':     { type: 'boolean', default: false },
       base:          { type: 'string' },
       project:       { type: 'string' },
@@ -132,15 +141,17 @@ async function main() {
     }
   });
 
-  /* 賓客標籤與入場登入：新人在後台都改不動（規則的白名單裡沒有這兩個欄位），
-     所以要開要關都從這裡下指令 */
+  /* 賓客標籤、入場登入與多活動：新人在後台都改不動（規則的白名單裡沒有
+     這三個欄位），所以要開要關都從這裡下指令 */
   const guestTags  = parseSwitch(values['guest-tags'], '--guest-tags');
   const entryLogin = parseSwitch(values['entry-login'], '--entry-login');
+  const multiEvent = parseSwitch(values['multi-event'], '--multi-event');
 
   const touchesPages =
     values.pages !== undefined || values.enable?.length || values.disable?.length;
 
-  if (!touchesPages && !owners && guestTags === null && entryLogin === null) {
+  if (!touchesPages && !owners && guestTags === null && entryLogin === null
+      && multiEvent === null) {
     /* 什麼都沒指定就當成查詢 */
     console.log(`站台：${values.slug}（siteId: ${siteId}）`);
     console.log(hadPagesField ? '' : '⚠️ 這個站台還沒有 pages 欄位，目前等於「全部開啟」。');
@@ -149,7 +160,12 @@ async function main() {
       site.guestTagsEnabled === true ? '✅ 開' : '⛔ 關'}`);
     console.log(`   ${padDisplay('入場登入（填名字進場）', 28)}${
       site.entryLoginEnabled === false ? '⛔ 關' : '✅ 開'}`);
-    console.log('\n加上 --pages／--enable／--disable／--guest-tags／--entry-login 才會實際修改。');
+    console.log(`   ${padDisplay('多活動（婚禮流程）', 28)}${
+      site.multiEventEnabled === true ? '✅ 開' : '⛔ 關'}${
+      Array.isArray(site.events) && site.events.length
+        ? `（目前 ${site.events.length} 個活動）` : ''}`);
+    console.log('\n加上 --pages／--enable／--disable／--guest-tags／--entry-login'
+              + '／--multi-event 才會實際修改。');
     return;
   }
 
@@ -191,6 +207,23 @@ async function main() {
     }
   }
 
+  if (multiEvent !== null) {
+    const events = Array.isArray(site.events) ? site.events : [];
+    console.log('');
+    console.log(`   ${padDisplay('多活動（婚禮流程）', 28)}${multiEvent ? '✅ 開' : '⛔ 關'}${
+      site.multiEventEnabled === multiEvent
+        ? '' : (multiEvent ? '  ← 這次打開' : '  ← 這次關掉')}`);
+    if (multiEvent) {
+      console.log('     後台「婚禮資訊」會長出「婚禮流程」，活動由新人自己新增。');
+      console.log('     只留一個活動時，大廳與邀請函仍然是現在的單一活動樣子。');
+    } else if (events.length > 1) {
+      /* 關掉只是收起後台入口，events 一個字都不會動 —— 但前台會退回
+         單一活動路徑，等於那幾個活動在賓客眼中消失了。這要講出來。 */
+      console.log(`     ⚠️ 這個站台目前有 ${events.length} 個活動，資料不會被刪除，`);
+      console.log('        但賓客只會看到主要活動（婚宴）。要保留就先別關。');
+    }
+  }
+
   if (values['dry-run']) {
     console.log('\n（--dry-run，沒有寫入資料庫）');
     return;
@@ -201,6 +234,7 @@ async function main() {
   if (owners) patch.ownerEmails = owners;
   if (guestTags !== null) patch.guestTagsEnabled = guestTags;
   if (entryLogin !== null) patch.entryLoginEnabled = entryLogin;
+  if (multiEvent !== null) patch.multiEventEnabled = multiEvent;
   await siteRef.update(patch);
 
   console.log('\n✅ 已更新，重新整理網頁就會生效（不用重新 deploy）。');
