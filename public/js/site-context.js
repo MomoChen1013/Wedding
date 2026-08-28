@@ -304,14 +304,26 @@ function buildWed(site) {
   const groom = site.groomName || '';
   const bride = site.brideName || '';
 
+  /* 英文名（選填，由 create-site.js 寫入）：只給 hero 這種想走拉丁字的地方用。
+     沒填就各自退回中文名，所以舊站台什麼都不會變。
+     兩邊都有英文名才算「這組新人的 hero 是英文的」—— 只有一邊填的話，
+     一行裡會出現「Ginny & 宜庭」這種中英混排，不如整行維持中文。 */
+  const groomEn = (site.groomNameEn || '').trim();
+  const brideEn = (site.brideNameEn || '').trim();
+  const heroNameLang = groomEn && brideEn ? 'en' : 'cn';
+
   /* dateISO 給倒數計時用；帶上時區位移才不會被瀏覽器當成本地時間 */
   const isoOffset = ev ? tzOffsetString(ev, tz) : '';
 
   return {
-    groom, groomCn: groom,
-    bride, brideCn: bride,
+    groom, groomCn: groom, groomEn: groomEn || groom,
+    bride, brideCn: bride, brideEn: brideEn || bride,
     couple: groom && bride ? `${groom} & ${bride}` : (groom || bride),
     coupleCn: groom && bride ? `${groom} ♡ ${bride}` : (groom || bride),
+    coupleEn: groomEn && brideEn ? `${groomEn} & ${brideEn}`
+      : (groom && bride ? `${groom} & ${bride}` : (groom || bride)),
+    /* 'en'／'cn'：寫成 <body data-hero-name>，版型的 hero 字級靠它分兩套 */
+    heroNameLang,
     /* 新人自己寫的稱呼（後台限 20 個字），沒填就沿用上面的 couple */
     coupleTitle: site.coupleTitle || '',
 
@@ -496,6 +508,12 @@ async function boot() {
     fileToKey: FILE_TO_KEY,
   };
   window.WED = buildWed(site);
+
+  /* hero 的名字是中文還是英文：korean 的 hero 字級要分兩套（見 css/lobby-korean.css）。
+     Cormorant 吃 font-size-adjust，同字級下拉丁字會被放大約 17%，
+     一套字級不可能同時餵飽中文名字與英文名字。
+     這一行要排在載入 common.js 之前 —— fillTemplates() 一跑，名字就填進去了。 */
+  document.body.dataset.heroName = window.WED.heroNameLang;
 
   document.title = window.WED.couple
     ? `${PAGES[pageKey].label}｜${window.WED.couple} 婚禮`

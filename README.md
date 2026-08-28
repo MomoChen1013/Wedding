@@ -164,8 +164,14 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 `common.js` 的 `fillTemplates()` 會在載入時換成這組新人的資料
 （文字節點與 `placeholder`／`alt`／`title`／`content` 屬性都會處理）。
 
-可用 token：`couple`、`coupleCn`、`groom`、`bride`、`date`、`weekday`、`time`、
+可用 token：`couple`、`coupleCn`、`coupleEn`、`groom`、`groomCn`、`groomEn`、
+`bride`、`brideCn`、`brideEn`、`date`、`weekday`、`time`、
 `venue`、`address`、`dressCode`、`giftNote`、`story`、`hashtag`。
+
+`groomEn`／`brideEn`／`coupleEn` 讀站台的 `groomNameEn`／`brideNameEn`，
+沒填就退回中文名。目前只有 korean 版型的大廳 hero 用它
+（`public/lobby-korean.html`），頁面其他地方仍然是中文名 —— 想讓某一塊
+走英文，就把那一行的 token 換成 `En` 那組，不必再改資料。
 
 `{{hashtag}}` 取新人填的第一個 hashtag；一個都沒填時用預設的 `#我們結婚了`
 （大廳開場那一排則是 `#我們結婚了`、`#Married` 兩個）。
@@ -178,6 +184,8 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 sites/{siteId}
   slug, ownerEmail, status(draft|published|archived)
   groomName, brideName
+  groomNameEn, brideNameEn  # 選填，英文名；只有 hero 用得到，兩個都填才生效
+                            # 沒填就退回中文名，新人後台改不動（見 create-site.js）
   coupleTitle           # 選填，大廳資訊卡上的稱呼（≤20 字），留白就用兩人的名字
   eventDate(timestamp), eventEndDate(timestamp|null)
   timezone(IANA，預設 Asia/Taipei)
@@ -363,6 +371,8 @@ node scripts/create-site.js \
 | `--slug` | ✅ | 網址代稱，小寫英數與連字號，3–40 字，全域唯一 |
 | `--groom` | ✅ | 新郎姓名 |
 | `--bride` | ✅ | 新娘姓名 |
+| `--groom-en` | | 新郎英文名；korean 版型的 hero 會改用它 |
+| `--bride-en` | | 新娘英文名；**兩個都填才生效**，只填一邊 hero 整行維持中文 |
 | `--date` | ✅ | 婚禮日期 `YYYY-MM-DD` |
 | `--time` | | 婚禮時間 `HH:mm`，預設 `12:00` |
 | `--timezone` | | 婚禮所在時區（IANA），預設 `Asia/Taipei` |

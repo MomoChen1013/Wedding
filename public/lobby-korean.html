@@ -66,12 +66,17 @@
 <div id="app">
   <section class="panel lobby" data-panel="lobby">
 
-    <!-- ===== Hero：兩人名字併成一行，照片橫切過它，下面接 Wedding ===== -->
+    <!-- ===== Hero：兩人名字併成一行，照片橫切過它，下面接 Wedding =====
+         名字用 {{groomEn}}／{{brideEn}}：站台有填英文名就走英文，
+         沒填會自動退回中文名（見 js/site-context.js 的 buildWed），
+         頁面其他地方仍然是 {{couple}} 那組中文 token。
+         名字之間沒有空白字元，長名字會擠出畫面 —— 兩個 <wbr> 是唯一的
+         折行點：要折就折在 & 的前後，名字本身（.n 是 nowrap）不會被拆開 -->
     <header class="lobby-hero k-hero">
       <div class="k-pagetitle">
         <span class="en">Invitation</span><i></i><span class="cn">邀請函</span>
       </div>
-      <h1 class="k-name k-nameA">{{groom}}<span class="amp">&amp;</span>{{bride}}</h1>
+      <h1 class="k-name k-nameA"><span class="n">{{groomEn}}</span><wbr><span class="amp">&amp;</span><wbr><span class="n">{{brideEn}}</span></h1>
       <div class="k-mid">
         <div class="k-photo" data-photo="portrait" aria-hidden="true"></div>
       </div>

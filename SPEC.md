@@ -75,6 +75,8 @@ sites/{siteId}
   status          : string   # "draft" | "published" | "archived"
   groomName       : string
   brideName       : string
+  groomNameEn     : string   # 選填，新郎英文名；只有大廳 hero 用得到
+  brideNameEn     : string   # 選填，新娘英文名；兩個都填才生效，否則 hero 維持中文名
   coupleTitle     : string   # 選填，大廳資訊卡上的稱呼（≤20 字）；留白就用兩人的名字
   eventDate       : timestamp
   eventEndDate    : timestamp | null   # 婚宴結束時間，加入行事曆用；null 則抓開始後 3 小時

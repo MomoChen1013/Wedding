@@ -28,10 +28,22 @@
   color:var(--ink);position:relative;z-index:3;mix-blend-mode:multiply;
   word-break:keep-all;}
 .k-name .amp{font-style:italic;padding:0 .14em;color:var(--primary-deep);}
+/* 一個名字就是一個不可拆的整體：Cheng-Han 不能在連字號斷成兩行，
+   中文名字也不該被拆字。要折行只會折在中間那個 & 的前後 */
+.k-name .n{white-space:nowrap;hyphens:none;}
 /* Wedding 是名字的副行，比名字小一號 —— Cormorant 又吃了 font-size-adjust
    （拉丁字會被放大 17%），同字級擺一起會反過來壓過中文名字 */
 .k-nameB{font-size:clamp(26px,6.2vw,78px);letter-spacing:.1em;
   padding-left:clamp(20px,14vw,190px);}
+
+/* 名字本身是英文時（站台填了 groomNameEn／brideNameEn，
+   site-context.js 會寫上 <body data-hero-name="en">）：
+   上面那組字級是為中文名字挑的 —— 中文一個字就是一個全形方塊，
+   拉丁字同字級只有 x-height 那點高度，照搬會整行縮水。
+   英文名字放大回這個版型原本的份量，Wedding 仍維持約 0.6 倍。 */
+body[data-hero-name="en"] .k-nameA{font-size:clamp(34px,7vw,88px);
+  line-height:.98;letter-spacing:.015em;}
+body[data-hero-name="en"] .k-nameB{font-size:clamp(24px,4.6vw,58px);}
 
 /* 中段：一條穿過照片後面的基準線 ＋ 霧藍重音 ＋ 照片 */
 .k-mid{height:clamp(150px,30svh,260px);position:relative;}
@@ -59,6 +71,8 @@
   .k-hero{padding-top:16px;}
   .k-name{font-size:clamp(34px,11vw,68px);mix-blend-mode:normal;}
   .k-nameB{font-size:clamp(22px,7vw,44px);padding-left:10px;}
+  body[data-hero-name="en"] .k-nameA{font-size:clamp(28px,8.5vw,52px);}
+  body[data-hero-name="en"] .k-nameB{font-size:clamp(20px,5.6vw,34px);}
   .k-mid{height:auto;}
   .k-mid::before,.k-mid::after{display:none;}
   .k-photo{position:static;transform:none;inline-size:100%;block-size:auto;
