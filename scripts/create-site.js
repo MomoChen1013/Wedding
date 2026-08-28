@@ -10,6 +10,9 @@
      --slug           必填，網址代稱（小寫英數與連字號，3–40 字）
      --groom          必填，新郎姓名
      --bride          必填，新娘姓名
+     --groom-en       選填，新郎英文名；korean 版型的 hero 會改用它
+     --bride-en       選填，新娘英文名；兩個都填才會生效（只填一邊會是
+                       「Ginny & 宜庭」這種中英混排，所以整行維持中文）
      --date           必填，婚禮日期 YYYY-MM-DD
      --time           選填，婚禮時間 HH:mm，預設 12:00
      --timezone       選填，婚禮所在時區（IANA），預設 Asia/Taipei
@@ -78,6 +81,8 @@ function parseCliArgs(argv) {
       slug:          { type: 'string' },
       groom:         { type: 'string' },
       bride:         { type: 'string' },
+      'groom-en':    { type: 'string', default: '' },
+      'bride-en':    { type: 'string', default: '' },
       date:          { type: 'string' },
       time:          { type: 'string', default: '12:00' },
       timezone:      { type: 'string', default: 'Asia/Taipei' },
@@ -167,6 +172,9 @@ async function createSite(values) {
   const slug = (values.slug || '').trim();
   const groomName = (values.groom || '').trim();
   const brideName = (values.bride || '').trim();
+  /* 英文名是選填的：只有 hero 用得到，其他地方一律是中文名 */
+  const groomNameEn = (values['groom-en'] || '').trim();
+  const brideNameEn = (values['bride-en'] || '').trim();
 
   assertValidSlug(slug);
   if (!groomName) throw new Error('請用 --groom 指定新郎姓名');
@@ -205,6 +213,8 @@ async function createSite(values) {
     status: values.status,
     groomName,
     brideName,
+    groomNameEn,
+    brideNameEn,
     eventDate: Timestamp.fromDate(eventDate),
     eventEndDate: eventEndDate ? Timestamp.fromDate(eventEndDate) : null,
     timezone,

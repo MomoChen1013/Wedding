@@ -13,8 +13,8 @@
    Korean Modern — 照片被「設計」進版面裡
    ------------------------------------------------------------
    結構主張：沒有背景照。照片是版面中的一個物件，
-   和名字互相咬合 —— GINNY 在照片上緣之前落款，
-   ONE 壓過照片的左下角，日期收在最底的細線上。
+   和名字互相咬合 —— 兩人的名字併成一行落在照片上緣之前，
+   下面接一行 Wedding 壓過照片的左下角，日期收在最底的細線上。
    主角是「編排」，照片是編排的一部分。
 
    版面骨架：12 欄 grid ＋ 大量留白 ＋ 1px 線
@@ -62,10 +62,12 @@ body{
 }
 .k-nameA,.k-nameB{
   font-family:var(--f-en);font-weight:300;
-  font-size:clamp(50px,15.5vw,196px);line-height:.86;letter-spacing:.012em;
-  position:relative;z-index:3;mix-blend-mode:multiply;
+  font-size:clamp(42px,11.5vw,150px);line-height:.92;letter-spacing:.012em;
+  position:relative;z-index:3;mix-blend-mode:multiply;word-break:keep-all;
 }
-.k-nameB{padding-left:clamp(20px,16vw,205px);}
+.k-nameA .amp{font-style:italic;padding:0 .14em;color:#5C7085;}
+.k-nameB{font-size:clamp(28px,6.6vw,92px);letter-spacing:.1em;
+  padding-left:clamp(20px,16vw,205px);}
 .k-mid{height:clamp(140px,25svh,230px);position:relative;}
 /* 穿過照片後面的水平線：把名字的左緣與照片鎖在同一條基準上 */
 .k-mid::before{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:var(--line);z-index:0;}
@@ -93,8 +95,8 @@ body{
 
 @media(max-width:900px){
   .k-hero{padding-top:120px;min-height:auto;}
-  .k-nameA,.k-nameB{font-size:clamp(46px,14vw,86px);mix-blend-mode:normal;}
-  .k-nameB{padding-left:10px;}
+  .k-nameA,.k-nameB{font-size:clamp(36px,11vw,72px);mix-blend-mode:normal;}
+  .k-nameB{font-size:clamp(24px,7.4vw,48px);padding-left:10px;}
   .k-mid{height:auto;}
   .k-mid::before,.k-mid::after{display:none;}
   .k-photo{position:static;transform:none;inline-size:100%;block-size:auto;
@@ -163,7 +165,12 @@ body{
 .k-cd .cd-lab{font-size:10px;letter-spacing:.3em;color:var(--muted);margin-top:10px;}
 
 /* RSVP：唯一一塊用霧藍填色的地方 */
-.k-rsvp{background:var(--blue);padding:clamp(34px,5vw,54px);display:flex;flex-direction:column;align-items:flex-start;gap:14px;}
+.k-rsvp{position:relative;isolation:isolate;
+  background:var(--blue) url('../public/assets/korean-clean/rsvp-satin.jpg') center/cover no-repeat;
+  padding:clamp(34px,5vw,54px);display:flex;flex-direction:column;align-items:flex-start;gap:14px;}
+.k-rsvp::before{content:'';position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(100deg,rgba(255,255,255,.74) 0%,rgba(255,255,255,.42) 46%,
+    rgba(168,184,197,.30) 100%);}
 .k-rsvp h3{font-family:var(--f-cn);font-weight:400;font-size:clamp(19px,2.6vw,24px);letter-spacing:.1em;}
 .k-rsvp p{font-size:13px;color:#3d4750;}
 .k-rsvp .k-btn{border-color:var(--ink);margin-top:8px;}
@@ -194,11 +201,11 @@ body{
 
 <!-- ============ HERO：照片被排進版面 ============ -->
 <header class="k-hero">
-  <h1 class="k-nameA" data-field="nameA"></h1>
+  <h1 class="k-nameA"><span data-field="nameA"></span><span class="amp">&amp;</span><span data-field="nameB"></span></h1>
   <div class="k-mid">
     <div class="k-photo ph"><span class="ph-note">couple portrait</span></div>
   </div>
-  <h1 class="k-nameB" data-field="nameB"></h1>
+  <div class="k-nameB">Wedding</div>
   <div class="k-hero-meta">
     <span class="d" data-field="dateEn"></span>
     <span class="eyebrow">Taipei</span>

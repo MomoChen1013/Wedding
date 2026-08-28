@@ -78,9 +78,11 @@ body{background:var(--ground);color:var(--ink);font-family:var(--f-ui);font-weig
 /* ============ 縮圖 ②　Korean Modern：照片＝版面裡的物件 ============ */
 .t-korean{background:#F7F5F0;}
 .t-korean .nameA,.t-korean .nameB{position:absolute;font-family:var(--f-en);font-weight:300;
-  font-size:44px;line-height:.86;color:#272725;z-index:3;mix-blend-mode:multiply;}
+  font-size:34px;line-height:.86;color:#272725;z-index:3;mix-blend-mode:multiply;
+  white-space:nowrap;}
 .t-korean .nameA{top:15%;left:7%;}
-.t-korean .nameB{bottom:19%;left:24%;}
+.t-korean .nameA .amp{font-style:italic;padding:0 .1em;color:#5C7085;}
+.t-korean .nameB{bottom:19%;left:24%;font-size:22px;letter-spacing:.08em;}
 .t-korean .rule{position:absolute;left:0;right:0;top:50%;height:1px;background:#DCD9D2;z-index:1;}
 .t-korean .bar{position:absolute;left:7%;top:calc(50% - 3px);width:22%;height:6px;background:#A8B8C5;z-index:2;}
 .t-korean .kphoto{position:absolute;z-index:2;left:47%;top:50%;transform:translateY(-50%);
@@ -162,15 +164,15 @@ body{background:var(--ground);color:var(--ink);font-family:var(--f-ui);font-weig
     <article class="card">
       <div class="thumb t-korean">
         <div class="rule"></div><div class="bar"></div>
-        <div class="nameA">GINNY</div>
+        <div class="nameA">GINNY<span class="amp">&amp;</span>ONE</div>
         <div class="kphoto"></div>
-        <div class="nameB">ONE</div>
+        <div class="nameB">Wedding</div>
         <div class="date">19 SEPTEMBER 2026</div>
       </div>
       <div class="card-body">
         <div class="card-title"><span class="en">Korean Modern</span><span class="cn">韓系現代簡約</span></div>
         <p class="thesis"><b>照片被設計進版面裡。</b>沒有背景照。名字是一根從上到下的柱子，
-           照片橫切過它的右緣，兩者互相壓過去，再拉一條穿過照片後面的細線把它們鎖在同一個網格上。</p>
+           兩人的名字併成一行落在上緣、Wedding 落在下緣，照片橫切過它的右緣，兩者互相壓過去，再拉一條穿過照片後面的細線把它們鎖在同一個網格上。</p>
         <div class="mood">Modern · Minimal · Editorial</div>
         <div class="swatches">
           <i style="background:#F7F5F0"></i><i style="background:#DCD9D2"></i>

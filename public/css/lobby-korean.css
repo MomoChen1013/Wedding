@@ -5,7 +5,7 @@
    （gate／開場／timeline／countdown／explore 的基本樣式都在那），
    這一份只負責把版面改成「照片被設計進版面裡」的編排：
    ・沒有背景照、沒有白卡 —— 內容靠 1px 線與留白分節
-   ・hero 是名字與照片互相咬合的版面
+   ・hero 是名字與照片互相咬合的版面（名字一行、Wedding 一行）
    ・區塊是「左側編號＋標題、右側內容」的雙欄，編號用 CSS counter
      自動跳過被收起來的區塊（display:none 不會累加 counter）
 ============================================================ */
@@ -21,10 +21,29 @@
 .k-pagetitle i{flex:0 0 clamp(28px,5vw,64px);height:1px;background:var(--line);}
 .k-pagetitle .cn{font-family:var(--font-hand);font-size:15px;letter-spacing:.3em;color:var(--ink);}
 
+/* 兩人的名字併成一行（中間一個斜體 &），下面那行是 Wedding。
+   原本上下拆開的排法在中文名字上會離太遠，讀起來不像一組人 */
 .k-name{font-family:var(--font-display);font-weight:300;
-  font-size:clamp(44px,12vw,150px);line-height:.9;letter-spacing:.02em;
-  color:var(--ink);position:relative;z-index:3;mix-blend-mode:multiply;}
-.k-nameB{padding-left:clamp(20px,14vw,190px);}
+  font-size:clamp(38px,9.5vw,120px);line-height:.95;letter-spacing:.02em;
+  color:var(--ink);position:relative;z-index:3;mix-blend-mode:multiply;
+  word-break:keep-all;}
+.k-name .amp{font-style:italic;padding:0 .14em;color:var(--primary-deep);}
+/* 一個名字就是一個不可拆的整體：Cheng-Han 不能在連字號斷成兩行，
+   中文名字也不該被拆字。要折行只會折在中間那個 & 的前後 */
+.k-name .n{white-space:nowrap;hyphens:none;}
+/* Wedding 是名字的副行，比名字小一號 —— Cormorant 又吃了 font-size-adjust
+   （拉丁字會被放大 17%），同字級擺一起會反過來壓過中文名字 */
+.k-nameB{font-size:clamp(26px,6.2vw,78px);letter-spacing:.1em;
+  padding-left:clamp(20px,14vw,190px);}
+
+/* 名字本身是英文時（站台填了 groomNameEn／brideNameEn，
+   site-context.js 會寫上 <body data-hero-name="en">）：
+   上面那組字級是為中文名字挑的 —— 中文一個字就是一個全形方塊，
+   拉丁字同字級只有 x-height 那點高度，照搬會整行縮水。
+   英文名字放大回這個版型原本的份量，Wedding 仍維持約 0.6 倍。 */
+body[data-hero-name="en"] .k-nameA{font-size:clamp(34px,7vw,88px);
+  line-height:.98;letter-spacing:.015em;}
+body[data-hero-name="en"] .k-nameB{font-size:clamp(24px,4.6vw,58px);}
 
 /* 中段：一條穿過照片後面的基準線 ＋ 霧藍重音 ＋ 照片 */
 .k-mid{height:clamp(150px,30svh,260px);position:relative;}
@@ -50,8 +69,10 @@
 
 @media(max-width:760px){
   .k-hero{padding-top:16px;}
-  .k-name{font-size:clamp(42px,14.5vw,84px);mix-blend-mode:normal;}
-  .k-nameB{padding-left:10px;}
+  .k-name{font-size:clamp(34px,11vw,68px);mix-blend-mode:normal;}
+  .k-nameB{font-size:clamp(22px,7vw,44px);padding-left:10px;}
+  body[data-hero-name="en"] .k-nameA{font-size:clamp(28px,8.5vw,52px);}
+  body[data-hero-name="en"] .k-nameB{font-size:clamp(20px,5.6vw,34px);}
   .k-mid{height:auto;}
   .k-mid::before,.k-mid::after{display:none;}
   .k-photo{position:static;transform:none;inline-size:100%;block-size:auto;
@@ -106,9 +127,18 @@
 .k-sec .cd-num{font-weight:300;}
 .k-sec .cd-target{text-align:left;}
 
-/* ---- RSVP：整頁唯一的霧藍色塊 ---- */
-.k-sec .rsvp-cta{background:var(--primary);padding:clamp(30px,4.5vw,50px);
+/* ---- RSVP：整頁唯一的滿版色塊，鋪一張綢緞底圖 ----
+   圖是「版型」的一部分，不跟著站台換：路徑寫死在 /assets/korean-clean/，
+   要換綢緞就直接覆蓋同一個檔名，不必動 CSS，也不用進 SITE.assets。
+   底色留著 --primary，圖還沒載完或載失敗時就是原本那塊霧藍。
+   上面那層白紗是為了保住深色字的對比 —— 換上比較暗的綢緞也還讀得動。 */
+.k-sec .rsvp-cta{position:relative;isolation:isolate;
+  background:var(--primary) url('/assets/korean-clean/rsvp-satin.jpg') center/cover no-repeat;
+  padding:clamp(30px,4.5vw,50px);
   text-align:left;display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
+.k-sec .rsvp-cta::before{content:'';position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(100deg,rgba(255,255,255,.74) 0%,rgba(255,255,255,.42) 46%,
+    rgba(168,184,197,.30) 100%);}
 .k-sec .rsvp-cta h3{color:#2b3240;}
 .k-sec .rsvp-cta p{color:#3d4750;margin-bottom:18px;}
 .k-sec .rsvp-cta .btn{border-color:#2b3240;color:#2b3240;}

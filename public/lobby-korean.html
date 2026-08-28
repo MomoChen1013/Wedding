@@ -66,16 +66,21 @@
 <div id="app">
   <section class="panel lobby" data-panel="lobby">
 
-    <!-- ===== Hero：名字與照片咬合（照片是版面裡的物件，不是背景） ===== -->
+    <!-- ===== Hero：兩人名字併成一行，照片橫切過它，下面接 Wedding =====
+         名字用 {{groomEn}}／{{brideEn}}：站台有填英文名就走英文，
+         沒填會自動退回中文名（見 js/site-context.js 的 buildWed），
+         頁面其他地方仍然是 {{couple}} 那組中文 token。
+         名字之間沒有空白字元，長名字會擠出畫面 —— 兩個 <wbr> 是唯一的
+         折行點：要折就折在 & 的前後，名字本身（.n 是 nowrap）不會被拆開 -->
     <header class="lobby-hero k-hero">
       <div class="k-pagetitle">
         <span class="en">Invitation</span><i></i><span class="cn">邀請函</span>
       </div>
-      <h1 class="k-name k-nameA">{{groom}}</h1>
+      <h1 class="k-name k-nameA"><span class="n">{{groomEn}}</span><wbr><span class="amp">&amp;</span><wbr><span class="n">{{brideEn}}</span></h1>
       <div class="k-mid">
         <div class="k-photo" data-photo="portrait" aria-hidden="true"></div>
       </div>
-      <h1 class="k-name k-nameB">{{bride}}</h1>
+      <div class="k-name k-nameB" aria-hidden="true">Wedding</div>
       <div class="k-hero-meta">
         <span class="d">{{date}}</span>
         <span class="w">{{weekday}}</span>
@@ -193,7 +198,7 @@
         </div>
       </section>
 
-      <!-- ===== RSVP（整頁唯一的霧藍色塊） ===== -->
+      <!-- ===== RSVP（整頁唯一的滿版色塊：綢緞底圖） ===== -->
       <section class="info-block k-sec" data-num>
         <div class="k-sec-head">
           <span class="num"></span>
