@@ -66,16 +66,16 @@
 <div id="app">
   <section class="panel lobby" data-panel="lobby">
 
-    <!-- ===== Hero：名字與照片咬合（照片是版面裡的物件，不是背景） ===== -->
+    <!-- ===== Hero：兩人名字併成一行，照片橫切過它，下面接 Wedding ===== -->
     <header class="lobby-hero k-hero">
       <div class="k-pagetitle">
         <span class="en">Invitation</span><i></i><span class="cn">邀請函</span>
       </div>
-      <h1 class="k-name k-nameA">{{groom}}</h1>
+      <h1 class="k-name k-nameA">{{groom}}<span class="amp">&amp;</span>{{bride}}</h1>
       <div class="k-mid">
         <div class="k-photo" data-photo="portrait" aria-hidden="true"></div>
       </div>
-      <h1 class="k-name k-nameB">{{bride}}</h1>
+      <div class="k-name k-nameB" aria-hidden="true">Wedding</div>
       <div class="k-hero-meta">
         <span class="d">{{date}}</span>
         <span class="w">{{weekday}}</span>
@@ -193,7 +193,7 @@
         </div>
       </section>
 
-      <!-- ===== RSVP（整頁唯一的霧藍色塊） ===== -->
+      <!-- ===== RSVP（整頁唯一的滿版色塊：綢緞底圖） ===== -->
       <section class="info-block k-sec" data-num>
         <div class="k-sec-head">
           <span class="num"></span>
