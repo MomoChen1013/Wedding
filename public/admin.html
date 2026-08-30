@@ -301,7 +301,7 @@
             </h3>
             <p class="ad-formgroup-note">
               這幾題會在<b>每張活動卡上各出現一次</b>。
-              活動本身（名稱、日期、地點）在「婚禮資訊 → 婚禮流程」設定。
+              活動本身（名稱、日期、地點）在「婚禮資訊 → 其他流程」設定。
             </p>
           </div>
           <div class="ad-evask" id="adEvAskList"></div>
@@ -499,7 +499,7 @@
       <button class="ad-subtab is-on" type="button" data-subtab="info">婚禮資訊</button>
       <!-- 多活動的站台才看得到（multiEventEnabled，由我們用 set-pages 打開） -->
       <button class="ad-subtab" type="button" data-subtab="events"
-              id="adEventsSubtab" hidden>婚禮流程</button>
+              id="adEventsSubtab" hidden>其他流程</button>
       <button class="ad-subtab" type="button" data-subtab="schedule">當日流程</button>
       <button class="ad-subtab" type="button" data-subtab="explore">自訂內容</button>
     </nav>
@@ -516,15 +516,15 @@
         <input class="ad-input" id="adCoupleTitle" type="text" maxlength="20">
         <div class="ad-count"><span id="adCoupleTitleLen">0</span> / 20</div>
 
-        <!-- 多活動時，場地改由「婚禮流程」管理，這三欄轉成唯讀的鏡像 -->
+        <!-- 多活動時，場地改由「其他流程」管理，這三欄轉成唯讀的鏡像 -->
         <div class="ad-callout" id="adVenueManaged" hidden>
           <p class="ad-callout-note">
-            這場婚禮有多個活動，<b>地點改在「婚禮流程」設定</b>。
+            這場婚禮有多個活動，<b>地點改在「其他流程」設定</b>。
             下面三欄顯示的是<b id="adVenueManagedName">主要活動</b>的地點，改不動。
           </p>
           <div class="ad-row">
             <button class="btn small ghost" id="adVenueManagedJump" type="button">
-              去設定婚禮流程</button>
+              去設定其他流程</button>
           </div>
         </div>
 
@@ -606,13 +606,11 @@
 
     <div class="ad-subpanel" data-subpanel="events">
     <section class="ad-sec">
-      <h2 class="ad-sec-title ad-page-title">婚禮流程</h2>
+      <h2 class="ad-sec-title ad-page-title">其他流程</h2>
       <p class="ad-sec-note">
-        一場婚禮可以有好幾個活動（文訂、迎娶、證婚、婚宴、派對），
-        <b>每個活動有自己的日期、時間與地點</b>。<br>
-        「需要賓客回覆」關起來的活動，會出現在邀請函上，但<b>不會出現在出席表單裡</b> ——
-        文訂、迎娶通常是這樣。<br>
-        要問賓客什麼（人數、葷素、兒童椅…）在「出席回覆 → 表單設定」設定。
+        一場婚禮可能有好幾個活動：文訂、迎娶、證婚、婚宴、After 派對，
+        <b>每個活動都可以設定日期、時間與地點</b>。<br>
+        需要賓客回覆的題目可以在「出席回覆 → 表單設定」設定。
       </p>
 
       <!-- 主日期對不上時的提醒（js/admin.js 判斷） -->
@@ -625,8 +623,8 @@
       <div class="ad-savebar">
         <span class="ad-savebar-note" id="adEvDirty">目前沒有未儲存的變更</span>
         <button class="btn small ghost" id="adEvAdd" type="button">＋ 新增活動</button>
-        <button class="btn small ghost" id="adEvReset" type="button">還原成目前的內容</button>
-        <button class="btn small" id="adEvSave" type="button">儲存婚禮流程</button>
+        <button class="btn small ghost" id="adEvReset" type="button">還原</button>
+        <button class="btn small" id="adEvSave" type="button">儲存</button>
       </div>
     </section>
     </div>
