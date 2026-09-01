@@ -2698,6 +2698,76 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
 .ad-tab{position:relative;}
 
 /* ============================================================
+   分頁與標題的圖示（SHIN9 圖示系統）
+   ------------------------------------------------------------
+   精靈圖在 admin.html 的 <symbol> 裡，這裡只管「長多大、多粗、多濃」。
+
+   線寬要在這裡調，不能寫死在 symbol 上：原稿是照 48px 畫的（stroke 1.5），
+   直接縮到 24px 會變成 0.75px —— 在 1x 螢幕上會被抹成一層灰。
+   所以線寬跟著顯示尺寸走：24px 顯示時給 2.4（換算回去正好是 1.2px），
+   比原稿略細一點，才配得上旁邊 14px 的細明體。
+
+   顏色刻意不吃 currentColor：圖示是輔助，跟標題文字一樣濃會變成噪音。
+   統一走 --primary-deep（每個主題各有一組），再用 opacity 分層次。
+============================================================ */
+.ad-ic{
+  flex:0 0 auto;width:24px;height:24px;
+  fill:none;stroke:currentColor;stroke-width:2.4;
+  stroke-linecap:round;stroke-linejoin:round;
+  color:var(--primary-deep);
+}
+
+/* shin9-carddraw 的前卡要蓋住後卡，那個實底不能寫死 ——
+   它坐在哪一面就要跟哪一面同色：側欄是 --bg1、選中的分頁是白的。
+   預設值刻意掛在 .ad-side／.ad-main 而不是 .ad-ic 上：寫在 svg 自己身上的話，
+   .ad-tab.is-on 那一條就蓋不過來了（直接設定 > 繼承）。 */
+.ad-side,.ad-main{--ic-surface:var(--bg1);}
+.ad-tab.is-on{--ic-surface:#fff;}
+
+/* ---- 側欄分頁 ---- */
+/* 加了圖示之後 .ad-tab 要變成 flex 才對得齊（原本是 display:block）。
+   .ad-tab.is-sub::before 那條 6px 的從屬線是 absolute，不受影響。 */
+.ad-tab{
+  display:flex;align-items:center;gap:10px;
+}
+.ad-ic-tab{opacity:.5;transition:opacity var(--dur-hover) ease-out;}
+.ad-tab.is-on .ad-ic-tab{opacity:1;}
+@media (hover:hover) and (pointer:fine){
+  .ad-tab:hover .ad-ic-tab{opacity:.8;}
+}
+
+/* ---- 頁面標題 ---- */
+/* 只給 .ad-page-title（一個 subpanel 一顆）。
+   .ad-sec-title 降階之後只有 13px，24px 的圖示擺上去會比字還大。
+
+   對齊用 flex-start 不用 center：窄螢幕上「上傳婚禮小卡照片」會折成兩行，
+   置中的話圖示會掉到兩行中間，看起來像在標記第二行。
+   margin-top 是把它推回第一行的視覺中線（21px×1.4 的行高減掉圖示高的一半）。 */
+.ad-sec-title.ad-page-title{display:flex;align-items:flex-start;gap:11px;}
+.ad-ic-title{width:26px;height:26px;stroke-width:2.2;opacity:.9;margin-top:2px;}
+
+@media(max-width:560px){
+  /* 標題在這裡收成 19px，圖示跟著收，線寬回到 24px 那一組的 2.4 */
+  .ad-sec-title.ad-page-title{gap:9px;}
+  .ad-ic-title{width:23px;height:23px;stroke-width:2.4;margin-top:2px;}
+}
+
+/* ---- 頁面裡的區塊與欄位 ---- */
+/* 「交通資訊」（12.5px）與「Dress Code」（11.5px 全大寫）都比標題小得多，
+   24px 的圖示擺上去會變成圖示帶著字走。這兩處收到 18／16px，
+   線寬同步加粗，縮得再小線都還在。 */
+.ad-sub-sec-title{display:flex;align-items:center;gap:8px;}
+.ad-ic-sub{width:18px;height:18px;stroke-width:3;}
+
+.ad-label-ic{display:flex;align-items:center;gap:7px;}
+.ad-ic-lab{width:16px;height:16px;stroke-width:3.4;}
+
+/* 動畫關掉時連圖示的淡入淡出一起關 */
+@media (prefers-reduced-motion:reduce){
+  .ad-ic-tab{transition:none;}
+}
+
+/* ============================================================
    側欄 tooltip
    ------------------------------------------------------------
    .ad-side 是 overflow-y:auto —— tooltip 放在側欄 DOM 裡會被裁掉。
