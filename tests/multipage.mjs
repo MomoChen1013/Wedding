@@ -1130,6 +1130,7 @@ console.log('\n[9] 素材資料夾自動載入');
   const cards = await page.evaluate(() => CARDS.map((c) => `${c.name}(${c.rarity})`));
   ok('囍卡用客戶的卡片',
     cards.join('、') === '戀愛中的新娘(SSR)、認真工作的新郎(N)', cards.join('、'));
+  ok('有卡片時抽卡按鈕是打開的', !(await page.isDisabled('#drawBtn')));
   await page.close();
 }
 {
@@ -1154,6 +1155,28 @@ console.log('\n[9] 素材資料夾自動載入');
     nodes.photos[nodes.photos.length - 1] === '下一張，等你一起入鏡！',
     nodes.photos[nodes.photos.length - 1]);
   await page.close();
+}
+{
+  /* 素材與後台都沒有卡片時，抽卡按鈕要停用，並且說清楚在等什麼。
+     minimal-site-2027 沒有素材資料夾、後台也沒上傳過卡，
+     只有抽卡頁本來是關著的 —— 借開一下，量完再關回去。 */
+  await adb.collection('sites').doc(siteIds['minimal-site-2027'])
+    .update({ pages: Object.fromEntries(ALL_PAGES.map((k) => [k, k === 'rsvp' || k === 'draw'])) });
+
+  const { page } = await visit('/w/minimal-site-2027/draw');
+  await page.waitForFunction(
+    () => document.getElementById('drawEmpty') && !document.getElementById('drawEmpty').hidden,
+    null, { timeout:10000 }).catch(() => {});
+  ok('沒有卡片時卡池是空的', (await page.evaluate(() => CARDS.length)) === 0);
+  ok('沒有卡片時抽卡按鈕停用', await page.isDisabled('#drawBtn'));
+  ok('沒有卡片時寫著在等新人上傳',
+    (await page.textContent('#drawEmpty')).trim() === '等待新人上傳照片',
+    await page.textContent('#drawEmpty'));
+  await page.close();
+
+  /* 還原，後面的測試還要用這組站台 */
+  await adb.collection('sites').doc(siteIds['minimal-site-2027'])
+    .update({ pages: Object.fromEntries(ALL_PAGES.map((k) => [k, k === 'rsvp'])) });
 }
 {
   /* 沒放素材的站台要沿用預設，不能整個空掉 */

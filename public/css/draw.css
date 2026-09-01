@@ -36,6 +36,10 @@
 .mini-card.has-img{background:var(--surface);}
 .mini-card .mh{position:absolute;inset:0;mix-blend-mode:color-dodge;opacity:.4;
   background:conic-gradient(from 0deg,#ff6ec4,#7873f5,#4ade80,#fcd34d,#ff6ec4);background-size:160% 160%;animation:holoMove 4s linear infinite;}
+/* 抽卡按鈕與底下那行「等待新人上傳照片」（卡池空的時候才出現） */
+.draw-act{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.draw-empty{margin:0;font-size:11px;letter-spacing:.08em;color:var(--ink-soft);opacity:.8;}
+
 .draw-info{font-size:12.5px;color:var(--ink-soft);text-align:center;letter-spacing:.14em;}
 .draw-info-hint{display:block;margin-top:4px;font-size:11px;letter-spacing:.08em;opacity:.8;}
 
