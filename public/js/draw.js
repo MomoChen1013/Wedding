@@ -1,130 +1,69 @@
 /* ============================================================
-   draw.js — 抽 Momo 小卡
+   draw.js — 抽婚禮小卡
    ============================================================
-   ▸ 怎麼加 / 改 / 刪小卡？
-     在下方 CARDS 陣列加一行：
-       {
-         art:    '✦',                 // ① 圖片網址或符號
-         name:   '日常 Momo',            // ② 卡名（顯示在卡片下方）
-         rarity: 'R',                   // ③ 等級：SSR / SR / R / N
-         desc:   '咖啡與書的下午',       // ④ 說明（選填）
-       },
-     ・刪除 = 把整行刪掉
-     ・順序、總張數隨便調，程式會自動處理
-
    ▸ 卡池從哪裡來？（由上而下，先找到就用）
-     1. 新人在後台 /w/{slug}/admin「囍卡」分頁上傳的卡（Firestore `cards`）
+     1. 新人在後台 /w/{slug}/admin「婚禮小卡」分頁上傳的卡（Firestore `cards`）
      2. 素材資料夾 public/assets/{slug}/cards/
-     3. 下方 CARDS 的內建範例卡
+     兩邊都沒有 ＝ 卡池是空的：抽卡按鈕停用，底下寫「等待新人上傳照片」。
+
+     **這一頁沒有內建範例卡。** 以前這裡寫死了一整組某位新人的生活照
+     （「小時候的Mo」那一批），新開的站台只要沒放素材，賓客就會抽到
+     別人的照片。與其給一組不屬於這對新人的卡，不如什麼都不給，
+     然後老實說「還在等新人上傳」。
+
+   ▸ 一張卡有哪些欄位？
+       art     圖片網址（後台上傳的是整段 data URL）或一個符號
+       name    卡名（顯示在卡片下方）
+       rarity  等級：SSR / SR / R / N
+       desc    說明（選填，顯示在大卡下方的小紙條）
      後台上傳的卡圖是整段 data URL，塞不進收藏紀錄的 art 欄位，
      所以收藏只存 cardId，畫面再回卡池取圖。
 
    ▸ art 寫什麼？
-     ・自己上傳的圖：放 public/assets/{slug}/cards/，程式會自動帶入
+     ・後台上傳、或放進 public/assets/{slug}/cards/ 的圖：程式自動帶入
      ・外部網址：    'https://example.com/photo.jpg'
      ・想用符號：    '✦'
      程式會自動分辨：含「/」或副檔名（.png .jpg .webp 等）→ 當圖片
                    其他 → 當 emoji 顯示
 
    ▸ 等級（rarity）會影響什麼？
-     ・SSR ＝ SSR：卡面有彩虹光膜 + 抽到時放煙火
-     ・SR  ＝ SR ：卡面有彩虹光膜 + 抽到時放煙火
-     ・R   ＝ R  ：一般卡（沒光膜、沒煙火）
-     ・N   ＝ N    ：一般卡
+     ・SSR／SR：卡面有彩虹光膜 + 抽到時放煙火
+     ・R／N   ：一般卡（沒光膜、沒煙火）
      ・目前每張卡的抽中機率相同
        想做「越稀有越難抽」？把高稀有卡少放幾張、N 卡多放幾張即可
-
-   ▸ desc（說明）寫什麼？
-     ・選填，留空就不顯示
-     ・短一點比較好看，建議一句話內
-     ・會顯示在大卡片下方的小紙條上
 
    ▸ 圖片建議
      ・卡片比例約 2:3（直式）
      ・解析度 800×1200 以上比較清楚
-     ・檔名愛叫什麼都行，path 對到 art 就好
 ============================================================ */
 if(!requireUser()) { /* requireUser 已導向首頁 */ }
 
-/* 以下 52 張為範例卡（卡名與描述沿用原作 Momo 的生活照）
-   art 一律留成記號：真正的卡圖請放 public/assets/{slug}/cards/，
-   由下面的 applyCardAssets() 整批取代，沒放素材時也不會去要不存在的圖。 */
-const CARDS = [
-  {art:'✦', name:'看劇前的Mo', rarity:'N', desc:'大愛CMusical'},
-  {art:'✦', name:'覺得自己可愛的Mo', rarity:'N', desc:'是拍貼機'},
-  {art:'✦', name:'神射手Momo', rarity:'N', desc:'百發百中'},
-  {art:'✦', name:'攝影師Momo', rarity:'N'},
-  {art:'✦', name:'春系Momo', rarity:'N'},
-  {art:'✦', name:'小時候的Mo', rarity:'SSR', desc:'不怕高又不怕鏡頭'},
-  {art:'✦', name:'中秋節的Momo', rarity:'SSR', desc:'覺得自己超帥氣'},
-  {art:'✦', name:'畢業展覽開幕的 Momo', rarity:'SR', desc:'鮮少膝上裙'},
-  {art:'✦', name:'超長髮的Momo', rarity:'SR', desc:'澳門的軍餐廳'},
-  {art:'✦', name:'拆聖誕交換禮物的Momo', rarity:'N', desc:'喜獲大禮包！'},
-  {art:'✦', name:'黑魔女Momo', rarity:'SR', desc:'DressCode暗黑系'},
-  {art:'✦', name:'快離職的Momo', rarity:'N', desc:'藏不住的雀躍'},
-  {art:'✦', name:'錄音室的Momo', rarity:'R', desc:'然後就完全沒聽過'},
-  {art:'✦', name:'男裝版Momo', rarity:'R', desc:'謝安哥支援'},
-  {art:'✦', name:'超尬的Momo', rarity:'N', desc:'謝姐側拍'},
-  {art:'✦', name:'黑道大姐Momo', rarity:'N'},
-  {art:'✦', name:'拔腿Momo', rarity:'N', desc:'一切都是角度'},
-  {art:'✦', name:'模特Momo', rarity:'R', desc:'不看鏡頭才不尬'},
-  {art:'✦', name:'和服Momo', rarity:'R'},
-  {art:'✦', name:'夜釣Momo', rarity:'N', desc:'好長的白帶魚'},
-  {art:'✦', name:'三眼怪Momo', rarity:'R', desc:'解鎖日本卡丁車'},
-  {art:'✦', name:'畫畫Momo', rarity:'N', desc:'畫Hana'},
-  {art:'✦', name:'和服Momo', rarity:'R'},
-  {art:'✦', name:'短髮做黑暗料理的Momo', rarity:'R', desc:'炒火龍果'},
-  {art:'✦', name:'青春大隊接力Momo', rarity:'R', desc:'第一名！'},
-  {art:'✦', name:'高原上騎馬的Momo', rarity:'SR', desc:'好喜歡'},
-  {art:'✦', name:'BaristaMomo', rarity:'N', desc:'跟杯子一樣顏色'},
-  {art:'✦', name:'婚宴Momo', rarity:'R', desc:'我就是在裝可愛'},
-  {art:'✦', name:'玩小孩Momo', rarity:'N'},
-  {art:'✦', name:'不是Momo', rarity:'SSR', desc:'是Hana'},
-  {art:'✦', name:'歐膩Momo', rarity:'N', desc:'是日出還是日落？'},
-  {art:'✦', name:'女友照（？）Momo', rarity:'N', desc:'超愛的寶藏店'},
-  {art:'✦', name:'獨旅Momo', rarity:'R', desc:'謝謝韓國姊姊幫拍'},
-  {art:'✦', name:'油菜花田裡的Momo', rarity:'N'},
-  {art:'✦', name:'吃不下Momo', rarity:'R', desc:'這一盤我可以吃一天'},
-  {art:'✦', name:'主持人Momo', rarity:'SR', desc:'一群人我就敢這樣綁'},
-  {art:'✦', name:'橘子園裡的Momo', rarity:'N', desc:'天氣超好'},
-  {art:'✦', name:'滑冰的Momo', rarity:'N', desc:'超難'},
-  {art:'✦', name:'黑道大姐Momo', rarity:'N'},
-  {art:'✦', name:'白馬上的Momo', rarity:'N'},
-  {art:'✦', name:'講台上報告的Momo', rarity:'R'},
-  {art:'✦', name:'女團Momo', rarity:'SR', desc:'好青春'},
-  {art:'✦', name:'輕井澤的Momo', rarity:'N', desc:'好愛這個光跟景'},
-  {art:'✦', name:'意外到粉紅草裡的Momo', rarity:'R'},
-  {art:'✦', name:'東京迪士尼的Momo', rarity:'SR', desc:'熊耳朵'},
-  {art:'✦', name:'裝日本人Momo', rarity:'N', desc:'日本人才不會穿這個顏色'},
-  {art:'✦', name:'做奇怪的事情的Momo', rarity:'N'},
-  {art:'✦', name:'婚宴Momo', rarity:'SR'},
-  {art:'✦', name:'追星的Momo', rarity:'SR'},
-  {art:'✦', name:'餵大貓咪的Momo', rarity:'R', desc:'是老虎'},
-  {art:'✦', name:'去膩沖繩的Momo', rarity:'N'},
-  {art:'✦', name:'馬祖的Momo', rarity:'N'}
-];
+/* 現在畫面上用的卡池。空的就是「新人還沒上傳」——
+   applyOwnerCards() 會整批換掉它，所以固定用同一個陣列（不重新指派）。 */
+const CARDS = [];
 
-/* 素材資料夾有 cards/ 就用客戶自己的卡圖，否則沿用上面的預設 */
-(function applyCardAssets(){
-  const list = (window.SITE && window.SITE.assets && window.SITE.assets.cards) || [];
-  if(!list.length) return;
-  CARDS.length = 0;
-  list.forEach((item, i) => {
-    CARDS.push({
-      art:    item.src,
-      name:   item.name   || `囍卡 ${i + 1}`,
-      rarity: item.rarity || 'N',
-      desc:   item.desc   || '',
-    });
-  });
-})();
+/* 素材資料夾（public/assets/{slug}/cards/）掃到的卡，
+   後台一張都沒上傳時就用這一組。 */
+const ASSET_CARDS = ((window.SITE && window.SITE.assets && window.SITE.assets.cards) || [])
+  .map((item, i) => ({
+    art:    item.src,
+    name:   item.name   || `囍卡 ${i + 1}`,
+    rarity: item.rarity || 'N',
+    desc:   item.desc   || '',
+  }));
+ASSET_CARDS.forEach(c => CARDS.push(c));
 
-/* 後台上傳的卡（Firestore）優先於上面兩種來源。
+/* 後台上傳的卡（Firestore）優先於素材資料夾。
    非同步讀進來，到齊之後整批換掉卡池；換完把已經畫好的收藏重畫一次，
    因為收藏只存 cardId，要有卡池才找得到圖。 */
-const ASSET_CARDS = CARDS.slice();
+
+/* Firestore 的第一份 snapshot 回來了沒。
+   還沒回來時的「卡池是空的」是「還沒讀到」，不是「新人沒上傳」——
+   兩者長得一樣，但只有後者可以把那行字寫出去。 */
+let cardsLoaded = false;
 
 function applyOwnerCards(){
+  cardsLoaded = true;
   const list = DataStore.getCards();
   CARDS.length = 0;
   if(list.length){
@@ -141,6 +80,7 @@ function applyOwnerCards(){
     ASSET_CARDS.forEach(c => CARDS.push(c));
   }
   redrawCollection();
+  updateDrawState();
 }
 
 /* 收藏紀錄裡的一筆 → 拿得到圖的樣子 */
@@ -165,6 +105,8 @@ const card      = document.getElementById('photocard');
 const coll      = document.getElementById('collection');
 const collCount = document.getElementById('collCount');
 const descEl    = document.getElementById('cardDesc');
+const drawBtn   = document.getElementById('drawBtn');
+const drawEmpty = document.getElementById('drawEmpty');
 let drawing = false;
 
 /* ===== 收藏（mini-card） =====
@@ -447,12 +389,26 @@ cvSave.addEventListener('click', async ()=>{
 
 document.addEventListener('data:collected', renderCollection);
 document.addEventListener('data:cards', applyOwnerCards);
+/* 讀不到 cards（規則擋下、網路掛掉）就當作「新人沒上傳」處理 ——
+   卡池裡剩下的是素材資料夾那一組，空的話一樣要把等待的字寫出來，
+   而不是留一顆永遠停用、什麼都不說的按鈕。 */
+document.addEventListener('data:cards:denied', ()=>{ cardsLoaded = true; updateDrawState(); });
 DataStore.subscribeCards();
 renderCollection();
 
 /* ===== 抽卡 ===== */
-document.getElementById('drawBtn').addEventListener('click', ()=>{
-  if(drawing) return; drawing = true;
+/* 卡池是空的就不讓人抽 —— 抽出來也只會是一張沒有照片的空卡。
+   HTML 上按鈕預設就是 disabled，所以 JS 還沒跑完之前也點不下去。 */
+function updateDrawState(){
+  const empty = !CARDS.length;
+  drawBtn.disabled = empty;
+  /* 還沒讀到 Firestore 之前不寫那行字：那時候的「空」是還沒讀到 */
+  if(drawEmpty) drawEmpty.hidden = !(empty && cardsLoaded);
+}
+updateDrawState();
+
+drawBtn.addEventListener('click', ()=>{
+  if(drawing || !CARDS.length) return; drawing = true;
   card.classList.remove('flipped', 'shine');
   if(descEl) descEl.classList.remove('show');
 

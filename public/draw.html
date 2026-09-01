@@ -53,7 +53,13 @@
           </div>
         </div>
         <div class="card-desc" id="cardDesc"></div>
-        <button class="btn small" id="drawBtn">抽一張婚禮小卡</button>
+        <!-- 卡池空的時候（新人一張照片都還沒上傳）按鈕是停用的，
+             底下補一行小字說明 —— 只有一顆點不動的按鈕會被當成壞掉。
+             預設就是 disabled，draw.js 讀到卡片之後才打開。 -->
+        <div class="draw-act">
+          <button class="btn small" id="drawBtn" disabled>抽一張婚禮小卡</button>
+          <p class="draw-empty" id="drawEmpty" hidden>等待新人上傳照片</p>
+        </div>
         <div class="draw-info">你的收藏（<span id="collCount">0</span> 張）<small class="draw-info-hint">點卡片看大圖・可以存下來</small></div>
         <div class="collection" id="collection"></div>
       </div>
