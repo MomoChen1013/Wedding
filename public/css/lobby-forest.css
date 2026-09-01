@@ -32,10 +32,15 @@
 .f-kicker .en{font-family:var(--font-display);font-size:12px;letter-spacing:.4em;
   text-transform:uppercase;color:rgba(255,255,255,.85);}
 .f-kicker .cn{font-family:var(--font-hand);font-size:14px;letter-spacing:.3em;color:rgba(255,255,255,.92);}
-.f-names{font-family:var(--font-display);font-weight:300;color:rgba(255,255,255,.92);
+/* 選擇器一定要帶著 .f-hero：名字那一顆是 <h1>，index.css 的
+   `.lobby-hero h1`（類別＋標籤）比單一個 `.f-names` 更明確，
+   後載入也贏不了它 —— 少了這個前綴，名字會被搶回 Classic 的
+   var(--ink)（森林綠壓在暗照片上幾乎看不見）與 Classic 的字級／字重，
+   下面的日期卻仍是白的，同一組字變成兩種顏色。 */
+.f-hero .f-names{font-family:var(--font-display);font-weight:300;color:rgba(255,255,255,.92);
   font-size:clamp(32px,8vw,78px);line-height:1.15;letter-spacing:.07em;
   text-shadow:0 2px 26px rgba(10,16,12,.5);}
-.f-names .amp{font-style:italic;padding:0 .16em;}
+.f-hero .f-names .amp{font-style:italic;padding:0 .16em;}
 .f-date{margin-top:14px;font-size:clamp(12px,2.2vw,14px);letter-spacing:.34em;
   color:rgba(255,255,255,.92);text-shadow:0 1px 14px rgba(10,16,12,.6);}
 .f-rule{width:1px;height:40px;background:rgba(255,255,255,.5);margin:22px auto 0;}
