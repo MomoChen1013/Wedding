@@ -2717,6 +2717,13 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
   color:var(--primary-deep);
 }
 
+/* shin9-carddraw 的前卡要蓋住後卡，那個實底不能寫死 ——
+   它坐在哪一面就要跟哪一面同色：側欄是 --bg1、選中的分頁是白的。
+   預設值刻意掛在 .ad-side／.ad-main 而不是 .ad-ic 上：寫在 svg 自己身上的話，
+   .ad-tab.is-on 那一條就蓋不過來了（直接設定 > 繼承）。 */
+.ad-side,.ad-main{--ic-surface:var(--bg1);}
+.ad-tab.is-on{--ic-surface:#fff;}
+
 /* ---- 側欄分頁 ---- */
 /* 加了圖示之後 .ad-tab 要變成 flex 才對得齊（原本是 display:block）。
    .ad-tab.is-sub::before 那條 6px 的從屬線是 absolute，不受影響。 */
@@ -2744,6 +2751,16 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
   .ad-sec-title.ad-page-title{gap:9px;}
   .ad-ic-title{width:23px;height:23px;stroke-width:2.4;margin-top:2px;}
 }
+
+/* ---- 頁面裡的區塊與欄位 ---- */
+/* 「交通資訊」（12.5px）與「Dress Code」（11.5px 全大寫）都比標題小得多，
+   24px 的圖示擺上去會變成圖示帶著字走。這兩處收到 18／16px，
+   線寬同步加粗，縮得再小線都還在。 */
+.ad-sub-sec-title{display:flex;align-items:center;gap:8px;}
+.ad-ic-sub{width:18px;height:18px;stroke-width:3;}
+
+.ad-label-ic{display:flex;align-items:center;gap:7px;}
+.ad-ic-lab{width:16px;height:16px;stroke-width:3.4;}
 
 /* 動畫關掉時連圖示的淡入淡出一起關 */
 @media (prefers-reduced-motion:reduce){

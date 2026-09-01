@@ -116,6 +116,33 @@
       <path d="M14 18h20M14 26h13"/>
     </symbol>
 
+    <!-- 前卡要蓋住後卡，那個實底得跟它坐的那一面同色 ——
+         側欄是 --bg1、選中的分頁是白的，所以走 --ic-surface（見 admin.css） -->
+    <symbol id="shin9-carddraw" viewBox="0 0 48 48">
+      <rect x="19" y="8" width="21" height="30" rx="3" transform="rotate(11 29.5 23)"/>
+      <rect x="8" y="9" width="21" height="30" rx="3" fill="var(--ic-surface)"/>
+      <circle cx="18.5" cy="20" r="4"/>
+      <path d="M13 31h11"/>
+    </symbol>
+
+    <symbol id="shin9-location" viewBox="0 0 48 48">
+      <path d="M24 42s13-13.4 13-22a13 13 0 1 0-26 0c0 8.6 13 22 13 22Z"/>
+      <circle cx="24" cy="19.5" r="4.6"/>
+    </symbol>
+
+    <symbol id="shin9-dresscode" viewBox="0 0 48 48">
+      <path d="M20.6 11.4a3.4 3.4 0 1 1 3.4 3.4v2.4"/>
+      <path d="M24 17.2 9.2 29.9A2.2 2.2 0 0 0 10.6 33.8h26.8a2.2 2.2 0 0 0 1.4-3.9L24 17.2Z"/>
+    </symbol>
+
+    <symbol id="shin9-rsvp-multi" viewBox="0 0 48 48">
+      <path d="M18 9h16a3 3 0 0 1 3 3v22"/>
+      <path d="M16 13h-3a3 3 0 0 0-3 3v22a3 3 0 0 0 3 3h17a3 3 0 0 0 3-3V16a3 3 0 0 0-3-3h-3"/>
+      <rect x="16" y="9.5" width="11" height="7" rx="2.2"/>
+      <path d="M14.5 27 18 30.5 25.5 22"/>
+      <path d="M14.5 36h14"/>
+    </symbol>
+
     <symbol id="shin9-timeline" viewBox="0 0 48 48">
       <path d="M13 9v30"/>
       <circle cx="13" cy="14" r="2.6"/>
@@ -186,13 +213,6 @@
       <path d="M7 25.5 10.5 29 17 22.5"/>
       <path d="M7 37.5 10.5 41 17 34.5"/>
       <path d="M23 14h18M23 26h18M23 38h13"/>
-    </symbol>
-
-    <!-- 婚禮小卡：單張直式小卡。跟 shin9-carddraw（兩張疊起來的抽卡）分工 -->
-    <symbol id="shin9-card" viewBox="0 0 48 48">
-      <rect x="13" y="5" width="22" height="38" rx="3.5"/>
-      <circle cx="24" cy="19" r="5.5"/>
-      <path d="M17 30.5h14M19.5 36.5h9"/>
     </symbol>
 
     <!-- 桌次圖：一張圓桌 ＋ 四個座位。跟 shin9-seating（拖曳排桌的方格）分工 -->
@@ -319,7 +339,7 @@
           <div class="ad-navgroup-items">
             <button class="ad-tab" type="button" data-tab="lobby"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-info"/></svg>婚禮資訊</button>
             <button class="ad-tab" type="button" data-tab="letters"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-letter"/></svg>感謝信</button>
-            <button class="ad-tab" type="button" data-tab="cards"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-card"/></svg>婚禮小卡</button>
+            <button class="ad-tab" type="button" data-tab="cards"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-carddraw"/></svg>婚禮小卡</button>
             <button class="ad-tab" type="button" data-tab="exhibits"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-storywall"/></svg>新人故事牆</button>
           </div>
         </div>
@@ -732,7 +752,7 @@
         <div class="ad-count" id="adEventTimeOff" hidden>婚禮日期還沒設定，請先找我們排定日期</div>
 
         <div class="ad-sub-sec">
-          <div class="ad-sub-sec-title">交通資訊</div>
+          <div class="ad-sub-sec-title"><svg class="ad-ic ad-ic-sub" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-location"/></svg>交通資訊</div>
 
           <label class="ad-label" for="adTransportPublic">大眾運輸</label>
           <textarea class="ad-textarea" id="adTransportPublic" rows="3" maxlength="500"
@@ -762,7 +782,7 @@
           </div>
         </div>
 
-        <label class="ad-label" for="adDressCode">Dress Code</label>
+        <label class="ad-label ad-label-ic" for="adDressCode"><svg class="ad-ic ad-ic-lab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-dresscode"/></svg>Dress Code</label>
         <textarea class="ad-textarea" id="adDressCode" rows="3" maxlength="500"
                   placeholder="溫柔大地色系，穿得舒服最重要"></textarea>
 
@@ -791,7 +811,7 @@
 
     <div class="ad-subpanel" data-subpanel="events">
     <section class="ad-sec">
-      <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-timeline"/></svg>其他流程</h2>
+      <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-rsvp-multi"/></svg>其他流程</h2>
       <p class="ad-sec-note">
         一場婚禮可能有好幾個活動：文訂、迎娶、證婚、婚宴、After 派對，
         <b>每個活動都可以設定日期、時間與地點</b>。<br>
