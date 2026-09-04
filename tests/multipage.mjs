@@ -2024,6 +2024,35 @@ console.log('\n[17] 後台只顯示有開的頁面');
   await page.close();
 }
 {
+  /* 「沒開」有兩種：可加購（鎖頭，看得見）與還沒對外開放（整顆收起來）。
+     分界是 site-context.js 的 UNRELEASED_FEATURES —— 那是一份寫在程式裡的
+     清單（產品層級的事實），預設是空的，所以這裡直接換掉 isUnreleased
+     再重跑一次 applyTabVisibility，看畫面有沒有跟著分開。 */
+  const { page } = await visit('/w/minimal-site-2027/admin');
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+
+  const st = await page.evaluate(() => {
+    window.SITE.isUnreleased = (k) => k === 'quiz';
+    applyTabVisibility();
+    const q = document.querySelector('.ad-tab[data-tab="quiz"]');
+    const c = document.querySelector('.ad-tab[data-tab="cards"]');
+    return {
+      quizHidden:  q.hidden,
+      quizLocked:  q.classList.contains('is-locked'),
+      quizIcon:    !!q.querySelector('.ad-ic-lock'),
+      quizCover:   !!document.querySelector('.ad-panel[data-panel="quiz"] > .ad-lock-cover'),
+      cardsHidden: c.hidden,
+      cardsLocked: c.classList.contains('is-locked'),
+    };
+  });
+  ok('還沒開放的功能整顆收起來', st.quizHidden === true, JSON.stringify(st));
+  ok('還沒開放的功能不掛鎖頭', !st.quizLocked && !st.quizIcon);
+  ok('還沒開放的功能不留說明卡', !st.quizCover);
+  ok('其他沒開的功能還是可加購（鎖頭）', !st.cardsHidden && st.cardsLocked);
+  await page.close();
+}
+{
   /* 連預設開著的那一頁都被關掉時，要自動改開第一個還在的分頁 */
   await adb.collection('sites').doc(siteIds['minimal-site-2027'])
     .update({ pages: Object.fromEntries(ALL_PAGES.map((k) => [k, false])) });

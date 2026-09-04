@@ -21,7 +21,8 @@ import { parseArgs } from 'node:util';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { resolveBaseUrl } from './site-url.js';
-import { OPTIONAL_PAGES, ADMIN_PAGES, ALL_PAGE_KEYS, PAGE_LABELS } from './site-pages.js';
+import { OPTIONAL_PAGES, ADMIN_PAGES, ALL_PAGE_KEYS, PAGE_LABELS,
+         isUnreleased } from './site-pages.js';
 
 function parseCliArgs(argv) {
   const { values } = parseArgs({
@@ -116,11 +117,17 @@ async function checkOne(db, slug, base) {
        不然它會被當成「已下架的代號」 */
     const gone = Object.keys(s.pages).filter((k) => !ALL_PAGE_KEYS.includes(k));
     console.log(`   已開頁面 : 大廳（固定）${on.length ? '、' + on.join('、') : ''}`);
-    if (off.length) console.log(`   已關頁面 : ${off.join('、')}`);
+    /* 關著的分兩種：新人在後台看得到鎖頭（可加購），還是完全看不到 */
+    const sellable = off.filter((k) => !isUnreleased(k));
+    const hidden   = off.filter((k) => isUnreleased(k));
+    if (sellable.length) console.log(`   可加購   : ${sellable.join('、')}（後台有鎖頭，點得進去看預覽）`);
+    if (hidden.length)   console.log(`   還沒開放 : ${hidden.join('、')}（後台整顆收起來）`);
 
     /* 後台功能沒有網址，分開列才不會被誤會成多一頁 */
-    const admin = ADMIN_PAGES.map((k) =>
-      `${PAGE_LABELS[k] || k}${s.pages[k] === true ? '：開' : '：關'}`);
+    const admin = ADMIN_PAGES.map((k) => {
+      if (s.pages[k] === true) return `${PAGE_LABELS[k] || k}：開`;
+      return `${PAGE_LABELS[k] || k}：${isUnreleased(k) ? '關（還沒開放）' : '關（可加購）'}`;
+    });
     console.log(`   後台功能 : ${admin.join('、')}`);
 
     if (gone.length) console.log(`ℹ️  已下架的代號（留著不影響）: ${gone.join('、')}`);

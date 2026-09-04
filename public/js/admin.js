@@ -1194,15 +1194,30 @@ const TAB_PAGE = {
   quiz:     'quiz',
 };
 
-function tabEnabled(tab){
+/* 一個分頁有三種狀態：
+     'on'     開著，正常用
+     'locked' 沒開，但是可以加購 —— 側欄留著、掛鎖頭，點得進去看預覽
+     'off'    沒開，而且功能本身還沒對外開放 —— 整顆收起來
+
+   'locked' 與 'off' 的差別只有一件事：這個功能現在賣不賣得出去。
+   判斷寫在 site-context.js 的 UNRELEASED_FEATURES（那是產品層級的事實，
+   不是某一組新人的設定），這裡只負責把它翻成畫面。 */
+function tabState(tab){
   const key = TAB_PAGE[tab];
-  if(!key) return true;
+  if(!key) return 'on';
+  const S = window.SITE;
+  if(!S) return 'off';
   /* 看的是 pages（我們幫這組新人開了哪幾頁），不是 isEnabled()——
      桌次功能被新人自己關起來時，賓客看不到那一頁，
      但後台的「桌次」分頁要留著，名單和桌次圖才有地方先整理。 */
-  const S = window.SITE;
-  if(!S) return false;
-  return !!(S.isPageOn ? S.isPageOn(key) : S.isEnabled(key));
+  if(S.isPageOn ? S.isPageOn(key) : S.isEnabled(key)) return 'on';
+  /* 舊版的 site-context 沒有 isUnreleased：當作「沒有還沒開放的功能」，
+     全部落在可加購那一邊，跟這個欄位加進來之前的行為一致 */
+  return (S.isUnreleased && S.isUnreleased(key)) ? 'off' : 'locked';
+}
+
+function tabEnabled(tab){
+  return tabState(tab) === 'on';
 }
 
 /* ============================================================
@@ -1267,14 +1282,22 @@ function tabLocked(btn){
   return btn.classList.contains('is-locked');
 }
 
-/* 沒開的分頁不再收起來，改成鎖起來（面板的顯示仍交給 activateTab 統一處理） */
+/* 可加購的分頁鎖起來、還沒開放的分頁收起來
+   （面板的顯示仍交給 activateTab 統一處理） */
 function applyTabVisibility(){
   document.querySelectorAll('#adSide .ad-tab').forEach(btn => {
-    const locked = !tabEnabled(btn.dataset.tab);
-    markTabLocked(btn, locked);
-    lockPanel(btn.dataset.tab, locked);
+    const state = tabState(btn.dataset.tab);
+    btn.hidden = state === 'off';
+    markTabLocked(btn, state === 'locked');
+    lockPanel(btn.dataset.tab, state === 'locked');
   });
-  /* 分組的標題不用再跟著收：每一組永遠至少有一顆按鈕在（鎖著也是在）。 */
+  /* 一組裡的分頁有可能全部都還沒開放（全 hidden）——
+     一個什麼都沒有的「婚禮管理」標題比沒有標題還糟，整組空了就一起收。
+     鎖著的分頁不算空：那正是要讓新人看見的「還可以加開什麼」。 */
+  document.querySelectorAll('#adSide .ad-navgroup').forEach(g => {
+    const tabs = Array.from(g.querySelectorAll('.ad-tab'));
+    g.hidden = tabs.length > 0 && tabs.every(b => b.hidden);
+  });
   /* 子分頁只有「設定賓客標籤」有開關。先在 initRouter 之前決定它在不在，
      #rsvp/tags 這個網址才進得去（進不去的話 activateSubtab 會退回第一個） */
   const tagBtn = document.getElementById('adTagSubtab');

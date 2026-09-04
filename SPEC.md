@@ -1061,13 +1061,32 @@ allow read: if request.auth != null
 **分頁跟著 `pages` 走**：這組新人沒開的頁面，後台不會長出那一區的編輯內容
 （`admin.js` 的 `TAB_PAGE`）—— 關掉抽卡卻還讓新人傳婚禮小卡，傳完賓客也看不到。
 
-沒開的分頁**不是收起來，是鎖起來**（`applyTabVisibility` → `markTabLocked`／
-`lockPanel`）：側欄按鈕留著、右邊掛一顆鎖頭（`#shin9-lock`，Feather 的 lock），
-點得進去，但面板收在一屏高以內、原本的骨架模糊掉當預覽，上面蓋一張
-`.ad-lock-cover` 說明卡（功能說明取自 `NAV_TIPS`，加一句「這是進階方案的功能」）。
-收起來的話新人永遠不知道還有什麼可以加；鎖起來就變成後台自己的加購入口。
+一個分頁有三種狀態（`admin.js` 的 `tabState()`）：
+
+| 狀態 | 條件 | 新人看到 |
+|---|---|---|
+| `on` | `pages[key] === true` | 正常用 |
+| `locked` | 沒開，**不在** `UNRELEASED_FEATURES` 裡 | 側欄留著、掛鎖頭，點得進去看預覽 |
+| `off` | 沒開，**在** `UNRELEASED_FEATURES` 裡 | 整顆收起來，完全看不到 |
+
+`locked` 的樣子（`markTabLocked`／`lockPanel`）：側欄按鈕留著、右邊掛一顆鎖頭
+（`#shin9-lock`，Feather 的 lock），點得進去，但面板收在一屏高以內、
+原本的骨架模糊掉當預覽，上面蓋一張 `.ad-lock-cover` 說明卡（功能說明取自
+`NAV_TIPS`，加一句「這是進階方案的功能」）。收起來的話新人永遠不知道還有什麼
+可以加；鎖起來就變成後台自己的加購入口。
+
+`off` 存在的理由：功能還在做的時候掛上「進階方案」的鎖頭，等於在賣一個
+我們開不了的東西 —— 新人問了，我們只能說「還沒好」。所以
+`UNRELEASED_FEATURES`（`public/js/site-context.js`，CLI 那邊是
+`scripts/site-pages.js` 的 `UNRELEASED_PAGES`）列的是**還沒對外開放的功能**：
+那是產品層級的事實，對所有站台都一樣，因此寫在程式裡而不是每個站台的
+`pages`。開賣那天把代號刪掉就好，站台資料一個都不用動；要先給某一組新人
+試用也不受影響 —— `set-pages --enable` 打開之後它就是 `on`，這份清單只管
+「沒開的時候要不要被看見」。`npm run check-site` 與 `set-pages` 都會把兩種
+關法分開印出來。
 
 鎖著的分頁只是**看得見**，不是進得去：資料訂閱一樣被 `tabEnabled()` 擋著
+（它就是 `tabState() === 'on'`）
 （一筆都不讀，Security Rules 那邊本來就不放行），骨架 `inert` ＋
 `pointer-events:none`，滑鼠與鍵盤都碰不到裡面的欄位。
 它也不能當退路 —— `activateTab` 找不到指定分頁時會跳過鎖著的，
