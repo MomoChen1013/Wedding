@@ -1205,17 +1205,76 @@ function tabEnabled(tab){
   return !!(S.isPageOn ? S.isPageOn(key) : S.isEnabled(key));
 }
 
-/* 關掉的分頁連按鈕帶內容一起收起來（面板的顯示交給 activateTab 統一處理） */
+/* ============================================================
+   沒開的功能＝進階方案（鎖起來，但看得見）
+   ------------------------------------------------------------
+   原本沒開的分頁是整顆 hidden 掉的：新人只看得到自己買到的那幾件事，
+   也就永遠不知道還有什麼可以加開。改成留在側欄、右邊掛一顆鎖頭，
+   點得進去，內容區蓋一層遮罩，底下是模糊的預覽（見 lockPanel）。
+
+   資料一筆都不會多讀 —— openAdmin 的訂閱本來就用 tabEnabled() 擋著，
+   鎖起來的分頁不訂閱、也讀不到（Security Rules 那邊本來就不放行），
+   所以遮罩底下看到的是空的骨架，那正好就是「這個功能長什麼樣子」。
+============================================================ */
+const LOCK_NOTE = '這是進階方案的功能。想開通再告訴我們，我們幫你打開，現有的資料都不會動。';
+
+function lockIconHtml(cls){
+  return `<svg class="ad-ic ${cls}" viewBox="0 0 48 48" aria-hidden="true">`
+       + `<use href="#shin9-lock"/></svg>`;
+}
+
+/* 側欄按鈕：留著，右邊補一顆鎖頭。
+   鎖頭刻意是 <svg> 而不是文字 —— 側欄 tooltip 的標題取的是 btn.textContent，
+   多一個「鎖」字進去會變成「排桌管理鎖」。 */
+function markTabLocked(btn, locked){
+  btn.classList.toggle('is-locked', locked);
+  const ic = btn.querySelector('.ad-ic-lock');
+  if(locked && !ic) btn.insertAdjacentHTML('beforeend', lockIconHtml('ad-ic-lock'));
+  if(!locked && ic) ic.remove();
+  /* 讀螢幕的人看不到那顆鎖頭，所以名字要自己說清楚 */
+  const label = btn.textContent.trim();
+  if(locked) btn.setAttribute('aria-label', `${label}（進階方案）`);
+  else btn.removeAttribute('aria-label');
+}
+
+/* 分頁內容：原本的骨架留著當預覽（模糊、不可點），上面蓋一張說明卡。
+   inert 是給鍵盤的 —— pointer-events:none 擋得住滑鼠，擋不住 Tab。 */
+function lockPanel(tab, locked){
+  const panel = document.querySelector(`.ad-panel[data-panel="${tab}"]`);
+  if(!panel) return;
+  panel.classList.toggle('is-locked', locked);
+  panel.querySelectorAll(':scope > *:not(.ad-lock-cover)').forEach(el => { el.inert = locked; });
+
+  const had = panel.querySelector(':scope > .ad-lock-cover');
+  if(!locked){ if(had) had.remove(); return; }
+  if(had) return;
+
+  const btn = document.querySelector(`#adSide .ad-tab[data-tab="${tab}"]`);
+  const name = btn ? btn.textContent.trim() : '';
+  const cover = document.createElement('div');
+  cover.className = 'ad-lock-cover';
+  cover.innerHTML = `
+    <div class="ad-lock-card">
+      ${lockIconHtml('ad-ic-lockbig')}
+      <div class="ad-lock-title">${escapeHtml(name)}</div>
+      <div class="ad-lock-body">${escapeHtml(NAV_TIPS[tab] || '')}</div>
+      <div class="ad-lock-note">${escapeHtml(LOCK_NOTE)}</div>
+    </div>`;
+  panel.appendChild(cover);
+}
+
+function tabLocked(btn){
+  return btn.classList.contains('is-locked');
+}
+
+/* 沒開的分頁不再收起來，改成鎖起來（面板的顯示仍交給 activateTab 統一處理） */
 function applyTabVisibility(){
   document.querySelectorAll('#adSide .ad-tab').forEach(btn => {
-    btn.hidden = !tabEnabled(btn.dataset.tab);
+    const locked = !tabEnabled(btn.dataset.tab);
+    markTabLocked(btn, locked);
+    lockPanel(btn.dataset.tab, locked);
   });
-  /* 某些站台沒開排桌管理／收禮小幫手，那一組可能只剩兩顆、甚至一顆都不剩 ——
-     一個什麼都沒有的「婚禮管理」標題比沒有標題還糟。整組空了就連 label 一起收。 */
-  document.querySelectorAll('#adSide .ad-navgroup').forEach(g => {
-    const tabs = Array.from(g.querySelectorAll('.ad-tab'));
-    g.hidden = tabs.length > 0 && tabs.every(b => b.hidden);
-  });
+  /* 分組的標題不用再跟著收：每一組永遠至少有一顆按鈕在（鎖著也是在）。 */
   /* 子分頁只有「設定賓客標籤」有開關。先在 initRouter 之前決定它在不在，
      #rsvp/tags 這個網址才進得去（進不去的話 activateSubtab 會退回第一個） */
   const tagBtn = document.getElementById('adTagSubtab');
@@ -1456,11 +1515,16 @@ function activateSubtab(tab, subtab){
   return valid;
 }
 
-/* 找不到／被關掉的分頁就退回第一個還在的分頁；網址跟著修正，
-   但用 replaceState 不佔用歷史紀錄，不會讓使用者按「上一頁」卡住。 */
+/* 找不到的分頁就退回第一個「有開」的分頁；網址跟著修正，
+   但用 replaceState 不佔用歷史紀錄，不會讓使用者按「上一頁」卡住。
+
+   鎖起來的分頁指得到（那是刻意的，#seatingPlan 就是要看得到那張說明卡），
+   但不能當退路 —— 一進後台就看到一張「這是進階方案」，那是最差的開場。 */
 function activateTab(tab, subtab){
   const btns = tabButtons();
-  const target = btns.find(b => b.dataset.tab === tab && !b.hidden) || btns.find(b => !b.hidden);
+  const target = btns.find(b => b.dataset.tab === tab && !b.hidden)
+              || btns.find(b => !b.hidden && !tabLocked(b))
+              || btns.find(b => !b.hidden);
   if(!target) return;
 
   btns.forEach(b => b.classList.toggle('is-on', b === target));
@@ -1620,7 +1684,9 @@ const NAV_TIPS = {
     openFor = btn;
     tip.innerHTML =
       `<div class="ad-nav-tip-title">${escapeHtml(btn.textContent.trim())}</div>` +
-      `<div class="ad-nav-tip-body">${escapeHtml(text)}</div>`;
+      `<div class="ad-nav-tip-body">${escapeHtml(text)}</div>` +
+      /* 鎖著的分頁多一行，滑過去就知道為什麼點進去是一張說明卡 */
+      (tabLocked(btn) ? '<div class="ad-nav-tip-lock">進階方案功能</div>' : '');
     tip.hidden = false;
 
     /* 貼著側欄右緣放；下面塞不下就往上收，永遠不要跑出畫面 */
