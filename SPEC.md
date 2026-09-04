@@ -1075,6 +1075,15 @@ allow read: if request.auth != null
 `NAV_TIPS`，加一句「這是進階方案的功能」）。收起來的話新人永遠不知道還有什麼
 可以加；鎖起來就變成後台自己的加購入口。
 
+**不是每個功能都是一頁**：`guestTagsEnabled`（設定賓客標籤）與
+`multiEventEnabled`（其他流程）是站台文件上自己的欄位，各自對應一個
+橫向子分頁，不在 `pages` 裡。它們走同一套三狀態，只是「關著要鎖還是要收」
+直接寫在 `admin.js` 的 `SUBTAB_FEATURES[].whenOff`（`'lock'`／`'hide'`），
+不查 `UNRELEASED_FEATURES`。鎖起來的樣子完全一樣，只是蓋的是
+`.ad-subpanel` 而不是整個 `.ad-panel`（`lockSection()` 兩邊共用）。
+目前 `guestTagsEnabled` 是 `'lock'`（可加購）、`multiEventEnabled` 是
+`'hide'`。
+
 `off` 存在的理由：功能還在做的時候掛上「進階方案」的鎖頭，等於在賣一個
 我們開不了的東西 —— 新人問了，我們只能說「還沒好」。所以
 `UNRELEASED_FEATURES`（`public/js/site-context.js`，CLI 那邊是
@@ -1105,6 +1114,10 @@ allow read: if request.auth != null
 | 新人故事牆 | `exhibition` |
 | 新人熟悉測驗 | `quiz` |
 | 收禮小幫手 | `butler`（工具本身在 `/butler`，這個分頁只管連結、名單與統計） |
+
+目前的分配：預設開 `rsvp` `wall` `draw` `exhibition` `seating` `seatingPlan`；
+可加購（掛鎖頭）`letter` `quiz` `butler` ＋ `guestTagsEnabled`；
+還沒開放（收起來）`cake` ＋ `multiEventEnabled`。
 
 預設開著的那一頁（出席回覆）剛好被關掉時，會自動改開第一個**沒有鎖著**的分頁。
 

@@ -1252,30 +1252,89 @@ function markTabLocked(btn, locked){
   else btn.removeAttribute('aria-label');
 }
 
-/* 分頁內容：原本的骨架留著當預覽（模糊、不可點），上面蓋一張說明卡。
-   inert 是給鍵盤的 —— pointer-events:none 擋得住滑鼠，擋不住 Tab。 */
-function lockPanel(tab, locked){
-  const panel = document.querySelector(`.ad-panel[data-panel="${tab}"]`);
-  if(!panel) return;
-  panel.classList.toggle('is-locked', locked);
-  panel.querySelectorAll(':scope > *:not(.ad-lock-cover)').forEach(el => { el.inert = locked; });
+/* 內容區（分頁或子分頁都一樣）：原本的骨架留著當預覽（模糊、不可點），
+   上面蓋一張說明卡。inert 是給鍵盤的 —— pointer-events:none 擋得住滑鼠，
+   擋不住 Tab。 */
+function lockSection(el, locked, name, body){
+  if(!el) return;
+  el.classList.toggle('is-locked', locked);
+  el.querySelectorAll(':scope > *:not(.ad-lock-cover)').forEach(x => { x.inert = locked; });
 
-  const had = panel.querySelector(':scope > .ad-lock-cover');
+  const had = el.querySelector(':scope > .ad-lock-cover');
   if(!locked){ if(had) had.remove(); return; }
   if(had) return;
 
-  const btn = document.querySelector(`#adSide .ad-tab[data-tab="${tab}"]`);
-  const name = btn ? btn.textContent.trim() : '';
   const cover = document.createElement('div');
   cover.className = 'ad-lock-cover';
   cover.innerHTML = `
     <div class="ad-lock-card">
       ${lockIconHtml('ad-ic-lockbig')}
       <div class="ad-lock-title">${escapeHtml(name)}</div>
-      <div class="ad-lock-body">${escapeHtml(NAV_TIPS[tab] || '')}</div>
+      <div class="ad-lock-body">${escapeHtml(body)}</div>
       <div class="ad-lock-note">${escapeHtml(LOCK_NOTE)}</div>
     </div>`;
-  panel.appendChild(cover);
+  el.appendChild(cover);
+}
+
+function lockPanel(tab, locked){
+  const btn = document.querySelector(`#adSide .ad-tab[data-tab="${tab}"]`);
+  lockSection(document.querySelector(`.ad-panel[data-panel="${tab}"]`), locked,
+    btn ? btn.textContent.trim() : '', NAV_TIPS[tab] || '');
+}
+
+/* ============================================================
+   子分頁層級的功能開關
+   ------------------------------------------------------------
+   有兩個功能不是「一頁」，而是某個分頁底下的一個橫向子分頁，
+   開關也不在 pages 裡，是站台文件上自己的欄位（新人改不動）：
+
+     設定賓客標籤   guestTagsEnabled   出席回覆 → 設定賓客標籤
+     其他流程       multiEventEnabled  婚禮資訊 → 其他流程
+
+   關著的時候要「掛鎖頭」還是「整顆收起來」，和分頁同一套語彙，
+   只是這裡直接寫在 whenOff 上（分頁那邊靠 UNRELEASED_FEATURES 判斷）：
+     'lock' → 可加購：子分頁鈕留著、掛鎖頭，點得進去看預覽
+     'hide' → 還沒開放／不對外提供：整顆收起來
+
+   要換哪一種，改 whenOff 那一個字就好。
+============================================================ */
+const SUBTAB_FEATURES = [
+  { subtab:'tags',   btnId:'adTagSubtab',    tab:'rsvp',  whenOff:'lock',
+    on: () => guestTagsOn(),
+    label:'設定賓客標籤',
+    tip:'分類賓客用的標籤（行動不便、大學同學…），一位賓客可以掛好幾個，'
+      + '排桌時可以照標籤分組，也可以讓賓客在出席回覆時自己選。' },
+  { subtab:'events', btnId:'adEventsSubtab', tab:'lobby', whenOff:'hide',
+    on: () => multiEventOn(),
+    label:'其他流程',
+    tip:'一場婚禮不只一個活動：文訂、迎娶、證婚、婚宴、After 派對，'
+      + '每個活動都可以各自設定日期、時間與地點。' },
+];
+
+function subtabState(f){
+  if(f.on()) return 'on';
+  return f.whenOff === 'lock' ? 'locked' : 'off';
+}
+
+function subtabFeature(subtab){
+  return SUBTAB_FEATURES.find(f => f.subtab === subtab) || null;
+}
+
+/* 子分頁鈕與它的內容區；和 applyTabVisibility 是同一件事，只是小一號。
+   renderTags() 也會呼叫這裡（標籤那一區每次重畫都會經過），
+   所以開關的判斷只有這一份，不會兩邊各寫一次然後對不起來。 */
+function applySubtabFeatures(){
+  SUBTAB_FEATURES.forEach(f => {
+    const state = subtabState(f);
+    const btn = document.getElementById(f.btnId);
+    if(btn){
+      btn.hidden = state === 'off';
+      markTabLocked(btn, state === 'locked');
+    }
+    lockSection(
+      document.querySelector(`.ad-panel[data-panel="${f.tab}"] .ad-subpanel[data-subpanel="${f.subtab}"]`),
+      state === 'locked', f.label, f.tip);
+  });
 }
 
 function tabLocked(btn){
@@ -1298,14 +1357,9 @@ function applyTabVisibility(){
     const tabs = Array.from(g.querySelectorAll('.ad-tab'));
     g.hidden = tabs.length > 0 && tabs.every(b => b.hidden);
   });
-  /* 子分頁只有「設定賓客標籤」有開關。先在 initRouter 之前決定它在不在，
-     #rsvp/tags 這個網址才進得去（進不去的話 activateSubtab 會退回第一個） */
-  const tagBtn = document.getElementById('adTagSubtab');
-  if(tagBtn) tagBtn.hidden = !guestTagsOn();
-  /* 「婚禮流程」同理：沒開多活動的站台看不到這一頁，
-     #lobby/events 也進不去（activateSubtab 會退回「婚禮資訊」） */
-  const evBtn = document.getElementById('adEventsSubtab');
-  if(evBtn) evBtn.hidden = !multiEventOn();
+  /* 子分頁層級的功能（設定賓客標籤／其他流程）。先在 initRouter 之前決定，
+     #rsvp/tags 這種網址才進得去（進不去的話 activateSubtab 會退回第一個） */
+  applySubtabFeatures();
   /* 桌次名單的「同步現在的排桌」要有排桌管理才有意義 */
   const seatSyncBtn = document.getElementById('adSeatSyncPlan');
   const seatSyncNote = document.getElementById('adSeatSyncNote');
@@ -1531,7 +1585,13 @@ function activateSubtab(tab, subtab){
     const b = btns.find(x => x.dataset.subtab === k);
     return !b || !b.hidden;
   });
-  const valid = shown.includes(subtab) ? subtab : (shown[0] || list[0]);
+  /* 鎖著的子分頁指得到（網址直接指過去就是要看那張說明卡），
+     但和分頁一樣不能當退路：預設要落在真的用得到的那一個 */
+  const usable = shown.filter(k => {
+    const b = btns.find(x => x.dataset.subtab === k);
+    return !b || !tabLocked(b);
+  });
+  const valid = shown.includes(subtab) ? subtab : (usable[0] || shown[0] || list[0]);
   btns.forEach(b => b.classList.toggle('is-on', b.dataset.subtab === valid));
   document.querySelectorAll(`.ad-panel[data-panel="${tab}"] .ad-subpanel`).forEach(p =>
     p.classList.toggle('is-on', p.dataset.subpanel === valid));
@@ -3065,11 +3125,15 @@ function tagUseCount(){
 
 function renderTags(){
   const on = guestTagsOn();
-  tagSecEl.hidden = !on;
-  /* 標籤是自己一個橫向子分頁，沒開這個功能就連分頁鈕一起收起來；
-     已經停在那一頁的話（重新整理、舊網址）退回第一個看得到的子分頁 */
-  tagSubtabEl.hidden = !on;
-  if(!on && tagSubtabEl.classList.contains('is-on')) activateSubtab('rsvp', '');
+  const state = subtabState(subtabFeature('tags'));
+  /* 標籤是自己一個橫向子分頁。沒開的時候是鎖著（分頁鈕留著、掛鎖頭、
+     裡面這一區當模糊的預覽）還是整顆收起來，統一由 applySubtabFeatures 決定 ——
+     這裡不要自己再設一次 hidden，不然兩邊會打架。 */
+  tagSecEl.hidden = state === 'off';
+  applySubtabFeatures();
+  /* 真的收起來時，已經停在那一頁的人（重新整理、舊網址）要退回看得到的子分頁。
+     鎖著不用退：那張說明卡就是要給他看的。 */
+  if(state === 'off' && tagSubtabEl.classList.contains('is-on')) activateSubtab('rsvp', '');
   /* 題目清單裡那一列跟著標籤設定走：沒有任何標籤當選項時，賓客也看不到那一題 */
   document.getElementById('adAskTagRow').hidden = !on || !guestTagList().some(t => t.onForm);
   if(!on) return;

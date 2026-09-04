@@ -59,15 +59,21 @@ export const ALL_PAGE_KEYS = [...OPTIONAL_PAGES, ...ADMIN_PAGES];
       （那邊是瀏覽器讀的，這邊是 CLI 讀的），改一邊要記得改另一邊。
 ============================================================ */
 export const UNRELEASED_PAGES = [
-  /* 例：'quiz',  ← 新人小測驗還在做的時候放這裡 */
+  /* 集氣送祝福：功能還沒開賣，先不要出現在任何地方。
+     （它沒有後台分頁，所以差別在賓客端與這兩支 CLI 的印出來的字） */
+  'cake',
 ];
 
 export function isUnreleased(key) {
   return UNRELEASED_PAGES.includes(key);
 }
 
-/* 建站時沒特別指定就開這些 */
-export const DEFAULT_PAGES = ['rsvp', 'wall'];
+/* 建站時沒特別指定就開這些（＝標準方案含的功能）。
+   沒列到的分兩種：在 UNRELEASED_PAGES 裡的是「還沒開放」，
+   其餘的是「可加購」——後台會掛鎖頭讓新人看得到。 */
+export const DEFAULT_PAGES = [
+  'rsvp', 'wall', 'draw', 'exhibition', 'seating', 'seatingPlan',
+];
 
 /* 給人看的名稱，印在 CLI 訊息裡 */
 export const PAGE_LABELS = {

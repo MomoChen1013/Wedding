@@ -2817,13 +2817,29 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
   .ad-tab.is-locked:hover .ad-ic-tab{opacity:.55;}
 }
 /* 鎖頭推到最右邊：分頁名稱長短不一，靠右對齊才排得成一直線 */
-.ad-ic-lock{width:14px;height:14px;stroke-width:3.6;margin-left:auto;opacity:.6;}
+.ad-tab .ad-ic-lock{margin-left:auto;}
+.ad-ic-lock{width:14px;height:14px;stroke-width:3.6;opacity:.6;}
 .ad-tab.is-locked.is-on{opacity:1;}
 
-.ad-panel.is-locked{position:relative;max-height:62vh;overflow:hidden;}
-.ad-panel.is-locked > :not(.ad-lock-cover){
+/* 子分頁層級的功能（設定賓客標籤）鎖起來時是同一套，
+   差別只在它蓋的是 .ad-subpanel 而不是整個 .ad-panel */
+.ad-panel.is-locked,
+.ad-subpanel.is-locked{position:relative;max-height:62vh;overflow:hidden;}
+.ad-panel.is-locked > :not(.ad-lock-cover),
+.ad-subpanel.is-locked > :not(.ad-lock-cover){
   filter:blur(3px) saturate(.55);opacity:.5;pointer-events:none;user-select:none;
 }
+/* 鎖著的子分頁鈕：和側欄同一個處理，字淡一階、名字後面跟一顆鎖頭。
+   這裡刻意不動 .ad-subtab 的 display —— 它現在是 inline-block，
+   窄螢幕的 segmented control（.ad-subtabs[data-count] 那幾條）
+   靠 text-align:center 置中，換成 flex 那一段就失效了。
+   鎖頭當成一個字排進去就好，vertical-align 對齊中線。 */
+.ad-subtab.is-locked{opacity:.72;}
+.ad-subtab .ad-ic-lock{margin-left:7px;vertical-align:-2px;}
+@media (hover:hover) and (pointer:fine){
+  .ad-subtab.is-locked:hover{opacity:1;}
+}
+.ad-subtab.is-locked.is-on{opacity:1;}
 .ad-lock-cover{
   /* 面板裡有 sticky 的子分頁列（z-index 7）與表頭，蓋不過去就會浮在卡片上面。
      950 是頂列 .ad-bar，這裡刻意停在它下面。 */
@@ -2860,14 +2876,16 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
   letter-spacing:.02em;color:var(--primary-deep);
 }
 @media(max-width:560px){
-  .ad-panel.is-locked{max-height:70vh;}
+  .ad-panel.is-locked,
+  .ad-subpanel.is-locked{max-height:70vh;}
   .ad-lock-card{padding:22px 18px 20px;}
   .ad-lock-title{font-size:15px;}
 }
 /* 動畫關掉的人不需要那層模糊（它不是動畫，但同樣是「看不清楚」的裝飾）；
    淡掉＋不可點已經足夠說明這一區現在不能用 */
 @media (prefers-reduced-motion:reduce){
-  .ad-panel.is-locked > :not(.ad-lock-cover){filter:none;opacity:.35;}
+  .ad-panel.is-locked > :not(.ad-lock-cover),
+  .ad-subpanel.is-locked > :not(.ad-lock-cover){filter:none;opacity:.35;}
 }
 
 /* ============================================================

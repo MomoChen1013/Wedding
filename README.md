@@ -405,8 +405,8 @@ node scripts/create-site.js \
 
 | 代號 | 是什麼 | 預設 |
 |---|---|---|
-| `seatingPlan` | 新人後台的「排桌管理」分頁（見下面的說明） | ⛔ 關 |
-| `butler` | 新人後台的「收禮小幫手」分頁 ＋ 獨立網址 `/butler`（見下面的說明） | ⛔ 關 |
+| `seatingPlan` | 新人後台的「排桌管理」分頁（見下面的說明） | ✅ 開 |
+| `butler` | 新人後台的「收禮小幫手」分頁 ＋ 獨立網址 `/butler`（見下面的說明） | 🔒 關（可加購） |
 
 它們都不是站台的一頁，不會出現在導覽列。`butler` 有自己的網址，
 但那個網址和 slug 無關，所以對 `pages` 來說一樣只是
@@ -427,9 +427,20 @@ node scripts/create-site.js \
 
 ```js
 export const UNRELEASED_PAGES = [
-  'quiz',   // ← 新人小測驗還在做的時候放這裡，後台整顆收起來
+  'cake',   // ← 集氣送祝福還沒開賣，先不要出現在任何地方
 ];
 ```
+
+目前的分配：
+
+| | 功能 |
+|---|---|
+| **預設開**（`DEFAULT_PAGES`） | `rsvp` `wall` `draw` `exhibition` `seating` `seatingPlan` |
+| **可加購**（掛鎖頭） | `letter` `quiz` `butler`、以及子分頁層級的 `guestTagsEnabled` |
+| **還沒開放**（收起來） | `cake`、以及子分頁層級的 `multiEventEnabled` |
+
+`cake`（集氣送祝福）沒有後台分頁，所以「還沒開放」對它來說只差在
+賓客端進不去，以及這兩支 CLI 印出來的字。
 
 代號放進去＝還沒開放，沒放＝可加購。開賣的那天把代號刪掉就好，
 **站台資料一個都不用動**。要先給某一組新人試用也不受影響 ——
@@ -440,8 +451,8 @@ export const UNRELEASED_PAGES = [
 # 全套都要
 --pages rsvp,wall,cake,draw,exhibition,quiz,seating,letter
 
-# 只要基本款（不給 --pages 時的預設）
-# → rsvp, wall
+# 只要標準款（不給 --pages 時的預設）
+# → rsvp, wall, draw, exhibition, seating, seatingPlan
 
 # 預設之外再加抽卡與測驗
 --enable draw --enable quiz

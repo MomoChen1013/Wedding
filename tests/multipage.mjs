@@ -2913,15 +2913,42 @@ console.log('\n[14d] 後台賓客標籤');
   await page.close();
 }
 {
-  /* 沒開這個功能的站台：後台不出現標籤，賓客表單也沒有那一題 */
+  /* 沒開這個功能的站台：後台的標籤子分頁是**鎖著**的（可加購，whenOff:'lock'），
+     賓客表單則完全沒有那一題 —— 鎖頭只給新人看，賓客那一側什麼都不會變 */
   const { page } = await visit('/w/minimal-site-2027/admin');
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
   await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="form"]');
   await page.waitForTimeout(300);
-  ok('沒開標籤功能的站台看不到標籤設定', !(await page.isVisible('#adTagSec')));
-  ok('沒開標籤功能的站台也沒有標籤子分頁', !(await page.isVisible('#adTagSubtab')));
   ok('沒開標籤功能的站台也沒有標籤那一題', !(await page.isVisible('#adAskTagRow')));
+  ok('標籤子分頁留著、掛鎖頭',
+    await page.evaluate(() => {
+      const b = document.getElementById('adTagSubtab');
+      return !b.hidden && b.classList.contains('is-locked')
+          && !!b.querySelector('.ad-ic-lock');
+    }));
+  ok('標籤子分頁蓋上說明卡',
+    await page.evaluate(() =>
+      !!document.querySelector('.ad-subpanel[data-subpanel="tags"] > .ad-lock-cover')));
+  ok('鎖著的標籤子分頁點得進去、但裡面碰不到',
+    await (async () => {
+      await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="tags"]');
+      await page.waitForTimeout(200);
+      return page.evaluate(() => {
+        const sp = document.querySelector('.ad-subpanel[data-subpanel="tags"]');
+        return sp.classList.contains('is-on')
+          && Array.from(sp.children)
+               .filter((el) => !el.classList.contains('ad-lock-cover'))
+               .every((el) => el.inert);
+      });
+    })());
+  /* 對不上的子分頁要退回第一個「用得到」的，不能退到鎖著的那一個 */
+  await page.evaluate(() => { location.hash = '#rsvp/nope'; });
+  await page.waitForTimeout(300);
+  const fallback = await page.evaluate(() =>
+    document.querySelector('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab.is-on')?.dataset.subtab);
+  ok('子分頁對不上時退回第一個用得到的（不是鎖著的）',
+    fallback === 'overview', String(fallback));
   await page.close();
 
   const guest = await visit('/w/minimal-site-2027/invitation');
