@@ -261,10 +261,19 @@
     });
   }
 
-  /* ---------- XML 小工具 ---------- */
+  /* ---------- XML 小工具 ----------
+     & < > 一定要跳脫，屬性值還要處理 " 與 '。
+     少了這一步，備註裡一個「＆」就會讓整份 sheet 變成不合法的 XML，
+     Excel 打開只會說「檔案毀損」—— 而且不會說是哪一格。
+     跳脫之前先把 XML 1.0 不接受的控制字元拿掉。 */
   function xmlEscape(s) {
     return String(s == null ? '' : s)
-      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
   }
 
   function colName(i) {

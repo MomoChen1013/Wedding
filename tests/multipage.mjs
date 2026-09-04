@@ -1034,6 +1034,8 @@ const MULTI_EVENTS = [
   const { page, errors } = await visit(`/w/${SLUG}/admin`);
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  /* 一進後台落在的是首頁（上手指南），要自己切到出席回覆 */
+  await page.click('.ad-tab[data-tab="rsvp"]');
   await page.waitForTimeout(1200);
 
   ok('總覽長出「各活動出席統計」', await page.isVisible('#adEvStats'));
@@ -1556,6 +1558,8 @@ console.log('\n[14b] 後台看得到出席回覆');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
   ok('新人登入後進得了後台', !(await page.evaluate(
     () => document.getElementById('adPage').hidden)));
+  /* 一進後台落在的是首頁（上手指南），要自己切到出席回覆 */
+  await page.click('.ad-tab[data-tab="rsvp"]');
 
   await page.waitForFunction(
     (n) => DataStore.getRSVPCount() === n, rows.length, { timeout:15000 });
@@ -1652,6 +1656,7 @@ console.log('\n[14b] 後台看得到出席回覆');
   const { page, errors } = await visit(`/w/${SLUG}/admin`);
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  await page.click('.ad-tab[data-tab="rsvp"]');
   await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="replies"]');
   await page.waitForFunction(
     () => document.querySelector('#adRsvpList tbody tr'), null, { timeout:10000 });
@@ -1993,14 +1998,15 @@ console.log('\n[17] 後台只顯示有開的頁面');
       .map((b) => ({ tab:b.dataset.tab, locked:b.classList.contains('is-locked') })));
   const open = tabs.filter((t) => !t.locked).map((t) => t.tab);
   const locked = tabs.filter((t) => t.locked).map((t) => t.tab);
-  /* 側欄現在分成三組（婚禮管理／婚禮內容／賓客互動），DOM 順序跟著改了：
-       婚禮管理  rsvp, seating, seatingPlan, butler
+  /* 側欄最上面是首頁（永遠在，不屬於任何一組），下面分成三組：
+       婚禮管理  rsvpForm, rsvp, seating, seatingPlan, butler
        婚禮內容  lobby, letters, cards, exhibits
        賓客互動  inbox, quiz
-     minimal-site 只開 rsvp，加上永遠都在的 lobby 與沒有開關的 inbox。
+     minimal-site 只開 rsvp（表單設定跟著同一個開關），
+     加上永遠都在的 home、lobby 與沒有開關的 inbox。
      其餘的不再收起來，而是鎖著留在側欄（進階方案）。 */
   ok('有開的頁面正常可用',
-    open.join(',') === 'rsvp,lobby,inbox', open.join(','));
+    open.join(',') === 'home,rsvpForm,rsvp,lobby,inbox', open.join(','));
   ok('沒開的頁面留在側欄、鎖起來',
     locked.join(',') === 'seating,seatingPlan,butler,letters,cards,exhibits,quiz',
     locked.join(','));
@@ -2063,10 +2069,9 @@ console.log('\n[17] 後台只顯示有開的頁面');
 
   const onTab = await page.evaluate(() =>
     document.querySelector('.ad-tab.is-on')?.dataset.tab);
-  /* 分組之後，「婚禮資訊」是第一個沒有頁面開關（永遠都在）的分頁 ——
-     它排在「婚禮內容」那一組的第一顆，而「婚禮管理」整組這時候都關掉了。
-     所以出席回覆被關掉時，第一個還在的分頁就是它。 */
-  ok('出席回覆關掉時自動改開第一個還在的分頁', onTab === 'lobby', String(onTab));
+  /* 首頁排在所有分組之上，而且沒有頁面開關（永遠都在），
+     所以什麼都關掉時，第一個還在的分頁就是它。 */
+  ok('出席回覆關掉時自動改開第一個還在的分頁', onTab === 'home', String(onTab));
   ok('出席回覆的內容也收起來',
     await page.evaluate(() =>
       !document.querySelector('.ad-panel[data-panel="rsvp"]').classList.contains('is-on')));
@@ -2514,6 +2519,33 @@ console.log('\n[14d] 後台婚禮流程');
   const mid = page.locator('#adEvList .ad-ev').nth(1);
   await mid.locator('[data-ev-toggle]').click();
   await page.waitForTimeout(200);
+
+  /* 打開「需要賓客回覆」之後，要先看到系統已經幫他問了哪幾題 ——
+     不然空白的「追加題目」讀起來像「這個活動什麼都沒問」 */
+  const defaultQs = await mid.locator('.ad-evq-sec').first()
+    .locator('.ad-check.is-fixed span').allInnerTexts();
+  ok('需要回覆的活動列出目前會問的預設題目',
+    defaultQs.some((t) => t.includes('能來參加嗎'))
+      && defaultQs.some((t) => t.includes('包含你，共幾位出席')),
+    defaultQs.join('｜').replace(/\s+/g, ' ').slice(0, 90));
+  /* 證婚預設只問人數，其餘三題要說清楚「目前沒問」——
+     不然新人會以為葷素也問了 */
+  ok('沒問的那幾題也講出來',
+    (await mid.locator('.ad-evq-sec .ad-hint').first().innerText())
+      .includes('目前沒問：餐點分配（葷食／素食）、兒童座椅、飲食習慣補充'),
+    await mid.locator('.ad-evq-sec .ad-hint').first().innerText());
+  ok('預設題目是唯讀的（開關在表單設定）',
+    await mid.locator('.ad-evq-sec .ad-check.is-fixed input:disabled').first().isDisabled());
+
+  /* 追加題目的提示要寫成範例，不然新人會照抄成題目 */
+  await mid.locator('[data-evq-add]').click();
+  await page.waitForTimeout(200);
+  ok('追加題目的 placeholder 寫成範例',
+    (await mid.locator('.ad-evq-label').first().getAttribute('placeholder'))
+      === '例如：需要接駁車嗎？',
+    await mid.locator('.ad-evq-label').first().getAttribute('placeholder'));
+  await mid.locator('[data-evq-del]').first().click();
+  await page.waitForTimeout(200);
   await mid.locator('[data-ev-field="startTime"]').fill('14:00');
   await mid.locator('[data-ev-field="venueName"]').fill('台北真理堂');
   await mid.locator('[data-ev-field="address"]').fill('台北市大安區新生南路三段86號');
@@ -2588,9 +2620,7 @@ console.log('\n[14d] 後台婚禮流程');
       (el) => el.classList.contains('is-on')));
 
   /* ---- 表單設定：每個活動各自要問的 ---- */
-  await page.click('.ad-tab[data-tab="rsvp"]');
-  await page.waitForTimeout(200);
-  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="form"]');
+  await page.click('.ad-tab[data-tab="rsvpForm"]');
   await page.waitForTimeout(300);
 
   ok('多活動時長出「每個活動各自要問的」', await page.isVisible('#adEvAskGroup'));
@@ -2657,8 +2687,7 @@ console.log('\n[14d] 後台婚禮流程');
   const { page } = await visit(`/w/${SLUG}/admin`);
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
-  await page.click('.ad-tab[data-tab="rsvp"]');
-  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="form"]');
+  await page.click('.ad-tab[data-tab="rsvpForm"]');
   await page.waitForTimeout(300);
 
   ok('只有一個活動時，不長出「每個活動各自要問的」',
@@ -2688,8 +2717,8 @@ console.log('\n[14c] 後台開關表單題目');
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
 
-  /* 表單設定是出席回覆的第三個子分頁 */
-  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="form"]');
+  /* 表單設定是側欄自己的一顆分頁（原本是出席回覆底下的子分頁） */
+  await page.click('.ad-tab[data-tab="rsvpForm"]');
   await page.waitForTimeout(200);
 
   ok('「查看表單」指向賓客那一頁',
@@ -2731,7 +2760,9 @@ console.log('\n[14c] 後台開關表單題目');
   ok('沒有動到出席回覆的開關與截止時間',
     site.rsvpEnabled === true && !!site.rsvpDeadline);
 
-  /* 關掉的題目不再畫成環狀圖（圖表在「出席回覆總覽」那個子分頁） */
+  /* 關掉的題目不再畫成環狀圖（圖表在「出席回覆」的總覽子分頁，
+     表單設定已經是另一顆分頁了，要先切回去） */
+  await page.click('.ad-tab[data-tab="rsvp"]');
   await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="overview"]');
   await page.waitForTimeout(300);
   const titles = await page.locator('#adRsvpCharts .ad-donut-title').allInnerTexts();
@@ -2798,11 +2829,13 @@ console.log('\n[14d] 後台賓客標籤');
   const { page, errors } = await visit(`/w/${SLUG}/admin`);
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
-  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="form"]');
+  await page.click('.ad-tab[data-tab="rsvpForm"]');
   await page.waitForTimeout(300);
   ok('題目清單多了標籤那一題', await page.isVisible('#adAskTagRow'));
 
-  /* 標籤設定自己一個橫向子分頁 */
+  /* 標籤設定是「出席回覆」底下的橫向子分頁（表單設定已經搬成獨立分頁了） */
+  await page.click('.ad-tab[data-tab="rsvp"]');
+  await page.waitForTimeout(200);
   ok('看得到「設定賓客標籤」子分頁', await page.isVisible('#adTagSubtab'));
   await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="tags"]');
   await page.waitForTimeout(300);
@@ -2918,7 +2951,7 @@ console.log('\n[14d] 後台賓客標籤');
   const { page } = await visit('/w/minimal-site-2027/admin');
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
-  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="form"]');
+  await page.click('.ad-tab[data-tab="rsvpForm"]');
   await page.waitForTimeout(300);
   ok('沒開標籤功能的站台也沒有標籤那一題', !(await page.isVisible('#adAskTagRow')));
   ok('標籤子分頁留著、掛鎖頭',
@@ -2932,6 +2965,9 @@ console.log('\n[14d] 後台賓客標籤');
       !!document.querySelector('.ad-subpanel[data-subpanel="tags"] > .ad-lock-cover')));
   ok('鎖著的標籤子分頁點得進去、但裡面碰不到',
     await (async () => {
+      /* 標籤子分頁掛在「出席回覆」底下，先切過去（現在停在「表單設定」） */
+      await page.click('.ad-tab[data-tab="rsvp"]');
+      await page.waitForTimeout(200);
       await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="tags"]');
       await page.waitForTimeout(200);
       return page.evaluate(() => {
@@ -3207,6 +3243,24 @@ console.log('\n[21] 後台排桌管理');
   ok('匯出 Excel 下載得到檔案', !!dl && /^seating-plan-.*\.xlsx$/.test(dl.suggestedFilename()),
     dl ? dl.suggestedFilename() : '(沒有下載)');
 
+  /* 檔名對不代表 Excel 打得開 —— 備註裡一個沒跳脫的「&」就會讓
+     整份 sheet 變成不合法的 XML，Excel 只說「檔案毀損」。
+     .xlsx 是不壓縮的 ZIP（見 js/xlsx-lite.js），XML 直接就在位元組裡，
+     所以下載回來原地切出來驗就好。 */
+  const xlsxRaw = dl ? readFileSync(await dl.path()).toString('utf8') : '';
+  const sheetXmls = xlsxRaw.split('<?xml').slice(1)
+    .map((x) => '<?xml' + x.slice(0, x.indexOf('</worksheet>') + 12))
+    .filter((x) => x.endsWith('</worksheet>'));
+  ok('匯出的每一份工作表都是合法的 XML',
+    sheetXmls.length === 2 && await page.evaluate((list) =>
+      list.every((xml) =>
+        !new DOMParser().parseFromString(xml, 'application/xml').querySelector('parsererror')),
+    sheetXmls),
+    `${sheetXmls.length} 份工作表`);
+  ok('桌位排桌表每一桌都帶上素食與兒童椅的小計',
+    xlsxRaw.includes('素食') && xlsxRaw.includes('兒童椅')
+      && xlsxRaw.includes('小計') && xlsxRaw.includes('全部合計'));
+
   /* ---- 桌次名單那一頁的「同步現在的排桌」 ---- */
   await page.click('.ad-tab[data-tab="seating"]');
   await page.click('.ad-subtabs[data-subtabs="seating"] .ad-subtab[data-subtab="list"]');
@@ -3463,6 +3517,205 @@ console.log('\n[21] 後台排桌管理');
   await page.waitForTimeout(200);
   ok('連線回來橫幅就收掉', !(await page.isVisible('#adOffline')));
 
+  await page.close();
+}
+
+
+/* ---------- 後台首頁與「表單設定」獨立分頁 ---------- */
+console.log('\n[24] 後台首頁與表單設定分頁');
+{
+  const { page, errors } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  await page.waitForTimeout(400);
+
+  ok('一進後台落在首頁',
+    await page.evaluate(() =>
+      document.querySelector('.ad-tab.is-on')?.dataset.tab === 'home'
+      && document.querySelector('.ad-panel[data-panel="home"]').classList.contains('is-on')));
+
+  ok('首頁有上手指南',
+    (await page.locator('#adHomeSteps .ad-step').count()) >= 4,
+    String(await page.locator('#adHomeSteps .ad-step').count()));
+  ok('已經填好的步驟打勾',
+    (await page.locator('#adHomeSteps .ad-step.is-done').count()) >= 1,
+    String(await page.locator('#adHomeSteps .ad-step.is-done').count()));
+  ok('首頁有「查看目前網站」與「查看表單」',
+    (await page.getAttribute('#adHomeViewSite', 'href')) === `/w/${SLUG}/`
+      && (await page.getAttribute('#adHomeViewForm', 'href')) === `/w/${SLUG}/invitation`,
+    `${await page.getAttribute('#adHomeViewSite', 'href')} ／ ${
+      await page.getAttribute('#adHomeViewForm', 'href')}`);
+
+  /* 上手指南上的按鈕就是分頁捷徑 */
+  await page.click('#adHomeSteps .ad-step:first-child [data-empty-hash]');
+  await page.waitForTimeout(300);
+  ok('上手指南的按鈕跳得到那一頁',
+    await page.evaluate(() => location.hash === '#lobby/info'), await page.evaluate(() => location.hash));
+
+  /* 頂列的「新人後台」＝回首頁 */
+  await page.click('#adHomeBtn');
+  await page.waitForTimeout(300);
+  ok('點頂列的「新人後台」回得了首頁',
+    await page.evaluate(() => location.hash === '#home'), await page.evaluate(() => location.hash));
+
+  /* 表單設定：側欄自己一顆，而且排在出席回覆上面 */
+  const order = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('#adSide .ad-tab')).map((b) => b.dataset.tab));
+  ok('表單設定是側欄自己的一顆，排在出席回覆上面',
+    order.indexOf('rsvpForm') >= 0 && order.indexOf('rsvpForm') < order.indexOf('rsvp'),
+    order.join(','));
+  ok('出席回覆底下沒有「表單設定」子分頁了',
+    (await page.locator('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="form"]').count()) === 0);
+
+  /* 舊書籤 #rsvp/form 要還帶得到新位置 */
+  await page.evaluate(() => { location.hash = '#rsvp/form'; });
+  await page.waitForTimeout(400);
+  ok('舊網址 #rsvp/form 導到新的分頁',
+    await page.evaluate(() =>
+      document.querySelector('.ad-tab.is-on')?.dataset.tab === 'rsvpForm'),
+    await page.evaluate(() => document.querySelector('.ad-tab.is-on')?.dataset.tab));
+
+  ok('後台首頁無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+
+/* ---------- Dress Code 的顏色與參考圖 ---------- */
+console.log('\n[25] Dress Code 的顏色與參考圖');
+{
+  const siteRef = adb.collection('sites').doc(siteIds[SLUG]);
+  const dressCol = siteRef.collection('dressImages');
+  await wipeCol(dressCol);
+
+  /* ---- 後台：預設三格白 ＋ 一顆「＋」 ---- */
+  const { page, errors } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  await page.click('.ad-tab[data-tab="lobby"]');
+  await page.waitForTimeout(400);
+
+  ok('還沒設定時預設攤開三格白色',
+    await page.evaluate(() =>
+      Array.from(document.querySelectorAll('#adDressColors .ad-swatch:not(.is-add) .ad-swatch-pick'))
+        .map((el) => el.value.toUpperCase()).join(',') === '#FFFFFF,#FFFFFF,#FFFFFF'),
+    await page.evaluate(() =>
+      Array.from(document.querySelectorAll('#adDressColors .ad-swatch-pick'))
+        .map((el) => el.value).join(',')));
+  ok('第四格是「＋」',
+    (await page.locator('#adDressColors .ad-swatch.is-add').count()) === 1);
+
+  /* 選色器是原生的 <input type="color">，測試直接設值再送 change */
+  await page.evaluate(() => {
+    const el = document.querySelector('#adDressColors .ad-swatch-pick[data-swatch-input="0"]');
+    el.value = '#c8a96e';
+    el.dispatchEvent(new Event('change', { bubbles:true }));
+  });
+  await page.waitForTimeout(1200);
+  ok('改一格顏色會整組存回站台文件',
+    ((await siteRef.get()).data().dressCodeColors || []).join(',') === '#C8A96E,#FFFFFF,#FFFFFF',
+    ((await siteRef.get()).data().dressCodeColors || []).join(','));
+
+  /* 「＋」直接補第四個 */
+  await page.evaluate(() => {
+    const el = document.querySelector('#adDressColors .ad-swatch-pick[data-swatch-add]');
+    el.value = '#2f4f4f';
+    el.dispatchEvent(new Event('change', { bubbles:true }));
+  });
+  await page.waitForTimeout(1200);
+  const four = ((await siteRef.get()).data().dressCodeColors || []);
+  ok('「＋」補上第四個顏色，補滿之後就不再有「＋」',
+    four.length === 4 && four[3] === '#2F4F4F'
+      && (await page.locator('#adDressColors .ad-swatch.is-add').count()) === 0,
+    four.join(','));
+
+  /* 參考圖 */
+  await page.setInputFiles('#adDressImgFile', TEST_PNG);
+  await page.waitForTimeout(2500);
+  ok('參考圖上傳進 dressImages 子集合',
+    (await waitForColSize(dressCol, 1, 'order')).size === 1,
+    String((await dressCol.get()).size));
+  ok('第一張標成「預設顯示」',
+    (await page.locator('#adDressImgs .ad-dressimg-tag').count()) === 1);
+  await page.close();
+
+  /* ---- 賓客那一側 ---- */
+  const guest = await visit(`/w/${SLUG}/`);
+  await guest.page.waitForTimeout(1500);
+  ok('大廳畫出四個色塊',
+    (await guest.page.locator('#dressSwatches .dress-swatch').count()) === 4,
+    String(await guest.page.locator('#dressSwatches .dress-swatch').count()));
+  ok('色塊填的是新人選的顏色',
+    await guest.page.evaluate(() => {
+      const el = document.querySelector('#dressSwatches .dress-swatch');
+      return getComputedStyle(el).backgroundColor === 'rgb(200, 169, 110)';
+    }),
+    await guest.page.evaluate(() =>
+      getComputedStyle(document.querySelector('#dressSwatches .dress-swatch')).backgroundColor));
+  ok('大廳露出第一張參考圖',
+    await guest.page.isVisible('#dressRefFirst'));
+  ok('只有一張時不出現「查看更多」',
+    !(await guest.page.isVisible('#dressRefMore')));
+  await guest.page.close();
+
+  /* 第二張進來之後才有「查看更多」 */
+  await dressCol.add({
+    img:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    order: 2, time: Date.now(),
+  });
+  const guest2 = await visit(`/w/${SLUG}/`);
+  await guest2.page.waitForTimeout(1800);
+  ok('兩張以上才長出「查看更多」', await guest2.page.isVisible('#dressRefMore'));
+  await guest2.page.click('#dressRefMore');
+  await guest2.page.waitForTimeout(300);
+  ok('「查看更多」把參考圖全部列出來',
+    (await guest2.page.locator('#lcModalBody .lc-modal-img').count()) === 2,
+    String(await guest2.page.locator('#lcModalBody .lc-modal-img').count()));
+  ok('大廳無 console 錯誤', realErrors(guest2.errors).length === 0,
+    realErrors(guest2.errors).slice(0, 2).join(' | '));
+  await guest2.page.close();
+
+  /* 邀請函也帶同一組色塊 */
+  const inv = await visit(`/w/${SLUG}/invitation`);
+  await inv.page.waitForTimeout(800);
+  ok('邀請函的「服裝」也畫出色塊',
+    (await inv.page.locator('#dressSwatches .dress-swatch').count()) === 4);
+  await inv.page.close();
+
+  ok('Dress Code 後台無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+
+  /* 收乾淨，不要影響後面的測試 */
+  await wipeCol(dressCol);
+  await siteRef.update({ dressCodeColors: [] });
+}
+
+/* ---------- 匯出的 Excel 檔要打得開 ---------- */
+console.log('\n[26] 匯出的 Excel');
+{
+  const { page } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  await page.waitForTimeout(500);
+
+  /* xlsx 就是一包 XML：備註裡一個「&」沒跳脫，整份檔案就打不開了
+     （Excel 只會說「檔案毀損」，不會說是哪一格） */
+  const sheet = await page.evaluate(async () => {
+    const blob = window.XLSXLite.write([
+      { name:'賓客明細', rows:[['姓名', '備註'], ['王小明 & 陳小美', '<素食> "兩位"']] },
+    ]);
+    /* 不解 ZIP，直接在位元組裡找 sheet1.xml 那一段就夠驗跳脫了 */
+    const text = new TextDecoder().decode(new Uint8Array(await blob.arrayBuffer()));
+    const at = text.indexOf('<worksheet');
+    return text.slice(at, text.indexOf('</worksheet>') + 12);
+  });
+  ok('& < > 都跳脫了',
+    sheet.includes('王小明 &amp; 陳小美') && sheet.includes('&lt;素食&gt;'),
+    sheet.slice(0, 120));
+  ok('產出的 sheet 是合法的 XML',
+    await page.evaluate((xml) => {
+      const doc = new DOMParser().parseFromString(xml, 'application/xml');
+      return !doc.querySelector('parsererror');
+    }, sheet));
   await page.close();
 }
 

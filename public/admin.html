@@ -125,6 +125,19 @@
       <path d="M13 31h11"/>
     </symbol>
 
+    <!-- 後台首頁：一個屋頂加一扇門，和側欄其他圖示同一套線寬 -->
+    <symbol id="shin9-home" viewBox="0 0 48 48">
+      <path d="M9 22 24 9.5 39 22"/>
+      <path d="M12.5 24.5V37a2 2 0 0 0 2 2h19a2 2 0 0 0 2-2V24.5"/>
+      <path d="M20.5 39v-9h7v9"/>
+    </symbol>
+
+    <!-- 上手指南上的步驟編號用不到圖示，這一顆是「打勾」，標示已經做完的步驟 -->
+    <symbol id="shin9-check" viewBox="0 0 48 48">
+      <circle cx="24" cy="24" r="15"/>
+      <path d="M17 24.5 22 29.5 31.5 19"/>
+    </symbol>
+
     <symbol id="shin9-location" viewBox="0 0 48 48">
       <path d="M24 42s13-13.4 13-22a13 13 0 1 0-26 0c0 8.6 13 22 13 22Z"/>
       <circle cx="24" cy="19.5" r="4.6"/>
@@ -266,13 +279,15 @@
       <button class="ad-menu-btn" id="adMenuBtn" type="button" aria-label="開啟選單" aria-expanded="false" aria-controls="adSide">
         <span></span><span></span><span></span>
       </button>
-      <div class="ad-bar-brand">
-        <div class="ad-bar-title">新人後台</div>
+      <!-- 「新人後台」就是回首頁的那顆按鈕（和一般網站點 logo 回首頁一樣）。
+           整塊是 <button>，不是 <a> —— 分頁路由走 hash，交給同一個 click 委派處理 -->
+      <button class="ad-bar-brand" id="adHomeBtn" type="button" aria-label="回到後台首頁">
+        <span class="ad-bar-title">新人後台</span>
         <!-- 原本是一個字串塞兩件事（`{couple}・{email}`）。
              新人姓名是身分、email 只是「我現在用哪個帳號登入」——
              後者降一階，收進帳號選單裡才對得起它的重要性。 -->
-        <div class="ad-bar-sub" id="adWho"></div>
-      </div>
+        <span class="ad-bar-sub" id="adWho"></span>
+      </button>
     </div>
     <!-- 「登出」不該一直是頂列上最顯眼的兩顆之一：它是一年按一次的動作。
          收進帳號 popover，頂列只留真正常用的「查看網站」。 -->
@@ -320,6 +335,11 @@
            點擊是委派的（closest('.ad-tab')）、tabButtons() 是後代選擇器，
            tests/multipage.mjs 裡那些 .ad-tab[data-tab="…"] 也照樣指得到。
       ============================================================ -->
+      <!-- 首頁不屬於任何一組：它是「回到起點」，和三個工作分組是不同層級的東西 -->
+      <div class="ad-navtop">
+        <button class="ad-tab is-on" type="button" data-tab="home"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-home"/></svg>首頁</button>
+      </div>
+
       <div class="ad-navgroup" data-navgroup="manage">
         <button class="ad-navgroup-lab" type="button"
                 aria-expanded="true" aria-controls="adNavManage">
@@ -327,7 +347,10 @@
         </button>
         <div class="ad-navgroup-body" id="adNavManage">
           <div class="ad-navgroup-items">
-            <button class="ad-tab is-on" type="button" data-tab="rsvp"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-rsvp"/></svg>出席回覆</button>
+            <!-- 「先決定要問什麼」排在「已經收到什麼」上面。
+                 原本它是出席回覆底下的第三顆子分頁，新人測試時找不到。 -->
+            <button class="ad-tab" type="button" data-tab="rsvpForm"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-form"/></svg>表單設定</button>
+            <button class="ad-tab" type="button" data-tab="rsvp"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-rsvp"/></svg>出席回覆</button>
             <button class="ad-tab" type="button" data-tab="seating"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-findseat"/></svg>桌次</button>
             <!-- 排桌管理是「桌次」的工作區（桌次名單的同步鈕也依賴它有沒有開），
                  縮排一階，從屬關係就看得出來 -->
@@ -377,15 +400,88 @@
     <main class="ad-main" id="adMain">
 
   <!-- ============================================================
+       分頁 －1：後台首頁
+       ------------------------------------------------------------
+       第一次登入的新人看到的是一整排他沒看過的分頁名稱。
+       這一頁只做三件事：
+         ・說一次這個後台是什麼、賓客會看到什麼
+         ・把「先做這個、再做那個」排成有順序的五步
+         ・兩個最常用的出口（查看目前網站、查看表單）擺在最上面
+
+       每一步右邊那顆按鈕就是 location.hash，點了直接到那一頁；
+       已經填好的步驟由 js/admin.js 的 renderHome() 打勾。
+  ============================================================ -->
+  <div class="ad-panel is-on" data-panel="home">
+
+    <section class="ad-sec">
+      <div class="ad-sec-head">
+        <div class="ad-sec-head-main">
+          <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-home"/></svg><span id="adHomeTitle">新人後台</span></h2>
+          <p class="ad-page-sub" id="adHomeSub"></p>
+        </div>
+        <div class="ad-sec-head-actions">
+          <a class="btn small" id="adHomeViewSite" href="/"
+             target="_blank" rel="noopener noreferrer">查看目前網站 ↗</a>
+          <a class="btn small ghost" id="adHomeViewForm" href="/"
+             target="_blank" rel="noopener noreferrer">查看表單 ↗</a>
+        </div>
+      </div>
+      <p class="ad-sec-note">
+        這裡是<b>只有你們看得到</b>的後台：左邊每一顆分頁就是賓客會看到的一塊內容。
+        改完按下該頁的儲存就生效，賓客重新整理就看得到。<br>
+        不確定改出來長怎樣時，按右上角的「<b>查看目前網站</b>」——
+        那就是賓客現在打開連結會看到的樣子。
+      </p>
+    </section>
+
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">從這裡開始</h2>
+      <p class="ad-sec-note">
+        照這個順序做一次，該有的東西就齊了。<b>每一步都可以之後再回來改</b>，
+        現在填不完也沒關係。
+      </p>
+      <ol class="ad-steps" id="adHomeSteps"></ol>
+    </section>
+
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">幾件常被問到的事</h2>
+      <div class="ad-faq">
+        <details class="ad-faq-item">
+          <summary>改了東西，賓客什麼時候看得到？</summary>
+          <p>按下儲存就生效了。賓客那一頁重新整理就是新的內容，不用等我們。</p>
+        </details>
+        <details class="ad-faq-item">
+          <summary>哪些東西後台改不動？</summary>
+          <p>
+            婚禮<b>日期</b>、網址、要開哪幾個功能，這幾件會牽動倒數計時與分享連結，
+            要改請直接告訴我們。日期以外的「開始時間、地點、交通」你們自己改得動。
+          </p>
+        </details>
+        <details class="ad-faq-item">
+          <summary>側欄有幾顆掛著鎖頭，那是什麼？</summary>
+          <p>那是還沒開通的功能。點得進去看它長什麼樣子，想開通再告訴我們，現有的資料都不會動。</p>
+        </details>
+        <details class="ad-faq-item">
+          <summary>照片可以自己上傳嗎？</summary>
+          <p>
+            交通圖、桌次圖、婚禮小卡、故事牆、Dress Code 參考圖都可以自己上傳。
+            大廳的封面照與照片集放在這場婚禮的素材資料夾裡，要換的話把檔案給我們。
+          </p>
+        </details>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ============================================================
        分頁 0：出席回覆
   ============================================================ -->
-  <div class="ad-panel is-on" data-panel="rsvp">
+  <div class="ad-panel" data-panel="rsvp">
 
     <nav class="ad-subtabs" data-subtabs="rsvp">
       <button class="ad-subtab is-on" type="button" data-subtab="overview">出席回覆總覽</button>
       <!-- 筆數由 js/admin.js 的 renderRsvpSubtabCount() 填，見 renderRsvps() -->
       <button class="ad-subtab" type="button" data-subtab="replies" id="adRepliesSubtab">回覆</button>
-      <button class="ad-subtab" type="button" data-subtab="form">表單設定</button>
       <!-- 賓客標籤整個功能預設是關的（guestTagsEnabled），關著時這一顆連同內容都收起來 -->
       <button class="ad-subtab" type="button" data-subtab="tags" id="adTagSubtab" hidden>設定賓客標籤</button>
     </nav>
@@ -485,7 +581,47 @@
     </div>
 
     <!-- 0-3 表單設定 -->
-    <div class="ad-subpanel" data-subpanel="form">
+
+    <!-- 0-4 設定賓客標籤：整個功能預設是關的，由我們在 Firebase 打開（guestTagsEnabled） -->
+    <div class="ad-subpanel" data-subpanel="tags">
+    <section class="ad-sec" id="adTagSec" hidden>
+      <div class="ad-sec-head">
+        <div class="ad-sec-head-main">
+          <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-tag"/></svg>設定賓客標籤</h2>
+          <p class="ad-page-sub" id="adTagPageSub"></p>
+        </div>
+        <div class="ad-sec-head-actions">
+          <button class="btn small" id="adTagAddBtn" type="button">新增標籤</button>
+          <button class="btn small ghost" id="adTagPresetBtn" type="button">加入常用標籤</button>
+        </div>
+      </div>
+      <p class="ad-sec-note">
+        分類賓客用的標籤（行動不便、大學同學…），一位賓客可以有好幾個標籤，可以在名單編輯每個人的標籤。
+        <br>
+        勾了<b>「當表單選項」</b>，出席回覆時賓客可以自己選；沒勾的只有在後台出現。<br>
+
+      </p>
+
+      <div class="ad-list" id="adTagList"></div>
+      <div class="ad-hint">
+        改標籤名稱不會影響已經掛好的分類。
+        刪掉標籤時，掛在賓客身上的那一份也會一起拿掉，救不回來
+        （賓客當初送出的回覆本身不會被改動，只是那個標籤不再顯示）。
+      </div>
+    </section>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       分頁 0b：表單設定
+       ------------------------------------------------------------
+       原本是「出席回覆」底下的第三顆子分頁。新人測試時找不到 ——
+       他要的是「我的表單長什麼樣」，那不是「已經收到的回覆」的一部分，
+       所以拉成側欄自己的一顆，而且排在「出席回覆」上面：
+       先決定要問什麼，才會有回覆可以看。
+  ============================================================ -->
+  <div class="ad-panel" data-panel="rsvpForm">
+
     <section class="ad-sec">
       <div class="ad-sec-head">
         <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-form"/></svg>表單設定</h2>
@@ -630,36 +766,6 @@
       </form>
     </section>
 
-    </div>
-
-    <!-- 0-4 設定賓客標籤：整個功能預設是關的，由我們在 Firebase 打開（guestTagsEnabled） -->
-    <div class="ad-subpanel" data-subpanel="tags">
-    <section class="ad-sec" id="adTagSec" hidden>
-      <div class="ad-sec-head">
-        <div class="ad-sec-head-main">
-          <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-tag"/></svg>設定賓客標籤</h2>
-          <p class="ad-page-sub" id="adTagPageSub"></p>
-        </div>
-        <div class="ad-sec-head-actions">
-          <button class="btn small" id="adTagAddBtn" type="button">新增標籤</button>
-          <button class="btn small ghost" id="adTagPresetBtn" type="button">加入常用標籤</button>
-        </div>
-      </div>
-      <p class="ad-sec-note">
-        分類賓客用的標籤（行動不便、大學同學…），一位賓客可以有好幾個標籤，可以在名單編輯每個人的標籤。
-        <br>
-        勾了<b>「當表單選項」</b>，出席回覆時賓客可以自己選；沒勾的只有在後台出現。<br>
-
-      </p>
-
-      <div class="ad-list" id="adTagList"></div>
-      <div class="ad-hint">
-        改標籤名稱不會影響已經掛好的分類。
-        刪掉標籤時，掛在賓客身上的那一份也會一起拿掉，救不回來
-        （賓客當初送出的回覆本身不會被改動，只是那個標籤不再顯示）。
-      </div>
-    </section>
-    </div>
   </div>
 
   <!-- ============================================================
@@ -789,9 +895,40 @@
           </div>
         </div>
 
-        <label class="ad-label ad-label-ic" for="adDressCode"><svg class="ad-ic ad-ic-lab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-dresscode"/></svg>Dress Code</label>
-        <textarea class="ad-textarea" id="adDressCode" rows="3" maxlength="500"
-                  placeholder="溫柔大地色系，穿得舒服最重要"></textarea>
+        <div class="ad-sub-sec">
+          <div class="ad-sub-sec-title"><svg class="ad-ic ad-ic-sub" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-dresscode"/></svg>Dress Code</div>
+
+          <label class="ad-label" for="adDressCode">說明文字</label>
+          <textarea class="ad-textarea" id="adDressCode" rows="3" maxlength="500"
+                    placeholder="溫柔大地色系，穿得舒服最重要"></textarea>
+
+          <!-- 色票：最多四個。點一個色塊就跳出系統的顏色選擇器，
+               選好立刻存起來（和交通圖片同一套「不用按下面的儲存」）。
+               四個都用完之前，最後面永遠有一顆「＋」。 -->
+          <label class="ad-label">顏色（最多 4 個）</label>
+          <div class="ad-swatches" id="adDressColors"></div>
+          <div class="ad-hint">
+            賓客那一頁會用這幾個顏色畫出色塊，比「大地色系」四個字好懂得多。
+            <b>選好就存起來了，不用按下面的儲存。</b>
+          </div>
+
+          <!-- 參考圖：最多五張。賓客那一頁預設只顯示第一張，
+               其餘要點「查看更多」才展開。 -->
+          <label class="ad-label">參考圖（最多 5 張）</label>
+          <div class="ad-dressimgs" id="adDressImgs"></div>
+          <div class="ad-img-field" id="adDressImgField">
+            <label class="btn small ghost" id="adDressImgAdd">
+              上傳參考圖
+              <input type="file" id="adDressImgFile" multiple
+                     accept="image/*,image/heic,image/heif,.heic,.heif" hidden>
+            </label>
+            <span class="ad-dressimgs-count" id="adDressImgCount"></span>
+          </div>
+          <div class="ad-hint">
+            賓客那一頁預設只看得到<b>第一張</b>，其餘要點「查看更多」才展開。
+            順序就是這裡由左到右的順序。<b>選好就存起來了，不用按下面的儲存。</b>
+          </div>
+        </div>
 
         <label class="ad-label" for="adGiftNote">關於禮金</label>
         <textarea class="ad-textarea" id="adGiftNote" rows="3" maxlength="500"
@@ -822,7 +959,7 @@
       <p class="ad-sec-note">
         一場婚禮可能有好幾個活動：文訂、迎娶、證婚、婚宴、After 派對，
         <b>每個活動都可以設定日期、時間與地點</b>。<br>
-        需要賓客回覆的題目可以在「出席回覆 → 表單設定」設定。
+        需要賓客回覆的題目可以在側欄的「<b>表單設定</b>」調整。
       </p>
 
       <!-- 主日期對不上時的提醒（js/admin.js 判斷） -->
@@ -1102,6 +1239,8 @@
         </div>
         <p class="ad-sec-note">
           Excel 檔包含賓客明細與桌位排桌表兩張工作表，下方有例圖。
+          桌位排桌表<b>每一桌都會附上素食人數與兒童椅張數的小計</b>，
+          最後一列是全場合計 —— 跟飯店確認份數時直接看這兩欄。
         </p>
 
         <!-- 「檔案打開來長怎樣」用講的講不清楚，直接把兩張工作表畫出來。
@@ -1125,19 +1264,19 @@
           </figure>
 
           <figure class="ad-demo">
-            <figcaption class="ad-demo-cap">桌位排桌表<span>依桌位分組，每桌附總人數</span></figcaption>
+            <figcaption class="ad-demo-cap">桌位排桌表<span>依桌位分組，每桌附小計</span></figcaption>
             <div class="ad-demo-body">
               <table class="ad-demo-sheet">
                 <thead>
-                  <tr><th>桌次</th><th>姓名</th><th>人數</th></tr>
+                  <tr><th>姓名</th><th>人數</th><th>素食</th><th>兒童椅</th></tr>
                 </thead>
                 <tbody>
-                  <tr class="is-group"><td colspan="3">01｜主桌</td></tr>
-                  <tr><td></td><td>林俊傑</td><td>2</td></tr>
-                  <tr><td></td><td>吳品妍</td><td>1</td></tr>
-                  <tr class="is-total"><td></td><td>小計</td><td>3</td></tr>
-                  <tr class="is-group"><td colspan="3">02｜女方親友</td></tr>
-                  <tr><td></td><td>陳怡君</td><td>1</td></tr>
+                  <tr class="is-group"><td colspan="4">01｜主桌</td></tr>
+                  <tr><td>林俊傑</td><td>2</td><td>1</td><td></td></tr>
+                  <tr><td>吳品妍</td><td>1</td><td></td><td></td></tr>
+                  <tr class="is-total"><td>小計</td><td>3</td><td>1</td><td>0</td></tr>
+                  <tr class="is-group"><td colspan="4">02｜女方親友</td></tr>
+                  <tr><td>陳怡君</td><td>1</td><td></td><td>1</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1217,6 +1356,20 @@
       <button class="ad-subtab" type="button" data-subtab="entries">收禮明細</button>
       <button class="ad-subtab" type="button" data-subtab="links">連結與名單</button>
     </nav>
+
+    <!-- 一組連結都還沒產生時，這整個分頁其實什麼都做不了：統計是 0、
+         明細是空的、名單也匯不出去。與其讓新人在三個空頁之間找原因，
+         這一條橫在最上面，三個子分頁都看得到。 -->
+    <div class="ad-callout is-todo" id="adBtNoLinkBanner" hidden>
+      <p class="ad-callout-note">
+        <b>還沒有收禮連結，這個功能要先產生一組才能開始用。</b><br>
+        產生之後會拿到一組網址與通行碼，交給婚宴當天幫忙收禮的親友，
+        他們記下的每一筆都會即時回到這裡。
+      </p>
+      <div class="ad-row">
+        <button class="btn small" id="adBtBannerNew" type="button">產生第一組連結</button>
+      </div>
+    </div>
 
     <!-- 3c-1 收禮統計 -->
     <div class="ad-subpanel is-on" data-subpanel="stats">

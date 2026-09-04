@@ -50,6 +50,19 @@
 .ir-jump[hidden]{display:none;}
 .inv-note{white-space:pre-wrap;}
 
+/* Dress Code 的色塊：和大廳（index.css）同一個形狀，只是小一號 ——
+   邀請函的資訊列是一行一件事，色塊不該比旁邊的字高太多 */
+.dress-swatches{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:9px;}
+.dress-swatches[hidden]{display:none;}
+.dress-swatch{
+  display:block;width:28px;height:28px;flex:0 0 auto;
+  border:1px solid var(--line-soft);
+  border-radius:58% 42% 47% 53% / 53% 47% 53% 47%;
+}
+.dress-swatch:nth-child(2){border-radius:45% 55% 62% 38% / 44% 56% 44% 56%;}
+.dress-swatch:nth-child(3){border-radius:60% 40% 38% 62% / 47% 60% 40% 53%;}
+.dress-swatch:nth-child(4){border-radius:41% 59% 55% 45% / 58% 41% 59% 42%;}
+
 .inv-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px;}
 .inv-actions .btn[hidden]{display:none;}
 

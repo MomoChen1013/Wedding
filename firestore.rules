@@ -56,7 +56,7 @@ service cloud.firestore {
              'coupleTitle', 'venueName', 'venueAddress', 'venueMapUrl',
              'transportPublic', 'transportParking',
              'transportPublicImg', 'transportParkingImg',
-             'dressCode', 'giftNote', 'story', 'schedule', 'hashtags',
+             'dressCode', 'dressCodeColors', 'giftNote', 'story', 'schedule', 'hashtags',
              'seatingSearchEnabled', 'updatedAt',
              /* 出席回覆頁的題目與區塊開關：只改變賓客看到的表單長什麼樣，
                 規則本身不拿它們做任何判斷（能不能寫回覆仍然只看
@@ -96,6 +96,13 @@ service cloud.firestore {
         && (!('transportParkingImg' in d) || (isStr(d.transportParkingImg, 300000)
              && (d.transportParkingImg == '' || d.transportParkingImg.matches('data:image/.*'))))
         && (!('dressCode' in d) || isStr(d.dressCode, 500))
+        /* Dress Code 的色票：最多四個 #RRGGBB。規則語言檢查不了陣列裡
+           每一格的內容（和 schedule、guestTags 同一個限制），
+           所以只擋筆數與型別，格式在後台送出前先切好。
+           參考圖不放這裡 —— 那是五張 data URL，會把整份站台文件撐爆，
+           改放子集合 dressImages（和 seatingImages 同一套做法）。 */
+        && (!('dressCodeColors' in d)
+            || (d.dressCodeColors is list && d.dressCodeColors.size() <= 4))
         && (!('giftNote'  in d) || isStr(d.giftNote, 500))
         && (!('story'     in d) || isStr(d.story, 2000))
         /* 桌次搜尋的開關：只影響賓客那一頁的畫面，不是規則的判斷依據 */
@@ -334,6 +341,23 @@ service cloud.firestore {
           && request.resource.data.img.size() <= 950000
           && request.resource.data.img.matches('data:image/.*')
           && isStr(request.resource.data.title, 60)
+          && request.resource.data.order is number
+          && request.resource.data.time is number;
+        allow delete: if isSiteOwner(siteId);
+      }
+
+      /* ---------- Dress Code 的參考圖 ----------
+         賓客那一頁要看得到（和 seatingImages 一樣公開讀），
+         但只有新人寫得進去。一張一份文件：五張 data URL 放在
+         同一份站台文件裡會直接撞上 Firestore 的 1MB 上限。
+         張數的上限（5）擋在後台 —— 規則沒辦法數子集合有幾份文件。 */
+      match /dressImages/{imageId} {
+        allow read: if true;
+        allow create, update: if isSiteOwner(siteId)
+          && request.resource.data.keys().hasOnly(['img', 'order', 'time'])
+          && request.resource.data.img is string
+          && request.resource.data.img.size() <= 400000
+          && request.resource.data.img.matches('data:image/.*')
           && request.resource.data.order is number
           && request.resource.data.time is number;
         allow delete: if isSiteOwner(siteId);

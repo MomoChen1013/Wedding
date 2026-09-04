@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- 這個檔案由 scripts/build-og.js 產生，不要手改；改來源請改 public/{index,invitation,shortlink}.html 再重跑 npm run build-og -->
-<!-- source: invitation.html 9c8fa390 -->
+<!-- source: invitation.html 585655e5 -->
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
@@ -82,7 +82,11 @@
           </div>
           <div class="inv-row" id="dressRow" hidden>
             <div class="ir-label">服裝</div>
-            <div class="ir-body"><div class="ir-val inv-note" id="dressCode"></div></div>
+            <div class="ir-body">
+              <!-- 色塊由 js/invitation.js 依後台設定的顏色填；沒設定就不出現 -->
+              <div class="dress-swatches" id="dressSwatches" hidden aria-hidden="true"></div>
+              <div class="ir-val inv-note" id="dressCode"></div>
+            </div>
           </div>
           <div class="inv-row" id="giftNoteRow" hidden>
             <div class="ir-label">禮金</div>

@@ -735,7 +735,7 @@ const DataStore = {
      所以不放進 _subscribe() 一律訂閱，而是各頁自己叫用。
      重複呼叫是安全的，只會訂閱一次。
   ============================================================ */
-  _seating:[], _seatingImages:[], _blessings:[], _explore:[],
+  _seating:[], _seatingImages:[], _blessings:[], _explore:[], _dressImages:[],
   _cards:[], _exhibits:[], _quiz:[], _quizVotes:[], _rsvpTags:[],
   _subs:{},
 
@@ -763,6 +763,9 @@ const DataStore = {
   },
   /* 新人關掉桌次搜尋時，賓客那一頁只需要桌次圖，不必讀整份名單 */
   subscribeSeatingImages(){ this._lazySub('seatingImages', 'seatingImages', 'order'); },
+  /* Dress Code 的參考圖（整段 data URL）。只有大廳與後台需要，
+     所以和囍卡、展品一樣不放進 _subscribe()，各頁自己叫用 */
+  subscribeDressImages(){ this._lazySub('dressImages', 'dressImages', 'order'); },
   subscribeBlessings(){ this._lazySub('blessings', 'blessings', 'time'); },
   subscribeExplore(){   this._lazySub('explore',   'explore',   'order'); },
   /* 囍卡與展品：新人自己上傳的圖是整段 data URL，資料量大，
@@ -778,6 +781,7 @@ const DataStore = {
 
   getSeating()       { return this._seating; },
   getSeatingImages() { return this._seatingImages; },
+  getDressImages()   { return this._dressImages; },
   getBlessings()     { return this._blessings; },
   getExplore()       { return this._explore; },
   getCards()         { return this._cards; },

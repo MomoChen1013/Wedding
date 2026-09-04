@@ -403,9 +403,90 @@ if(sch){
     if(grid) grid.classList.toggle('is-solo', filled.filter(Boolean).length === 1);
   };
 
-  const dress = setOptionalText('dressCode', 'dressCodeItem', W.dressCode);
+  /* ---------- Dress Code 的色塊 ----------
+     「溫柔大地色系」十個人會穿出十種顏色，一排實心的色塊才講得清楚。
+     形狀刻意是不規則的圓（見 .dress-swatch 的 border-radius）——
+     正圓看起來像色票工具，這裡要的是「一坨顏色」的感覺。
+     四個一組，每一個的形狀都不一樣（nth-child 各給一組半徑）。 */
+  function renderDressSwatches(){
+    const box = document.getElementById('dressSwatches');
+    if(!box) return false;
+    const colors = (Array.isArray(W.dressCodeColors) ? W.dressCodeColors : [])
+      .filter(c => /^#[0-9a-fA-F]{6}$/.test(String(c || '').trim()))
+      .slice(0, 4);
+    box.hidden = !colors.length;
+    if(!colors.length){ box.innerHTML = ''; return false; }
+    /* 顏色本身是新人選的十六進位碼，不是使用者輸入的自由文字，
+       但仍然只透過 style 屬性寫進去，不拼進 innerHTML 的字串裡 */
+    box.innerHTML = '';
+    colors.forEach(hex => {
+      const dot = document.createElement('span');
+      dot.className = 'dress-swatch';
+      dot.style.background = hex;
+      box.appendChild(dot);
+    });
+    return true;
+  }
+
+  /* ---------- Dress Code 的參考圖 ----------
+     預設只露第一張 —— 五張照片排在資訊卡裡會把整頁撐開。
+     其餘的收在「查看更多」的彈窗裡（和交通資訊的「展開更多」同一個彈窗）。 */
+  function renderDressRefs(){
+    const box   = document.getElementById('dressRefs');
+    const first = document.getElementById('dressRefFirst');
+    const more  = document.getElementById('dressRefMore');
+    if(!box || !first) return;
+
+    const imgs = (DataStore.getDressImages() || [])
+      .map(it => (it && typeof it.img === 'string' ? it.img : ''))
+      .filter(Boolean);
+
+    box.hidden = !imgs.length;
+    if(!imgs.length) return;
+
+    first.src = imgs[0];
+    if(more){
+      more.hidden = imgs.length < 2;
+      more.onclick = () => openInfoModal({
+        title: 'Dress Code',
+        bodyText: (W.dressCode || '').trim(),
+        imgSrc: imgs,
+      });
+    }
+
+    /* 只設定了參考圖、文字與顏色都留白的新人：這一格原本是收起來的，
+       圖片非同步到齊之後要自己把它打開（連同整個「小提醒」區塊） */
+    const item = document.getElementById('dressCodeItem');
+    if(item && item.hidden){
+      item.hidden = false;
+      const block = document.getElementById('noteBlock');
+      if(block) block.hidden = false;
+      const grid = block && block.querySelector('.note-grid');
+      if(grid){
+        const shown = [...block.querySelectorAll('.note-item')].filter(x => !x.hidden).length;
+        grid.classList.toggle('is-solo', shown === 1);
+      }
+    }
+  }
+
+  /* Dress Code 現在有三種內容：色塊、文字、參考圖。
+     只要其中一種有設定，這一格就要出現 —— 只填了顏色的新人
+     不該因為沒打字而整格消失。 */
+  const dressText = setOptionalText('dressCode', null, W.dressCode);
+  const dressColors = renderDressSwatches();
+  const dress = dressText || dressColors;
+  const dressBox = document.getElementById('dressCodeItem');
+  if(dressBox) dressBox.hidden = !dress;
+
   const gift  = setOptionalText('giftNote',  'giftNoteItem',  W.giftNote);
   layoutGrid('noteBlock', [dress, gift]);
+
+  /* 參考圖是子集合（可能有五張整段 data URL），非同步讀進來，
+     所以不參與上面那一輪「這一格要不要出現」的判斷 ——
+     到齊之後自己再決定一次（沒有圖就維持原樣）。 */
+  DataStore.subscribeDressImages();
+  document.addEventListener('data:dressImages', renderDressRefs);
+  renderDressRefs();
 
   /* 文字太長，或是新人有放一張圖時，內文只先露出一小段，
      其餘要點「展開更多」才在彈窗裡看完整內容（含圖片） */
@@ -521,13 +602,16 @@ function openInfoModal({ title, sub, bodyText, imgSrc }){
 
   const bodyEl = document.getElementById('lcModalBody');
   bodyEl.innerHTML = '';
-  if(imgSrc){
+  /* imgSrc 可以是一張或一疊：交通資訊給一張，Dress Code 的「查看更多」
+     給整組參考圖（第一張在卡片上已經看過了，這裡連它一起再列一次 ——
+     少了它，彈窗裡的順序會對不上卡片上的那一張） */
+  (Array.isArray(imgSrc) ? imgSrc : [imgSrc]).filter(Boolean).forEach(src => {
     const img = document.createElement('img');
     img.className = 'lc-modal-img';
-    img.src = imgSrc;
+    img.src = src;
     img.alt = '';
     bodyEl.appendChild(img);
-  }
+  });
   if(bodyText){
     const p = document.createElement('p');
     p.className = 'lc-modal-text';

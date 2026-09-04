@@ -1294,22 +1294,40 @@
       `${folded ? '展開' : '收合'}第 ${no ? no.textContent : ''} 桌`);
   }
 
+  /* 標籤比對：新人自己取的標籤名字用包含判斷（「全素」「素食者」都算） */
+  function hasSpecial(g, sp) {
+    return g.tagNames.some((x) =>
+      sp.match.some((m) => x.toLowerCase().includes(m.toLowerCase())));
+  }
+
+  /* 一位賓客的素食人數：回覆填過葷素分配的用實際數字，
+     只有標籤、沒有數字的才把整筆算成素食（三位裡只有一位吃素時不會多算） */
+  function vegOf(g) {
+    const vegSp = SPECIAL_TAGS.find((sp) => sp.key === 'veg');
+    return g.veg > 0 ? g.veg : (hasSpecial(g, vegSp) ? g.count : 0);
+  }
+  /* 兒童椅：這是「要跟飯店要幾張椅子」的數字，單位是張不是人 */
+  function seatsOf(g) { return Number(g.seats) || 0; }
+
+  /* 一桌的素食人數與兒童椅張數。桌卡上的提醒與匯出的排桌表共用同一份算法，
+     兩邊才不會出現「畫面上 3 位素食、Excel 裡 2 位」這種對不起來的數字。 */
+  function tableNeeds(rows) {
+    return {
+      veg:   rows.reduce((n, g) => n + vegOf(g), 0),
+      seats: rows.reduce((n, g) => n + seatsOf(g), 0),
+    };
+  }
+
   /* 一桌要提醒的事，直接寫在桌卡上，不用點進去才看得到。
      數字能用回覆裡問到的實際值就用實際值 ——
      一筆「3 位」裡面只有 1 位吃素的話，寫「3 位素食」是錯的。 */
   function tableFlags(rows) {
-    const has = (g, sp) => g.tagNames.some((x) =>
-      sp.match.some((m) => x.toLowerCase().includes(m.toLowerCase())));
+    const has = hasSpecial;
     const out = [];
 
-    /* 素食：回覆填過葷素分配的用實際人數，只有標籤沒有數字的才整筆算 */
     const vegSp = SPECIAL_TAGS.find((sp) => sp.key === 'veg');
-    const veg = rows.reduce((n, g) =>
-      n + (g.veg > 0 ? g.veg : (has(g, vegSp) ? g.count : 0)), 0);
+    const { veg, seats } = tableNeeds(rows);
     if (veg) out.push(`${vegSp.icon} ${veg} 位素食`);
-
-    /* 兒童座椅：這是「要跟飯店要幾張椅子」的數字，單位是張不是人 */
-    const seats = rows.reduce((n, g) => n + (Number(g.seats) || 0), 0);
     if (seats) out.push(`🪑 ${seats} 個兒童椅`);
 
     /* 有小孩但沒要兒童椅的，另外算一筆，才不會和上面那個重複數 */
@@ -2028,25 +2046,42 @@
 
   const EXPORT_HEAD = ['類別', '編號', '桌號', '桌名', '賓客姓名', '人數', 'RSVP', 'Tags', '備註'];
 
-  /* 桌位排桌表：依桌位分組，每桌最後補一列總人數 */
+  /* 桌位排桌表：依桌位分組，每桌最後補一列小計。
+     素食與兒童椅要按桌算 —— 婚宴當天要跟飯店講的就是
+     「第 3 桌兩份素食、一張兒童椅」，總表上的一個大數字幫不上忙。
+     算法和桌卡上的提醒共用 tableNeeds()，兩邊不會對不起來。 */
+  const TABLE_SHEET_HEAD = ['姓名', '人數', '素食', '兒童椅', '備註'];
+
+  function exportTableBlock(rows, title, list, tailNote) {
+    const seated = sortGuests(list);
+    const heads = seated.reduce((n, g) => n + (Number(g.count) || 0), 0);
+    const { veg, seats } = tableNeeds(seated);
+    rows.push([title, '', '', '', '']);
+    rows.push(TABLE_SHEET_HEAD.slice());
+    seated.forEach((g) => rows.push([
+      g.name, g.count, vegOf(g) || '', seatsOf(g) || '', g.note || '',
+    ]));
+    /* 0 也要寫出來 —— 空白讀起來像「還沒算」，0 才是「這桌不用」 */
+    rows.push(['小計', heads, veg, seats, tailNote || '']);
+    rows.push(['', '', '', '', '']);
+  }
+
   function exportTableRows() {
     const guests = allGuests();
     const rows = [];
     sortedTables().forEach((t) => {
-      const { rows: list, heads } = seatedOf(t.id, guests);
-      rows.push([tableLabel(t), '', '']);
-      rows.push(['姓名', '人數', '備註']);
-      sortGuests(list).forEach((g) => rows.push([g.name, g.count, g.note || '']));
-      rows.push(['總人數', heads, `容量 ${t.cap} 人`]);
-      rows.push(['', '', '']);
+      const { rows: list } = seatedOf(t.id, guests);
+      exportTableBlock(rows, tableLabel(t), list, `容量 ${t.cap} 人`);
     });
+
     const rest = guests.filter((g) => !g.tableId);
-    if (rest.length) {
-      rows.push(['未安排', '', '']);
-      rows.push(['姓名', '人數', '備註']);
-      sortGuests(rest).forEach((g) => rows.push([g.name, g.count, g.note || '']));
-      rows.push(['總人數', rest.reduce((n, g) => n + g.count, 0), '']);
-    }
+    if (rest.length) exportTableBlock(rows, '未安排', rest, '');
+
+    /* 最後一列是整場的合計：跟飯店確認總份數時看這一列就好 */
+    const all = sortGuests(guests);
+    const total = tableNeeds(all);
+    rows.push(['全部合計', all.reduce((n, g) => n + (Number(g.count) || 0), 0),
+      total.veg, total.seats, `共 ${sortedTables().length} 桌`]);
     return rows;
   }
 
@@ -2725,7 +2760,8 @@
       toast('已匯出賓客明細');
     });
     $('spExportCsvTable').addEventListener('click', () => {
-      downloadCsv('seating-tables', ['桌位／姓名', '人數', '備註'], exportTableRows());
+      downloadCsv('seating-tables',
+        ['桌位／姓名', '人數', '素食', '兒童椅', '備註'], exportTableRows());
       toast('已匯出桌位排桌表');
     });
 

@@ -908,8 +908,8 @@ function renderPager(listEl, state, total, onChange){
    跟「真的沒有資料」的空狀態區分開，畫面才不會忽閃忽現。
 ============================================================ */
 const loadedOnce = new Set();
-['rsvps', 'letters', 'seating', 'seatingImages', 'blessings', 'explore', 'cards', 'exhibits', 'quiz',
- 'quizVotes', 'rsvpTags']
+['rsvps', 'letters', 'seating', 'seatingImages', 'dressImages', 'blessings', 'explore',
+ 'cards', 'exhibits', 'quiz', 'quizVotes', 'rsvpTags']
   .forEach(key => {
     document.addEventListener(`data:${key}`, ()=> loadedOnce.add(key));
     document.addEventListener(`data:${key}:denied`, ()=> loadedOnce.add(key));
@@ -1179,6 +1179,11 @@ function showError(msg){
    值是 null 代表「永遠都在」：大廳是必開的頁面。
 ============================================================ */
 const TAB_PAGE = {
+  /* 首頁沒有對應的對外頁面，永遠開著 */
+  home:     null,
+  /* 表單設定就是出席回覆那一頁的題目，開關跟著同一個 pages 走：
+     沒開 rsvp 的站台，這一顆也不該長出來 */
+  rsvpForm: 'rsvp',
   rsvp:     'rsvp',
   lobby:    null,
   seating:  'seating',
@@ -1397,6 +1402,13 @@ function openAdmin(){
   /* 表單設定裡的兩顆按鈕指的都是賓客那一頁（分享出去的就是這個網址） */
   document.getElementById('adRsvpViewForm').href = sitePath('rsvp');
   document.getElementById('adRsvpGalleryView').href = sitePath('rsvp');
+  /* 首頁上的兩個出口：「賓客現在看到的樣子」與「賓客要填的那張表單」 */
+  const homeSite = document.getElementById('adHomeViewSite');
+  const homeForm = document.getElementById('adHomeViewForm');
+  if(homeSite) homeSite.href = sitePath('lobby');
+  if(homeForm) homeForm.href = sitePath('rsvp');
+  const homeTitle = document.getElementById('adHomeTitle');
+  if(homeTitle && couple) homeTitle.textContent = `${couple} 的新人後台`;
 
   applyTabVisibility();
 
@@ -1411,6 +1423,7 @@ function openAdmin(){
   restoreNavGroups();
   syncStickyMetrics();
 
+  renderHome();
   initRouter();
 
   /* 訂閱各份資料，畫面隨著資料變動重畫。
@@ -1460,7 +1473,9 @@ function openAdmin(){
   DataStore.subscribeExplore();
   renderExplore();
 
-  /* 大廳文案不是子集合，是站台文件本身；載入時已經讀進 window.SITE.data */
+  /* 大廳文案不是子集合，是站台文件本身；載入時已經讀進 window.SITE.data。
+     只有 Dress Code 的參考圖是子集合（整段 data URL，放不進站台文件） */
+  DataStore.subscribeDressImages();
   syncSeatFeatureUI();
   fillSiteForm();
   renderSchedule(siteSchedule());
@@ -1556,7 +1571,7 @@ if(!ownerEmails().length){
    這樣重新整理、分享連結、瀏覽器上一頁都能回到原本開著的那一頁。
 ============================================================ */
 const SUBTABS = {
-  rsvp:    ['overview', 'replies', 'form', 'tags'],
+  rsvp:    ['overview', 'replies', 'tags'],
   lobby:   ['info', 'events', 'schedule', 'explore'],
   seating: ['map', 'list'],
   seatingPlan: ['board', 'tables', 'io'],
@@ -1564,8 +1579,14 @@ const SUBTABS = {
   quiz:    ['questions', 'votes'],
 };
 
+/* 搬過家的網址：表單設定原本是「出席回覆」底下的子分頁。
+   新人書籤裡、我們寄出去的信裡都還留著舊的 #rsvp/form。 */
+const LEGACY_HASH = { 'rsvp/form': { tab:'rsvpForm', subtab:'' } };
+
 function parseHash(){
   const raw = location.hash.replace(/^#/, '');
+  const moved = LEGACY_HASH[raw];
+  if(moved) return { ...moved };
   const [tab, subtab] = raw.split('/');
   return { tab: tab || '', subtab: subtab || '' };
 }
@@ -1621,7 +1642,8 @@ function activateTab(tab, subtab){
 
   let wantHash = `#${target.dataset.tab}`;
   if(SUBTABS[target.dataset.tab]){
-    wantHash = `#${target.dataset.tab}/${activateSubtab(target.dataset.tab, subtab)}`;
+    const want = subtab || defaultSubtab(target.dataset.tab);
+    wantHash = `#${target.dataset.tab}/${activateSubtab(target.dataset.tab, want)}`;
   }
 
   closeDrawer();
@@ -1652,8 +1674,16 @@ document.getElementById('adSide').addEventListener('click', (e)=>{
   const btn = e.target.closest('.ad-tab');
   if(!btn || btn.hidden) return;
   const tab = btn.dataset.tab;
-  location.hash = SUBTABS[tab] ? `${tab}/${SUBTABS[tab][0]}` : tab;
+  location.hash = SUBTABS[tab] ? `${tab}/${defaultSubtab(tab)}` : tab;
 });
+
+/* 大部分分頁的預設子分頁就是第一顆。收禮小幫手是例外：
+   一組連結都還沒產生時，先落在「連結與名單」——
+   那時候統計與明細都是空的，讓新人停在那裡等於什麼線索都沒給。 */
+function defaultSubtab(tab){
+  if(tab === 'butler' && Butler.needsLink()) return 'links';
+  return SUBTABS[tab][0];
+}
 
 /* ============================================================
    側欄分組的收合
@@ -1727,6 +1757,8 @@ document.getElementById('adSide').addEventListener('click', (e)=>{
         「點一下跳出說明、再點一次才切分頁」是壞掉的互動。
 ============================================================ */
 const NAV_TIPS = {
+  home:        '這個後台怎麼用、從哪裡開始。也放著「查看目前網站」與「查看表單」兩個出口。',
+  rsvpForm:    '決定出席表單要問賓客什麼、那一頁還要放哪些內容。先設定好這裡，再把連結發出去。',
   rsvp:        '賓客填的出席回覆都在這裡：人數、葷素、聯絡方式、喜帖與喜餅的寄送，也能篩選、貼標籤、匯出 CSV。',
   seating:     '婚宴當天貼在門口的那張桌次表：整理賓客與桌號的對照名單，也可以直接上傳桌次圖。',
   seatingPlan: '把人拖到桌上的工作區：看得到每一桌坐了幾位、還剩幾個位子，排完再一次同步給桌次名單。',
@@ -2135,7 +2167,7 @@ function renderRsvps(){
           title: '尚未收到賓客回覆',
           body: '賓客在邀請函上按下送出之後，回覆就會一筆一筆出現在這裡。'
               + '現在可以先去確認表單問了哪些問題。',
-          action: { label:'去看表單設定', hash:'rsvp/form' },
+          action: { label:'去看表單設定', hash:'rsvpForm' },
         });
     renderPager(rsvpListEl, rsvpPager, 0, renderRsvps);
     return;
@@ -2991,6 +3023,20 @@ function weddingDateText(){
   return `${p.year}.${p.month}.${p.day}（${(p.weekday || '').replace('週', '')}）${hour}:${p.minute}`;
 }
 
+/* 「服裝」這一列現在有三種內容（文字、色票、參考圖），
+   任何一種有填就不是空的 —— 只看文字的話，只選了顏色的新人
+   會在這裡看到「還沒填」，然後跑去多打一段其實不必要的字 */
+function dressCodeSummary(d){
+  const bits = [];
+  const text = clip(d.dressCode);
+  if(text) bits.push(text);
+  const colors = Array.isArray(d.dressCodeColors) ? d.dressCodeColors.filter(Boolean) : [];
+  if(colors.length) bits.push(`${colors.length} 個顏色`);
+  const imgs = DataStore.getDressImages().length;
+  if(imgs) bits.push(`${imgs} 張參考圖`);
+  return bits.join('・');
+}
+
 function rsvpInfoRows(){
   const d = siteData();
   const tags = Array.isArray(d.hashtags) ? d.hashtags.filter(Boolean) : [];
@@ -3003,7 +3049,7 @@ function rsvpInfoRows(){
     { name:'地址',       value: clip(d.venueAddress) },
     { name:'地圖連結',   value: clip(d.venueMapUrl),
       empty:'留白就用地址自動開 Google 地圖' },
-    { name:'服裝',       value: clip(d.dressCode) },
+    { name:'服裝',       value: dressCodeSummary(d) },
     { name:'關於禮金',   value: clip(d.giftNote) },
     { name:'婚禮 hashtag', value: clip(tags.join('　')),
       empty:'留白就用預設的 #我們結婚了 #Married' },
@@ -3354,7 +3400,7 @@ function openTagPick(rsvpId){
   const r = DataStore.getRSVPs().find(x => x.id === rsvpId);
   if(!r) return;
   const list = guestTagList();
-  if(!list.length){ toast('還沒有標籤，先到「表單設定」建立幾個', true); return; }
+  if(!list.length){ toast('還沒有標籤，先到「設定賓客標籤」建立幾個', true); return; }
 
   tagPickId = rsvpId;
   /* 賓客自己選的那一個是他送出的紀錄，後台改不動，所以畫成關不掉的勾勾 */
@@ -4356,6 +4402,228 @@ ef.list.addEventListener('click', (e)=>{
 });
 
 /* ============================================================
+   Dress Code：色票與參考圖
+   ------------------------------------------------------------
+   「大地色系」四個字，十個人會穿出十種顏色。所以這一區讓新人
+   直接把顏色與照片指出來，賓客那一頁畫成色塊與參考圖。
+
+   兩份資料分開放，理由是大小：
+     色票  dressCodeColors  站台文件上的一個字串陣列（最多 4 個）
+     參考圖 dressImages     子集合，一張一份文件（最多 5 張）
+   五張 data URL 塞進站台文件會直接撞上 Firestore 的 1MB 上限，
+   所以照 seatingImages 那一套辦。
+
+   兩者都是「選好就存」，不進 adSiteForm 的未儲存追蹤 ——
+   和旁邊的交通圖片同一個規矩，欄位旁邊也寫了同一句話。
+============================================================ */
+const DRESS_COLOR_MAX = 4;
+const DRESS_IMG_MAX = 5;
+/* 預設攤開三格白色，第四格是「＋」。
+   一格都不給的話，新人不會知道這裡可以放顏色。 */
+const DRESS_COLOR_DEFAULT = ['#FFFFFF', '#FFFFFF', '#FFFFFF'];
+/* 站台文件跟一堆文字欄位共用，參考圖壓得比桌次圖小一點 */
+const DRESS_IMG_MAX_BYTES = 300000;
+
+const dressColorsEl = document.getElementById('adDressColors');
+const dressImgsEl   = document.getElementById('adDressImgs');
+const dressImgFile  = document.getElementById('adDressImgFile');
+const dressImgCount = document.getElementById('adDressImgCount');
+
+/* #abc → #AABBCC；認不得的一律當白色。
+   顏色是要畫在賓客那一頁上的，格式在這裡就切乾淨，
+   規則語言檢查不了陣列裡的每一格（見 firestore.rules）。 */
+function normHex(v){
+  const s = String(v || '').trim();
+  const short = /^#?([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(s);
+  if(short) return `#${short[1]}${short[1]}${short[2]}${short[2]}${short[3]}${short[3]}`.toUpperCase();
+  const full = /^#?([0-9a-f]{6})$/i.exec(s);
+  return full ? `#${full[1].toUpperCase()}` : '#FFFFFF';
+}
+
+/* 存好的那一份；還沒存過就用預設的三格白 */
+function dressColors(){
+  const raw = siteData().dressCodeColors;
+  if(!Array.isArray(raw) || !raw.length) return DRESS_COLOR_DEFAULT.slice();
+  return raw.slice(0, DRESS_COLOR_MAX).map(normHex);
+}
+
+async function saveDressColors(list){
+  const rows = list.slice(0, DRESS_COLOR_MAX).map(normHex);
+  await runSave(null, async ()=>{
+    await DataStore.saveSiteFields({ dressCodeColors: rows });
+    renderDressColors();
+    renderRsvpFormInfo();
+    toast('顏色已更新（這一區不用按下面的儲存）');
+  });
+}
+
+function renderDressColors(){
+  if(!dressColorsEl) return;
+  const list = dressColors();
+
+  const swatches = list.map((hex, i) => `
+    <div class="ad-swatch" data-swatch="${i}">
+      <input class="ad-swatch-pick" type="color" value="${escapeHtml(hex)}"
+             data-swatch-input="${i}" aria-label="第 ${i + 1} 個顏色">
+      <span class="ad-swatch-hex">${escapeHtml(hex)}</span>
+      ${list.length > 1
+        ? `<button class="ad-swatch-del" type="button" data-swatch-del="${i}"
+                   aria-label="移除第 ${i + 1} 個顏色">✕</button>`
+        : ''}
+    </div>`).join('');
+
+  /* 四個用完之前，最後面永遠有一顆「＋」；點了直接跳顏色選擇器 */
+  const add = list.length < DRESS_COLOR_MAX
+    ? `<div class="ad-swatch is-add">
+         <input class="ad-swatch-pick" type="color" value="#FFFFFF"
+                data-swatch-add aria-label="新增一個顏色">
+         <span class="ad-swatch-plus" aria-hidden="true">＋</span>
+       </div>`
+    : '';
+
+  dressColorsEl.innerHTML = swatches + add;
+}
+
+if(dressColorsEl){
+  /* change 而不是 input：拖曳選色時 input 會一路狂送，
+     change 只在選擇器關起來（真的選定了）才觸發一次 */
+  dressColorsEl.addEventListener('change', (e)=>{
+    const el = e.target.closest('.ad-swatch-pick');
+    if(!el) return;
+    const list = dressColors();
+    if(el.hasAttribute('data-swatch-add')){
+      if(list.length >= DRESS_COLOR_MAX) return;
+      saveDressColors([...list, el.value]);
+      return;
+    }
+    const i = Number(el.dataset.swatchInput);
+    if(!Number.isInteger(i) || !list[i]) return;
+    list[i] = el.value;
+    saveDressColors(list);
+  });
+
+  dressColorsEl.addEventListener('click', async (e)=>{
+    const del = e.target.closest('[data-swatch-del]');
+    if(!del) return;
+    const list = dressColors();
+    const i = Number(del.dataset.swatchDel);
+    if(!Number.isInteger(i) || !list[i]) return;
+    list.splice(i, 1);
+    await saveDressColors(list);
+  });
+}
+
+/* ---------- 參考圖 ---------- */
+function dressImgList(){
+  return DataStore.getDressImages().filter(it => !isPendingDelete('dressImages', it.id));
+}
+
+function renderDressImages(){
+  if(!dressImgsEl) return;
+  const list = dressImgList();
+
+  dressImgsEl.innerHTML = list.length
+    ? list.map((it, i) => `
+      <figure class="ad-dressimg" data-dressimg="${escapeHtml(it.id)}">
+        <img src="${escapeHtml(it.img)}" alt="Dress Code 參考圖 ${i + 1}">
+        ${i === 0 ? '<figcaption class="ad-dressimg-tag">預設顯示</figcaption>' : ''}
+        <div class="ad-dressimg-acts">
+          <button class="ad-edit" type="button" data-dressimg-move="up"
+                  aria-label="往前移"${i === 0 ? ' disabled' : ''}>←</button>
+          <button class="ad-edit" type="button" data-dressimg-move="down"
+                  aria-label="往後移"${i === list.length - 1 ? ' disabled' : ''}>→</button>
+          <button class="ad-del" type="button" data-dressimg-del
+                  aria-label="刪除這張參考圖">刪除</button>
+        </div>
+      </figure>`).join('')
+    : '<div class="ad-empty">還沒有參考圖</div>';
+
+  if(dressImgCount){
+    dressImgCount.textContent = list.length
+      ? `${list.length} / ${DRESS_IMG_MAX} 張`
+      : '';
+  }
+  const addBtn = document.getElementById('adDressImgAdd');
+  if(addBtn) addBtn.classList.toggle('is-disabled', list.length >= DRESS_IMG_MAX);
+}
+
+async function uploadDressImages(files){
+  const picked = pickImageFiles(files);
+  if(!picked.length){
+    toast('這幾個檔案不是圖片（支援 JPG／PNG／WebP／HEIC）', true);
+    return;
+  }
+  const room = DRESS_IMG_MAX - dressImgList().length;
+  if(room <= 0){
+    toast(`參考圖最多 ${DRESS_IMG_MAX} 張，先刪掉一張再上傳`, true);
+    return;
+  }
+  const list = picked.slice(0, room);
+  if(picked.length > room) toast(`最多 ${DRESS_IMG_MAX} 張，只會收前 ${room} 張`, true);
+
+  const field = document.getElementById('adDressImgField');
+  if(field) field.classList.add('is-saving');
+  const busy = showToast('圖片上傳中…', { duration: 60000 });
+
+  let done = 0;
+  const fails = [];
+  const base = dressImgList().length;
+  for(const file of list){
+    try{
+      const img = await shrinkImage(file, DRESS_IMG_MAX_BYTES, 1200);
+      await DataStore.saveDoc('dressImages', null, {
+        img, order: base + done + 1, time: Date.now(),
+      });
+      done++;
+    }catch(err){
+      fails.push({ file, err, text: uploadErrorText(file, err) });
+    }
+  }
+
+  busy.dismiss();
+  if(field) field.classList.remove('is-saving');
+  if(dressImgFile) dressImgFile.value = '';
+  if(done) toast(`已上傳 ${done} 張參考圖（這一區不用按下面的儲存）`);
+  reportUploadFails(fails, ()=> uploadDressImages(fails.map(f => f.file)));
+  renderDressImages();
+}
+
+if(dressImgFile){
+  dressImgFile.addEventListener('change', ()=> uploadDressImages(dressImgFile.files));
+}
+
+if(dressImgsEl){
+  dressImgsEl.addEventListener('click', async (e)=>{
+    const card = e.target.closest('[data-dressimg]');
+    if(!card) return;
+    const id = card.dataset.dressimg;
+
+    const move = e.target.closest('[data-dressimg-move]');
+    if(move){
+      const list = dressImgList();
+      const i = list.findIndex(x => x.id === id);
+      const to = move.dataset.dressimgMove === 'up' ? i - 1 : i + 1;
+      if(i < 0 || to < 0 || to >= list.length) return;
+      const next = list.map(x => x.id);
+      next.splice(to, 0, next.splice(i, 1)[0]);
+      await saveOrder('dressImages', list, next, renderDressImages);
+      return;
+    }
+
+    if(e.target.closest('[data-dressimg-del]')){
+      const ok = await confirmModal({
+        title: '刪除參考圖',
+        message: '確定要刪掉這張 Dress Code 參考圖嗎？',
+      });
+      if(!ok) return;
+      scheduleUndoDelete('dressImages', id, '參考圖', renderDressImages);
+    }
+  });
+}
+
+document.addEventListener('data:dressImages', ()=> renderDressImages());
+
+/* ============================================================
    4. 大廳內容（寫回 sites/{siteId} 的文案欄位）
    ------------------------------------------------------------
    這一頁改的不是子集合，而是站台文件本身。
@@ -4508,12 +4776,18 @@ function fillSiteForm(){
   renderTransportPublicImg();
   renderTransportParkingImg();
   sf.dress.value = d.dressCode    || '';
+  /* 色票與參考圖是「選好就存」，不進未儲存追蹤（和交通圖片同一個規矩），
+     但每次重填表單時都要跟著畫成資料庫現在那一份 */
+  renderDressColors();
+  renderDressImages();
   sf.gift.value  = d.giftNote     || '';
   sf.story.value = d.story        || '';
   sf.tags.value  = Array.isArray(d.hashtags) ? d.hashtags.join(', ') : '';
 
-  /* 出席回覆的「表單資訊」列的就是這些欄位，改完要跟著重畫 */
+  /* 出席回覆的「表單資訊」列的就是這些欄位，改完要跟著重畫；
+     首頁的上手指南是拿同一份資料判斷「這一步做完了沒」，一起更新 */
   renderRsvpFormInfo();
+  renderHome();
   siteFormBaseline = siteFormSnapshot();
   syncSiteDirtyUI();
 }
@@ -4932,9 +5206,41 @@ function evCardHtml(ev, i, total){
         <span>需要賓客回覆<small>關起來的話，這個活動不會出現在出席表單裡</small></span>
       </label>
 
-      ${ev.requiresRsvp ? evQuestionsHtml(ev) : ''}
+      ${ev.requiresRsvp ? evDefaultQsHtml(ev) + evQuestionsHtml(ev) : ''}
     </div>
   </div>`;
+}
+
+/* ---------- 這個活動目前問了什麼 ----------
+   打開「需要賓客回覆」之後，新人看到的下一件事原本是一張空的
+   「追加題目」—— 那讀起來像「這個活動什麼都沒問」。
+   實際上系統已經幫他問了五題，先把那五題原樣列出來，
+   他才知道「追加」是加在什麼後面。
+
+   這裡刻意是唯讀的：這幾題的開關屬於整份表單（見側欄的「表單設定」），
+   在兩個地方都改得動，兩邊就會對不起來。 */
+function evDefaultQsHtml(ev){
+  const rows = EV_ASK_ROWS.map(([key, label]) => ({ on: ev[key] !== false, label }));
+  const on  = rows.filter(r => r.on);
+  const off = rows.filter(r => !r.on);
+
+  return `
+    <div class="ad-sub-sec ad-evq-sec">
+      <div class="ad-sub-sec-title">這個活動目前會問 <small>（系統的預設題目）</small></div>
+      <p class="ad-sub-sec-note">
+        這幾題每個活動都會各問一次，改開關要到
+        側欄的「<b>表單設定</b>」。
+      </p>
+      <label class="ad-check is-fixed">
+        <input type="checkbox" checked disabled>
+        <span>能來參加嗎<small>固定題目，就是活動卡本身</small></span></label>
+      ${on.map(r => `
+      <label class="ad-check is-fixed">
+        <input type="checkbox" checked disabled>
+        <span>${escapeHtml(r.label)}</span></label>`).join('')}
+      ${off.length ? `<div class="ad-hint">目前沒問：${
+        escapeHtml(off.map(r => r.label).join('、'))}</div>` : ''}
+    </div>`;
 }
 
 /* ---------- 這個活動的追加題目 ----------
@@ -4948,7 +5254,7 @@ function evQuestionsHtml(ev){
       <div class="ad-evq-head">
         <input class="ad-input ad-evq-label" type="text" maxlength="30"
                data-evq-field="label" value="${escapeHtml(q.label || '')}"
-               placeholder="需要接駁車嗎？">
+               placeholder="例如：需要接駁車嗎？">
         <select class="ad-input ad-evq-kind" data-evq-field="kind">
           <option value="choice"${q.kind === 'choice' ? ' selected' : ''}>單選</option>
           <option value="text"${q.kind === 'text' ? ' selected' : ''}>文字</option>
@@ -6206,6 +6512,127 @@ document.getElementById('adQuizWipe').addEventListener('click', async ()=>{
 });
 
 /* ============================================================
+   後台首頁
+   ------------------------------------------------------------
+   第一次登入的新人看到的是十顆他沒看過的分頁名稱，
+   沒有任何一句話說「先做哪一個」。這一頁補上那句話。
+
+   三塊：
+     1. 開場 —— 這是什麼、賓客會看到什麼，兩個出口擺在最上面
+        （查看目前網站／查看表單）
+     2. 上手指南 —— 有順序的幾步，每一步右邊一顆直達的按鈕，
+        已經填好的打勾
+     3. 常被問到的事
+
+   「已經填好了嗎」一律用資料本身判斷，不另外記狀態 ——
+   我們沒有辦法保證新人只用同一台裝置，也不該讓一個進度條
+   在他換手機之後歸零。
+============================================================ */
+const HOME_STEPS = [
+  {
+    tab: 'lobby', hash: 'lobby/info',
+    title: '填好婚禮資訊',
+    note: '地點、時間、交通、Dress Code、關於禮金。留白的那一塊不會出現在賓客那一頁。',
+    done: () => !!(siteData().venueName || siteData().venueAddress),
+    doneText: '地點已經填好了',
+  },
+  {
+    tab: 'rsvpForm', hash: 'rsvpForm',
+    title: '決定出席表單要問什麼',
+    note: '固定題目不用管，這裡是決定要不要問喜帖、喜餅、聯絡方式，'
+        + '以及邀請函上還要放哪些內容。',
+    done: () => 'rsvpContactMethods' in siteData(),
+    doneText: '已經設定過了',
+  },
+  {
+    tab: 'lobby', hash: 'lobby/schedule',
+    title: '排當日流程',
+    note: '婚宴當天的時間軸。沒填的話，大廳會顯示「流程稍後公布」。',
+    done: () => Array.isArray(siteData().schedule) && siteData().schedule.length > 0,
+    doneText: () => `已經有 ${siteData().schedule.length} 個段落`,
+  },
+  {
+    tab: 'letters', hash: 'letters',
+    title: '寫一封給賓客的感謝信',
+    note: '賓客在婚禮當天抽到的那一封。可以寫好幾封，抽到哪一封由你們決定。',
+    done: () => DataStore.getLetters().length > 0,
+    doneText: () => `已經寫了 ${DataStore.getLetters().length} 封`,
+  },
+  {
+    tab: 'rsvp', hash: 'rsvp/overview',
+    title: '把連結發給賓客，等回覆進來',
+    note: '收到的每一份回覆都會出現在「出席回覆」，人數、葷素、兒童椅都幫你加好。',
+    done: () => DataStore.getRSVPCount() > 0,
+    doneText: () => `已經收到 ${DataStore.getRSVPCount()} 份回覆`,
+  },
+  {
+    tab: 'seatingPlan', hash: 'seatingPlan/board',
+    title: '回覆差不多了就開始排桌',
+    note: '把人拖到桌上，排完再一次同步給門口那張桌次表。',
+  },
+  {
+    tab: 'butler', hash: 'butler/links',
+    title: '婚宴前產生收禮連結',
+    note: '交給當天幫忙收禮的親友，他們記下的每一筆都會即時回到後台。',
+  },
+];
+
+const homeStepsEl = document.getElementById('adHomeSteps');
+
+function homeStepText(v){
+  return typeof v === 'function' ? v() : v;
+}
+
+/* 這一步「做完了沒有」。判斷不出來（例如排桌、收禮那種沒有明確終點的）
+   就回 null —— 那不是「還沒做」，只是不該打勾 */
+function homeStepDone(step){
+  if(typeof step.done !== 'function') return null;
+  try{ return !!step.done(); }
+  catch{ return null; }
+}
+
+function renderHome(){
+  if(!homeStepsEl) return;
+
+  /* 沒開的功能不該出現在「從這裡開始」——
+     叫新人去點一顆鎖著的分頁是最糟的第一步 */
+  const steps = HOME_STEPS.filter(s => !s.tab || tabEnabled(s.tab));
+
+  homeStepsEl.innerHTML = steps.map((s, i) => {
+    const done = homeStepDone(s);
+    const state = done ? homeStepText(s.doneText) : '';
+    return `<li class="ad-step${done ? ' is-done' : ''}">
+      <span class="ad-step-no">${done
+        ? `<svg class="ad-ic" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-check"/></svg>`
+        : String(i + 1)}</span>
+      <div class="ad-step-main">
+        <div class="ad-step-title">${escapeHtml(s.title)}</div>
+        <p class="ad-step-note">${escapeHtml(s.note)}</p>
+        ${state ? `<p class="ad-step-state">✓ ${escapeHtml(state)}</p>` : ''}
+      </div>
+      <div class="ad-step-act">
+        <button class="btn small ${done ? 'ghost' : ''}" type="button"
+                data-empty-hash="${escapeHtml(s.hash)}">${done ? '再看一次' : '去設定'}</button>
+      </div>
+    </li>`;
+  }).join('');
+
+  const left = steps.filter(s => homeStepDone(s) === false).length;
+  setPageSub('adHomeSub', left
+    ? `照下面的順序走一遍就差不多了，目前還有 <b>${left}</b> 步沒動過`
+    : '該填的都填得差不多了 —— 隨時可以回來改');
+}
+
+/* 回覆與感謝信進來之後，「這一步做完了沒」的答案會變，重畫一次 */
+document.addEventListener('data:rsvps', renderHome);
+document.addEventListener('data:letters', renderHome);
+
+/* 頂列的「新人後台」＝回首頁（和一般網站點 logo 回首頁一樣） */
+document.getElementById('adHomeBtn')?.addEventListener('click', ()=>{
+  location.hash = 'home';
+});
+
+/* ============================================================
    收禮小幫手（後台這一側）
    ------------------------------------------------------------
    工具本身是另一個網址：/butler#{token}，交給婚宴當天幫忙收禮的
@@ -6238,6 +6665,8 @@ const Butler = (() => {
     newLink:  document.getElementById('adBtNewLink'),
     exportBtn:document.getElementById('adBtExport'),
     noLink:   document.getElementById('adBtNoLink'),
+    banner:   document.getElementById('adBtNoLinkBanner'),
+    bannerNew:document.getElementById('adBtBannerNew'),
     meta:     document.getElementById('adBtMeta'),
     tableWrap:document.getElementById('adBtTableWrap'),
   };
@@ -6366,8 +6795,28 @@ const Butler = (() => {
     );
   }
 
+  /* 一組連結都沒有 → 統計與明細那兩頁做不了事，最上面橫一條提醒。
+     「連結與名單」那一頁不掛：那裡本來就有一張完整的空狀態卡，
+     兩個都出現的話，同一句話會在一個畫面上說三次。
+     還在讀的時候也不出現：那會在每次進後台時閃一下「還沒有連結」。 */
+  function currentButlerSubtab(){
+    return document.querySelector('.ad-subtabs[data-subtabs="butler"] .ad-subtab.is-on')
+      ?.dataset.subtab || '';
+  }
+
+  function syncNoLinkBanner(){
+    if(!el.banner) return;
+    el.banner.hidden = !loaded || links.length > 0 || currentButlerSubtab() === 'links';
+  }
+  window.addEventListener('hashchange', syncNoLinkBanner);
+
+  /* 側欄的路由問得到：沒有連結時，點「收禮小幫手」直接落在「連結與名單」，
+     而不是一張全是 0 的統計 */
+  function needsLink(){ return loaded && !links.length; }
+
   /* ---------- 統計 ---------- */
   function renderAll(){
+    syncNoLinkBanner();
     renderStats();
     renderRows();
     renderByWho();
@@ -7074,6 +7523,7 @@ const Butler = (() => {
   }
 
   el.newLink.addEventListener('click', createLink);
+  if(el.bannerNew) el.bannerNew.addEventListener('click', createLink);
   el.exportBtn.addEventListener('click', exportCsv);
   /* 兩顆眼睛（統計、明細）都是同一個開關 */
   eyeButtons().forEach(btn => btn.addEventListener('click', toggleMoney));
@@ -7101,5 +7551,5 @@ const Butler = (() => {
     if(d.drop)       dropLink(link);
   });
 
-  return { init };
+  return { init, needsLink };
 })();
