@@ -38,8 +38,42 @@ export const ADMIN_PAGES = ['seatingPlan', 'butler'];
 /* pages map 裡會出現的所有代號（頁面 ＋ 後台功能） */
 export const ALL_PAGE_KEYS = [...OPTIONAL_PAGES, ...ADMIN_PAGES];
 
-/* 建站時沒特別指定就開這些 */
-export const DEFAULT_PAGES = ['rsvp', 'wall'];
+/* ============================================================
+   還沒對外開放的功能
+   ------------------------------------------------------------
+   「沒開」有兩種，新人在後台看到的不一樣：
+
+     沒開，不在這份清單裡 → **可加購**：後台側欄留著、掛一顆鎖頭，
+                             點得進去看預覽，想開通就會來問我們
+     沒開，而且在這裡     → **單純關閉**：後台整顆收起來，新人看不到
+
+   放進來的代號代表「這個功能本身還沒好、還沒開賣」，跟某一組新人
+   買了什麼無關 —— 所以它寫在程式裡，不是每個站台各自的設定。
+   把還在做的功能掛上「進階方案」的鎖頭，等於在賣一個開不了的東西。
+
+   開賣的那一天把代號從這裡刪掉就好，一個站台的資料都不用動。
+   要先給某一組新人試用也不受影響：--enable 打開之後它就是開著的，
+   這份清單只管「沒開的時候要不要被看見」。
+
+   ⚠️ public/js/site-context.js 的 UNRELEASED_FEATURES 是同一份清單
+      （那邊是瀏覽器讀的，這邊是 CLI 讀的），改一邊要記得改另一邊。
+============================================================ */
+export const UNRELEASED_PAGES = [
+  /* 集氣送祝福：功能還沒開賣，先不要出現在任何地方。
+     （它沒有後台分頁，所以差別在賓客端與這兩支 CLI 的印出來的字） */
+  'cake',
+];
+
+export function isUnreleased(key) {
+  return UNRELEASED_PAGES.includes(key);
+}
+
+/* 建站時沒特別指定就開這些（＝標準方案含的功能）。
+   沒列到的分兩種：在 UNRELEASED_PAGES 裡的是「還沒開放」，
+   其餘的是「可加購」——後台會掛鎖頭讓新人看得到。 */
+export const DEFAULT_PAGES = [
+  'rsvp', 'wall', 'draw', 'exhibition', 'seating', 'seatingPlan',
+];
 
 /* 給人看的名稱，印在 CLI 訊息裡 */
 export const PAGE_LABELS = {

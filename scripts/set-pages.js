@@ -67,7 +67,8 @@ import { parseArgs } from 'node:util';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { resolveBaseUrl } from './site-url.js';
-import { OPTIONAL_PAGES, ADMIN_PAGES, ALL_PAGE_KEYS, resolvePages, labelOf } from './site-pages.js';
+import { OPTIONAL_PAGES, ADMIN_PAGES, ALL_PAGE_KEYS, resolvePages, labelOf,
+         isUnreleased } from './site-pages.js';
 
 function parseCliArgs(argv) {
   const { values } = parseArgs({
@@ -261,7 +262,11 @@ function padDisplay(text, width) {
 /* 印出開關；有 before 就標出這次的變化 */
 function printPages(after, before) {
   const line = (key) => {
-    const mark = after[key] ? '✅ 開' : '⛔ 關';
+    /* 關著的還要分兩種：新人在後台看得到鎖頭（可加購），還是完全看不到。
+       這裡把它印出來，才不會改完之後還要去猜新人會看到什麼。 */
+    const mark = after[key]
+      ? '✅ 開'
+      : (isUnreleased(key) ? '⛔ 關（還沒開放，後台看不到）' : '🔒 關（可加購，後台有鎖頭）');
     let change = '';
     if (before && before[key] !== after[key]) {
       change = after[key] ? '  ← 這次打開' : '  ← 這次關掉';

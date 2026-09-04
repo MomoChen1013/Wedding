@@ -1987,20 +1987,69 @@ console.log('\n[17] 後台只顯示有開的頁面');
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
 
-  const shown = await page.evaluate(() =>
+  const tabs = await page.evaluate(() =>
     Array.from(document.querySelectorAll('.ad-tab'))
-      .filter((b) => !b.hidden).map((b) => b.dataset.tab));
+      .filter((b) => !b.hidden)
+      .map((b) => ({ tab:b.dataset.tab, locked:b.classList.contains('is-locked') })));
+  const open = tabs.filter((t) => !t.locked).map((t) => t.tab);
+  const locked = tabs.filter((t) => t.locked).map((t) => t.tab);
   /* 側欄現在分成三組（婚禮管理／婚禮內容／賓客互動），DOM 順序跟著改了：
        婚禮管理  rsvp, seating, seatingPlan, butler
        婚禮內容  lobby, letters, cards, exhibits
        賓客互動  inbox, quiz
-     minimal-site 只開 rsvp，加上永遠都在的 lobby 與沒有開關的 inbox */
-  ok('關掉的頁面不出現編輯分頁',
-    shown.join(',') === 'rsvp,lobby,inbox', shown.join(','));
-  ok('大廳內容永遠在', shown.includes('lobby'));
+     minimal-site 只開 rsvp，加上永遠都在的 lobby 與沒有開關的 inbox。
+     其餘的不再收起來，而是鎖著留在側欄（進階方案）。 */
+  ok('有開的頁面正常可用',
+    open.join(',') === 'rsvp,lobby,inbox', open.join(','));
+  ok('沒開的頁面留在側欄、鎖起來',
+    locked.join(',') === 'seating,seatingPlan,butler,letters,cards,exhibits,quiz',
+    locked.join(','));
+  ok('大廳內容永遠在', open.includes('lobby'));
+  ok('鎖起來的分頁有鎖頭圖示',
+    await page.evaluate(() =>
+      !!document.querySelector('.ad-tab[data-tab="cards"] .ad-ic-lock')));
+  ok('鎖起來的分頁蓋上說明卡',
+    await page.evaluate(() =>
+      !!document.querySelector('.ad-panel[data-panel="cards"] > .ad-lock-cover')));
+  ok('鎖起來的分頁點得進去',
+    await (async () => {
+      await page.click('.ad-tab[data-tab="cards"]');
+      return page.evaluate(() =>
+        document.querySelector('.ad-tab.is-on')?.dataset.tab === 'cards'
+        && !!document.querySelector('.ad-panel[data-panel="cards"].is-on .ad-lock-cover'));
+    })());
 
   ok('後台分頁無 console 錯誤', realErrors(errors).length === 0,
     realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+{
+  /* 「沒開」有兩種：可加購（鎖頭，看得見）與還沒對外開放（整顆收起來）。
+     分界是 site-context.js 的 UNRELEASED_FEATURES —— 那是一份寫在程式裡的
+     清單（產品層級的事實），預設是空的，所以這裡直接換掉 isUnreleased
+     再重跑一次 applyTabVisibility，看畫面有沒有跟著分開。 */
+  const { page } = await visit('/w/minimal-site-2027/admin');
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+
+  const st = await page.evaluate(() => {
+    window.SITE.isUnreleased = (k) => k === 'quiz';
+    applyTabVisibility();
+    const q = document.querySelector('.ad-tab[data-tab="quiz"]');
+    const c = document.querySelector('.ad-tab[data-tab="cards"]');
+    return {
+      quizHidden:  q.hidden,
+      quizLocked:  q.classList.contains('is-locked'),
+      quizIcon:    !!q.querySelector('.ad-ic-lock'),
+      quizCover:   !!document.querySelector('.ad-panel[data-panel="quiz"] > .ad-lock-cover'),
+      cardsHidden: c.hidden,
+      cardsLocked: c.classList.contains('is-locked'),
+    };
+  });
+  ok('還沒開放的功能整顆收起來', st.quizHidden === true, JSON.stringify(st));
+  ok('還沒開放的功能不掛鎖頭', !st.quizLocked && !st.quizIcon);
+  ok('還沒開放的功能不留說明卡', !st.quizCover);
+  ok('其他沒開的功能還是可加購（鎖頭）', !st.cardsHidden && st.cardsLocked);
   await page.close();
 }
 {
@@ -2021,11 +2070,11 @@ console.log('\n[17] 後台只顯示有開的頁面');
   ok('出席回覆的內容也收起來',
     await page.evaluate(() =>
       !document.querySelector('.ad-panel[data-panel="rsvp"]').classList.contains('is-on')));
-  /* 整組都被關掉時，那一組的標題也要跟著收起來 ——
-     一個什麼都沒有的「婚禮管理」比沒有標題還糟 */
-  ok('整組都關掉時，group label 也一起藏起來',
+  /* 分組的標題不再跟著收：每一組至少有一顆鎖著的按鈕在，
+     那正是要讓新人看見的「還可以加開什麼」 */
+  ok('整組都關掉時，group label 還在（底下是鎖著的分頁）',
     await page.evaluate(() =>
-      document.querySelector('.ad-navgroup[data-navgroup="manage"]').hidden));
+      !document.querySelector('.ad-navgroup[data-navgroup="manage"]').hidden));
   await page.close();
 
   /* 還原，後面的測試還要用這組站台 */
@@ -2864,15 +2913,42 @@ console.log('\n[14d] 後台賓客標籤');
   await page.close();
 }
 {
-  /* 沒開這個功能的站台：後台不出現標籤，賓客表單也沒有那一題 */
+  /* 沒開這個功能的站台：後台的標籤子分頁是**鎖著**的（可加購，whenOff:'lock'），
+     賓客表單則完全沒有那一題 —— 鎖頭只給新人看，賓客那一側什麼都不會變 */
   const { page } = await visit('/w/minimal-site-2027/admin');
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
   await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="form"]');
   await page.waitForTimeout(300);
-  ok('沒開標籤功能的站台看不到標籤設定', !(await page.isVisible('#adTagSec')));
-  ok('沒開標籤功能的站台也沒有標籤子分頁', !(await page.isVisible('#adTagSubtab')));
   ok('沒開標籤功能的站台也沒有標籤那一題', !(await page.isVisible('#adAskTagRow')));
+  ok('標籤子分頁留著、掛鎖頭',
+    await page.evaluate(() => {
+      const b = document.getElementById('adTagSubtab');
+      return !b.hidden && b.classList.contains('is-locked')
+          && !!b.querySelector('.ad-ic-lock');
+    }));
+  ok('標籤子分頁蓋上說明卡',
+    await page.evaluate(() =>
+      !!document.querySelector('.ad-subpanel[data-subpanel="tags"] > .ad-lock-cover')));
+  ok('鎖著的標籤子分頁點得進去、但裡面碰不到',
+    await (async () => {
+      await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="tags"]');
+      await page.waitForTimeout(200);
+      return page.evaluate(() => {
+        const sp = document.querySelector('.ad-subpanel[data-subpanel="tags"]');
+        return sp.classList.contains('is-on')
+          && Array.from(sp.children)
+               .filter((el) => !el.classList.contains('ad-lock-cover'))
+               .every((el) => el.inert);
+      });
+    })());
+  /* 對不上的子分頁要退回第一個「用得到」的，不能退到鎖著的那一個 */
+  await page.evaluate(() => { location.hash = '#rsvp/nope'; });
+  await page.waitForTimeout(300);
+  const fallback = await page.evaluate(() =>
+    document.querySelector('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab.is-on')?.dataset.subtab);
+  ok('子分頁對不上時退回第一個用得到的（不是鎖著的）',
+    fallback === 'overview', String(fallback));
   await page.close();
 
   const guest = await visit('/w/minimal-site-2027/invitation');
@@ -3216,13 +3292,25 @@ console.log('\n[21] 後台排桌管理');
   await page.close();
 }
 {
-  /* 沒開這個開關的站台，後台就不該長出「排桌管理」 */
+  /* 沒開這個開關的站台，「排桌管理」是鎖著的（進階方案）：
+     按鈕還在、掛著鎖頭，點進去只有那張說明卡，工作區進不去 */
   const { page } = await visit('/w/minimal-site-2027/admin');
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
-  ok('沒開 seatingPlan 的站台看不到排桌管理',
-    await page.evaluate(() =>
-      document.querySelector('.ad-tab[data-tab="seatingPlan"]').hidden));
+  ok('沒開 seatingPlan 的站台，排桌管理是鎖著的',
+    await page.evaluate(() => {
+      const b = document.querySelector('.ad-tab[data-tab="seatingPlan"]');
+      return !b.hidden && b.classList.contains('is-locked')
+          && !!b.querySelector('.ad-ic-lock');
+    }));
+  ok('鎖著的排桌管理進不去工作區',
+    await page.evaluate(() => {
+      const p = document.querySelector('.ad-panel[data-panel="seatingPlan"]');
+      return !!p.querySelector(':scope > .ad-lock-cover')
+          && Array.from(p.children)
+               .filter((el) => !el.classList.contains('ad-lock-cover'))
+               .every((el) => el.inert);
+    }));
   await page.close();
 }
 
