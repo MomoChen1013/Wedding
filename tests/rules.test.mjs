@@ -657,6 +657,23 @@ describe('seating（桌次名單與桌次圖）', () => {
     await assertFails(setDoc(doc(db, `sites/${SITE_ID}/seatingImages/i3`),
       { ...okImg, img: `data:image/jpeg;base64,${'A'.repeat(960000)}` }));
   });
+
+  it('Dress Code 的參考圖：賓客讀得到、只有新人寫得進去', async () => {
+    const db = ownerDb();
+    const okImg = { img:'data:image/jpeg;base64,AAAA', order:1, time: Date.now() };
+    await assertSucceeds(setDoc(doc(db, `sites/${SITE_ID}/dressImages/d1`), okImg));
+    /* 大廳要畫得出來，所以是公開讀 */
+    await assertSucceeds(getDoc(doc(
+      testEnv.unauthenticatedContext().firestore(), `sites/${SITE_ID}/dressImages/d1`)));
+    /* 外部網址與過大的圖一律擋下（和桌次圖同一套，只是上限更嚴） */
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/dressImages/d2`),
+      { ...okImg, img:'https://evil.example.com/x.jpg' }));
+    await assertFails(setDoc(doc(db, `sites/${SITE_ID}/dressImages/d3`),
+      { ...okImg, img: `data:image/jpeg;base64,${'A'.repeat(410000)}` }));
+    /* 賓客寫不進去 */
+    await assertFails(setDoc(doc(
+      testEnv.unauthenticatedContext().firestore(), `sites/${SITE_ID}/dressImages/d4`), okImg));
+  });
 });
 
 /* ============================================================
@@ -1198,6 +1215,20 @@ describe('sites 的大廳文案更新', () => {
     /* 只認 boolean，塞字串進去就當作無效 */
     await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
       seatingFeatureEnabled: 'off',
+    }));
+  });
+
+  it('Dress Code 的色票最多四個', async () => {
+    const db = ownerDb();
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      dressCodeColors: ['#C8A96E', '#FFFFFF', '#FFFFFF', '#2F4F4F'],
+    }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      dressCodeColors: ['#000000', '#111111', '#222222', '#333333', '#444444'],
+    }));
+    /* 型別不對就整筆擋下（內容的格式在後台送出前切好，規則看不到陣列裡面） */
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      dressCodeColors: '#FFFFFF',
     }));
   });
 

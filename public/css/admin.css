@@ -137,10 +137,22 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
   width:36px;height:36px;padding:0;border:1px solid var(--line);border-radius:var(--radius);
   background:#fff;cursor:pointer;flex:0 0 auto;}
 .ad-menu-btn span{display:block;width:16px;height:1px;background:var(--ink);margin:0 auto;}
-.ad-bar-title{font-family:var(--font-display);font-weight:500;font-size:19px;
-  letter-spacing:.2em;color:var(--ink);}
-.ad-bar-sub{margin-top:4px;font-size:12px;letter-spacing:.06em;color:var(--ink-soft);
-  word-break:break-all;}
+/* 整塊是回首頁的按鈕：外觀維持原本的兩行文字，只在 hover／focus 時
+   讓標題轉深，不加底線也不加框 —— 頂列不該多一顆看起來像按鈕的東西 */
+.ad-bar-brand{
+  display:block;min-width:0;padding:0;margin:0;
+  background:none;border:none;text-align:left;cursor:pointer;
+  border-radius:var(--radius);
+}
+.ad-bar-title{display:block;font-family:var(--font-display);font-weight:500;font-size:19px;
+  letter-spacing:.2em;color:var(--ink);
+  transition:color var(--dur-hover) ease-out;}
+.ad-bar-sub{display:block;margin-top:4px;font-size:12px;letter-spacing:.06em;
+  color:var(--ink-soft);word-break:break-all;}
+@media (hover:hover) and (pointer:fine){
+  .ad-bar-brand:hover .ad-bar-title{color:var(--primary-deep);}
+}
+.ad-bar-brand:focus-visible{outline:2px solid var(--primary-deep);outline-offset:4px;}
 .ad-bar-actions{display:flex;gap:8px;flex:0 0 auto;}
 
 /* ---------- 側欄選單 ----------
@@ -270,6 +282,12 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
 .ad-callout-note{margin:10px 0 0;padding-left:26px;
   font-size:12.5px;line-height:2;letter-spacing:.04em;color:var(--ink-soft);}
 
+/* 「這件事還沒做，先做這個」的版本：沒有勾選框，所以說明不縮排；
+   自己站在子分頁列與內容之間，所以自己帶上下的距離 */
+.ad-callout.is-todo{margin:0 0 22px;background:var(--bg1);}
+.ad-callout.is-todo .ad-callout-note{margin-top:0;padding-left:0;}
+.ad-callout.is-todo .ad-row{margin-top:14px;}
+
 /* ============================================================
    表單元件
 ============================================================ */
@@ -317,6 +335,53 @@ select.ad-input{appearance:none;cursor:pointer;
   border:1px solid var(--line);background:var(--bg2);}
 .ad-img-field-prev[hidden]{display:none;}
 .ad-img-field .btn{cursor:pointer;}
+.ad-img-field .btn.is-disabled{opacity:.4;pointer-events:none;}
+
+/* ---------- Dress Code 的色票 ----------
+   <input type="color"> 直接當色塊：不必自己做選色器，
+   手機上跳出來的是系統原生的那一個（比任何自製的都好用）。
+   原生的 input 會自己畫一圈邊框與內距，全部歸零之後
+   剩下的就是「一格顏色」。 */
+.ad-swatches{display:flex;flex-wrap:wrap;gap:12px;margin-top:4px;}
+.ad-swatch{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.ad-swatch-pick{
+  -webkit-appearance:none;appearance:none;
+  width:52px;height:52px;padding:0;cursor:pointer;
+  /* 色塊裡沒有字，但 iOS 一樣會因為 <16px 的欄位而放大整頁（見 tests/ui-consistency） */
+  font-size:16px;
+  border:1px solid var(--line);border-radius:50%;background:none;
+  /* 不規則的圓：和賓客那一頁的色塊同一個形狀，後台看到的就是實際會出現的樣子 */
+  border-radius:58% 42% 47% 53% / 53% 47% 53% 47%;
+}
+.ad-swatch-pick::-webkit-color-swatch-wrapper{padding:0;}
+.ad-swatch-pick::-webkit-color-swatch{border:none;border-radius:inherit;}
+.ad-swatch-pick::-moz-color-swatch{border:none;border-radius:inherit;}
+.ad-swatch-hex{font-family:var(--font-ui);font-size:10.5px;letter-spacing:.06em;
+  color:var(--ink-soft);}
+.ad-swatch-del{
+  position:absolute;top:-6px;right:-6px;width:20px;height:20px;padding:0;
+  border:1px solid var(--line);border-radius:50%;background:#fff;cursor:pointer;
+  font-size:10px;line-height:1;color:var(--ink-soft);
+}
+.ad-swatch-del:hover{color:#a4677a;border-color:#a4677a;}
+/* 「＋」那一格：色塊本身是透明的，＋ 疊在上面，點下去就是選色器 */
+.ad-swatch.is-add .ad-swatch-pick{opacity:0;position:relative;z-index:1;}
+.ad-swatch.is-add{border:1px dashed var(--line);border-radius:50%;
+  width:52px;height:52px;justify-content:center;align-self:flex-start;}
+.ad-swatch.is-add .ad-swatch-plus{position:absolute;inset:0;display:flex;
+  align-items:center;justify-content:center;font-size:17px;color:var(--ink-soft);}
+
+/* ---------- Dress Code 的參考圖 ---------- */
+.ad-dressimgs{display:flex;flex-wrap:wrap;gap:12px;margin-top:4px;}
+.ad-dressimgs .ad-empty{padding:16px 0;text-align:left;}
+.ad-dressimg{position:relative;margin:0;width:104px;}
+.ad-dressimg img{width:104px;height:104px;object-fit:cover;
+  border:1px solid var(--line);border-radius:var(--radius);background:var(--bg2);display:block;}
+.ad-dressimg-tag{position:absolute;top:6px;left:6px;padding:2px 7px;border-radius:2px;
+  background:rgba(43,47,54,.66);color:#fff;font-size:10px;letter-spacing:.08em;}
+.ad-dressimg-acts{display:flex;align-items:center;gap:8px;margin-top:6px;}
+.ad-dressimg-acts .ad-edit:disabled{opacity:.3;cursor:not-allowed;}
+.ad-dressimgs-count{font-size:11.5px;letter-spacing:.06em;color:var(--ink-soft);}
 
 /* 勾選框和字要對齊在同一條中線上。原本是 flex-start ＋ margin-top:5px 硬推，
    字級或行高一改就對不準了（看起來像沒對齊，勾選框浮在文字上緣）。 */
@@ -662,6 +727,57 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-pager-size{display:flex;align-items:center;gap:6px;}
 .ad-pager-size select{padding:5px 8px;border:1px solid var(--line);border-radius:var(--radius);
   font-family:var(--font-ui);font-size:12px;color:var(--ink);background:#fff;cursor:pointer;}
+
+/* ============================================================
+   後台首頁：上手指南
+   ------------------------------------------------------------
+   一步一列：左邊編號、中間說明、右邊一顆「去設定」。
+   做完的那幾步不會消失，只是編號換成打勾、字轉淡 ——
+   「我做到哪裡了」比「還剩幾步」更常被問。
+============================================================ */
+.ad-steps{list-style:none;margin:0;padding:0;border-top:1px solid var(--line-soft);}
+.ad-step{display:flex;align-items:flex-start;gap:14px;
+  padding:18px 2px;border-bottom:1px solid var(--line-soft);}
+.ad-step-no{
+  flex:0 0 auto;width:26px;height:26px;border-radius:50%;
+  border:1px solid var(--line);background:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-ui);font-size:12px;color:var(--ink-soft);
+}
+.ad-step.is-done .ad-step-no{border-color:var(--primary-deep);color:var(--primary-deep);}
+.ad-step.is-done .ad-step-no .ad-ic{width:18px;height:18px;}
+.ad-step-main{flex:1 1 auto;min-width:0;}
+.ad-step-title{font-size:14px;letter-spacing:.06em;color:var(--ink);line-height:1.7;}
+.ad-step.is-done .ad-step-title{color:var(--ink-soft);}
+.ad-step-note{margin:5px 0 0;font-size:12.5px;line-height:1.9;
+  letter-spacing:.04em;color:var(--ink-soft);}
+.ad-step-state{margin:6px 0 0;font-size:11.5px;letter-spacing:.06em;color:var(--primary-deep);}
+.ad-step-act{flex:0 0 auto;align-self:center;}
+
+/* 常被問到的事：<details> 就夠了，不做自己的手風琴 */
+.ad-faq{border-top:1px solid var(--line-soft);}
+.ad-faq-item{border-bottom:1px solid var(--line-soft);}
+.ad-faq-item > summary{
+  list-style:none;cursor:pointer;padding:16px 2px;
+  font-size:13.5px;letter-spacing:.06em;color:var(--ink);
+}
+.ad-faq-item > summary::-webkit-details-marker{display:none;}
+.ad-faq-item > summary::before{
+  content:'＋';margin-right:10px;color:var(--primary-deep);font-size:12px;
+}
+.ad-faq-item[open] > summary::before{content:'－';}
+.ad-faq-item > p{margin:0;padding:0 2px 18px 26px;
+  font-size:12.5px;line-height:2;letter-spacing:.04em;color:var(--ink-soft);}
+
+/* 窄螢幕：編號與標題要留在同一行，按鈕才掉到下面。
+   flex-wrap 做不到這件事（說明一長，整塊 .ad-step-main 就整個換行，
+   編號會被自己留在上一行），所以直接換成兩欄的 grid。 */
+@media(max-width:599px){
+  .ad-step{display:grid;grid-template-columns:26px 1fr;
+    column-gap:12px;row-gap:10px;align-items:start;}
+  .ad-step-main,.ad-step-act{grid-column:2;}
+  .ad-step-act{align-self:start;}
+}
 
 /* ============================================================
    悄悄話
@@ -2640,6 +2756,12 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
    所以不給背景、不給框，只有 10.5px 的字距與一道極淡的上線。
    （它其實可以點——收合——但那是次要功能，視覺上不宣傳。）
 ============================================================ */
+/* 首頁：站在三個分組之上，不屬於任何一組，所以自己一格並用一道線隔開 */
+.ad-navtop{display:flex;flex-direction:column;padding-bottom:6px;}
+.ad-navtop + .ad-navgroup .ad-navgroup-lab{
+  margin-top:4px;border-top:1px solid var(--line-soft);padding-top:15px;
+}
+
 .ad-navgroup{display:flex;flex-direction:column;}
 .ad-navgroup[hidden]{display:none;}
 .ad-navgroup + .ad-navgroup{margin-top:6px;}

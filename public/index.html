@@ -143,7 +143,14 @@
         <div class="note-grid">
           <div class="note-item" id="dressCodeItem" hidden>
             <div class="note-label">Dress Code</div>
+            <!-- 色塊與參考圖由 js/index.js 填（新人在後台設定）；
+                 都沒設定時這兩塊不會出現，只剩下面那段文字 -->
+            <div class="dress-swatches" id="dressSwatches" hidden aria-hidden="true"></div>
             <p class="info-note" id="dressCode"></p>
+            <div class="dress-refs" id="dressRefs" hidden>
+              <img class="dress-ref-img" id="dressRefFirst" alt="Dress Code 參考圖">
+              <button class="ir-jump" id="dressRefMore" type="button" hidden>查看更多 →</button>
+            </div>
           </div>
           <div class="note-item" id="giftNoteItem" hidden>
             <div class="note-label">關於禮金</div>

@@ -418,11 +418,22 @@ console.log('\n【後台】');
   await page.waitForFunction(
     () => document.querySelector('.ad-tab.is-on')?.dataset.tab === 'butler',
     null, { timeout:5000 });
-  ok('網址帶到第一個子分頁', page.url().endsWith('#butler/stats'), page.url());
+  /* 一組連結都還沒產生時，直接落在「連結與名單」——
+     統計與明細那時候都是空的，停在那裡等於什麼線索都沒給 */
+  ok('還沒有連結時直接帶到「連結與名單」',
+    page.url().endsWith('#butler/links'), page.url());
+  /* 「連結與名單」上本來就有一張空狀態卡，橫幅只掛在做不了事的那兩頁 */
+  ok('連結那一頁不重複掛橫幅', !(await page.isVisible('#adBtNoLinkBanner')));
+  ok('連結那一頁有「產生第一組連結」的空狀態',
+    await page.isVisible('#adBtEmptyNew'));
+  await page.click('.ad-subtab[data-subtab="stats"]');
+  await page.waitForTimeout(300);
+  ok('統計那一頁橫一條提醒', await page.isVisible('#adBtNoLinkBanner'));
+  await page.click('.ad-subtab[data-subtab="links"]');
+  await page.waitForTimeout(300);
 
   /* 統計要看得到前面那幾筆（測試資料的收禮簿還沒登記成連結，
-     所以先切到「連結與名單」產生一組新的） */
-  await page.click('.ad-subtab[data-subtab="links"]');
+     所以在「連結與名單」產生一組新的） */
   await page.waitForSelector('#adBtLinks', { state:'visible' });
 
   await page.click('#adBtNewLink');

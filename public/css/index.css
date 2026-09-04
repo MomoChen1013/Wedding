@@ -132,6 +132,10 @@
   padding:0 0 2px;background:none;cursor:pointer;font-family:var(--font-body);
   transition:color .25s,border-color .25s;}
 .ir-jump:hover{color:var(--ink);border-bottom-color:var(--ink);}
+/* display:inline-block 會蓋掉瀏覽器對 [hidden] 的 display:none。
+   這幾顆（交通的「展開更多」、Dress Code 的「查看更多」）都是靠
+   el.hidden 開關的，少了這一條就永遠看得到。 */
+.ir-jump[hidden]{display:none;}
 .info-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:30px;}
 .info-actions .btn{text-decoration:none;text-align:center;}
 
@@ -170,6 +174,31 @@
    沒填的那格是 [hidden]，還留在 DOM 裡，所以用 class 判斷而不是 :only-child */
 .note-grid.is-solo{grid-template-columns:1fr;}
 .note-grid.is-solo .note-item{border-left:none;padding:0;}
+
+/* ---- Dress Code 的色塊與參考圖 ----
+   實心、不規則的圓：正圓看起來像設計工具裡的色票，
+   這裡要的是「一坨顏色」，所以四個角各給不同的半徑，
+   而且四顆各用一組（:nth-child），排在一起才不像複製貼上。
+   邊框是一條極淡的線 —— 沒有它，白色的色塊在米色底上會消失。 */
+.dress-swatches{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:14px;}
+.dress-swatches[hidden]{display:none;}
+.dress-swatch{
+  display:block;width:38px;height:38px;flex:0 0 auto;
+  border:1px solid var(--line-soft);
+  border-radius:58% 42% 47% 53% / 53% 47% 53% 47%;
+}
+.dress-swatch:nth-child(2){border-radius:45% 55% 62% 38% / 44% 56% 44% 56%;}
+.dress-swatch:nth-child(3){border-radius:60% 40% 38% 62% / 47% 60% 40% 53%;}
+.dress-swatch:nth-child(4){border-radius:41% 59% 55% 45% / 58% 41% 59% 42%;}
+
+.dress-refs{margin-top:14px;}
+.dress-refs[hidden]{display:none;}
+/* 參考圖不裁切：新人放上來的可能是直式的穿搭照，也可能是橫式的
+   色彩靈感板，切成固定比例一定會切壞其中一種。
+   高度給上限就好，太高的圖不會把整頁撐開。 */
+.dress-ref-img{display:block;width:auto;max-width:100%;
+  max-height:320px;border-radius:var(--radius);background:var(--bg2);}
+.dress-refs .ir-jump{margin-top:10px;}
 
 /* ---- 兩人的故事 ---- */
 .story-text{max-width:560px;margin:0 auto;color:var(--ink);

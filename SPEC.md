@@ -93,6 +93,10 @@ sites/{siteId}
   hashtags        : string[] # 婚禮 hashtag，前面沒有 # 會自動補上
                              # 留白則用預設的 #我們結婚了 / #Married
   dressCode       : string   # 服裝建議，支援換行；留白則大廳不出現
+  dressCodeColors : string[] # Dress Code 的色票，≤4 個 '#RRGGBB'；
+                             # 賓客那一頁畫成實心的不規則圓。
+                             # 格式在後台送出前切好（規則只擋筆數與型別）。
+                             # 參考圖不在這裡 —— 見子集合 dressImages
   giftNote        : string   # 禮金說明，支援換行；留白則大廳不出現
   transportPublic : string   # 大眾運輸說明，支援換行；留白則大廳不出現
   transportParking: string   # 停車說明，支援換行；兩格都留白時整塊不出現
@@ -186,6 +190,8 @@ sites/{siteId}
   # 以下七個由新人在 /w/{slug}/admin 維護，寫入需通過 ownerEmails 白名單
   seating/{autoId}       name, table, note(≤100), time            # 桌次名單
   seatingImages/{autoId} img(data URL ≤950000), title, order, time # 桌次圖
+  dressImages/{autoId}   img(data URL ≤400000), order, time        # Dress Code 參考圖
+                                                                   # 後台限 5 張（規則數不了子集合）
   blessings/{autoId}     terms(list ≤20), title, body(≤2000),
                          sign, isDefault(bool), time              # 電子祝福信
   explore/{autoId}       title, sub, kind('link'|'popup'),
@@ -331,6 +337,15 @@ short/{code}                # 短連結
 一律選填。刻意不做通用 form builder —— 規則語言檢查不了陣列裡的內容，
 型態一開放就等於前端說什麼算什麼。
 
+> 後台在「需要賓客回覆」打開之後，會先把**系統已經幫這個活動問的那幾題**
+> 原樣列出來（「能來參加嗎」＋ `askCount`／`askMeal`／`askChildSeat`／`askDiet`
+> 目前開著的那些，沒開的用一句「目前沒問：…」補上），**唯讀**——
+> 那幾題的開關屬於整份表單（側欄的「表單設定」），兩個地方都改得動就會對不起來。
+> 少了這一段，打開之後看到的第一件事是一張空的「追加題目」，
+> 讀起來像「這個活動什麼都沒問」。
+> 追加題目的 placeholder 寫成「例如：需要接駁車嗎？」而不是「需要接駁車嗎？」——
+> 後者會被當成建議題目直接照抄。
+
 ```json
 [
   { "id": "q_shuttle", "kind": "choice", "label": "需要接駁車嗎？",
@@ -387,6 +402,7 @@ short/{code}                # 短連結
 | `sites/{siteId}/rsvpTags/{rsvpId}` | 新人 | 新人 | 新人 | 新人 |
 | `sites/{siteId}/seating/{id}` | 允許 | 新人 | 新人 | 新人 |
 | `sites/{siteId}/seatingImages/{id}` | 允許 | 新人 | 新人 | 新人 |
+| `sites/{siteId}/dressImages/{id}` | 允許 | 新人 | 新人 | 新人 |
 | `sites/{siteId}/blessings/{id}` | 允許 | 新人 | 新人 | 新人 |
 | `sites/{siteId}/explore/{id}` | 允許 | 新人 | 新人 | 新人 |
 | `sites/{siteId}/cards/{id}` | 允許 | 新人 | 新人 | 新人 |
@@ -406,7 +422,7 @@ short/{code}                # 短連結
 
 | 型態 | 集合 | read | write |
 |---|---|---|---|
-| 賓客要用的內容 | `seating` `seatingImages` `blessings` `explore` `cards` `exhibits` `quiz` | 公開 | 新人 |
+| 賓客要用的內容 | `seating` `seatingImages` `dressImages` `blessings` `explore` `cards` `exhibits` `quiz` | 公開 | 新人 |
 | 賓客交上來的資料 | `rsvps` `letters` | 新人 | 賓客（create only） |
 | 新人自己的整理 | `rsvpTags` `seatingPlan` `butlerLinks` | 新人 | 新人 |
 | 收禮台的工作紀錄 | `butlers/{bookId}` | 靠不可猜的路徑（見 13.9） | 小幫手 |
@@ -423,7 +439,7 @@ Firestore 的讀取請求不帶條件，規則沒有辦法「只讓對得上的�
 
 ```
 coupleTitle venueName venueAddress venueMapUrl transportPublic transportParking
-dressCode giftNote story schedule hashtags updatedAt
+dressCode dressCodeColors giftNote story schedule hashtags updatedAt
 seatingSearchEnabled seatingFeatureEnabled
 rsvpAskCard rsvpAskGift rsvpAskMessage rsvpContactMethods
 rsvpShowStory rsvpShowGallery guestTags
@@ -1105,6 +1121,8 @@ allow read: if request.auth != null
 
 | 後台分頁 | 需要開的頁面 |
 |---|---|
+| 首頁 | 永遠都在（上手指南，不對應任何賓客頁面） |
+| 表單設定 | `rsvp`（和出席回覆同一個開關 —— 它就是那一頁的題目） |
 | 出席回覆 | `rsvp` |
 | 婚禮資訊 | 永遠都在（大廳是必開的頁面） |
 | 桌次 | `seating`（只看 `pages`：新人自己把「開放桌次功能」關起來時，後台照樣進得去） |
@@ -1119,22 +1137,51 @@ allow read: if request.auth != null
 可加購（掛鎖頭）`letter` `quiz` `butler` ＋ `guestTagsEnabled`；
 還沒開放（收起來）`cake` ＋ `multiEventEnabled`。
 
-預設開著的那一頁（出席回覆）剛好被關掉時，會自動改開第一個**沒有鎖著**的分頁。
+一進後台落在的是**首頁**：它排在所有分組之上、沒有頁面開關，
+所以什麼都關掉時第一個還在的分頁也是它（`activateTab` 的 fallback
+會跳過鎖著的分頁，免得一進來就是一張「這是進階方案」）。
+頂列的「新人後台」是一顆按鈕，點了回首頁 —— 和一般網站點 logo 回首頁一樣。
+
+**首頁在做的事**：新人第一次登入看到的是十顆他沒看過的分頁名稱，
+沒有一句話說「先做哪一個」。首頁補上那句話 ——
+
+1. 開場：這個後台是什麼、賓客會看到什麼。右上角兩個出口：
+   **查看目前網站**（賓客現在打開連結看到的樣子）與**查看表單**。
+2. **上手指南**（`HOME_STEPS`）：有順序的幾步，每一步右邊一顆
+   `data-empty-hash` 的按鈕直達那一頁；沒開的功能整步不出現
+   （叫新人去點一顆鎖著的分頁是最糟的第一步）。
+3. 幾件常被問到的事：`<details>` 就夠了，不做自己的手風琴。
+
+「這一步做完了沒」**一律用資料本身算**（地點填了沒、`rsvpContactMethods`
+存在不存在、`schedule` 有幾筆、收到幾份回覆…），不另外記一份進度 ——
+我們沒辦法保證新人只用同一台裝置，也不該讓一個進度條在他換手機之後歸零。
+算不出終點的那幾步（排桌、收禮）就不打勾，也不算進「還有幾步沒動過」。
 
 **一個分頁裝好幾件事的，用橫向子分頁分開**（`admin.js` 的 `SUBTABS`），
 網址是 `#分頁/子分頁`，重新整理或分享連結都回得到原本那一頁：
 
 | 分頁 | 子分頁 |
 |---|---|
-| 出席回覆 | 出席回覆總覽／回覆資訊／表單設定／設定賓客標籤 |
-| 婚禮資訊 | 婚禮資訊／當日流程／自訂內容 |
+| 出席回覆 | 出席回覆總覽／回覆資訊／設定賓客標籤 |
+| 婚禮資訊 | 婚禮資訊／其他流程／當日流程／自訂內容 |
 | 桌次 | 桌次圖／桌次搜尋及名單 |
 | 排桌管理 | 排桌工作區／桌位管理／匯入匯出 |
 | 收禮小幫手 | 收禮統計／收禮明細／連結與名單 |
+| 新人熟悉測驗 | 測驗題目／作答記錄 |
+
+「**表單設定**」原本是出席回覆底下的第三顆子分頁，實測時新人找不到 ——
+他要找的是「我的表單長什麼樣」，那不是「已經收到的回覆」的一部分。
+現在它是側欄自己的一顆分頁，而且排在「出席回覆」上面（先決定要問什麼，
+才會有回覆可以看）。舊網址 `#rsvp/form` 由 `admin.js` 的 `LEGACY_HASH`
+帶到 `#rsvpForm`，寄出去的信與新人的書籤都不會斷。
 
 子分頁也可以被開關收起來（目前只有「設定賓客標籤」）：沒開 `guestTagsEnabled`
 的站台連那顆子分頁鈕都不會出現，`#rsvp/tags` 這個網址會退回第一個看得到的子分頁。
-| 新人熟悉測驗 | 測驗題目／作答記錄 |
+
+**預設子分頁通常就是第一顆，收禮小幫手是例外**（`defaultSubtab()`）：
+一組連結都還沒產生時，統計與明細都是空的，所以直接落在「連結與名單」。
+另外兩個子分頁最上面橫一條提醒（`#adBtNoLinkBanner`），
+「連結與名單」那一頁不掛 —— 那裡本來就有一張完整的空狀態卡。
 
 **筆數多、欄位也多的清單畫成表格**（目前只有回覆名單）：一列一筆、一欄一件事，
 同一欄從上到下對得起來才比得出差異。欄位一定會超過螢幕寬度，
@@ -1315,6 +1362,23 @@ Firestore 的讀取請求不帶條件，規則無法「只讓對得上的人讀�
 **留白就不出現**：交通、Dress Code、禮金、兩人的故事沒填的話，
 大廳不會出現那一塊（也不會塞我們預想的罐頭文案）。
 兩格的區塊（Dress Code／禮金、大眾運輸／停車）只填一格時，那一格會佔滿整列。
+
+**Dress Code 是三件事，不是一段文字**：說明文字、**最多 4 個顏色**
+（`dressCodeColors`）、**最多 5 張參考圖**（子集合 `dressImages`）。
+「溫柔大地色系」四個字，十個賓客會穿出十種顏色 —— 直接把顏色與照片指出來，
+比任何形容詞都準。三樣**任何一樣有設定，大廳就出現這一塊**。
+
+| | 後台 | 賓客那一頁 |
+|---|---|---|
+| 顏色 | 一排色塊，點一個跳系統原生的 `<input type="color">`（自製選色器沒有任何理由比原生的好用，手機上尤其）。還沒設定過時預設攤開 3 格 `#FFFFFF`，最後一顆「＋」，補滿 4 個就不再出現 | 一排**實心的不規則圓**（`border-radius` 給八個值，四顆各一組，排在一起不像複製貼上）。邀請函的「服裝」那一列也帶同一組 |
+| 參考圖 | 最多 5 張，←／→ 排序、單張刪除，第一張標「預設顯示」 | 卡片上只露第一張，其餘點「查看更多」在既有的 `lcModal` 裡看完整的一疊 |
+
+兩者都是**選好就存**，不進 `adSiteForm` 的未儲存追蹤 ——
+和旁邊的交通圖片同一個規矩（欄位旁邊也寫了同一句話）。
+顏色進站台文件、圖進子集合：五張 data URL 塞進站台文件會直接撞上
+Firestore 單一文件 1MB 的上限，和 `seatingImages` 同一個理由。
+參考圖是非同步讀進來的（`DataStore.subscribeDressImages()`），
+所以它到齊之後會自己再決定一次「這一格要不要出現」。
 唯一有預設值的是 hashtag —— 沒填就用 `#我們結婚了`、`#Married`，
 大廳開場才不會空一排。
 
@@ -1590,14 +1654,25 @@ Guest（賓客）── SeatingAssignment（排桌關係）── Table（桌位
 檢查不過的那幾筆**不會被匯進來**，並且逐筆講清楚：
 「第 12 筆資料：人數不是有效數字」「編號 B01 已經有人用了」
 「找不到桌號 09，請先在桌位管理建立」。
-匯出有兩種：**賓客明細**（一列一位）與**桌位排桌表**（依桌位分組，
-每桌結尾附總人數），Excel 檔一次含這兩張工作表。
+匯出有兩種：**賓客明細**（一列一位）與**桌位排桌表**，Excel 檔一次含這兩張工作表。
+桌位排桌表依桌位分組，欄位是姓名、人數、**素食、兒童椅**、備註，
+每一桌結尾一列「小計」，最後一列「全部合計」——
+婚宴當天要跟飯店講的是「第 3 桌兩份素食、一張兒童椅」，一個總數幫不上忙。
+素食與兒童椅的算法（`tableNeeds()`）和排桌板上的桌卡提醒是同一份程式碼，
+兩邊不會出現「畫面上 3 位素食、Excel 裡 2 位」。
 
 **為什麼自己寫 Excel 讀寫器**（`js/xlsx-lite.js`）：第 1 節說不引入前端函式庫。
 `.xlsx` 就是一包 ZIP 裡的 XML，讀的時候用瀏覽器內建的
 `DecompressionStream('deflate-raw')` ＋ `DOMParser`，
 寫的時候一律用 ZIP 的 **stored（不壓縮）**，
 這樣連 deflate 都不必實作，產出的檔案 Excel／Numbers／試算表都打得開。
+
+> ⚠️ **每一格都要跳脫 `&`、`<`、`>`（屬性值再加 `"`、`'`）。**
+> 自己拼 XML 最容易漏的就是這一步：備註裡一個「王小明 & 陳小美」沒跳脫，
+> 整份工作表就不是合法的 XML，Excel 打開只說「檔案毀損」，
+> 而且不會告訴你是哪一格 —— 檔名、大小、ZIP 結構全部看起來都正常。
+> `tests/multipage.mjs` 會把匯出的檔案讀回來（stored 的 ZIP，XML 直接在位元組裡），
+> 逐份工作表丟給 `DOMParser` 驗一次。
 
 **為什麼整份草稿存成一份文件**（`seatingPlan/draft`）而不是三個子集合：
 排桌是「改一堆、看整體、覺得可以了才存」的工作。

@@ -366,6 +366,14 @@ function buildWed(site) {
     mapUrl: site.venueMapUrl || '',
 
     dressCode: site.dressCode || '',
+    /* Dress Code 的色票：最多四個 #RRGGBB，後台切好才寫進來。
+       這裡再擋一次格式 —— 資料庫裡的舊資料不保證乾淨，
+       而這幾個值是直接當成 CSS 顏色用的。
+       參考圖不在這裡：那是子集合 dressImages（見 DataStore）。 */
+    dressCodeColors: (Array.isArray(site.dressCodeColors) ? site.dressCodeColors : [])
+      .map((c) => String(c || '').trim())
+      .filter((c) => /^#[0-9a-fA-F]{6}$/.test(c))
+      .slice(0, 4),
     schedule: Array.isArray(site.schedule) ? site.schedule : [],
     giftNote: site.giftNote || '',
     transportPublic: site.transportPublic || '',

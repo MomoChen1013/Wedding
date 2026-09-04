@@ -134,6 +134,24 @@ function renderEventRows(evs){
   show('dressRow',    'dressCode', W.dressCode);
   show('giftNoteRow', 'giftNote', W.giftNote);
 
+  /* Dress Code 的色塊：和大廳同一組顏色、同一個形狀。
+     只選了顏色沒寫文字時，這一列也要出現 ——
+     參考圖不放在邀請函上：這一頁要短，滑到底就是「我要回覆」。 */
+  const swatchBox = document.getElementById('dressSwatches');
+  const colors = (Array.isArray(W.dressCodeColors) ? W.dressCodeColors : [])
+    .filter(c => /^#[0-9a-fA-F]{6}$/.test(String(c || '').trim()))
+    .slice(0, 4);
+  if(swatchBox && colors.length){
+    colors.forEach(hex => {
+      const dot = document.createElement('span');
+      dot.className = 'dress-swatch';
+      dot.style.background = hex;
+      swatchBox.appendChild(dot);
+    });
+    swatchBox.hidden = false;
+    document.getElementById('dressRow').hidden = false;
+  }
+
   if(W.story && CFG.showStory){
     document.getElementById('storyBlock').hidden = false;
     document.getElementById('storyText').textContent = W.story;
