@@ -196,9 +196,10 @@ body:is([data-template="korean"],[data-template="forest"]) :is(
   .step-pane .step-hint, .gate-card .sub){
   font-size:14px;
 }
-/* 流程時間軸的連接線：這兩版是實色底，線可以實一點，一定看得見 */
-body[data-template="korean"] .tl-dot{background:#c6c2ba;}
-body[data-template="forest"] .tl-dot{background:#c8c4b4;}
+/* 流程時間軸的連接線：這兩版是實色底，線可以實一點，一定看得見。
+   換的是 .timeline 上的 --tl-line（線本體畫在 .tl-dot::after，見 index.css）。 */
+body[data-template="korean"] .timeline{--tl-line:#c6c2ba;}
+body[data-template="forest"] .timeline{--tl-line:#c8c4b4;}
 
 /* ---- 植物線稿（由 common.js 注入，只有這兩個版型有） ----
    korean 是一小枝、forest 是一支蕨葉；素材資料夾放 deco.png/svg

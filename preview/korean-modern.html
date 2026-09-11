@@ -141,12 +141,19 @@ body{
 /* 流程：左細線，時間用 Cormorant */
 .k-tl{display:flex;flex-direction:column;}
 .k-tl-item{display:grid;grid-template-columns:5.5em 1fr;gap:20px;padding:0 0 26px;position:relative;}
-.k-tl-item::before{content:'';position:absolute;left:calc(5.5em + 9px);top:12px;bottom:0;width:1px;background:var(--line);}
-.k-tl-item:last-child::before{display:none;}
-.k-tl-item::after{content:'';position:absolute;left:calc(5.5em + 7px);top:7px;width:5px;height:5px;border-radius:50%;
-  background:var(--blue);}
-.k-tl-time{font-family:var(--f-en);font-size:17px;letter-spacing:.1em;text-align:right;}
-.k-tl-t{font-size:14.5px;}
+/* 線從這一列的頂端畫到底端，下一列接著畫 → 整條連得起來
+   （原本從 top:12px 起筆，每一列交界就缺一段）。
+   第一列從圓點起筆、最後一列到圓點收筆，只有一列時上下對撞、不畫 */
+.k-tl-item::before{content:'';position:absolute;left:calc(5.5em + 9px);top:0;bottom:0;width:1px;background:var(--line);}
+/* 用 of-type 而不是 :first-child／:last-child：clone 出來的列是插在
+   <template> 前面的（見 lobby-mount.js），<template> 才是最後一個子元素 */
+.k-tl-item:first-of-type::before{top:13px;}
+.k-tl-item:last-of-type::before{bottom:calc(100% - 13px);}
+/* 圓點對準第一行行盒的中心（26px 的一半） */
+.k-tl-item::after{content:'';position:absolute;left:calc(5.5em + 7px);top:13px;transform:translateY(-50%);
+  width:5px;height:5px;border-radius:50%;background:var(--blue);}
+.k-tl-time{font-family:var(--f-en);font-size:17px;line-height:26px;letter-spacing:.1em;text-align:right;}
+.k-tl-t{font-size:14.5px;line-height:26px;}
 .k-tl-d{font-size:12.5px;color:var(--muted);margin-top:3px;}
 
 .k-notes{display:grid;grid-template-columns:1fr 1fr;gap:clamp(20px,3vw,40px);}

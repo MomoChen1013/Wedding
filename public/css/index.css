@@ -147,17 +147,26 @@
 .info-seat .btn{text-decoration:none;text-align:center;width:min(100%,320px);}
 
 /* ---- 當日流程 ---- */
-.timeline{max-width:520px;margin:0 auto;}
+.timeline{max-width:520px;margin:0 auto;
+  /* 連接線的顏色：Korean／Forest 只換這一個變數（見 common.css） */
+  --tl-line:var(--line);}
 .tl-item{display:grid;grid-template-columns:5em 1px 1fr;gap:20px;align-items:start;}
 /* 時間（13px）與標題（15px）的第一行行盒統一成 24px：
    兩邊的字才會坐在同一條線上，圓點再對準這條線的中心（12px）。
    原本各吃 line-height 1.8 → 行盒 23.4 vs 27，時間會浮高半個字。 */
 .tl-time{font-size:13px;line-height:24px;color:var(--primary-deep);letter-spacing:.1em;text-align:right;}
-.tl-dot{position:relative;background:var(--line);}
+/* 中間那一欄要 stretch 撐滿整列，線才接得到下一列的圓點
+   （align-items:start 會讓這顆空 div 高度歸零，線就整條不見了）。
+   線畫在 ::after 而不是欄位的 background：這樣第一列可以從圓點才起筆、
+   最後一列到圓點就收筆，只有一列時上下對撞、整條線不畫。 */
+.tl-dot{position:relative;align-self:stretch;}
+.tl-dot::after{content:'';position:absolute;left:0;right:0;top:0;bottom:0;
+  background:var(--tl-line,var(--line));}
+.tl-item:first-child .tl-dot::after{top:12px;}
+.tl-item:last-child .tl-dot::after{bottom:calc(100% - 12px);}
+/* 圓點壓在線上面（同一顆 ::after 在後面畫，不 z-index 會被線切過去） */
 .tl-dot::before{content:'';position:absolute;top:12px;left:50%;transform:translate(-50%,-50%);
-  width:5px;height:5px;border-radius:50%;background:var(--ink);}
-.tl-item:first-child .tl-dot{top:12px;}
-.tl-item:last-child .tl-dot{height:12px;}
+  width:5px;height:5px;border-radius:50%;background:var(--ink);z-index:1;}
 .tl-content{padding-bottom:30px;}
 .tl-t{color:var(--ink);font-size:15px;line-height:24px;}
 .tl-d{font-size:13px;color:var(--ink-soft);margin-top:4px;line-height:1.9;}

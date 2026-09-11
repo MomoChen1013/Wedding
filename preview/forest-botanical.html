@@ -110,13 +110,19 @@ body{
 /* 流程：中線時間軸 */
 .f-tl{max-width:460px;margin:0 auto;text-align:left;}
 .f-tl-item{display:grid;grid-template-columns:4.6em 1px 1fr;gap:18px;align-items:start;}
-.f-tl-time{font-family:var(--f-en);font-size:17px;letter-spacing:.1em;text-align:right;padding-top:2px;}
-.f-tl-line{position:relative;background:var(--line);}
-.f-tl-line::before{content:'';position:absolute;top:8px;left:50%;transform:translate(-50%,-50%);
-  width:7px;height:7px;border-radius:50%;background:var(--sage);border:1px solid var(--ground);}
-.f-tl-item:last-child .f-tl-line{height:8px;}
+/* 時間與標題的第一行行盒都是 26px，圓點對準中心（13px） */
+.f-tl-time{font-family:var(--f-en);font-size:17px;line-height:26px;letter-spacing:.1em;text-align:right;}
+/* 線撐滿整列才接得到下一列的圓點；第一列從圓點起筆、最後一列到圓點收筆 */
+.f-tl-line{position:relative;align-self:stretch;}
+.f-tl-line::after{content:'';position:absolute;left:0;right:0;top:0;bottom:0;background:var(--line);}
+/* 用 of-type 而不是 :first-child／:last-child：clone 出來的列是插在
+   <template> 前面的（見 lobby-mount.js），<template> 才是最後一個子元素 */
+.f-tl-item:first-of-type .f-tl-line::after{top:13px;}
+.f-tl-item:last-of-type .f-tl-line::after{bottom:calc(100% - 13px);}
+.f-tl-line::before{content:'';position:absolute;top:13px;left:50%;transform:translate(-50%,-50%);
+  width:7px;height:7px;border-radius:50%;background:var(--sage);border:1px solid var(--ground);z-index:1;}
 .f-tl-body{padding-bottom:28px;}
-.f-tl-t{font-family:var(--f-cn);font-weight:400;font-size:15px;letter-spacing:.06em;}
+.f-tl-t{font-family:var(--f-cn);font-weight:400;font-size:15px;line-height:26px;letter-spacing:.06em;}
 .f-tl-d{font-size:12.5px;color:var(--ink-2);margin-top:3px;}
 
 .f-notes{display:grid;grid-template-columns:1fr 1fr;gap:clamp(20px,4vw,44px);text-align:left;}
