@@ -33,7 +33,7 @@ function renderWishes(){
 document.getElementById('postWish').addEventListener('click',async ()=>{
   const t=document.getElementById('wishText').value.trim();
   if(!t) return;
-  const u = await ensureUser('祝福會掛在你的名字下，讓新人知道是誰寫的');
+  const u = await ensureUser('讓新人知道，這句祝福來自你');
   if(!u) return;
   DataStore.addWish({name:u.name, icon:u.icon, text:t});
   document.getElementById('wishText').value='';
@@ -58,7 +58,7 @@ function closeLetter(){ letterModal.classList.remove('open'); }
 async function submitLetter(){
   const t=letterText.value.trim();
   if(!t){ letterText.focus(); return; }
-  const u = await ensureUser('這封信只有新人讀得到，署個名他們才知道是誰');
+  const u = await ensureUser('這封信只有新人讀得到，讓他們知道是誰寫的');
   if(!u) return;
   DataStore.addLetter({name:u.name, icon:u.icon, text:t});
   letterText.value='';

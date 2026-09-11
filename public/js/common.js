@@ -1273,7 +1273,7 @@ async function signInWithGoogleName(){
 
    reason＝這次為什麼需要名字，直接印在標題底下（見 ensureUser()）。
 ============================================================ */
-const ASK_REASON_DEFAULT = '留個名字，新人才知道這份心意是誰送的';
+const ASK_REASON_DEFAULT = '讓新人知道，這份心意來自你';
 
 function askName(reason){
   return new Promise(resolve => {
@@ -1293,18 +1293,21 @@ function askName(reason){
       <div class="id-card">
         <button class="id-close" type="button" data-act="cancel" aria-label="關閉">✕</button>
         <div class="id-head">
+          <h3>留個名字吧</h3>
+          <p class="id-why"></p>
+        </div>
+        <div class="id-mark">
+          <span class="id-mark-lab">你的記號</span>
           <span class="ask-icon" data-act="reroll" role="button" tabindex="0"
                 aria-label="換一個專屬記號"></span>
-          <div class="id-head-txt">
-            <h3>先留個名字</h3>
-            <p class="id-why"></p>
-          </div>
+          <b class="id-reroll" data-act="reroll" role="button" tabindex="0">換一個</b>
         </div>
         <div class="id-row">
-          <input class="ask-input" type="text" maxlength="12" placeholder="輸入你的名字"
+          <input class="ask-input" type="text" maxlength="12" placeholder="請輸入你的名字"
                  autocomplete="nickname" enterkeyhint="done" aria-label="你的名字">
-          <button class="btn" type="button" data-act="ok">就是我</button>
+          <button class="btn" type="button" data-act="ok">確認</button>
         </div>
+        <div class="id-sep"><span>或</span></div>
         <button class="btn btn-google id-google" type="button" data-act="google">
           <svg viewBox="0 0 18 18" aria-hidden="true">
             <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.17-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.61z"/>
@@ -1312,12 +1315,8 @@ function askName(reason){
             <path fill="#FBBC05" d="M3.96 10.71A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.17.28-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.04l3-2.33z"/>
             <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 9 0 9 9 0 0 0 .96 4.96l3 2.33C4.67 5.16 6.66 3.58 9 3.58z"/>
           </svg>
-          <span>用 Google 帶入名字</span>
+          <span>使用 Google 登入</span>
         </button>
-        <div class="ask-hint">
-          <span>你的記號是 <b data-act="reroll" role="button" tabindex="0">換一個</b></span>
-          <button class="id-later" type="button" data-act="cancel">再等等</button>
-        </div>
       </div>`;
     document.body.appendChild(sheet);
 
@@ -1330,8 +1329,12 @@ function askName(reason){
 
     /* 右下角那顆 BGM 浮動鈕本來就在同一塊區域，讓它先讓開 */
     document.body.classList.add('id-sheet-on');
-    /* 沒有 Firebase（離線預覽、SDK 掛了）就不留一顆按了沒反應的按鈕 */
-    if(!(window.fb && window.fb.auth)) gBtn.remove();
+    /* 沒有 Firebase（離線預覽、SDK 掛了）就不留一顆按了沒反應的按鈕；
+       只剩一條路的時候，「或」那條分隔線也跟著收掉 */
+    if(!(window.fb && window.fb.auth)){
+      gBtn.remove();
+      sheet.querySelector('.id-sep').remove();
+    }
 
     let done = false;
     const close = (user) => {
@@ -1733,7 +1736,7 @@ function buildSiteNav(){
      只是這次沒有「正在送出的東西」，所以理由寫得比較泛用 */
   const signIn = document.getElementById('navSignInBtn');
   if(signIn){
-    signIn.addEventListener('click', () => askName('留個名字，之後寫祝福、送甜點就不用再填一次'));
+    signIn.addEventListener('click', () => askName('留下之後，寫祝福、送甜點就不用再填一次'));
   }
 
   const btn = document.getElementById('navUserBtn');

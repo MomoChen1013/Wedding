@@ -449,16 +449,26 @@ body.nav-off{padding-top:0;}
   color:var(--ink-soft);background:none;border:none;line-height:1;padding:4px;}
 .id-sheet .id-close:hover{color:var(--ink);}
 
-.id-sheet .id-head{display:flex;align-items:center;gap:14px;margin:0 24px 16px 0;}
-.id-sheet .ask-icon{flex:0 0 auto;width:46px;height:46px;display:flex;align-items:center;
-  justify-content:center;font-size:19px;color:var(--primary-deep);cursor:pointer;
-  border:1px solid var(--line);border-radius:50%;}
-.id-sheet .id-head-txt h3{font-family:var(--font-display);font-weight:500;font-size:16px;
+/* 標題與這次為什麼需要名字 */
+.id-sheet .id-head{margin:0 24px 16px 0;}
+.id-sheet .id-head h3{font-family:var(--font-display);font-weight:500;font-size:17px;
   color:var(--ink);letter-spacing:.16em;margin:0;}
-.id-sheet .id-why{font-size:12.5px;color:var(--ink-soft);line-height:1.7;margin:4px 0 0;
+.id-sheet .id-why{font-size:12.5px;color:var(--ink-soft);line-height:1.7;margin:6px 0 0;
   letter-spacing:.06em;}
 
-/* 輸入框與「就是我」同一列：最短的路徑就是填字、按旁邊那顆 */
+/* 記號自己一列：「你的記號 ◇ 換一個」
+   —— 它是附帶的小驚喜，不是要填的欄位，所以縮到一行文字的份量 */
+.id-sheet .id-mark{display:flex;align-items:center;gap:10px;margin:0 0 14px;}
+.id-sheet .id-mark-lab{font-size:12px;letter-spacing:.1em;color:var(--ink-soft);}
+.id-sheet .ask-icon{flex:0 0 auto;width:30px;height:30px;display:flex;align-items:center;
+  justify-content:center;font-size:15px;color:var(--primary-deep);cursor:pointer;
+  border:1px solid var(--line);border-radius:50%;transition:border-color .2s;}
+.id-sheet .ask-icon:hover{border-color:var(--ink);}
+.id-sheet .id-reroll{font-weight:400;font-size:12px;letter-spacing:.08em;color:var(--ink-soft);
+  cursor:pointer;border-bottom:1px solid var(--line);}
+.id-sheet .id-reroll:hover{color:var(--ink);border-bottom-color:var(--ink);}
+
+/* 輸入框與「確認」同一列：最短的路徑就是填字、按旁邊那顆 */
 .id-sheet .id-row{display:flex;gap:8px;}
 .id-sheet .ask-input{flex:1 1 auto;min-width:0;padding:12px 14px;border:1px solid var(--line);
   border-radius:var(--radius);font-family:var(--font-body);font-size:15px;
@@ -466,29 +476,28 @@ body.nav-off{padding-top:0;}
 .id-sheet .ask-input:focus{border-color:var(--ink);}
 /* .btn 的底色設定是 width:100%（全站的按鈕多半自己佔一列）；
    這裡要並排，所以把寬度交還給內容 */
-.id-sheet .id-row .btn{flex:0 0 auto;width:auto;padding:12px 24px;}
+.id-sheet .id-row .btn{flex:0 0 auto;width:auto;padding:12px 26px;}
 .id-sheet .id-row.shake{animation:idShake .3s ease;}
 @keyframes idShake{0%,100%{transform:none}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 
-.id-sheet .id-google{width:100%;margin-top:10px;}
+/* 「或」分隔線：與大廳 gate 的 .gate-sep 同一份規格 */
+.id-sheet .id-sep{position:relative;text-align:center;margin:16px 0 12px;
+  font-size:10.5px;letter-spacing:.4em;color:var(--ink-soft);}
+.id-sheet .id-sep::before,
+.id-sheet .id-sep::after{content:'';position:absolute;top:50%;
+  width:calc(50% - 22px);height:1px;background:var(--line);}
+.id-sheet .id-sep::before{left:0;}
+.id-sheet .id-sep::after{right:0;}
 
-.id-sheet .ask-hint{display:flex;align-items:center;justify-content:space-between;gap:12px;
-  font-size:12px;color:var(--ink-soft);letter-spacing:.08em;margin-top:14px;}
-.id-sheet .ask-hint b{font-weight:500;color:var(--ink);cursor:pointer;
-  border-bottom:1px solid var(--line);}
-.id-sheet .id-later{background:none;border:none;cursor:pointer;padding:0;
-  font-family:inherit;font-size:12px;letter-spacing:.08em;color:var(--ink-soft);
-  border-bottom:1px solid var(--line);}
-.id-sheet .id-later:hover{color:var(--ink);}
+.id-sheet .id-google{width:100%;}
 
 /* 手機：整條貼齊螢幕底，只留上緣的圓角 */
 @media(max-width:560px){
   .id-sheet .id-card{width:100%;margin:0;border-radius:18px 18px 0 0;
     border-left:none;border-right:none;border-bottom:none;
     padding:18px 16px calc(14px + env(safe-area-inset-bottom));}
-  .id-sheet .id-head{margin-bottom:14px;gap:12px;}
-  .id-sheet .ask-icon{width:42px;height:42px;font-size:18px;}
-  /* 小螢幕上「名字 ＋ 就是我」擠在一列會兩邊都太窄，改成上下兩排 */
+  .id-sheet .id-head{margin-bottom:14px;}
+  /* 小螢幕上「名字 ＋ 確認」擠在一列會兩邊都太窄，改成上下兩排 */
   .id-sheet .id-row{flex-direction:column;}
   .id-sheet .id-row .btn{width:100%;padding:13px 22px;}
 }
