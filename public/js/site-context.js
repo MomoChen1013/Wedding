@@ -136,11 +136,14 @@ const UNRELEASED_FEATURES = new Set([
 
    沒預產到的頁面才真的在這裡換 —— 那種頁面由 .boot-veil 遮著，
    換色發生在遮罩底下，賓客一樣看不到。 */
-function applyTemplate(name) {
+function applyTemplate(name, isLobby) {
   const key = templateKey(name);
   document.body.dataset.template = key;
   const t = TEMPLATES[key];
-  for (const href of [...(t.fonts || []), ...(t.css || [])]) {
+  /* 字體整個版型都要；版面 CSS 只有大廳要（見 wed-model.js 的 lobbyCss）。
+     以前這裡是每一頁都插，子頁等於多擋一次首次繪製在一份用不到的樣式上。 */
+  const sheets = [...(t.fonts || []), ...(isLobby ? (t.lobbyCss || []) : [])];
+  for (const href of sheets) {
     if (document.querySelector(`link[href="${href}"]`)) continue;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
@@ -385,7 +388,7 @@ async function boot() {
   }
 
   /* 版型：越早套上，換色閃一下的時間越短，所以排在讀素材之前 */
-  const template = applyTemplate(site.template);
+  const template = applyTemplate(site.template, pageKey === 'lobby');
 
   /* 大廳再換一次骨架（korean／forest 的版面結構跟 Classic 不同）。
      一定要排在載入 common.js／index.js 之前 —— 那兩支一載入就開始

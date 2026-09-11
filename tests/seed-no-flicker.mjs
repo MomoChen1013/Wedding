@@ -11,6 +11,11 @@
                       → 驗兩件事：沒開的頁面不會被產出來，
                         以及沒預產到的頁面確實有遮罩接住
 
+     ginny-one-…      forest 版型，而且 public/assets/ 底下**真的有素材**
+                      → 驗大廳的首屏大圖有沒有被預載。
+                        前兩組沒有素材資料夾，lobbyPhoto() 會回空字串，
+                        驗不到那條路徑
+
    只寫 Admin SDK 改得動的欄位（template、姓名、pages…），
    因為預渲染烤的就是這一批 —— 新人在後台改得動的欄位一律不烤。
 ============================================================ */
@@ -34,6 +39,13 @@ const SITES = {
       rsvp: true, wall: true, letter: true, quiz: true,
       draw: true, exhibition: true, seating: true, admin: true,
     },
+  },
+  /* 這個 slug 對應 public/assets/ginny-one-20260919/（manifest 裡有 lobby.jpg），
+     所以 build-og 的 lobbyPhoto() 挑得出照片、印得出 preload */
+  'ginny-one-20260919': {
+    template: 'forest',
+    groomName: '柏翰', brideName: '思妤',
+    pages: { rsvp: true, letter: true, wall: true, admin: true },
   },
   'flicker-classic': {
     template: 'classic',

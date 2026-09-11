@@ -41,9 +41,14 @@
    ・賓客也沒有切換的入口：版型是我們幫這組新人挑好的樣子，
      不是賓客的偏好。
 
-   fonts／css：只有需要額外檔案的版型才列。build-og 會把它們直接
-   寫進產出頁面的 <head>（讓瀏覽器的 preload scanner 掃得到），
-   沒預產到的頁面才由 site-context.js 在執行期補上。
+   ▸ fonts：整個版型都要用，每一頁都載。
+   ▸ lobbyCss：**只有大廳要**。lobby-korean.css／lobby-forest.css 裡
+     每一條規則都收在 .k-* ／ .f-* 這些大廳容器底下，對子頁一條都不生效
+     —— 「給你的信」載它等於白白多擋一次首次繪製（korean 那份 10KB）。
+     所以名字寫成 lobbyCss，作用域直接寫在名字上，兩端才不會各自解讀。
+
+   兩者都由 build-og 直接寫進產出頁面的 <head>（讓瀏覽器的 preload
+   scanner 掃得到），沒預產到的頁面才由 site-context.js 在執行期補上。
 ============================================================ */
 export const TEMPLATES = {
   'classic':       { label:'Classic 香檳金' },
@@ -56,10 +61,10 @@ export const TEMPLATES = {
      沒跑過 build-og 的站台落回 index.html（Classic 骨架＋版型色票）。
      其餘子頁全部共用，靠色票與字體換裝。 */
   'korean':        { label:'Korean Modern', lobbyFile:'lobby-korean.html',
-                     css:['/css/lobby-korean.css'],
+                     lobbyCss:['/css/lobby-korean.css'],
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
   'forest':        { label:'Forest Botanical', lobbyFile:'lobby-forest.html',
-                     css:['/css/lobby-forest.css'],
+                     lobbyCss:['/css/lobby-forest.css'],
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
 };
 export const DEFAULT_TEMPLATE = 'classic';

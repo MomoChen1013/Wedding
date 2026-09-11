@@ -546,6 +546,38 @@ const BANNER = '<!-- 這個檔案由 scripts/build-og.js 產生，不要手改�
 /* 把 head 裡舊的社群標籤整組拆掉，換上這個站台專屬的一組。
    用「先清乾淨再插入」而不是逐一取代，重跑幾次結果都一樣 */
 /* ============================================================
+   大廳的背景照：建置期就先查出來，讓它跟 CSS 平行下載
+   ------------------------------------------------------------
+   執行期的順序是「載 SDK → 讀 Firestore → 載 common.js／index.js
+   → applyLobbyBackground() 才設 img.src」，等於整張首屏大圖排在
+   所有事情的最後面才開始下載。
+
+   但這張圖是什麼，建置期就知道了 —— 挑選規則跟 js/index.js 的
+   applyLobbyBackground() 一模一樣（lobby → cover → coverImageUrl），
+   所以直接印一行 preload 進 <head>，瀏覽器的 preload scanner
+   一解析到就開始抓。
+
+   ▸ 有 lobbyVideo 的站台不preload圖：index.js 會優先播影片，
+     那張圖根本不會被用到，預載只是白白多下載一份
+   ▸ 只預載同源的 /assets/… ：Firestore 的 coverImageUrl 可能是
+     data: URI（預載沒有意義）或外部網址（多一次跨網域握手，
+     反而比讓它排在後面更糟）
+============================================================ */
+function lobbyPhoto(slug, site) {
+  let manifest = {};
+  try {
+    const file = join(ASSETS_ROOT, slug, 'manifest.json');
+    if (existsSync(file)) manifest = JSON.parse(readFileSync(file, 'utf8')) || {};
+  } catch {
+    return '';                       /* manifest 壞了就不預載，頁面照樣能跑 */
+  }
+  if (manifest.lobbyVideo) return '';
+
+  const src = manifest.lobby || manifest.cover || (site && site.coverImageUrl) || '';
+  return typeof src === 'string' && src.startsWith('/assets/') ? src : '';
+}
+
+/* ============================================================
    注水：把「新人改不動的那些值」先填進 HTML
    ------------------------------------------------------------
    這是整支 build-og 從「只換 og 標籤」變成「真正的預渲染」的地方。
@@ -577,7 +609,7 @@ function escapeHtmlText(str) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function hydrateHtml(html, info) {
+function hydrateHtml(html, info, { isLobby = false, photo = '' } = {}) {
   const wed = info.wed;
   const key = templateKey(info.template);
   const tpl = TEMPLATES[key];
@@ -596,12 +628,23 @@ function hydrateHtml(html, info) {
     return `<body data-template="${key}" data-hero-name="${wed.heroNameLang}"${a}>`;
   });
 
-  /* ---- 版型專屬的字體與 CSS 直接寫進 <head> ----
-     執行期 applyTemplate() 有「已經有這個 href 就跳過」的判斷，
+  /* ---- 版型專屬的字體與版面 CSS 直接寫進 <head> ----
+     字體整個版型都要；版面 CSS 只有大廳要（見 wed-model.js 的 lobbyCss）——
+     lobby-korean.css 那 10KB 全部收在 .k-* 底下，對「給你的信」一條都不生效，
+     寫進子頁的 <head> 只是多擋一次首次繪製。
+     判斷要跟執行期的 applyTemplate() 一致，兩邊才不會一個有一個沒有。
+
+     執行期那支有「已經有這個 href 就跳過」的判斷，
      所以這裡印進去之後，那邊就不會再插一次。 */
-  const links = [...(tpl.fonts || []), ...(tpl.css || [])]
+  const links = [...(tpl.fonts || []), ...(isLobby ? (tpl.lobbyCss || []) : [])]
     .filter((href) => !html.includes(`href="${href}"`))
     .map((href) => `<link rel="stylesheet" href="${href}">`);
+
+  /* 大廳的首屏大圖：建置期就知道是哪一張，先宣告出來 */
+  if (isLobby && photo && !html.includes(`href="${photo}"`)) {
+    links.push(`<link rel="preload" as="image" href="${photo}" fetchpriority="high">`);
+  }
+
   if (links.length) {
     html = html.replace(/<\/head>/i, `${links.join('\n')}\n</head>`);
   }
@@ -622,7 +665,9 @@ function buildHtml(srcHtml, srcName, meta, info) {
   /* 先注水（版型、姓名、字體 link），再換 og 標籤 ——
      注水會動到 <html>／<body>／<head>，og 只動 <title> 那一段，兩邊不衝突。
      讀不到 Firestore 就整段跳過，產出跟以前一模一樣的檔案。 */
-  let html = info && info.hydrate ? hydrateHtml(srcHtml, info) : srcHtml;
+  let html = info && info.hydrate
+    ? hydrateHtml(srcHtml, info, { isLobby: meta.isLobby, photo: meta.photo })
+    : srcHtml;
 
   html = html.replace(
     /<meta\s+name="description"[^>]*>\s*\n?/gi, '',
@@ -738,6 +783,8 @@ function siteInfo(site) {
     template: typeof site.template === 'string' ? site.template : '',
     /* 預渲染要填的值。和瀏覽器端 site-context.js 用的是同一個 buildWed() */
     wed: buildWed(site),
+    /* 原始文件：目前只有 lobbyPhoto() 要看 coverImageUrl */
+    site,
     hydrate: true,
   };
 }
@@ -844,6 +891,8 @@ async function buildSlug(slug, ctx) {
       description: page.desc(info),
       url: `${ctx.base}/w/${slug}/${page.path}`,
       image: imageUrl,
+      isLobby: page.pageKey === 'lobby',
+      photo: lobbyPhoto(slug, info.hydrate ? info.site : null),
     }, info);
     writeOrCheck(join(outDir, page.out), html, ctx.state);
     made.push(page.path || (lobbyFile ? `（大廳・${info.template} 版面）` : '（大廳）'));

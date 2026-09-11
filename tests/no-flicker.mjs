@@ -250,13 +250,16 @@ console.log('\n【④ 保底層：沒預產到的頁面由遮罩擋住換色】'
      display === 'none', display);
 }
 {
-  /* 刪掉一頁的預產檔 → 這個網址會落回 /w/*\/quiz 的 rewrite，
-     命中共用的 public/quiz.html（<body> 寫死 classic） */
-  const victim = new URL(`../public/w/${KOREAN}/quiz.html`, import.meta.url);
+  /* 刪掉一頁的預產檔 → 這個網址會落回 /w/*\/draw 的 rewrite，
+     命中共用的 public/draw.html（<body> 寫死 classic）。
+
+     挑 draw 是因為它沒有被其他檢查用到 —— 這一段會把檔案刪掉，
+     後面 ⑦ 若剛好要讀同一個檔就會讀到 null，變成假的失敗。 */
+  const victim = new URL(`../public/w/${KOREAN}/draw.html`, import.meta.url);
   const hadFile = existsSync(victim);
   if(hadFile) rmSync(victim);
 
-  const frames = await record(`/w/${KOREAN}/quiz`);
+  const frames = await record(`/w/${KOREAN}/draw`);
   const templates = [...new Set(frames.map((f) => f.template))];
 
   ok('沒預產到的頁面確實會換色（證明這條路徑真的需要保底）',
@@ -274,7 +277,7 @@ console.log('\n【④ 保底層：沒預產到的頁面由遮罩擋住換色】'
   ok('資料到齊之後遮罩收掉了', !!last && !last.veiled && last.template === 'korean',
      last ? `veiled=${last.veiled} template=${last.template}` : '沒有錄到');
 
-  if(hadFile) console.log(`     （已刪除 ${KOREAN}/quiz.html 製造測試情境，下次 build-og 會重新產出）`);
+  if(hadFile) console.log(`     （已刪除 ${KOREAN}/draw.html 製造測試情境，下次 build-og 會重新產出）`);
 }
 
 /* ============================================================
@@ -348,6 +351,56 @@ console.log('\n【⑥ 載入順序：預載的網址要跟實際 import 的一�
      missing.length === 0, missing.slice(0, 4).join('、') || `${pages.length} 頁都對得上`);
   ok('每一頁預載的頁面 JS 檔名都對得上 pageScript',
      wrongJs.length === 0, wrongJs.join('、') || `${pages.length} 頁都對得上`);
+}
+
+/* ============================================================
+   7. 首屏只載真的用得到的東西
+   ------------------------------------------------------------
+   ▸ lobby-*.css 只有大廳要
+     那 10KB 全部收在 .k-* ／ .f-* 大廳容器底下，對子頁一條規則都不生效。
+     但它是被印進 <head> 的 <link rel="stylesheet">，會擋住首次繪製 ——
+     等於「給你的信」為了一份用不到的樣式多等一個來回。
+   ▸ 大廳的首屏大圖要先宣告
+     不然它排在「載 SDK → 讀 Firestore → 載 index.js」之後才開始下載。
+============================================================ */
+console.log('\n【⑦ 首屏只載真的用得到的東西】');
+{
+  const read = (slug, file) => {
+    const u = new URL(`../public/w/${slug}/${file}`, import.meta.url);
+    return existsSync(u) ? readFileSync(u, 'utf8') : null;
+  };
+
+  const lobby = read(KOREAN, 'index.html');
+  ok('korean 的大廳有載 lobby-korean.css',
+     !!lobby && lobby.includes('/css/lobby-korean.css'));
+
+  const leaked = ['letter','wall','quiz','seating']
+    .filter((f) => (read(KOREAN, `${f}.html`) || '').includes('/css/lobby-korean.css'));
+  ok('korean 的子頁都沒有載 lobby-korean.css',
+     leaked.length === 0, leaked.join('、') || '4 頁都乾淨');
+
+  /* 字體是整個版型的，子頁仍然要有 —— 別把版面 CSS 和字體一起收掉了 */
+  const noFont = ['letter','wall','quiz','seating']
+    .filter((f) => {
+      const html = read(KOREAN, `${f}.html`);
+      return html === null ? `${f}（檔案不存在）` : !html.includes('Cormorant+Garamond');
+    });
+  ok('但版型字體仍然每一頁都載（字體是整個版型的，不是大廳的）',
+     noFont.length === 0, noFont.join('、') || '4 頁都有');
+
+  /* 有素材的站台，大廳要先宣告首屏大圖 */
+  const assetLobby = read('ginny-one-20260919', 'index.html');
+  const m = assetLobby && assetLobby.match(
+    /<link rel="preload" as="image" href="(\/assets\/[^"]+)" fetchpriority="high">/);
+  ok('有素材的站台，大廳先宣告了首屏大圖', !!m, m ? m[1] : '沒有找到 preload as="image"');
+
+  /* 挑的那一張要跟 index.js 的 applyLobbyBackground() 一致（lobby 優先於 cover） */
+  ok('預載的是 manifest 的 lobby（不是 cover）',
+     !!m && m[1].includes('/lobby.'), m ? m[1] : '—');
+
+  /* 沒有素材的站台不該憑空印一行 preload */
+  ok('沒有素材的站台不會印出空的 preload',
+     !!lobby && !lobby.includes('as="image"'));
 }
 
 await browser.close();
