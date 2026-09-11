@@ -28,9 +28,10 @@
      node scripts/set-pages.js --slug ginny-one-20260919 \
        --enable seatingPlan --guest-tags on
 
-     # 關掉「入場登入」：賓客不用報上名來，一進來就是大廳
-     # （只用大廳＋桌次查詢的站台適合關掉，預設是開的）
-     node scripts/set-pages.js --slug ginny-one-20260919 --entry-login off
+     # 打開「入場登入」：賓客要先報上名來才進得了大廳
+     # （預設是關的 —— 一進來就是大廳，要署名的動作才當場問名字。
+     #   想做成「簽到簿」式的婚禮網站才需要打開這一項）
+     node scripts/set-pages.js --slug ginny-one-20260919 --entry-login on
 
      # 打開「多活動」：這場婚禮不只一場（文訂／迎娶／證婚／婚宴／派對）
      # 打開之後後台才會長出「婚禮流程」，活動由新人自己維護
@@ -44,8 +45,9 @@
      --disable       關掉某頁；可重複給多次
      --owner-email   重設後台可用帳號；可重複給多次
      --guest-tags    on／off，賓客標籤功能的總開關（新人自己改不動）
-     --entry-login   on／off，大廳入場登入（填名字才進得去）的總開關；
-                     關掉時需要名字的動作（寫祝福、送甜點）才會當場問
+     --entry-login   on／off，大廳入場登入（填名字才進得去）的總開關。
+                     **預設 off**：賓客直接進大廳，需要名字的動作
+                     （寫祝福、投一封信、送甜點）才從畫面下方當場問
      --multi-event   on／off，多活動的總開關（新人自己改不動）；
                      打開之後後台「婚禮資訊」才會長出「婚禮流程」分頁。
                      ⚠️ 打開不等於前台變複雜 —— 只要新人只留一個活動，
@@ -160,7 +162,7 @@ async function main() {
     console.log(`   ${padDisplay('賓客標籤（排桌次用）', 28)}${
       site.guestTagsEnabled === true ? '✅ 開' : '⛔ 關'}`);
     console.log(`   ${padDisplay('入場登入（填名字進場）', 28)}${
-      site.entryLoginEnabled === false ? '⛔ 關' : '✅ 開'}`);
+      site.entryLoginEnabled === true ? '✅ 開' : '⛔ 關（預設）'}`);
     console.log(`   ${padDisplay('多活動（婚禮流程）', 28)}${
       site.multiEventEnabled === true ? '✅ 開' : '⛔ 關'}${
       Array.isArray(site.events) && site.events.length
@@ -201,10 +203,12 @@ async function main() {
   if (entryLogin !== null) {
     console.log('');
     console.log(`   ${padDisplay('入場登入（填名字進場）', 28)}${entryLogin ? '✅ 開' : '⛔ 關'}${
-      (site.entryLoginEnabled !== false) === entryLogin
+      (site.entryLoginEnabled === true) === entryLogin
         ? '' : (entryLogin ? '  ← 這次打開' : '  ← 這次關掉')}`);
     if (!entryLogin) {
-      console.log('     大廳不再出現入場畫面；寫祝福、送甜點時才會當場問名字。');
+      console.log('     大廳不再出現入場畫面；寫祝福、送甜點時才會當場問名字（這是預設）。');
+    } else {
+      console.log('     賓客要先填名字才進得了大廳；子頁也會把沒報到的人請回大廳。');
     }
   }
 

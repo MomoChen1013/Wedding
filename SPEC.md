@@ -103,10 +103,11 @@ sites/{siteId}
   schedule        : map[]    # 當日流程，陣列順序即顯示順序（見下方說明）
   rsvpDeadline    : timestamp
   rsvpEnabled     : boolean
-  entryLoginEnabled    : boolean  # 大廳入場登入的總開關，沒有這個欄位視為 true；
-                                  # false 時大廳不出現入場畫面（#gate），賓客不必
-                                  # 報上名來就看得到內容；需要名字的動作（寫祝福、
-                                  # 悄悄話、送甜點）改成送出的那一刻才問。
+  entryLoginEnabled    : boolean  # 大廳入場登入的總開關，**沒有這個欄位視為 false**；
+                                  # 預設（關）：大廳不出現入場畫面（#gate），賓客
+                                  # 一進來就看得到內容；需要名字的動作（寫祝福、
+                                  # 悄悄話、送甜點）改成送出的那一刻才從畫面下方問。
+                                  # true：回到「先報上名來才進得去」的入場畫面。
                                   # 和 pages 一樣不在規則白名單內，新人改不動
   seatingSearchEnabled : boolean  # 桌次頁的搜尋開關，沒有這個欄位視為 true；
                                   # false 時賓客只看得到已上傳的桌次圖
@@ -450,7 +451,7 @@ rsvpShowStory rsvpShowGallery guestTags
 由我們決定哪一組新人要用這個功能（`npm run set-pages -- --guest-tags on`）。
 
 **`entryLoginEnabled` 也不在名單內**，理由同上：它改變的是整站的入場方式
-（要不要請賓客先報上名來），由我們決定（`npm run set-pages -- --entry-login off`）。
+（要不要請賓客先報上名來），由我們決定（`npm run set-pages -- --entry-login on`）。
 
 最後那六個 `rsvp*` 與 `seatingSearchEnabled` 一樣，是「非文案但可以放行」的欄位：
 它們只改變賓客看到的表單長什麼樣，規則本身不拿它們做任何判斷 ——
@@ -928,33 +929,56 @@ Classic 一個像素都不動。
 
 ### 賓客身分與資料隔離
 
-- 賓客在大廳填名字入場，狀態存在 `localStorage`，
-  key 以 `wed.{siteId}.` 開頭 —— 同一位賓客逛兩組新人的網站不會互相污染
+- 賓客的名字與記號存在 `localStorage`，key 以 `wed.{siteId}.` 開頭 ——
+  同一位賓客逛兩組新人的網站不會互相污染
 - 抽卡收藏用 Firebase 匿名登入的 uid 隔離，只讀得到自己的卡
 - 各站台的祝福、信件、蛋糕、測驗票數都在自己的子集合底下，彼此看不到
 
-### 入場登入的開關（`entryLoginEnabled`）
+### 入場登入的開關（`entryLoginEnabled`，預設關）
 
-只用大廳與桌次查詢的站台，賓客沒有一件事需要名字，
-先擋一道「輸入名字」只是把人擋在門外，所以整道門可以關掉
-（站台文件的 `entryLoginEnabled: false`，沒有這個欄位＝開著）。
+**問名字的時機從「進門」挪到「你正要做一件需要署名的事」。**
 
-| | 開著（預設） | 關掉 |
+絕大多數賓客第一件事只是看時間、地點、找自己的桌次 —— 一件都不需要名字。
+先擋一道「輸入你的名字」，是在人還沒決定要不要留下的時候先要他表態，
+而那正是最容易直接關掉頁面的一刻。所以整道門預設不出現
+（站台文件的 `entryLoginEnabled`，**沒有這個欄位＝關著**）。
+
+| | 關（預設） | 開（`entryLoginEnabled: true`） |
 |---|---|---|
-| 大廳 | gate → 開場 → 首頁 | gate 從 DOM 移除，一進來就播開場 |
-| 開場重播 | 報到過就不再播（localStorage 有名字） | 同一個分頁只播一次（sessionStorage 的 `introSeen`） |
-| BGM | 按下「進場觀禮」時啟動 | 不自動播（沒有使用者手勢，瀏覽器本來就會擋），由浮動按鈕開 |
-| 導覽列的 User | 報到後出現 | 留下名字之前不出現 |
-| `requireUser()` | 沒報到就導回大廳 | 直接放行 —— 沒有 gate 可以報到，彈回去等於死路 |
-| 寫祝福／悄悄話／送甜點 | 用報到時的名字 | `ensureUser()` 在送出那一刻用小視窗補問，填過一次就記住 |
+| 大廳 | gate 從 DOM 移除，一進來就播開場 | gate → 開場 → 首頁 |
+| 開場重播 | 同一個分頁播過、或已經留過名字就不再播 | 報到過就不再播 |
+| BGM | 不自動播（沒有使用者手勢，瀏覽器本來就會擋），由浮動按鈕開 | 按下「進場觀禮」時啟動 |
+| 導覽列右邊 | 留名前是一顆「留下名字」（`#navSignInBtn`），留名後換成 User | 報到後就是 User |
+| `requireUser()` | 直接放行 —— 沒有 gate 可以報到，彈回去等於死路 | 沒報到就導回大廳 |
+| 寫祝福／悄悄話／送甜點 | `ensureUser()` 在送出那一刻用底部視窗補問，填過一次就記住 | 用報到時的名字 |
 
 實作分三處：`site-context.js` 攤成 `WED.entryLogin`、`common.js` 的
-`entryLoginOn()／requireUser()／ensureUser()／askName()`、`index.js` 的
-`setupGate()／skipGate()`。
+`entryLoginOn()／requireUser()／ensureUser()／askName()／signInWithGoogleName()`、
+`index.js` 的 `setupGate()／skipGate()`。
 
 `#gate` 在 `index.css` 裡預設 `display:none`，由 `index.js` 決定要不要顯示 ——
-站台設定是非同步讀來的，先畫再藏會閃一下登入畫面（關掉入場登入、
-或已經報到過的賓客最明顯）。
+站台設定是非同步讀來的，先畫再藏會閃一下登入畫面。
+
+### 問名字的底部視窗（`askName()`，`.id-sheet`）
+
+需要署名的動作在送出那一刻叫出來的卡片。**不是蓋掉整頁的對話框**：
+
+| 規則 | 怎麼做到 |
+|---|---|
+| 看得到後面 | 沒有壓黑整頁的遮罩，只有底部一層 46vh 的淡漸層（`.id-scrim`），作用是讓卡片浮得起來，不是把內容藏起來 |
+| 只佔下方 | `position:fixed` 只綁 `left/right/bottom`，上半部的閱讀區完全不動；手機貼齊螢幕底（拇指構得到、鍵盤不會把輸入框頂掉），桌機在下緣置中（`max-width:520px`） |
+| 不鎖畫面 | 外層與漸層都是 `pointer-events:none`，只有 `.id-card` 收事件；`body` 不設 `overflow:hidden`，底下照樣捲得動、點得到 |
+| 隨時能退場 | 「再等等」／右上角 ✕／Esc，回傳 `null`，呼叫端就不送出，剛打的字留在原地 |
+
+卡片上有三條路：直接打名字、用 Google 帶入名字、再等等。
+
+**Google 那條是 `linkWithPopup()` 不是 `signInWithPopup()`**：
+賓客一進站就已經有一個匿名帳號（`site-context.js` 自動登入的），
+抽卡收藏 (`collected`) 就綁在那個 uid 上。先用 link 把 Google 接到**現有**的
+匿名帳號上，uid 不變、收藏不會消失；只有在這組 Google 已經有自己的帳號時
+（`auth/credential-already-in-use` 等）才退回 `signInWithPopup()` ——
+那是真的換一個身分，本來就該換 uid。共用函式是 `signInWithGoogleName()`，
+大廳那道 gate 的 Google 鈕走的也是同一支。
 
 ### 開場（字幕 + 開幕簾 + 跳過）
 

@@ -25,7 +25,7 @@ import {
   getDocs, deleteDoc, setDoc, updateDoc, writeBatch, connectFirestoreEmulator
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 import {
-  getAuth, signInAnonymously, signInWithPopup, signOut,
+  getAuth, signInAnonymously, signInWithPopup, linkWithPopup, signOut,
   GoogleAuthProvider, onAuthStateChanged, connectAuthEmulator
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 
@@ -243,7 +243,7 @@ window.fb = {
   db, auth,
   collection, addDoc, onSnapshot, query, orderBy, where, doc, getDoc,
   runTransaction, serverTimestamp, getDocs, deleteDoc, setDoc, updateDoc, writeBatch,
-  signInAnonymously, signInWithPopup, signOut,
+  signInAnonymously, signInWithPopup, linkWithPopup, signOut,
   GoogleAuthProvider, onAuthStateChanged,
 };
 
