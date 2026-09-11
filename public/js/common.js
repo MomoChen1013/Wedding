@@ -1056,33 +1056,65 @@ function sitePath(key){
   return window.SITE ? window.SITE.pathFor(key) : '/';
 }
 /* ============================================================
-   文字樣板：把 HTML 裡的 {{couple}}、{{date}} 等換成這組新人的資料
-   ・純文字節點與 placeholder／alt／title／content 屬性都會處理
-   ・找不到對應的 key 就換成空字串，畫面不會露出 {{...}}
+   文字樣板：把頁面上的空載體填上這組新人的資料
+   ------------------------------------------------------------
+   HTML 裡的寫法是**空的載體**，不是 {{couple}}：
+
+     <span data-tpl="couple"></span>                    文字
+     <textarea data-tpl-placeholder="親愛的 {{couple}}…">  屬性
+
+   為什麼不直接寫 {{couple}}：JS 跑完之前賓客會真的看到那四個
+   大括號，看起來就是一個壞掉的網站。空載體最壞只會是「空白」。
+   預產過的頁面連空白都沒有 —— build-og 已經先填好了（見 wed-model.js）。
+
+   屬性型的樣板字串收在 data-tpl-* 裡而不是屬性本身，
+   所以大括號不會被瀏覽器渲染出來給人看到。
+
+   token 的取值與代換一律走 window.WEDMODEL（＝ js/wed-model.js），
+   跟 scripts/build-og.js 建置期用的是同一份邏輯，兩邊算出來的字
+   必定相同，才不會「名字閃一下換成另一個名字」。
 ============================================================ */
+
+/* 舊寫法（文字節點與屬性裡直接寫 {{couple}}）的相容處理。
+   新頁面一律用 data-tpl，但既有的頁面或第三方片段漏網時，
+   這一道仍然會把它換掉，不會讓大括號留在畫面上。 */
 const TPL_ATTRS = ['placeholder', 'alt', 'title', 'content', 'aria-label'];
 
-/* 婚禮 hashtag：新人沒在後台填的話用這兩個當預設，
-   大廳與各頁的 {{hashtag}} 都走這裡，兩邊不會一個有、一個沒有 */
-const DEFAULT_HASHTAGS = ['#我們結婚了', '#Married'];
-
+/* 婚禮 hashtag：實作在 wed-model.js，這裡只是給各頁 JS 的捷徑
+   （index.js 的 lobbyTags、各頁 footer 都在用） */
 function hashtagList(){
-  const tags = ((window.WED && window.WED.hashtags) || [])
-    .map(t => String(t).trim()).filter(Boolean);
-  return tags.length ? tags : DEFAULT_HASHTAGS.slice();
+  return window.WEDMODEL.hashtagList(window.WED || {});
 }
 
 function fillTemplates(root){
   const W = window.WED || {};
-  const val = (key) => {
-    if(key === 'hashtag') return hashtagList()[0];
-    return W[key] != null ? String(W[key]) : '';
-  };
-  const swap = (text) => text.replace(/\{\{(\w+)\}\}/g, (_, k) => val(k));
+  const M = window.WEDMODEL;
+  const swap = (text) => M.swapTokens(text, W);
 
   const scope = root || document;
+  /* scope 自己也可能是載體（例如 fillTemplates(someSpan)），
+     querySelectorAll 只往下找，所以要另外把它算進來 */
+  const self = scope.nodeType === 1 ? [scope] : [];
 
-  /* 文字節點 */
+  /* ---- 文字載體：<span data-tpl="couple"></span> ---- */
+  for(const el of [...self, ...scope.querySelectorAll('[data-tpl]')]){
+    if(!el.dataset || !el.dataset.tpl) continue;
+    el.textContent = M.tplValue(W, el.dataset.tpl);
+  }
+
+  /* ---- 屬性載體：data-tpl-placeholder="親愛的 {{couple}}…" ---- */
+  for(const el of [...self, ...scope.querySelectorAll('*')]){
+    if(!el.dataset) continue;
+    for(const [key, tpl] of Object.entries(el.dataset)){
+      /* data-tpl-aria-label → dataset.tplAriaLabel，要換回帶連字號的屬性名 */
+      if(key === 'tpl' || !key.startsWith('tpl')) continue;
+      const attr = key.slice(3).replace(/[A-Z]/g, (c) => '-' + c.toLowerCase())
+        .replace(/^-/, '');
+      if(attr) el.setAttribute(attr, swap(tpl));
+    }
+  }
+
+  /* ---- 相容：文字節點裡的 {{couple}} ---- */
   const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT);
   const hits = [];
   while(walker.nextNode()){
@@ -1090,7 +1122,7 @@ function fillTemplates(root){
   }
   hits.forEach(n => { n.nodeValue = swap(n.nodeValue); });
 
-  /* 屬性 */
+  /* ---- 相容：屬性裡的 {{couple}} ---- */
   scope.querySelectorAll('*').forEach(el => {
     TPL_ATTRS.forEach(attr => {
       const v = el.getAttribute && el.getAttribute(attr);

@@ -6,6 +6,9 @@
   "hosting": {
     "site": "minato-studio-wedding",
     "public": "public",
+    "predeploy": [
+      "npm run build-og"
+    ],
     "ignore": [
       "firebase.json",
       "**/.*",
