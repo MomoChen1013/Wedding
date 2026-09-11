@@ -96,13 +96,21 @@ body{
 
 .timeline{max-width:520px;margin:0 auto;}
 .tl-item{display:grid;grid-template-columns:5em 1px 1fr;gap:20px;align-items:start;}
-.tl-time{font-size:13px;color:var(--primary-deep);letter-spacing:.1em;text-align:right;padding-top:2px;}
-.tl-dot{position:relative;background:var(--line);}
-.tl-dot::before{content:'';position:absolute;top:7px;left:50%;transform:translate(-50%,-50%);
-  width:5px;height:5px;border-radius:50%;background:var(--ink);}
-.tl-item:last-child .tl-dot{height:7px;}
+/* 時間與標題的第一行行盒都是 24px，圓點對準中心（12px）：
+   時間、圓點、標題就坐在同一條水平線上 */
+.tl-time{font-size:13px;line-height:24px;color:var(--primary-deep);letter-spacing:.1em;text-align:right;}
+/* 中間那一欄 stretch 撐滿整列，線才接得到下一列的圓點。
+   線畫在 ::after：第一列從圓點起筆、最後一列到圓點收筆，只有一列時不畫 */
+.tl-dot{position:relative;align-self:stretch;}
+.tl-dot::after{content:'';position:absolute;left:0;right:0;top:0;bottom:0;background:var(--line);}
+/* 用 of-type 而不是 :first-child／:last-child：clone 出來的列是插在
+   <template> 前面的（見 lobby-mount.js），<template> 才是最後一個子元素 */
+.tl-item:first-of-type .tl-dot::after{top:12px;}
+.tl-item:last-of-type .tl-dot::after{bottom:calc(100% - 12px);}
+.tl-dot::before{content:'';position:absolute;top:12px;left:50%;transform:translate(-50%,-50%);
+  width:5px;height:5px;border-radius:50%;background:var(--ink);z-index:1;}
 .tl-content{padding-bottom:30px;}
-.tl-t{font-size:15px;}
+.tl-t{font-size:15px;line-height:24px;}
 .tl-d{font-size:13px;color:var(--ink-soft);margin-top:4px;}
 
 .note-grid{display:grid;grid-template-columns:1fr 1fr;max-width:640px;margin:0 auto;}
