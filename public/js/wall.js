@@ -28,12 +28,12 @@ function renderWishes(){
   });
 }
 
-/* 名字：入場登入開著時就是大廳報到的那個；關著的話 ensureUser() 會在這一刻補問，
-   賓客按了取消就不送出（留言留在輸入框裡，不會白打一次） */
+/* 名字：留過的直接沿用；還沒留過的話 ensureUser() 會在這一刻從畫面下方補問，
+   賓客按了「再等等」就不送出（留言留在輸入框裡，不會白打一次） */
 document.getElementById('postWish').addEventListener('click',async ()=>{
   const t=document.getElementById('wishText').value.trim();
   if(!t) return;
-  const u = await ensureUser();
+  const u = await ensureUser('祝福會掛在你的名字下，讓新人知道是誰寫的');
   if(!u) return;
   DataStore.addWish({name:u.name, icon:u.icon, text:t});
   document.getElementById('wishText').value='';
@@ -58,7 +58,7 @@ function closeLetter(){ letterModal.classList.remove('open'); }
 async function submitLetter(){
   const t=letterText.value.trim();
   if(!t){ letterText.focus(); return; }
-  const u = await ensureUser();
+  const u = await ensureUser('這封信只有新人讀得到，署個名他們才知道是誰');
   if(!u) return;
   DataStore.addLetter({name:u.name, icon:u.icon, text:t});
   letterText.value='';

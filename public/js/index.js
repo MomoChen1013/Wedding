@@ -65,9 +65,12 @@ let currentIcon = ICONS[Math.floor(Math.random()*ICONS.length)];
 /* ============================================================
    入場 gate
    ------------------------------------------------------------
-   entryLoginEnabled 關掉的站台整道 gate 都不出現（見下面的 setupGate）：
-   只用大廳與桌次查詢時，賓客沒有一件事需要名字，
-   先擋一道「輸入名字」只是把人擋在門外。
+   ★ 預設**不出現**：賓客直接進大廳，一進來就播開場字幕。
+     大部分人只是要看時間地點、找桌次，這些事都不需要名字；
+     真的要署名的那一刻（寫祝福、送甜點）才由 common.js 的
+     askName() 從畫面下方問，問完就記起來。
+   只有站台文件把 entryLoginEnabled 設成 true 才會走 setupGate()，
+   回到「先報上名來才進得去」的舊流程。
 ============================================================ */
 function rollIcon(){
   currentIcon = ICONS[Math.floor(Math.random()*ICONS.length)];
@@ -179,7 +182,8 @@ function setupGate(){
   iconPick.addEventListener('click', rollIcon);
   document.getElementById('rerollIcon').addEventListener('click', rollIcon);
 
-  /* Google 登入：彈窗成功後自動填名字 + 進場 */
+  /* Google 登入：彈窗成功後自動填名字 + 進場
+     （signInWithGoogleName() 在 common.js，底部問名字的視窗用的是同一支） */
   const googleBtn = document.getElementById('googleBtn');
   googleBtn.addEventListener('click', async ()=>{
     if(!window.fb || !window.fb.auth){
@@ -187,10 +191,8 @@ function setupGate(){
     }
     googleBtn.disabled = true;
     try{
-      const provider = new window.fb.GoogleAuthProvider();
-      const result   = await window.fb.signInWithPopup(window.fb.auth, provider);
-      const dn       = result.user?.displayName || '朋友';
-      nameInput.value = dn.slice(0, 12);   // input maxlength=12，超過裁掉
+      const dn = await signInWithGoogleName();
+      nameInput.value = (dn || '朋友').slice(0, 12);   // input maxlength=12，超過裁掉
       document.getElementById('enterBtn').click();
     }catch(e){
       console.warn('Google 登入失敗或取消：', e);
@@ -214,16 +216,20 @@ function setupGate(){
   gate.style.display='flex';
 }
 
-/* 這組新人不用入場登入：整道 gate 從畫面上移除，改成一進來就播開場字幕。
+/* 預設的流程：整道 gate 從畫面上移除，一進來就播開場字幕。
    ・同一個分頁播過就不再播（子頁逛回大廳時不會每次都被兩秒的字幕擋住）
+   ・**已經留過名字的賓客也不再播**：他一定來過，開場那兩句看過了。
+     婚禮當天賓客會反覆點開這個網站找桌次、寫祝福，
+     每次都先擋兩秒字幕，第三次就只剩下煩。
    ・BGM 不自動開 —— 沒有使用者手勢，瀏覽器本來就會擋掉自動播放，
      賓客想聽的話按右下角那顆音樂鈕（浮動控制照舊） */
 function skipGate(){
   gate.remove();
-  if(introSeen()) enterSite();
-  else            runIntro();
+  if(introSeen() || LS.get('user', null)) enterSite();
+  else                                    runIntro();
 }
 
+/* 預設走 skipGate()（先進大廳）；只有明確打開入場登入的站台才擋一道 gate */
 if(entryLoginOn()) setupGate();
 else               skipGate();
 

@@ -302,6 +302,13 @@ body.nav-off{padding-top:0;}
 .nav-user-pop a:hover,
 .nav-user-pop button:hover{background:var(--primary-soft);color:var(--primary-deep);}
 
+/* 還沒署名的訪客：User 那塊換成這顆「留下名字」。
+   刻意做得很輕（沒有底色、字級 12）—— 它是入口，不是催促。 */
+.nav-signin{background:none;border:1px solid var(--line);border-radius:999px;cursor:pointer;
+  font-family:inherit;font-size:12px;letter-spacing:.1em;color:var(--ink-soft);
+  padding:6px 12px;white-space:nowrap;transition:border-color .2s,color .2s;}
+.nav-signin:hover{border-color:var(--ink);color:var(--ink);}
+
 @media(max-width:720px){
   :root{--nav-h:52px;}
   .nav-inner{gap:12px;padding:0 12px;}
@@ -312,6 +319,8 @@ body.nav-off{padding-top:0;}
   .nav-link{font-size:12.5px;letter-spacing:.08em;}
   .nav-user-nm{display:none;}
   .nav-user-btn{padding:5px;}
+  /* 手機的導覽列本來就擠，這顆只是「想署名的人有地方按」，不該搶走連結的位置 */
+  .nav-signin{font-size:11.5px;letter-spacing:.04em;padding:5px 9px;}
 }
 
 /* ============================================================
@@ -396,23 +405,97 @@ body.nav-off{padding-top:0;}
   color:var(--ink-soft);background:none;border:none;z-index:3;line-height:1;}
 .wax-seal{display:none;}
 
+/* Google 登入按鈕（大廳的 gate、問名字的底部視窗、後台登入共用同一顆） */
+.btn.btn-google{background:#fff;color:var(--ink);border:1px solid var(--line);
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  font-size:14px;letter-spacing:.06em;padding:13px 22px;}
+.btn.btn-google:hover{background:#fff;border-color:var(--ink);color:var(--ink);}
+.btn.btn-google svg{width:16px;height:16px;flex-shrink:0;}
+.btn.btn-google[disabled]{opacity:.5;cursor:wait;}
+
 /* ============================================================
-   問名字的小視窗（common.js 的 askName()）
+   問名字的底部視窗（common.js 的 askName()）
    ------------------------------------------------------------
-   入場登入關掉的站台沒有大廳那道 gate，寫祝福／送甜點時
-   才用這個視窗補問名字。外框沿用上面的 .letter-card。
+   賓客不必先報上名來才進得了大廳；真的要署名的那一刻
+   （寫祝福、投一封信、送甜點）才從下方升起這張卡片。
+
+   ★ 三條規則決定了這裡每一行 CSS：
+     ・**看得到後面**：沒有蓋滿整頁的黑遮罩。只有底部一層很淡的漸層
+       （.id-scrim），作用是讓卡片浮得起來，不是把內容藏起來。
+     ・**只佔下方**：inset 只綁 left/right/bottom，上半部的閱讀區完全不動。
+       手機貼齊螢幕底，拇指構得到，鍵盤跳出來也不會把輸入框頂掉。
+     ・**不鎖畫面**：外層是 pointer-events:none，只有卡片本身收事件，
+       底下照樣捲得動、點得到（漸層也是 pointer-events:none）。
 ============================================================ */
-.ask-name .ask-icon{width:56px;height:56px;margin:0 auto;display:flex;align-items:center;
-  justify-content:center;font-size:22px;color:var(--primary-deep);cursor:pointer;
+.id-sheet{position:fixed;left:0;right:0;bottom:0;z-index:1200;
+  display:flex;justify-content:center;pointer-events:none;}
+.id-sheet .id-scrim{position:fixed;left:0;right:0;bottom:0;height:46vh;pointer-events:none;
+  background:linear-gradient(to top,rgba(var(--ink-rgb),.26),rgba(var(--ink-rgb),0));
+  opacity:0;transition:opacity .28s ease;}
+.id-sheet.open .id-scrim{opacity:1;}
+.id-sheet.closing .id-scrim{opacity:0;}
+
+.id-sheet .id-card{position:relative;pointer-events:auto;
+  width:min(520px,calc(100% - 24px));margin:0 12px 12px;
+  margin-bottom:calc(12px + env(safe-area-inset-bottom));
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:0 -8px 34px rgba(var(--ink-rgb),.16);
+  padding:20px 20px 16px;
+  transform:translateY(110%);transition:transform .28s cubic-bezier(.22,.9,.3,1);}
+.id-sheet.open .id-card{transform:none;}
+.id-sheet.closing .id-card{transform:translateY(110%);}
+
+.id-sheet .id-close{position:absolute;top:10px;right:12px;cursor:pointer;font-size:15px;
+  color:var(--ink-soft);background:none;border:none;line-height:1;padding:4px;}
+.id-sheet .id-close:hover{color:var(--ink);}
+
+.id-sheet .id-head{display:flex;align-items:center;gap:14px;margin:0 24px 16px 0;}
+.id-sheet .ask-icon{flex:0 0 auto;width:46px;height:46px;display:flex;align-items:center;
+  justify-content:center;font-size:19px;color:var(--primary-deep);cursor:pointer;
   border:1px solid var(--line);border-radius:50%;}
-.ask-name .ask-hint{font-size:12px;color:var(--ink-soft);text-align:center;
-  margin:10px 0 18px;letter-spacing:.1em;}
-.ask-name .ask-hint b{font-weight:500;color:var(--ink);cursor:pointer;
-  border-bottom:1px solid var(--line);}
-.ask-name .ask-input{width:100%;padding:13px 16px;border:1px solid var(--line);
+.id-sheet .id-head-txt h3{font-family:var(--font-display);font-weight:500;font-size:16px;
+  color:var(--ink);letter-spacing:.16em;margin:0;}
+.id-sheet .id-why{font-size:12.5px;color:var(--ink-soft);line-height:1.7;margin:4px 0 0;
+  letter-spacing:.06em;}
+
+/* 輸入框與「就是我」同一列：最短的路徑就是填字、按旁邊那顆 */
+.id-sheet .id-row{display:flex;gap:8px;}
+.id-sheet .ask-input{flex:1 1 auto;min-width:0;padding:12px 14px;border:1px solid var(--line);
   border-radius:var(--radius);font-family:var(--font-body);font-size:15px;
-  color:var(--ink);outline:none;background:var(--surface);text-align:center;letter-spacing:.1em;}
-.ask-name .ask-input:focus{border-color:var(--ink);}
+  color:var(--ink);outline:none;background:var(--surface);letter-spacing:.1em;}
+.id-sheet .ask-input:focus{border-color:var(--ink);}
+/* .btn 的底色設定是 width:100%（全站的按鈕多半自己佔一列）；
+   這裡要並排，所以把寬度交還給內容 */
+.id-sheet .id-row .btn{flex:0 0 auto;width:auto;padding:12px 24px;}
+.id-sheet .id-row.shake{animation:idShake .3s ease;}
+@keyframes idShake{0%,100%{transform:none}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+.id-sheet .id-google{width:100%;margin-top:10px;}
+
+.id-sheet .ask-hint{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  font-size:12px;color:var(--ink-soft);letter-spacing:.08em;margin-top:14px;}
+.id-sheet .ask-hint b{font-weight:500;color:var(--ink);cursor:pointer;
+  border-bottom:1px solid var(--line);}
+.id-sheet .id-later{background:none;border:none;cursor:pointer;padding:0;
+  font-family:inherit;font-size:12px;letter-spacing:.08em;color:var(--ink-soft);
+  border-bottom:1px solid var(--line);}
+.id-sheet .id-later:hover{color:var(--ink);}
+
+/* 手機：整條貼齊螢幕底，只留上緣的圓角 */
+@media(max-width:560px){
+  .id-sheet .id-card{width:100%;margin:0;border-radius:18px 18px 0 0;
+    border-left:none;border-right:none;border-bottom:none;
+    padding:18px 16px calc(14px + env(safe-area-inset-bottom));}
+  .id-sheet .id-head{margin-bottom:14px;gap:12px;}
+  .id-sheet .ask-icon{width:42px;height:42px;font-size:18px;}
+  /* 小螢幕上「名字 ＋ 就是我」擠在一列會兩邊都太窄，改成上下兩排 */
+  .id-sheet .id-row{flex-direction:column;}
+  .id-sheet .id-row .btn{width:100%;padding:13px 22px;}
+}
+
+/* 視窗開著的時候，右下角那顆 BGM 讓開一點，不跟卡片疊在一起 */
+body.id-sheet-on .floating{transform:translateY(-16px);opacity:.45;}
+.floating{transition:transform .28s ease,opacity .28s ease;}
 
 /* ============================================================
    浮動控制：BGM（由 js/common.js 注入）

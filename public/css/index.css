@@ -44,13 +44,7 @@
 .gate-sep::before{left:0;}
 .gate-sep::after{right:0;}
 
-/* Google 登入按鈕 */
-.btn.btn-google{background:#fff;color:var(--ink);border:1px solid var(--line);
-  display:inline-flex;align-items:center;justify-content:center;gap:10px;
-  font-size:14px;letter-spacing:.06em;padding:13px 22px;}
-.btn.btn-google:hover{background:#fff;border-color:var(--ink);color:var(--ink);}
-.btn.btn-google svg{width:16px;height:16px;flex-shrink:0;}
-.btn.btn-google[disabled]{opacity:.5;cursor:wait;}
+/* Google 登入按鈕的樣式在 css/common.css（底部問名字視窗也用同一顆） */
 
 /* ============================================================
    開場字幕（兩句、共兩秒）＋ 開幕 ＋ 跳過

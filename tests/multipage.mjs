@@ -72,7 +72,18 @@ const SEED = {
     story:'', dressCode:'', giftNote:'', hashtags:[],
     pages: allOn, ownerEmails:[],
   },
-  /* 關掉入場登入的站台：賓客不必報上名來，一進來就是大廳 */
+  /* 明確打開入場登入的站台：唯一還有大廳 gate 的那一種
+     （預設是關的，見 js/wed-model.js 的 entryLogin） */
+  'gate-on-2027': {
+    groomName:'把關', brideName:'新人',
+    themeColor:'#8E7CC3',
+    venueName:'寒舍艾美', venueAddress:'台北市信義區松高路18號',
+    story:'', dressCode:'', giftNote:'', hashtags:[],
+    pages: Object.fromEntries(ALL_PAGES.map((k) => [k, k === 'seating' || k === 'wall'])),
+    ownerEmails:[],
+    entryLoginEnabled: true,
+  },
+  /* 入場登入關著的站台（也是預設）：賓客不必報上名來，一進來就是大廳 */
   'no-login-2027': {
     groomName:'阿明', brideName:'阿美',
     themeColor:'#B5838D',
@@ -299,12 +310,13 @@ console.log('\n[2] 站內連結已 slug 化');
 /* ---------- 樣板文字 ---------- */
 console.log('\n[2b] 新人名字有套進畫面');
 {
-  /* 尚未入場的新訪客會看到大廳的入場 gate，名字與日期就在那裡 */
+  /* 第一次點進來的訪客（localStorage 乾淨）直接看到大廳，不再被 gate 擋著 */
   const { page } = await visit(`/w/${SLUG}/`, { guest:false });
-  const gate = await page.innerText('#gate');
-  ok('入場畫面顯示這組新人', gate.includes('Ginny & One'), gate.slice(0, 50).replace(/\n/g, ' '));
-  ok('入場畫面顯示婚禮日期', gate.includes('2026.09.19'), gate.slice(0, 80).replace(/\n/g, ' '));
+  ok('第一次來的訪客不會被入場畫面擋住', (await page.locator('#gate').count()) === 0);
+  await page.waitForSelector('#app', { state:'visible', timeout: 15000 });
   const text = await page.innerText('body');
+  ok('大廳顯示這組新人', text.includes('Ginny & One'), text.slice(0, 60).replace(/\n/g, ' '));
+  ok('大廳顯示婚禮日期', text.includes('2026.09.19'), text.slice(0, 120).replace(/\n/g, ' '));
   ok('沒有殘留上一組新人的名字', !/Ethan|Momo/.test(text));
   ok('沒有露出未取代的 token', !text.includes('{{'), text.match(/\{\{\w+\}\}/g)?.join(',') || '');
   await page.close();
@@ -329,8 +341,9 @@ console.log('\n[2b] 新人名字有套進畫面');
 }
 {
   const { page } = await visit('/w/minimal-site-2027/', { guest:false });
-  const gate = await page.innerText('#gate');
-  ok('另一組站台顯示自己的名字', gate.includes('小明 & 小美'), gate.slice(0, 50).replace(/\n/g, ' '));
+  await page.waitForSelector('#app', { state:'visible', timeout: 15000 });
+  const text = await page.innerText('body');
+  ok('另一組站台顯示自己的名字', text.includes('小明 & 小美'), text.slice(0, 60).replace(/\n/g, ' '));
   await page.close();
 }
 
@@ -358,11 +371,11 @@ console.log('\n[3] 頁面開關');
 }
 
 /* ---------- 入場登入的開關 ---------- */
-console.log('\n[3b] 入場登入（entryLoginEnabled）');
+console.log('\n[3b] 入場登入（entryLoginEnabled，預設關）');
 {
   /* guest:false＝localStorage 是乾淨的，等於一位第一次點進來的賓客 */
   const { page, errors } = await visit('/w/no-login-2027/', { guest:false });
-  ok('關掉入場登入後大廳沒有入場畫面',
+  ok('入場登入關著的站台沒有入場畫面',
     (await page.locator('#gate').count()) === 0);
   ok('改成一進來就播開場字幕', await page.isVisible('#intro'));
   const line = (await page.innerText('#introLine')).trim();
@@ -383,8 +396,9 @@ console.log('\n[3b] 入場登入（entryLoginEnabled）');
   ok('播完收掉字幕與跳過按鈕',
     !(await page.isVisible('#intro')) && !(await page.isVisible('#introSkip')));
   ok('導覽列出現', await page.isVisible('#siteNav'));
-  ok('還沒留名字，導覽列不出現 User 那塊',
-    (await page.locator('.nav-user').count()) === 0);
+  ok('還沒留名字，導覽列出現的是「留下名字」而不是 User 那塊',
+    (await page.locator('#navSignInBtn').count()) === 1
+    && (await page.locator('.nav-user-btn').count()) === 0);
   ok('無 console 錯誤', realErrors(errors).length === 0, realErrors(errors).slice(0,2).join(' | '));
 
   /* 同一個分頁再回大廳：開場不再播（sessionStorage 記著） */
@@ -435,6 +449,26 @@ console.log('\n[3b] 入場登入（entryLoginEnabled）');
   await page.waitForSelector('.ask-name', { state:'visible', timeout: 5000 }).catch(() => {});
   ok('送出的那一刻才問名字', await page.isVisible('.ask-name'));
 
+  /* 這個視窗不該把畫面蓋掉：它只佔下方，而且底下照樣點得到、捲得動 */
+  const sheet = await page.evaluate(() => {
+    const el = document.querySelector('.ask-name .id-card');
+    const r  = el.getBoundingClientRect();
+    return {
+      /* 卡片貼著視窗底部（留給 margin / safe-area 的空間很小） */
+      bottomGap: Math.round(window.innerHeight - r.bottom),
+      /* 上半部完全沒被蓋到 */
+      topFree:   r.top > window.innerHeight * 0.4,
+      /* 外層不吃點擊，底下的內容還是原來那一層在收事件 */
+      passThrough: getComputedStyle(document.querySelector('.ask-name')).pointerEvents === 'none',
+      /* 沒有蓋滿整頁的遮罩：漸層只鋪在下半部，而且不吃點擊 */
+      scrimPassThrough:
+        getComputedStyle(document.querySelector('.ask-name .id-scrim')).pointerEvents === 'none',
+      bodyScrollable: getComputedStyle(document.body).overflow !== 'hidden',
+    };
+  });
+  ok('問名字的視窗貼在畫面下方', sheet.bottomGap <= 24 && sheet.topFree, JSON.stringify(sheet));
+  ok('視窗不擋住後面的內容（外層與漸層都不吃點擊、畫面照樣捲得動）',
+    sheet.passThrough && sheet.scrimPassThrough && sheet.bodyScrollable, JSON.stringify(sheet));
   await page.fill('.ask-name .ask-input', '路過的朋友');
   await page.click('.ask-name [data-act="ok"]');
   await page.waitForSelector('.ask-name', { state:'detached', timeout: 10000 });
@@ -445,15 +479,28 @@ console.log('\n[3b] 入場登入（entryLoginEnabled）');
   ok('祝福掛在剛填的名字下',
     wishes.size === 1 && wishes.docs[0].data().name === '路過的朋友',
     wishes.size ? JSON.stringify(wishes.docs[0].data()) : '');
-  ok('有名字之後導覽列長出 User 那塊', await page.isVisible('.nav-user'));
+  ok('有名字之後導覽列換成 User 那塊', await page.isVisible('.nav-user-btn'));
+  ok('「留下名字」跟著收起來', (await page.locator('#navSignInBtn').count()) === 0);
   ok('無 console 錯誤', realErrors(errors).length === 0, realErrors(errors).slice(0,2).join(' | '));
   await page.close();
 }
 {
-  /* 開著入場登入的站台照舊：第一次來的賓客先看到入場畫面，
-     填完名字才播開場字幕 */
+  /* 沒有 entryLoginEnabled 欄位的站台（絕大多數）＝預設關著：一進來就是大廳 */
   const { page } = await visit(`/w/${SLUG}/`, { guest:false });
-  ok('沒關開關的站台仍有入場畫面', await page.isVisible('#gate'));
+  ok('沒設定過這個欄位的站台預設不擋人',
+    (await page.locator('#gate').count()) === 0);
+  await page.waitForSelector('#app', { state:'visible', timeout: 15000 });
+  ok('直接進得了大廳', await page.isVisible('#app'));
+  ok('還沒署名，導覽列出現的是「留下名字」不是 User',
+    (await page.locator('#navSignInBtn').count()) === 1
+    && (await page.locator('.nav-user-btn').count()) === 0);
+  await page.close();
+}
+{
+  /* 明確把 entryLoginEnabled 設成 true 的站台照舊：
+     第一次來的賓客先看到入場畫面，填完名字才播開場字幕 */
+  const { page } = await visit('/w/gate-on-2027/', { guest:false });
+  ok('打開入場登入的站台仍有入場畫面', await page.isVisible('#gate'));
   ok('入場畫面期間沒有跳過按鈕', !(await page.isVisible('#introSkip')));
 
   await page.fill('#nameInput', '第一次來的賓客');
@@ -461,6 +508,15 @@ console.log('\n[3b] 入場登入（entryLoginEnabled）');
   ok('填完名字才播開場字幕', await page.isVisible('#intro'));
   await page.waitForSelector('#app', { state:'visible', timeout: 10000 });
   ok('開場播完進大廳', await page.isVisible('#app'));
+  await page.close();
+}
+{
+  /* 打開入場登入的站台，子頁照舊把沒報到的賓客請回大廳 */
+  const page = await newPage({}, { guest:false });
+  await page.goto(`${BASE}/w/gate-on-2027/wall`, { waitUntil:'domcontentloaded' });
+  await page.waitForURL('**/w/gate-on-2027/', { timeout: 20000 }).catch(() => {});
+  ok('打開入場登入時，沒報到的賓客進子頁會被請回大廳',
+    page.url().endsWith('/w/gate-on-2027/'), page.url());
   await page.close();
 }
 

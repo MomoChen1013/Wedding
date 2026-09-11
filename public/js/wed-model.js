@@ -151,9 +151,10 @@ export function buildWed(site) {
     transportParking: site.transportParking || '',
     transportPublicImg: site.transportPublicImg || '',
     transportParkingImg: site.transportParkingImg || '',
-    /* 入場登入（大廳的 gate）：沒設定過就視為開著，舊站台的入場動畫不會突然消失。
-       關掉時賓客不必報上名來，直接看到大廳（見 common.js 的 entryLoginOn()） */
-    entryLogin: site.entryLoginEnabled !== false,
+    /* 入場登入（大廳那道 gate）：**預設關著**，只有明確寫 true 才擋在門口。
+       賓客先進大廳，真的要留名字的那一刻才問（見 common.js 的 askName()）。
+       想回到「先報上名來才進得去」的站台，把 entryLoginEnabled 設成 true。 */
+    entryLogin: site.entryLoginEnabled === true,
     /* 沒設定過就視為開著，舊站台的桌次搜尋不會突然消失 */
     seatingSearch: site.seatingSearchEnabled !== false,
     /* 桌次功能的總開關，同樣是沒設定過就視為開著 */

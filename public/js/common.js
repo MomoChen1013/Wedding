@@ -1151,7 +1151,9 @@ function rewriteNavLinks(root){
    使用者（名字 + 隨機記號）
    ・極簡風格：不用 emoji，改用單色的幾何線條符號
 ============================================================ */
-const ICONS = ['✦','✧','◇','◈','○','◎','△','▽','□','◻','✕','＋','∞','♢','⬦','❖'];
+/* 沒有 ✕ 與 ＋：那兩個在視窗裡會被讀成「關閉」與「新增」，
+   而這是賓客的專屬記號，不該長得像一顆按鈕 */
+const ICONS = ['✦','✧','◇','◈','○','◎','△','▽','□','◻','∞','♢','⬦','❖'];
 const DEFAULT_ICON = '✦';
 let me_user = LS.get('user', null) || { name:'朋友', icon:DEFAULT_ICON };
 function saveUser(u){ me_user = u; LS.set('user', u); }
@@ -1176,20 +1178,26 @@ async function logout(){
    入場登入（大廳那道 gate）的總開關
    ------------------------------------------------------------
    entryLoginEnabled（站台文件，新人改不動）＝要不要請賓客先報上名來。
-   ・沒有這個欄位＝視為開著，既有站台的入場動畫不會突然消失
-   ・關掉時：大廳不出現 gate，賓客直接看到內容；
-     需要名字的動作（寫祝福、送甜點）改成在那一刻才用 ensureUser() 問
-   只用大廳與桌次查詢的站台，賓客其實沒有一件事需要名字，
-   多一道「輸入名字」只是把人擋在門外，所以做成可以整個關掉。
+
+   ★ 預設是**關著**的：賓客先進大廳，門口不擋人。
+     絕大多數賓客只是想看看時間地點、找自己的桌次，
+     這些事一件都不需要名字；先擋一道「輸入你的名字」，
+     是把還沒決定要不要留下的人擋在門外。
+     真正需要名字的動作（寫祝福、投一封信、送甜點）改成在
+     **按下送出的那一刻**才用 ensureUser() 問，問完就記起來。
+
+   ・想回到「先報上名來才進得去」的站台：把 entryLoginEnabled 設成 true
+     （scripts/set-pages.js --entry-login on）。那時大廳照舊出現 gate，
+     子頁也照舊會把沒報到的賓客請回大廳。
 ============================================================ */
 function entryLoginOn(){
-  return !(window.WED && window.WED.entryLogin === false);
+  return !!(window.WED && window.WED.entryLogin === true);
 }
 
-/* 子場景：沒登入就丟回大廳 */
+/* 子場景：沒登入就丟回大廳
+   —— 只有「入場登入開著」的站台才有這回事。預設的站台沒有 gate 可以報到，
+   把賓客彈回大廳只會讓祝福牆、抽卡這些頁面變成誰都進不去的死路。 */
 function requireUser(){
-  /* 入場登入關掉的站台沒有 gate 可以報到，這時不能把賓客彈回大廳 ——
-     否則祝福牆、抽卡這些頁面變成誰都進不去的死路。 */
   if(!entryLoginOn()) return true;
   if(!LS.get('user', null)){
     location.href = sitePath('lobby');
@@ -1201,63 +1209,203 @@ function requireUser(){
 /* ============================================================
    需要名字才能做的事（寫祝福、寄信、送甜點）
    ------------------------------------------------------------
-   入場登入開著 → 賓客一定在大廳報到過，直接沿用那個名字。
-   入場登入關著 → 沒有報到這回事，所以在真的要送出的那一刻才問，
-                  填過一次就存進 localStorage，之後不再打擾。
-   回傳 Promise<user|null>，null＝賓客按了取消（呼叫端就別送出）。
+   已經留過名字（大廳報到過，或之前在別頁填過）→ 直接沿用，不再打擾。
+   還沒留過 → 在真的要送出的那一刻才問，填過一次就存進 localStorage。
+
+   why：這一句話是「降低門檻」的實作重點 ——
+        問名字的時機從「進門」挪到「你正要做一件需要署名的事」，
+        賓客這時已經知道自己為什麼要留名字，願意填的比例完全不同。
+
+   reason：這次為什麼需要名字（會印在視窗上），例如「讓新人知道這份祝福是誰寫的」。
+   回傳 Promise<user|null>，null＝賓客按了「再等等」（呼叫端就別送出）。
 ============================================================ */
-function ensureUser(){
+function ensureUser(reason){
   if(LS.get('user', null)) return Promise.resolve(me_user);
-  return askName();
+  return askName(reason);
 }
 
-/* 問名字的小視窗（沿用信件視窗的外框樣式，只換內容） */
-function askName(){
+/* ============================================================
+   用 Google 帳號帶出名字
+   ------------------------------------------------------------
+   賓客一進站就已經有一個匿名帳號（site-context.js 自動登入的），
+   抽卡收藏就綁在那個 uid 上。所以這裡先用 linkWithPopup()
+   **把 Google 接到現在這個匿名帳號上**，uid 不變、收藏不會消失。
+   只有在這組 Google 已經有自己的帳號時（換手機、之前登入過）才退回
+   signInWithPopup()，那是真的換一個身分，本來就該換 uid。
+   回傳 displayName（沒有就回空字串）；失敗會 throw，由呼叫端處理。
+============================================================ */
+async function signInWithGoogleName(){
+  const { auth, signInWithPopup, linkWithPopup, GoogleAuthProvider } = window.fb;
+  const provider = new GoogleAuthProvider();
+  const cur = auth.currentUser;
+  let cred;
+  if(cur && cur.isAnonymous && linkWithPopup){
+    try{
+      cred = await linkWithPopup(cur, provider);
+    }catch(e){
+      /* 這組 Google 已經有自己的帳號了：換過去，不再硬接 */
+      if(e && (e.code === 'auth/credential-already-in-use'
+            || e.code === 'auth/email-already-in-use'
+            || e.code === 'auth/provider-already-linked')){
+        cred = await signInWithPopup(auth, provider);
+      }else{
+        throw e;
+      }
+    }
+  }else{
+    cred = await signInWithPopup(auth, provider);
+  }
+  return (cred && cred.user && cred.user.displayName) || '';
+}
+
+/* ============================================================
+   問名字的底部視窗（bottom sheet）
+   ------------------------------------------------------------
+   ★ 這個視窗**不是**把畫面整個蓋掉的那種對話框。三件事是刻意的：
+
+   1. 看得到後面：沒有整片壓黑的遮罩，只在底部鋪一層很淡的漸層，
+      讓卡片跟內容分得開而已。賓客剛剛在看的祝福牆、蛋糕櫃
+      還在原地，不會有「我怎麼突然被帶到另一個畫面」的斷裂感。
+   2. 固定在下方：手機貼齊螢幕底（拇指構得到、鍵盤跳出來也不會擋住輸入框），
+      桌機也放在下緣置中。上半部的閱讀區一律不動。
+   3. 不鎖畫面：底下照樣捲得動、點得到。賓客可以先滑上去看看
+      自己在留言給誰，再回來填名字；不想填就按「再等等」或 Esc。
+
+   reason＝這次為什麼需要名字，直接印在標題底下（見 ensureUser()）。
+============================================================ */
+const ASK_REASON_DEFAULT = '留個名字，新人才知道這份心意是誰送的';
+
+function askName(reason){
   return new Promise(resolve => {
+    /* 同時只留一個：連點兩次送出不會疊出兩張卡片 */
+    document.querySelector('.ask-name')?.remove();
+
     let icon = ICONS[Math.floor(Math.random() * ICONS.length)];
 
-    const modal = document.createElement('div');
-    /* 直接帶著 open 進場：這個視窗是「按了送出才出現」的，
-       晚一個 frame 才顯示會讓按鈕看起來像沒反應 */
-    modal.className = 'letter-modal ask-name open';
-    modal.innerHTML = `
-      <div class="letter-card">
-        <span class="letter-close" data-act="cancel" role="button" aria-label="關閉">✕</span>
-        <h3>先報上名來</h3>
-        <div class="ltip">讓新人知道這份心意是誰送的</div>
-        <div class="ask-icon" data-act="reroll" role="button" aria-label="換一個記號"></div>
-        <div class="ask-hint">這是你的專屬記號・<b data-act="reroll">換一個</b></div>
-        <input class="ask-input" type="text" maxlength="12" placeholder="輸入你的名字">
-        <div class="letter-actions">
-          <button class="btn ghost" type="button" data-act="cancel">再等等</button>
+    const sheet = document.createElement('div');
+    sheet.className = 'ask-name id-sheet';
+    sheet.setAttribute('role', 'dialog');
+    /* aria-modal="false"：底下的內容沒有被關起來，讀屏也該讀得到 */
+    sheet.setAttribute('aria-modal', 'false');
+    sheet.setAttribute('aria-label', '留下你的名字');
+    sheet.innerHTML = `
+      <div class="id-scrim" aria-hidden="true"></div>
+      <div class="id-card">
+        <button class="id-close" type="button" data-act="cancel" aria-label="關閉">✕</button>
+        <div class="id-head">
+          <span class="ask-icon" data-act="reroll" role="button" tabindex="0"
+                aria-label="換一個專屬記號"></span>
+          <div class="id-head-txt">
+            <h3>先留個名字</h3>
+            <p class="id-why"></p>
+          </div>
+        </div>
+        <div class="id-row">
+          <input class="ask-input" type="text" maxlength="12" placeholder="輸入你的名字"
+                 autocomplete="nickname" enterkeyhint="done" aria-label="你的名字">
           <button class="btn" type="button" data-act="ok">就是我</button>
         </div>
+        <button class="btn btn-google id-google" type="button" data-act="google">
+          <svg viewBox="0 0 18 18" aria-hidden="true">
+            <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.17-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.61z"/>
+            <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.33A9 9 0 0 0 9 18z"/>
+            <path fill="#FBBC05" d="M3.96 10.71A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.17.28-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.04l3-2.33z"/>
+            <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 9 0 9 9 0 0 0 .96 4.96l3 2.33C4.67 5.16 6.66 3.58 9 3.58z"/>
+          </svg>
+          <span>用 Google 帶入名字</span>
+        </button>
+        <div class="ask-hint">
+          <span>你的記號是 <b data-act="reroll" role="button" tabindex="0">換一個</b></span>
+          <button class="id-later" type="button" data-act="cancel">再等等</button>
+        </div>
       </div>`;
-    document.body.appendChild(modal);
+    document.body.appendChild(sheet);
 
-    const iconEl = modal.querySelector('.ask-icon');
-    const input  = modal.querySelector('.ask-input');
+    const iconEl  = sheet.querySelector('.ask-icon');
+    const input   = sheet.querySelector('.ask-input');
+    const whyEl   = sheet.querySelector('.id-why');
+    const gBtn    = sheet.querySelector('.id-google');
     iconEl.textContent = icon;
+    whyEl.textContent  = reason || ASK_REASON_DEFAULT;
 
-    const close = (user) => { modal.remove(); resolve(user); };
+    /* 右下角那顆 BGM 浮動鈕本來就在同一塊區域，讓它先讓開 */
+    document.body.classList.add('id-sheet-on');
+    /* 沒有 Firebase（離線預覽、SDK 掛了）就不留一顆按了沒反應的按鈕 */
+    if(!(window.fb && window.fb.auth)) gBtn.remove();
+
+    let done = false;
+    const close = (user) => {
+      if(done) return;
+      done = true;
+      document.body.classList.remove('id-sheet-on');
+      document.removeEventListener('keydown', onKey, true);
+      sheet.classList.add('closing');
+      /* 等收起來的動畫跑完再拿掉；呼叫端不必等這 200ms */
+      setTimeout(() => sheet.remove(), 200);
+      resolve(user);
+    };
+
     const submit = () => {
       const name = input.value.trim();
-      if(!name){ input.focus(); return; }
+      if(!name){
+        input.focus();
+        sheet.querySelector('.id-row').classList.remove('shake');
+        void sheet.offsetWidth;
+        sheet.querySelector('.id-row').classList.add('shake');
+        return;
+      }
       saveUser({ name, icon });
-      /* 有名字之後導覽列才要長出那塊 User（原本是整塊不畫的） */
+      /* 有名字之後導覽列那塊 User 才要長出來（原本是整塊不畫的） */
       refreshSiteNav();
       close(me_user);
     };
 
-    modal.addEventListener('click', (e) => {
+    const reroll = () => {
+      icon = ICONS[Math.floor(Math.random() * ICONS.length)];
+      iconEl.textContent = icon;
+    };
+
+    const google = async () => {
+      gBtn.disabled = true;
+      try{
+        const dn = await signInWithGoogleName();
+        if(dn){
+          input.value = dn.slice(0, 12);   // input maxlength=12，超過裁掉
+          submit();
+          return;
+        }
+        /* Google 帳號沒有顯示名稱：不能白登入一場，把游標交回輸入框 */
+        input.focus();
+      }catch(e){
+        console.warn('[askName] Google 登入失敗或取消：', e);
+      }
+      gBtn.disabled = false;
+    };
+
+    sheet.addEventListener('click', (e) => {
       const act = e.target.closest('[data-act]')?.dataset.act;
-      if(act === 'reroll'){ icon = ICONS[Math.floor(Math.random()*ICONS.length)]; iconEl.textContent = icon; }
-      else if(act === 'ok') submit();
-      else if(act === 'cancel' || e.target === modal) close(null);
+      if(act === 'reroll')      reroll();
+      else if(act === 'ok')     submit();
+      else if(act === 'google') google();
+      else if(act === 'cancel') close(null);
+    });
+    /* 記號那兩處是 div／b，鍵盤要按得動才算數 */
+    sheet.addEventListener('keydown', (e) => {
+      if((e.key === 'Enter' || e.key === ' ') && e.target.closest('[data-act="reroll"]')){
+        e.preventDefault(); reroll();
+      }
     });
     input.addEventListener('keydown', (e) => { if(e.key === 'Enter') submit(); });
 
-    requestAnimationFrame(() => input.focus());
+    /* Esc 收起來。用 capture 才不會被頁面上其他的 Esc 處理搶先 */
+    const onKey = (e) => { if(e.key === 'Escape'){ e.stopPropagation(); close(null); } };
+    document.addEventListener('keydown', onKey, true);
+
+    /* 進場動畫跑完再搶焦點：手機上太早 focus 會讓鍵盤把動畫壓掉一半 */
+    requestAnimationFrame(() => {
+      sheet.classList.add('open');
+      setTimeout(() => input.focus({ preventScroll:true }), 180);
+    });
   });
 }
 
@@ -1551,10 +1699,14 @@ function buildSiteNav(){
               + `href="${S.pathFor(it.key)}">${escapeHtml(it.label)}</a>`)
     .join('');
 
-  /* 還沒在大廳報到過的訪客（例如直接點邀請函連結進來的）沒有名字，
-     這時不該出現「朋友 ▾ / 登出（換一位賓客）」—— 他根本沒登入過。 */
+  /* 還沒留過名字的訪客不該看到「朋友 ▾ / 登出（換一位賓客）」—— 他根本沒登入過。
+     取而代之的是一顆很輕的「留下名字」：想主動署名的人有地方按，
+     不想的人它就只是一顆字級 12 的文字鈕，不擋路也不催。 */
   const entered = !!LS.get('user', null);
-  const userBox = !entered ? '' : `
+  const userBox = !entered ? `
+      <div class="nav-user">
+        <button class="nav-signin" id="navSignInBtn" type="button">留下名字</button>
+      </div>` : `
       <div class="nav-user">
         <button class="nav-user-btn" id="navUserBtn" type="button" aria-haspopup="true" aria-expanded="false">
           <span class="nav-user-ic" id="navUserIc"></span>
@@ -1576,6 +1728,13 @@ function buildSiteNav(){
   document.body.insertBefore(nav, document.body.firstChild);
 
   syncNavUser();
+
+  /* 還沒署名的訪客：那顆「留下名字」就是同一個底部視窗，
+     只是這次沒有「正在送出的東西」，所以理由寫得比較泛用 */
+  const signIn = document.getElementById('navSignInBtn');
+  if(signIn){
+    signIn.addEventListener('click', () => askName('留個名字，之後寫祝福、送甜點就不用再填一次'));
+  }
 
   const btn = document.getElementById('navUserBtn');
   const pop = document.getElementById('navUserPop');

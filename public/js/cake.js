@@ -114,9 +114,9 @@ function showStep(name){
 }
 
 /* idle → pick。名字是最後要跟著甜點一起送出去的，所以在儀式開始前先問清楚
-   （入場登入開著時賓客早就報到過，ensureUser() 不會跳出來打擾） */
+   （留過名字的賓客不會被打擾，ensureUser() 直接沿用） */
 document.getElementById('startBtn').addEventListener('click', async ()=>{
-  const u = await ensureUser();
+  const u = await ensureUser('甜點會署上你的名字送進蛋糕櫃');
   if(!u) return;
   syncSenderPreview();
   showStep('pick');
