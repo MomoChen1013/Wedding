@@ -1867,6 +1867,128 @@ function applyPaperTexture(){
 }
 
 /* ============================================================
+   把畫好的圖交給使用者（抽卡的小卡、祝福信）
+   ------------------------------------------------------------
+   同一件事在桌機和手機上是兩種動作：
+
+   ・桌機：<a download> —— 檔案落進下載資料夾，這是桌機上大家認得的行為。
+   ・手機：下載資料夾在手機上是個很難找的地方。iOS Safari 會把 JPG 收進
+     「檔案」App，相簿裡一張都不會多；Android 則是跳一條下載通知，
+     然後沉進通知列。可是賓客想的是「存進相簿」，所以手機改走兩條路：
+       1. 系統分享單（navigator.share 帶 files）：iOS 的「儲存影像」、
+          Android 的「儲存到相簿」都在那張單子上，一下就進相簿。
+       2. 分享單不吃檔案（部分 Android 瀏覽器、WebView）：把圖攤成一張
+          全螢幕的 <img>，長按「儲存影像」是最後一條一定走得通的路。
+
+   回傳一句可以直接寫給使用者的提示；畫不出來／存不下來就丟出例外，
+   呼叫端自己決定要說什麼（抽卡與信的退路講法不一樣）。
+============================================================ */
+
+/* 「這是一台手機嗎」——只用來決定存圖的方式，判斷錯了最多是退回下載。
+   userAgentData.mobile 準但不是每個瀏覽器都有；iOS／iPadOS 沒有，
+   補上「有觸控 ＋ 主要指標是粗的」：桌機接觸控螢幕時主要指標仍是滑鼠，
+   所以不會被誤判。iPad 報 Macintosh 也還是會落在這一邊（它也該存相簿）。 */
+function isMobileLike(){
+  const uad = navigator.userAgentData;
+  if(uad && typeof uad.mobile === 'boolean' && uad.mobile) return true;
+  const coarse = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+  return coarse && (navigator.maxTouchPoints || 0) > 0;
+}
+
+/* 叫系統的分享單。回傳 true＝送出去了，false＝這台機器不支援帶檔案分享。
+   使用者自己取消會丟 AbortError，交給上層分辨（那不是失敗）。 */
+async function shareImageFile(blob, filename){
+  if(!navigator.share || !navigator.canShare || typeof File !== 'function') return false;
+  let file;
+  try{ file = new File([blob], filename, { type: blob.type || 'image/jpeg' }); }
+  catch{ return false; }
+  if(!navigator.canShare({ files: [file] })) return false;
+  await navigator.share({ files: [file] });
+  return true;
+}
+
+/* 長按存圖的蓋版（分享單走不通時的退路）。
+   圖放大到整個畫面，底下一行字說怎麼存 —— 只有這一句要說。 */
+function openImageSaveSheet(url, alt){
+  let el = document.getElementById('imgSaveSheet');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'imgSaveSheet';
+    el.className = 'imgsave';
+    el.hidden = true;
+    el.innerHTML = `
+      <div class="imgsave-box" role="dialog" aria-modal="true" aria-label="儲存圖片">
+        <img class="imgsave-img" alt="">
+        <p class="imgsave-note">長按圖片 →「儲存影像」就會收進相簿</p>
+        <button class="btn small ghost imgsave-close" type="button">關閉</button>
+      </div>`;
+    document.body.appendChild(el);
+    const close = ()=>{
+      el.hidden = true;
+      const img = el.querySelector('.imgsave-img');
+      /* 蓋版關掉才收 objectURL：圖還掛在畫面上時收掉，
+         部分瀏覽器會把它變成破圖（長按就沒東西可存了） */
+      const old = img.src;
+      img.removeAttribute('src');
+      if(old.startsWith('blob:')) URL.revokeObjectURL(old);
+    };
+    el.addEventListener('click', (e)=>{
+      if(e.target === el || e.target.closest('.imgsave-close')) close();
+    });
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape' && !el.hidden) close();
+    });
+  }
+  const img = el.querySelector('.imgsave-img');
+  img.src = url;
+  img.alt = alt || '儲存圖片';
+  el.hidden = false;
+}
+
+/* blob →「存起來」。opts 只有提示文案，四條路各一句（都有預設值）：
+     shareHint / cancelHint / pressHint / downloadHint */
+async function saveImageBlob(blob, filename, opts = {}){
+  if(isMobileLike()){
+    try{
+      if(await shareImageFile(blob, filename)){
+        return opts.shareHint || '分享單開了，選「儲存影像」就會收進相簿';
+      }
+    }catch(err){
+      if(err && err.name === 'AbortError'){
+        return opts.cancelHint || '取消了，要存的話再按一次';
+      }
+      console.warn('[存圖] 分享失敗，改成長按存圖', err);
+    }
+    openImageSaveSheet(URL.createObjectURL(blob), opts.alt);
+    return opts.pressHint || '長按上面那張圖 →「儲存影像」就會收進相簿';
+  }
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  /* 立刻 revoke 會讓部分瀏覽器的下載半路斷掉，晚一點再收 */
+  setTimeout(()=> URL.revokeObjectURL(url), 30000);
+  return opts.downloadHint || '已存成 JPG，去下載資料夾看看';
+}
+
+/* canvas → blob → 存起來。
+   跨網域的圖把 canvas 染色時 toBlob 會丟 SecurityError，一路往上丟。 */
+async function saveCanvasImage(canvas, filename, opts = {}){
+  const blob = await new Promise((res, rej) => {
+    try{
+      canvas.toBlob(b => (b ? res(b) : rej(new Error('toBlob failed'))),
+                    opts.type || 'image/jpeg',
+                    opts.quality == null ? 0.92 : opts.quality);
+    }catch(err){ rej(err); }
+  });
+  return saveImageBlob(blob, filename, opts);
+}
+
+/* ============================================================
    共用 UI 綁定（在每頁載入時呼叫一次）
 ============================================================ */
 function bindCommonUI(){

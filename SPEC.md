@@ -1279,7 +1279,7 @@ HTML5 Drag & Drop 在觸控裝置完全不會觸發，Pointer Events 版的拖�
 | 名字 → 桌次的查詢 | `sites/{siteId}/seating` |
 | 桌次圖（多張、可放大拖曳） | `sites/{siteId}/seatingImages` ＋ `assets/{slug}/seating/` |
 
-**整個桌次功能可以先關著**（後台「婚禮資訊」分頁最上面的
+**整個桌次功能可以先關著**（後台「桌次 → 桌次圖」最上面的
 「開放桌次功能」checkbox → `seatingFeatureEnabled`）：
 關掉時大廳的婚禮資訊卡最下面不出現「尋找我的座位」、導覽列也沒有桌次，
 直接打 `/w/{slug}/seating` 會被導回大廳（`site-context.js` 的 `isEnabled()`）。
@@ -1323,6 +1323,14 @@ HTML5 Drag & Drop 在觸控裝置完全不會觸發，Pointer Events 版的拖�
 用 canvas 重畫而不是截 DOM —— 全站不引第三方函式庫，而且信紙版面單純，
 自己畫拿得到更好的解析度。斷行規則跟著網頁走：中文可以斷在任何一個字之間，
 英數整個單字一起搬。
+
+畫好之後交給 `common.js` 的 `saveCanvasImage()`，**手機與桌機走不同的路**
+（抽卡的小卡同一套）：桌機是 `<a download>`，檔案落進下載資料夾；
+手機上那個資料夾很難找（iOS 會收進「檔案」App，相簿裡一張都不會多），
+所以先叫系統分享單（`navigator.share` 帶 `files`）—— iOS 的「儲存影像」、
+Android 的「儲存到相簿」都在那張單子上；分享單不吃檔案的瀏覽器再退一步，
+把圖攤成一張全螢幕的 `<img>`，長按存圖。判斷是不是手機看
+`navigator.userAgentData.mobile`，沒有這個欄位就看「有觸控 ＋ 主要指標是粗的」。
 
 **信件內容是公開可讀的**，這是刻意的取捨：比對必須在前端做，
 Firestore 的讀取請求不帶條件，規則無法「只讓對得上的人讀到那一封」。

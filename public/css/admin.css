@@ -257,7 +257,7 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
 
 /* ---------- 區塊 ---------- */
 .ad-sec{margin-bottom:52px;}
-/* 貼在子分頁列上方的那一塊（例如「開放桌次功能」），間距收窄一點 */
+/* 貼在子分頁列上方的那一塊，間距收窄一點 */
 .ad-sec-flush{margin-bottom:24px;}
 .ad-sec-title{font-family:var(--font-display);font-weight:500;font-size:15px;
   letter-spacing:.2em;color:var(--ink);padding-bottom:11px;
@@ -3466,10 +3466,24 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:11px;}
 .ad-ev-body{padding:4px 14px 16px;border-top:1px solid var(--line-soft);}
 .ad-ev-body[hidden]{display:none;}
 .ad-ev-body .ad-label:first-of-type{margin-top:14px;}
-/* 型別／名稱／日期／時間排成一列，窄畫面自己折行 */
-.ad-ev-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
-  gap:10px 12px;padding-top:14px;}
+/* 活動卡上半部分兩列：
+     第一列「活動類型 ＋ 名稱」（這是什麼活動）
+     第二列「日期 ＋ 開始 ＋ 結束」（什麼時候）
+   原本五欄 auto-fit 擠成一排，讀起來分不出哪幾欄是一件事；
+   而且名稱那一欄常常只剩 140px，四個字就滿了。 */
+.ad-ev-grid{display:grid;gap:10px 12px;padding-top:14px;}
 .ad-ev-grid .ad-label{margin-top:0;}
+.ad-ev-grid-what{grid-template-columns:repeat(2,minmax(0,1fr));}
+.ad-ev-grid-when{grid-template-columns:repeat(3,minmax(0,1fr));}
+/* 兩列連在一起時上面那一列已經留過空間了，不用再留一次 */
+.ad-ev-grid + .ad-ev-grid{padding-top:10px;}
+
+@media(max-width:599px){
+  /* 三欄擠在 400px 的畫面上，type="date" 的原生欄位會被切掉一半 ——
+     日期自己占滿一行，兩個時間並排（它們本來就是一組） */
+  .ad-ev-grid-when{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .ad-ev-grid-when > :first-child{grid-column:1 / -1;}
+}
 
 /* 場地三欄被「婚禮流程」接管時，看得到但改不動 */
 .ad-input.is-locked{background:var(--bg2);color:var(--ink-soft);cursor:not-allowed;}

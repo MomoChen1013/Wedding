@@ -212,8 +212,8 @@ function realErrors(list){
     !/favicon|fonts\.|\.png|\.jpg|\.jpeg|\.webp|jsdelivr|ERR_FAILED|status of 404/i.test(t));
 }
 
-async function visit(path, { waitForBody = true, guest = true } = {}){
-  const page = await newPage({}, { guest });
+async function visit(path, { waitForBody = true, guest = true, pageOpts = {} } = {}){
+  const page = await newPage(pageOpts, { guest });
   const errors = [];
   page.on('console', (m) => { if(m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
@@ -1444,6 +1444,35 @@ console.log('\n[12] 電子祝福信');
   await page.close();
 }
 {
+  /* 手機上「儲存下載」不該變成一個下載檔案 —— 下載資料夾在手機上是個
+     很難找的地方，賓客要的是相簿裡多一張。第一條路是系統分享單
+     （navigator.share 帶 files），這台測試機器沒有，所以應該退成
+     長按存圖的蓋版（見 common.js 的 saveImageBlob）。 */
+  const { page } = await visit(`/w/${SLUG}/letter`, {
+    pageOpts: { viewport:{ width:390, height:844 }, hasTouch:true, isMobile:true },
+  });
+  await page.waitForFunction(() => DataStore.getBlessings().length > 0, null, { timeout:10000 });
+  await page.fill('#wlInput', '小明');
+  await page.click('#wlBtn');
+  await page.waitForSelector('#wlSheet:not([hidden])', { timeout:10000 });
+
+  let downloaded = false;
+  page.on('download', () => { downloaded = true; });
+  await page.click('#wlSave');
+  const pressUp = await page.waitForFunction(() => {
+    const el = document.getElementById('imgSaveSheet');
+    const img = el && el.querySelector('.imgsave-img');
+    return !!el && !el.hidden && !!img && img.naturalWidth > 0;
+  }, null, { timeout:15000 }).then(() => true).catch(() => false);
+
+  ok('手機上改成長按存圖的蓋版，圖畫出來了', pressUp);
+  ok('手機上不會變成下載一個檔案', !downloaded);
+  ok('提示也改成講長按',
+    (await page.innerText('#wlSaveHint')).includes('長按'),
+    await page.innerText('#wlSaveHint'));
+  await page.close();
+}
+{
   /* 好幾封通用信：同一個名字每次拿到的都是同一封，不同名字會分散開 */
   const site = adb.collection('sites').doc(siteIds[SLUG]);
   await site.collection('blessings').doc('b3').set({
@@ -2158,7 +2187,8 @@ console.log('\n[18b] 桌次功能可以整個關掉');
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
 
-  await page.click('.ad-tab[data-tab="lobby"]');
+  /* 開關在「桌次 → 桌次圖」那一頁最上面（桌次圖是預設的子分頁） */
+  await page.click('.ad-tab[data-tab="seating"]');
   ok('桌次功能開關預設是開著的', await page.isChecked('#adSeatFeature'));
 
   await page.uncheck('#adSeatFeature');

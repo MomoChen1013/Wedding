@@ -1394,7 +1394,8 @@ function openAdmin(){
   document.getElementById('adAcctNm').textContent = email ? email.split('@')[0] : '帳號';
   document.getElementById('adAcctBtn').setAttribute('aria-label', `帳號：${email || '未登入'}`);
 
-  /* 「查看網站」現在有三份：頂列、帳號選單裡、抽屜底部。都指到同一個網址 */
+  /* 「查看網站」現在有三份：頂列、帳號選單裡、抽屜底部。都指到同一個網址，
+     而且都是另開新分頁（target=_blank 寫在 admin.html 上） */
   ['adViewBtn', 'adViewBtnMobile', 'adViewBtnDrawer'].forEach(id => {
     const a = document.getElementById(id);
     if(a) a.href = sitePath('lobby');
@@ -1551,7 +1552,8 @@ document.getElementById('adLockMobile').addEventListener('click', ownerLogout);
   document.addEventListener('keydown', (e)=>{
     if(e.key === 'Escape' && !pop.hidden){ close(); btn.focus(); }
   });
-  /* 選單裡按下任何一項就收起來（登出會整頁換掉，查看網站會離開） */
+  /* 選單裡按下任何一項就收起來
+     （登出會整頁換掉；查看網站另開新分頁，回來時選單不該還開著） */
   pop.addEventListener('click', (e)=>{ if(e.target.closest('.ad-acct-item')) close(); });
 })();
 
@@ -3542,7 +3544,7 @@ document.getElementById('adInboxExport').addEventListener('click', ()=>{
 });
 
 /* ============================================================
-   2-0 開放桌次功能（放在「婚禮資訊」分頁最上面）
+   1-0 開放桌次功能（放在「桌次 → 桌次圖」最上面）
    ------------------------------------------------------------
    關著的時候賓客那邊完全看不到桌次：大廳沒有「尋找我的座位」、
    導覽列沒有「桌次」、直接打網址也會被導回大廳（見 site-context.js）。
@@ -3572,7 +3574,7 @@ seatFeatureEl.addEventListener('change', async ()=>{
 });
 
 /* ============================================================
-   1-0 桌次搜尋開關
+   1-2 桌次搜尋開關
    ------------------------------------------------------------
    關掉的話，賓客的桌次頁只剩下新人上傳的桌次圖。
    沒設定過的舊站台一律視為開著，不會因為多了這個欄位就突然關掉。
@@ -5158,7 +5160,9 @@ function evCardHtml(ev, i, total){
     </div>
 
     <div class="ad-ev-body"${open ? '' : ' hidden'}>
-      <div class="ad-ev-grid">
+      <!-- 「這是什麼活動」一列，「什麼時候」再一列：
+           兩件事分開問，比五欄擠成一排好讀（見 admin.css 的 .ad-ev-grid） -->
+      <div class="ad-ev-grid ad-ev-grid-what">
         <div>
           <label class="ad-label">活動類型</label>
           <select class="ad-input" data-ev-field="type">${typeOpts}</select>
@@ -5168,6 +5172,8 @@ function evCardHtml(ev, i, total){
           <input class="ad-input" type="text" maxlength="30"
                  data-ev-field="name" value="${escapeHtml(ev.name)}">
         </div>
+      </div>
+      <div class="ad-ev-grid ad-ev-grid-when">
         <div>
           <label class="ad-label">日期</label>
           <input class="ad-input" type="date" data-ev-field="date"

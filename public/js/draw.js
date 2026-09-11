@@ -162,6 +162,8 @@ function redrawCollection(){
 
    「儲存下載」把同一張照片畫進 canvas 輸出 JPG，
    照片底下只留一行「新人名字・日期」，其餘什麼都不加。
+   存去哪裡分手機與桌機兩條路（見 common.js 的 saveCanvasImage）：
+   手機走系統分享單／長按存圖，進的是相簿；桌機才是下載檔案。
 
    為什麼是自己畫而不是截圖：全站不引第三方函式庫（html2canvas 之類），
    而且卡面就是一張照片，自己畫拿得到更好的解析度。
@@ -364,21 +366,15 @@ cvSave.addEventListener('click', async ()=>{
     if(document.fonts && document.fonts.ready) await document.fonts.ready;
 
     const canvas = await drawCardCanvas(cvOpen.art);
-    const blob = await new Promise((res, rej) => {
-      try{ canvas.toBlob(b => (b ? res(b) : rej(new Error('toBlob failed'))), 'image/jpeg', 0.92); }
-      catch(err){ rej(err); }
-    });
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = cardFileName(cvOpen.index);
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    /* 立刻 revoke 會讓部分瀏覽器的下載半路斷掉，晚一點再收 */
-    setTimeout(()=> URL.revokeObjectURL(url), 30000);
-    cvSetHint('已存成 JPG，去相簿或下載資料夾看看');
+    /* 手機存進相簿、桌機落進下載資料夾，兩條路都在 common.js 的
+       saveCanvasImage()（賓客在手機上要的是相簿裡多一張，不是一個檔案） */
+    cvSetHint(await saveCanvasImage(canvas, cardFileName(cvOpen.index), {
+      alt: cvOpen.rec.name || '婚禮小卡',
+      shareHint:    '分享單開了，選「儲存影像」就會收進相簿',
+      cancelHint:   '取消了，想存的話再按一次',
+      pressHint:    '長按上面那張卡 →「儲存影像」就會收進相簿',
+      downloadHint: '已存成 JPG，去下載資料夾看看',
+    }));
   }catch(err){
     console.warn('[抽卡] 存圖失敗', err);
     cvSetHint('這張圖存不下來，改成長按（電腦按右鍵）另存圖片吧');

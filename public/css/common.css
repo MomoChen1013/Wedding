@@ -375,6 +375,28 @@ body.nav-off{padding-top:0;}
 @media(max-width:760px){.grid2{grid-template-columns:1fr;}}
 
 /* ============================================================
+   長按存圖的蓋版（common.js 的 openImageSaveSheet()）
+   ------------------------------------------------------------
+   手機上分享單走不通時的退路：把畫好的圖攤開，讓使用者長按存進相簿。
+   z-index 要在抽卡的大卡蓋版（.cv 是 1200）之上，不然存的時候看不到。
+   圖上刻意不加 user-select／touch-callout 的限制 ——
+   這一張的存在意義就是「長按它」。
+============================================================ */
+.imgsave{position:fixed;inset:0;z-index:1300;display:flex;
+  align-items:center;justify-content:center;padding:20px;overflow-y:auto;
+  background:rgba(var(--ink-rgb),.9);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  animation:pop .2s ease;}
+.imgsave[hidden]{display:none;}
+.imgsave-box{display:flex;flex-direction:column;align-items:center;gap:14px;
+  width:min(92vw,420px);margin:auto;}
+.imgsave-img{width:100%;height:auto;border-radius:var(--radius);
+  border:1px solid rgba(255,255,255,.35);background:var(--surface);}
+.imgsave-note{margin:0;text-align:center;font-size:12.5px;letter-spacing:.06em;
+  line-height:1.9;color:rgba(255,255,255,.82);}
+.imgsave-close{color:#fff;border-color:rgba(255,255,255,.45);}
+.imgsave-close:hover{color:#fff;border-color:#fff;background:rgba(255,255,255,.12);}
+
+/* ============================================================
    悄悄話信件彈窗（祝福牆用；信件內容只有新人在後台讀得到）
 ============================================================ */
 .letter-modal{position:fixed;inset:0;z-index:1100;display:none;align-items:center;justify-content:center;
