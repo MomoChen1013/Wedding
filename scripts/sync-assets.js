@@ -48,9 +48,15 @@ import { fileURLToPath } from 'node:url';
 
 const ASSETS_ROOT = fileURLToPath(new URL('../public/assets/', import.meta.url));
 
-const IMAGE_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif', '.svg']);
-const VIDEO_EXT = new Set(['.mp4', '.webm', '.mov']);
-const AUDIO_EXT = new Set(['.mp3', '.m4a', '.aac', '.ogg', '.wav']);
+/* 順序有意義：同一個名字有好幾種副檔名時，排在前面的優先
+   （cover.jpg 與 cover.jpeg 並存時固定用 .jpg，不看資料夾的排列順序） */
+const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif', '.svg'];
+const VIDEO_EXTS = ['.mp4', '.webm', '.mov'];
+const AUDIO_EXTS = ['.mp3', '.m4a', '.aac', '.ogg', '.wav'];
+
+const IMAGE_EXT = new Set(IMAGE_EXTS);
+const VIDEO_EXT = new Set(VIDEO_EXTS);
+const AUDIO_EXT = new Set(AUDIO_EXTS);
 
 /* 單張圖片的「特別檔名」→ manifest 的欄位 */
 const SINGLE_FILES = {
@@ -70,6 +76,11 @@ const SINGLE_FILES = {
 /* scripts/build-og.js 產生的檔案。
    不是新人放的素材，所以不列進 manifest，也不該被當成「檔名沒對上」 */
 const GENERATED_FILES = new Set(['og']);
+
+/* 版型自己的圖：CSS 直接寫死路徑吃它，不經過 manifest
+   （例如 public/css/lobby-korean.css 的 .rsvp-cta 吃 rsvp-satin）。
+   換圖只要覆蓋同一個檔名，所以這些也不該被當成「檔名沒對上」。 */
+const TEMPLATE_FILES = new Set(['rsvp-satin']);
 
 /* 單支影片的「特別檔名」→ manifest 的欄位（首頁固定背景用） */
 const SINGLE_VIDEOS = {
@@ -144,9 +155,19 @@ function buildList(slug, folder, key) {
   });
 }
 
-/* 檔名比對不分大小寫：BGM.mp3、Cover.JPG 都認得 */
-function findByStem(files, stem) {
-  return files.find((f) => basename(f, extname(f)).toLowerCase() === stem.toLowerCase());
+/* 找出所有叫這個名字的檔案（不分大小寫：BGM.mp3、Cover.JPG 都認得）。
+   回傳的第一個就是會用的那一個：先照 exts 的順序，同副檔名再照檔名排。
+   之所以要「全部」而不是「第一個」—— cover.jpg 與 cover.jpeg 並存時，
+   沒被選上的那個以前會混進「檔名沒對上」的清單，
+   讓人以為檔名打錯，其實是重複，方向完全相反。 */
+function matchStem(files, stem, exts) {
+  const rank = (f) => {
+    const i = exts.indexOf(extname(f).toLowerCase());
+    return i === -1 ? exts.length : i;
+  };
+  return files
+    .filter((f) => basename(f, extname(f)).toLowerCase() === stem.toLowerCase())
+    .sort((a, b) => rank(a) - rank(b) || naturalSort(a, b));
 }
 
 function buildManifest(slug) {
@@ -156,13 +177,17 @@ function buildManifest(slug) {
   const manifest = { slug };
   const used = new Set();
 
-  const take = (files, map) => {
+  const duplicates = [];
+
+  const take = (files, map, exts) => {
     for (const [stem, field] of Object.entries(map)) {
-      const hit = findByStem(files, stem);
-      if (hit) {
-        manifest[field] = `/assets/${slug}/${hit}`;
-        used.add(hit);
-      }
+      const [hit, ...extra] = matchStem(files, stem, exts);
+      if (!hit) continue;
+      manifest[field] = `/assets/${slug}/${hit}`;
+      used.add(hit);
+      /* 重複的也算「認得」：它不是檔名沒對上，是同一個名字放了好幾份 */
+      for (const f of extra) used.add(f);
+      if (extra.length) duplicates.push({ hit, extra });
     }
   };
 
@@ -170,14 +195,19 @@ function buildManifest(slug) {
   const rootVideos = readdirSync(dir).filter(isVideo);
   const rootAudio  = readdirSync(dir).filter(isAudio);
 
-  take(rootFiles,  SINGLE_FILES);    /* 封面、大廳背景 */
-  take(rootVideos, SINGLE_VIDEOS);   /* 首頁背景影片 */
-  take(rootAudio,  SINGLE_AUDIO);    /* 背景音樂 */
+  take(rootFiles,  SINGLE_FILES,  IMAGE_EXTS);   /* 封面、大廳背景 */
+  take(rootVideos, SINGLE_VIDEOS, VIDEO_EXTS);   /* 首頁背景影片 */
+  take(rootAudio,  SINGLE_AUDIO,  AUDIO_EXTS);   /* 背景音樂 */
+
+  manifest._duplicates = duplicates;
 
   /* 檔名沒對上的素材會被忽略，這是最容易踩的坑，明確講出來 */
   manifest._ignored = [...rootFiles, ...rootVideos, ...rootAudio]
     .filter((f) => !used.has(f))
-    .filter((f) => !GENERATED_FILES.has(basename(f, extname(f)).toLowerCase()));
+    .filter((f) => {
+      const stem = basename(f, extname(f)).toLowerCase();
+      return !GENERATED_FILES.has(stem) && !TEMPLATE_FILES.has(stem);
+    });
 
   /* 子資料夾 */
   for (const [folder, field] of Object.entries(FOLDERS)) {
@@ -361,10 +391,17 @@ function main() {
     return;
   }
 
+  /* 提示文字直接從對照表長出來，才不會改了對照表卻忘了改說明 */
+  const rootNames = [...new Set([
+    ...Object.keys(SINGLE_FILES), ...Object.keys(SINGLE_VIDEOS), ...Object.keys(SINGLE_AUDIO),
+  ])].join(' / ');
+
   for (const slug of slugs) {
     const manifest = buildManifest(slug);
     const ignored = manifest._ignored || [];
+    const duplicates = manifest._duplicates || [];
     delete manifest._ignored;
+    delete manifest._duplicates;
 
     writeFileSync(
       join(ASSETS_ROOT, slug, 'manifest.json'),
@@ -374,9 +411,15 @@ function main() {
     console.log(`✅ ${slug}`);
     console.log(`   ${describe(manifest)}`);
 
+    /* 重複要先講：換了圖卻沒變，十之八九是吃到同名的另一個副檔名 */
+    for (const { hit, extra } of duplicates) {
+      console.log(`   ⚠️ 同一個名字放了好幾個檔案：只會用 ${hit}，${extra.join('、')} 不會被用到。`);
+      console.log(`      換圖請直接覆蓋 ${hit}，或把多出來的那幾個刪掉。`);
+    }
+
     if (ignored.length) {
       console.log(`   ⚠️ 這些檔案的檔名沒對上，不會被使用：${ignored.join('、')}`);
-      console.log('      放在這一層的檔案必須命名為 cover / lobby / lobby-blur / bgm，');
+      console.log(`      放在這一層的檔案必須命名為 ${rootNames}，`);
       console.log('      其他圖片請放進 gallery／exhibition／cards／cakes／seating 子資料夾。');
     }
   }
