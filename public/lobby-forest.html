@@ -15,6 +15,30 @@
 
 <link rel="icon" href="/favicon.png" type="image/png">
 <link rel="apple-touch-icon" href="/favicon.png">
+<!-- ============ 載入順序 ============
+     下面這幾行不改變任何行為，只是把「瀏覽器什麼時候開始下載」往前挪。
+
+     ・preconnect：Firebase SDK 在 www.gstatic.com、資料在 firestore.googleapis.com，
+       都是**全新的網域**，各要一次 DNS + TLS 握手。不先連好的話，
+       這兩次握手是卡在關鍵路徑上的。
+     ・modulepreload：site-context.js 是 type="module"，預設要等 HTML 解析完
+       才會開始抓，它 import 的三支 Firebase SDK 更要再等一輪。
+       先宣告之後，它們會跟 CSS 平行下載。
+     ・preload as="script"：common.js 與本頁的 JS 是資料到齊之後才被注入的，
+       不先宣告的話那是兩個接在最後面的來回。這裡只是先下載，
+       執行順序仍然由 site-context.js 決定（它要等站台設定）。
+
+     版號要跟 js/site-context.js 的 import 一致，
+     tests/ui-consistency.mjs 有一條在守這件事。 -->
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="modulepreload" href="/js/site-context.js">
+<link rel="modulepreload" href="/js/wed-model.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js" crossorigin>
+<link rel="preload" as="script" href="/js/common.js">
+<link rel="preload" as="script" href="/js/index.js">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- 這一份是 korean 專屬的靜態頁，字檔直接寫在 head（不等 applyTemplate 注入才要）。
@@ -27,6 +51,11 @@
 <link rel="stylesheet" href="/css/lobby-forest.css">
 </head>
 <body data-template="forest" data-page="lobby" data-lobby="forest">
+<!-- 開場遮罩：只有**沒預產到**的頁面會顯示（見 css/common.css 的 .boot-veil）。
+     那種頁面的版型要等 Firestore 回來才換得掉，換色就發生在這一層底下。
+     build-og 產出的頁面會在 <html> 上蓋 data-prerendered，這層直接不顯示。 -->
+<div class="boot-veil" aria-hidden="true"><span class="boot-veil-mark">✦</span></div>
+
 
 <div class="bg-decor"></div>
 <canvas id="fx"></canvas>
@@ -35,8 +64,8 @@
 <div class="overlay" id="gate">
   <div class="gate-card">
     <div class="ribbon">We're getting married</div>
-    <h1>{{couple}}</h1>
-    <div class="sub">{{date}}・在進場前，先報上名來</div>
+    <h1 data-tpl="couple"></h1>
+    <div class="sub"><span data-tpl="date"></span>・在進場前，先報上名來</div>
     <div class="icon-pick" id="iconPick">✦</div>
     <div class="icon-hint">這是你的專屬記號・<b id="rerollIcon">換一個</b></div>
     <div class="field"><input id="nameInput" type="text" maxlength="12" placeholder="輸入你的名字"></div>
@@ -72,10 +101,10 @@
       <div class="f-hero-tint" aria-hidden="true"></div>
       <div class="f-hero-body">
         <div class="f-kicker"><span class="en">Invitation</span><span class="cn">邀請函</span></div>
-        <h1 class="f-names">{{groom}}<span class="amp">&amp;</span>{{bride}}</h1>
-        <div class="f-date">{{date}}・{{weekday}}</div>
+        <h1 class="f-names"><span data-tpl="groom"></span><span class="amp">&amp;</span><span data-tpl="bride"></span></h1>
+        <div class="f-date"><span data-tpl="date"></span>・<span data-tpl="weekday"></span></div>
         <div class="f-rule"></div>
-        <div class="hashtags" id="lobbyTags"></div>
+        <div class="hashtags" id="lobbyTags" data-sk="tags"></div>
         <div class="scroll-cue"><span>Scroll</span><span class="arrow"></span></div>
       </div>
     </header>
@@ -91,13 +120,13 @@
         </div>
         <div class="f-sec-body">
           <div class="info-card">
-            <div class="info-couple" id="infoCouple">{{couple}}</div>
+            <div class="info-couple" id="infoCouple" data-tpl="couple"></div>
             <div class="info-couple-cn" id="infoCoupleCn"></div>
             <div class="info-rows">
-              <div class="info-row"><div class="ir-label">日期</div><div class="ir-body"><div class="ir-val" id="infoDate">—</div></div></div>
-              <div class="info-row" id="infoTimeRow"><div class="ir-label">時間</div><div class="ir-body"><div class="ir-val" id="infoTime">—</div>
+              <div class="info-row"><div class="ir-label">日期</div><div class="ir-body"><div class="ir-val" id="infoDate" data-sk="text">—</div></div></div>
+              <div class="info-row" id="infoTimeRow"><div class="ir-label">時間</div><div class="ir-body"><div class="ir-val" id="infoTime" data-sk="text">—</div>
                 <a class="ir-jump" id="infoTimeJump" href="#scheduleBlock" hidden>看當日流程 →</a></div></div>
-              <div class="info-row" id="infoVenueRow"><div class="ir-label">地點</div><div class="ir-body"><div class="ir-val" id="infoVenue">—</div><div class="ir-sub" id="infoAddr"></div>
+              <div class="info-row" id="infoVenueRow"><div class="ir-label">地點</div><div class="ir-body"><div class="ir-val" id="infoVenue" data-sk="text">—</div><div class="ir-sub" id="infoAddr"></div>
                 <a class="ir-jump" id="infoVenueJump" href="#transportBlock" hidden>看交通資訊 →</a></div></div>
             </div>
             <div class="info-actions">
@@ -118,7 +147,7 @@
           <span class="cn block-sub">當日流程</span>
           <span class="f-sprig" aria-hidden="true"><i></i><b></b><i></i></span>
         </div>
-        <div class="f-sec-body"><div class="timeline" id="schedule"></div></div>
+        <div class="f-sec-body"><div class="timeline" id="schedule" data-sk="rows"></div></div>
       </section>
 
       <!-- ===== 出席前的小提醒（沒填就整塊收起） ===== -->
@@ -189,7 +218,7 @@
           <div class="band-title">Countdown</div>
           <div class="band-sub">距離我們的大日子還有</div>
           <div class="cd-card">
-            <div class="cd-grid" id="cdGrid"></div>
+            <div class="cd-grid" id="cdGrid" data-sk="grid"></div>
             <div class="cd-target" id="cdTarget"></div>
           </div>
         </div>
@@ -260,7 +289,7 @@
         </div>
       </section>
 
-      <footer>made for {{couple}}・小港製作所 設計製作</footer>
+      <footer>made for <span data-tpl="couple"></span>・小港製作所 設計製作</footer>
     </div>
   </section>
 </div>

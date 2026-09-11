@@ -58,6 +58,12 @@ import sharp from 'sharp';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { resolveBaseUrl } from './site-url.js';
+/* 站台資料模型：與瀏覽器端的 js/site-context.js 共用同一份。
+   建置期烤進 HTML 的字，必須和執行期 fillTemplates() 算出來的逐字相同，
+   不然賓客會看到「名字換成另一個名字」——只是把閃爍換個地方發作。 */
+import {
+  TEMPLATES, templateKey, buildWed, tplValue, BAKEABLE_TPL_KEYS,
+} from '../public/js/wed-model.js';
 
 const ROOT         = fileURLToPath(new URL('../', import.meta.url));
 const PUBLIC_ROOT  = join(ROOT, 'public');
@@ -102,13 +108,12 @@ const SKIP_SLUGS = new Set(['e2e', 'demo-wedding-2027']);
    out      : 產到 public/w/{slug}/ 底下的檔名（配合 cleanUrls）
    path     : 對外網址的片段，用來組 og:url
 ============================================================ */
-/* 大廳的來源檔依 sites.template 分流：korean／forest 有自己的版面結構，
-   其餘（classic 系列、沒設定、認不得的值）都用 index.html。
-   要跟 js/site-context.js 的 TEMPLATES、css/ 的 lobby-*.css 保持同步。 */
-const LOBBY_SRC = {
-  korean: 'lobby-korean.html',
-  forest: 'lobby-forest.html',
-};
+/* 大廳的來源檔依 sites.template 分流：korean／forest 有自己的版面結構
+   （TEMPLATES 的 lobbyFile），其餘（classic 系列、沒設定、認不得的值）
+   都用 index.html。清單直接讀 wed-model.js，不再手抄一份。 */
+function lobbySrc(template) {
+  return TEMPLATES[templateKey(template)].lobbyFile || null;
+}
 
 const SHARE_PAGES = [
   {
@@ -140,6 +145,78 @@ const SHARE_PAGES = [
         ? `${bits.join('・')}・出席回覆請由此進`
         : '誠摯邀請您一起見證我們的大喜之日・時間、地點與出席回覆都在這裡';
     },
+  },
+
+  /* ---------- 以下這幾頁原本不產 ----------
+     它們不是常被分享的入口，所以本來只靠 /w/** rewrite 到共用 HTML。
+     但共用 HTML 的 <body> 寫死 data-template="classic"，
+     korean／forest 的站台開進來一定會先看到 Classic 配色再換色 ——
+     「給你的信」那一頁的信封就是這樣先淺色再變色的。
+     現在一律產出來，順便也都有了自己的 og 縮圖。 */
+  {
+    pageKey: 'letter',
+    src: 'letter.html',
+    out: 'letter.html',
+    path: 'letter',
+    title: (couple) => `給你的信｜${couple}`,
+    fallbackTitle: '給你的信｜婚禮邀請函',
+    desc: () => '新人寫了一封信，正在這裡等您來領',
+  },
+  {
+    pageKey: 'wall',
+    src: 'wall.html',
+    out: 'wall.html',
+    path: 'wall',
+    title: (couple) => `祝福牆｜${couple}`,
+    fallbackTitle: '祝福牆｜婚禮邀請函',
+    desc: (info) => info.couple
+      ? `留言、寫信，把想說的話送給 ${info.couple}`
+      : '留言、寫信，把想說的話送給這對新人',
+  },
+  {
+    pageKey: 'exhibition',
+    src: 'exhibition.html',
+    out: 'exhibition.html',
+    path: 'exhibition',
+    title: (couple) => `我們的故事｜${couple}`,
+    fallbackTitle: '我們的故事｜婚禮邀請函',
+    desc: () => '沿著時間軸走一趟，看看這對新人一路走來的故事',
+  },
+  {
+    pageKey: 'quiz',
+    src: 'quiz.html',
+    out: 'quiz.html',
+    path: 'quiz',
+    title: (couple) => `新人小測驗｜${couple}`,
+    fallbackTitle: '新人小測驗｜婚禮邀請函',
+    desc: () => '你有多了解這對新人？花一分鐘測驗看看',
+  },
+  {
+    pageKey: 'draw',
+    src: 'draw.html',
+    out: 'draw.html',
+    path: 'draw',
+    title: (couple) => `抽囍卡｜${couple}`,
+    fallbackTitle: '抽囍卡｜婚禮邀請函',
+    desc: () => '抽一張專屬囍卡，把今天的好運氣收藏起來',
+  },
+  {
+    pageKey: 'seating',
+    src: 'seating.html',
+    out: 'seating.html',
+    path: 'seating',
+    title: (couple) => `我的桌次｜${couple}`,
+    fallbackTitle: '我的桌次｜婚禮邀請函',
+    desc: () => '輸入您的名字，馬上查到今天的座位',
+  },
+  {
+    pageKey: 'cake',
+    src: 'cake.html',
+    out: 'cake.html',
+    path: 'cake',
+    title: (couple) => `集氣送祝福｜${couple}`,
+    fallbackTitle: '集氣送祝福｜婚禮邀請函',
+    desc: () => '一起把祝福集滿，替新人送上今天的甜點',
   },
 ];
 
@@ -468,8 +545,84 @@ const BANNER = '<!-- 這個檔案由 scripts/build-og.js 產生，不要手改�
 
 /* 把 head 裡舊的社群標籤整組拆掉，換上這個站台專屬的一組。
    用「先清乾淨再插入」而不是逐一取代，重跑幾次結果都一樣 */
-function buildHtml(srcHtml, srcName, meta) {
-  let html = srcHtml;
+/* ============================================================
+   注水：把「新人改不動的那些值」先填進 HTML
+   ------------------------------------------------------------
+   這是整支 build-og 從「只換 og 標籤」變成「真正的預渲染」的地方。
+   做完之後，賓客**第一次繪製**看到的就已經是成品：
+
+     <body data-template>   正確的版型 → 信封不會先淺色再變色，
+                            字體與 font-size-adjust 也不會晚一步才套上
+     <span data-tpl>        姓名與日期已經填好 → 不會先看到空白再跳出名字
+     <head> 的字體／版型 CSS 直接印進去 → 被 preload scanner 掃得到，
+                            跟 common.css 平行下載，而不是等 JS 注入
+
+   ▸ 只填 BAKEABLE_TPL_KEYS 裡的 token（見 js/wed-model.js）
+     判準是「新人在後台改不動」——那些欄位只有我們用 Admin SDK 改得動，
+     所以靜態檔不可能過期。新人改得動的（hashtag…）留空給執行期填。
+
+   ▸ data-tpl 屬性**不拿掉**
+     執行期 fillTemplates() 還是會再填一次。值一樣所以畫面不動，
+     萬一資料真的變了（我們改了姓名還沒重跑 build-og），
+     執行期會把它修正過來，靜態檔只是「先畫一版」而不是唯一真相。
+
+   ▸ 屬性型的樣板（data-tpl-placeholder）不烤
+     目前唯一一處是祝福牆彈窗裡的 textarea，開窗才看得到，
+     不在首屏；留給執行期填就好。
+============================================================ */
+
+/* 填進 HTML 的值要當成文字，不是標記 */
+function escapeHtmlText(str) {
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function hydrateHtml(html, info) {
+  const wed = info.wed;
+  const key = templateKey(info.template);
+  const tpl = TEMPLATES[key];
+
+  /* ---- <html> 蓋戳記：告訴 common.css 這一頁不用開場遮罩 ---- */
+  html = html.replace(/<html(\s[^>]*)?>/i, (m, attrs) =>
+    `<html${attrs || ''} data-prerendered="1">`);
+
+  /* ---- <body> 的版型與 hero 字族 ----
+     來源檔寫死 data-template="classic"（korean／forest 的大廳來源檔
+     則已經是對的），這裡一律換成這組新人真正的版型。
+     data-hero-name 原本由 site-context.js 在執行期寫，一起提前。 */
+  html = html.replace(/<body([^>]*)>/i, (m, attrs) => {
+    let a = attrs.replace(/\s*data-template="[^"]*"/i, '')
+                 .replace(/\s*data-hero-name="[^"]*"/i, '');
+    return `<body data-template="${key}" data-hero-name="${wed.heroNameLang}"${a}>`;
+  });
+
+  /* ---- 版型專屬的字體與 CSS 直接寫進 <head> ----
+     執行期 applyTemplate() 有「已經有這個 href 就跳過」的判斷，
+     所以這裡印進去之後，那邊就不會再插一次。 */
+  const links = [...(tpl.fonts || []), ...(tpl.css || [])]
+    .filter((href) => !html.includes(`href="${href}"`))
+    .map((href) => `<link rel="stylesheet" href="${href}">`);
+  if (links.length) {
+    html = html.replace(/<\/head>/i, `${links.join('\n')}\n</head>`);
+  }
+
+  /* ---- <span data-tpl="couple"></span> → 先填好 ---- */
+  html = html.replace(
+    /(<(\w+)\b[^>]*\bdata-tpl="(\w+)"[^>]*>)([\s\S]*?)(<\/\2>)/g,
+    (m, open, tag, tplKey, inner, close) => {
+      if (!BAKEABLE_TPL_KEYS.has(tplKey)) return m;
+      return `${open}${escapeHtmlText(tplValue(wed, tplKey))}${close}`;
+    },
+  );
+
+  return html;
+}
+
+function buildHtml(srcHtml, srcName, meta, info) {
+  /* 先注水（版型、姓名、字體 link），再換 og 標籤 ——
+     注水會動到 <html>／<body>／<head>，og 只動 <title> 那一段，兩邊不衝突。
+     讀不到 Firestore 就整段跳過，產出跟以前一模一樣的檔案。 */
+  let html = info && info.hydrate ? hydrateHtml(srcHtml, info) : srcHtml;
 
   html = html.replace(
     /<meta\s+name="description"[^>]*>\s*\n?/gi, '',
@@ -559,7 +712,16 @@ function formatEventDate(ts, timezone) {
 }
 
 function siteInfo(site) {
-  if (!site) return { couple: '', dateText: '', dateNumeric: '', venueName: '', pages: null, template: '' };
+  /* 讀不到 Firestore 時 hydrate=false：**不做預渲染、也不蓋 data-prerendered**。
+     這一點很重要 —— 蓋了戳記等於告訴 common.css「這頁是成品、不用遮罩」，
+     但姓名其實是空的，賓客會看到一個沒有名字又沒有遮罩的頁面。
+     寧可退回原本的行為（遮罩 + 執行期填），也不要產出一份半成品。 */
+  if (!site) {
+    return {
+      couple: '', dateText: '', dateNumeric: '', venueName: '',
+      pages: null, template: '', wed: buildWed({}), hydrate: false,
+    };
+  }
   const groom = (site.groomName || '').trim();
   const bride = (site.brideName || '').trim();
   const couple = (site.coupleTitle || '').trim()
@@ -572,8 +734,11 @@ function siteInfo(site) {
     dateNumeric: dateText.replace(/（.*?）/g, ''),
     venueName: (site.venueName || '').trim(),
     pages: site.pages && typeof site.pages === 'object' ? site.pages : null,
-    /* 版型：決定大廳用哪一份來源 HTML（LOBBY_SRC） */
+    /* 版型：決定大廳用哪一份來源 HTML（lobbySrc），也決定烤進 <body> 的色票 */
     template: typeof site.template === 'string' ? site.template : '',
+    /* 預渲染要填的值。和瀏覽器端 site-context.js 用的是同一個 buildWed() */
+    wed: buildWed(site),
+    hydrate: true,
   };
 }
 
@@ -658,31 +823,39 @@ async function buildSlug(slug, ctx) {
   const outDir = join(PUBLIC_ROOT, 'w', slug);
   if (!ctx.state.check && existsSync(outDir)) rmSync(outDir, { recursive: true, force: true });
 
+  /* 這一頁有沒有開給這組新人用。
+     **判準要跟 js/site-context.js 的 isPageOn() 一模一樣**：
+     沒有 pages 這個 map ＝ 全開（舊站台）；有 map 就必須明確寫 true。
+     以前這裡寫的是「=== false 才跳過」，兩邊對不上 ——
+     有 map 但沒列到的頁面，site-context 會把賓客導回大廳，
+     build-og 卻照樣產一份靜態檔出來。 */
+  const pageOn = (key) => (info.pages ? info.pages[key] === true : true);
+
   const made = [];
   for (const page of SHARE_PAGES) {
-    /* pages 沒設定＝全開；明確設成 false 才跳過 */
-    if (!page.always && info.pages && info.pages[page.pageKey] === false) continue;
+    if (!page.always && !pageOn(page.pageKey)) continue;
 
-    /* 大廳依版型選來源檔；其他頁面照舊 */
-    const srcName = page.pageKey === 'lobby'
-      ? (LOBBY_SRC[info.template] || page.src)
-      : page.src;
+    /* 大廳依版型選來源檔（korean／forest 的版面結構不同）；其他頁面照舊 */
+    const lobbyFile = lobbySrc(info.template);
+    const srcName = page.pageKey === 'lobby' ? (lobbyFile || page.src) : page.src;
     const srcHtml = readFileSync(join(PUBLIC_ROOT, srcName), 'utf8');
     const html = buildHtml(srcHtml, srcName, {
       title: info.couple ? page.title(info.couple) : page.fallbackTitle,
       description: page.desc(info),
       url: `${ctx.base}/w/${slug}/${page.path}`,
       image: imageUrl,
-    });
+    }, info);
     writeOrCheck(join(outDir, page.out), html, ctx.state);
-    made.push(page.path || (LOBBY_SRC[info.template]
-      ? `（大廳・${info.template} 版面）` : '（大廳）'));
+    made.push(page.path || (lobbyFile ? `（大廳・${info.template} 版面）` : '（大廳）'));
   }
 
   console.log(`✅ ${slug}`);
   console.log(`   縮圖 : ${note}`);
   console.log(`   標題 : ${info.couple || '（Firestore 沒讀到新人姓名，沿用通用文案）'}`);
   console.log(`   頁面 : ${made.join('、') || '（都關著）'}`);
+  console.log(`   預渲染 : ${info.hydrate
+    ? `版型 ${templateKey(info.template)}・姓名與日期已烤進 HTML`
+    : '略過（讀不到 Firestore，產出維持原本的執行期填值）'}`);
 
   return { imageUrl, info };
 }

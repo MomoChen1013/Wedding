@@ -8,3 +8,17 @@ serviceAccountKey.json
 
 # build-og.js 下載回來的中文字型快取（約 10MB，不進版控）
 scripts/.fontcache/
+
+# build-og.js 的產出物（不進版控，由 firebase.json 的 predeploy 在部署前現產）
+#   public/w/{slug}/*.html  每個站台的預渲染頁面
+#   public/s/{code}.html    短連結的 og 頁
+#   public/assets/*/og.jpg  合成出來的social 縮圖
+#   public/og-default.jpg   全站共用的預設縮圖
+# 擴充到全部賓客頁之後，一個站台就有 9 個檔，50 個站台約 450 個 ——
+# 每次重跑都讓 git diff 淹掉幾百個自動產生的檔案，review 不可能看。
+# 代價是 `build-og --check` 在 CI 沒有東西可以比對，
+# 所以「改了站台設定卻忘記重產」改由 predeploy 保證（見 firebase.json）。
+public/w/
+public/s/
+public/assets/*/og.jpg
+public/og-default.jpg

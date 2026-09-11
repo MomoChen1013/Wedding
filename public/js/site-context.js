@@ -29,6 +29,14 @@ import {
   GoogleAuthProvider, onAuthStateChanged, connectAuthEmulator
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 
+/* 站台資料模型：與 scripts/build-og.js 共用同一份。
+   建置期烤進 HTML 的字，和這裡執行期算出來的字必須逐字相同，
+   否則賓客會看到「名字換成另一個名字」——那只是把閃爍換個地方。 */
+import {
+  TEMPLATES, templateKey, buildWed,
+  tplValue, swapTokens, hashtagList,
+} from './wed-model.js';
+
 const firebaseConfig = {
   apiKey: "AIzaSyCU9_kkUzqiAjouvbf-_d7geeHXup-ltYA",
   authDomain: "wedding-22b94.firebaseapp.com",
@@ -117,53 +125,19 @@ const UNRELEASED_FEATURES = new Set([
   'cake',
 ]);
 
-/* ============================================================
-   版型（sites.template）
-   ------------------------------------------------------------
-   一份婚禮資料，多套視覺。key 就是寫進 <body data-template> 的值，
-   對得上 css/common.css 的 body[data-template="…"] 色票。
-
-   ・**新開的站台一律是 classic**：沒有 template 欄位、值不認得、
-     或是拼錯了，都會落回 classic，不會變成沒有樣式的白畫面。
-   ・要換版型只能到 Firestore 改 sites/{siteId}.template ——
-     它不在 firestore.rules 的可更新白名單裡，新人自己改不動，
-     和 pages、entryLoginEnabled 是同一個層級的設定。
-   ・賓客也沒有切換的入口：原本右下角那顆「換主題色」已經移除，
-     版型是我們幫這組新人挑好的樣子，不是賓客的偏好。
-
-   fonts：只有需要額外字檔的版型才列。Classic 的站台不會多載這一份，
-   省下來的是首屏的一次跨網域請求。
-============================================================ */
-const TEMPLATES = {
-  'classic':       { label:'Classic 香檳金' },
-  'classic-blush': { label:'Classic 霧玫瑰' },
-  'classic-sage':  { label:'Classic 鼠尾草綠' },
-  'classic-dusk':  { label:'Classic 霧霾藍' },
-  /* korean／forest 的大廳有自己的版面結構（lobbyFile）：
-     由 scripts/build-og.js 產出 public/w/{slug}/index.html 時選用，
-     Hosting 的靜態檔優先於 /w/** 的 rewrite 所以會命中它；
-     沒跑過 build-og 的站台落回 index.html（Classic 骨架＋版型色票）。
-     其餘子頁全部共用，靠色票與字體換裝。 */
-  'korean':        { label:'Korean Modern', lobbyFile:'lobby-korean.html',
-                     css:['/css/lobby-korean.css'],
-                     fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
-  'forest':        { label:'Forest Botanical', lobbyFile:'lobby-forest.html',
-                     css:['/css/lobby-forest.css'],
-                     fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
-};
-const DEFAULT_TEMPLATE = 'classic';
+/* 版型（sites.template）、資料模型 buildWed() 都搬到 js/wed-model.js，
+   因為 scripts/build-og.js 在建置期要用同一份。改版型清單請改那一支。 */
 
 /* 套上版型：寫 <body data-template>，需要的話再補字檔。
-   HTML 上本來就寫死 data-template="classic"，所以在這一行跑到之前，
-   畫面是 Classic 而不是沒有樣式 —— 換到別的版型時會有一次短暫的換色。
-   （要連那一下都省掉的話，得在 build-og.js 產出每個站台的 HTML 時
-     就把 data-template 印進去，那是另一件事。） */
+
+   **預產過的頁面不會走到這裡做事**：build-og 已經把正確的
+   data-template 與字體 link 印進 HTML 了，所以下面兩件事都是 no-op
+   （dataset 寫回同一個值、link 被 querySelector 擋掉），賓客不會看到換色。
+
+   沒預產到的頁面才真的在這裡換 —— 那種頁面由 .boot-veil 遮著，
+   換色發生在遮罩底下，賓客一樣看不到。 */
 function applyTemplate(name) {
-  /* 用 hasOwn 而不是 TEMPLATES[name] —— 'toString'、'__proto__' 這些
-     原型上的屬性是 truthy，直接判斷會讓它們通過，然後寫出一個
-     CSS 對不上的 data-template，整站只剩 :root 的預設值（沒有 --bg1／
-     --primary），畫面會壞掉。 */
-  const key = Object.hasOwn(TEMPLATES, name) ? name : DEFAULT_TEMPLATE;
+  const key = templateKey(name);
   document.body.dataset.template = key;
   const t = TEMPLATES[key];
   for (const href of [...(t.fonts || []), ...(t.css || [])]) {
@@ -197,7 +171,7 @@ async function swapLobbyLayout(templateKey) {
   if (document.body.dataset.lobby === templateKey) return;  /* 已經是對的骨架 */
 
   try {
-    const res = await fetch(`/${file}`, { cache: 'no-cache' });
+    const res = await fetch(`/${file}`);
     if (!res.ok) return;
     const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
     if (!doc.body || !doc.body.children.length) return;
@@ -294,6 +268,10 @@ function parseLocation() {
 
 /* ---------- 錯誤畫面 ---------- */
 function showFatal(title, message) {
+  /* 錯誤畫面本身就是「最終狀態」，遮罩該收掉。
+     body.innerHTML 整個換掉會順手把 .boot-veil 也拿走，
+     旗標則讓任何吃 [data-site-ready] 的規則一起生效。 */
+  document.documentElement.dataset.siteReady = '1';
   document.documentElement.style.background = '#FBFAF8';
   document.body.innerHTML = `
     <div data-fatal="1" style="min-height:100svh;display:flex;flex-direction:column;align-items:center;
@@ -307,118 +285,12 @@ function showFatal(title, message) {
   document.title = title;
 }
 
-/* ---------- 把站台設定攤平成舊頁面看得懂的 window.WED ---------- */
-const WEEKDAYS = ['日','一','二','三','四','五','六'];
-
-function buildWed(site) {
-  const tz = site.timezone || 'Asia/Taipei';
-  const ev = site.eventDate && typeof site.eventDate.toDate === 'function'
-    ? site.eventDate.toDate() : null;
-
-  /* 以婚禮當地時區取出年月日時分，海外賓客才不會看到換算後的時間 */
-  let parts = {};
-  if (ev) {
-    for (const p of new Intl.DateTimeFormat('en-CA', {
-      timeZone: tz, hour12: false,
-      year:'numeric', month:'2-digit', day:'2-digit',
-      hour:'2-digit', minute:'2-digit', weekday:'short',
-    }).formatToParts(ev)) parts[p.type] = p.value;
-  }
-  const hour = parts.hour === '24' ? '00' : parts.hour;
-  const wdIdx = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(parts.weekday);
-
-  const groom = site.groomName || '';
-  const bride = site.brideName || '';
-
-  /* 英文名（選填，由 create-site.js 寫入）：只給 hero 這種想走拉丁字的地方用。
-     沒填就各自退回中文名，所以舊站台什麼都不會變。
-     兩邊都有英文名才算「這組新人的 hero 是英文的」—— 只有一邊填的話，
-     一行裡會出現「Ginny & 宜庭」這種中英混排，不如整行維持中文。 */
-  const groomEn = (site.groomNameEn || '').trim();
-  const brideEn = (site.brideNameEn || '').trim();
-  const heroNameLang = groomEn && brideEn ? 'en' : 'cn';
-
-  /* dateISO 給倒數計時用；帶上時區位移才不會被瀏覽器當成本地時間 */
-  const isoOffset = ev ? tzOffsetString(ev, tz) : '';
-
-  return {
-    groom, groomCn: groom, groomEn: groomEn || groom,
-    bride, brideCn: bride, brideEn: brideEn || bride,
-    couple: groom && bride ? `${groom} & ${bride}` : (groom || bride),
-    coupleCn: groom && bride ? `${groom} ♡ ${bride}` : (groom || bride),
-    coupleEn: groomEn && brideEn ? `${groomEn} & ${brideEn}`
-      : (groom && bride ? `${groom} & ${bride}` : (groom || bride)),
-    /* 'en'／'cn'：寫成 <body data-hero-name>，版型的 hero 字級靠它分兩套 */
-    heroNameLang,
-    /* 新人自己寫的稱呼（後台限 20 個字），沒填就沿用上面的 couple */
-    coupleTitle: site.coupleTitle || '',
-
-    date: ev ? `${parts.year}.${parts.month}.${parts.day}` : '',
-    dateISO: ev ? `${parts.year}-${parts.month}-${parts.day}T${hour}:${parts.minute}:00${isoOffset}` : '',
-    dateEndISO: site.eventEndDate && typeof site.eventEndDate.toDate === 'function'
-      ? site.eventEndDate.toDate().toISOString() : '',
-    weekday: wdIdx >= 0 ? `星期${WEEKDAYS[wdIdx]}` : '',
-    time: ev ? `${hour}:${parts.minute} 開始` : '',
-
-    venue: site.venueName || '',
-    city: '',
-    address: site.venueAddress || '',
-    mapUrl: site.venueMapUrl || '',
-
-    dressCode: site.dressCode || '',
-    /* Dress Code 的色票：最多四個 #RRGGBB，後台切好才寫進來。
-       這裡再擋一次格式 —— 資料庫裡的舊資料不保證乾淨，
-       而這幾個值是直接當成 CSS 顏色用的。
-       參考圖不在這裡：那是子集合 dressImages（見 DataStore）。 */
-    dressCodeColors: (Array.isArray(site.dressCodeColors) ? site.dressCodeColors : [])
-      .map((c) => String(c || '').trim())
-      .filter((c) => /^#[0-9a-fA-F]{6}$/.test(c))
-      .slice(0, 4),
-    schedule: Array.isArray(site.schedule) ? site.schedule : [],
-    giftNote: site.giftNote || '',
-    transportPublic: site.transportPublic || '',
-    transportParking: site.transportParking || '',
-    transportPublicImg: site.transportPublicImg || '',
-    transportParkingImg: site.transportParkingImg || '',
-    /* 入場登入（大廳的 gate）：沒設定過就視為開著，舊站台的入場動畫不會突然消失。
-       關掉時賓客不必報上名來，直接看到大廳（見 common.js 的 entryLoginOn()） */
-    entryLogin: site.entryLoginEnabled !== false,
-    /* 沒設定過就視為開著，舊站台的桌次搜尋不會突然消失 */
-    seatingSearch: site.seatingSearchEnabled !== false,
-    /* 桌次功能的總開關，同樣是沒設定過就視為開著 */
-    seatingFeature: site.seatingFeatureEnabled !== false,
-    story: site.story || '',
-    coverImageUrl: site.coverImageUrl || '',
-    photos: Array.isArray(site.photos) ? site.photos : [],
-    hashtags: Array.isArray(site.hashtags) ? site.hashtags : [],
-
-    ownerKey: '#couple',
-  };
-}
-
-/* 取得某時區在該時間點的 UTC 位移，例如 "+08:00" */
-function tzOffsetString(date, timeZone) {
-  const dtf = new Intl.DateTimeFormat('en-US', {
-    timeZone, hour12: false,
-    year:'numeric', month:'2-digit', day:'2-digit',
-    hour:'2-digit', minute:'2-digit', second:'2-digit',
-  });
-  const p = {};
-  for (const part of dtf.formatToParts(date)) p[part.type] = part.value;
-  const asUtc = Date.UTC(+p.year, p.month - 1, +p.day, +p.hour % 24, +p.minute, +p.second);
-  const mins = Math.round((asUtc - date.getTime()) / 60000);
-  const sign = mins >= 0 ? '+' : '-';
-  const abs = Math.abs(mins);
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`;
-}
-
 /* ---------- 站台素材 ----------
    public/assets/{slug}/manifest.json 由 scripts/sync-assets.js 產生。
    沒有這個檔案（還沒放素材）就回傳空物件，頁面照樣能跑。 */
 async function loadAssets(slug) {
   try {
-    const res = await fetch(`/assets/${slug}/manifest.json`, { cache: 'no-cache' });
+    const res = await fetch(`/assets/${slug}/manifest.json`);
     if (!res.ok) return {};
     const data = await res.json();
     return data && typeof data === 'object' ? data : {};
@@ -453,6 +325,13 @@ async function boot() {
   }
 
   const pageKey = document.body.dataset.page || loc.page;
+
+  /* 素材清單只需要 slug，而 slug 從網址就讀得到 —— 完全不必等 Firestore。
+     以前它排在兩次 getDoc 之後，等於白白多串一個來回在關鍵路徑上。
+     這裡先發動、下面再 await，讓它跟 Firestore 的查詢平行跑。
+     （catch 掛在發動的當下而不是等到 await：先發動的 promise 若在
+       await 之前就 reject，會變成 unhandledrejection） */
+  const assetsPromise = loadAssets(loc.slug).catch(() => ({}));
 
   let site, siteId;
   try {
@@ -513,7 +392,7 @@ async function boot() {
      抓 DOM，骨架換晚了它們會綁到舊節點上。 */
   if (pageKey === 'lobby') await swapLobbyLayout(template);
 
-  const assets = await loadAssets(loc.slug);
+  const assets = await assetsPromise;
 
   /* Firestore 沒填的話，就用素材資料夾裡掃到的檔案 */
   if (!site.coverImageUrl && assets.cover) site.coverImageUrl = assets.cover;
@@ -546,6 +425,12 @@ async function boot() {
   };
   window.WED = buildWed(site);
 
+  /* 給 common.js 用的資料模型。
+     common.js 是被 loadScript() 注入的**傳統 script**，不是 module，
+     所以 import 不動 wed-model.js —— 由這裡代為掛上去，
+     fillTemplates() 才能跟建置期共用同一套 token 邏輯。 */
+  window.WEDMODEL = { tplValue, swapTokens, hashtagList };
+
   /* hero 的名字是中文還是英文：korean 的 hero 字級要分兩套（見 css/lobby-korean.css）。
      Cormorant 吃 font-size-adjust，同字級下拉丁字會被放大約 17%，
      一套字級不可能同時餵飽中文名字與英文名字。
@@ -556,7 +441,10 @@ async function boot() {
     ? `${PAGES[pageKey].label}｜${window.WED.couple} 婚禮`
     : PAGES[pageKey].label;
 
-  /* 資料到齊了才載入舊有頁面 JS */
+  /* 資料到齊了才**執行**頁面 JS。
+     下載本身已經由 HTML 的 <link rel="preload" as="script"> 提前了，
+     所以這兩行多半是直接從快取拿，不是兩個新的來回。
+     順序仍然要維持：頁面 JS 一載入就會讀 common.js 的全域函式。 */
   try {
     await loadScript('/js/common.js');
     /* 開關代號 → 頁面 JS 檔名（檔名跟著 HTML 走，不是跟著代號） */

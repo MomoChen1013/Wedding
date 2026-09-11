@@ -442,3 +442,112 @@ footer{text-align:center;color:var(--ink-soft);font-size:11.5px;letter-spacing:.
 
 /* 舊版導覽元件已移除（改用頂部 navigation bar） */
 .back-lobby,.turn-nav,.me-mini{display:none !important;}
+
+/* ============================================================
+   開場遮罩與骨架
+   ------------------------------------------------------------
+   這一段解的是「先顯示半成品，再靠 JS 修成成品」留下的兩種閃爍：
+   賓客先看到樣板 token、先看到 Classic 配色的信封再看到換色後的。
+
+   分兩種頁面處理，靠 <html data-prerendered> 分流：
+
+   ▸ **預產過的頁面**（build-og 產出的 /w/{slug}/*.html）
+     第一次繪製就是成品：版型、姓名、日期都已經印在 HTML 裡，
+     所以**不遮**——遮了反而是把「一秒的正確畫面」換成「一秒的空白」。
+     只有真的要等資料才長得出來的區塊（當日流程、倒數、hashtag）
+     掛骨架，示意還在跑。
+
+   ▸ **沒預產到的頁面**（/w/** rewrite 到共用 HTML）
+     版型要等 Firestore 回來才換得掉，換色沒辦法避免，
+     所以用 .boot-veil 整個遮住，換色發生在遮罩底下。
+
+   兩種情況共用同一個結束訊號：site-context.js 在資料到齊、
+   頁面 JS 跑完之後寫上的 <html data-site-ready>。
+============================================================ */
+
+/* ---------- 開場遮罩 ---------- */
+.boot-veil{
+  position:fixed;inset:0;z-index:9999;
+  display:flex;align-items:center;justify-content:center;
+  /* 版型中性的底色：這裡還不知道是哪一套色票，
+     用 showFatal() 同一支米白，換到任何版型都不會突兀 */
+  background:#FBFAF8;
+  font-size:2.6rem;line-height:1;color:#E8A93C;
+  /* 8 秒安全閥。刻意寫成 CSS 動畫而不是 setTimeout ——
+     Firestore 掛掉還有 showFatal 接手，但如果連 JS 都沒載起來
+     （擋廣告的瀏覽器、網路斷在半路），那就沒有任何程式碼能掀開它。
+     純 CSS 的話，不管 JS 發生什麼事，8 秒後一定會露出底下的內容。 */
+  animation:bootVeilGiveUp 0s linear 8s forwards;
+}
+.boot-veil-mark{animation:bootVeilBreathe 1.8s ease-in-out infinite;}
+
+/* 預產過的頁面內容本來就是對的，不需要遮 */
+html[data-prerendered] .boot-veil{display:none;}
+
+/* 資料到齊（或 showFatal 接手）就收掉 */
+html[data-site-ready] .boot-veil{
+  opacity:0;visibility:hidden;transition:opacity .34s ease,visibility 0s .34s;
+}
+
+@keyframes bootVeilGiveUp{to{opacity:0;visibility:hidden;}}
+@keyframes bootVeilBreathe{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ---------- 骨架 ----------
+   只掛在「一定會長出東西」的區塊上。
+   有條件才出現的區塊（#noteBlock、#transportBlock、#storyBlock…）
+   一律不掛 —— 那些先長骨架再整塊收掉，比空著更像壞了。
+
+   data-tpl 的載體也不需要骨架：預產頁它本來就填好了，
+   沒預產的頁面則整個被 .boot-veil 遮著。
+
+   ★ 只適用於「頁面 JS 一載入就同步填好」的區塊（大廳的資訊列、
+     當日流程、倒數、hashtag 都是從 window.WED 直接算出來的）。
+     祝福牆那種靠 onSnapshot 慢慢流進來的內容**不要掛** ——
+     data-site-ready 在頁面 JS 載完當下就寫上去了，骨架會比資料早收，
+     反而先變成空的。那種區塊要的是自己的載入狀態，不是這一套。 */
+html:not([data-site-ready]) [data-sk]{
+  color:transparent;
+  border-radius:var(--radius);
+  animation:skBreathe 1.6s ease-in-out infinite;
+}
+/* 骨架本身刻意不用掃光（shimmer）：全站是極簡線條版，
+   一道跑來跑去的高光在這裡會很吵。改成整塊輕輕呼吸。 */
+@keyframes skBreathe{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* 單行文字（資訊卡的日期／時間／地點） */
+html:not([data-site-ready]) [data-sk="text"]{
+  background:rgba(var(--ink-rgb),.07);
+  min-height:1em;
+}
+/* 多行清單（當日流程）：一條 12px 的字、間隔 30px，接近 .tl-item 的節奏 */
+html:not([data-site-ready]) [data-sk="rows"]{
+  min-height:126px;
+  background-image:repeating-linear-gradient(180deg,
+    rgba(var(--ink-rgb),.07) 0 12px, transparent 12px 42px);
+}
+/* 四格倒數：對齊 .cd-grid 的四欄 */
+html:not([data-site-ready]) [data-sk="grid"]{
+  min-height:64px;
+  background-image:repeating-linear-gradient(90deg,
+    rgba(var(--ink-rgb),.07) 0 calc(25% - 14px), transparent calc(25% - 14px) 25%);
+}
+/* hashtag 那一排：兩顆短籤 */
+html:not([data-site-ready]) [data-sk="tags"]{
+  min-height:12px;
+  background-image:linear-gradient(90deg,
+    transparent 0 34%, rgba(var(--ink-rgb),.07) 34% 47%,
+    transparent 47% 53%, rgba(var(--ink-rgb),.07) 53% 66%, transparent 66%);
+}
+
+/* 分隔符跟著 token 一起出現：hashtag 是新人改得動的欄位，
+   所以刻意不烤進靜態 HTML（見 js/wed-model.js 的 BAKEABLE_TPL_KEYS），
+   預產頁在 common.js 跑起來之前它是空的。
+   分隔符若寫死在 HTML 裡，那一瞬間會變成「made for 宇辰 & 宜庭・」
+   這種斷在半路的句子 —— 改成由 ::before 產生，有內容才有分隔符。 */
+.tpl-sep:not(:empty)::before{content:'・';}
+
+/* 會動的東西一律尊重系統設定 */
+@media (prefers-reduced-motion: reduce){
+  .boot-veil-mark,
+  html:not([data-site-ready]) [data-sk]{animation:none;}
+}

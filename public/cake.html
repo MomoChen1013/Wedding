@@ -13,6 +13,30 @@
 <link rel="icon" href="/favicon.png" type="image/png">
 <!-- iOS「加到主畫面」用的圖示。同一張 512×512，iOS 會自己縮 -->
 <link rel="apple-touch-icon" href="/favicon.png">
+<!-- ============ 載入順序 ============
+     下面這幾行不改變任何行為，只是把「瀏覽器什麼時候開始下載」往前挪。
+
+     ・preconnect：Firebase SDK 在 www.gstatic.com、資料在 firestore.googleapis.com，
+       都是**全新的網域**，各要一次 DNS + TLS 握手。不先連好的話，
+       這兩次握手是卡在關鍵路徑上的。
+     ・modulepreload：site-context.js 是 type="module"，預設要等 HTML 解析完
+       才會開始抓，它 import 的三支 Firebase SDK 更要再等一輪。
+       先宣告之後，它們會跟 CSS 平行下載。
+     ・preload as="script"：common.js 與本頁的 JS 是資料到齊之後才被注入的，
+       不先宣告的話那是兩個接在最後面的來回。這裡只是先下載，
+       執行順序仍然由 site-context.js 決定（它要等站台設定）。
+
+     版號要跟 js/site-context.js 的 import 一致，
+     tests/ui-consistency.mjs 有一條在守這件事。 -->
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="modulepreload" href="/js/site-context.js">
+<link rel="modulepreload" href="/js/wed-model.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js" crossorigin>
+<link rel="preload" as="script" href="/js/common.js">
+<link rel="preload" as="script" href="/js/cake.js">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -21,6 +45,11 @@
 <link rel="stylesheet" href="/css/cake.css">
 </head>
 <body data-template="classic" data-page="cake">
+<!-- 開場遮罩：只有**沒預產到**的頁面會顯示（見 css/common.css 的 .boot-veil）。
+     那種頁面的版型要等 Firestore 回來才換得掉，換色就發生在這一層底下。
+     build-og 產出的頁面會在 <html> 上蓋 data-prerendered，這層直接不顯示。 -->
+<div class="boot-veil" aria-hidden="true"><span class="boot-veil-mark">✦</span></div>
+
 
 <div class="bg-decor"></div>
 <canvas id="fx"></canvas>
@@ -98,7 +127,7 @@
       </div>
     </div>
 
-    <footer>made for {{couple}}・{{hashtag}}</footer>
+    <footer>made for <span data-tpl="couple"></span><span class="tpl-sep" data-tpl="hashtag"></span></footer>
   </div>
 </section>
 
