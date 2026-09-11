@@ -311,19 +311,15 @@ async function saveLetterImage(){
     }
 
     const cv = drawLetterCanvas(openedLetter.letter, openedLetter.typed);
-    const blob = await new Promise(res => cv.toBlob(res, 'image/jpeg', 0.92));
-    if(!blob) throw new Error('toBlob failed');
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = saveFileName();
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    /* 立刻 revoke 會讓部分瀏覽器的下載半路斷掉，晚一點再收 */
-    setTimeout(()=> URL.revokeObjectURL(url), 30000);
-    saveHint('已存成 JPG，去相簿或下載資料夾看看');
+    /* 手機存進相簿、桌機落進下載資料夾，兩條路都在 common.js 的
+       saveCanvasImage()（在手機上「下載一個檔案」等於這封信不見了） */
+    saveHint(await saveCanvasImage(cv, saveFileName(), {
+      alt: '新人寫的信',
+      shareHint:    '分享單開了，選「儲存影像」就會收進相簿',
+      cancelHint:   '取消了，想存的話再按一次',
+      pressHint:    '長按上面那張圖 →「儲存影像」就會收進相簿',
+      downloadHint: '已存成 JPG，去下載資料夾看看',
+    }));
   }catch(err){
     console.warn('[信] 存圖失敗', err);
     saveHint('這個瀏覽器存不了圖，可以改用手機截圖');
