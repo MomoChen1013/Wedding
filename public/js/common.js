@@ -169,6 +169,17 @@ function rsvpConfig(){
   return {
     askCard:     on(d.rsvpAskCard),      // 喜帖
     askGift:     on(d.rsvpAskGift),      // 喜餅
+    /* ---------- 全域的基本問題 ----------
+       「出席人數／餐點分配／兒童座椅／飲食習慣補充」這四題問的是同一件事，
+       不管這場婚禮有幾個活動，所以開關放在站台文件這一層＝**所有場次共用**。
+       個別活動要少問一題時，用 events[].ask* 那一份把它單獨關掉（見
+       eventAsks()）—— 兩層的關係一律是「全域關了，個別場次開不回來」。
+       沒設定過就視為開著，舊站台不會因為少了這幾個欄位就整組題目消失。 */
+    askCount:    on(d.rsvpAskCount),     // 出席人數
+    askMeal:     on(d.rsvpAskMeal),      // 餐點分配（葷／素）
+    askChildSeat:on(d.rsvpAskChildSeat), // 兒童座椅
+    askDiet:     on(d.rsvpAskDiet),      // 飲食習慣補充
+    askNote:     on(d.rsvpAskNote),      // 其他備註
     /* 郵寄：沒設定過就視為提供（舊站台的選項不會突然少一個） */
     allowMail:   on(d.rsvpMailEnabled),
     askMessage:  on(d.rsvpAskMessage),   // 想對新人說的話
@@ -267,8 +278,8 @@ function guestTagName(id){
 ============================================================ */
 
 const EVENT_MAX = 10;              // 規則也擋同一個數字
-const EVENT_QUESTION_MAX = 3;      // 一個活動最多幾個追加題目
-const EVENT_OPT_MAX = 4;           // 一個單選題最多幾個選項
+const EVENT_QUESTION_MAX = 3;      // 一個活動最多幾個專屬問題
+const EVENT_OPT_MAX = 8;           // 一個選擇題最多幾個選項
 const EVENT_ID_MAX = 24;           // 規則也擋同一個長度
 const EVENT_NAME_MAX = 30;
 
@@ -319,17 +330,26 @@ function clampStr(v, max){
   return String(v == null ? '' : v).trim().slice(0, max);
 }
 
-/* 追加題目：型態只有 choice 與 text 兩種，其餘一律丟掉。
+/* 本場次專屬問題：型態只有三種 —— choice（單選）、multi（多選）、text（簡答），
+   其餘一律丟掉。multi 是後來才加的，舊資料一律是 choice 或 text，
+   所以「認不出來就當 choice」這條規則不必動。
+
    ★ opts 是「map 的陣列」不是「陣列的陣列」——
      Firestore 不接受巢狀陣列，而且是 SDK 在送出前就同步丟例外，
      根本走不到規則（quizVotes.picks 踩過同一個坑）。 */
+const QUESTION_KINDS = ['choice', 'multi', 'text'];
+
+/* 題型 → 後台與表單上的名字。只有需要選項的題型才會有 opts */
+const QUESTION_KIND_LABEL = { choice:'單選', multi:'多選', text:'簡答題' };
+function questionNeedsOpts(kind){ return kind === 'choice' || kind === 'multi'; }
+
 function normalizeQuestion(raw){
   if(!raw || typeof raw !== 'object') return null;
   const id = clampStr(raw.id, 40);
   const label = clampStr(raw.label, 30);
   if(!id || !label) return null;
 
-  const kind = raw.kind === 'text' ? 'text' : 'choice';
+  const kind = QUESTION_KINDS.includes(raw.kind) ? raw.kind : 'choice';
   if(kind === 'text'){
     return { id, kind, label, hint: clampStr(raw.hint, 30), opts: [] };
   }
@@ -339,7 +359,7 @@ function normalizeQuestion(raw){
       : null))
     .filter(o => o && o.id && o.label)
     .slice(0, EVENT_OPT_MAX);
-  if(!opts.length) return null;      /* 單選題沒有選項＝壞掉的題目，不要畫出來 */
+  if(!opts.length) return null;      /* 選擇題沒有選項＝壞掉的題目，不要畫出來 */
   return { id, kind, label, hint:'', opts };
 }
 
@@ -481,6 +501,46 @@ function rsvpEvents(){
 
 function findEvent(id){
   return weddingEvents().find(ev => ev.id === id) || null;
+}
+
+/* ---------- 一個活動真正會問哪幾題 ----------
+   兩層開關疊起來的結果：
+
+     全域（sites.rsvpAsk*）      這場婚禮到底要不要收集這項資料
+     個別場次（events[].ask*）   這一場要不要少問一題（只能往下關）
+
+   ★ 這裡回傳的是「效果值」，只給畫面與表單用。
+     後台編輯活動時讀的仍然是 events[] 原本那一份（override 本身），
+     不然新人在全域關掉的那一刻，個別場次的設定就會被效果值覆蓋掉。 */
+const EVENT_ASK_KEYS = ['askCount', 'askMeal', 'askChildSeat', 'askDiet'];
+
+function eventAsks(ev){
+  const cfg = rsvpConfig();
+  const out = { ...ev };
+  EVENT_ASK_KEYS.forEach(key => { out[key] = ev[key] !== false && cfg[key] !== false; });
+  return out;
+}
+
+/* 賓客表單與後台統計看到的活動：ask* 已經疊好全域開關 */
+function rsvpEventsAsked(){
+  return rsvpEvents().map(eventAsks);
+}
+
+/* ---------- 自訂題目的作答 → 看得懂的文字 ----------
+   多選題存的是「用逗號串起來的選項 id」（一個字串欄位就收得下，
+   規則與既有的 answers map 都不必跟著改型別），所以這裡一律當清單處理：
+   單選就是一個元素的清單。對不到選項的 id 原樣顯示 ——
+   新人把選項刪掉之後，已經送出的作答還是要看得出來賓客選了什麼。 */
+function questionAnswerText(q, value){
+  const ids = String(value == null ? '' : value)
+    .split(',').map(x => x.trim()).filter(Boolean);
+  if(!ids.length) return '';
+  if(q && q.kind === 'text') return String(value).trim();
+  const opts = (q && Array.isArray(q.opts)) ? q.opts : [];
+  return ids.map(id => {
+    const hit = opts.find(o => o.id === id);
+    return hit ? hit.label : id;
+  }).join('、');
 }
 
 /* ---------- 主要活動 ----------

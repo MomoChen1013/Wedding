@@ -670,9 +670,13 @@
       <div class="ad-sec-head">
         <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-form"/></svg>表單設定</h2>
         <div class="ad-sec-head-actions">
-          <!-- 網址由 js/admin.js 填成 /w/{slug}/invitation，就是分享給賓客的那一頁 -->
+          <!-- 網址由 js/admin.js 填成 /w/{slug}/invitation，就是分享給賓客的那一頁。
+               「複製表單連結」排在左邊：新人最常做的事是把連結貼給賓客，
+               不是自己再看一遍。「預覽」另開新視窗（↗ 就是那個意思），
+               後台的設定才不會被自己的表單蓋掉。 -->
+          <button class="btn small ghost" id="adRsvpCopyLink" type="button">複製表單連結</button>
           <a class="btn small ghost" id="adRsvpViewForm" href="/"
-             target="_blank" rel="noopener noreferrer">查看表單</a>
+             target="_blank" rel="noopener noreferrer">預覽 <span aria-hidden="true">↗</span></a>
         </div>
       </div>
       <p class="ad-sec-note">
@@ -680,98 +684,194 @@
         儲存後重新整理就看得到，<b>已經送出的回覆不受影響</b>。
       </p>
 
-      <!-- 這一頁其實是兩件事：問賓客什麼（題目）、邀請函上還要放什麼（資訊）。
-           改版前兩邊都只用一個 11.5px 的 .ad-label 開頭，看起來像同一串
-           勾選框從頭排到尾。現在各自包成一張 .ad-formgroup，
-           標題用明朝體、給編號，中間那道界線才看得出來。 -->
+      <!-- 這一頁的資訊架構（改版後）：
+             ① 活動場次       一個活動一張卡 —— 只屬於某一場的設定都在卡上
+             ② 必填基本資料   不分活動、關不掉、每份回覆問一次
+             ③ 喜帖／喜餅     不分活動，只要填一次；郵寄是一個「服務開關」
+             ④ 其他資料       兩個自由填寫欄位
+             ⑤ 表單上的其他內容（唯讀，內容在「婚禮資訊」填）
+           改版前這一頁是一串從頭排到尾的勾選框，新人看不出
+           「這一項會影響誰」；現在每一組的標題就回答了那個問題。 -->
       <form class="ad-form" id="adRsvpForm">
-        <!-- 多活動時才出現。這幾題會在每張活動卡上各問一次 -->
-        <section class="ad-formgroup" id="adEvAskGroup" hidden>
+
+        <!-- ============================================================
+             ① 活動場次
+             ------------------------------------------------------------
+             一個活動一張卡。卡上由上到下就是賓客會看到的順序：
+             這是什麼活動（時間、地點）→ 基本問題 → 只有這一場才問的題目。
+
+             為什麼「所有場次的基本問題」要單獨一塊：
+             新人最常誤解的是「我改的是全部活動，還是只有這一場」。
+             把全域那一層放在活動卡**上面**，並且在每張卡上標記
+             「來自所有場次」／「僅此場次停用」，那個問題才不用靠猜。
+             只有一個要回覆的活動時整層收起來 —— 一場婚宴的新人
+             不需要學兩層設定（判斷在 js/admin.js 的 formActTwoLayer()）。
+        ============================================================ -->
+        <section class="ad-formgroup" id="adFormActGroup">
           <div class="ad-formgroup-head">
             <h3 class="ad-formgroup-title">
-              <span class="ad-formgroup-no" aria-hidden="true">1</span>每個活動各自要問的
+              <span class="ad-formgroup-no" aria-hidden="true">1</span>活動場次
             </h3>
-            <p class="ad-formgroup-note">
-              這幾題會在<b>每張活動卡上各出現一次</b>。
-              活動本身（名稱、日期、地點）在「婚禮資訊 → 其他流程」設定。
-            </p>
+            <p class="ad-formgroup-note" id="adFormActNote"></p>
           </div>
-          <div class="ad-evask" id="adEvAskList"></div>
+
+          <!-- 兩個以上要回覆的活動才出現 -->
+          <div class="ad-sub-sec" id="adGlobalAskSec" hidden>
+            <div class="ad-sub-sec-title">所有場次的基本問題</div>
+            <p class="ad-sub-sec-note">
+              這裡的勾選<b>套用到每一個活動</b>。
+              某一場不想問的話，到下面那張活動卡上單獨取消就好 ——
+              取消單一場次<b>不會</b>動到這一層。
+            </p>
+            <div class="ad-asklist" id="adGlobalAskList"></div>
+          </div>
+
+          <div class="ad-actlist" id="adActList"></div>
         </section>
 
+        <!-- ============================================================
+             ② 必填基本資料
+             ------------------------------------------------------------
+             關不掉的題目一律用「打勾但點不動」的勾選框 ＋「系統固定」badge。
+             整份回覆只問一次，不分活動。
+        ============================================================ -->
         <section class="ad-formgroup">
           <div class="ad-formgroup-head">
             <h3 class="ad-formgroup-title">
-              <span class="ad-formgroup-no" aria-hidden="true"
-                    id="adFormGroupNoA">1</span><span id="adFormGroupTitleA">題目</span>
+              <span class="ad-formgroup-no" aria-hidden="true">2</span>必填基本資料
             </h3>
             <p class="ad-formgroup-note">
-             <b>灰掉、打勾但點不動的是固定題目</b>，每份回覆都要有，不能關。
+              不分活動、<b>每一份回覆只問一次</b>，而且關不掉 ——
+              少了這幾題，收到的回覆會對不到人。
             </p>
           </div>
 
-          <label class="ad-check is-fixed">
-            <input type="checkbox" checked disabled><span>怎麼稱呼你？</span></label>
-          <label class="ad-check is-fixed">
-            <input type="checkbox" checked disabled><span>能來參加嗎？</span></label>
-          <label class="ad-check is-fixed">
-            <input type="checkbox" checked disabled><span>與新人的關係</span></label>
-          <!-- 只有開了標籤功能、而且至少有一個標籤當選項時才看得到 -->
-          <label class="ad-check is-fixed" id="adAskTagRow" hidden>
-            <input type="checkbox" checked disabled>
-            <span>更具體是哪一種？<small>選項在「設定賓客標籤」那一頁</small></span></label>
-          <!-- 多活動時這四題移到上面的活動卡上，整組收起來（js/admin.js 判斷） -->
-          <div id="adFixedEventQs">
-          <label class="ad-check is-fixed">
-            <input type="checkbox" checked disabled>
-            <span>包含你，共幾位出席？<small>選「會出席」才會出現</small></span></label>
-          <label class="ad-check is-fixed">
-            <input type="checkbox" checked disabled>
-            <span>餐點分配（葷食／素食）<small>選「會出席」才會出現</small></span></label>
-          <label class="ad-check is-fixed">
-            <input type="checkbox" checked disabled>
-            <span>兒童座椅<small>選「會出席」才會出現</small></span></label>
-          <label class="ad-check is-fixed">
-            <input type="checkbox" checked disabled>
-            <span>飲食習慣補充<small>選「會出席」才會出現</small></span></label>
+          <div class="ad-askrow">
+            <label class="ad-check is-fixed">
+              <input type="checkbox" checked disabled><span>怎麼稱呼你？</span></label>
+            <span class="ad-badge">系統固定</span>
           </div>
 
-          <label class="ad-check"><input type="checkbox" id="adAskCard"><span>喜帖發送方式</span></label>
-          <label class="ad-check"><input type="checkbox" id="adAskGift"><span>喜餅領取方式</span></label>
-          <label class="ad-check"><input type="checkbox" id="adAskMessage"><span>想對新人說的話</span></label>
+          <div class="ad-askrow">
+            <label class="ad-check is-fixed">
+              <input type="checkbox" checked disabled><span>與新人的關係？</span></label>
+            <span class="ad-badge">系統固定</span>
+          </div>
+          <!-- Chips 只是預覽：賓客看到的就是這四顆，這裡改不動 -->
+          <div class="ad-chips ad-chips-preview" id="adPreviewRelation"
+               aria-label="與新人的關係的選項"></div>
 
-          <div class="ad-sub-sec" id="adMailSec">
-            <div class="ad-sub-sec-title">要不要提供「郵寄」</div>
-            <label class="ad-check"><input type="checkbox" id="adAskMail">
-              <span>可以幫賓客郵寄<small>喜帖與喜餅都適用</small></span></label>
-            <div class="ad-hint">
-              打勾時，喜帖的「紙本要怎麼給你？」會多一個<b>郵寄</b>，
-              喜餅的領取方式也會多一個<b>郵寄</b>，選了才會問地址。<br>
-              不打勾就完全不出現郵寄 —— 賓客不會填了地址才發現沒有這回事。
-              喜餅剩下<b>現場領取</b>與<b>自行領取</b>兩個選項。
+          <div class="ad-sub-sec" id="adAskTagSec">
+            <div class="ad-sub-sec-title">是哪一種關係 <small>（選填）</small></div>
+            <p class="ad-sub-sec-note">
+              答完「與新人的關係」之後再問一次更具體的哪一種。
+              選項就是<b>賓客標籤</b>裡勾了「當表單選項」的那幾個，
+              名單與排桌也照同一套標籤分組。
+            </p>
+            <div class="ad-chips ad-chips-preview" id="adPreviewTags"
+                 aria-label="目前會出現在表單上的標籤"></div>
+            <div class="ad-row">
+              <button class="btn small ghost" id="adAskTagAdd" type="button">新增關係標籤</button>
+              <button class="btn small ghost" id="adAskTagJump" type="button">去設定賓客標籤</button>
             </div>
+            <div class="ad-hint" id="adAskTagHint"></div>
           </div>
-
-          <label class="ad-check is-fixed">
-            <input type="checkbox" checked disabled><span>其他備註</span></label>
 
           <div class="ad-sub-sec">
-            <div class="ad-sub-sec-title">聯絡方式（可複選）</div>
+            <div class="ad-sub-sec-title">聯絡方式</div>
+            <div class="ad-askrow">
+              <label class="ad-check is-fixed">
+                <input type="checkbox" checked disabled>
+                <span>聯絡方式<small>賓客至少要填其中一種</small></span></label>
+              <span class="ad-badge">必填</span>
+            </div>
+            <p class="ad-sub-sec-note">要收集哪幾種？<b>至少留一種</b>。</p>
             <label class="ad-check"><input type="checkbox" id="adContactPhone"><span>電話號碼</span></label>
             <label class="ad-check"><input type="checkbox" id="adContactLine"><span>LINE ID</span></label>
             <label class="ad-check"><input type="checkbox" id="adContactEmail"><span>Email</span></label>
-            <div class="ad-hint">
-              有勾1~3個，賓客要<b>至少填其中一種</b>。三種都不勾就整題不問。
-            </div>
+            <div class="ad-hint" id="adContactHint"></div>
           </div>
-
         </section>
 
+        <!-- ============================================================
+             ③ 喜帖／喜餅
+             ------------------------------------------------------------
+             Checkbox ＝「要不要收集這項資料」（喜帖、喜餅各一題）
+             Switch   ＝「要不要開一個服務」（郵寄）
+             兩者刻意用不同的元件：前者是問卷的一列，後者會讓表單
+             多長出一整段（收件地址），不是同一個量級的決定。
+        ============================================================ -->
         <section class="ad-formgroup">
           <div class="ad-formgroup-head">
             <h3 class="ad-formgroup-title">
-              <span class="ad-formgroup-no" aria-hidden="true"
-                    id="adFormGroupNoB">2</span>表單資訊
+              <span class="ad-formgroup-no" aria-hidden="true">3</span>喜帖／喜餅
+            </h3>
+            <p class="ad-formgroup-note">
+              預設兩題都問。不發喜餅（或不用線上問）的話，取消勾選就整題不出現。
+            </p>
+          </div>
+
+          <label class="ad-check"><input type="checkbox" id="adAskCard"><span>喜帖領取方式</span></label>
+          <div class="ad-reveal" id="adCardReveal">
+            <div class="ad-reveal-lab">賓客會看到的選項</div>
+            <div class="ad-chips ad-chips-preview" id="adPreviewCard"
+                 aria-label="喜帖領取方式的選項"></div>
+          </div>
+
+          <label class="ad-check"><input type="checkbox" id="adAskGift"><span>喜餅領取方式</span></label>
+          <div class="ad-reveal" id="adGiftReveal">
+            <div class="ad-reveal-lab">賓客會看到的選項</div>
+            <div class="ad-chips ad-chips-preview" id="adPreviewGift"
+                 aria-label="喜餅領取方式的選項"></div>
+          </div>
+
+          <div class="ad-sub-sec" id="adMailSec">
+            <div class="ad-sub-sec-title">郵寄服務</div>
+            <label class="ad-switch">
+              <input type="checkbox" id="adAskMail" role="switch">
+              <span class="ad-switch-box" aria-hidden="true"><span class="ad-switch-knob"></span></span>
+              <span class="ad-switch-lab">提供喜帖／喜餅郵寄</span>
+            </label>
+            <div class="ad-hint">
+              開啟後，賓客可以選擇郵寄，系統會進一步收集收件地址。
+            </div>
+            <div class="ad-reveal" id="adMailReveal">
+              <div class="ad-reveal-lab">開啟後會多出來的</div>
+              <div class="ad-info" id="adMailRevealInfo"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================
+             ④ 其他資料
+        ============================================================ -->
+        <section class="ad-formgroup">
+          <div class="ad-formgroup-head">
+            <h3 class="ad-formgroup-title">
+              <span class="ad-formgroup-no" aria-hidden="true">4</span>其他資料
+            </h3>
+            <p class="ad-formgroup-note">
+              表單最後面的兩個自由填寫欄位。兩題問的是同一件事的兩個口氣，
+              只留一個也很常見。
+            </p>
+          </div>
+
+          <label class="ad-check"><input type="checkbox" id="adAskMessage">
+            <span>想對新人說的話<small>會出現在回覆明細與匯出的 CSV</small></span></label>
+          <label class="ad-check"><input type="checkbox" id="adAskNote">
+            <span>其他備註<small>賓客補充交通、時間、同行的人…</small></span></label>
+        </section>
+
+        <!-- ============================================================
+             ⑤ 表單上的其他內容（唯讀）
+             ------------------------------------------------------------
+             內容本身不在這裡編輯（在「婚禮資訊」那一頁），
+             所以只把「現在填了什麼」列出來，再給一個過去填寫的入口。
+        ============================================================ -->
+        <section class="ad-formgroup">
+          <div class="ad-formgroup-head">
+            <h3 class="ad-formgroup-title">
+              <span class="ad-formgroup-no" aria-hidden="true">5</span>表單上的其他內容
             </h3>
             <p class="ad-formgroup-note">
               題目以外，出席表單那一頁還會出現這些內容。
@@ -795,12 +895,14 @@
               賓客送出回覆之後，結果卡上就有「回婚禮大廳」與「看我們的故事」。
             </div>
           </div>
-
         </section>
 
+        <!-- 活動卡上的設定（時間地點、需要回覆、基本問題、專屬題目）一改就存，
+             這一條儲存管的是 ②③④ 那幾組整份表單共用的開關 -->
         <div class="ad-savebar">
-          <button class="btn small" id="adRsvpFormSave" type="submit">儲存表單設定</button>
+          <span class="ad-savebar-note" id="adRsvpFormDirty">目前沒有未儲存的變更</span>
           <button class="btn small ghost" id="adRsvpFormReset" type="button">還原成目前的設定</button>
+          <button class="btn small" id="adRsvpFormSave" type="submit">儲存表單設定</button>
         </div>
       </form>
     </section>
@@ -2026,6 +2128,137 @@
       <div class="ad-modal-actions">
         <button class="btn small ghost" id="adQuizCancelBtn" type="button">取消</button>
         <button class="btn small" type="submit">儲存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================================
+     表單設定：活動資訊（時間、地點、要不要回覆）
+     ------------------------------------------------------------
+     為什麼是彈窗而不是另一頁：新人改的是「某一張活動卡上的那幾欄」，
+     跳到另一個分頁再回來找剛剛那張卡，是改版前最大的操作成本。
+     這裡改完就存，站台上用到這個時間地點的頁面一起更新。
+============================================================ -->
+<div class="ad-modal-mask" id="adActModalMask" hidden>
+  <div class="ad-modal-card ad-modal-card-form">
+    <div class="ad-modal-title" id="adActModalTitle">編輯活動資訊</div>
+
+    <form class="ad-form" id="adActForm">
+      <input type="hidden" id="adActId">
+
+      <!-- 合成出來的那一個活動（站台還沒有 events）沒有型別與名稱可以改：
+           它就是「這場婚禮」本身，名稱與日期由我們設定 -->
+      <div id="adActWhatBox">
+        <label class="ad-label" for="adActType">活動種類</label>
+        <select class="ad-input" id="adActType"></select>
+
+        <label class="ad-label" for="adActName">名稱<small>（建議 4 個字以內）</small></label>
+        <input class="ad-input" id="adActName" type="text" maxlength="30">
+      </div>
+
+      <label class="ad-label" for="adActDate">日期</label>
+      <input class="ad-input" id="adActDate" type="date">
+      <div class="ad-count" id="adActDateNote" hidden>
+        婚禮主日期要透過我們才改得動（倒數計時與分享縮圖都看它）
+      </div>
+
+      <label class="ad-label" for="adActStart">開始時間</label>
+      <input class="ad-input ad-input-time" id="adActStart" type="time">
+
+      <div id="adActEndBox">
+        <label class="ad-label" for="adActEnd">結束時間 <small>（選填）</small></label>
+        <input class="ad-input ad-input-time" id="adActEnd" type="time">
+      </div>
+
+      <label class="ad-label" for="adActVenue">地點名稱</label>
+      <input class="ad-input" id="adActVenue" type="text" maxlength="80"
+             placeholder="台北婚宴大飯店・二樓宴會廳">
+
+      <label class="ad-label" for="adActAddr">地址</label>
+      <input class="ad-input" id="adActAddr" type="text" maxlength="200"
+             placeholder="台北市中山區中山北路二段 63 號">
+
+      <label class="ad-label" for="adActMap">地圖連結 <small>（選填）</small></label>
+      <input class="ad-input" id="adActMap" type="url" maxlength="500"
+             placeholder="沒填的話自動用地址開 Google 地圖">
+
+      <div id="adActDescBox">
+        <label class="ad-label" for="adActDesc">活動說明 <small>（選填）</small></label>
+        <textarea class="ad-textarea" id="adActDesc" rows="2" maxlength="300"></textarea>
+      </div>
+
+      <div class="ad-sub-sec">
+        <div class="ad-askrow">
+          <label class="ad-check" id="adActRsvpRow">
+            <input type="checkbox" id="adActRsvp">
+            <span>需要賓客回覆<small>關起來的話，這個活動不會出現在出席表單裡</small></span>
+          </label>
+          <span class="ad-badge" id="adActRsvpBadge" hidden>系統固定</span>
+        </div>
+      </div>
+
+      <div class="ad-hint" id="adActHint"></div>
+
+      <div class="ad-modal-actions">
+        <button class="btn small ghost" id="adActCancel" type="button">取消</button>
+        <button class="btn small" type="submit">儲存活動資訊</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================================
+     表單設定：本場次專屬問題（新增／編輯共用同一個彈窗）
+     ------------------------------------------------------------
+     題型用 Radio Group：三個選項只能選一個，而且選了哪一個
+     會決定下面要不要出現「選項」那一段（Conditional Reveal）——
+     一開始就把選項欄位全部攤開，等於要新人先看懂三種題型的差別。
+============================================================ -->
+<div class="ad-modal-mask" id="adEvqModalMask" hidden>
+  <div class="ad-modal-card ad-modal-card-form">
+    <div class="ad-modal-title" id="adEvqModalTitle">新增題目</div>
+    <p class="ad-modal-note" id="adEvqModalNote"></p>
+
+    <form class="ad-form" id="adEvqForm">
+      <input type="hidden" id="adEvqEvId">
+      <input type="hidden" id="adEvqId">
+
+      <label class="ad-label" for="adEvqLabel">題目名稱</label>
+      <input class="ad-input" id="adEvqLabel" type="text" maxlength="30"
+             placeholder="例如：需要接駁車嗎？">
+
+      <label class="ad-label" id="adEvqKindLab">題型</label>
+      <div class="ad-radios" id="adEvqKind" role="radiogroup" aria-labelledby="adEvqKindLab">
+        <label class="ad-radio">
+          <input type="radio" name="adEvqKind" value="choice" checked><span>單選</span></label>
+        <label class="ad-radio">
+          <input type="radio" name="adEvqKind" value="multi"><span>多選</span></label>
+        <label class="ad-radio">
+          <input type="radio" name="adEvqKind" value="text"><span>簡答題</span></label>
+      </div>
+
+      <!-- 只有需要選項的題型才出現 -->
+      <div id="adEvqOptsBox" hidden>
+        <label class="ad-label">選項</label>
+        <div class="ad-evq-opts" id="adEvqOpts"></div>
+        <div class="ad-row">
+          <button class="btn small ghost" id="adEvqOptAdd" type="button">＋ 加一個選項</button>
+          <span class="ad-evq-optcount" id="adEvqOptCount"></span>
+        </div>
+      </div>
+
+      <!-- 簡答題才出現 -->
+      <div id="adEvqHintBox" hidden>
+        <label class="ad-label" for="adEvqHint">提示文字 <small>（選填）</small></label>
+        <input class="ad-input" id="adEvqHint" type="text" maxlength="30"
+               placeholder="例：需要素食兒童餐">
+        <div class="ad-hint">簡答題不做統計，只出現在回覆明細與匯出的 CSV。</div>
+      </div>
+
+      <div class="ad-modal-actions">
+        <button class="btn small ghost" id="adEvqCancel" type="button">取消</button>
+        <button class="btn small" type="submit">儲存題目</button>
       </div>
     </form>
   </div>

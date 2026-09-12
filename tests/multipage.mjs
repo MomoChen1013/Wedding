@@ -2728,32 +2728,16 @@ console.log('\n[14d] 後台婚禮流程');
   await mid.locator('[data-ev-toggle]').click();
   await page.waitForTimeout(200);
 
-  /* 打開「需要賓客回覆」之後，要先看到系統已經幫他問了哪幾題 ——
-     不然空白的「追加題目」讀起來像「這個活動什麼都沒問」 */
-  const defaultQs = await mid.locator('.ad-evq-sec').first()
-    .locator('.ad-check.is-fixed span').allInnerTexts();
-  ok('需要回覆的活動列出目前會問的預設題目',
-    defaultQs.some((t) => t.includes('能來參加嗎'))
-      && defaultQs.some((t) => t.includes('包含你，共幾位出席')),
-    defaultQs.join('｜').replace(/\s+/g, ' ').slice(0, 90));
-  /* 證婚預設只問人數，其餘三題要說清楚「目前沒問」——
-     不然新人會以為葷素也問了 */
-  ok('沒問的那幾題也講出來',
-    (await mid.locator('.ad-evq-sec .ad-hint').first().innerText())
-      .includes('目前沒問：餐點分配（葷食／素食）、兒童座椅、飲食習慣補充'),
-    await mid.locator('.ad-evq-sec .ad-hint').first().innerText());
-  ok('預設題目是唯讀的（開關在表單設定）',
-    await mid.locator('.ad-evq-sec .ad-check.is-fixed input:disabled').first().isDisabled());
+  /* 這一頁只管活動本身（時間、地點、說明）——
+     「要不要回覆、要問什麼」都在側欄的「表單設定」，同一件事不給兩個入口 */
+  ok('其他流程不再出現題目設定',
+    (await mid.locator('[data-evq-add]').count()) === 0
+      && (await mid.locator('[data-ev-field="requiresRsvp"]').count()) === 0,
+    `evq=${await mid.locator('[data-evq-add]').count()}`);
+  ok('改成一句話指回「表單設定」',
+    (await mid.locator('.ad-ev-note').innerText()).includes('表單設定'),
+    (await mid.locator('.ad-ev-note').innerText()).replace(/\s+/g, ' ').slice(0, 60));
 
-  /* 追加題目的提示要寫成範例，不然新人會照抄成題目 */
-  await mid.locator('[data-evq-add]').click();
-  await page.waitForTimeout(200);
-  ok('追加題目的 placeholder 寫成範例',
-    (await mid.locator('.ad-evq-label').first().getAttribute('placeholder'))
-      === '例如：需要接駁車嗎？',
-    await mid.locator('.ad-evq-label').first().getAttribute('placeholder'));
-  await mid.locator('[data-evq-del]').first().click();
-  await page.waitForTimeout(200);
   await mid.locator('[data-ev-field="startTime"]').fill('14:00');
   await mid.locator('[data-ev-field="venueName"]').fill('台北真理堂');
   await mid.locator('[data-ev-field="address"]').fill('台北市大安區新生南路三段86號');
@@ -2827,29 +2811,44 @@ console.log('\n[14d] 後台婚禮流程');
     await page.$eval('.ad-subpanel[data-subpanel="events"]',
       (el) => el.classList.contains('is-on')));
 
-  /* ---- 表單設定：每個活動各自要問的 ---- */
+  /* ============================================================
+     表單設定：活動場次（改版後的資訊架構）
+     ------------------------------------------------------------
+     要驗的是三件事，而且都是「新人看不看得懂」的那種：
+       1. 一個活動一張卡（含不需要回覆的那幾場）
+       2. 全域那一層（所有場次的基本問題）只在多場次時出現
+       3. 單一場次取消一題時，畫面要說「僅此場次停用」，
+          而且**不會**動到全域那一份
+  ============================================================ */
   await page.click('.ad-tab[data-tab="rsvpForm"]');
   await page.waitForTimeout(300);
 
-  ok('多活動時長出「每個活動各自要問的」', await page.isVisible('#adEvAskGroup'));
-  ok('只列需要回覆的活動（文訂不在裡面）',
-    (await page.locator('#adEvAskList .ad-evask-item').count()) === 3,
-    String(await page.locator('#adEvAskList .ad-evask-item').count()));
-  ok('那四題從「只問一次」那一組收起來', await page.isHidden('#adFixedEventQs'));
-  ok('編號跟著往後挪',
-    (await page.innerText('#adFormGroupNoA')) === '2'
-      && (await page.innerText('#adFormGroupNoB')) === '3');
-  ok('第一組的標題換成「整份回覆只問一次的」',
-    (await page.innerText('#adFormGroupTitleA')) === '整份回覆只問一次的');
+  ok('每個活動一張卡（不用回覆的也在）',
+    (await page.locator('#adActList .ad-actcard').count()) === 4,
+    String(await page.locator('#adActList .ad-actcard').count()));
+  ok('多場次時才出現「所有場次的基本問題」',
+    await page.isVisible('#adGlobalAskSec'));
+  /* 不用回覆的那一張要淡出視野，而且說清楚它不在表單裡 */
+  const engaged = page.locator('#adActList .ad-actcard')
+    .filter({ has: page.locator('.ad-actcard-name', { hasText:'文訂' }) });
+  ok('不用回覆的活動卡沒有題目、只有一句說明',
+    (await engaged.locator('[data-act-ask]').count()) === 0
+      && (await engaged.locator('.ad-actcard-note').innerText()).includes('不會出現在出席表單'),
+    (await engaged.locator('.ad-actcard-note').innerText()).slice(0, 30));
+  /* 「主要活動」要標出來 —— 頂層欄位（人數、葷素）講的是那一場 */
+  ok('主要活動有 badge',
+    (await page.locator('#adActList .ad-actcard').filter({
+      has: page.locator('.ad-actcard-name', { hasText:'婚宴' }) })
+      .locator('.ad-badge', { hasText:'主要活動' }).count()) === 1);
 
   /* 型別預設：證婚不問餐點與兒童椅，婚宴四題全開 */
   const asks = await page.evaluate(() => {
     const out = {};
-    document.querySelectorAll('#adEvAskList .ad-evask-item').forEach((item) => {
-      const name = item.querySelector('.ad-evask-name').textContent;
+    document.querySelectorAll('#adActList .ad-actcard').forEach((card) => {
+      const name = card.querySelector('.ad-actcard-name').textContent;
       out[name] = {};
-      item.querySelectorAll('[data-evask-field]').forEach((el) => {
-        out[name][el.dataset.evaskField] = el.checked;
+      card.querySelectorAll('[data-act-ask]').forEach((el) => {
+        out[name][el.dataset.actAsk] = el.checked;
       });
     });
     return out;
@@ -2864,8 +2863,9 @@ console.log('\n[14d] 後台婚禮流程');
     JSON.stringify(asks['證婚']));
 
   /* 勾掉婚宴的兒童椅 → 立刻存回 events[]，其餘欄位不能被動到 */
-  await page.locator('#adEvAskList .ad-evask-item')
-    .filter({ hasText:'婚宴' }).locator('[data-evask-field="askChildSeat"]').uncheck();
+  const banquetCard = () => page.locator('#adActList .ad-actcard')
+    .filter({ has: page.locator('.ad-actcard-name', { hasText:'婚宴' }) });
+  await banquetCard().locator('[data-act-ask="askChildSeat"]').uncheck();
   await page.waitForTimeout(1500);
   const site2 = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
   const banquet = site2.events.find((e) => e.name === '婚宴');
@@ -2876,8 +2876,101 @@ console.log('\n[14d] 後台婚禮流程');
     site2.events.length === 4
       && site2.events.find((e) => e.name === '證婚').venueName === '台北真理堂',
     String(site2.events.length));
+  /* ★ 這一條就是整個改版最重要的那句話：只改了一場，不是全部 */
+  ok('全域那一份沒有被單一場次改掉',
+    site2.rsvpAskChildSeat !== false, String(site2.rsvpAskChildSeat));
+  ok('畫面上說得出「僅此場次停用」',
+    (await banquetCard().locator('[data-askrow="askChildSeat"] .ad-badge.is-warn')
+      .innerText()) === '僅此場次停用');
+  ok('而且給得回去（恢復所有場次設定）',
+    (await banquetCard().locator('[data-act-ask-reset="askChildSeat"]').count()) === 1);
+  /* 全域那一塊也要指認回去：兒童座椅那一列要說得出「婚宴」單獨停用。
+     證婚與派對本來就沒有兒童椅（型別預設），所以那一列會一併列出它們；
+     餐點與飲食那兩列也各自有自己的名單 —— 所以要指名抓 askChildSeat 那一列 */
+  ok('全域那一塊也標出是哪一場單獨停用',
+    (await page.locator('#adGlobalAskList [data-globalrow="askChildSeat"] .ad-badge.is-warn')
+      .innerText()).includes('婚宴'),
+    await page.locator('#adGlobalAskList [data-globalrow="askChildSeat"] .ad-badge.is-warn')
+      .innerText());
 
-  ok('婚禮流程無 console 錯誤', realErrors(errors).length === 0,
+  /* 「恢復所有場次設定」按回去 */
+  await banquetCard().locator('[data-act-ask-reset="askChildSeat"]').click();
+  await page.waitForTimeout(1500);
+  const site3 = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
+  ok('恢復之後那一場又跟著全域走',
+    site3.events.find((e) => e.name === '婚宴').askChildSeat === true);
+
+  /* ---- 全域那一層：一勾就套用到所有場次 ---- */
+  await page.uncheck('#adGlobalAskList [data-globalrow="askDiet"] [data-global-ask]');
+  await page.waitForTimeout(1500);
+  const site4 = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
+  ok('全域關掉寫的是站台欄位，不是逐一改每個活動',
+    site4.rsvpAskDiet === false
+      && site4.events.find((e) => e.name === '婚宴').askDiet === true,
+    String(site4.rsvpAskDiet));
+  ok('全域關掉時，個別場次的勾選框關起來（不能只開一場）',
+    await banquetCard().locator('[data-act-ask="askDiet"]').isDisabled());
+  await page.check('#adGlobalAskList [data-globalrow="askDiet"] [data-global-ask]');
+  await page.waitForTimeout(1200);
+
+  /* ---- 本場次專屬問題：新增一題多選 ---- */
+  await banquetCard().locator('[data-q-add]').click();
+  await page.waitForSelector('#adEvqModalMask:not([hidden])', { timeout:5000 });
+  ok('題型是 Radio Group（三個裡選一個）',
+    (await page.locator('#adEvqKind input[type="radio"]').count()) === 3);
+  ok('預設是單選，簡答題的提示欄不出現',
+    (await page.isVisible('#adEvqOptsBox')) && (await page.isHidden('#adEvqHintBox')));
+  await page.fill('#adEvqLabel', '是否參加 After Party？');
+  await page.check('#adEvqKind input[value="multi"]');
+  await page.waitForTimeout(150);
+  await page.click('#adEvqOptAdd');
+  await page.waitForTimeout(150);
+  const optInputs = page.locator('#adEvqOpts [data-opt-label]');
+  ok('多選題也是用同一組選項欄位（最多 8 個）',
+    (await optInputs.count()) === 3, String(await optInputs.count()));
+  await optInputs.nth(0).fill('會參加');
+  await optInputs.nth(1).fill('看情況');
+  await optInputs.nth(2).fill('不參加');
+  await page.click('#adEvqForm button[type="submit"]');
+  await page.waitForTimeout(1500);
+  const site5 = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
+  const q5 = (site5.events.find((e) => e.name === '婚宴').questions || [])[0];
+  ok('多選題存進 events[].questions',
+    !!q5 && q5.kind === 'multi' && q5.label === '是否參加 After Party？'
+      && (q5.opts || []).length === 3,
+    JSON.stringify(q5 || {}).slice(0, 120));
+  ok('選項存的是 id ＋ 文字（改名字不會把作答對丟了）',
+    !!q5 && q5.opts.every((o) => o.id && o.label), JSON.stringify(q5.opts));
+  ok('題目列出現在那一張卡上',
+    (await banquetCard().locator('.ad-qrow').count()) === 1);
+  ok('列上看得出題型與選項數量',
+    (await banquetCard().locator('.ad-qrow .ad-tag').innerText()) === '多選'
+      && (await banquetCard().locator('.ad-qrow .ad-item-sub').innerText()).includes('3 個選項'),
+    await banquetCard().locator('.ad-qrow .ad-item-sub').innerText());
+  ok('只有這一場有題目（證婚那一張還是空的）',
+    (await page.locator('#adActList .ad-actcard')
+      .filter({ has: page.locator('.ad-actcard-name', { hasText:'證婚' }) })
+      .locator('.ad-qrow-empty').count()) === 1);
+
+  /* ---- 活動資訊彈窗：不跳頁就改得到時間地點 ---- */
+  await banquetCard().locator('[data-act-edit]').click();
+  await page.waitForSelector('#adActModalMask:not([hidden])', { timeout:5000 });
+  await page.fill('#adActVenue', '晶華酒店・三樓宴會廳');
+  await page.fill('#adActStart', '12:30');
+  await page.click('#adActForm button[type="submit"]');
+  await page.waitForTimeout(1500);
+  const site6 = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
+  const b6 = site6.events.find((e) => e.name === '婚宴');
+  ok('彈窗改的時間地點寫回 events[]',
+    b6.venueName === '晶華酒店・三樓宴會廳' && b6.startTime === '12:30',
+    `${b6.venueName} / ${b6.startTime}`);
+  ok('主要活動的地點同時鏡像回站台文件（大廳與分享縮圖讀那一份）',
+    site6.venueName === '晶華酒店・三樓宴會廳', site6.venueName);
+  ok('卡片上的時間地點跟著更新',
+    (await banquetCard().locator('.ad-actcard-where').innerText()).includes('晶華酒店'),
+    await banquetCard().locator('.ad-actcard-where').innerText());
+
+    ok('婚禮流程無 console 錯誤', realErrors(errors).length === 0,
     realErrors(errors).slice(0, 2).join(' | '));
   await page.close();
 }
@@ -2898,23 +2991,46 @@ console.log('\n[14d] 後台婚禮流程');
   await page.click('.ad-tab[data-tab="rsvpForm"]');
   await page.waitForTimeout(300);
 
-  ok('只有一個活動時，不長出「每個活動各自要問的」',
-    await page.isHidden('#adEvAskGroup'));
-  ok('那四題留在原本的位置', await page.isVisible('#adFixedEventQs'));
-  ok('編號回到 1 / 2',
-    (await page.innerText('#adFormGroupNoA')) === '1'
-      && (await page.innerText('#adFormGroupNoB')) === '2');
-  ok('標題回到「題目」', (await page.innerText('#adFormGroupTitleA')) === '題目');
-  const fixedQs = '#adRsvpForm .ad-check.is-fixed:not(#adAskTagRow) input:disabled:checked';
-  ok('固定題目仍然是 8 條（和改版前一樣）',
-    (await page.locator(fixedQs).count()) === 8,
+  /* 一場婚宴的新人不該看到兩層設定：全域那一塊整個收起來，
+     活動卡上的勾選框就直接代表「要不要問」（badge 也不出現） */
+  ok('只有一個活動時，不長出「所有場次的基本問題」',
+    await page.isHidden('#adGlobalAskSec'));
+  ok('只有一張活動卡',
+    (await page.locator('#adActList .ad-actcard').count()) === 1,
+    String(await page.locator('#adActList .ad-actcard').count()));
+  ok('四題都在那張卡上',
+    (await page.locator('#adActList [data-act-ask]').count()) === 4);
+  ok('單一場次不出現「來自所有場次」那一類的 badge',
+    (await page.locator('#adActList .ad-badge.is-on', { hasText:'來自所有場次' }).count()) === 0);
+
+  /* 一個活動的時候，勾選框同時寫全域與這個活動 —— 兩邊永遠一致，
+     日後再加活動也不會突然少一題 */
+  await page.uncheck('#adActList [data-act-ask="askMeal"]');
+  await page.waitForTimeout(1500);
+  const one = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
+  ok('單一場次取消時，全域與那個活動一起關',
+    one.rsvpAskMeal === false
+      && one.events[0].askMeal === false,
+    JSON.stringify({ g:one.rsvpAskMeal, ev:one.events[0].askMeal }));
+  await page.check('#adActList [data-act-ask="askMeal"]');
+  await page.waitForTimeout(1200);
+
+  const fixedQs = '#adRsvpForm .ad-check.is-fixed input:disabled:checked';
+  ok('關不掉的題目用「打勾但點不動」列出來（稱呼、關係、聯絡方式、能來參加嗎）',
+    (await page.locator(fixedQs).count()) === 4,
     String(await page.locator(fixedQs).count()));
+  ok('每一條關不掉的都掛「系統固定」或「必填」badge',
+    (await page.locator('#adRsvpForm .ad-badge', { hasText:/系統固定|必填/ }).count()) >= 4,
+    String(await page.locator('#adRsvpForm .ad-badge', { hasText:/系統固定|必填/ }).count()));
   await page.close();
 
   /* 還原：關掉旗標、清空 events，後面的測試看到的是原本的站台。
      地點刻意不動 —— 那是前面 [14] 那一段存進去的，不是這一段弄出來的 */
   await adb.collection('sites').doc(siteIds[SLUG]).update({
     multiEventEnabled: false, events: [],
+    /* 基本問題的全域開關也收回預設（上面那幾條測試動過），
+       後面 [14c] 看到的才是「沒設定過」的站台 */
+    rsvpAskCount: true, rsvpAskMeal: true, rsvpAskChildSeat: true, rsvpAskDiet: true,
   });
 }
 
@@ -2929,12 +3045,28 @@ console.log('\n[14c] 後台開關表單題目');
   await page.click('.ad-tab[data-tab="rsvpForm"]');
   await page.waitForTimeout(200);
 
-  ok('「查看表單」指向賓客那一頁',
-    (await page.getAttribute('#adRsvpViewForm', 'href')) === `/w/${SLUG}/invitation`,
-    await page.getAttribute('#adRsvpViewForm', 'href'));
-  const fixedQs = '#adRsvpForm .ad-check.is-fixed:not(#adAskTagRow) input:disabled:checked';
-  ok('固定題目用關不掉的勾選框列出來',
-    (await page.locator(fixedQs).count()) === 8,
+  /* 右上角兩顆：複製連結排在左邊（最常做的事），預覽另開新視窗 */
+  ok('「預覽」指向賓客那一頁、另開新視窗',
+    (await page.getAttribute('#adRsvpViewForm', 'href')) === `/w/${SLUG}/invitation`
+      && (await page.getAttribute('#adRsvpViewForm', 'target')) === '_blank'
+      && (await page.innerText('#adRsvpViewForm')).includes('↗'),
+    `${await page.getAttribute('#adRsvpViewForm', 'href')} / ${
+      await page.getAttribute('#adRsvpViewForm', 'target')}`);
+  ok('多一顆「複製表單連結」', await page.isVisible('#adRsvpCopyLink'));
+
+  /* 站台還沒有 events：活動卡是「這場婚禮」本身 ——
+     型別、名稱、專屬題目都沒有地方存，所以那幾塊不該出現 */
+  ok('沒有 events 的站台也有一張活動卡',
+    (await page.locator('#adActList .ad-actcard').count()) === 1,
+    String(await page.locator('#adActList .ad-actcard').count()));
+  ok('那一張卡上的「需要賓客回覆」是系統固定的',
+    await page.locator('#adActList [data-act-rsvp]').isDisabled());
+  ok('那一張卡沒有「本場次專屬問題」（沒有地方存）',
+    (await page.locator('#adActList [data-q-add]').count()) === 0);
+
+  const fixedQs = '#adRsvpForm .ad-check.is-fixed input:disabled:checked';
+  ok('關不掉的題目用「打勾但點不動」列出來',
+    (await page.locator(fixedQs).count()) === 5,
     String(await page.locator(fixedQs).count()));
   ok('表單資訊列出封面那一段的內容',
     (await page.innerText('#adRsvpInfoList')).includes('婚禮 hashtag'),
@@ -2942,21 +3074,66 @@ console.log('\n[14c] 後台開關表單題目');
 
   ok('題目預設全部開著',
     (await page.isChecked('#adAskCard')) && (await page.isChecked('#adAskGift'))
-      && (await page.isChecked('#adAskMessage')));
+      && (await page.isChecked('#adAskMessage')) && (await page.isChecked('#adAskNote')));
   /* 「郵寄」是新人自己在這一頁關的，不是我們進 Firebase 設的 */
   ok('「要不要提供郵寄」預設也是開著的', await page.isChecked('#adAskMail'));
+  ok('郵寄是 Switch（開的是一個服務，不是一個欄位）',
+    (await page.getAttribute('#adAskMail', 'role')) === 'switch');
   ok('聯絡方式預設三種都問',
     (await page.isChecked('#adContactPhone')) && (await page.isChecked('#adContactLine'))
       && (await page.isChecked('#adContactEmail')));
 
-  /* 關掉喜餅與留言、不提供郵寄，聯絡方式只留 Email */
-  await page.uncheck('#adAskGift');
-  await page.uncheck('#adAskMessage');
+  /* ---- 預覽膠囊：賓客會看到的選項就是這幾顆（不可點，所以是 .ad-tag） ---- */
+  ok('關係那一題列出四顆預設選項',
+    (await page.locator('#adPreviewRelation .ad-tag').allInnerTexts()).join('／')
+      === '男方親友／女方親友／雙方親友／其他',
+    (await page.locator('#adPreviewRelation .ad-tag').allInnerTexts()).join('／'));
+  ok('預覽用的膠囊不是按鈕（看起來不能點）',
+    (await page.locator('#adPreviewRelation button').count()) === 0);
+
+  /* ---- Conditional reveal ---- */
+  ok('郵寄開著時才看得到「會多出來的」那一段',
+    await page.isVisible('#adMailReveal'));
+  ok('喜餅選項預覽含郵寄',
+    (await page.locator('#adPreviewGift .ad-tag').allInnerTexts()).includes('郵寄'));
   await page.uncheck('#adAskMail');
+  await page.waitForTimeout(200);
+  ok('關掉郵寄之後那一段整塊不見（不是灰掉）',
+    await page.isHidden('#adMailReveal'));
+  ok('關掉郵寄之後預覽也少一顆',
+    !(await page.locator('#adPreviewGift .ad-tag').allInnerTexts()).includes('郵寄'),
+    (await page.locator('#adPreviewGift .ad-tag').allInnerTexts()).join('／'));
+  await page.uncheck('#adAskGift');
+  await page.waitForTimeout(200);
+  ok('喜餅不問時，它的選項預覽跟著收起來',
+    await page.isHidden('#adGiftReveal'));
+
+  /* ---- 至少要留一種聯絡方式 ---- */
+  await page.uncheck('#adAskMessage');
   await page.uncheck('#adContactPhone');
   await page.uncheck('#adContactLine');
+  await page.waitForTimeout(200);
+  ok('只剩一種聯絡方式時，那一顆自己變成關不掉的',
+    await page.locator('#adContactEmail').isDisabled());
+  ok('而且說得出原因',
+    (await page.innerText('#adContactHint')).includes('關不掉'),
+    (await page.innerText('#adContactHint')).slice(0, 40));
+  await page.check('#adContactPhone');
+  await page.waitForTimeout(200);
+  ok('勾了第二種之後，第一種就解開了',
+    !(await page.locator('#adContactEmail').isDisabled()));
+  await page.uncheck('#adContactPhone');
+  await page.waitForTimeout(200);
+
+  /* 有未儲存的變更時要看得出來（這一頁同時有「一改就存」的區塊） */
+  ok('有未儲存的變更時說出來',
+    (await page.innerText('#adRsvpFormDirty')).includes('還沒儲存'),
+    await page.innerText('#adRsvpFormDirty'));
+
   await page.click('#adRsvpForm button[type="submit"]');
   await page.waitForTimeout(1500);
+  ok('存完就不再說有未儲存的變更',
+    !(await page.innerText('#adRsvpFormDirty')).includes('還沒儲存'));
 
   /* 「相遇之間」的開關在「婚禮資訊 → 自訂內容」（它現在是首頁上自己的一段），
      那一顆是按下去就存，不跟著這張表單走 */

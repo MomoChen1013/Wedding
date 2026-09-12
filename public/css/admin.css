@@ -2555,6 +2555,12 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-filter,
 body:is([data-page="admin"],[data-page="butler"]) .ad-label,
 body:is([data-page="admin"],[data-page="butler"]) .ad-chip,
 body:is([data-page="admin"],[data-page="butler"]) .ad-tag,
+/* 表單設定新增的四個元件也走 UI 軌：它們是「工作」的部分
+   （11px 的明朝體在這個密度下只是噪點，見上面那段說明） */
+body:is([data-page="admin"],[data-page="butler"]) .ad-badge,
+body:is([data-page="admin"],[data-page="butler"]) .ad-radio,
+body:is([data-page="admin"],[data-page="butler"]) .ad-switch,
+body:is([data-page="admin"],[data-page="butler"]) .ad-reveal-lab,
 body:is([data-page="admin"],[data-page="butler"]) .ad-hint,
 body:is([data-page="admin"],[data-page="butler"]) .ad-count,
 body:is([data-page="admin"],[data-page="butler"]) .ad-field-err,
@@ -3539,6 +3545,10 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:11px;}
   border:1px solid var(--line);border-radius:999px;padding:2px 9px;color:var(--ink-soft);}
 .ad-ev-flag.is-on{border-color:var(--ink);background:var(--ink);color:var(--on-ink);}
 
+/* 這一頁不再管「要問什麼」（那在表單設定），只留一句話說明現況 */
+.ad-ev-note{margin:18px 0 0;padding:12px 14px;background:var(--bg2);
+  border-radius:var(--radius);font-size:12px;line-height:1.9;color:var(--ink-soft);}
+.ad-ev-note b{color:var(--ink);font-weight:500;}
 .ad-ev-body{padding:4px 14px 16px;border-top:1px solid var(--line-soft);}
 .ad-ev-body[hidden]{display:none;}
 .ad-ev-body .ad-label:first-of-type{margin-top:14px;}
@@ -3572,39 +3582,159 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:11px;}
 }
 
 /* ============================================================
-   表單設定：每個活動各自要問的
+   表單設定：Badge、Switch、Radio group、Conditional reveal
    ------------------------------------------------------------
-   一個活動一組勾選框。和活動卡不同的是這裡不收合 ——
-   這一頁本來就是「一次看完要問什麼」，收起來反而要多點好幾下。
-============================================================ */
-.ad-evask{display:flex;flex-direction:column;gap:16px;}
-.ad-evask-item{border:1px solid var(--line);border-radius:var(--radius);
-  padding:12px 14px 14px;background:var(--surface);}
-.ad-evask-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
-  padding-bottom:10px;margin-bottom:6px;border-bottom:1px solid var(--line-soft);}
-.ad-evask-name{font-size:14px;letter-spacing:.06em;color:var(--ink);}
-.ad-evask-when{font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums;}
+   這四個是這次改版唯一新增的視覺語彙，其餘一律沿用既有元件
+   （Checkbox 用 .ad-check、唯讀狀態 pill 用 .ad-tag、
+     需要進一步設定用 .ad-modal-*）。分工寫在 docs/UI-SPEC.md：
 
-/* ---------- 活動的追加題目 ----------
-   一題一塊，題目文字與型態排一列，選項在下面縮排。
-   刻意不做拖曳排序：最多三題，↑↓ 都嫌多。 */
+     Checkbox  要不要收集這項資料
+     Switch    要不要開啟一個服務（開了會長出一整段設定）
+     Radio     幾個選項只能選一個
+     Badge     唯讀的狀態標記（系統固定／必填／已套用／僅此場次）
+     Chips     預覽目前的選項（不可點，所以用 .ad-tag 而不是 .ad-chip）
+============================================================ */
+
+/* ---------- Badge ----------
+   和 .ad-tag 的差別：.ad-tag 講的是「這一筆資料是什麼」（出席、標籤），
+   Badge 講的是「這個設定現在的狀態」。所以它更小、更輕，
+   而且永遠跟在一個控制項旁邊，不會單獨出現在一列裡。 */
+.ad-badge{display:inline-flex;align-items:center;white-space:nowrap;
+  border:1px solid var(--line);border-radius:999px;padding:2px 9px;
+  font-size:11px;letter-spacing:.08em;line-height:1.7;
+  color:var(--ink-soft);background:var(--bg2);}
+/* 「已套用」這種「正在生效」的狀態：和品牌色同一支，但用面不用字
+   （--primary-deep 當小字對比不足，見 UI-SPEC 的已知落差） */
+.ad-badge.is-on{color:var(--ink);border-color:var(--primary);background:var(--primary-soft);}
+/* 「僅此場次停用」＝這一格和全域設定不一樣，要被看到 */
+.ad-badge.is-warn{color:#8a5765;border-color:rgba(164,103,122,.45);background:#fdf6f7;}
+
+/* ---------- 一列設定 ＋ 它的狀態 ----------
+   .ad-check 自己是 flex 而且帶 margin-top，直接塞一顆 Badge 進去會被拉開，
+   所以外面包一層 .ad-askrow：勾選框與狀態在同一條基線上。 */
+.ad-askrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px;}
+.ad-askrow > .ad-check{margin-top:0;}
+.ad-askrow + .ad-askrow{margin-top:8px;}
+.ad-askrow .ad-edit{font-size:11.5px;}
+.ad-asklist > .ad-askrow:first-child{margin-top:6px;}
+
+/* ---------- Switch ----------
+   「要不要開啟這個服務」。原生的 checkbox 藏起來但留在無障礙樹裡
+   （role="switch" 寫在 HTML 上），焦點框掛在可見的那顆軌道上。 */
+.ad-switch{position:relative;display:inline-flex;align-items:center;gap:12px;
+  cursor:pointer;margin-top:6px;font-size:14px;letter-spacing:.04em;color:var(--ink);}
+/* 原生 checkbox 疊在軌道上（透明但**照樣接得到點擊**）：
+   它仍然在無障礙樹裡、role="switch" 掛在它身上，而且自動化測試
+   與螢幕閱讀器點的就是它本人 —— 不是一顆被 span 蓋住的 1px 元素。 */
+.ad-switch input{position:absolute;left:0;top:0;height:100%;width:42px;
+  margin:0;opacity:0;cursor:pointer;z-index:1;}
+/* 軌道與把手是純裝飾（aria-hidden），點擊一律交給上面那顆 input ——
+   不然 .ad-switch-knob（絕對定位、又排在 input 後面）會蓋在它的正中間，
+   變成「看得到、也點得到，但點到的是一個 span」 */
+.ad-switch-box{position:relative;flex:0 0 auto;width:42px;height:24px;
+  pointer-events:none;
+  border:1px solid var(--line);border-radius:999px;background:var(--bg2);
+  transition:background var(--dur-btn) var(--ease),border-color var(--dur-btn) var(--ease);}
+.ad-switch-knob{position:absolute;top:2px;left:2px;width:18px;height:18px;
+  border-radius:50%;background:#fff;border:1px solid var(--line);
+  transition:transform var(--dur-btn) var(--ease),border-color var(--dur-btn) var(--ease);}
+.ad-switch input:checked + .ad-switch-box{background:var(--ink);border-color:var(--ink);}
+.ad-switch input:checked + .ad-switch-box .ad-switch-knob{
+  transform:translateX(18px);border-color:var(--ink);}
+.ad-switch input:focus-visible + .ad-switch-box{
+  outline:2px solid var(--primary-deep);outline-offset:2px;}
+.ad-switch-lab{min-width:0;}
+@media (pointer:coarse){
+  .ad-switch{min-height:44px;}
+}
+@media (prefers-reduced-motion:reduce){
+  .ad-switch-box,.ad-switch-knob{transition:none;}
+}
+
+/* ---------- Radio group ----------
+   題型這種「三個裡選一個」。長得像 chip，但它是輸入元件不是篩選器，
+   所以用 --radius 的方框（chip 是膠囊）—— 兩者不要看起來一樣。 */
+.ad-radios{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
+.ad-radio{display:inline-flex;align-items:center;gap:8px;min-height:40px;
+  padding:8px 14px;border:1px solid var(--line);border-radius:var(--radius);
+  font-size:13.5px;letter-spacing:.04em;color:var(--ink-soft);cursor:pointer;
+  background:var(--bg2);
+  transition:border-color var(--dur-btn) var(--ease),background var(--dur-btn) var(--ease);}
+.ad-radio input{flex:0 0 auto;accent-color:var(--primary-deep);}
+.ad-radio:has(input:checked){border-color:var(--ink);color:var(--ink);background:#fff;}
+.ad-radio:has(input:focus-visible){outline:2px solid var(--primary-deep);outline-offset:2px;}
+@media (pointer:coarse){
+  .ad-radio{min-height:44px;}
+}
+
+/* ---------- Conditional reveal ----------
+   有前置條件的設定：條件不成立時整塊不存在（不是灰掉）。
+   左邊那道細線就是「這一段隸屬於上面那個開關」的唯一視覺線索。 */
+.ad-reveal{margin-top:12px;padding:2px 0 2px 14px;border-left:2px solid var(--line-soft);}
+.ad-reveal[hidden]{display:none;}
+.ad-reveal-lab{font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-soft);}
+.ad-reveal .ad-chips{margin-top:8px;}
+.ad-reveal .ad-info{margin-top:8px;border-top:none;}
+
+/* 預覽用的膠囊排：容器沿用 .ad-chips，裡面放不可點的 .ad-tag */
+.ad-chips-preview{margin-top:10px;}
+
+/* ============================================================
+   表單設定：活動卡
+   ------------------------------------------------------------
+   一個活動一張卡，卡上由上到下就是賓客會看到的順序：
+   這是什麼活動 → 基本問題 → 只有這一場才問的題目。
+
+   為什麼是卡片而不是清單列（UI-SPEC 3.10 的判準）：
+   一筆裡有名稱、時間、地點、開關、兩組題目，行高完全不一致。
+============================================================ */
+.ad-actlist{display:flex;flex-direction:column;gap:16px;margin-top:18px;}
+.ad-actcard{border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--surface);padding:14px 16px 16px;}
+/* 不用回覆的活動：整張淡出視野（和名單上「無法出席」同一套做法），
+   但不隱藏 —— 新人要看得到它還在，只是不在表單裡 */
+.ad-actcard.is-off{background:var(--bg2);}
+.ad-actcard-head{display:flex;align-items:flex-start;gap:10px 14px;flex-wrap:wrap;}
+.ad-actcard-id{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0;}
+.ad-actcard-name{font-family:var(--font-display);font-weight:500;font-size:15px;
+  letter-spacing:.1em;color:var(--ink);}
+.ad-actcard-meta{flex:1 1 100%;display:flex;flex-direction:column;gap:3px;min-width:0;}
+.ad-actcard-when{font-size:12.5px;color:var(--ink-soft);
+  font-variant-numeric:tabular-nums;letter-spacing:.04em;}
+.ad-actcard-where{font-size:12px;line-height:1.8;color:var(--ink-soft);}
+.ad-actcard-where.is-empty{opacity:.75;}
+.ad-actcard-acts{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  margin-top:12px;padding-top:12px;border-top:1px solid var(--line-soft);}
+.ad-actcard-acts > .ad-check{margin-top:0;}
+.ad-actcard-acts .btn{margin-left:auto;}
+.ad-actcard-body{margin-top:2px;}
+.ad-actcard-body .ad-sub-sec{margin-top:18px;}
+.ad-actcard-note{margin:14px 0 0;font-size:12px;line-height:1.9;color:var(--ink-soft);}
+@media(max-width:560px){
+  .ad-actcard{padding:12px 13px 14px;}
+  .ad-actcard-acts .btn{margin-left:0;}
+}
+
+/* ---------- 本場次專屬問題 ----------
+   一題一列（UI-SPEC 3.10：一到兩行、右邊幾顆按鈕 → 清單列，不是卡片）。
+   拖曳把手、⋮ 選單、undo 刪除全部沿用測驗題目那一份。 */
+.ad-qlist{border-top:1px solid var(--line-soft);margin-top:10px;}
+.ad-qrow{display:flex;align-items:flex-start;gap:4px;
+  padding:10px 2px;border-bottom:1px solid var(--line-soft);background:#fff;}
+.ad-qrow .ad-item-main{flex:1 1 auto;}
+.ad-qrow.is-dragging{opacity:.55;box-shadow:var(--shadow-drag);position:relative;z-index:2;}
+.ad-qrow.is-dragging .ad-drag-handle{cursor:grabbing;}
+.ad-qrow-empty{font-size:12.5px;line-height:1.9;color:var(--ink-soft);padding:10px 0;}
+
+/* ---------- 題目彈窗裡的選項 ----------
+   選項數量是變動的（最多 8 個），所以一列一格、後面一顆 ✕。 */
 .ad-evq-sec{margin-top:18px;}
-.ad-evq{border:1px solid var(--line-soft);border-radius:var(--radius);
-  padding:10px 12px;margin-bottom:10px;}
-.ad-evq-head{display:flex;gap:8px;align-items:center;}
-.ad-evq-label{flex:1 1 auto;min-width:0;}
-.ad-evq-kind{flex:0 0 88px;}
-.ad-evq-hint{margin-top:8px;}
-.ad-evq-opts{margin-top:8px;padding-left:12px;border-left:1px solid var(--line-soft);
-  display:flex;flex-direction:column;gap:6px;align-items:flex-start;}
+.ad-evq-opts{margin-top:8px;display:flex;flex-direction:column;gap:6px;
+  align-items:flex-start;}
 .ad-evq-opt{display:flex;gap:6px;align-items:center;width:100%;}
 .ad-evq-opt .ad-input{flex:1 1 auto;min-width:0;}
-.ad-evq-optadd{align-self:flex-start;font-size:12.5px;}
-.ad-evq-empty{font-size:12.5px;color:var(--ink-soft);padding:6px 0 10px;}
-@media(max-width:899px){
-  .ad-evq-head{flex-wrap:wrap;}
-  .ad-evq-label{flex:1 1 100%;}
-}
+.ad-evq-optcount{font-size:11.5px;letter-spacing:.06em;color:var(--ink-soft);}
 
 /* ---------- 各活動出席統計 ----------
    放在環狀圖上面。就是一張 .ad-table，後台本來就是這個語言 —— 不另造元件。 */
