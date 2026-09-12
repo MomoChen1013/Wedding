@@ -755,7 +755,37 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-step-act{flex:0 0 auto;align-self:center;}
 
 /* ============================================================
-   頁面設定（後台首頁最下面）
+   首頁最下面的兩個出口（頁面設定、常見問題）
+   ------------------------------------------------------------
+   兩張一模一樣的卡，圖示與側欄那兩顆分頁是同一顆 ——
+   第一次照著五步走完的人，下一步要去哪裡，用看的就認得出來。
+============================================================ */
+.ad-more{display:grid;gap:10px;}
+.ad-more-item{
+  display:flex;align-items:center;gap:14px;width:100%;
+  padding:16px 18px;text-align:left;cursor:pointer;
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  font-family:inherit;transition:border-color var(--dur-hover) ease-out,
+             background var(--dur-hover) ease-out;
+}
+/* display:flex 蓋過 hidden 的預設值，所以要自己寫一條 */
+.ad-more-item[hidden]{display:none;}
+@media (hover:hover) and (pointer:fine){
+  .ad-more-item:hover{border-color:var(--primary-deep);}
+  .ad-more-item:hover .ad-more-go{transform:translateX(3px);opacity:1;}
+}
+.ad-more-item:focus-visible{outline:1px solid var(--ink);outline-offset:2px;}
+.ad-ic-more{width:22px;height:22px;opacity:.85;}
+.ad-more-main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:4px;}
+.ad-more-title{font-size:14px;letter-spacing:.06em;color:var(--ink);line-height:1.7;}
+.ad-more-note{font-size:12px;line-height:1.8;letter-spacing:.04em;color:var(--ink-soft);}
+.ad-more-go{
+  flex:0 0 auto;font-style:normal;font-size:13px;color:var(--ink-soft);opacity:.6;
+  transition:transform var(--dur-pop) var(--ease),opacity var(--dur-hover) ease-out;
+}
+
+/* ============================================================
+   頁面設定（側欄最下面那顆分頁）
    ------------------------------------------------------------
    左邊一列一頁（開關 ＋ 排程），右邊一支手機示意賓客現在看到什麼。
    桌機並排，窄螢幕手機示意掉到下面 —— 它是「看的」，不是「操作的」，
@@ -788,6 +818,45 @@ select.ad-input{appearance:none;cursor:pointer;
   color:var(--ink-soft);margin-bottom:8px;}
 .ad-page-sched-lab .ad-input-when{margin-top:6px;max-width:240px;}
 
+/* 沒開通的那一列，開關旁邊那顆問號（Feather 的 help-circle）。
+   照 §3.2 的圖示按鈕規格：桌機 36×36、觸控 44×44，透明框、hover 才顯 ——
+   它站在內容上（不是站在一張面上），沒有框就看不出是可以按的。
+   刻意不寫文字：一列裡已經有頁名、說明、狀態三行字，再多一句
+   「為什麼不能開？」會蓋過它們。無障礙的名字掛在 aria-label 上。 */
+.ad-page-why{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  width:36px;height:36px;padding:0;
+  background:none;border:1px solid transparent;border-radius:var(--radius);
+  cursor:help;
+}
+.ad-page-why .ad-ic{width:19px;height:19px;opacity:.55;
+  transition:opacity var(--dur-hover) ease-out;}
+.ad-page-why:hover{border-color:var(--line);}
+.ad-page-why:hover .ad-ic,
+.ad-page-why[aria-expanded="true"] .ad-ic{opacity:1;}
+.ad-page-why:focus-visible{outline:1px solid var(--ink);outline-offset:2px;}
+@media (pointer:coarse){
+  .ad-page-why{width:44px;height:44px;cursor:pointer;}
+  .ad-page-why .ad-ic{width:21px;height:21px;}
+}
+
+/* 按下那顆死掉的開關、或問號，就展開這一塊 ——
+   一句話說清楚要找誰，加一顆直接找得到人的按鈕。
+   和排程那一塊共用同一種展開形狀，新人不必學第二種。 */
+.ad-page-lock{grid-column:1/-1;border-top:1px dashed var(--line);
+  margin-top:4px;padding-top:14px;}
+.ad-page-lock[hidden]{display:none;}
+.ad-page-lock-msg{margin:0 0 12px;font-size:12.5px;line-height:1.9;
+  letter-spacing:.04em;color:var(--ink);}
+
+/* 手機：一列裡「頁名 ＋ 說明」和「排程／問號 ＋ 開關」擠不進同一行
+   （420px 的畫面上右邊那一欄會被切掉），所以讓動作整排掉到文字下面，
+   按鈕靠左、開關靠右，兩端對齊才點得準。 */
+@media(max-width:599px){
+  .ad-page-row{grid-template-columns:1fr;}
+  .ad-page-act{justify-self:stretch;justify-content:space-between;}
+}
+
 /* 開關本體：一顆真的 checkbox（鍵盤、讀螢幕都照舊），
    只是把它藏起來，畫面上顯示旁邊那條軌道 */
 .ad-toggle{position:relative;flex:0 0 auto;display:inline-flex;cursor:pointer;}
@@ -802,8 +871,12 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-toggle input:checked + .ad-toggle-track::after{
   background:#fff;transform:translateX(20px);}
 .ad-toggle input:focus-visible + .ad-toggle-track{outline:1px solid var(--ink);outline-offset:2px;}
-.ad-toggle input:disabled{cursor:not-allowed;}
+/* pointer-events:none 是有意的：disabled 的 input 不會發事件也不會冒泡，
+   點擊要落到外層的 <label> 上，admin.js 才接得到「他想打開這個功能」。
+   游標改成 help（不是 not-allowed）—— 按下去確實會發生事情，只是不是開啟。 */
+.ad-toggle input:disabled{pointer-events:none;}
 .ad-toggle input:disabled + .ad-toggle-track{opacity:.45;}
+.ad-page-row.is-locked .ad-toggle{cursor:help;}
 
 /* 手機示意 */
 .ad-phone{margin:0;}
@@ -830,7 +903,19 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-phone-cap{margin-top:10px;text-align:center;
   font-size:11.5px;letter-spacing:.06em;color:var(--ink-soft);}
 
-/* 常被問到的事：<details> 就夠了，不做自己的手風琴 */
+/* ============================================================
+   常見問題（側欄最下面那顆分頁）
+   ------------------------------------------------------------
+   問題一多，平鋪十幾則就找不到東西了 —— 所以先分類，
+   每一類一個小標 ＋ 一疊 <details>（還是不做自己的手風琴）。
+   最後一塊是官方帳號：這一頁回答不了的，讓他一鍵去問人。
+============================================================ */
+.ad-faq-group + .ad-faq-group{margin-top:30px;}
+.ad-faq-cat{
+  margin:0 0 2px;padding:0 2px;
+  font-family:var(--font-ui);font-size:10.5px;font-weight:400;
+  letter-spacing:.22em;color:var(--ink-soft);
+}
 .ad-faq{border-top:1px solid var(--line-soft);}
 .ad-faq-item{border-bottom:1px solid var(--line-soft);}
 .ad-faq-item > summary{
@@ -844,6 +929,23 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-faq-item[open] > summary::before{content:'－';}
 .ad-faq-item > p{margin:0;padding:0 2px 18px 26px;
   font-size:12.5px;line-height:2;letter-spacing:.04em;color:var(--ink-soft);}
+
+/* 還是沒找到答案？—— 整頁最後一塊，也是唯一一塊有底色的，
+   所以捲到底的人不會錯過它。按鈕不縮，窄螢幕整個掉到下面去 */
+.ad-support{
+  display:flex;align-items:center;gap:20px;flex-wrap:wrap;
+  margin-top:36px;padding:22px 20px;
+  background:#fff;border:1px solid var(--line);
+  border-left:4px solid var(--primary-deep);border-radius:var(--radius);
+}
+.ad-support-main{flex:1 1 260px;min-width:0;}
+.ad-support-title{font-size:14px;letter-spacing:.06em;color:var(--ink);line-height:1.7;}
+.ad-support-note{margin:6px 0 0;font-size:12.5px;line-height:1.9;
+  letter-spacing:.04em;color:var(--ink-soft);}
+.ad-support .btn{flex:0 0 auto;width:auto;text-decoration:none;}
+@media(max-width:599px){
+  .ad-support .btn{width:100%;text-align:center;}
+}
 
 /* 窄螢幕：編號與標題要留在同一行，按鈕才掉到下面。
    flex-wrap 做不到這件事（說明一長，整塊 .ad-step-main 就整個換行，
@@ -2841,6 +2943,13 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
 .ad-navgroup{display:flex;flex-direction:column;}
 .ad-navgroup[hidden]{display:none;}
 .ad-navgroup + .ad-navgroup{margin-top:6px;}
+
+/* 頁面設定與常見問題：和「首頁」同一層（不是在編輯某一塊賓客內容），
+   所以也不進任何一組，用同一道淡線隔在最底下 */
+.ad-navbot{
+  display:flex;flex-direction:column;gap:1px;
+  margin-top:10px;padding-top:9px;border-top:1px solid var(--line-soft);
+}
 
 .ad-navgroup-lab{
   display:flex;align-items:center;gap:8px;width:100%;

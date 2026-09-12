@@ -1197,6 +1197,9 @@ const TAB_PAGE = {
   cards:    'draw',
   exhibits: 'exhibition',
   quiz:     'quiz',
+  /* 頁面設定與常見問題是後台自己的兩頁（不對應任何賓客頁面），永遠開著 */
+  pages:    null,
+  help:     null,
 };
 
 /* 一個分頁有三種狀態：
@@ -1237,6 +1240,11 @@ function tabEnabled(tab){
    所以遮罩底下看到的是空的骨架，那正好就是「這個功能長什麼樣子」。
 ============================================================ */
 const LOCK_NOTE = '這是進階方案的功能。想開通再告訴我們，我們幫你打開，現有的資料都不會動。';
+
+/* 官方帳號：要開通功能、改日期或網址，新人都從這裡找得到人。
+   ★ 全站只有這一個地方寫這個網址 —— 常見問題最下面那顆按鈕、
+     頁面設定裡沒開通那幾列的說明，讀的都是它。換帳號只改這一行。 */
+const SUPPORT_LINE_URL = 'https://line.me/R/ti/p/@381tboky';
 
 function lockIconHtml(cls){
   return `<svg class="ad-ic ${cls}" viewBox="0 0 48 48" aria-hidden="true">`
@@ -1411,6 +1419,9 @@ function openAdmin(){
   if(homeForm) homeForm.href = sitePath('rsvp');
   const homeTitle = document.getElementById('adHomeTitle');
   if(homeTitle && couple) homeTitle.textContent = `${couple} 的新人後台`;
+  /* 常見問題最下面那顆「用官方帳號聯繫」。網址只寫在 SUPPORT_LINE_URL 一個地方 */
+  const support = document.getElementById('adSupportBtn');
+  if(support) support.href = SUPPORT_LINE_URL;
 
   applyTabVisibility();
 
@@ -1774,6 +1785,8 @@ const NAV_TIPS = {
   exhibits:    '新人的故事牆：一張照片配一段文字，賓客可以慢慢看完你們的故事。',
   inbox:       '賓客留給新人的悄悄話。只有你們讀得到，別人在祝福牆上看不到內容。',
   quiz:        '賓客玩的「你有多認識新人」小測驗：出題、設定正確答案，也看得到大家答了什麼。',
+  pages:       '決定賓客現在看得到哪幾頁。內容還沒寫完的先收起來，也可以排一個時間讓它自己開。',
+  help:        '新人最常問到的幾件事，照類別分好了。這裡沒寫到的可以直接用官方帳號私訊我們。',
 };
 
 (function bindNavTips(){
@@ -6602,7 +6615,7 @@ function homeStepDone(step){
 }
 
 /* ============================================================
-   頁面設定（後台首頁最下面）
+   頁面設定（側欄最下面那顆分頁）
    ------------------------------------------------------------
    「這一頁現在要不要讓賓客看到」由新人自己決定 —— 內容還沒寫完的
    先收起來、婚禮當天再打開，也可以排一個時間讓它自己開。
@@ -6698,6 +6711,28 @@ function pageStateText(row){
     : `${fmtTime(row.at)} 自動開啟`;
 }
 
+/* 沒開通的那一列，開關是死的。死的開關按下去什麼都不發生，
+   新人只會以為壞掉了 —— 所以按下去要有人回他一句話，並且說清楚要找誰。 */
+const PAGE_LOCK_MSG = '這個功能需要管理員才能開啟，請透過官方帳號聯繫';
+
+/* 那一句話由旁邊的問號（Feather 的 help-circle）帶出來：
+   桌機滑過去就看得到，觸控裝置點一下 —— 兩邊都不必先按下一顆看起來
+   按不動的開關才知道發生什麼事。按鈕上刻意沒有文字：一列裡已經有
+   頁名、說明、狀態三行字了，再多一句「為什麼不能開？」會蓋過它們。 */
+function setLockNote(row, show){
+  if(!row) return;
+  const box = row.querySelector('[data-page-lock]');
+  if(!box || box.hidden === !show) return;
+  box.hidden = !show;
+  const why = row.querySelector('[data-page-why]');
+  if(why) why.setAttribute('aria-expanded', String(show));
+}
+
+function lockNoteOpen(row){
+  const box = row && row.querySelector('[data-page-lock]');
+  return !!box && !box.hidden;
+}
+
 function pageRowHtml(row){
   const live = pageRowLive(row);
   const schedFuture = !row.on && row.at !== null && Date.now() < row.at;
@@ -6713,8 +6748,13 @@ function pageRowHtml(row){
     </div>
 
     <div class="ad-page-act">
-      ${row.locked ? '' : `<button class="ad-page-when" type="button" data-page-when
-        aria-expanded="false">${schedFuture ? '改排程' : '排程開啟'}</button>`}
+      ${row.locked
+        ? `<button class="ad-page-why" type="button" data-page-why
+            aria-expanded="false" aria-label="為什麼不能開？">
+            <svg class="ad-ic" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-help"/></svg>
+          </button>`
+        : `<button class="ad-page-when" type="button" data-page-when
+            aria-expanded="false">${schedFuture ? '改排程' : '排程開啟'}</button>`}
       <label class="ad-toggle">
         <input type="checkbox" data-page-on ${live ? 'checked' : ''}
                ${row.locked ? 'disabled' : ''}
@@ -6722,6 +6762,19 @@ function pageRowHtml(row){
         <span class="ad-toggle-track" aria-hidden="true"></span>
       </label>
     </div>
+
+    ${!row.locked ? '' : `
+    <div class="ad-page-lock" data-page-lock hidden>
+      <p class="ad-page-lock-msg">${escapeHtml(PAGE_LOCK_MSG)}</p>
+      <div class="ad-row">
+        <a class="btn small" href="${escapeHtml(SUPPORT_LINE_URL)}"
+           target="_blank" rel="noopener noreferrer">用官方帳號聯繫 ↗</a>
+      </div>
+      <div class="ad-hint">
+        開通之後這一列就會活過來，換你自己決定什麼時候讓賓客看到。
+        <b>現有的資料一筆都不會動。</b>
+      </div>
+    </div>`}
 
     ${row.locked ? '' : `
     <div class="ad-page-sched" data-page-sched hidden>
@@ -6768,6 +6821,14 @@ function renderPageSettings(){
 
   const rows = pageSettingRows();
   pagesSecEl.hidden = !rows.length;
+  /* 一頁都沒得收的站台（理論上只有全部功能都還沒對外開放時才會發生），
+     側欄那顆分頁也一起收起來 —— 點進去只有一片空白比沒有這顆按鈕更糟。
+     這一支在 applyTabVisibility 之後才跑，所以蓋得過它的 hidden。 */
+  const pagesTab = document.querySelector('#adSide .ad-tab[data-tab="pages"]');
+  if(pagesTab) pagesTab.hidden = !rows.length;
+  /* 首頁最下面那張「頁面設定」的出口卡同理，不要指向一顆不存在的分頁 */
+  const pagesCta = document.querySelector('.ad-more-item[data-empty-hash="pages"]');
+  if(pagesCta) pagesCta.hidden = !rows.length;
   pageListEl.innerHTML = rows.map(pageRowHtml).join('');
   renderPagePreview(rows);
 }
@@ -6824,6 +6885,24 @@ if(pageListEl){
   });
 
   pageListEl.addEventListener('click', async (e)=>{
+    /* 沒開通的那一列。兩個入口，做的是同一件事：
+         問號  —— 「這是什麼？」（觸控靠點的；桌機滑過去就開了，見下面）
+         開關  —— 「我要打開它」。開關是 disabled 的，按在它身上不會有
+                   change 事件（CSS 把 disabled 的 input 設成
+                   pointer-events:none，點擊才落到外層的 <label> 上、
+                   冒泡到這裡），所以按下去的回應要在這裡給。
+       說明本身裡面的點擊不算（點那顆連結是要去聯繫我們，不是要收回去）。 */
+    const lockedRow = e.target.closest('.ad-page-row.is-locked');
+    if(lockedRow && !e.target.closest('[data-page-lock]')){
+      const viaWhy = !!e.target.closest('[data-page-why]');
+      const show   = viaWhy ? !lockNoteOpen(lockedRow) : true;
+      setLockNote(lockedRow, show);
+      /* 按了那顆按不動的開關才吐 toast —— 問號是「我想知道」，
+         畫面上那段說明就是答案，不必再有人在角落喊一次。 */
+      if(!viaWhy) toast(PAGE_LOCK_MSG);
+      return;
+    }
+
     const openBtn = e.target.closest('[data-page-when]');
     if(openBtn){
       const box = openBtn.closest('[data-page-row]').querySelector('[data-page-sched]');
@@ -6862,6 +6941,43 @@ if(pageListEl){
         toast('已取消排程，這一頁維持收起來');
       });
     }
+  });
+
+  /* 桌機：滑過問號就看得到那句話，不必先點。
+     能力判斷不是寬度判斷 —— iPad 橫向有 1194px，但它是觸控裝置
+     （和側欄 tooltip 的 bindNavTips 同一套判斷）。
+     說明是長在那一列裡面的，所以從問號滑到底下那顆「用官方帳號聯繫」
+     不算離開，滑得到也點得到；真的離開那一列才收起來。 */
+  const finePointer = window.matchMedia('(hover:hover) and (pointer:fine)');
+
+  pageListEl.addEventListener('pointerover', (e)=>{
+    if(!finePointer.matches || e.pointerType === 'touch') return;
+    const why = e.target.closest('[data-page-why]');
+    if(why) setLockNote(why.closest('.ad-page-row.is-locked'), true);
+  });
+
+  pageListEl.addEventListener('pointerout', (e)=>{
+    if(!finePointer.matches || e.pointerType === 'touch') return;
+    const row = e.target.closest('.ad-page-row.is-locked');
+    if(!row) return;
+    if(e.relatedTarget && row.contains(e.relatedTarget)) return;
+    setLockNote(row, false);
+  });
+
+  /* 鍵盤：Tab 到問號上和滑過去是同一件事。
+     再按一次 Tab 會落到說明裡那顆連結（還在同一列裡），所以不會收起來。 */
+  pageListEl.addEventListener('focusin', (e)=>{
+    const why = e.target.closest('[data-page-why]');
+    if(why) setLockNote(why.closest('.ad-page-row.is-locked'), true);
+  });
+
+  pageListEl.addEventListener('focusout', (e)=>{
+    const row = e.target.closest('.ad-page-row.is-locked');
+    if(!row) return;
+    if(e.relatedTarget && row.contains(e.relatedTarget)) return;
+    /* 滑鼠還停在那一列上時不收 —— 焦點離開不代表他不看了 */
+    if(row.matches(':hover')) return;
+    setLockNote(row, false);
   });
 }
 
