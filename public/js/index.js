@@ -590,61 +590,143 @@ function renderExploreCards(){
     linkGrid.appendChild(el);
   });
 
-  /* 照片集永遠排在最後一張：它是「看完了再翻翻照片」，
-     不是要賓客先去做的事（所以也排在新人自訂的卡片後面）。 */
-  const gallery = addGalleryCard();
-
   /* 內建的頁面全關、但新人寫了自訂卡片時，整個區塊要重新露出來 */
   const section = linkGrid.closest('.link-section');
-  if(section) section.hidden = !(builtinCards.length || items.length || gallery);
+  if(section) section.hidden = !(builtinCards.length || items.length);
 
   renumberLinkCards();
 }
 
 /* ============================================================
-   照片集（Explore 的最後一張卡）
+   Moments 相遇之間
    ------------------------------------------------------------
-   本來在邀請函那一頁。邀請函現在只剩出席回覆的表單（拿到那個連結的人
-   是要回覆的人），照片集就搬到大廳來 —— 它本來就比較接近「逛一逛」，
-   和 Explore 的其他卡片是同一件事。
+   本來是 Explore 的最後一張卡（點開才跳出一疊照片）。但照片不是
+   「另一個可以去玩的活動」，它就是這場婚禮本身 —— 藏在一張卡後面，
+   等於要賓客先猜到裡面有東西才看得到。所以現在它是首頁上自己的一段：
+   往下捲，照片一張一張浮出來。
 
    ・照片是站台的 photos（沒填就是素材資料夾掃到的那些）
    ・新人可以在後台把它整塊關掉（rsvpShowGallery，和以前同一個開關）
-   ・點了用 Explore 既有的彈窗顯示，不另外做一套燈箱
+   ・src 是「捲到附近」才填的（下面的 loadIO）：一進大廳不會同時發出
+     十幾個圖片請求，那段頻寬留給封面與背景
+   ・進場動畫是另一顆 observer（revealIO）：真的進到畫面裡才淡入 ＋ 上浮，
+     同一批進來的依序錯開，不是整片一起亮
+   ・點了用既有的彈窗放大，不另外做一套燈箱
+   ・prefers-reduced-motion 不必在這裡判斷：common.css 那條全站規則
+     會把 transition 壓成 1ms，等於直接到位
 ============================================================ */
+
+/* 捲到距離畫面這麼近就開始下載（提前量夠大，正常速度捲下去時
+   照片已經在那裡了，不會看到一格一格的空框） */
+const RAIL_LOAD_MARGIN = '600px 0px';
+/* 同一批進畫面的照片，彼此錯開的時間；錯太多會變成在等它演完 */
+const RAIL_STAGGER_MS = 90;
+const RAIL_STAGGER_MAX = 5;
+
 function galleryPhotos(){
   if(!rsvpConfig().showGallery) return [];
   return (Array.isArray(W.photos) ? W.photos : [])
     .filter(p => typeof p === 'string' && p.trim());
 }
 
-function addGalleryCard(){
-  if(!linkGrid) return false;
-  linkGrid.querySelectorAll('.link-card.is-gallery').forEach(el => el.remove());
+/* 重畫時要把上一輪的 observer 收掉，否則它們還盯著已經移除的節點 */
+let railObservers = [];
+
+function renderPhotoGallery(){
+  const section = document.getElementById('photoGallery');
+  const rail = document.getElementById('photoRail');
+  if(!section || !rail) return;
+
+  railObservers.forEach(io => io.disconnect());
+  railObservers = [];
+  rail.innerHTML = '';
 
   const photos = galleryPhotos();
-  if(!photos.length) return false;
+  section.hidden = !photos.length;
+  if(!photos.length) return;
 
-  const el = document.createElement('button');
-  el.type = 'button';
-  el.className = 'link-card is-gallery';
-  el.innerHTML =
-    `<span class="lc-index"></span>` +
-    `<span class="lc-title">照片集</span>` +
-    `<span class="lc-sub">${photos.length} 張我們的照片，點開來慢慢看</span>` +
-    `<span class="lc-go">看照片</span>`;
-  el.addEventListener('click', ()=> openInfoModal({
-    title:'照片集', sub:'我們的照片', imgSrc: photos, grid: photos.length > 1,
-  }));
+  photos.forEach((src, i) => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'pr-item';
+    item.setAttribute('aria-label', `放大第 ${i + 1} 張照片`);
 
-  linkGrid.appendChild(el);
-  return true;
+    const frame = document.createElement('span');
+    frame.className = 'pr-frame';
+
+    const img = document.createElement('img');
+    img.className = 'pr-img';
+    img.alt = '';
+    /* 原生 lazy 也留著：observer 先填 src，實際要不要現在抓由瀏覽器再決定一次 */
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    img.dataset.src = src;
+    img.addEventListener('load', () => item.classList.add('is-loaded'));
+    /* 載不到的那一張整格收掉 —— 迴廊上不要留一個永遠在閃的空框 */
+    img.addEventListener('error', () => item.remove());
+
+    frame.appendChild(img);
+    item.appendChild(frame);
+    item.addEventListener('click', () => openInfoModal({
+      title: '相遇之間',
+      sub: photos.length > 1 ? `第 ${i + 1} 張，共 ${photos.length} 張` : '',
+      imgSrc: src, photo: true,
+    }));
+    rail.appendChild(item);
+  });
+
+  observePhotoRail(rail);
+}
+
+function loadRailItem(el){
+  const img = el.querySelector('.pr-img');
+  /* img.src 在還沒指定前是空字串，指定後會變成絕對網址 —— 不會重複填 */
+  if(img && !img.src && img.dataset.src) img.src = img.dataset.src;
+}
+
+function revealRailItem(el, delayMs){
+  if(delayMs) el.style.transitionDelay = `${delayMs}ms`;
+  el.classList.add('is-in');
+}
+
+function observePhotoRail(rail){
+  const items = Array.from(rail.querySelectorAll('.pr-item'));
+  if(!items.length) return;
+
+  /* 沒有 IntersectionObserver 的瀏覽器：全部直接載、直接顯示。
+     動畫是加分的，照片看不看得到不能賭在它身上。 */
+  if(!('IntersectionObserver' in window)){
+    items.forEach(el => { loadRailItem(el); revealRailItem(el, 0); });
+    return;
+  }
+
+  const loadIO = new IntersectionObserver((entries, io) => {
+    entries.forEach(e => {
+      if(!e.isIntersecting) return;
+      io.unobserve(e.target);
+      loadRailItem(e.target);
+    });
+  }, { rootMargin: RAIL_LOAD_MARGIN });
+
+  const revealIO = new IntersectionObserver((entries, io) => {
+    /* 同一次回呼可能一次進來好幾張（開場結束、或捲得很快）：
+       依序錯開，看起來是一張接一張走進來的 */
+    let n = 0;
+    entries.forEach(e => {
+      if(!e.isIntersecting) return;
+      io.unobserve(e.target);
+      revealRailItem(e.target, Math.min(n++, RAIL_STAGGER_MAX) * RAIL_STAGGER_MS);
+    });
+  }, { threshold: 0.12 });
+
+  items.forEach(el => { loadIO.observe(el); revealIO.observe(el); });
+  railObservers = [loadIO, revealIO];
 }
 
 /* ---------- 彈窗（自訂內容的「跳出說明」跟交通資訊的「展開更多」共用） ---------- */
 const lcModal = document.getElementById('lcModal');
 
-function openInfoModal({ title, sub, bodyText, imgSrc, grid }){
+function openInfoModal({ title, sub, bodyText, imgSrc, grid, photo }){
   document.getElementById('lcModalTitle').textContent = title || '';
   const subEl = document.getElementById('lcModalSub');
   subEl.textContent = sub || '';
@@ -652,9 +734,12 @@ function openInfoModal({ title, sub, bodyText, imgSrc, grid }){
 
   const bodyEl = document.getElementById('lcModalBody');
   bodyEl.innerHTML = '';
-  /* 照片集是一疊照片，排成兩欄才看得完；交通資訊與 Dress Code
-     是「一張圖配一段說明」，維持整欄一張 */
+  /* 一次給一疊圖時排成兩欄（Dress Code 的「查看更多」）；交通資訊與
+     「相遇之間」的單張放大是「一張圖配一段說明」，維持整欄一張 */
   bodyEl.classList.toggle('is-grid', !!grid);
+  /* 迴廊點開的那一張是「把照片看清楚」：整張放進來、不裁切。
+     交通圖與 Dress Code 是配著文字看的示意圖，維持原本的定高裁切。 */
+  bodyEl.classList.toggle('is-photo', !!photo);
   /* imgSrc 可以是一張或一疊：交通資訊給一張，Dress Code 的「查看更多」
      給整組參考圖（第一張在卡片上已經看過了，這裡連它一起再列一次 ——
      少了它，彈窗裡的順序會對不上卡片上的那一張） */
@@ -688,9 +773,11 @@ if(lcModal){
 
 document.addEventListener('data:explore', renderExploreCards);
 DataStore.subscribeExplore();
-/* 自訂卡片是非同步的，照片集不是 —— 先畫一次，照片集才不會等到
-   explore 那一份回來（或讀不到）才出現 */
 renderExploreCards();
+
+/* 「相遇之間」的照片來自站台設定（同步就有），和 Explore 的自訂卡片
+   是兩件事，所以自己畫自己的 */
+renderPhotoGallery();
 
 /* ============================================================
    卡片連結的編號
