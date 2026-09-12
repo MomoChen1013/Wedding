@@ -122,33 +122,20 @@ body{padding-top:0;}
     </div>
   </section>
 
-  <!-- ============ 邀請函 ============ -->
+  <!-- ============ 出席回覆 ============
+       那一頁已經不放婚禮資訊、兩人的故事與照片集了（都在大廳），
+       封面之後直接就是表單 —— 會拿到這個連結的人是來回覆的。 -->
   <section class="hx-sec">
-    <h2>邀請函</h2><div class="file">invitation.html ＋ rsvp.css ＋ invitation.css</div>
+    <h2>出席回覆</h2><div class="file">invitation.html ＋ rsvp.css ＋ invitation.css</div>
     <div class="panel">
       <header class="scene-hero inv-hero">
         <div class="inv-kicker">We're getting married</div>
         <h1 class="sh-title inv-couple">Ginny &amp; One</h1>
         <div class="sh-rule"></div>
         <div class="sh-sub">2026.09.19</div>
+        <div class="inv-countdown">距離婚禮還有 <b>32</b> 天</div>
       </header>
       <div class="scene-body">
-        <section class="inv-block">
-          <div class="section-title">Details <small>婚禮資訊</small></div>
-          <div class="cardbox">
-            <div class="inv-rows">
-              <div class="inv-row"><div class="ir-label">日期</div>
-                <div class="ir-body"><div class="ir-val">2026.09.19（六）11:30</div></div></div>
-              <div class="inv-row"><div class="ir-label">地點</div>
-                <div class="ir-body"><div class="ir-val">台北萬豪酒店　三樓宴會廳</div>
-                  <div class="ir-sub">台北市中山區樂群二路 199 號</div>
-                  <a class="ir-jump" href="#">開啟地圖 →</a></div></div>
-              <div class="inv-row"><div class="ir-label">服裝</div>
-                <div class="ir-body"><div class="ir-val inv-note">不用太隆重，淺色系就好</div></div></div>
-            </div>
-            <div class="inv-actions"><button class="btn small ghost" type="button">加入行事曆</button></div>
-          </div>
-        </section>
         <section class="inv-block">
           <div class="section-title">R.S.V.P. <small>出席回覆</small></div>
           <p class="inv-lead">花一分鐘告訴我們你的安排，讓我們把每個細節都準備好</p>
@@ -160,6 +147,18 @@ body{padding-top:0;}
               <button class="choice" type="button">無法參加</button></div></div>
           <label class="rf-check"><input type="checkbox" checked><span>需要兒童座椅</span></label>
           <div class="rf-actions" style="margin-top:20px"><button class="btn" type="button">送出回覆</button></div>
+        </section>
+        <!-- 送出之後的結果卡：這一頁到此為止，所以要有下一步可以走 -->
+        <section class="inv-block">
+          <div class="cardbox thanks-card">
+            <h3>太好了，收到你的回覆</h3>
+            <p>我們幫你留好 2 個位置，超期待相見</p>
+            <div class="tk-next">
+              <a class="btn small ghost" href="#">看我們的故事</a>
+              <a class="btn small" href="#">回婚禮大廳</a>
+            </div>
+            <button type="button" class="btn ghost small">修改我的回覆</button>
+          </div>
         </section>
       </div>
     </div>

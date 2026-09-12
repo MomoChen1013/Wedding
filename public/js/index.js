@@ -590,17 +590,61 @@ function renderExploreCards(){
     linkGrid.appendChild(el);
   });
 
+  /* 照片集永遠排在最後一張：它是「看完了再翻翻照片」，
+     不是要賓客先去做的事（所以也排在新人自訂的卡片後面）。 */
+  const gallery = addGalleryCard();
+
   /* 內建的頁面全關、但新人寫了自訂卡片時，整個區塊要重新露出來 */
   const section = linkGrid.closest('.link-section');
-  if(section) section.hidden = !(builtinCards.length || items.length);
+  if(section) section.hidden = !(builtinCards.length || items.length || gallery);
 
   renumberLinkCards();
+}
+
+/* ============================================================
+   照片集（Explore 的最後一張卡）
+   ------------------------------------------------------------
+   本來在邀請函那一頁。邀請函現在只剩出席回覆的表單（拿到那個連結的人
+   是要回覆的人），照片集就搬到大廳來 —— 它本來就比較接近「逛一逛」，
+   和 Explore 的其他卡片是同一件事。
+
+   ・照片是站台的 photos（沒填就是素材資料夾掃到的那些）
+   ・新人可以在後台把它整塊關掉（rsvpShowGallery，和以前同一個開關）
+   ・點了用 Explore 既有的彈窗顯示，不另外做一套燈箱
+============================================================ */
+function galleryPhotos(){
+  if(!rsvpConfig().showGallery) return [];
+  return (Array.isArray(W.photos) ? W.photos : [])
+    .filter(p => typeof p === 'string' && p.trim());
+}
+
+function addGalleryCard(){
+  if(!linkGrid) return false;
+  linkGrid.querySelectorAll('.link-card.is-gallery').forEach(el => el.remove());
+
+  const photos = galleryPhotos();
+  if(!photos.length) return false;
+
+  const el = document.createElement('button');
+  el.type = 'button';
+  el.className = 'link-card is-gallery';
+  el.innerHTML =
+    `<span class="lc-index"></span>` +
+    `<span class="lc-title">照片集</span>` +
+    `<span class="lc-sub">${photos.length} 張我們的照片，點開來慢慢看</span>` +
+    `<span class="lc-go">看照片</span>`;
+  el.addEventListener('click', ()=> openInfoModal({
+    title:'照片集', sub:'我們的照片', imgSrc: photos, grid: photos.length > 1,
+  }));
+
+  linkGrid.appendChild(el);
+  return true;
 }
 
 /* ---------- 彈窗（自訂內容的「跳出說明」跟交通資訊的「展開更多」共用） ---------- */
 const lcModal = document.getElementById('lcModal');
 
-function openInfoModal({ title, sub, bodyText, imgSrc }){
+function openInfoModal({ title, sub, bodyText, imgSrc, grid }){
   document.getElementById('lcModalTitle').textContent = title || '';
   const subEl = document.getElementById('lcModalSub');
   subEl.textContent = sub || '';
@@ -608,6 +652,9 @@ function openInfoModal({ title, sub, bodyText, imgSrc }){
 
   const bodyEl = document.getElementById('lcModalBody');
   bodyEl.innerHTML = '';
+  /* 照片集是一疊照片，排成兩欄才看得完；交通資訊與 Dress Code
+     是「一張圖配一段說明」，維持整欄一張 */
+  bodyEl.classList.toggle('is-grid', !!grid);
   /* imgSrc 可以是一張或一疊：交通資訊給一張，Dress Code 的「查看更多」
      給整組參考圖（第一張在卡片上已經看過了，這裡連它一起再列一次 ——
      少了它，彈窗裡的順序會對不上卡片上的那一張） */
@@ -641,6 +688,9 @@ if(lcModal){
 
 document.addEventListener('data:explore', renderExploreCards);
 DataStore.subscribeExplore();
+/* 自訂卡片是非同步的，照片集不是 —— 先畫一次，照片集才不會等到
+   explore 那一份回來（或讀不到）才出現 */
+renderExploreCards();
 
 /* ============================================================
    卡片連結的編號

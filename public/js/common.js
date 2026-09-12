@@ -116,12 +116,30 @@ const RSVP_OPTIONS = {
     ['pickup', '自行領取'],
     ['mail',   '郵寄'],
   ],
+  /* 喜餅：現場領取＝婚宴當天在會場拿；自行領取＝另外跟新人約時間拿。
+     兩件事在台灣的婚禮是分開的，合成一個選項的話新人分不出要準備幾盒在會場。 */
   gift: [
     ['pickup', '現場領取'],
+    ['self',   '自行領取'],
     ['mail',   '郵寄'],
   ],
 };
+
+/* 「郵寄」這個選項可以由新人在後台整個關掉（rsvpMailEnabled）——
+   不寄送喜帖喜餅的新人，不該讓賓客填了地址才發現沒有這回事。
+   關掉時喜帖的「紙本要怎麼給」與喜餅的「領取方式」都少一個郵寄。 */
+const MAIL_OPTION_GROUPS = ['cardDelivery', 'gift'];
 window.RSVP_OPTIONS = RSVP_OPTIONS;
+
+/* 某一題現在真正要給賓客看的選項。
+   目前只有一條規則：新人關掉郵寄時，兩題各少一個「郵寄」。
+   表單（rsvp-form.js）讀這一份而不是 RSVP_OPTIONS，
+   已經送出的回覆仍然靠 rsvpLabel() 翻譯得回來（選項只是不再出現）。 */
+function rsvpOptions(group){
+  const all = RSVP_OPTIONS[group] || [];
+  if(!MAIL_OPTION_GROUPS.includes(group)) return all;
+  return rsvpConfig().allowMail ? all : all.filter(([v]) => v !== 'mail');
+}
 
 /* 代號 → 中文（找不到就原樣回傳，舊資料才不會變成空白） */
 function rsvpLabel(group, value){
@@ -151,10 +169,15 @@ function rsvpConfig(){
   return {
     askCard:     on(d.rsvpAskCard),      // 喜帖
     askGift:     on(d.rsvpAskGift),      // 喜餅
+    /* 郵寄：沒設定過就視為提供（舊站台的選項不會突然少一個） */
+    allowMail:   on(d.rsvpMailEnabled),
     askMessage:  on(d.rsvpAskMessage),   // 想對新人說的話
     contacts,                            // 要問哪幾種聯絡方式
-    showStory:   on(d.rsvpShowStory),    // 頁面上的「兩人的故事」
-    showGallery: on(d.rsvpShowGallery),  // 頁面上的「照片集」
+    /* 照片集：現在是首頁 Explore 的最後一張卡（本來在邀請函上）。
+       欄位沿用 rsvpShowGallery —— 已經關掉的站台不會因為搬家又打開。
+       rsvpShowStory 則整個不再讀：出席表單那一頁已經不放兩人的故事，
+       那是首頁的事，有寫就出現。 */
+    showGallery: on(d.rsvpShowGallery),
     /* 賓客標籤：整個功能預設是關的，由我們在 Firebase 打開（見下面說明） */
     tagsOn:      guestTagsOn(),
     tags:        guestTagList(),

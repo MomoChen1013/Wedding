@@ -47,13 +47,6 @@
   white-space:pre-wrap;
 }
 
-.st-mates{margin-top:22px;padding-top:18px;border-top:1px solid var(--line-soft);}
-.st-mates-label{font-size:11px;letter-spacing:.3em;text-transform:uppercase;
-  color:var(--ink-soft);margin-bottom:12px;}
-.st-mates-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
-.st-mate{border:1px solid var(--line);border-radius:999px;padding:5px 14px;
-  font-size:12.5px;letter-spacing:.08em;color:var(--ink);}
-
 /* ---------- 有一封信在等你 ---------- */
 .st-letter{
   display:flex;align-items:center;gap:12px;

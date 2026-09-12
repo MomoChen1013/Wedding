@@ -134,6 +134,30 @@ async function checkOne(db, slug, base) {
     if (gone.length) console.log(`ℹ️  已下架的代號（留著不影響）: ${gone.join('、')}`);
   }
 
+  /* 5b. 新人自己收起來的頁面（sites.pagePublish）
+         ——「我們開了這一頁，賓客卻看不到」最常見的原因就是這裡。
+         桌次比較特別，它的開關仍然是 seatingFeatureEnabled。 */
+  const pub = s.pagePublish && typeof s.pagePublish === 'object' ? s.pagePublish : {};
+  const now = Date.now();
+  const hiddenByCouple = [];
+  const scheduled = [];
+  Object.entries(pub).forEach(([k, row]) => {
+    if (!row || typeof row !== 'object') return;
+    const at = Number(row.at);
+    const when = Number.isFinite(at) && at > 0 ? at : null;
+    if (row.on === true) return;
+    if (when && now >= when) return;                 /* 排程時間到了＝已經開了 */
+    if (when) scheduled.push(`${PAGE_LABELS[k] || k}（${fmtDate({ toDate: () => new Date(when) })}）`);
+    else hiddenByCouple.push(PAGE_LABELS[k] || k);
+  });
+  if (s.seatingFeatureEnabled === false) hiddenByCouple.push(`${PAGE_LABELS.seating}（seatingFeatureEnabled）`);
+  if (hiddenByCouple.length) {
+    console.log(`ℹ️  新人自己收起來的頁面 : ${hiddenByCouple.join('、')}（後台首頁的「頁面設定」，我們不用動）`);
+  }
+  if (scheduled.length) {
+    console.log(`ℹ️  排程開啟 : ${scheduled.join('、')}`);
+  }
+
   /* 6. RSVP */
   console.log('');
   if (s.rsvpEnabled === false) {

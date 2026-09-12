@@ -62,7 +62,7 @@
 | 檔案 | 行數位置 | 職責 |
 |---|---|---|
 | `public/invitation.html` | 全檔 125 行 | 單頁邀請函骨架。RSVP 區塊只有 `<div id="rsvpFormHost">` |
-| `public/js/invitation.js` | 全檔 211 行 | 封面／倒數／地點／故事／照片牆／hashtag／`.ics`，最後 `RSVPForm.mount()` |
+| `public/js/invitation.js` | 全檔 | 封面／倒數／hashtag，最後 `RSVPForm.mount()`。**婚禮資訊、兩人的故事、照片集、`.ics` 都已經回到大廳**，那一頁只剩表單 |
 | `public/js/rsvp-form.js` | 全檔 689 行 | **表單的全部**：DOM 產生（`formHtml`）、狀態、條件顯示、驗證（`validate`）、payload（`buildPayload`）、送出、感謝畫面、回訪還原 |
 | `public/js/common.js` | L88–124 | `RSVP_OPTIONS` — 表單與後台圖表共用的選項字典 |
 | " | L142–160 | `rsvpConfig()` — 新人在後台開關了哪些題目 |
@@ -71,7 +71,7 @@
 | " | L589–621 | `getRSVPs / getRSVPCount / rsvpStatus / getAttendingCount / getRsvpTally` |
 | " | L623–704 | `getRsvpCharts()` — 後台五個環狀圖的統計 |
 | `public/css/rsvp.css` | 全檔 143 行 | 表單樣式（`.rf-*`、`.choice`、`.stepper`、`.thanks-card`） |
-| `public/css/invitation.css` | 全檔 91 行 | 這一頁獨有（`.inv-*`：封面、資訊列、照片牆、lightbox） |
+| `public/css/invitation.css` | 全檔 | 這一頁獨有（`.inv-*`：封面、hashtag） |
 | `public/js/admin.js` | L1688–2535 | 後台「出席回覆」分頁：統計、名單表格／卡片、抽屜、篩選、標籤、CSV |
 | " | L2537–2700 | 「表單設定」子分頁（寫回 `sites` 的 `rsvpAsk*`／`rsvpContactMethods`／`rsvpShow*`） |
 | `public/admin.html` | L170–430 | 出席回覆分頁的 HTML |
@@ -181,8 +181,7 @@ DataStore.getRSVPs().map(r => ({
 | 大廳資訊卡 | `js/index.js` L263–264 | `infoVenue` / `infoAddr` |
 | 大廳地圖鈕 | `js/index.js` L272–275 | `mapUrl` 或用地址組 Google Maps |
 | 大廳 Google Calendar | `js/index.js` L277–299 | `location` 參數 |
-| 邀請函資訊列 | `js/invitation.js` `renderVenue()` | 地點列 ＋ 開啟地圖 |
-| 邀請函 `.ics` | `js/invitation.js` `setupCalendar()` | `LOCATION` |
+| 出席回覆的活動卡 | `js/rsvp-form.js` `evCardHtml()` | 每一場自己的地點 ＋ 查看地圖（多活動時） |
 | OG 分享文字 | `scripts/build-og.js` L138 | 日期 ＋ 場地名 |
 | 後台婚禮資訊 | `js/admin.js` L3976–3978、L4231–4233 | 三個輸入框 |
 | 後台表單設定的「表單資訊」列 | `js/admin.js` L2612–2614 | 唯讀顯示 |
@@ -194,8 +193,8 @@ DataStore.getRSVPs().map(r => ({
 ```
 出席回覆 (rsvp)          ├ 出席回覆總覽（大數字 ＋ 五個環狀圖）
                         ├ 回覆（表格／卡片、篩選、標籤、CSV、詳細抽屜）
-                        ├ 表單設定（題目開關 ＋ 表單資訊）
                         └ 設定賓客標籤（guestTagsEnabled 才出現）
+表單設定 (rsvpForm)        側欄自己的一顆分頁（題目開關 ＋ 封面那一段）
 桌次 (seating)           ├ 桌次圖 └ 桌次搜尋及名單
 排桌管理 (seatingPlan)    ├ 排桌工作區 ├ 桌位管理 └ 匯入匯出
 收禮小幫手 (butler)       ├ 收禮統計 ├ 收禮明細 …

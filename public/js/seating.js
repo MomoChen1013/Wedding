@@ -76,15 +76,6 @@ function findSeats(input){
   return rows.filter(r => q.includes(r._k));
 }
 
-/* 同一桌還有誰（讓賓客知道旁邊坐的是誰，也方便一群人一起找位子） */
-function tableMates(table, exclude){
-  const t = normKey(table);
-  return DataStore.getSeating()
-    .filter(r => normKey(r.table) === t && r.id !== exclude)
-    .map(r => r.name)
-    .filter(Boolean);
-}
-
 function renderResult(list, typed){
   if(!list.length){
     stResult.innerHTML = `
@@ -99,23 +90,16 @@ function renderResult(list, typed){
     return;
   }
 
-  stResult.innerHTML = list.map(r => {
-    const mates = tableMates(r.table, r.id);
-    return `
+  /* 刻意不列出「同桌還有誰」：那份名單是新人整理的資料，
+     賓客查自己的位子不必連帶看到同桌其他人的名字。 */
+  stResult.innerHTML = list.map(r => `
       <div class="st-card">
         <div class="st-card-name">${escapeHtml(r.name)}</div>
         <div class="st-card-label">你的桌次</div>
         <div class="st-card-table">${escapeHtml(r.table)}</div>
         ${r.note ? `<div class="st-card-note">${escapeHtml(r.note)}</div>` : ''}
-        ${mates.length ? `
-          <div class="st-mates">
-            <div class="st-mates-label">同桌的還有</div>
-            <div class="st-mates-list">${mates.map(n =>
-              `<span class="st-mate">${escapeHtml(n)}</span>`).join('')}</div>
-          </div>` : ''}
         ${letterNote(r.name)}
-      </div>`;
-  }).join('');
+      </div>`).join('');
 
   try{ goldFall(); }catch{}
 }

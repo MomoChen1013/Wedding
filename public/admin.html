@@ -448,6 +448,45 @@
       <ol class="ad-steps" id="adHomeSteps"></ol>
     </section>
 
+    <!-- ============================================================
+         頁面設定
+         ------------------------------------------------------------
+         哪幾頁「現在」讓賓客看得到，由新人自己決定：
+         內容還沒寫完的先收起來，婚禮當天再打開；
+         也可以排一個時間，到了自己開（例如喜宴當天中午開放抽卡）。
+
+         ・沒開通的功能是灰的、掛一顆鎖頭 —— 那是我們這一層的開關
+         ・右邊那支手機就是賓客現在打開首頁看到的入口清單
+         列表與手機示意都由 js/admin.js 的 renderPageSettings() 產生。
+    ============================================================ -->
+    <section class="ad-sec" id="adPagesSec" hidden>
+      <h2 class="ad-sec-title">頁面設定</h2>
+      <p class="ad-sec-note">
+        決定<b>賓客現在看得到哪幾頁</b>。收起來的頁面，首頁不會出現入口，
+        直接打網址也會被帶回首頁 —— <b>裡面的內容不會消失</b>，
+        你在後台照樣編輯得動，重新打開就回來了。
+      </p>
+
+      <div class="ad-pages">
+        <div class="ad-pages-list" id="adPageList"></div>
+
+        <!-- 手機示意：賓客現在打開首頁看到的樣子 -->
+        <figure class="ad-phone">
+          <div class="ad-phone-screen">
+            <div class="ad-phone-top">
+              <span class="ad-phone-dot" aria-hidden="true"></span>
+              <span class="ad-phone-title" id="adPhoneTitle">婚禮邀請函</span>
+            </div>
+            <div class="ad-phone-body">
+              <div class="ad-phone-lab">Explore</div>
+              <ul class="ad-phone-list" id="adPagePreview"></ul>
+            </div>
+          </div>
+          <figcaption class="ad-phone-cap">賓客現在打開首頁看到的入口</figcaption>
+        </figure>
+      </div>
+    </section>
+
     <section class="ad-sec">
       <h2 class="ad-sec-title">幾件常被問到的事</h2>
       <div class="ad-faq">
@@ -701,6 +740,18 @@
           <label class="ad-check"><input type="checkbox" id="adAskGift"><span>喜餅領取方式</span></label>
           <label class="ad-check"><input type="checkbox" id="adAskMessage"><span>想對新人說的話</span></label>
 
+          <div class="ad-sub-sec" id="adMailSec">
+            <div class="ad-sub-sec-title">要不要提供「郵寄」</div>
+            <label class="ad-check"><input type="checkbox" id="adAskMail">
+              <span>可以幫賓客郵寄<small>喜帖與喜餅都適用</small></span></label>
+            <div class="ad-hint">
+              打勾時，喜帖的「紙本要怎麼給你？」會多一個<b>郵寄</b>，
+              喜餅的領取方式也會多一個<b>郵寄</b>，選了才會問地址。<br>
+              不打勾就完全不出現郵寄 —— 賓客不會填了地址才發現沒有這回事。
+              喜餅剩下<b>現場領取</b>與<b>自行領取</b>兩個選項。
+            </div>
+          </div>
+
           <label class="ad-check is-fixed">
             <input type="checkbox" checked disabled><span>其他備註</span></label>
 
@@ -728,37 +779,20 @@
           </div>
 
           <div class="ad-sub-sec">
-            <div class="ad-sub-sec-title">婚禮資訊</div>
+            <div class="ad-sub-sec-title">封面那一段</div>
             <p class="ad-sub-sec-note">
+              表單上面那一段會出現你們的名字、日期與倒數，以及婚禮 hashtag。
               在「婚禮資訊」分頁填寫，這裡只是列出目前的內容。
-              <b>留白的那一列不會出現在邀請函上</b>。
             </p>
             <div class="ad-info" id="adRsvpInfoList"></div>
             <div class="ad-row">
               <button class="btn small ghost" id="adRsvpInfoJump" type="button">去填寫婚禮資訊</button>
             </div>
-          </div>
-
-          <div class="ad-sub-sec">
-            <div class="ad-sub-sec-title">兩人的故事</div>
-            <label class="ad-check"><input type="checkbox" id="adShowStory"><span>在邀請函上放「兩人的故事」</span></label>
-            <div class="ad-info" id="adRsvpStoryInfo"></div>
-            <div class="ad-row">
-              <button class="btn small ghost" id="adRsvpStoryJump" type="button">去填寫兩人的故事</button>
-            </div>
-          </div>
-
-          <div class="ad-sub-sec">
-            <div class="ad-sub-sec-title">照片集</div>
-            <label class="ad-check"><input type="checkbox" id="adShowGallery"><span>在邀請函上放「照片集」</span></label>
-            <div class="ad-info" id="adRsvpGalleryInfo"></div>
-            <div class="ad-row">
-              <a class="btn small ghost" id="adRsvpGalleryView" href="/"
-                 target="_blank" rel="noopener noreferrer">看看目前的照片集</a>
-            </div>
             <div class="ad-hint">
-              照片集的照片放在<b>這場婚禮的素材資料夾</b>裡，後台不能自己上傳 ——
-              要新增或更換照片，把檔案給我們就會幫你換上。
+              地點、交通、Dress Code、禮金、兩人的故事與照片集<b>只出現在首頁</b>，
+              出席表單那一頁不再放第二次 —— 會拿到這個連結的人是來回覆的，
+              那幾塊擺在表單前面只會把要填的東西往下推。
+              賓客送出回覆之後，結果卡上就有「回婚禮大廳」與「看我們的故事」。
             </div>
           </div>
 
@@ -986,6 +1020,28 @@
     </div>
 
     <div class="ad-subpanel" data-subpanel="explore">
+
+    <!-- 照片集是 Explore 的最後一張卡，所以開關就放在 Explore 這一頁。
+         （它本來在邀請函上，那一頁現在只剩出席回覆的表單） -->
+    <section class="ad-sec">
+      <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-storywall"/></svg>照片集</h2>
+      <p class="ad-sec-note">
+        首頁 Explore 的<b>最後一張卡</b>，點開是一疊你們的照片。
+      </p>
+      <label class="ad-check"><input type="checkbox" id="adShowGallery">
+        <span>在首頁 Explore 放「照片集」</span></label>
+      <div class="ad-info" id="adRsvpGalleryInfo"></div>
+      <div class="ad-row">
+        <a class="btn small ghost" id="adRsvpGalleryView" href="/"
+           target="_blank" rel="noopener noreferrer">看看目前的照片集</a>
+      </div>
+      <div class="ad-hint">
+        照片集的照片放在<b>這場婚禮的素材資料夾</b>裡，後台不能自己上傳 ——
+        要新增或更換照片，把檔案給我們就會幫你換上。
+        <b>這個開關按下去就存起來了，不用按下面的儲存。</b>
+      </div>
+    </section>
+
     <section class="ad-sec">
       <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-custom"/></svg>自訂內容</h2>
       <p class="ad-sec-note">

@@ -125,6 +125,13 @@
 .thanks-card p{color:var(--ink-soft);font-size:14.5px;line-height:1.9;margin-bottom:24px;}
 .thanks-card .btn{display:inline-block;width:auto;}
 
+/* 回覆完的下一步：大廳／兩人的故事。
+   兩顆並排、窄螢幕自己換行，底下再隔一條線才是「修改我的回覆」——
+   前兩顆是往前走，最後那顆是往回走，不該長得一樣重。 */
+.tk-next{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;
+  margin:0 0 22px;padding-bottom:22px;border-bottom:1px solid var(--line-soft);}
+.tk-next[hidden]{display:none;}
+
 /* ---- 新人專屬名單 ---- */
 .ol-summary{font-size:14px;color:var(--ink);border:1px solid var(--line);
   border-radius:var(--radius);padding:14px 16px;line-height:1.9;}

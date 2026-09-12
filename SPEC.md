@@ -120,10 +120,15 @@ sites/{siteId}
   rsvpAskCard     : boolean  # 要不要問「喜帖發送方式」
   rsvpAskGift     : boolean  # 要不要問「喜餅領取方式」
   rsvpAskMessage  : boolean  # 要不要問「想對新人說的話」
+  rsvpMailEnabled : boolean  # 要不要提供「郵寄」這個選項（喜帖怎麼給、喜餅怎麼領）；
+                             # 沒有這個欄位＝提供。關掉時兩題各少一個「郵寄」，
+                             # 也就不會問地址 —— 不寄送的新人不該讓賓客
+                             # 填了地址才發現沒有這回事
   rsvpContactMethods : string[]  # 要問哪幾種聯絡方式，'phone'|'line'|'email'
                                   # 沒有這個欄位＝三種都問；空陣列＝整題不問
-  rsvpShowStory   : boolean  # 那一頁要不要放「兩人的故事」
-  rsvpShowGallery : boolean  # 那一頁要不要放「照片集」
+  rsvpShowGallery : boolean  # 首頁 Explore 要不要放「照片集」（本來在邀請函上）
+  rsvpShowStory   : boolean  # 舊欄位，前端已不再讀 —— 出席回覆那一頁不再放
+                             # 兩人的故事（它只在大廳，有寫就出現）
   # ↓ 賓客標籤（配合排桌次用）。總開關新人改不動，和 pages 一樣由我們設定
   guestTagsEnabled: boolean  # 這個站台要不要用標籤；沒有這個欄位＝關
   guestTags       : map[]    # 標籤庫，陣列順序即顯示順序（見下方說明）
@@ -136,7 +141,13 @@ sites/{siteId}
   events          : map[]    # 活動清單，≤10；陣列順序即顯示順序（見下方說明）
                              # 沒有這個欄位或空陣列＝這場婚禮只有一個活動，
                              # 由 eventDate／venueName 那幾欄合成（不寫回資料庫）
-  pages           : map      # 頁面開關，見第 10 節
+  pages           : map      # 頁面開關（**我們**開了哪幾頁），見第 10 節
+  pagePublish     : map      # 頁面「現在公開了沒」（**新人自己**在後台首頁的
+                             # 「頁面設定」開關／排程），見第 10 節。
+                             #   key → { on: bool, at: number|null }
+                             # 沒有這個欄位、或某一頁沒有自己的那一筆＝公開；
+                             # on:false ＋ at（epoch ms）＝時間到了自動公開。
+                             # 和 pages 不同，它**不參與 Security Rules 的判斷**
   ownerEmails     : string[] # 新人的 Google 信箱；規則據此決定誰進得了後台
   createdAt       : timestamp
   updatedAt       : timestamp
@@ -163,7 +174,7 @@ sites/{siteId}
     cardZip       : string   # 選填，喜帖郵寄的郵遞區號（≤10）
     cardAddress   : string   # 選填，喜帖郵寄地址（≤200）
     cardEmail     : string   # 選填，電子喜帖要寄到的 Email（≤120）
-    giftDelivery  : string   # 選填，喜餅 'pickup'|'mail'
+    giftDelivery  : string   # 選填，喜餅 'pickup'（現場領取）|'self'（自行領取）|'mail'（郵寄）
     giftZip       : string   # 選填，喜餅郵寄的郵遞區號（≤10）
     giftAddress   : string   # 選填，喜餅郵寄地址（≤200）
     message       : string   # 給新人的話，選填
@@ -442,8 +453,8 @@ Firestore 的讀取請求不帶條件，規則沒有辦法「只讓對得上的�
 coupleTitle venueName venueAddress venueMapUrl transportPublic transportParking
 dressCode dressCodeColors giftNote story schedule hashtags updatedAt
 seatingSearchEnabled seatingFeatureEnabled
-rsvpAskCard rsvpAskGift rsvpAskMessage rsvpContactMethods
-rsvpShowStory rsvpShowGallery guestTags
+rsvpAskCard rsvpAskGift rsvpAskMessage rsvpMailEnabled rsvpContactMethods
+rsvpShowStory rsvpShowGallery guestTags events eventDate pagePublish
 ```
 
 `guestTags` 是新人自己維護的標籤庫，所以在名單內；
@@ -456,6 +467,13 @@ rsvpShowStory rsvpShowGallery guestTags
 最後那六個 `rsvp*` 與 `seatingSearchEnabled` 一樣，是「非文案但可以放行」的欄位：
 它們只改變賓客看到的表單長什麼樣，規則本身不拿它們做任何判斷 ——
 能不能寫回覆仍然只看 `rsvpEnabled` 與 `rsvpDeadline`，那兩個依舊改不動。
+
+`pagePublish` 也是同一類，而且是這一類裡最重要的一個：
+它決定賓客現在看不看得到某一頁的入口（見第 10 節），
+但規則一個字都不讀它 —— **關掉一頁不會讓任何人多得到或少掉權限**，
+賓客寫得進去的仍然只由 `pages` 的 `pageOn()` 決定。
+規則語言逐筆檢查不了 map 裡的內容（和 `schedule`、`guestTags` 同一個限制），
+所以只擋型別與筆數（≤20），每一筆在後台送出前先切好。
 
 兩個 `seating*` 開關放行的理由一樣：它們只改變賓客看到的畫面
 （`seatingSearchEnabled`＝那一頁要不要出現搜尋欄，`seatingFeatureEnabled`＝
@@ -650,15 +668,22 @@ slug 不存在、格式不合法、站台非 `published`、或連線失敗時，
 > 欄位保留在資料模型裡，只是前端不再讀它。
 
 頁面區塊順序：
-封面（含倒數計時）→ 封面照 → 兩人的故事 → 婚禮資訊（日期／地點／服裝／禮金
-＋加入行事曆）→ 照片牆 → RSVP → hashtag → footer。
-**每個區塊在對應欄位是空的時候會整段隱藏**，不會留下空標題。
+封面（姓名／日期／倒數計時）→ **出席回覆** → hashtag → footer。
+
+**這一頁只做一件事：收下這位賓客的回覆。**
+會拿到這個連結的人多半已經知道要回覆出席了 —— 婚禮資訊、兩人的故事、
+照片集在大廳都有，在這裡再放一次，等於把真正要做的那件事一路往下推。
+所以那三塊（連同封面照、加入行事曆）都收回大廳，滑進 `.scene-body`
+的第一塊就是表單。
+
+回完之後這一頁就走到底了，所以感謝卡上有兩個出口（`js/rsvp-form.js`
+的 `buildNext()`）：**回婚禮大廳**與**看我們的故事**
+（後者在這組新人沒開 `exhibition` 時不會出現，不留死入口）。
 
 - 倒數計時：顯示距離婚禮剩餘天數，婚禮當天過後改顯示「我們結婚囉」
-- 照片牆：響應式格狀排列（手機 2 欄／桌機 3 欄），點圖可放大，
-  支援 Esc 關閉；載不到的圖會整格移除不留破圖
-- 加入行事曆：前端產生 `.ics` 檔下載，iOS／Android／桌機通用，
-  不依賴任何第三方服務
+- 照片集：搬到大廳 Explore 的**最後一張卡**（見第 10 節），
+  開關仍然是 `rsvpShowGallery`
+- 加入行事曆：留在大廳的婚禮資訊卡，不在這一頁重複一次
 
 ### 出席回覆只有一頁
 
@@ -693,6 +718,18 @@ HTML 只放一個 `<div id="rsvpFormHost">` —— 題目會依新人在後台�
 哪些題目要問集中在 `rsvpConfig()`，
 表單、頁面與後台儀表板讀的都是這兩份，三邊才不會各自解讀。
 
+**「郵寄」可以整個關掉**（`rsvpMailEnabled`，後台「表單設定」）：
+不寄送喜帖喜餅的新人，不該讓賓客填完地址才發現沒有這回事。
+關掉時「紙本要怎麼給」與「喜餅領取方式」各少一個選項，
+地址欄也就永遠不會出現。哪些選項現在真的要給賓客看，集中在
+`common.js` 的 `rsvpOptions(group)` —— 表單讀的是它，不是 `RSVP_OPTIONS`；
+已經送出的回覆仍然靠 `rsvpLabel()` 翻得回來（選項只是不再出現，
+舊資料不會變成空白）。
+
+**喜餅的「自行領取」**（`giftDelivery: 'self'`）和「現場領取」是兩件事：
+現場領取是婚宴當天在會場拿，自行領取是另外跟新人約時間拿。
+合成一個選項的話，新人算不出當天要準備幾盒在會場。
+
 題目與條件顯示（★ 是新人可以在後台關掉的）：
 
 | 題目 | 型態 | 何時出現 |
@@ -707,10 +744,10 @@ HTML 只放一個 `<div id="rsvpFormHost">` —— 題目會依新人在後台�
 | 兒童座椅 | 勾選後才問張數 | 同上 |
 | 飲食習慣補充 | 文字，選填 | 同上 |
 | ★ 喜帖發送方式 | 單選：紙本／電子／不需要 | always |
-| 紙本要怎麼給 | 單選：自行領取／郵寄 | 選「紙本」才出現 |
+| ★ 紙本要怎麼給 | 單選：自行領取／郵寄 | 選「紙本」才出現；「郵寄」由 `rsvpMailEnabled` 決定在不在 |
 | 喜帖郵寄地址 | 郵遞區號 ＋ 地址 | 選「郵寄」才出現 |
 | 電子喜帖的 Email | 文字，可勾「同上」帶入聯絡方式的 Email | 選「電子」才出現 |
-| ★ 喜餅領取方式 | 單選：現場領取／郵寄 | always |
+| ★ 喜餅領取方式 | 單選：現場領取／自行領取／郵寄 | always；「郵寄」同樣由 `rsvpMailEnabled` 決定 |
 | 喜餅郵寄地址 | 郵遞區號 ＋ 地址，可勾「同上」帶入喜帖的地址 | 選「郵寄」才出現 |
 | ★ 想對新人說的話 | 文字，選填 | always |
 | 其他備註 | 文字，選填 | always |
@@ -926,6 +963,46 @@ Classic 一個像素都不動。
 3. **Security Rules 也會拒絕該功能的寫入**
 
 `pages` 欄位不存在時視為全部開啟，舊資料不會因此壞掉。
+
+### 新人自己的那一層：頁面設定（`pagePublish`）
+
+`pages` 是**我們**幫這組新人開了哪幾頁（＝他買了什麼），新人改不動。
+但「買了」不等於「現在就要讓賓客看到」——
+故事牆的照片還沒挑完、小測驗想留到婚宴當天才開、抽卡要等現場才好玩。
+所以再往下一層，新人自己在後台首頁的「**頁面設定**」決定：
+
+```
+pagePublish = {
+  wall:       { on: true,  at: null },
+  quiz:       { on: false, at: null },          // 現在收起來
+  exhibition: { on: false, at: 1774000000000 }, // 排程：時間到了自己開
+}
+```
+
+| | `pages` | `pagePublish` |
+|---|---|---|
+| 誰改得動 | 只有我們（Admin SDK／`set-pages`） | 新人自己 |
+| 規則讀不讀 | 讀（`pageOn()`，決定寫入放不放行） | **不讀** |
+| 沒設定時 | 視為全開 | 視為公開 |
+| 關掉時後台 | 側欄掛鎖頭，點得進去看預覽 | 分頁照常，內容照樣編輯得動 |
+
+賓客看不看得到 ＝ **兩層都要點頭**：
+`isPageOn(key)`（`site-context.js`）且 `pageVisible(site, key)`
+（`wed-model.js`）。收起來的頁面和關掉的頁面在賓客那一側完全一樣：
+入口不見、直接打網址被導回大廳。
+
+**排程沒有後端**：時間到了不會有任何程序寫回資料庫，而是每個賓客
+開頁面時重新判斷一次「現在過了 `at` 沒有」。所以新人排完就可以關掉後台，
+也不必擔心某一台機器沒跑到。時間以新人設定當下那台裝置的時鐘為準
+（他人就在婚禮現場，不換算婚禮時區）。
+
+**桌次是唯一的例外**：它的開關早就存在 `seatingFeatureEnabled`
+（後台「桌次」分頁那一顆），所以 `pagePublish.seating` 只接手排程時間，
+開／關仍然讀那個舊欄位 —— 兩個地方不會各記一份然後對不起來。
+後台兩邊的開關走的是同一支 `savePagePublish()`。
+
+**出席回覆（`rsvp`）不在這份清單裡**：那是對外分享的連結本身。
+要停止收回覆的話是設 `rsvpDeadline`，不是把整頁收起來。
 
 ### 賓客身分與資料隔離
 
@@ -1145,7 +1222,7 @@ allow read: if request.auth != null
 
 | 後台分頁 | 需要開的頁面 |
 |---|---|
-| 首頁 | 永遠都在（上手指南，不對應任何賓客頁面） |
+| 首頁 | 永遠都在（上手指南 ＋ 頁面設定，不對應任何賓客頁面） |
 | 表單設定 | `rsvp`（和出席回覆同一個開關 —— 它就是那一頁的題目） |
 | 出席回覆 | `rsvp` |
 | 婚禮資訊 | 永遠都在（大廳是必開的頁面） |
@@ -1174,7 +1251,30 @@ allow read: if request.auth != null
 2. **上手指南**（`HOME_STEPS`）：有順序的幾步，每一步右邊一顆
    `data-empty-hash` 的按鈕直達那一頁；沒開的功能整步不出現
    （叫新人去點一顆鎖著的分頁是最糟的第一步）。
-3. 幾件常被問到的事：`<details>` 就夠了，不做自己的手風琴。
+3. **頁面設定**（`renderPageSettings()`）：見下面那一段。
+4. 幾件常被問到的事：`<details>` 就夠了，不做自己的手風琴。
+
+**首頁的「頁面設定」**（`sites.pagePublish`，見第 10 節）：
+一列一頁，右邊一顆 toggle 決定賓客現在看不看得到，
+旁邊的「排程開啟」可以設一個時間讓它自己開
+（`<input type="datetime-local">`，存成 epoch ms）。
+清單是從 `site-context.js` 的 `PAGES` 長出來的，
+**之後新增的頁面會自己出現在這一區**，不必回來改一份清單。
+
+| 這一列 | 怎麼來的 | 新人看到 |
+|---|---|---|
+| 我們沒開通的頁面 | `isPageOn(key) === false` | 灰的、掛鎖頭、toggle `disabled` |
+| 還沒對外開放的功能 | 上面那個 ＋ `UNRELEASED_FEATURES` | 整列不出現（和側欄的 `off` 同一個判斷） |
+| 已經開通的頁面 | 其餘 | toggle 可按，下面一行寫現在的狀態 |
+
+右邊那支**手機示意**（`.ad-phone`）列的是賓客現在打開首頁看得到的入口 ——
+**收起來的頁面直接不出現**：那支手機就是賓客的畫面，
+在上面畫一排賓客看不到的東西，等於在示意一件沒發生的事。
+（「哪幾頁被我收起來了」左邊那一排每一列都寫著，不必在手機上再講一次。）
+全部收起來時改成一句「目前全部收起來了，賓客只看得到首頁」。
+
+打開＝現在就公開，所以會順手清掉排程；關掉也一樣清掉 ——
+不清的話「我明明關起來了」過幾小時又自己開回來，那不是他按下去的意思。
 
 「這一步做完了沒」**一律用資料本身算**（地點填了沒、`rsvpContactMethods`
 存在不存在、`schedule` 有幾筆、收到幾份回覆…），不另外記一份進度 ——
@@ -1187,7 +1287,7 @@ allow read: if request.auth != null
 | 分頁 | 子分頁 |
 |---|---|
 | 出席回覆 | 出席回覆總覽／回覆資訊／設定賓客標籤 |
-| 婚禮資訊 | 婚禮資訊／其他流程／當日流程／自訂內容 |
+| 婚禮資訊 | 婚禮資訊／其他流程／當日流程／自訂內容（含照片集的開關） |
 | 桌次 | 桌次圖／桌次搜尋及名單 |
 | 排桌管理 | 排桌工作區／桌位管理／匯入匯出 |
 | 收禮小幫手 | 收禮統計／收禮明細／連結與名單 |
@@ -1311,6 +1411,11 @@ HTML5 Drag & Drop 在觸控裝置完全不會觸發，Pointer Events 版的拖�
 後台的分頁看的是 `pages`（`isPageOn()`），功能關著時名單與桌次圖照樣先整理好。
 沒有這個欄位的舊站台視為開著。
 
+同一顆開關在**後台首頁的「頁面設定」**也有一列（見第 10 節）：
+兩邊走的是同一支 `savePagePublish()`，寫的是同一個欄位，怎麼按都同步。
+「幾點自動開啟」的排程存在 `pagePublish.seating.at` ——
+婚禮當天早上自己打開，新人不必記得回來按。
+
 **搜尋可以單獨關掉**（後台的 `seatingSearchEnabled` 開關）：
 關掉時前台只留桌次圖，查詢欄整塊收起來，也不再訂閱整份名單 ——
 名單還沒整理好、或本來就打算讓大家自己看圖找位子時用。
@@ -1320,7 +1425,8 @@ HTML5 Drag & Drop 在觸控裝置完全不會觸發，Pointer Events 版的拖�
 **名字比對**由寬到嚴，先找到就用：正規化後完全相同 →
 名單的名字包含輸入的字 → 輸入的字包含名單的名字。
 正規化會去空白、全形轉半形、英文轉小寫（`common.js` 的 `normKey()`），
-所以賓客怎麼打都找得到。查到之後一併列出同桌還有誰。
+所以賓客怎麼打都找得到。**查到之後只顯示自己的桌號** ——
+名單是新人整理的資料，賓客不必連帶看到同桌其他人的名字。
 
 **桌次圖為什麼存成 data URL**：新人要能在瀏覽器裡直接上傳，
 而 Firebase Storage 的規則**讀不到 Firestore**，
@@ -1380,6 +1486,17 @@ Firestore 的讀取請求不帶條件，規則無法「只讓對得上的人讀�
 `url` 只收 `http(s)://` 開頭，規則層與前端各擋一次，
 `javascript:` 之類的協定寫不進資料庫、也不會被渲染成連結。
 卡片編號在自訂卡加入後整批重編，不會跳號。
+
+**照片集是 Explore 的最後一張卡**（`index.js` 的 `addGalleryCard()`）：
+它本來在邀請函上，邀請函現在只剩出席回覆的表單，而照片集本來就比較接近
+「逛一逛」，和 Explore 的其他卡片是同一件事。
+
+- 排在**自訂卡片後面**：它是「看完了再翻翻照片」，不是要賓客先去做的事
+- 照片就是站台的 `photos`（沒填的話是素材資料夾掃到的那些）
+- 點了用 Explore 既有的彈窗顯示（`openInfoModal({ grid:true })`，兩欄），
+  不另外做一套燈箱
+- 開關沿用 `rsvpShowGallery`，後台在「婚禮資訊 → 自訂內容」那一頁，
+  按下去就存 —— 已經關掉的站台不會因為搬家又自己打開
 
 ### 13.4 大廳文案（`sites` 文件本身）
 

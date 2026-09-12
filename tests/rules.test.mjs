@@ -462,6 +462,9 @@ describe('rsvps 的完整表單欄位', () => {
       fullRsvp({ cardDelivery: 'drone' })));
     await assertFails(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
       fullRsvp({ giftDelivery: 'drone' })));
+    /* 喜餅多了「自行領取」：現場領取是當天在會場拿，自行領取是另外約時間拿 */
+    await assertSucceeds(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
+      fullRsvp({ giftDelivery: 'self' })));
   });
 
   it('人數類欄位必須是 0–10 的整數', async () => {
@@ -1151,6 +1154,37 @@ describe('sites 的大廳文案更新', () => {
     await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
       rsvpContactMethods: ['a', 'b', 'c', 'd'],
     }));
+  });
+
+  it('新人可以自己收起／排程某一頁（pagePublish）', async () => {
+    const db = ownerDb();
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      pagePublish: {
+        wall: { on: false, at: null },
+        quiz: { on: false, at: Date.now() + 3600000 },
+      },
+      updatedAt: Timestamp.now(),
+    }));
+    /* 型別不對就擋下；筆數也有上限（規則看不到 map 裡面的內容） */
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { pagePublish: 'off' }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      pagePublish: Object.fromEntries(
+        Array.from({ length: 21 }, (_, i) => [`p${i}`, { on: true, at: null }])),
+    }));
+    /* 它不是規則的判斷依據：收起來一頁不會順便改到 pages */
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      pagePublish: { wall: { on: false, at: null } },
+      pages: { wall: false },
+    }));
+  });
+
+  it('新人可以關掉「郵寄」這個選項', async () => {
+    const db = ownerDb();
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      rsvpMailEnabled: false,
+      updatedAt: Timestamp.now(),
+    }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { rsvpMailEnabled: 'no' }));
   });
 
   it('題目開關放行，但出席回覆的開關與截止時間仍然改不動', async () => {

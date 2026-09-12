@@ -754,6 +754,82 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-step-state{margin:6px 0 0;font-size:11.5px;letter-spacing:.06em;color:var(--primary-deep);}
 .ad-step-act{flex:0 0 auto;align-self:center;}
 
+/* ============================================================
+   頁面設定（後台首頁最下面）
+   ------------------------------------------------------------
+   左邊一列一頁（開關 ＋ 排程），右邊一支手機示意賓客現在看到什麼。
+   桌機並排，窄螢幕手機示意掉到下面 —— 它是「看的」，不是「操作的」，
+   所以順序讓給左邊那一排開關。
+============================================================ */
+.ad-pages{display:grid;grid-template-columns:1fr 232px;gap:34px;align-items:start;}
+@media(max-width:719px){.ad-pages{grid-template-columns:1fr;gap:26px;}}
+
+.ad-pages-list{border-top:1px solid var(--line-soft);}
+.ad-page-row{display:grid;grid-template-columns:1fr auto;gap:10px 16px;
+  padding:16px 2px;border-bottom:1px solid var(--line-soft);align-items:center;}
+.ad-page-main{min-width:0;}
+.ad-page-name{display:flex;align-items:center;gap:8px;
+  font-size:14px;letter-spacing:.06em;color:var(--ink);line-height:1.7;}
+.ad-page-row.is-locked .ad-page-name{color:var(--ink-soft);}
+.ad-page-note{margin-top:4px;font-size:12px;line-height:1.9;
+  letter-spacing:.04em;color:var(--ink-soft);}
+.ad-page-state{margin-top:5px;font-size:11.5px;letter-spacing:.06em;color:var(--ink-soft);}
+.ad-page-row.is-live .ad-page-state{color:var(--primary-deep);}
+.ad-page-state.is-sched{color:var(--primary-deep);}
+.ad-page-act{display:flex;align-items:center;gap:14px;justify-self:end;}
+.ad-page-when{background:none;border:none;cursor:pointer;padding:0 0 2px;
+  font-family:var(--font-ui);font-size:12px;letter-spacing:.08em;
+  color:var(--ink-soft);border-bottom:1px solid var(--line);transition:.2s;}
+.ad-page-when:hover{color:var(--ink);border-bottom-color:var(--ink);}
+.ad-page-sched{grid-column:1/-1;border-top:1px dashed var(--line);
+  margin-top:4px;padding-top:14px;}
+.ad-page-sched[hidden]{display:none;}
+.ad-page-sched-lab{display:block;font-size:12px;letter-spacing:.08em;
+  color:var(--ink-soft);margin-bottom:8px;}
+.ad-page-sched-lab .ad-input-when{margin-top:6px;max-width:240px;}
+
+/* 開關本體：一顆真的 checkbox（鍵盤、讀螢幕都照舊），
+   只是把它藏起來，畫面上顯示旁邊那條軌道 */
+.ad-toggle{position:relative;flex:0 0 auto;display:inline-flex;cursor:pointer;}
+.ad-toggle input{position:absolute;inset:0;width:100%;height:100%;
+  margin:0;opacity:0;cursor:pointer;}
+.ad-toggle-track{display:block;width:44px;height:24px;border-radius:999px;
+  border:1px solid var(--line);background:var(--bg1);transition:.2s;}
+.ad-toggle-track::after{content:'';display:block;width:16px;height:16px;border-radius:50%;
+  background:var(--ink-soft);margin:3px;transition:transform .2s,background .2s;}
+.ad-toggle input:checked + .ad-toggle-track{
+  border-color:var(--primary-deep);background:var(--primary-deep);}
+.ad-toggle input:checked + .ad-toggle-track::after{
+  background:#fff;transform:translateX(20px);}
+.ad-toggle input:focus-visible + .ad-toggle-track{outline:1px solid var(--ink);outline-offset:2px;}
+.ad-toggle input:disabled{cursor:not-allowed;}
+.ad-toggle input:disabled + .ad-toggle-track{opacity:.45;}
+
+/* 手機示意 */
+.ad-phone{margin:0;}
+.ad-phone-screen{border:1px solid var(--line);border-radius:18px;background:#fff;
+  padding:14px 12px 18px;}
+.ad-phone-top{display:flex;align-items:center;gap:8px;padding:0 4px 12px;
+  border-bottom:1px solid var(--line-soft);}
+.ad-phone-dot{width:6px;height:6px;border-radius:50%;background:var(--primary-deep);
+  flex:0 0 auto;}
+.ad-phone-title{font-size:11.5px;letter-spacing:.1em;color:var(--ink-soft);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ad-phone-body{padding:14px 4px 0;}
+.ad-phone-lab{font-family:var(--font-display);font-size:11px;letter-spacing:.3em;
+  text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px;}
+.ad-phone-list{list-style:none;margin:0;padding:0;}
+.ad-phone-item{display:flex;align-items:center;gap:8px;
+  padding:9px 0;border-bottom:1px solid var(--line-soft);
+  font-size:12.5px;letter-spacing:.06em;color:var(--ink);}
+.ad-phone-item:last-child{border-bottom:none;}
+.ad-phone-item-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+/* 全部收起來時的那一句話：賓客只剩首頁 */
+.ad-phone-empty{padding:14px 0;font-size:12px;line-height:1.9;
+  letter-spacing:.04em;color:var(--ink-soft);}
+.ad-phone-cap{margin-top:10px;text-align:center;
+  font-size:11.5px;letter-spacing:.06em;color:var(--ink-soft);}
+
 /* 常被問到的事：<details> 就夠了，不做自己的手風琴 */
 .ad-faq{border-top:1px solid var(--line-soft);}
 .ad-faq-item{border-bottom:1px solid var(--line-soft);}

@@ -35,6 +35,7 @@ import {
 import {
   TEMPLATES, templateKey, buildWed,
   tplValue, swapTokens, hashtagList,
+  pagePublishEntry, pageVisible,
 } from './wed-model.js';
 
 const firebaseConfig = {
@@ -367,18 +368,22 @@ async function boot() {
     return pages ? pages[key] === true : true;
   };
 
-  /* 賓客現在看不看得到這一頁。
-     桌次另外有一個新人自己控制的總開關（後台「婚禮資訊」分頁的
-     「開放桌次功能」）：關著的時候整頁一起收起來 —— 導覽列的連結、
-     大廳的「尋找我的座位」都是靠 isEnabled() 判斷的，直接打網址進來
-     也會被導回大廳，賓客才不會在婚禮還沒到的時候就先去找位子。
-     沒有這個欄位＝視為開著，既有站台的桌次頁不會突然消失。
-     （後台自己看的是 isPageOn()，功能關著時新人照樣進得去整理名單） */
+  /* 賓客現在看不看得到這一頁 ＝ 兩層都要點頭：
+
+       isPageOn(key)          我們幫這組新人開了這一頁嗎（sites.pages）
+       pageVisible(site, key) 新人自己現在要不要公開（sites.pagePublish，
+                              含「幾點自動開啟」的排程；桌次沿用
+                              seatingFeatureEnabled，見 wed-model.js）
+
+     導覽列的連結、大廳的入口卡片都是靠 isEnabled() 判斷的，
+     收起來的頁面直接打網址進來也會被導回大廳。
+     兩層都是沒設定過就視為開著，既有站台不會突然少東西。
+     （後台自己看的是 isPageOn()，新人把一頁收起來時照樣進得去編輯內容） */
   const isEnabled = (key) => {
     /* 後台功能不是賓客看得到的頁面，永遠不算「已啟用」 */
     if (ADMIN_FEATURES[key]) return false;
-    if (key === 'seating' && site.seatingFeatureEnabled === false) return false;
-    return isPageOn(key);
+    if (!isPageOn(key)) return false;
+    return pageVisible(site, key);
   };
 
   /* 這頁沒開放就導回大廳，不要讓賓客卡在空頁面 */
@@ -416,6 +421,8 @@ async function boot() {
     adminFeatures: ADMIN_FEATURES,
     isEnabled,
     isPageOn,
+    /* 新人那一層的設定原樣給後台用（開關 ＋ 排程時間） */
+    pagePublish: (key) => pagePublishEntry(site, key),
     /* 沒開的功能要在後台掛鎖頭（可加購）還是整顆收起來（還沒開放）；
        只有後台用得到，賓客那一側兩種都一樣是「這頁不存在」 */
     isUnreleased: (key) => UNRELEASED_FEATURES.has(key),

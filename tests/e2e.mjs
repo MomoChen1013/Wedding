@@ -70,6 +70,16 @@ const SEED = {
     photos: [], hashtags: [], dressCode: '', giftNote: '',
     rsvpDeadline: future(120), rsvpEnabled: true, ownerEmail: '',
   },
+  /* 不寄送喜帖喜餅的新人：兩題都不該出現「郵寄」 */
+  'no-mail': {
+    slug: 'no-mail', status: 'published',
+    groomName: '不寄', brideName: '測試',
+    eventDate: TAIPEI_NOON, timezone: 'Asia/Taipei',
+    venueName: '', venueAddress: '', venueMapUrl: '',
+    themeColor: '#3D9AD1', coverImageUrl: '', story: '',
+    rsvpMailEnabled: false,
+    rsvpDeadline: future(30), rsvpEnabled: true, ownerEmail: '',
+  },
   'draft-site-test': {
     slug: 'draft-site-test', status: 'draft',
     groomName: '測', brideName: '試',
@@ -212,21 +222,23 @@ console.log('\n[1] /w/chen-lin-0315/invitation');
   const { page, consoleErrors } = await visit('/w/chen-lin-0315/invitation');
   const t = await page.title();
   const couple = await page.textContent('.inv-couple');
-  const detailDate = await page.textContent('#detailDate');
-  const venue = await page.textContent('#venueName');
-  const storyVisible = await page.isVisible('#storyBlock');
-  const story = await page.textContent('#storyText');
+  const invDate = await page.textContent('#invDate');
   const formVisible = await page.isVisible('#rsvpForm');
   const notFound = await page.locator('[data-fatal]').count();
 
   ok('標題', t.includes('陳彥廷') && t.includes('林佳蓉'), t);
   ok('新人姓名', couple.trim() === '陳彥廷 & 林佳蓉', couple.trim());
-  ok('日期以婚禮時區顯示', detailDate === '2027.03.15（一）12:00', detailDate);
-  ok('場地', venue.includes('晶華'), venue);
-  ok('故事區塊顯示', storyVisible && story.includes('蛋糕'));
-  ok('故事保留換行', story.includes('\n'));
+  ok('日期以婚禮時區顯示', invDate === '2027.03.15', invDate);
   ok('RSVP 表單顯示', formVisible);
   ok('未顯示找不到畫面', notFound === 0);
+
+  /* 這一頁只剩出席回覆：婚禮資訊、兩人的故事、照片集都回到大廳 */
+  ok('不再重放婚禮資訊', await page.locator('#venueName').count() === 0);
+  ok('不再重放兩人的故事', await page.locator('#storyBlock').count() === 0);
+  ok('不再重放照片集', await page.locator('#galleryBlock').count() === 0);
+  ok('表單是內容區的第一塊',
+    await page.evaluate(() =>
+      document.querySelector('.scene-body .inv-block').id === 'rsvpBlock'));
 
   /* 與其他頁面同一套版型（共用的浮動控制要在），
      但邀請函是單獨分享出去的一頁，不掛導覽列 */
@@ -238,22 +250,15 @@ console.log('\n[1] /w/chen-lin-0315/invitation');
       && document.body.classList.contains('nav-off')));
   ok('有共用的音樂浮動控制', await page.isVisible('.floating'));
   ok('沿用共用的區塊標題樣式',
-    await page.locator('.section-title').count() >= 3,
+    await page.locator('.section-title').count() >= 2,
     String(await page.locator('.section-title').count()));
 
   /* 內容區塊 */
   ok('倒數計時顯示', (await page.textContent('#invCountdown')).includes('距離婚禮還有'),
     await page.textContent('#invCountdown'));
-  ok('照片牆顯示 3 張', await page.locator('#gallery button').count() === 3,
-    String(await page.locator('#gallery button').count()));
-  ok('Dress code 顯示',
-    (await page.textContent('#dressCode')).includes('香檳金'));
-  ok('禮金說明顯示',
-    (await page.textContent('#giftNote')).includes('最好的禮物'));
   const tags = await page.locator('#hashtags span').allTextContents();
   ok('hashtag 顯示且自動補 #',
     tags.join(',') === '#陳林2027,#我們結婚了', tags.join(','));
-  ok('加入行事曆按鈕顯示', await page.isVisible('#calBtn'));
 
   ok('無 console 錯誤', realErrors(consoleErrors).length === 0,
     realErrors(consoleErrors).join(' | '));
@@ -275,8 +280,8 @@ console.log('\n[1a] 出席回覆的題目');
   ok('喜帖三個選項',
     (await opts('#cardRow .choice')).join('／') === '需要紙本喜帖／需要電子喜帖／不需要喜帖',
     (await opts('#cardRow .choice')).join('／'));
-  ok('喜餅兩個選項',
-    (await opts('#giftRow .choice')).join('／') === '現場領取／郵寄',
+  ok('喜餅三個選項',
+    (await opts('#giftRow .choice')).join('／') === '現場領取／自行領取／郵寄',
     (await opts('#giftRow .choice')).join('／'));
   ok('其他備註欄位存在', await page.locator('#rMemo').count() === 1);
   ok('沒設定時三種聯絡方式都問',
@@ -367,33 +372,16 @@ console.log('\n[1a] 出席回覆的題目');
   await page.close();
 }
 
-/* ---------- 照片放大 ---------- */
-console.log('\n[1b] 照片放大');
-{
-  const { page } = await visit('/w/chen-lin-0315/invitation');
-  ok('lightbox 預設關閉', !(await page.isVisible('#lightbox')));
-  await page.locator('#gallery button').first().click();
-  await page.waitForSelector('#lightbox', { state: 'visible', timeout: 5000 });
-  ok('點圖後開啟 lightbox', await page.isVisible('#lightbox'));
-  await page.keyboard.press('Escape');
-  await page.waitForSelector('#lightbox', { state: 'hidden', timeout: 5000 });
-  ok('按 Esc 可關閉', !(await page.isVisible('#lightbox')));
-  await page.close();
-}
 
 /* ---------- 站台 B（內容須互不干擾） ---------- */
 console.log('\n[2] /w/wu-yang-1220/invitation');
 {
   const { page, consoleErrors } = await visit('/w/wu-yang-1220/invitation');
   const couple = await page.textContent('.inv-couple');
-  const detailDate = await page.textContent('#detailDate');
+  const invDate = await page.textContent('#invDate');
 
   ok('新人姓名', couple.trim() === '吳柏勳 & 楊雅婷', couple.trim());
-  ok('日期以東京時區顯示', detailDate === '2027.12.20（一）18:30', detailDate);
-  ok('無 story 時區塊隱藏', !(await page.isVisible('#storyBlock')));
-  ok('無照片時照片牆隱藏', !(await page.isVisible('#galleryBlock')));
-  ok('無 dress code 時該列隱藏', !(await page.isVisible('#dressRow')));
-  ok('無禮金說明時該列隱藏', !(await page.isVisible('#giftNoteRow')));
+  ok('日期以東京時區顯示', invDate === '2027.12.20', invDate);
   const tags = await page.locator('#hashtags span').allTextContents();
   ok('沒設 hashtag 時用預設兩個',
     tags.join(',') === '#我們結婚了,#Married', tags.join(','));
@@ -471,8 +459,30 @@ console.log('\n[5] RSVP 送出流程');
   ok('表單隱藏', !(await page.isVisible('#rsvpForm')));
   const doneText = await page.textContent('#tkMsg');
   ok('成功訊息含人數', doneText.includes('3'), doneText);
+
+  /* 回覆完是這一頁的終點，要有下一步可以走 */
+  const next = await page.$$eval('#tkNext a',
+    (els) => els.map((e) => `${e.textContent.trim()}＝${new URL(e.href).pathname}`));
+  ok('結果卡有「看我們的故事」',
+    next.some((t) => t === '看我們的故事＝/w/chen-lin-0315/exhibition'), next.join('、'));
+  ok('結果卡有「回婚禮大廳」',
+    next.some((t) => t === '回婚禮大廳＝/w/chen-lin-0315/'), next.join('、'));
   ok('無 console 錯誤', realErrors(consoleErrors).length === 0,
     realErrors(consoleErrors).join(' | '));
+  await page.close();
+}
+
+/* ---------- 關掉「郵寄」 ---------- */
+console.log('\n[5b] 新人關掉郵寄');
+{
+  const { page } = await visit('/w/no-mail/invitation');
+  const gift = await page.locator('#giftRow .choice').allTextContents();
+  ok('喜餅只剩現場領取與自行領取',
+    gift.join('／') === '現場領取／自行領取', gift.join('／'));
+
+  await page.click('#cardRow .choice[data-val="paper"]');
+  const deliver = await page.locator('#cardDeliveryRow .choice').allTextContents();
+  ok('紙本喜帖只剩自行領取', deliver.join('／') === '自行領取', deliver.join('／'));
   await page.close();
 }
 
