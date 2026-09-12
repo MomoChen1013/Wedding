@@ -62,7 +62,7 @@
 | 檔案 | 行數位置 | 職責 |
 |---|---|---|
 | `public/invitation.html` | 全檔 125 行 | 單頁邀請函骨架。RSVP 區塊只有 `<div id="rsvpFormHost">` |
-| `public/js/invitation.js` | 全檔 | 封面／倒數／hashtag，最後 `RSVPForm.mount()`。**婚禮資訊、兩人的故事、照片集、`.ics` 都已經回到大廳**，那一頁只剩表單 |
+| `public/js/invitation.js` | 全檔 | 封面／倒數／hashtag，最後 `RSVPForm.mount()`。**婚禮資訊、兩人的故事、照片迴廊、`.ics` 都已經回到大廳**，那一頁只剩表單 |
 | `public/js/rsvp-form.js` | 全檔 689 行 | **表單的全部**：DOM 產生（`formHtml`）、狀態、條件顯示、驗證（`validate`）、payload（`buildPayload`）、送出、感謝畫面、回訪還原 |
 | `public/js/common.js` | L88–124 | `RSVP_OPTIONS` — 表單與後台圖表共用的選項字典 |
 | " | L142–160 | `rsvpConfig()` — 新人在後台開關了哪些題目 |

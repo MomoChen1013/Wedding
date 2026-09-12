@@ -211,6 +211,19 @@
         </div>
       </section>
 
+      <!-- ===== Gallery 照片迴廊（沒有照片、或新人關掉就不出現） ===== -->
+      <section class="info-block f-sec gallery-block" id="photoGallery" hidden>
+        <div class="f-sec-head">
+          <span class="en block-title">Gallery</span>
+          <span class="cn block-sub">照片迴廊</span>
+          <span class="f-sprig" aria-hidden="true"><i></i><b></b><i></i></span>
+        </div>
+        <div class="f-sec-body">
+          <!-- 照片由 js/index.js 一張一張放進來：捲到附近才下載 -->
+          <div class="photo-rail" id="photoRail"></div>
+        </div>
+      </section>
+
       <!-- ===== 日期倒數：滿版照片帶 ===== -->
       <section class="info-block f-band f-band-count">
         <div class="f-band-ph" data-photo="countdown" aria-hidden="true"></div>

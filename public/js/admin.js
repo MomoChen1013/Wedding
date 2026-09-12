@@ -1402,7 +1402,7 @@ function openAdmin(){
   });
   /* 表單設定裡的兩顆按鈕指的都是賓客那一頁（分享出去的就是這個網址） */
   document.getElementById('adRsvpViewForm').href = sitePath('rsvp');
-  /* 照片集現在在首頁 Explore 的最後一張卡 */
+  /* 照片迴廊是首頁上自己的一段 */
   document.getElementById('adRsvpGalleryView').href = sitePath('lobby');
   /* 首頁上的兩個出口：「賓客現在看到的樣子」與「賓客要填的那張表單」 */
   const homeSite = document.getElementById('adHomeViewSite');
@@ -3002,7 +3002,7 @@ document.getElementById('adRsvpFormReset')
   .addEventListener('click', fillRsvpFormSettings);
 
 /* ---------- 表單資訊 ----------
-   題目以外，邀請函那一頁還會出現的內容：婚禮資訊那幾列、兩人的故事、照片集。
+   題目以外，邀請函那一頁還會出現的內容：婚禮資訊那幾列、兩人的故事、照片迴廊。
    內容本身都不在這裡編輯（婚禮資訊在隔壁分頁、照片在素材資料夾），
    所以這裡只把「現在填了什麼」列出來，再給一個過去填寫的入口 ——
    新人才不用自己在兩個分頁之間猜哪一列會出現在邀請函上。 */
@@ -3087,7 +3087,7 @@ function jumpToLobbyInfo(fieldId){
 document.getElementById('adRsvpInfoJump')
   .addEventListener('click', ()=> jumpToLobbyInfo('adHashtags'));
 
-/* ---------- 照片集（首頁 Explore 的最後一張卡） ----------
+/* ---------- Gallery 照片迴廊（首頁上自己的一段） ----------
    它不在「表單設定」那張表單裡，所以按下去就直接存 ——
    和交通圖片、Dress Code 色票同一套「不用按儲存」的做法。 */
 const showGalleryEl = document.getElementById('adShowGallery');
@@ -3101,7 +3101,7 @@ showGalleryEl.addEventListener('change', async ()=>{
   try{
     await DataStore.saveSiteFields({ rsvpShowGallery: on });
     syncGalleryUI();
-    toast(on ? '已在首頁 Explore 放上照片集' : '已收起照片集');
+    toast(on ? '已在首頁放上照片迴廊' : '已收起照片迴廊');
   }catch(err){
     /* 存不進去就把開關扳回原本的狀態，畫面不要和資料庫說不一樣的話 */
     syncGalleryUI();
