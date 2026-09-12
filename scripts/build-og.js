@@ -707,11 +707,21 @@ function buildHtml(srcHtml, srcName, meta, info) {
 
 let firestoreWarned = false;
 
-function connectFirestore(projectId) {
+async function connectFirestore(projectId) {
   try {
     const initOptions = { projectId: projectId || process.env.GOOGLE_CLOUD_PROJECT };
     if (!process.env.FIRESTORE_EMULATOR_HOST) {
-      initOptions.credential = applicationDefault();
+      const credential = applicationDefault();
+      /* 先把權杖要出來，確定憑證真的拿得到。
+         不先問的話，沒有憑證的環境（Codespaces、CI）要等到 Firestore 真的送出
+         查詢，才會從 gRPC 底層的背景 promise 竄出 NO_ADC_FOUND —— 那是一個沒人
+         await 的 rejection，這裡的 try/catch 和檔案末尾的 main().catch 都攔不到，
+         Node 直接砍掉整支腳本。predeploy 一掛，firebase deploy 就整個中止，
+         一個檔案都不會上傳：換了照片卻怎麼 deploy 都還是舊圖，就是這樣來的。
+         這支本來就設計成讀不到 Firestore 也要跑完（只是不壓字、不預渲染），
+         先問一次權杖才能真的走到那條降級路徑。 */
+      await credential.getAccessToken();
+      initOptions.credential = credential;
     }
     initializeApp(initOptions);
     return getFirestore();
@@ -977,7 +987,7 @@ async function main() {
     textMode: values.text,
   });
   /* Firestore 要先連，站台清單才問得到（它是清單的來源之一） */
-  const db = connectFirestore(values.project);
+  const db = await connectFirestore(values.project);
 
   const { all, fromAssets, fromDb } = await listSlugs(db);
   let slugs = all;
