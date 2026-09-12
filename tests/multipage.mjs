@@ -2885,22 +2885,23 @@ console.log('\n[14d] 後台婚禮流程');
       (el) => el.classList.contains('is-on')));
 
   /* ============================================================
-     表單設定：活動場次（改版後的資訊架構）
+     表單設定：活動場次
      ------------------------------------------------------------
      要驗的是三件事，而且都是「新人看不看得懂」的那種：
-       1. 一個活動一張卡（含不需要回覆的那幾場）
-       2. 全域那一層（所有場次的基本問題）只在多場次時出現
-       3. 單一場次取消一題時，畫面要說「僅此場次停用」，
-          而且**不會**動到全域那一份
+       1. 一個行程一張卡（含不需要回覆的那幾場）
+       2. 基本問題的勾選框就在卡上，一張卡只管一場
+       3. 取消某一場的某一題，**其他場次不會被動到**
   ============================================================ */
   await page.click('.ad-tab[data-tab="rsvpForm"]');
   await page.waitForTimeout(300);
 
-  ok('每個活動一張卡（不用回覆的也在）',
+  ok('每個行程一張卡（不用回覆的也在）',
     (await page.locator('#adActList .ad-actcard').count()) === 4,
     String(await page.locator('#adActList .ad-actcard').count()));
-  ok('多場次時才出現「所有場次的基本問題」',
-    await page.isVisible('#adGlobalAskSec'));
+  ok('沒有第二層的「所有場次」總開關',
+    (await page.locator('#adGlobalAskSec').count()) === 0);
+  ok('「需要賓客回覆」在卡片最上面那一行',
+    (await page.locator('#adActList .ad-actcard-head [data-act-rsvp]').count()) === 4);
   /* 不用回覆的那一張要淡出視野，而且說清楚它不在表單裡 */
   const engaged = page.locator('#adActList .ad-actcard')
     .filter({ has: page.locator('.ad-actcard-name', { hasText:'文訂' }) });
@@ -2950,41 +2951,27 @@ console.log('\n[14d] 後台婚禮流程');
       && site2.events.find((e) => e.name === '證婚').venueName === '台北真理堂',
     String(site2.events.length));
   /* ★ 這一條就是整個改版最重要的那句話：只改了一場，不是全部 */
-  ok('全域那一份沒有被單一場次改掉',
+  /* ★ 這一條就是整個改版最重要的那句話：只改了一場，不是全部 */
+  ok('其他場次那一題沒有被動到',
+    site2.events.find((e) => e.name === '證婚').askCount === true
+      && site2.events.find((e) => e.name === '派對').askCount === true,
+    JSON.stringify(site2.events.map((e) => [e.name, e.askCount])));
+  ok('站台層那一份也沒有被單一場次改掉',
     site2.rsvpAskChildSeat !== false, String(site2.rsvpAskChildSeat));
-  ok('畫面上說得出「僅此場次停用」',
-    (await banquetCard().locator('[data-askrow="askChildSeat"] .ad-badge.is-warn')
-      .innerText()) === '僅此場次停用');
-  ok('而且給得回去（恢復所有場次設定）',
-    (await banquetCard().locator('[data-act-ask-reset="askChildSeat"]').count()) === 1);
-  /* 全域那一塊也要指認回去：兒童座椅那一列要說得出「婚宴」單獨停用。
-     證婚與派對本來就沒有兒童椅（型別預設），所以那一列會一併列出它們；
-     餐點與飲食那兩列也各自有自己的名單 —— 所以要指名抓 askChildSeat 那一列 */
-  ok('全域那一塊也標出是哪一場單獨停用',
-    (await page.locator('#adGlobalAskList [data-globalrow="askChildSeat"] .ad-badge.is-warn')
-      .innerText()).includes('婚宴'),
-    await page.locator('#adGlobalAskList [data-globalrow="askChildSeat"] .ad-badge.is-warn')
-      .innerText());
+  ok('卡片上那一格真的變成沒勾',
+    !(await banquetCard().locator('[data-act-ask="askChildSeat"]').isChecked()));
 
-  /* 「恢復所有場次設定」按回去 */
-  await banquetCard().locator('[data-act-ask-reset="askChildSeat"]').click();
+  /* 勾回來：站台層本來就是開著的，所以只會再動 events[] 那一格 */
+  await banquetCard().locator('[data-act-ask="askChildSeat"]').check();
   await page.waitForTimeout(1500);
   const site3 = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
-  ok('恢復之後那一場又跟著全域走',
+  ok('勾回來又問這一題了',
     site3.events.find((e) => e.name === '婚宴').askChildSeat === true);
 
-  /* ---- 全域那一層：一勾就套用到所有場次 ---- */
-  await page.uncheck('#adGlobalAskList [data-globalrow="askDiet"] [data-global-ask]');
-  await page.waitForTimeout(1500);
-  const site4 = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
-  ok('全域關掉寫的是站台欄位，不是逐一改每個活動',
-    site4.rsvpAskDiet === false
-      && site4.events.find((e) => e.name === '婚宴').askDiet === true,
-    String(site4.rsvpAskDiet));
-  ok('全域關掉時，個別場次的勾選框關起來（不能只開一場）',
-    await banquetCard().locator('[data-act-ask="askDiet"]').isDisabled());
-  await page.check('#adGlobalAskList [data-globalrow="askDiet"] [data-global-ask]');
-  await page.waitForTimeout(1200);
+  /* 飲食習慣補充要標出題型（賓客是自己打字，不是勾選） */
+  ok('飲食習慣補充標了「簡答題」',
+    (await banquetCard().locator('[data-askrow="askDiet"] .ad-tag').innerText()) === '簡答題',
+    await banquetCard().locator('[data-askrow="askDiet"] .ad-tag').innerText());
 
   /* ---- 本場次專屬問題：新增一題多選 ---- */
   await banquetCard().locator('[data-q-add]').click();
@@ -3064,37 +3051,30 @@ console.log('\n[14d] 後台婚禮流程');
   await page.click('.ad-tab[data-tab="rsvpForm"]');
   await page.waitForTimeout(300);
 
-  /* 一場婚宴的新人不該看到兩層設定：全域那一塊整個收起來，
-     活動卡上的勾選框就直接代表「要不要問」（badge 也不出現） */
-  ok('只有一個活動時，不長出「所有場次的基本問題」',
-    await page.isHidden('#adGlobalAskSec'));
   ok('只有一張活動卡',
     (await page.locator('#adActList .ad-actcard').count()) === 1,
     String(await page.locator('#adActList .ad-actcard').count()));
   ok('四題都在那張卡上',
     (await page.locator('#adActList [data-act-ask]').count()) === 4);
-  ok('單一場次不出現「來自所有場次」那一類的 badge',
-    (await page.locator('#adActList .ad-badge.is-on', { hasText:'來自所有場次' }).count()) === 0);
 
-  /* 一個活動的時候，勾選框同時寫全域與這個活動 —— 兩邊永遠一致，
-     日後再加活動也不會突然少一題 */
+  /* 存得進 events[] 的活動：勾選框寫的就是那一場的那一格 */
   await page.uncheck('#adActList [data-act-ask="askMeal"]');
   await page.waitForTimeout(1500);
   const one = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
-  ok('單一場次取消時，全域與那個活動一起關',
-    one.rsvpAskMeal === false
-      && one.events[0].askMeal === false,
-    JSON.stringify({ g:one.rsvpAskMeal, ev:one.events[0].askMeal }));
+  ok('取消時寫回這個活動的 askMeal',
+    one.events[0].askMeal === false, String(one.events[0].askMeal));
   await page.check('#adActList [data-act-ask="askMeal"]');
   await page.waitForTimeout(1200);
 
+  /* 關不掉的題目：稱呼、關係、是哪一組關係（有選項所以打勾）、聯絡方式、
+     ＋ 卡上的「能來參加嗎」＝ 5 條 */
   const fixedQs = '#adRsvpForm .ad-check.is-fixed input:disabled:checked';
-  ok('關不掉的題目用「打勾但點不動」列出來（稱呼、關係、聯絡方式、能來參加嗎）',
-    (await page.locator(fixedQs).count()) === 4,
+  ok('關不掉的題目用「打勾但點不動」列出來',
+    (await page.locator(fixedQs).count()) === 5,
     String(await page.locator(fixedQs).count()));
-  ok('每一條關不掉的都掛「系統固定」或「必填」badge',
-    (await page.locator('#adRsvpForm .ad-badge', { hasText:/系統固定|必填/ }).count()) >= 4,
-    String(await page.locator('#adRsvpForm .ad-badge', { hasText:/系統固定|必填/ }).count()));
+  ok('關不掉的那幾題掛「固定題目」badge',
+    (await page.locator('#adRsvpForm .ad-badge', { hasText:'固定題目' }).count()) === 3,
+    String(await page.locator('#adRsvpForm .ad-badge', { hasText:'固定題目' }).count()));
   await page.close();
 
   /* 還原：關掉旗標、清空 events，後面的測試看到的是原本的站台。
@@ -3132,14 +3112,16 @@ console.log('\n[14c] 後台開關表單題目');
   ok('沒有 events 的站台也有一張活動卡',
     (await page.locator('#adActList .ad-actcard').count()) === 1,
     String(await page.locator('#adActList .ad-actcard').count()));
-  ok('那一張卡上的「需要賓客回覆」是系統固定的',
+  ok('那一張卡上的「需要賓客回覆」改不動（它就是這場婚禮本身）',
     await page.locator('#adActList [data-act-rsvp]').isDisabled());
   ok('那一張卡沒有「本場次專屬問題」（沒有地方存）',
     (await page.locator('#adActList [data-q-add]').count()) === 0);
 
+  /* 稱呼、關係、是哪一組關係、聯絡方式 ＋ 卡上的「需要賓客回覆」與
+     「能來參加嗎」＝ 6 條（這個站台沒有 events[]，所以連回覆開關也是固定的） */
   const fixedQs = '#adRsvpForm .ad-check.is-fixed input:disabled:checked';
   ok('關不掉的題目用「打勾但點不動」列出來',
-    (await page.locator(fixedQs).count()) === 5,
+    (await page.locator(fixedQs).count()) === 6,
     String(await page.locator(fixedQs).count()));
   ok('表單資訊列出封面那一段的內容',
     (await page.innerText('#adRsvpInfoList')).includes('婚禮 hashtag'),
@@ -3305,7 +3287,12 @@ console.log('\n[14d] 後台賓客標籤');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
   await page.click('.ad-tab[data-tab="rsvpForm"]');
   await page.waitForTimeout(300);
-  ok('題目清單多了標籤那一題', await page.isVisible('#adAskTagRow'));
+  /* 有標籤當選項時，「是哪一組關係」那一格會打勾，並且把選項列出來 */
+  ok('「是哪一組關係」有選項時會打勾',
+    await page.isChecked('#adAskTagBox'));
+  ok('而且把選項列出來',
+    (await page.locator('#adPreviewTags .ad-tag').allInnerTexts()).includes('大學同學'),
+    (await page.locator('#adPreviewTags .ad-tag').allInnerTexts()).join('／'));
 
   /* 標籤設定是「出席回覆」底下的橫向子分頁（表單設定已經搬成獨立分頁了） */
   await page.click('.ad-tab[data-tab="rsvp"]');
@@ -3427,7 +3414,11 @@ console.log('\n[14d] 後台賓客標籤');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
   await page.click('.ad-tab[data-tab="rsvpForm"]');
   await page.waitForTimeout(300);
-  ok('沒開標籤功能的站台也沒有標籤那一題', !(await page.isVisible('#adAskTagRow')));
+  /* 沒開通的站台：那一格不打勾，而且當場說出原因（不是一顆按了沒反應的按鈕） */
+  ok('沒開標籤功能的站台，那一題不會出現', !(await page.isChecked('#adAskTagBox')));
+  ok('而且說出「目前方案還沒開通」',
+    (await page.innerText('#adAskTagHint')).includes('還沒開通'),
+    (await page.innerText('#adAskTagHint')).slice(0, 30));
   ok('標籤子分頁留著、掛鎖頭',
     await page.evaluate(() => {
       const b = document.getElementById('adTagSubtab');

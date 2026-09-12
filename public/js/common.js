@@ -169,12 +169,12 @@ function rsvpConfig(){
   return {
     askCard:     on(d.rsvpAskCard),      // 喜帖
     askGift:     on(d.rsvpAskGift),      // 喜餅
-    /* ---------- 全域的基本問題 ----------
-       「出席人數／餐點分配／兒童座椅／飲食習慣補充」這四題問的是同一件事，
-       不管這場婚禮有幾個活動，所以開關放在站台文件這一層＝**所有場次共用**。
-       個別活動要少問一題時，用 events[].ask* 那一份把它單獨關掉（見
-       eventAsks()）—— 兩層的關係一律是「全域關了，個別場次開不回來」。
-       沒設定過就視為開著，舊站台不會因為少了這幾個欄位就整組題目消失。 */
+    /* ---------- 基本問題（站台這一份）----------
+       「出席人數／餐點分配／兒童座椅／飲食習慣補充」原則上是**每個活動自己**
+       的設定（events[].ask*）。但站台還沒有 events[] 時，活動卡是
+       mainEventFromSite() 合成出來的、存不回去 —— 那四題就存這裡。
+       兩份疊起來才是效果值（見 eventAsks()），關係是「這裡關了，個別場次
+       開不回來」。沒設定過就視為開著，舊站台不會因為少了這幾個欄位就整組消失。 */
     askCount:    on(d.rsvpAskCount),     // 出席人數
     askMeal:     on(d.rsvpAskMeal),      // 餐點分配（葷／素）
     askChildSeat:on(d.rsvpAskChildSeat), // 兒童座椅
@@ -504,14 +504,14 @@ function findEvent(id){
 }
 
 /* ---------- 一個活動真正會問哪幾題 ----------
-   兩層開關疊起來的結果：
+   兩份設定疊起來的結果：
 
-     全域（sites.rsvpAsk*）      這場婚禮到底要不要收集這項資料
-     個別場次（events[].ask*）   這一場要不要少問一題（只能往下關）
+     這一場（events[].ask*）   有 events[] 的站台，勾選框寫的就是這一份
+     站台（sites.rsvpAsk*）    還沒有 events[] 時，那四題唯一存得下的地方
 
-   ★ 這裡回傳的是「效果值」，只給畫面與表單用。
-     後台編輯活動時讀的仍然是 events[] 原本那一份（override 本身），
-     不然新人在全域關掉的那一刻，個別場次的設定就會被效果值覆蓋掉。 */
+   ★ 這裡回傳的是「效果值」——後台的勾選框、賓客的表單、統計圖表讀的都是它，
+     所以「畫面上打勾」＝「賓客真的看得到」，不會有兩份說法。
+     只有寫入時要分清楚該寫哪一份（見 admin.js 的 setActAsk()）。 */
 const EVENT_ASK_KEYS = ['askCount', 'askMeal', 'askChildSeat', 'askDiet'];
 
 function eventAsks(ev){
