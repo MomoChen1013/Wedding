@@ -823,12 +823,10 @@ select.ad-input{appearance:none;cursor:pointer;
   padding:9px 0;border-bottom:1px solid var(--line-soft);
   font-size:12.5px;letter-spacing:.06em;color:var(--ink);}
 .ad-phone-item:last-child{border-bottom:none;}
-.ad-phone-item.is-off{color:var(--ink-soft);}
-.ad-phone-item.is-off .ad-phone-item-name{text-decoration:line-through;
-  text-decoration-color:var(--line);}
 .ad-phone-item-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.ad-phone-item-tag{margin-left:auto;flex:0 0 auto;font-size:10.5px;letter-spacing:.08em;
-  color:var(--ink-soft);border:1px solid var(--line);border-radius:999px;padding:2px 8px;}
+/* 全部收起來時的那一句話：賓客只剩首頁 */
+.ad-phone-empty{padding:14px 0;font-size:12px;line-height:1.9;
+  letter-spacing:.04em;color:var(--ink-soft);}
 .ad-phone-cap{margin-top:10px;text-align:center;
   font-size:11.5px;letter-spacing:.06em;color:var(--ink-soft);}
 

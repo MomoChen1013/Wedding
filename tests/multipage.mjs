@@ -2252,7 +2252,7 @@ console.log('\n[18c] 新人自己收起某一頁');
   ok('預設每一頁都是開著的',
     await page.evaluate(() => [...document.querySelectorAll('#adPageList [data-page-on]')]
       .every((el) => el.checked)));
-  ok('手機示意列出同樣那幾頁',
+  ok('手機示意列出賓客現在看得到的那幾頁',
     (await page.locator('#adPagePreview .ad-phone-item').count()) === rows.length,
     String(await page.locator('#adPagePreview .ad-phone-item').count()));
 
@@ -2263,12 +2263,9 @@ console.log('\n[18c] 新人自己收起某一頁');
   ok('收起來會寫回 pagePublish',
     off.wall && off.wall.on === false && !off.wall.at,
     JSON.stringify(off.wall || null));
-  ok('手機示意把它畫成收起來的樣子',
-    await page.evaluate(() => {
-      const items = [...document.querySelectorAll('#adPagePreview .ad-phone-item')];
-      const hit = items.find((el) => el.textContent.includes('祝福牆'));
-      return !!hit && hit.classList.contains('is-off');
-    }));
+  ok('收起來的那一頁就從手機示意上消失',
+    await page.evaluate(() => ![...document.querySelectorAll('#adPagePreview .ad-phone-item')]
+      .some((el) => el.textContent.includes('祝福牆'))));
   ok('收起來之後後台照樣進得去那一頁的內容',
     !(await page.evaluate(() =>
       document.querySelector('#adSide .ad-tab[data-tab="inbox"]').hidden)));
@@ -2932,13 +2929,16 @@ console.log('\n[14c] 後台開關表單題目');
   ok('題目預設全部開著',
     (await page.isChecked('#adAskCard')) && (await page.isChecked('#adAskGift'))
       && (await page.isChecked('#adAskMessage')));
+  /* 「郵寄」是新人自己在這一頁關的，不是我們進 Firebase 設的 */
+  ok('「要不要提供郵寄」預設也是開著的', await page.isChecked('#adAskMail'));
   ok('聯絡方式預設三種都問',
     (await page.isChecked('#adContactPhone')) && (await page.isChecked('#adContactLine'))
       && (await page.isChecked('#adContactEmail')));
 
-  /* 關掉喜餅與留言，聯絡方式只留 Email */
+  /* 關掉喜餅與留言、不提供郵寄，聯絡方式只留 Email */
   await page.uncheck('#adAskGift');
   await page.uncheck('#adAskMessage');
+  await page.uncheck('#adAskMail');
   await page.uncheck('#adContactPhone');
   await page.uncheck('#adContactLine');
   await page.click('#adRsvpForm button[type="submit"]');
@@ -2958,6 +2958,9 @@ console.log('\n[14c] 後台開關表單題目');
       && site.rsvpAskMessage === false && site.rsvpShowGallery === false,
     JSON.stringify({ card:site.rsvpAskCard, gift:site.rsvpAskGift,
                      msg:site.rsvpAskMessage, gallery:site.rsvpShowGallery }));
+  /* 新人的帳號寫得進去（規則白名單裡有），不必經過我們 */
+  ok('「不提供郵寄」也是新人自己存得進去的',
+    site.rsvpMailEnabled === false, String(site.rsvpMailEnabled));
   ok('聯絡方式只留 Email',
     (site.rsvpContactMethods || []).join(',') === 'email',
     (site.rsvpContactMethods || []).join(','));
@@ -2987,6 +2990,11 @@ console.log('\n[14c] 後台開關表單題目');
 
   ok('喜帖還在', (await page.locator('#cardRow').count()) === 1);
   ok('喜餅整題不見了', (await page.locator('#giftRow').count()) === 0);
+  /* 新人在後台關掉郵寄之後，賓客那一側的選項真的少一個 */
+  await page.click('#cardRow .choice[data-val="paper"]');
+  ok('紙本喜帖不再出現「郵寄」',
+    (await page.locator('#cardDeliveryRow .choice').allTextContents()).join('／') === '自行領取',
+    (await page.locator('#cardDeliveryRow .choice').allTextContents()).join('／'));
   ok('想對新人說的話不見了', (await page.locator('#rNote').count()) === 0);
   ok('其他備註仍然在', (await page.locator('#rMemo').count()) === 1);
   ok('聯絡方式只剩 Email',
@@ -3016,7 +3024,7 @@ console.log('\n[14c] 後台開關表單題目');
   /* 改回全開，後面的測試才不受影響 */
   await adb.collection('sites').doc(siteIds[SLUG]).update({
     rsvpAskCard: true, rsvpAskGift: true, rsvpAskMessage: true,
-    rsvpShowStory: true, rsvpShowGallery: true,
+    rsvpMailEnabled: true, rsvpShowStory: true, rsvpShowGallery: true,
     rsvpContactMethods: ['phone', 'line', 'email'],
   });
 }

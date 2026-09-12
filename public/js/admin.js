@@ -6744,21 +6744,18 @@ function pageRowHtml(row){
   </div>`;
 }
 
-/* 手機示意：賓客現在打開首頁看到的入口清單。
-   收起來的那幾頁留在畫面上但是灰的 —— 直接消失的話，
-   新人分不出「我關掉了」跟「這個功能我本來就沒有」。 */
+/* 手機示意：賓客現在打開首頁**真的看得到**的入口。
+   收起來的那幾頁直接不出現 —— 這一支手機就是賓客的畫面，
+   在上面畫一排賓客看不到的東西，等於在示意一件沒發生的事。
+   「哪幾頁被我收起來了」左邊那一排每一列都寫著，不必在這裡再講一次。 */
 function renderPagePreview(rows){
   if(!pagePrevEl) return;
-  const items = rows.map(row => {
-    const live = pageRowLive(row);
-    const cls = live ? '' : ' is-off';
-    const tail = live ? '' : (row.locked ? '未開通' : '已收起');
-    return `<li class="ad-phone-item${cls}">
-      <span class="ad-phone-item-name">${escapeHtml(row.label)}</span>
-      ${tail ? `<span class="ad-phone-item-tag">${escapeHtml(tail)}</span>` : ''}
-    </li>`;
-  }).join('');
-  pagePrevEl.innerHTML = items || '<li class="ad-phone-item is-off">沒有可以設定的頁面</li>';
+  const live = rows.filter(pageRowLive);
+  pagePrevEl.innerHTML = live.length
+    ? live.map(row => `<li class="ad-phone-item">
+        <span class="ad-phone-item-name">${escapeHtml(row.label)}</span>
+      </li>`).join('')
+    : '<li class="ad-phone-empty">目前全部收起來了，賓客只看得到首頁</li>';
 }
 
 function renderPageSettings(){
