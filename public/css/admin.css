@@ -818,8 +818,30 @@ select.ad-input{appearance:none;cursor:pointer;
   color:var(--ink-soft);margin-bottom:8px;}
 .ad-page-sched-lab .ad-input-when{margin-top:6px;max-width:240px;}
 
-/* 沒開通的那一列：按下那顆死掉的開關（或旁邊的「為什麼不能開？」）
-   就展開這一塊 —— 一句話說清楚要找誰，加一顆直接找得到人的按鈕。
+/* 沒開通的那一列，開關旁邊那顆問號（Feather 的 help-circle）。
+   照 §3.2 的圖示按鈕規格：桌機 36×36、觸控 44×44，透明框、hover 才顯 ——
+   它站在內容上（不是站在一張面上），沒有框就看不出是可以按的。
+   刻意不寫文字：一列裡已經有頁名、說明、狀態三行字，再多一句
+   「為什麼不能開？」會蓋過它們。無障礙的名字掛在 aria-label 上。 */
+.ad-page-why{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  width:36px;height:36px;padding:0;
+  background:none;border:1px solid transparent;border-radius:var(--radius);
+  cursor:help;
+}
+.ad-page-why .ad-ic{width:19px;height:19px;opacity:.55;
+  transition:opacity var(--dur-hover) ease-out;}
+.ad-page-why:hover{border-color:var(--line);}
+.ad-page-why:hover .ad-ic,
+.ad-page-why[aria-expanded="true"] .ad-ic{opacity:1;}
+.ad-page-why:focus-visible{outline:1px solid var(--ink);outline-offset:2px;}
+@media (pointer:coarse){
+  .ad-page-why{width:44px;height:44px;cursor:pointer;}
+  .ad-page-why .ad-ic{width:21px;height:21px;}
+}
+
+/* 按下那顆死掉的開關、或問號，就展開這一塊 ——
+   一句話說清楚要找誰，加一顆直接找得到人的按鈕。
    和排程那一塊共用同一種展開形狀，新人不必學第二種。 */
 .ad-page-lock{grid-column:1/-1;border-top:1px dashed var(--line);
   margin-top:4px;padding-top:14px;}
@@ -827,7 +849,7 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-page-lock-msg{margin:0 0 12px;font-size:12.5px;line-height:1.9;
   letter-spacing:.04em;color:var(--ink);}
 
-/* 手機：一列裡「頁名 ＋ 說明」和「排程／為什麼不能開？＋ 開關」擠不進同一行
+/* 手機：一列裡「頁名 ＋ 說明」和「排程／問號 ＋ 開關」擠不進同一行
    （420px 的畫面上右邊那一欄會被切掉），所以讓動作整排掉到文字下面，
    按鈕靠左、開關靠右，兩端對齊才點得準。 */
 @media(max-width:599px){

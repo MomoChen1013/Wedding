@@ -6715,6 +6715,24 @@ function pageStateText(row){
    新人只會以為壞掉了 —— 所以按下去要有人回他一句話，並且說清楚要找誰。 */
 const PAGE_LOCK_MSG = '這個功能需要管理員才能開啟，請透過官方帳號聯繫';
 
+/* 那一句話由旁邊的問號（Feather 的 help-circle）帶出來：
+   桌機滑過去就看得到，觸控裝置點一下 —— 兩邊都不必先按下一顆看起來
+   按不動的開關才知道發生什麼事。按鈕上刻意沒有文字：一列裡已經有
+   頁名、說明、狀態三行字了，再多一句「為什麼不能開？」會蓋過它們。 */
+function setLockNote(row, show){
+  if(!row) return;
+  const box = row.querySelector('[data-page-lock]');
+  if(!box || box.hidden === !show) return;
+  box.hidden = !show;
+  const why = row.querySelector('[data-page-why]');
+  if(why) why.setAttribute('aria-expanded', String(show));
+}
+
+function lockNoteOpen(row){
+  const box = row && row.querySelector('[data-page-lock]');
+  return !!box && !box.hidden;
+}
+
 function pageRowHtml(row){
   const live = pageRowLive(row);
   const schedFuture = !row.on && row.at !== null && Date.now() < row.at;
@@ -6731,8 +6749,10 @@ function pageRowHtml(row){
 
     <div class="ad-page-act">
       ${row.locked
-        ? `<button class="ad-page-when" type="button" data-page-why
-            aria-expanded="false">為什麼不能開？</button>`
+        ? `<button class="ad-page-why" type="button" data-page-why
+            aria-expanded="false" aria-label="為什麼不能開？">
+            <svg class="ad-ic" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-help"/></svg>
+          </button>`
         : `<button class="ad-page-when" type="button" data-page-when
             aria-expanded="false">${schedFuture ? '改排程' : '排程開啟'}</button>`}
       <label class="ad-toggle">
@@ -6865,19 +6885,21 @@ if(pageListEl){
   });
 
   pageListEl.addEventListener('click', async (e)=>{
-    /* 沒開通的那一列：開關是 disabled 的，按在它身上不會有 change 事件
-       （CSS 把 disabled 的 input 設成 pointer-events:none，點擊才落到外層的
-       <label> 上、冒泡到這裡）。按開關、按「為什麼不能開？」都是同一件事 ——
-       他想打開這個功能 —— 所以一律展開那張說明，並且吐一句話給他。
-       說明卡裡面的連結不算（點那顆是要去聯繫我們，不是要把它收回去）。 */
+    /* 沒開通的那一列。兩個入口，做的是同一件事：
+         問號  —— 「這是什麼？」（觸控靠點的；桌機滑過去就開了，見下面）
+         開關  —— 「我要打開它」。開關是 disabled 的，按在它身上不會有
+                   change 事件（CSS 把 disabled 的 input 設成
+                   pointer-events:none，點擊才落到外層的 <label> 上、
+                   冒泡到這裡），所以按下去的回應要在這裡給。
+       說明本身裡面的點擊不算（點那顆連結是要去聯繫我們，不是要收回去）。 */
     const lockedRow = e.target.closest('.ad-page-row.is-locked');
     if(lockedRow && !e.target.closest('[data-page-lock]')){
-      const box  = lockedRow.querySelector('[data-page-lock]');
-      const why  = lockedRow.querySelector('[data-page-why]');
-      const show = box.hidden;
-      box.hidden = !show;
-      if(why) why.setAttribute('aria-expanded', String(show));
-      if(show) toast(PAGE_LOCK_MSG);
+      const viaWhy = !!e.target.closest('[data-page-why]');
+      const show   = viaWhy ? !lockNoteOpen(lockedRow) : true;
+      setLockNote(lockedRow, show);
+      /* 按了那顆按不動的開關才吐 toast —— 問號是「我想知道」，
+         畫面上那段說明就是答案，不必再有人在角落喊一次。 */
+      if(!viaWhy) toast(PAGE_LOCK_MSG);
       return;
     }
 
@@ -6919,6 +6941,43 @@ if(pageListEl){
         toast('已取消排程，這一頁維持收起來');
       });
     }
+  });
+
+  /* 桌機：滑過問號就看得到那句話，不必先點。
+     能力判斷不是寬度判斷 —— iPad 橫向有 1194px，但它是觸控裝置
+     （和側欄 tooltip 的 bindNavTips 同一套判斷）。
+     說明是長在那一列裡面的，所以從問號滑到底下那顆「用官方帳號聯繫」
+     不算離開，滑得到也點得到；真的離開那一列才收起來。 */
+  const finePointer = window.matchMedia('(hover:hover) and (pointer:fine)');
+
+  pageListEl.addEventListener('pointerover', (e)=>{
+    if(!finePointer.matches || e.pointerType === 'touch') return;
+    const why = e.target.closest('[data-page-why]');
+    if(why) setLockNote(why.closest('.ad-page-row.is-locked'), true);
+  });
+
+  pageListEl.addEventListener('pointerout', (e)=>{
+    if(!finePointer.matches || e.pointerType === 'touch') return;
+    const row = e.target.closest('.ad-page-row.is-locked');
+    if(!row) return;
+    if(e.relatedTarget && row.contains(e.relatedTarget)) return;
+    setLockNote(row, false);
+  });
+
+  /* 鍵盤：Tab 到問號上和滑過去是同一件事。
+     再按一次 Tab 會落到說明裡那顆連結（還在同一列裡），所以不會收起來。 */
+  pageListEl.addEventListener('focusin', (e)=>{
+    const why = e.target.closest('[data-page-why]');
+    if(why) setLockNote(why.closest('.ad-page-row.is-locked'), true);
+  });
+
+  pageListEl.addEventListener('focusout', (e)=>{
+    const row = e.target.closest('.ad-page-row.is-locked');
+    if(!row) return;
+    if(e.relatedTarget && row.contains(e.relatedTarget)) return;
+    /* 滑鼠還停在那一列上時不收 —— 焦點離開不代表他不看了 */
+    if(row.matches(':hover')) return;
+    setLockNote(row, false);
   });
 }
 

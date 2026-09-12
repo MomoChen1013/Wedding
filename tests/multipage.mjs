@@ -2341,11 +2341,25 @@ console.log('\n[18c] 新人自己收起某一頁');
     (await page.getAttribute(`${row} [data-page-lock] a`, 'href') || '')
       .startsWith('https://line.me/R/ti/p/'),
     await page.getAttribute(`${row} [data-page-lock] a`, 'href'));
-  ok('「為什麼不能開？」再按一次收回去',
+  ok('問號沒有文字，名字掛在 aria-label 上',
+    (await page.innerText(`${row} [data-page-why]`)).trim() === ''
+      && (await page.getAttribute(`${row} [data-page-why]`, 'aria-label')) === '為什麼不能開？',
+    await page.getAttribute(`${row} [data-page-why]`, 'aria-label'));
+  ok('問號再按一次收回去',
     await (async () => {
       await page.click(`${row} [data-page-why]`);
       return page.isHidden(`${row} [data-page-lock]`);
     })());
+
+  /* 桌機不必點：滑過問號就看得到。離開那一列才收起來 */
+  await page.hover('.ad-panel[data-panel="pages"] .ad-sec-title');
+  await page.hover(`${row} [data-page-why]`);
+  await page.waitForSelector(`${row} [data-page-lock]:not([hidden])`, { timeout:5000 });
+  ok('滑過問號就看得到（不必點）',
+    await page.isVisible(`${row} [data-page-lock]`));
+  await page.hover('.ad-panel[data-panel="pages"] .ad-sec-title');
+  await page.waitForSelector(`${row} [data-page-lock][hidden]`, { timeout:5000 });
+  ok('滑開那一列就收起來', await page.isHidden(`${row} [data-page-lock]`));
   await page.close();
 
   await siteRef.update({ pages: allOnPlusAdmin });

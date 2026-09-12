@@ -273,6 +273,7 @@ sticky 的位置不能寫死（婚禮名稱換一行、離線橫幅出現，高�
 | `.sp-move-btn` `.ad-sch-move [data-sch-move]` | ↑ ↓ ⇤ ⇥ | **36×36**／13px | **44×44** | 1px `--line` ＋ radius |
 | `.sp-card-move` | ↔ | **36×36**／16px | 同左（只在觸控出現） | 透明框，`:active` 才顯 |
 | `.sp-table-fold` | ▾（收起來轉 −90°） | **36×36**／12px | 36×36 ＋ `::after` 補到 **44×44** | 透明框，`:active` 才顯 |
+| `.ad-page-why` | ？（`#shin9-help`） | **36×36**／19px | **44×44**／21px | 透明框，hover 才顯 `--line`；`cursor:help` |
 | `.ad-drag-handle` | ⠿ | 16px | — | 無框，`cursor:grab`／`grabbing` |
 
 三條規則：
