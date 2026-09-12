@@ -1156,6 +1156,26 @@ describe('sites 的大廳文案更新', () => {
     }));
   });
 
+  it('新人可以開關基本問題的全域設定', async () => {
+    const db = ownerDb();
+    /* 出席人數／餐點分配／兒童座椅／飲食習慣補充／其他備註：
+       一場婚禮有幾個活動都問同一件事，所以開關在站台這一層 */
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      rsvpAskCount: false,
+      rsvpAskMeal: true,
+      rsvpAskChildSeat: false,
+      rsvpAskDiet: true,
+      rsvpAskNote: false,
+      updatedAt: Timestamp.now(),
+    }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { rsvpAskCount: 'off' }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { rsvpAskNote: 1 }));
+    /* 它們仍然不是規則的判斷依據：改題目不會順便開到回覆本身 */
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      rsvpAskCount: true, rsvpEnabled: false,
+    }));
+  });
+
   it('新人可以自己收起／排程某一頁（pagePublish）', async () => {
     const db = ownerDb();
     await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {

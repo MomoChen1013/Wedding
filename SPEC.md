@@ -120,6 +120,13 @@ sites/{siteId}
   rsvpAskCard     : boolean  # 要不要問「喜帖發送方式」
   rsvpAskGift     : boolean  # 要不要問「喜餅領取方式」
   rsvpAskMessage  : boolean  # 要不要問「想對新人說的話」
+  rsvpAskNote     : boolean  # 要不要問「其他備註」
+  # ↓ 基本問題的**全域**開關（不分活動）。events[].ask* 是單一場次的
+  #   override，只能往下關：效果值 = 這裡 && events[].askX（見 eventAsks()）
+  rsvpAskCount    : boolean  # 要不要問「包含你，共幾位出席？」
+  rsvpAskMeal     : boolean  # 要不要問餐點分配（葷／素）
+  rsvpAskChildSeat: boolean  # 要不要問兒童座椅
+  rsvpAskDiet     : boolean  # 要不要問飲食習慣補充
   rsvpMailEnabled : boolean  # 要不要提供「郵寄」這個選項（喜帖怎麼給、喜餅怎麼領）；
                              # 沒有這個欄位＝提供。關掉時兩題各少一個「郵寄」，
                              # 也就不會問地址 —— 不寄送的新人不該讓賓客
@@ -333,8 +340,8 @@ short/{code}                # 短連結
 | `venueName`／`address`／`mapUrl` | 這個活動自己的地點。`mapUrl` 留白時前端用 `address` 組 Google Maps |
 | `desc` | 活動說明，≤300 |
 | `requiresRsvp` | `false` 時出現在婚禮流程／邀請函，**但不出現在 RSVP 表單**（文訂、迎娶通常是這樣） |
-| `askCount`／`askMeal`／`askChildSeat`／`askDiet` | 這個活動的表單要問哪幾題（證婚通常沒有餐） |
-| `questions` | 這個活動的追加題目，≤3；見下方 |
+| `askCount`／`askMeal`／`askChildSeat`／`askDiet` | 這個活動**要不要少問**這一題（證婚通常沒有餐）。★ 它是 **override**：效果值＝站台的 `rsvpAsk*`（全域）**且** 這一欄，見下方「兩層開關」 |
+| `questions` | 這個活動自己的題目，≤3；見下方 |
 
 **為什麼日期時間存字串不存 Timestamp**：一來 `schedule[].time` 本來就是字串，
 後台輸入框也是字串；二來婚禮的時間是**牆上時間**（「10/18 14:00 在台北真理堂」），
@@ -345,18 +352,34 @@ short/{code}                # 短連結
 它們代表**主要活動**（婚宴）。倒數計時、`rsvpDeadline` 的比較、OG 分享文字
 都還是讀那一份，所以既有站台不會因為多了 `events` 就變樣。
 
-**`events[].questions`（活動自己的追加題目）**：型態只有兩種、每個活動最多 3 題，
-一律選填。刻意不做通用 form builder —— 規則語言檢查不了陣列裡的內容，
+**基本問題的兩層開關**：「出席人數／餐點分配／兒童座椅／飲食習慣補充」
+問的是同一件事，所以**全域一份**（站台文件的 `rsvpAskCount`／`rsvpAskMeal`／
+`rsvpAskChildSeat`／`rsvpAskDiet`，沒設定過＝開著），`events[].ask*` 是
+**單一場次的 override，只能往下關**：
+
+```
+效果值 = sites.rsvpAskX !== false  &&  events[].askX !== false
+```
+
+收斂在 `common.js` 的 `eventAsks()`／`rsvpEventsAsked()`，賓客表單與後台統計
+讀的都是它。**後台編輯時讀的仍然是 `events[]` 原本那一份**（override 本身）——
+不然全域一關，個別場次的設定就會被效果值覆蓋掉。
+後台的畫法見 `docs/RSVP-FORM-UX.md`：全域那一層在活動卡**上面**，
+單一場次被關掉的那一列掛「僅此場次停用」，並且給得回去。
+
+**`events[].questions`（活動自己的題目）**：題型三種（`choice` 單選／
+`multi` 多選／`text` 簡答）、每個活動最多 3 題、選擇題最多 8 個選項，一律選填。
+刻意不做通用 form builder —— 規則語言檢查不了陣列裡的內容，
 型態一開放就等於前端說什麼算什麼。
 
-> 後台在「需要賓客回覆」打開之後，會先把**系統已經幫這個活動問的那幾題**
-> 原樣列出來（「能來參加嗎」＋ `askCount`／`askMeal`／`askChildSeat`／`askDiet`
-> 目前開著的那些，沒開的用一句「目前沒問：…」補上），**唯讀**——
-> 那幾題的開關屬於整份表單（側欄的「表單設定」），兩個地方都改得動就會對不起來。
-> 少了這一段，打開之後看到的第一件事是一張空的「追加題目」，
-> 讀起來像「這個活動什麼都沒問」。
-> 追加題目的 placeholder 寫成「例如：需要接駁車嗎？」而不是「需要接駁車嗎？」——
+> 這幾題**只在側欄的「表單設定」設**（活動卡上的「本場次專屬問題」，
+> 新增／編輯走 Modal、排序走拖曳）。「婚禮資訊 → 其他流程」那一頁只管
+> 活動本身（時間、地點、說明）—— 同一件事給兩個入口，一改就會對不起來。
+> 題目名稱的 placeholder 寫成「例如：需要接駁車嗎？」而不是「需要接駁車嗎？」——
 > 後者會被當成建議題目直接照抄。
+> **多選題存的是「用逗號串起來的選項 id」**（`answers` 仍然是
+> `題目 id → 字串`，規則與既有資料都不必改型別）；顯示走
+> `common.js` 的 `questionAnswerText()`，單選就是一個元素的清單。
 
 ```json
 [
@@ -454,6 +477,7 @@ coupleTitle venueName venueAddress venueMapUrl transportPublic transportParking
 dressCode dressCodeColors giftNote story schedule hashtags updatedAt
 seatingSearchEnabled seatingFeatureEnabled
 rsvpAskCard rsvpAskGift rsvpAskMessage rsvpMailEnabled rsvpContactMethods
+rsvpAskCount rsvpAskMeal rsvpAskChildSeat rsvpAskDiet rsvpAskNote
 rsvpShowStory rsvpShowGallery guestTags events eventDate pagePublish
 ```
 
@@ -739,10 +763,10 @@ HTML 只放一個 `<div id="rsvpFormHost">` —— 題目會依新人在後台�
 | 與新人的關係 | 單選：男方親友／女方親友／雙方親友／其他 | always |
 | ★ 更具體是哪一種？ | 單選、選填；選項＝新人開放的賓客標籤 | 開了標籤功能、而且至少有一個標籤設成「當表單選項」時 |
 | ★ 聯絡方式 | 電話／LINE／Email，新人複選要問哪幾種；賓客至少填一種 | 至少勾一種時才出現 |
-| 出席人數 | 1–10 | 選「熱情出席」才出現 |
-| 餐點分配（葷／素） | 兩個計數器，相加恆等於出席人數 | 同上 |
-| 兒童座椅 | 勾選後才問張數 | 同上 |
-| 飲食習慣補充 | 文字，選填 | 同上 |
+| ★ 出席人數 | 1–10 | 選「熱情出席」才出現（多活動時掛在各張活動卡上） |
+| ★ 餐點分配（葷／素） | 兩個計數器，相加恆等於出席人數 | 同上 |
+| ★ 兒童座椅 | 勾選後才問張數 | 同上 |
+| ★ 飲食習慣補充 | 文字，選填 | 同上 |
 | ★ 喜帖發送方式 | 單選：紙本／電子／不需要 | always |
 | ★ 紙本要怎麼給 | 單選：自行領取／郵寄 | 選「紙本」才出現；「郵寄」由 `rsvpMailEnabled` 決定在不在 |
 | 喜帖郵寄地址 | 郵遞區號 ＋ 地址 | 選「郵寄」才出現 |
@@ -750,7 +774,12 @@ HTML 只放一個 `<div id="rsvpFormHost">` —— 題目會依新人在後台�
 | ★ 喜餅領取方式 | 單選：現場領取／自行領取／郵寄 | always；「郵寄」同樣由 `rsvpMailEnabled` 決定 |
 | 喜餅郵寄地址 | 郵遞區號 ＋ 地址，可勾「同上」帶入喜帖的地址 | 選「郵寄」才出現 |
 | ★ 想對新人說的話 | 文字，選填 | always |
-| 其他備註 | 文字，選填 | always |
+| ★ 其他備註 | 文字，選填 | always |
+| ★ 本場次專屬問題 | 單選／多選／簡答，選填；一個活動最多 3 題 | 那一場的活動卡上（`events[].questions`） |
+
+> 這四題（出席人數／餐點／兒童椅／飲食）的開關有兩層：
+> 全域一份 ＋ 單一場次 override，見「`events[].ask*`」那一段。
+> 後台怎麼畫、為什麼這樣畫：`docs/RSVP-FORM-UX.md`。
 
 ### 賓客標籤（配合排桌次）
 
@@ -1352,9 +1381,17 @@ hover 那一套走 `matchMedia('(hover:hover) and (pointer:fine)')`
 留在上面。關掉的題目**整欄不出現** —— 一整欄的「—」沒有任何資訊。
 其餘清單維持一筆一張卡（`.ad-item`）：欄位少，卡片讀起來比表格快。
 
-**新增與編輯一律開彈窗**（桌次名單、感謝信、故事牆、測驗題目、自訂內容）：
-清單是這些分頁的主畫面，表單只在要動它的時候才出現。
+**新增與編輯一律開彈窗**（桌次名單、感謝信、故事牆、測驗題目、自訂內容、
+表單設定的活動資訊與自訂題目）：清單是這些分頁的主畫面，
+表單只在要動它的時候才出現。
 彈窗裡叫得出裁切器（故事牆的照片），所以裁切器的 z-index 壓在所有彈窗之上。
+
+**「表單設定」整頁不跳頁**：它管的是三種不同層級的設定（只屬於某一場的、
+所有場次共用的、不分活動的），所以資訊架構就照那三層排，
+需要進一步設定時開彈窗 —— 而不是把新人送去另一個分頁再叫他自己找回來。
+每一組的標題就要回答「這個設定會影響誰」；
+元件的選法（Checkbox／Switch／Radio／Badge／Chips／Conditional Reveal）
+與完整的互動流程寫在 `docs/RSVP-FORM-UX.md`，視覺規格在 `docs/UI-SPEC.md`。
 
 #### 13.0 後台在手機與平板上
 

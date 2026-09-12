@@ -1447,7 +1447,7 @@ function openAdmin(){
     /* 沒開標籤功能就連訂閱都省下來 */
     if(guestTagsOn()) DataStore.subscribeRsvpTags();
     fillRsvpFormSettings();
-    renderEventAsk();
+    renderFormSettings();
     renderTags();
     renderRsvpTagChips();
     renderRsvps();
@@ -1495,11 +1495,7 @@ function openAdmin(){
   fillSiteForm();
   renderSchedule(siteSchedule());
   /* 婚禮流程：沒開多活動的站台連草稿都不用備，那一頁根本不存在 */
-  if(multiEventOn()){
-    evDraft = evStartingDraft();
-    evBaseline = evSnapshot();
-    renderEvents();
-  }
+  resetEvDraft();
   syncVenueManagedUI();
   /* 上次沒存完的婚禮資訊（填完表單之後才問，不然會被 fillSiteForm 蓋掉） */
   offerSiteDraft();
@@ -2093,13 +2089,15 @@ function renderRsvpCharts(state){
   rsvpChartsEl.classList.add('ad-donuts');
   const c = DataStore.getRsvpCharts();
   const cfg = rsvpConfig();
+  /* 新人關掉的題目就不畫圖 —— 一張全是「未填」的圖沒有任何資訊，
+     只會讓人以為賓客都跳過不答。
+     餐點與兒童座椅看的是全域那一份（見 common.js 的 eventAsks()）：
+     只有某一場單獨停用時圖表照畫，那一場的人只是沒有答案。 */
   const cards = [
     { ...c.attend, title:'出席',     hint:'依回覆筆數' },
-    { ...c.meal,   title:'飲食',     hint:'依出席人數' },
-    { ...c.child,  title:'兒童座椅',
-      hint: c.child.seats ? `共需 ${c.child.seats} 張` : '依回覆筆數' },
-    /* 新人關掉的題目就不畫圖 —— 一張全是「未填」的圖沒有任何資訊，
-       只會讓人以為賓客都跳過不答 */
+    cfg.askMeal ? { ...c.meal, title:'飲食', hint:'依出席人數' } : null,
+    cfg.askChildSeat ? { ...c.child, title:'兒童座椅',
+      hint: c.child.seats ? `共需 ${c.child.seats} 張` : '依回覆筆數' } : null,
     cfg.askCard ? { ...c.card, title:'喜帖', hint:'依回覆筆數' } : null,
     cfg.askGift ? { ...c.gift, title:'喜餅', hint:'依回覆筆數' } : null,
   ].filter(Boolean);
@@ -2440,7 +2438,7 @@ function rsvpDrawerHtml(r){
     </div>
     ${rsvpEvents().length > 1 ? `<div class="ad-drawer-sec">
       <div class="ad-drawer-sec-title">各活動出席</div>
-      <div class="ad-drawer-rows">${rsvpEvents().map(ev => {
+      <div class="ad-drawer-rows">${rsvpEventsAsked().map(ev => {
         const res = eventResponse(r, ev.id);
         const ans = !res || res.tentative ? '尚未回覆'
           : (res.going ? (ev.askCount ? `會參加・${res.count} 位` : '會參加') : '無法參加');
@@ -2448,10 +2446,8 @@ function rsvpDrawerHtml(r){
           ev.askMeal && res.veg ? `素食 ${res.veg} 位` : '',
           res.note ? res.note : '',
           ...ev.questions.map(q => {
-            const v = (res.answers || {})[q.id];
-            if(!v) return '';
-            const opt = (q.opts || []).find(o => o.id === v);
-            return `${q.label}：${opt ? opt.label : v}`;
+            const text = questionAnswerText(q, (res.answers || {})[q.id]);
+            return text ? `${q.label}：${text}` : '';
           }),
         ].filter(Boolean) : [];
         return rsvpDrawerRow(ev.name,
@@ -2815,7 +2811,7 @@ function rsvpCsvColumns(){
 /* 多活動時多出來的那幾欄。單一活動回傳空陣列 ——
    CSV 的欄位和改版前逐字相同。 */
 function evCsvColumns(){
-  const evs = rsvpEvents();
+  const evs = rsvpEventsAsked();
   if(evs.length <= 1) return [];
   const out = [];
   evs.forEach(ev => {
@@ -2836,14 +2832,12 @@ function evCsvColumns(){
         return res && res.going && !res.tentative ? res.veg : '';
       } });
     }
-    /* 單選題才進 CSV 的固定欄位；文字題也帶，只是不做統計 */
+    /* 選擇題才進 CSV 的固定欄位；簡答題也帶，只是不做統計。
+       多選題一格裡會有好幾個答案，用「、」串起來（見 questionAnswerText） */
     ev.questions.forEach(q => {
       out.push({ key:`ev_${ev.id}_${q.id}`, label:`${ev.name}・${q.label}`, val:(r)=>{
         const res = eventResponse(r, ev.id);
-        const v = res && res.answers ? res.answers[q.id] : '';
-        if(!v) return '';
-        const opt = (q.opts || []).find(o => o.id === v);
-        return opt ? opt.label : v;
+        return questionAnswerText(q, res && res.answers ? res.answers[q.id] : '');
       } });
     });
   });
@@ -2876,102 +2870,747 @@ document.getElementById('adRsvpExport').addEventListener('click', async ()=>{
 });
 
 /* ============================================================
-   0b. 每個活動各自要問的（多活動時才出現）
+   0b. 表單設定：活動場次
    ------------------------------------------------------------
-   題目分成兩層：
+   題目分成三層，這一頁的資訊架構就是照這三層排的：
 
-     每個活動各問一次  人數、葷素、兒童椅、飲食補充  → events[].ask*
-     整份回覆只問一次  稱呼、關係、聯絡方式、喜帖、喜餅、想說的話、備註
+     只屬於某一場   events[].ask*／events[].questions   → 活動卡上
+     所有場次共用   sites.rsvpAsk*（出席人數、餐點…）    → 活動卡上面那一塊
+     不分活動       sites.rsvpAsk*（喜帖、喜餅、備註…）  → ②③④ 那幾組
 
-   喜帖與喜餅刻意留在「只問一次」：那是寄給一個家庭的，
-   不會因為多辦一場證婚就要寄兩份。
+   ★ 為什麼要有「所有場次共用」那一層
+     改版前四題的開關只存在 events[] 裡，所以新人在一張卡上取消餐點分配，
+     看起來像改了全部、其實只改了那一場（或反過來）。現在全域是一份、
+     單一場次是覆寫，而且兩邊在畫面上互相標記 ——
+     「我現在改的是全部活動，還是只有這一場」不必靠猜。
 
-   ★ 存的時候讀的是「現在資料庫裡的 events」而不是這一頁畫出來的快照 ——
-     新人可能剛在「婚禮流程」改過活動，用快照會把那邊的改動蓋掉。
+   ★ 只有一個要回覆的活動時整個第二層收起來（formActTwoLayer() === false）：
+     一場婚宴的新人不需要學兩層設定，勾選框直接代表「要不要問」。
+     那種情況下勾選框會同時寫全域與這個活動，兩邊永遠一致。
+
+   ★ 存的時候一律讀「資料庫現在的 events」而不是畫面上的快照 ——
+     新人可能剛在「其他流程」改過活動，用快照會把那邊的改動蓋掉。
 ============================================================ */
+
+/* [欄位, 名稱, 說明]。順序＝賓客在活動卡上看到的順序 */
 const EV_ASK_ROWS = [
-  ['askCount',     '包含你，共幾位出席？'],
-  ['askMeal',      '餐點分配（葷食／素食）'],
-  ['askChildSeat', '兒童座椅'],
-  ['askDiet',      '飲食習慣補充'],
+  ['askCount',     '出席人數',     '包含你，共幾位出席？'],
+  ['askMeal',      '餐點分配',     '葷食／素食各幾位'],
+  ['askChildSeat', '兒童座椅',     '需要幾張'],
+  ['askDiet',      '飲食習慣補充', '不吃牛、海鮮過敏、孕婦餐…'],
 ];
 
-const evAskListEl = document.getElementById('adEvAskList');
+/* events[].askCount → sites.rsvpAskCount（全域那一份的欄位名） */
+function globalAskField(key){
+  return `rsvp${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+}
 
-function renderEventAsk(){
-  if(!evAskListEl) return;
-  syncRsvpFormGroups();
+const actListEl = document.getElementById('adActList');
 
-  /* 這一組收起來的時候要**連 DOM 一起清掉**，不能只是 hidden ——
-     每個活動都帶一條「能來參加嗎」的固定題目勾選框，
-     留在畫面上的話會被「固定題目有幾條」那一類的判斷一起數進去
-     （測試就是這樣抓到的）。看不見的東西不該還算數。 */
-  if(document.getElementById('adEvAskGroup')?.hidden){
-    evAskListEl.innerHTML = '';
-    return;
+/* 這一區要不要分成「全域 ＋ 各場次覆寫」兩層 */
+function formActTwoLayer(){
+  return multiEventOn() && rsvpEvents().length > 1;
+}
+
+/* 這個活動的設定存得進 events[] 嗎 ——
+   合成出來的那一個（站台還沒有 events）存不進去，它代表「這場婚禮」本身 */
+function actSaved(ev){
+  return !!ev && ev.id !== MAIN_EVENT_ID;
+}
+
+function siteEventRows(){
+  return Array.isArray(siteData().events) ? siteData().events : [];
+}
+
+/* 只改某一個活動的幾個欄位，其餘原封不動帶回去。
+   回傳要寫進 sites 的 patch（含主要活動地點的鏡像），找不到那個活動就回 null */
+function eventPatchFields(id, patch){
+  const rows = siteEventRows().map(ev => (ev && ev.id === id ? { ...ev, ...patch } : ev));
+  if(!rows.some(ev => ev && ev.id === id)) return null;
+  const out = { events: rows };
+  /* 主要活動的地點鏡像回站台文件：分享縮圖（build-og）與大廳的既有欄位
+     讀的還是那一份，不鏡像回去兩邊會對不起來（和「其他流程」的儲存同一套） */
+  const primary = rows.find(e => e && e.type === 'reception')
+               || rows.find(e => e && e.requiresRsvp) || rows[0];
+  if(primary){
+    out.venueName    = String(primary.venueName || '');
+    out.venueAddress = String(primary.address || '');
+    out.venueMapUrl  = String(primary.mapUrl || '');
   }
+  return out;
+}
 
-  evAskListEl.innerHTML = rsvpEvents().map(ev => `
-    <div class="ad-evask-item" data-evask="${escapeHtml(ev.id)}">
-      <div class="ad-evask-head">
-        <span class="ad-evask-name">${escapeHtml(ev.name)}</span>
-        <span class="ad-evask-when">${escapeHtml(evWhenText(ev) || '時間未定')}</span>
-      </div>
+/* ---------- 這一頁的重畫入口 ----------
+   活動卡、全域那一塊、預覽膠囊、條件顯示全部跟著同一份資料走，
+   所以永遠一起重畫 —— 只更新一半才是畫面和資料說不一樣話的來源。 */
+function renderFormSettings(){
+  renderGlobalAsk();
+  renderActCards();
+  renderFormPreviews();
+  syncRsvpFormReveals();
+}
+
+/* ---------- 所有場次的基本問題（第二層） ---------- */
+function renderGlobalAsk(){
+  const sec  = document.getElementById('adGlobalAskSec');
+  const list = document.getElementById('adGlobalAskList');
+  if(!sec || !list) return;
+
+  const on = formActTwoLayer();
+  sec.hidden = !on;
+  /* 收起來的時候連 DOM 一起清掉，不能只是 hidden ——
+     看不見的勾選框不該還被「固定題目有幾條」那一類的判斷數進去 */
+  if(!on){ list.innerHTML = ''; return; }
+
+  const cfg = rsvpConfig();
+  const evs = rsvpEvents();
+  list.innerHTML = `
+    <div class="ad-askrow">
       <label class="ad-check is-fixed">
         <input type="checkbox" checked disabled>
-        <span>能來參加嗎<small>固定題目，就是活動卡本身</small></span></label>
-      ${EV_ASK_ROWS.map(([key, label]) => `
-      <label class="ad-check">
-        <input type="checkbox" data-evask-field="${key}"${ev[key] ? ' checked' : ''}>
-        <span>${escapeHtml(label)}</span></label>`).join('')}
-    </div>`).join('');
-
-  syncRsvpFormGroups();
+        <span>能來參加嗎<small>就是活動卡本身，關不掉</small></span></label>
+      <span class="ad-badge">系統固定</span>
+    </div>
+    ${EV_ASK_ROWS.map(([key, label, note]) => {
+      const globalOn = cfg[key] !== false;
+      /* 單獨關掉這一題的是哪幾場 —— 講出名字，新人才知道去哪張卡上找 */
+      const only = globalOn ? evs.filter(ev => ev[key] === false) : [];
+      return `
+      <div class="ad-askrow" data-globalrow="${key}">
+        <label class="ad-check">
+          <input type="checkbox" data-global-ask="${key}"${globalOn ? ' checked' : ''}>
+          <span>${escapeHtml(label)}<small>${escapeHtml(note)}</small></span></label>
+        ${globalOn
+          ? `<span class="ad-badge is-on">已套用 ${evs.length - only.length} / ${evs.length} 個場次</span>`
+          : '<span class="ad-badge">所有場次都不問</span>'}
+        ${only.length
+          ? `<span class="ad-badge is-warn">${escapeHtml(only.map(e => e.name).join('、'))}單獨停用</span>`
+          : ''}
+      </div>`;
+    }).join('')}`;
 }
 
-/* 多活動時，「題目」那一組的四題移到上面的活動卡，編號也跟著往後挪 */
-function syncRsvpFormGroups(){
-  const group = document.getElementById('adEvAskGroup');
-  if(!group) return;
-  /* 只有「兩個以上要回覆的活動」才值得拆成兩層 ——
-     只有一場的話，多一個標題只是把同樣的題目搬個位置 */
-  const on = multiEventOn() && rsvpEvents().length > 1;
+/* ---------- 活動卡 ---------- */
 
-  group.hidden = !on;
-  const fixed = document.getElementById('adFixedEventQs');
-  if(fixed) fixed.hidden = on;
-  const titleA = document.getElementById('adFormGroupTitleA');
-  if(titleA) titleA.textContent = on ? '整份回覆只問一次的' : '題目';
-  const noA = document.getElementById('adFormGroupNoA');
-  if(noA) noA.textContent = on ? '2' : '1';
-  const noB = document.getElementById('adFormGroupNoB');
-  if(noB) noB.textContent = on ? '3' : '2';
+/* 卡上那一行時間：09/09（三）12:00–15:00。
+   evWhenText() 是收合清單用的短版，這裡要完整一點（含星期與結束時間） */
+function actWhenText(ev){
+  if(!ev || !ev.date) return ev && ev.startTime ? ev.startTime : '';
+  const w = eventWhen(ev);
+  const md = w.md + (w.wdTw ? `（${w.wdTw}）` : '');
+  return [md, w.range].filter(Boolean).join(' ');
 }
 
-if(evAskListEl){
-  evAskListEl.addEventListener('change', async (e)=>{
-    const el = e.target.closest('[data-evask-field]');
-    if(!el) return;
-    const id = el.closest('[data-evask]').dataset.evask;
-    const key = el.dataset.evaskField;
+function actAskRowsHtml(ev, two){
+  const cfg = rsvpConfig();
+  return `
+    <div class="ad-askrow">
+      <label class="ad-check is-fixed">
+        <input type="checkbox" checked disabled>
+        <span>能來參加嗎<small>就是活動卡本身，關不掉</small></span></label>
+      <span class="ad-badge">系統固定</span>
+    </div>
+    ${EV_ASK_ROWS.map(([key, label, note]) => {
+      const globalOn = cfg[key] !== false;
+      const own = ev[key] !== false;
+      /* 兩層的時候：全域關了就整題不問，個別場次也開不回來（只能往下關）*/
+      const locked = two && !globalOn;
+      const single = two && globalOn && !own;
+      return `
+      <div class="ad-askrow" data-askrow="${key}">
+        <label class="ad-check">
+          <input type="checkbox" data-act-ask="${key}"${
+            globalOn && own ? ' checked' : ''}${locked ? ' disabled' : ''}>
+          <span>${escapeHtml(label)}<small>${escapeHtml(note)}</small></span></label>
+        ${!two ? ''
+          : locked ? '<span class="ad-badge">所有場次都不問</span>'
+          : single ? '<span class="ad-badge is-warn">僅此場次停用</span>'
+            + `<button class="ad-edit" type="button" data-act-ask-reset="${key}"
+                 >恢復所有場次設定</button>`
+          : '<span class="ad-badge is-on">來自所有場次</span>'}
+      </div>`;
+    }).join('')}`;
+}
 
-    /* 讀資料庫現在那一份，只改這一個活動的這一個開關。
-       其餘欄位原封不動帶回去 —— 這一頁看不到的東西不該被它動到。 */
-    const rows = (Array.isArray(siteData().events) ? siteData().events : [])
-      .map(ev => (ev && ev.id === id ? { ...ev, [key]: el.checked } : ev));
-    if(!rows.some(ev => ev && ev.id === id)){
-      toast('這個活動已經不在了，重新整理看看', true);
+/* 一題自訂題目長什麼樣（一列，不是卡片 —— 見 UI-SPEC 3.10 的判準） */
+function actQuestionRowHtml(ev, q){
+  const opts = Array.isArray(q.opts) ? q.opts : [];
+  const sub = questionNeedsOpts(q.kind)
+    ? `${opts.length} 個選項：${opts.map(o => o.label).join('／')}`
+    : (q.hint ? `提示：${q.hint}` : '賓客自己打字');
+  return `
+    <div class="ad-qrow" data-id="${escapeHtml(q.id)}">
+      <button class="ad-drag-handle" type="button" aria-label="拖曳調整順序">⠿</button>
+      <div class="ad-item-main">
+        <span class="ad-item-title">${escapeHtml(q.label)}</span>
+        <span class="ad-tag">${escapeHtml(QUESTION_KIND_LABEL[q.kind] || '單選')}</span>
+        <span class="ad-item-sub">${escapeHtml(sub)}</span>
+      </div>
+      <div class="ad-item-actions">
+        <button class="ad-edit ad-edit-inline" type="button"
+                data-q-edit="${escapeHtml(q.id)}">編輯</button>
+        <button class="ad-del ad-del-inline" type="button"
+                data-q-del="${escapeHtml(q.id)}">刪除</button>
+        ${rowMenuBtn('evq', `${ev.id}|${q.id}`)}
+      </div>
+    </div>`;
+}
+
+function actQuestionsHtml(ev){
+  const qs = Array.isArray(ev.questions) ? ev.questions : [];
+  return `
+    <div class="ad-sub-sec">
+      <div class="ad-sub-sec-title">本場次專屬問題</div>
+      <p class="ad-sub-sec-note">
+        只有<b>這一場</b>會問，其他活動不會出現。
+        最多 ${EVENT_QUESTION_MAX} 題，一律選填。
+      </p>
+      <div class="ad-qlist" data-qlist="${escapeHtml(ev.id)}">${
+        qs.map(q => actQuestionRowHtml(ev, q)).join('')
+        || '<div class="ad-qrow-empty">尚未新增問題</div>'}</div>
+      <div class="ad-row">
+        ${qs.length < EVENT_QUESTION_MAX
+          ? `<button class="btn small ghost" type="button"
+                     data-q-add="${escapeHtml(ev.id)}">＋ 增加自訂題目</button>`
+          : `<span class="ad-hint">已經到 ${EVENT_QUESTION_MAX} 題的上限了</span>`}
+      </div>
+    </div>`;
+}
+
+function actCardHtml(ev, two){
+  const saved = actSaved(ev);
+  const kind  = (EVENT_TYPES[ev.type] || {}).name || '自訂';
+  const where = [ev.venueName, ev.address].filter(Boolean).join('・');
+  const rsvp  = ev.requiresRsvp === true;
+  return `
+  <article class="ad-actcard${rsvp ? '' : ' is-off'}" data-act="${escapeHtml(ev.id)}">
+    <div class="ad-actcard-head">
+      <div class="ad-actcard-id">
+        <span class="ad-actcard-name">${escapeHtml(ev.name || '（沒有名稱）')}</span>
+        ${kind && kind !== ev.name ? `<span class="ad-badge">${escapeHtml(kind)}</span>` : ''}
+        ${ev.id === primaryEventId()
+          ? '<span class="ad-badge is-on">主要活動</span>' : ''}
+      </div>
+      <div class="ad-actcard-meta">
+        <span class="ad-actcard-when">${escapeHtml(actWhenText(ev) || '時間未定')}</span>
+        <span class="ad-actcard-where${where ? '' : ' is-empty'}">${
+          escapeHtml(where || '地點還沒填')}</span>
+      </div>
+    </div>
+
+    <div class="ad-actcard-acts">
+      <label class="ad-check${saved ? '' : ' is-fixed'}">
+        <input type="checkbox" data-act-rsvp${rsvp ? ' checked' : ''}${
+          saved ? '' : ' disabled'}>
+        <span>需要賓客回覆</span></label>
+      ${saved ? '' : '<span class="ad-badge">系統固定</span>'}
+      <button class="btn small ghost" type="button" data-act-edit>編輯活動資訊</button>
+    </div>
+
+    ${rsvp ? `<div class="ad-actcard-body">
+      <div class="ad-sub-sec">
+        <div class="ad-sub-sec-title">基本問題</div>
+        ${two ? `<p class="ad-sub-sec-note">
+          這幾題來自上面的「<b>所有場次的基本問題</b>」。
+          在這裡取消<b>只影響這一場</b>，其他場次照舊。</p>` : ''}
+        <div class="ad-asklist">${actAskRowsHtml(ev, two)}</div>
+      </div>
+      ${saved ? actQuestionsHtml(ev) : ''}
+    </div>`
+    : `<p class="ad-actcard-note">
+        這個活動<b>不會出現在出席表單</b>裡 ——
+        賓客只會在大廳與邀請函上看到它的時間與地點。</p>`}
+  </article>`;
+}
+
+function renderActCards(){
+  if(!actListEl) return;
+  const evs = weddingEvents();
+  const two = formActTwoLayer();
+
+  const note = document.getElementById('adFormActNote');
+  if(note){
+    note.innerHTML = two
+      ? `這場婚禮有 <b>${evs.length}</b> 個活動，一個活動一張卡。`
+        + '只屬於某一場的設定都在那張卡上 —— 改一張卡<b>不會</b>動到別的場次。'
+      : '活動的時間、地點與要問的題目都在這張卡上。'
+        + '<b>時間與地點一改，大廳與邀請函會一起更新。</b>';
+  }
+
+  actListEl.innerHTML = evs.map(ev => actCardHtml(ev, two)).join('');
+
+  /* 每一張卡上的題目清單各自接一份拖曳排序。
+     卡片是整塊重畫的，所以這裡也要重新接 —— 舊的節點連同監聽一起被丟掉。 */
+  actListEl.querySelectorAll('[data-qlist]').forEach(box => {
+    const evId = box.dataset.qlist;
+    setupDragSort(box, '.ad-qrow', (order)=> saveQuestionOrder(evId, order));
+  });
+}
+
+/* ---------- 基本問題的開關 ---------- */
+
+/* 兩層的時候：全域一份，套用到每一個活動 */
+async function setGlobalAsk(key, on){
+  await runSave(null, async ()=>{
+    await DataStore.saveSiteFields({ [globalAskField(key)]: on });
+    renderFormSettings();
+    toast(on ? '所有場次都會問這一題了（這一區不用按下面的儲存）'
+             : '所有場次都不問這一題了（這一區不用按下面的儲存）');
+  });
+}
+
+/* 單一場次：兩層時只動這個活動（覆寫）；
+   只有一個活動時同時寫全域與這個活動，勾選框與實際效果才會一致 */
+async function setActAsk(ev, key, on){
+  const two = formActTwoLayer();
+  await runSave(null, async ()=>{
+    if(two){
+      const patch = eventPatchFields(ev.id, { [key]: on });
+      if(!patch){ toast('這個活動已經不在了，重新整理看看', true); return; }
+      await DataStore.saveSiteFields(patch);
+      renderFormSettings();
+      toast(on ? `「${ev.name}」恢復問這一題了`
+               : `已在「${ev.name}」單獨停用，其他場次不變`);
+      return;
+    }
+    const patch = { [globalAskField(key)]: on };
+    if(actSaved(ev)){
+      const rows = eventPatchFields(ev.id, { [key]: on });
+      if(rows) Object.assign(patch, rows);
+    }
+    await DataStore.saveSiteFields(patch);
+    renderFormSettings();
+    toast('已更新（這一區不用按下面的儲存）');
+  });
+}
+
+/* 全域那一塊：容器是固定的（只有內容會重畫），所以監聽接一次就好 */
+document.getElementById('adGlobalAskList')?.addEventListener('change', async (e)=>{
+  const box = e.target.closest('[data-global-ask]');
+  if(!box) return;
+  box.disabled = true;
+  await setGlobalAsk(box.dataset.globalAsk, box.checked);
+  box.disabled = false;
+});
+
+if(actListEl){
+  actListEl.addEventListener('change', async (e)=>{
+    const card = e.target.closest('[data-act]');
+    if(!card) return;
+    const ev = weddingEvents().find(x => x.id === card.dataset.act);
+    if(!ev) return;
+
+    /* 要不要請賓客回覆 */
+    const rsvpBox = e.target.closest('[data-act-rsvp]');
+    if(rsvpBox){
+      if(!actSaved(ev)) return;
+      const on = rsvpBox.checked;
+      rsvpBox.disabled = true;
+      await runSave(null, async ()=>{
+        const patch = eventPatchFields(ev.id, { requiresRsvp: on });
+        if(!patch){ toast('這個活動已經不在了，重新整理看看', true); return; }
+        await DataStore.saveSiteFields(patch);
+        renderFormSettings();
+        toast(on ? `「${ev.name}」會出現在出席表單裡了`
+                 : `「${ev.name}」不會再出現在出席表單裡`);
+      });
+      rsvpBox.disabled = false;
       return;
     }
 
-    el.disabled = true;
-    await runSave(null, async ()=>{
-      await DataStore.saveSiteFields({ events: rows });
-      renderEventAsk();
-      toast('已更新（這一區不用按下面的儲存）');
-    });
-    el.disabled = false;
+    const askBox = e.target.closest('[data-act-ask]');
+    if(askBox){
+      askBox.disabled = true;
+      await setActAsk(ev, askBox.dataset.actAsk, askBox.checked);
+      askBox.disabled = false;
+    }
   });
+
+  actListEl.addEventListener('click', async (e)=>{
+    const card = e.target.closest('[data-act]');
+
+    /* 「＋ 增加自訂題目」帶的是活動 id，不必靠卡片推 */
+    const add = e.target.closest('[data-q-add]');
+    if(add){ openEvqModal(add.dataset.qAdd, ''); return; }
+
+    if(!card) return;
+    const ev = weddingEvents().find(x => x.id === card.dataset.act);
+    if(!ev) return;
+
+    if(e.target.closest('[data-act-edit]')){ openActModal(ev.id); return; }
+
+    const reset = e.target.closest('[data-act-ask-reset]');
+    if(reset){ await setActAsk(ev, reset.dataset.actAskReset, true); return; }
+
+    const edit = e.target.closest('[data-q-edit]');
+    if(edit){ openEvqModal(ev.id, edit.dataset.qEdit); return; }
+
+    const del = e.target.closest('[data-q-del]');
+    if(del){ await deleteQuestion(ev.id, del.dataset.qDel); }
+  });
+}
+
+/* 觸控裝置上「編輯／刪除」是收在「⋮」裡的（見 admin.css 的 hover:none），
+   排序也只有這裡按得動 —— 拖曳在觸控上可以用，但把第三題拖到第一位仍然難按 */
+registerRowMenu('evq', (raw)=>{
+  const [evId, qId] = String(raw).split('|');
+  const ev = weddingEvents().find(x => x.id === evId);
+  if(!ev) return [];
+  const qs = Array.isArray(ev.questions) ? ev.questions : [];
+  return [
+    ...reorderMenuItems(qs, qId, (next)=> saveQuestionOrder(evId, next)),
+    '-',
+    { label:'編輯這一題', run: ()=> openEvqModal(evId, qId) },
+    { label:'刪除這一題', danger:true, run: ()=> deleteQuestion(evId, qId) },
+  ];
+});
+
+async function saveQuestionOrder(evId, order){
+  const ev = weddingEvents().find(x => x.id === evId);
+  if(!ev) return;
+  const qs = Array.isArray(ev.questions) ? ev.questions : [];
+  const next = order.map(id => qs.find(q => q.id === id)).filter(Boolean);
+  /* 順序沒變也要重畫一次：拖曳把 DOM 動過了，要回到資料的順序 */
+  if(next.length !== qs.length || next.every((q, i) => q.id === qs[i].id)){
+    renderFormSettings();
+    return;
+  }
+  await runSave(null, async ()=>{
+    const patch = eventPatchFields(evId, { questions: next });
+    if(!patch){ toast('這個活動已經不在了，重新整理看看', true); return; }
+    await DataStore.saveSiteFields(patch);
+    renderFormSettings();
+    toast('題目順序已更新');
+  });
+}
+
+async function deleteQuestion(evId, qId){
+  const ev = weddingEvents().find(x => x.id === evId);
+  if(!ev) return;
+  const qs = Array.isArray(ev.questions) ? ev.questions : [];
+  const q = qs.find(x => x.id === qId);
+  if(!q) return;
+
+  const ok = await confirmModal({
+    title: `刪除「${q.label}」`,
+    message: '賓客不會再看到這一題。已經送出的回覆仍然保留（回覆本來就改不動），'
+           + '只是這一題不會再出現在名單與匯出的 CSV 裡。',
+    danger: true,
+    confirmText: '刪除',
+  });
+  if(!ok) return;
+
+  await runSave(null, async ()=>{
+    const patch = eventPatchFields(evId, { questions: qs.filter(x => x.id !== qId) });
+    if(!patch){ toast('這個活動已經不在了，重新整理看看', true); return; }
+    await DataStore.saveSiteFields(patch);
+    renderFormSettings();
+    toast('題目已刪除');
+  });
+}
+
+/* ============================================================
+   0b-2. 活動資訊彈窗
+   ------------------------------------------------------------
+   為什麼是彈窗：新人改的是「這張卡上的那幾欄」。跳到另一個分頁再回來
+   找剛剛那張卡，是改版前最大的操作成本（設定頁 → 子頁 → 再回設定頁）。
+
+   合成出來的那一個活動（站台還沒有 events）走的是另一條路：
+   它就是「這場婚禮」本身，所以寫回站台文件的 venueName／venueAddress／
+   venueMapUrl 與 eventDate 的「幾點開始」—— 和「婚禮資訊」那一頁同一份欄位。
+   日期本身仍然只有我們改得動（見 firestore.rules 的說明）。
+============================================================ */
+const actModalMask = document.getElementById('adActModalMask');
+const af = {
+  form:  document.getElementById('adActForm'),
+  id:    document.getElementById('adActId'),
+  type:  document.getElementById('adActType'),
+  name:  document.getElementById('adActName'),
+  date:  document.getElementById('adActDate'),
+  start: document.getElementById('adActStart'),
+  end:   document.getElementById('adActEnd'),
+  venue: document.getElementById('adActVenue'),
+  addr:  document.getElementById('adActAddr'),
+  map:   document.getElementById('adActMap'),
+  desc:  document.getElementById('adActDesc'),
+  rsvp:  document.getElementById('adActRsvp'),
+};
+const closeActModal = actModalMask
+  ? registerFormModal(actModalMask, ()=>{ actModalMask.hidden = true; })
+  : ()=>{};
+
+function openActModal(id){
+  if(!actModalMask) return;
+  const ev = weddingEvents().find(x => x.id === id);
+  if(!ev){ toast('這個活動已經不在了，重新整理看看', true); return; }
+  const saved = actSaved(ev);
+
+  af.id.value = ev.id;
+  af.type.innerHTML = Object.entries(EVENT_TYPES).map(([key, def]) =>
+    `<option value="${key}">${escapeHtml(def.name || '自訂')}</option>`).join('');
+  af.type.value = ev.type;
+  af.name.value  = ev.name || '';
+  af.date.value  = ev.date || '';
+  af.start.value = ev.startTime || '';
+  af.end.value   = ev.endTime || '';
+  af.venue.value = ev.venueName || '';
+  af.addr.value  = ev.address || '';
+  af.map.value   = ev.mapUrl || '';
+  af.desc.value  = ev.desc || '';
+  af.rsvp.checked = ev.requiresRsvp === true;
+
+  /* 存不進 events[] 的那一個活動：型別、名稱、結束時間、說明都沒有地方存，
+     「需要賓客回覆」也不是它的開關（整站的回覆開關是 rsvpEnabled，我們設定） */
+  document.getElementById('adActWhatBox').hidden = !saved;
+  document.getElementById('adActEndBox').hidden  = !saved;
+  document.getElementById('adActDescBox').hidden = !saved;
+  af.date.readOnly = !saved;
+  af.date.classList.toggle('is-locked', !saved);
+  document.getElementById('adActDateNote').hidden = saved;
+  af.rsvp.disabled = !saved;
+  document.getElementById('adActRsvpRow').classList.toggle('is-fixed', !saved);
+  document.getElementById('adActRsvpBadge').hidden = saved;
+  document.getElementById('adActModalTitle').textContent = `編輯「${ev.name}」`;
+  document.getElementById('adActHint').innerHTML = saved
+    ? '儲存後，<b>大廳、邀請函與出席表單</b>上這個活動的時間與地點會一起更新。'
+    : '儲存後，<b>大廳、邀請函與出席表單</b>上的時間與地點會一起更新。'
+      + '日期要透過我們才改得動。';
+
+  actModalMask.hidden = false;
+  af.venue.focus({ preventScroll:true });
+}
+
+document.getElementById('adActCancel')?.addEventListener('click', ()=> closeActModal());
+
+af.form?.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const ev = weddingEvents().find(x => x.id === af.id.value);
+  if(!ev){ toast('這個活動已經不在了，重新整理看看', true); return; }
+  const saved = actSaved(ev);
+
+  const type  = EVENT_TYPE_KEYS.includes(af.type.value) ? af.type.value : ev.type;
+  const name  = af.name.value.trim().slice(0, EVENT_NAME_MAX)
+             || (EVENT_TYPES[type] || {}).name || '';
+  const venue = af.venue.value.trim().slice(0, 80);
+  const addr  = af.addr.value.trim().slice(0, 200);
+  const map   = af.map.value.trim().slice(0, 500);
+
+  if(saved && !name){ toast('活動還沒填名稱', true); return; }
+  if(map && !/^https?:\/\//i.test(map)){
+    toast('地圖連結要以 https:// 開頭', true);
+    return;
+  }
+
+  const btn = af.form.querySelector('button[type="submit"]');
+  await runSave(btn, async ()=>{
+    if(saved){
+      const before = EVENT_TYPES[ev.type] || EVENT_TYPES.custom;
+      const after  = EVENT_TYPES[type] || EVENT_TYPES.custom;
+      const patch = eventPatchFields(ev.id, {
+        type, name,
+        /* 英文 kicker 是新人沒在管的那一欄：只有還留著舊型別的預設值時才跟著換 */
+        nameEn: (!ev.nameEn || ev.nameEn === before.nameEn)
+          ? after.nameEn : ev.nameEn,
+        date:      af.date.value || '',
+        startTime: af.start.value || '',
+        endTime:   af.end.value || '',
+        venueName: venue,
+        address:   addr,
+        mapUrl:    map,
+        desc:      af.desc.value.trim().slice(0, 300),
+        requiresRsvp: af.rsvp.checked,
+      });
+      if(!patch){ toast('這個活動已經不在了，重新整理看看', true); return; }
+      await DataStore.saveSiteFields(patch);
+    }else{
+      /* 合成出來的那一個：寫回站台文件本身的幾欄 */
+      const patch = { venueName: venue, venueAddress: addr, venueMapUrl: map };
+      const d = siteData();
+      const at = toJsDate(d.eventDate);
+      if(at && af.start.value){
+        const tz = d.timezone || 'Asia/Taipei';
+        const dp = {};
+        new Intl.DateTimeFormat('en-CA', {
+          timeZone: tz, year:'numeric', month:'2-digit', day:'2-digit',
+        }).formatToParts(at).forEach(x => { dp[x.type] = x.value; });
+        const [hh, mm] = af.start.value.split(':').map(Number);
+        patch.eventDate = zonedTimeToDate(+dp.year, +dp.month, +dp.day, hh, mm, tz);
+      }
+      await DataStore.saveSiteFields(patch);
+    }
+
+    closeActModal();
+    renderFormSettings();
+    /* 這幾個地方讀的是同一份資料，存完一起重畫：
+       婚禮資訊的場地三欄、其他流程那一頁的活動卡、表單上方的資訊列 */
+    fillSiteForm();
+    markSiteFormClean();
+    syncVenueManagedUI();
+    resetEvDraft();
+    renderRsvpFormInfo();
+    toast('活動資訊已更新，用到這個時間地點的頁面都會一起調整');
+  });
+});
+
+/* ============================================================
+   0b-3. 本場次專屬問題的彈窗（新增／編輯共用）
+   ------------------------------------------------------------
+   題型用 Radio Group：三個選項只能選一個，而且選了哪一個會決定
+   下面要不要出現「選項」那一段（Conditional Reveal）——
+   一開始就把選項欄位全部攤開，等於要新人先看懂三種題型的差別。
+
+   選項存的是 id 不是文字：新人日後改選項的字，已送出的作答還對得回來
+   （和賓客標籤同一個理由）。
+============================================================ */
+const evqMask = document.getElementById('adEvqModalMask');
+const evqForm = document.getElementById('adEvqForm');
+const closeEvqModal = evqMask
+  ? registerFormModal(evqMask, ()=>{ evqMask.hidden = true; })
+  : ()=>{};
+let evqOpts = [];      /* 彈窗裡的選項草稿：[{ id, label }] */
+
+function evqKindValue(){
+  const el = document.querySelector('#adEvqKind input:checked');
+  return el ? el.value : 'choice';
+}
+
+function renderEvqOpts(){
+  const box = document.getElementById('adEvqOpts');
+  if(!box) return;
+  box.innerHTML = evqOpts.map((o, i) => `
+    <div class="ad-evq-opt" data-opt="${i}">
+      <input class="ad-input" type="text" maxlength="20" data-opt-label
+             value="${escapeHtml(o.label)}" placeholder="選項 ${i + 1}"
+             aria-label="選項 ${i + 1}">
+      <button class="ad-del" type="button" data-opt-del
+              aria-label="刪除選項 ${i + 1}">✕</button>
+    </div>`).join('');
+  document.getElementById('adEvqOptCount').textContent =
+    `${evqOpts.length} / ${EVENT_OPT_MAX} 個選項`;
+  document.getElementById('adEvqOptAdd').disabled = evqOpts.length >= EVENT_OPT_MAX;
+}
+
+/* 題型決定下面出現什麼（Conditional Reveal） */
+function syncEvqKind(){
+  const kind = evqKindValue();
+  const needOpts = questionNeedsOpts(kind);
+  document.getElementById('adEvqOptsBox').hidden = !needOpts;
+  document.getElementById('adEvqHintBox').hidden = kind !== 'text';
+  if(needOpts && evqOpts.length < 2){
+    while(evqOpts.length < 2) evqOpts.push({ id:`o${evqOpts.length + 1}`, label:'' });
+  }
+  if(needOpts) renderEvqOpts();
+  document.getElementById('adEvqModalNote').textContent = kind === 'text'
+    ? '簡答題不做統計，答案只出現在回覆明細與匯出的 CSV。'
+    : (kind === 'multi' ? '多選題：賓客可以同時選好幾個選項。'
+                        : '單選題：賓客只能選一個，再點一次可以取消。');
+}
+
+function openEvqModal(evId, qId){
+  if(!evqMask) return;
+  const ev = weddingEvents().find(x => x.id === evId);
+  if(!ev || !actSaved(ev)) return;
+  const qs = Array.isArray(ev.questions) ? ev.questions : [];
+  const q = qs.find(x => x.id === qId) || null;
+  if(!q && qs.length >= EVENT_QUESTION_MAX){
+    toast(`一個活動最多 ${EVENT_QUESTION_MAX} 題`, true);
+    return;
+  }
+
+  document.getElementById('adEvqEvId').value = evId;
+  document.getElementById('adEvqId').value = q ? q.id : '';
+  document.getElementById('adEvqModalTitle').textContent =
+    q ? `編輯「${q.label}」` : `在「${ev.name}」新增題目`;
+  document.getElementById('adEvqLabel').value = q ? q.label : '';
+  document.getElementById('adEvqHint').value = q ? (q.hint || '') : '';
+  const kind = q ? q.kind : 'choice';
+  document.querySelectorAll('#adEvqKind input').forEach(el => {
+    el.checked = el.value === kind;
+  });
+  evqOpts = (q && Array.isArray(q.opts) ? q.opts : []).map(o => ({ ...o }));
+  syncEvqKind();
+
+  evqMask.hidden = false;
+  document.getElementById('adEvqLabel').focus({ preventScroll:true });
+}
+
+document.getElementById('adEvqKind')?.addEventListener('change', syncEvqKind);
+document.getElementById('adEvqCancel')?.addEventListener('click', ()=> closeEvqModal());
+
+document.getElementById('adEvqOptAdd')?.addEventListener('click', ()=>{
+  if(evqOpts.length >= EVENT_OPT_MAX) return;
+  evqOpts.push({ id:`o${evqOpts.length + 1}`, label:'' });
+  renderEvqOpts();
+  const last = document.querySelector('#adEvqOpts .ad-evq-opt:last-child [data-opt-label]');
+  if(last) last.focus({ preventScroll:true });
+});
+
+document.getElementById('adEvqOpts')?.addEventListener('input', (e)=>{
+  const el = e.target.closest('[data-opt-label]');
+  if(!el) return;
+  const i = Number(el.closest('[data-opt]').dataset.opt);
+  if(evqOpts[i]) evqOpts[i].label = el.value;
+});
+
+document.getElementById('adEvqOpts')?.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-opt-del]');
+  if(!btn) return;
+  if(evqOpts.length <= 1){ toast('選擇題至少要有一個選項', true); return; }
+  evqOpts.splice(Number(btn.closest('[data-opt]').dataset.opt), 1);
+  renderEvqOpts();
+});
+
+evqForm?.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const evId = document.getElementById('adEvqEvId').value;
+  const qId  = document.getElementById('adEvqId').value;
+  const ev = weddingEvents().find(x => x.id === evId);
+  if(!ev){ toast('這個活動已經不在了，重新整理看看', true); return; }
+
+  const label = document.getElementById('adEvqLabel').value.trim().slice(0, 30);
+  if(!label){ toast('題目還沒填名稱', true); return; }
+  const kind = evqKindValue();
+
+  let row;
+  if(kind === 'text'){
+    row = { id: qId || newQuestionId(), kind:'text', label,
+            hint: document.getElementById('adEvqHint').value.trim().slice(0, 30),
+            opts: [] };
+  }else{
+    const used = new Set();
+    const opts = evqOpts
+      .map(o => ({ raw:o, label:String(o.label || '').trim().slice(0, 20) }))
+      .filter(o => o.label)
+      .slice(0, EVENT_OPT_MAX)
+      .map(o => {
+        /* 已經定下來的 id 不動（改一次選項文字就把已送出的作答對丟了才是真的糟）；
+           還是流水號的才照文字重新推導一次 */
+        const keep = o.raw.id && !/^o\d+$/.test(o.raw.id);
+        const id = keep ? o.raw.id : newOptId(o.label, used);
+        used.add(id);
+        return { id, label: o.label };
+      });
+    if(!opts.length){ toast('選擇題至少要填一個選項', true); return; }
+    row = { id: qId || newQuestionId(), kind, label, hint:'', opts };
+  }
+
+  const qs = Array.isArray(ev.questions) ? ev.questions : [];
+  const next = qId
+    ? qs.map(q => (q.id === qId ? row : q))
+    : [...qs, row].slice(0, EVENT_QUESTION_MAX);
+
+  await runSave(evqForm.querySelector('button[type="submit"]'), async ()=>{
+    const patch = eventPatchFields(evId, { questions: next });
+    if(!patch){ toast('這個活動已經不在了，重新整理看看', true); return; }
+    await DataStore.saveSiteFields(patch);
+    closeEvqModal();
+    renderFormSettings();
+    toast(qId ? '題目已更新' : `已在「${ev.name}」新增題目`);
+  });
+});
+
+function newQuestionId(){
+  return `q_${Date.now().toString(36).slice(-4)}${Math.random().toString(36).slice(2, 5)}`;
 }
 
 /* ============================================================
@@ -2988,7 +3627,10 @@ const RSVP_FORM_TOGGLES = {
   adAskCard:      'rsvpAskCard',
   adAskGift:      'rsvpAskGift',
   adAskMessage:   'rsvpAskMessage',
-  /* 有沒有「郵寄」這個選項；關掉時喜帖與喜餅各少一個選項 */
+  adAskNote:      'rsvpAskNote',
+  /* 有沒有「郵寄」這個選項；關掉時喜帖與喜餅各少一個選項。
+     這一顆在畫面上是 Switch 而不是 Checkbox —— 它開的是一個服務
+     （開了就會長出收件地址那一整段），不是「要不要收集這一欄」。 */
   adAskMail:      'rsvpMailEnabled',
 };
 const RSVP_CONTACT_BOXES = {
@@ -2997,22 +3639,219 @@ const RSVP_CONTACT_BOXES = {
   adContactEmail: 'email',
 };
 
+const contactBoxEls = ()=> Object.keys(RSVP_CONTACT_BOXES)
+  .map(id => document.getElementById(id)).filter(Boolean);
+
 function fillRsvpFormSettings(){
   const cfg = rsvpConfig();
   const on = {
     adAskCard: cfg.askCard, adAskGift: cfg.askGift, adAskMessage: cfg.askMessage,
-    adAskMail: cfg.allowMail,
+    adAskNote: cfg.askNote, adAskMail: cfg.allowMail,
   };
   Object.keys(RSVP_FORM_TOGGLES).forEach(id => {
-    document.getElementById(id).checked = on[id];
+    const el = document.getElementById(id);
+    if(el) el.checked = on[id];
   });
   Object.entries(RSVP_CONTACT_BOXES).forEach(([id, key]) => {
-    document.getElementById(id).checked = cfg.contacts.includes(key);
+    const el = document.getElementById(id);
+    if(el) el.checked = cfg.contacts.includes(key);
   });
+  syncContactBoxes();
+  syncRsvpFormReveals();
+  renderFormPreviews();
+  markRsvpFormClean();
 }
+
+/* ---------- 聯絡方式至少要留一種 ----------
+   三種都不勾＝賓客送出來的回覆上沒有任何聯絡方式，
+   婚禮前要確認人數時完全找不到人。所以不是存的時候才擋（那太晚了），
+   而是**最後一個勾選項自己變成關不掉的** —— 使用者不會先做錯再被罵。 */
+function syncContactBoxes(){
+  const boxes = contactBoxEls();
+  const on = boxes.filter(b => b.checked);
+  boxes.forEach(b => { b.disabled = on.length <= 1 && b.checked; });
+  const hint = document.getElementById('adContactHint');
+  if(!hint) return;
+  hint.innerHTML = !on.length
+    ? '<b>目前沒有問任何聯絡方式</b>，至少勾一種才存得起來。'
+    : (on.length === 1
+      ? '至少要留一種，所以<b>現在勾著的這一種關不掉</b>；先勾第二種，就可以把它取消。'
+      : '賓客要<b>至少填其中一種</b>，不必全部填。');
+}
+
+/* ---------- 條件顯示 ----------
+   喜帖／喜餅沒有要問時，它的選項預覽與郵寄服務都不該還在畫面上 ——
+   「這一段什麼時候會出現」要靠看得出來，不是靠讀說明。 */
+function syncRsvpFormReveals(){
+  const card = document.getElementById('adAskCard');
+  const gift = document.getElementById('adAskGift');
+  const mail = document.getElementById('adAskMail');
+  if(!card || !gift || !mail) return;
+  document.getElementById('adCardReveal').hidden = !card.checked;
+  document.getElementById('adGiftReveal').hidden = !gift.checked;
+  /* 兩題都不問的話，「要不要幫賓客郵寄」根本沒有東西可以寄 */
+  document.getElementById('adMailSec').hidden = !card.checked && !gift.checked;
+  document.getElementById('adMailReveal').hidden = !mail.checked;
+}
+
+/* ---------- 預覽用的膠囊 ----------
+   賓客會看到的選項就是這幾顆。刻意用不可點的 .ad-tag 而不是 .ad-chip ——
+   這裡只是 Preview，看起來可以點就會有人按下去等它變色（見 UI-SPEC 3.5）。
+   內容一律從 RSVP_OPTIONS 長出來，和賓客那一頁讀的是同一份。 */
+function previewTags(labels){
+  return labels.map(t => `<span class="ad-tag">${escapeHtml(t)}</span>`).join('');
+}
+
+function renderFormPreviews(){
+  const set = (id, labels)=>{
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = previewTags(labels);
+  };
+  const mailOn = !!document.getElementById('adAskMail')?.checked;
+  /* 郵寄的預覽跟著畫面上的 Switch 走，不是跟著已經存好的設定 ——
+     還沒按儲存就要看得到「開了會變成什麼樣」 */
+  const opts = (group)=> RSVP_OPTIONS[group]
+    .filter(([v]) => mailOn || v !== 'mail').map(([, label]) => label);
+
+  set('adPreviewRelation', RSVP_OPTIONS.relation.map(([, l]) => l));
+  set('adPreviewCard', [
+    ...RSVP_OPTIONS.card.map(([, l]) => l),
+    ...opts('cardDelivery').map(l => `紙本・${l}`),
+  ]);
+  set('adPreviewGift', opts('gift'));
+
+  /* 郵寄開啟後會多出來的東西：講具體的欄位，不要只說「會收集更多資料」 */
+  const info = document.getElementById('adMailRevealInfo');
+  if(info){
+    const card = !!document.getElementById('adAskCard')?.checked;
+    const gift = !!document.getElementById('adAskGift')?.checked;
+    info.innerHTML = [
+      card ? { name:'喜帖', value:'「紙本要怎麼給你？」多一個「郵寄」' } : null,
+      gift ? { name:'喜餅', value:'領取方式多一個「郵寄」' } : null,
+      { name:'收件地址', value:'選了郵寄才出現：郵遞區號＋地址（喜餅可以沿用喜帖的）' },
+    ].filter(Boolean).map(infoRowHtml).join('');
+  }
+
+  renderFormTagPreview();
+}
+
+/* 「是哪一種關係」的選項就是賓客標籤裡勾了「當表單選項」的那幾個 */
+function renderFormTagPreview(){
+  const sec = document.getElementById('adAskTagSec');
+  if(!sec) return;
+  const on = guestTagsOn();
+  const list = on ? guestTagList().filter(t => t.onForm) : [];
+  const box = document.getElementById('adPreviewTags');
+  if(box){
+    box.innerHTML = list.length
+      ? previewTags(list.map(t => t.name))
+      : '<span class="ad-tag ad-tag-maybe">目前沒有選項，這一題不會出現</span>';
+  }
+  const hint = document.getElementById('adAskTagHint');
+  if(hint){
+    hint.innerHTML = on
+      ? '在標籤那一頁勾「當表單選項」的標籤才會出現在這裡。'
+        + '新增完會<b>同時出現在賓客標籤頁面</b>。'
+      : '這是要配合排桌一起用的進階功能，<b>目前的方案還沒開通</b>，'
+        + '需要管理員協助打開。';
+  }
+  const jump = document.getElementById('adAskTagJump');
+  if(jump) jump.hidden = !on;
+}
+
+/* ---------- 有沒有還沒存的變更 ----------
+   ②③④ 那幾組是一張表單、按了儲存才算數（活動卡上的設定則是一改就存）。
+   兩種行為同時存在時，「現在到底存了沒」一定要看得出來。 */
+function rsvpFormSnapshot(){
+  return JSON.stringify([
+    Object.keys(RSVP_FORM_TOGGLES).map(id => !!document.getElementById(id)?.checked),
+    contactBoxEls().map(b => b.checked),
+  ]);
+}
+let rsvpFormBaseline = '';
+function markRsvpFormClean(){
+  rsvpFormBaseline = rsvpFormSnapshot();
+  syncRsvpFormDirty();
+}
+function syncRsvpFormDirty(){
+  const note = document.getElementById('adRsvpFormDirty');
+  const btn  = document.getElementById('adRsvpFormSave');
+  const dirty = rsvpFormSnapshot() !== rsvpFormBaseline;
+  if(note){
+    note.textContent = dirty ? '有還沒儲存的變更' : '目前沒有未儲存的變更';
+    note.classList.toggle('is-dirty', dirty);
+  }
+  if(btn) btn.classList.toggle('is-dirty', dirty);
+}
+
+/* 表單上的勾選一動：條件顯示、預覽、dirty 一起跟上 */
+document.getElementById('adRsvpForm')?.addEventListener('change', (e)=>{
+  if(!e.target.closest('#adRsvpForm')) return;
+  /* 活動卡上的勾選是一改就存的，不算「未儲存的變更」（它們自己有 toast） */
+  if(e.target.closest('#adActList, #adGlobalAskList')) return;
+  if(e.target.closest('[id^="adContact"]')) syncContactBoxes();
+  syncRsvpFormReveals();
+  renderFormPreviews();
+  syncRsvpFormDirty();
+});
 
 document.getElementById('adRsvpFormReset')
   .addEventListener('click', fillRsvpFormSettings);
+
+/* ---------- 複製表單連結 ----------
+   新人最常做的事是把連結貼給賓客，不是自己再看一遍表單 ——
+   所以它排在「預覽」左邊。複製不到時（權限、舊瀏覽器）用 toast 把網址
+   放出來，至少還選得到（和收禮小幫手的連結同一套做法）。 */
+document.getElementById('adRsvpCopyLink')?.addEventListener('click', async ()=>{
+  const url = new URL(sitePath('rsvp'), location.origin).href;
+  try{
+    await navigator.clipboard.writeText(url);
+    toast('表單連結已複製，貼上就可以傳給賓客');
+  }catch{
+    toast(url, { duration: 8000 });
+  }
+});
+
+/* ---------- 新增關係標籤 ----------
+   在這一頁就開得起來，不必先跑去標籤那一頁 —— 新增完兩邊同時更新。
+   還沒開通這個功能的新人，在按下去的那一刻就要知道原因，
+   不是看到一個按了沒反應的按鈕。 */
+document.getElementById('adAskTagAdd')?.addEventListener('click', async ()=>{
+  if(!guestTagsOn()){
+    await confirmModal({
+      title: '賓客標籤還沒開通',
+      message: '「是哪一種關係」的選項來自賓客標籤 —— 這是要配合排桌一起用的'
+             + '進階功能，目前的方案還沒有這個權限，需要管理員協助開通。',
+      confirmText: '知道了',
+      cancelText: '關閉',
+    });
+    return;
+  }
+  const list = guestTagList();
+  if(list.length >= GUEST_TAG_MAX){ toast(`標籤最多 ${GUEST_TAG_MAX} 個`, true); return; }
+
+  const name = await promptModal({
+    title: '新增關係標籤',
+    message: '例如：大學同學、公司同事、教會朋友、親戚',
+    placeholder: '標籤名稱',
+    maxLength: GUEST_TAG_NAME_MAX,
+    confirmText: '新增',
+  });
+  if(!name) return;
+  if(list.some(t => t.name === name)){ toast('已經有同名的標籤了', true); return; }
+
+  try{
+    /* onForm:true —— 從這一頁新增的標籤，本來就是要當表單選項的 */
+    await saveGuestTags([...list, { id:newTagId(), name, onForm:true }]);
+    renderTagsAndList();
+    renderFormPreviews();
+    toast(`已新增「${name}」，賓客標籤那一頁也更新了`);
+  }catch(err){ writeFailed(err); }
+});
+
+document.getElementById('adAskTagJump')?.addEventListener('click', ()=>{
+  location.hash = 'rsvp/tags';
+});
 
 /* ---------- 表單資訊 ----------
    題目以外，邀請函那一頁還會出現的內容：婚禮資訊那幾列、兩人的故事、「相遇之間」。
@@ -3133,8 +3972,18 @@ document.getElementById('adRsvpForm').addEventListener('submit', async (e)=>{
     .filter(([id]) => document.getElementById(id).checked)
     .map(([, key]) => key);
 
+  /* 最後一個勾選項本來就關不掉（見 syncContactBoxes），所以走到這裡只剩
+     一種情況：這個站台以前把三種都關掉了。那就在這裡講清楚，不要默默存下去。 */
+  if(!patch.rsvpContactMethods.length){
+    toast('聯絡方式至少要勾選一種', true);
+    document.getElementById('adContactEmail')?.focus();
+    return;
+  }
+
   await runSave(document.getElementById('adRsvpFormSave'), async ()=>{
     await DataStore.saveSiteFields(patch);
+    markRsvpFormClean();
+    renderFormSettings();
     toast('表單設定已更新');
     /* 圖表跟著題目開關增減，存完就重畫 */
     renderRsvps();
@@ -3196,8 +4045,9 @@ function renderTags(){
   /* 真的收起來時，已經停在那一頁的人（重新整理、舊網址）要退回看得到的子分頁。
      鎖著不用退：那張說明卡就是要給他看的。 */
   if(state === 'off' && tagSubtabEl.classList.contains('is-on')) activateSubtab('rsvp', '');
-  /* 題目清單裡那一列跟著標籤設定走：沒有任何標籤當選項時，賓客也看不到那一題 */
-  document.getElementById('adAskTagRow').hidden = !on || !guestTagList().some(t => t.onForm);
+  /* 表單設定那一頁的「是哪一種關係」預覽跟著標籤走：
+     沒有任何標籤當選項時，那一題在賓客那邊也不會出現 */
+  renderFormTagPreview();
   if(!on) return;
 
   const list = guestTagList();
@@ -5103,6 +5953,17 @@ function evStartingDraft(){
   return [{ ...main, id: newEventId('reception') }];
 }
 
+/* 把畫面上的草稿丟掉、重新以資料庫現在那一份當起點。
+   「表單設定」那一頁也改得動活動（活動資訊彈窗），存完要讓
+   「其他流程」看到同一份資料 —— 不然那一頁會拿舊草稿把它蓋回去。 */
+function resetEvDraft(){
+  if(!multiEventOn()) return;
+  evDraft = evStartingDraft();
+  evOpenId = '';
+  evBaseline = evSnapshot();
+  renderEvents();
+}
+
 function evSnapshot(){ return JSON.stringify(evDraft); }
 function evDirty(){ return evSnapshot() !== evBaseline; }
 
@@ -5224,98 +6085,15 @@ function evCardHtml(ev, i, total){
       <textarea class="ad-textarea" rows="2" maxlength="300"
                 data-ev-field="desc">${escapeHtml(ev.desc)}</textarea>
 
-      <label class="ad-check">
-        <input type="checkbox" data-ev-field="requiresRsvp"${ev.requiresRsvp ? ' checked' : ''}>
-        <span>需要賓客回覆<small>關起來的話，這個活動不會出現在出席表單裡</small></span>
-      </label>
-
-      ${ev.requiresRsvp ? evDefaultQsHtml(ev) + evQuestionsHtml(ev) : ''}
+      <!-- 「需要賓客回覆」與這一場要問什麼，都在側欄的「表單設定」那一頁 ——
+           這一頁管的是活動本身（時間、地點、說明）。
+           同一件事在兩個地方都改得動，兩邊就會對不起來。 -->
+      <p class="ad-ev-note">
+        這個活動<b>${ev.requiresRsvp ? '需要' : '不需要'}賓客回覆</b>。
+        要不要回覆、要問哪幾題，在側欄的「<b>表單設定</b>」那一頁調整。
+      </p>
     </div>
   </div>`;
-}
-
-/* ---------- 這個活動目前問了什麼 ----------
-   打開「需要賓客回覆」之後，新人看到的下一件事原本是一張空的
-   「追加題目」—— 那讀起來像「這個活動什麼都沒問」。
-   實際上系統已經幫他問了五題，先把那五題原樣列出來，
-   他才知道「追加」是加在什麼後面。
-
-   這裡刻意是唯讀的：這幾題的開關屬於整份表單（見側欄的「表單設定」），
-   在兩個地方都改得動，兩邊就會對不起來。 */
-function evDefaultQsHtml(ev){
-  const rows = EV_ASK_ROWS.map(([key, label]) => ({ on: ev[key] !== false, label }));
-  const on  = rows.filter(r => r.on);
-  const off = rows.filter(r => !r.on);
-
-  return `
-    <div class="ad-sub-sec ad-evq-sec">
-      <div class="ad-sub-sec-title">這個活動目前會問 <small>（系統的預設題目）</small></div>
-      <p class="ad-sub-sec-note">
-        這幾題每個活動都會各問一次，改開關要到
-        側欄的「<b>表單設定</b>」。
-      </p>
-      <label class="ad-check is-fixed">
-        <input type="checkbox" checked disabled>
-        <span>能來參加嗎<small>固定題目，就是活動卡本身</small></span></label>
-      ${on.map(r => `
-      <label class="ad-check is-fixed">
-        <input type="checkbox" checked disabled>
-        <span>${escapeHtml(r.label)}</span></label>`).join('')}
-      ${off.length ? `<div class="ad-hint">目前沒問：${
-        escapeHtml(off.map(r => r.label).join('、'))}</div>` : ''}
-    </div>`;
-}
-
-/* ---------- 這個活動的追加題目 ----------
-   型態只有「單選」與「文字」兩種，每個活動最多 3 題，一律選填。
-   刻意不做通用 form builder：規則語言檢查不了陣列裡的內容，
-   型態一開放就等於前端說什麼算什麼（見 SPEC 第 2 節）。 */
-function evQuestionsHtml(ev){
-  const qs = Array.isArray(ev.questions) ? ev.questions : [];
-  const rows = qs.map((q, qi) => `
-    <div class="ad-evq" data-evq="${qi}">
-      <div class="ad-evq-head">
-        <input class="ad-input ad-evq-label" type="text" maxlength="30"
-               data-evq-field="label" value="${escapeHtml(q.label || '')}"
-               placeholder="例如：需要接駁車嗎？">
-        <select class="ad-input ad-evq-kind" data-evq-field="kind">
-          <option value="choice"${q.kind === 'choice' ? ' selected' : ''}>單選</option>
-          <option value="text"${q.kind === 'text' ? ' selected' : ''}>文字</option>
-        </select>
-        <button class="ad-del" type="button" data-evq-del aria-label="刪除這一題">刪除</button>
-      </div>
-      ${q.kind === 'text' ? `
-      <input class="ad-input ad-evq-hint" type="text" maxlength="30"
-             data-evq-field="hint" value="${escapeHtml(q.hint || '')}"
-             placeholder="提示文字（選填），例：需要素食兒童餐">`
-      : `
-      <div class="ad-evq-opts">
-        ${(q.opts || []).map((o, oi) => `
-        <div class="ad-evq-opt" data-evq-opt="${oi}">
-          <input class="ad-input" type="text" maxlength="20"
-                 data-evq-optlabel value="${escapeHtml(o.label || '')}"
-                 placeholder="選項${oi + 1}">
-          <button class="ad-del" type="button" data-evq-optdel
-                  aria-label="刪除這個選項">✕</button>
-        </div>`).join('')}
-        ${(q.opts || []).length < EVENT_OPT_MAX
-          ? `<button class="ad-edit ad-evq-optadd" type="button" data-evq-optadd>＋ 加一個選項</button>`
-          : ''}
-      </div>`}
-    </div>`).join('');
-
-  return `
-    <div class="ad-sub-sec ad-evq-sec">
-      <div class="ad-sub-sec-title">追加題目 <small>（最多 ${EVENT_QUESTION_MAX} 題，都是選填）</small></div>
-      <p class="ad-sub-sec-note">
-        只有這一場會問。單選的選項最多 ${EVENT_OPT_MAX} 個；文字題不做統計，
-        只出現在名單與匯出的 CSV 裡。
-      </p>
-      ${rows || '<div class="ad-evq-empty">還沒有追加題目</div>'}
-      ${qs.length < EVENT_QUESTION_MAX
-        ? '<button class="btn small ghost" type="button" data-evq-add>＋ 新增題目</button>'
-        : `<div class="ad-hint">已經到 ${EVENT_QUESTION_MAX} 題的上限了</div>`}
-    </div>`;
 }
 
 /* 選項存的是 id 不是文字 —— 新人日後改選項的字，已送出的作答還對得回來
@@ -5366,47 +6144,6 @@ if(evListEl){
       return;
     }
 
-    /* ---- 追加題目 ---- */
-    const ev0 = evDraft[i];
-    if(!Array.isArray(ev0.questions)) ev0.questions = [];
-
-    if(e.target.closest('[data-evq-add]')){
-      if(ev0.questions.length >= EVENT_QUESTION_MAX) return;
-      ev0.questions.push({
-        id: `q_${Math.random().toString(36).slice(2, 7)}`,
-        kind: 'choice', label: '', hint: '',
-        opts: [{ id:'o1', label:'' }, { id:'o2', label:'' }],
-      });
-      renderEvents();
-      return;
-    }
-    const qDel = e.target.closest('[data-evq-del]');
-    if(qDel){
-      ev0.questions.splice(Number(qDel.closest('[data-evq]').dataset.evq), 1);
-      renderEvents();
-      return;
-    }
-    const optAdd = e.target.closest('[data-evq-optadd]');
-    if(optAdd){
-      const q = ev0.questions[Number(optAdd.closest('[data-evq]').dataset.evq)];
-      if(q && q.opts.length < EVENT_OPT_MAX){
-        q.opts.push({ id: newOptId('', new Set(q.opts.map(o => o.id))), label:'' });
-        renderEvents();
-      }
-      return;
-    }
-    const optDel = e.target.closest('[data-evq-optdel]');
-    if(optDel){
-      const q = ev0.questions[Number(optDel.closest('[data-evq]').dataset.evq)];
-      if(q && q.opts.length > 1){
-        q.opts.splice(Number(optDel.closest('[data-evq-opt]').dataset.evqOpt), 1);
-        renderEvents();
-      }else{
-        toast('單選題至少要有一個選項', true);
-      }
-      return;
-    }
-
     if(e.target.closest('[data-ev-del]')){
       const ev = evDraft[i];
       /* 已經存好、而且已經有人回覆過的活動，刪掉之前要講清楚會怎麼樣。
@@ -5435,53 +6172,12 @@ if(evListEl){
   /* 欄位改動：型別換掉時，名稱與英文 kicker 留白的才跟著換 ——
      新人自己打過的字不能被覆蓋掉 */
   const onField = (e)=>{
-    /* 先處理追加題目的欄位（它們也在同一張卡裡） */
-    const qEl = e.target.closest('[data-evq-field], [data-evq-optlabel]');
-    if(qEl){
-      const qi = evIndexOf(qEl);
-      if(qi < 0) return;
-      const ev = evDraft[qi];
-      const q = ev.questions[Number(qEl.closest('[data-evq]').dataset.evq)];
-      if(!q) return;
-
-      const optEl = qEl.closest('[data-evq-opt]');
-      if(optEl){
-        const o = q.opts[Number(optEl.dataset.evqOpt)];
-        if(o){
-          o.label = qEl.value;
-          /* id 只在第一次有文字時定下來，之後改字不動 id ——
-             改一次名字就把已送出的作答對丟了才是真的糟 */
-          if(/^o\d+$/.test(o.id) && o.label.trim()){
-            o.id = newOptId(o.label, new Set(q.opts.filter(x => x !== o).map(x => x.id)));
-          }
-        }
-        syncEvDirty();
-        return;
-      }
-
-      const f = qEl.dataset.evqField;
-      if(f === 'kind'){
-        q.kind = qEl.value === 'text' ? 'text' : 'choice';
-        if(q.kind === 'choice' && !q.opts.length){
-          q.opts = [{ id:'o1', label:'' }, { id:'o2', label:'' }];
-        }
-        renderEvents();
-        return;
-      }
-      q[f] = qEl.value;
-      syncEvDirty();
-      return;
-    }
-
     const el = e.target.closest('[data-ev-field]');
     if(!el) return;
     const i = evIndexOf(el);
     if(i < 0) return;
     const key = el.dataset.evField;
     const ev = evDraft[i];
-
-    if(key === 'requiresRsvp'){ ev.requiresRsvp = el.checked; renderEvents(); return; }
-    void 0;
 
     if(key === 'type'){
       const before = EVENT_TYPES[ev.type] || EVENT_TYPES.custom;
@@ -5540,12 +6236,7 @@ document.getElementById('adEvAdd')?.addEventListener('click', ()=>{
   evListEl.lastElementChild?.scrollIntoView({ behavior:'smooth', block:'center' });
 });
 
-document.getElementById('adEvReset')?.addEventListener('click', ()=>{
-  evDraft = evStartingDraft();
-  evOpenId = '';
-  evBaseline = evSnapshot();
-  renderEvents();
-});
+document.getElementById('adEvReset')?.addEventListener('click', resetEvDraft);
 
 document.getElementById('adEvSave')?.addEventListener('click', async ()=>{
   /* 名稱是收合那一行唯一的線索，空的話整份清單會看不懂 */
@@ -5608,7 +6299,7 @@ document.getElementById('adEvSave')?.addEventListener('click', async ()=>{
     fillSiteForm();
     markSiteFormClean();
     syncVenueManagedUI();
-    renderEventAsk();
+    renderFormSettings();
     toast(rows.length ? `已儲存 ${rows.length} 個活動` : '婚禮流程已清空');
   });
 });

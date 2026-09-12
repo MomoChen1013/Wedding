@@ -221,6 +221,11 @@ sticky 的位置不能寫死（婚禮名稱換一行、離線橫幅出現，高�
 | 「展開全部」「清除」「顯示金額」 | pill／底線文字按鈕（3.3） |
 | 篩選、切換一組互斥選項 | `.ad-chip`（3.4） |
 | 顯示唯讀狀態 | `.ad-tag`（3.5） |
+| 標記一個設定現在的狀態 | `.ad-badge`（3.5b） |
+| 要不要收集這項資料 | Checkbox `.ad-check`（3.6） |
+| 要不要開啟一個服務 | Switch `.ad-switch`（3.6b） |
+| 幾個模式只能選一個 | Radio group `.ad-radios`（3.6c） |
+| 有前置條件才要設定的一段 | Conditional reveal `.ad-reveal`（3.6d） |
 | 收集輸入 | 表單（3.6） |
 | 在清單裡找東西 | `.ad-filter`（3.7） |
 | 切換畫面 | Tab（3.8） |
@@ -353,6 +358,30 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 
 ---
 
+### 3.5b Badge `.ad-badge`（設定的狀態標記）
+
+```html
+<div class="ad-askrow">
+  <label class="ad-check"><input type="checkbox"><span>餐點分配</span></label>
+  <span class="ad-badge is-on">來自所有場次</span>
+</div>
+```
+
+| 變體 | 樣子 | 用在哪 |
+|---|---|---|
+| `.ad-badge` | `--bg2` 底 ＋ `--line` 框 ＋ `--ink-soft` | 系統固定、必填、活動種類 |
+| `.ad-badge.is-on` | `--primary-soft` 底 ＋ `--primary` 框 ＋ `--ink` | 正在生效（已套用、主要活動） |
+| `.ad-badge.is-warn` | `#fdf6f7` 底 ＋ 危險色的字 | 這一格和全域設定不一樣（僅此場次停用） |
+
+和 `.ad-tag`（3.5）的分工：**`.ad-tag` 講「這一筆資料是什麼」，Badge 講
+「這個設定現在的狀態」。** 所以 Badge 更小、更輕，而且永遠跟在一個控制項旁邊
+（包在 `.ad-askrow` 裡），不會單獨佔一列。
+
+> `--primary-deep` 當小字的對比只有 2.57:1（見「已知落差」），所以 `.is-on`
+> 用**面**（`--primary-soft`）強調，字仍然是 `--ink`。
+
+---
+
 ### 3.6 表單
 
 ```html
@@ -377,6 +406,66 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 
 > 輸入框的字級固定 16px：iOS Safari 只要聚焦 <16px 的欄位就會把整頁放大，
 > 之後版面往右偏，使用者得自己雙指縮回來。
+
+---
+
+### 3.6b Switch `.ad-switch`（開啟一個服務）
+
+```html
+<label class="ad-switch">
+  <input type="checkbox" id="adAskMail" role="switch">
+  <span class="ad-switch-box" aria-hidden="true"><span class="ad-switch-knob"></span></span>
+  <span class="ad-switch-lab">提供喜帖／喜餅郵寄</span>
+</label>
+```
+
+- 42×24 的軌道 ＋ 18px 的把手，開啟時軌道轉 `--ink`。
+- 原生 checkbox `opacity:0` **疊在軌道上**（**不是 `display:none`**，也不是
+  縮成 1px 藏到角落）—— 它仍然在無障礙樹裡、`role="switch"` 掛在它身上，
+  而且點擊、螢幕閱讀器與自動化測試點到的都是它本人。焦點框畫在軌道上。
+- `(pointer:coarse)` 時整顆的 `min-height` 撐到 44。
+
+**和 Checkbox 的分工（這一條最容易弄反）：**
+
+| 使用者在想什麼 | 元件 |
+|---|---|
+| 「我要不要收集這項資料？」（表單上多一題／少一題） | Checkbox |
+| 「我要不要開啟這個服務？」（開了會長出一整段設定） | Switch |
+
+所以「喜帖領取方式」是 Checkbox，而「提供郵寄」是 Switch ——
+後者一開，賓客那邊會多出郵寄選項與**收件地址那一整段**。
+
+---
+
+### 3.6c Radio group `.ad-radios`
+
+```html
+<div class="ad-radios" role="radiogroup" aria-labelledby="adEvqKindLab">
+  <label class="ad-radio"><input type="radio" name="k" value="choice" checked><span>單選</span></label>
+  <label class="ad-radio"><input type="radio" name="k" value="multi"><span>多選</span></label>
+</div>
+```
+
+幾個模式只能選一個（題型、模式切換）。長得像 chip，但**圓角是 `--radius` 不是膠囊**
+—— 它是輸入元件，chip 是篩選器，兩者不要看起來一樣。選中的那一顆轉白底 ＋ `--ink` 框。
+
+---
+
+### 3.6d Conditional reveal `.ad-reveal`
+
+```html
+<label class="ad-check"><input type="checkbox" id="adAskCard"><span>喜帖領取方式</span></label>
+<div class="ad-reveal" id="adCardReveal">
+  <div class="ad-reveal-lab">賓客會看到的選項</div>
+  …
+</div>
+```
+
+有前置條件的設定：**條件不成立時整塊不存在（`hidden`），不是灰掉。**
+左邊那道 2px `--line-soft` 是「這一段隸屬於上面那個開關」的唯一線索。
+
+> 灰掉的欄位仍然佔著版面、仍然會被讀出來，而且看不出「要怎樣才會變成可以改」。
+> 收起來比較誠實：**沒有前提就沒有這一段。**
 
 ---
 

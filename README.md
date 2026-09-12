@@ -104,6 +104,10 @@
 /
 ├─ SPEC.md                    # 規格書
 ├─ README.md                  # 本文件
+├─ docs/
+│   ├─ UI-SPEC.md             # 後台 UI 設計規範（元件目錄與規格）
+│   ├─ RSVP-FORM-UX.md        # 後台「表單設定」的 UX review ＋ 資訊架構
+│   └─ RSVP-MULTI-EVENT.md    # 多活動 RSVP 的架構研究（歷史提案）
 ├─ firebase.json              # Hosting rewrite 與 emulator 設定
 ├─ .firebaserc                # 預設 Firebase 專案
 ├─ firestore.rules            # 安全規則（權限邊界都在這裡）

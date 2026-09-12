@@ -174,7 +174,7 @@
       </div>`);
     }
 
-    /* 這個活動自己的追加題目（後台每個活動最多 3 題，一律選填） */
+    /* 這個活動自己的專屬問題（後台每個活動最多 3 題，一律選填） */
     ev.questions.forEach(q => {
       const qid = `${p}q_${q.id}`;
       if(q.kind === 'text'){
@@ -185,8 +185,13 @@
         </div>`);
         return;
       }
-      bits.push(`<label class="rf-label">${esc(q.label)} <small>（選填）</small></label>
-      <div class="choice-row" id="${qid}" data-ev-q="${esc(q.id)}">${
+      /* 多選題和單選題長得一樣，差別只在「可以同時選幾個」——
+         所以用同一個 .choice-row，多一個 data-ev-multi 給點擊那一段判斷 */
+      const many = q.kind === 'multi';
+      bits.push(`<label class="rf-label">${esc(q.label)} <small>（${
+        many ? '可複選，選填' : '選填'}）</small></label>
+      <div class="choice-row" id="${qid}" data-ev-q="${esc(q.id)}"${
+        many ? ' data-ev-multi="1"' : ''}>${
         q.opts.map(o =>
           `<button type="button" class="choice sm" data-val="${esc(o.id)}">${esc(o.label)}</button>`
         ).join('')}</div>`);
@@ -292,19 +297,31 @@
       <textarea id="rNote" maxlength="${MAX.message}" placeholder="給 {{couple}} 的悄悄話…"></textarea>
     </div>`;
 
+    /* 其他備註：和「想對新人說的話」一樣由新人決定要不要問。
+       兩題問的其實是同一件事的兩個口氣，只留一個是常見的選擇。 */
+    const memoBlock = !cfg.askNote ? '' : `
+    <label class="rf-label" for="rMemo">其他備註 <small>（選填）</small></label>
+    <div class="field">
+      <textarea id="rMemo" maxlength="${MAX.note}" placeholder="還有什麼想讓我們知道的嗎？"></textarea>
+    </div>`;
+
     /* 多活動時「能來參加嗎」變成每張活動卡上的按鈕，這裡就不再問一次 */
     const attendBlock = multi ? '' : `
     <label class="rf-label">能來參加嗎？<i class="rf-req">必填</i></label>
     ${choiceRow('attendRow', 'attend')}`;
 
-    /* 人數、葷素、兒童椅、飲食也一樣，多活動時掛在各自的活動卡上 */
-    const detailBlock = multi ? '' : `
-    <!-- 以下只有「熱情出席」才要填 -->
-    <div class="rf-detail" id="detailBox" hidden>
-
+    /* 人數、葷素、兒童椅、飲食也一樣，多活動時掛在各自的活動卡上。
+       單一活動時這四塊各自看新人在後台有沒有勾（一場婚禮的活動卡就是
+       站台本身，ask* 疊起來的結果＝「表單設定」裡那四個勾選框）。 */
+    /* 一個要回覆的活動都沒有時（所有活動都關了「需要賓客回覆」），
+       退回這場婚禮本身那一個活動 —— 表單仍然照全域的四個開關畫，
+       和改版前一樣，不會突然少掉人數與餐點 */
+    const one = evs[0] || eventAsks(weddingEvents()[0] || {});
+    const detailBits = !multi ? [
+      one.askCount ? `
       <label class="rf-label">包含你，共幾位出席？</label>
-      ${stepper('head', '位')}
-
+      ${stepper('head', '位')}` : '',
+      one.askMeal ? `
       <label class="rf-label">餐點分配 <small>（依出席人數分配）</small></label>
       <div class="rf-split">
         <div class="rf-split-item">
@@ -316,8 +333,8 @@
           ${stepper('veg', '位')}
         </div>
       </div>
-      <div class="rf-hint" id="mealHint"></div>
-
+      <div class="rf-hint" id="mealHint"></div>` : '',
+      one.askChildSeat ? `
       <label class="rf-label">兒童座椅</label>
       <label class="rf-check">
         <input type="checkbox" id="childSeatOn">
@@ -325,13 +342,18 @@
       </label>
       <div class="rf-sub" id="childSeatBox" hidden>
         ${stepper('child', '張')}
-      </div>
-
+      </div>` : '',
+      one.askDiet ? `
       <label class="rf-label" for="rDiet">飲食習慣補充 <small>（選填）</small></label>
       <div class="field">
         <input type="text" id="rDiet" maxlength="${MAX.diet}"
                placeholder="例：不吃牛、海鮮過敏、孕婦餐">
-      </div>
+      </div>` : '',
+    ].filter(Boolean) : [];
+    const detailBlock = (multi || !detailBits.length) ? '' : `
+    <!-- 以下只有「熱情出席」才要填 -->
+    <div class="rf-detail" id="detailBox" hidden>
+${detailBits.join('\n')}
     </div>`;
 
     return `
@@ -354,10 +376,7 @@ ${detailBlock}
 ${cardBlock}
 ${giftBlock}
 ${messageBlock}
-    <label class="rf-label" for="rMemo">其他備註 <small>（選填）</small></label>
-    <div class="field">
-      <textarea id="rMemo" maxlength="${MAX.note}" placeholder="還有什麼想讓我們知道的嗎？"></textarea>
-    </div>
+${memoBlock}
 
     <!-- honeypot：只有機器人會填。填了就照樣顯示成功，但不寫入資料庫 -->
     <div class="rf-hp" aria-hidden="true">
@@ -410,7 +429,9 @@ ${messageBlock}
     /* ★ 整個改版的第一原則就在這一行：
        只有「兩個以上需要回覆的活動」才長出活動卡。
        一場婚宴的站台（＝目前全部）走的是原本那份表單，一個字都沒改。 */
-    const evs = rsvpEvents();
+    /* ask* 疊好全域開關才畫 —— 新人在「表單設定」關掉的那一題，
+       每一張活動卡上都要跟著不見（見 common.js 的 eventAsks()） */
+    const evs = rsvpEventsAsked();
     const multi = evs.length > 1;
     host.innerHTML = formHtml(cfg, evs);
     if (typeof fillTemplates === 'function') fillTemplates(host);
@@ -464,9 +485,12 @@ ${messageBlock}
     }
 
     /* ---------- 數量 stepper ---------- */
+    /* 新人關掉的那一題整塊不會畫出來，所以找不到按鈕是正常的，不是壞掉 */
     function wireStepper(id, onDelta) {
-      $(id + 'Minus').addEventListener('click', () => onDelta(-1));
-      $(id + 'Plus').addEventListener('click', () => onDelta(1));
+      const minus = $(id + 'Minus');
+      const plus  = $(id + 'Plus');
+      if (minus) minus.addEventListener('click', () => onDelta(-1));
+      if (plus)  plus.addEventListener('click', () => onDelta(1));
     }
 
     function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
@@ -480,20 +504,23 @@ ${messageBlock}
       state.childSeat = clamp(state.childSeat, 0, state.head);
       const meat = state.head - state.veg;
 
-      $('headNum').textContent = state.head;
-      $('meatNum').textContent = meat;
-      $('vegNum').textContent = state.veg;
-      $('childNum').textContent = state.childSeat;
-      $('mealHint').textContent = `葷食 ${meat} 位・素食 ${state.veg} 位，共 ${state.head} 位`;
+      /* 關掉的題目沒有這幾個節點（見 detailBits），一律先確認找得到 */
+      const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
+      const dis = (id, v) => { const el = $(id); if (el) el.disabled = v; };
+      set('headNum', state.head);
+      set('meatNum', meat);
+      set('vegNum', state.veg);
+      set('childNum', state.childSeat);
+      set('mealHint', `葷食 ${meat} 位・素食 ${state.veg} 位，共 ${state.head} 位`);
 
-      $('headMinus').disabled = state.head <= 1;
-      $('headPlus').disabled = state.head >= MAX.guest;
-      $('meatMinus').disabled = meat <= 0;
-      $('meatPlus').disabled = meat >= state.head;
-      $('vegMinus').disabled = state.veg <= 0;
-      $('vegPlus').disabled = state.veg >= state.head;
-      $('childMinus').disabled = state.childSeat <= 0;
-      $('childPlus').disabled = state.childSeat >= state.head;
+      dis('headMinus', state.head <= 1);
+      dis('headPlus', state.head >= MAX.guest);
+      dis('meatMinus', meat <= 0);
+      dis('meatPlus', meat >= state.head);
+      dis('vegMinus', state.veg <= 0);
+      dis('vegPlus', state.veg >= state.head);
+      dis('childMinus', state.childSeat <= 0);
+      dis('childPlus', state.childSeat >= state.head);
     }
 
     /* 這幾個只有單一活動的表單才有；多活動時它們掛在各自的活動卡上 */
@@ -504,8 +531,10 @@ ${messageBlock}
       wireStepper('veg', (d) => { state.veg += d; syncCounts(); });
       wireStepper('child', (d) => { state.childSeat += d; syncCounts(); });
 
-      $('childSeatOn').addEventListener('change', (e) => {
-        $('childSeatBox').hidden = !e.target.checked;
+      const childOn = $('childSeatOn');
+      if (childOn) childOn.addEventListener('change', (e) => {
+        const box = $('childSeatBox');
+        if (box) box.hidden = !e.target.checked;
         state.childSeat = e.target.checked ? Math.max(1, state.childSeat) : 0;
         syncCounts();
       });
@@ -605,6 +634,18 @@ ${messageBlock}
        ------------------------------------------------------------
        單一活動的站台完全走不到這一段（evs.length <= 1）。
     ============================================================ */
+    /* 一題的作答 → 選了哪幾個選項 id。單選題就是一個元素的陣列 */
+    function answerList(v){
+      return String(v || '').split(',').map(x => x.trim()).filter(Boolean);
+    }
+
+    /* 把一列選項按目前的作答打亮（單選、多選共用） */
+    function markAnswerRow(row, value){
+      const picked = answerList(value);
+      row.querySelectorAll('.choice').forEach(b =>
+        b.classList.toggle('on', picked.includes(b.dataset.val)));
+    }
+
     const evState = {};      /* eventId → { going, head, veg, child, answers } */
     /* 剛剛回答的是哪一張 —— 那一張要留著打開，賓客才填得了人數。
        其餘答過的收起來（見 syncEvCard 的 is-folded）。 */
@@ -734,15 +775,25 @@ ${messageBlock}
         const go = e.target.closest('[data-ev-go]');
         if(go){ setEvGoing(ev, go.dataset.evGo === 'yes'); return; }
 
-        /* 追加題目的單選：再點一次可以取消（和「更具體是哪一種」同一套） */
+        /* 專屬問題：再點一次可以取消（和「更具體是哪一種」同一套）。
+           多選題存的是「用逗號串起來的選項 id」—— 一個字串欄位就收得下，
+           規則與既有的 answers map 都不必跟著改型別。 */
         const opt = e.target.closest('.choice-row[data-ev-q] .choice');
         if(opt){
           const row = opt.closest('[data-ev-q]');
           const qid = row.dataset.evQ;
           const st = evState[ev.id];
-          st.answers[qid] = st.answers[qid] === opt.dataset.val ? '' : opt.dataset.val;
-          row.querySelectorAll('.choice').forEach(b =>
-            b.classList.toggle('on', b.dataset.val === st.answers[qid]));
+          const v = opt.dataset.val;
+          if(row.dataset.evMulti){
+            const picked = answerList(st.answers[qid]);
+            const next = picked.includes(v)
+              ? picked.filter(x => x !== v)
+              : [...picked, v];
+            st.answers[qid] = next.join(',');
+          }else{
+            st.answers[qid] = st.answers[qid] === v ? '' : v;
+          }
+          markAnswerRow(row, st.answers[qid]);
         }
       });
 
@@ -1172,8 +1223,7 @@ ${messageBlock}
             if(q.kind === 'text') setVal(`ev_${ev.id}_q_${q.id}`, (saved.texts || {})[q.id]);
             else {
               const row = $(`ev_${ev.id}_q_${q.id}`);
-              if(row) row.querySelectorAll('.choice').forEach(b =>
-                b.classList.toggle('on', b.dataset.val === st.answers[q.id]));
+              if(row) markAnswerRow(row, st.answers[q.id]);
             }
           });
           const childOn = $(`ev_${ev.id}_childOn`);

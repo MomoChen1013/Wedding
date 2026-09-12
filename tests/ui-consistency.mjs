@@ -16,6 +16,7 @@
      9. Pill 按鈕：只有 32／28 兩階
     10. Tab：兩種 tab 共用「白底 ＋ 字重 500 ＋ --primary-deep 定位線」
     11. 卡片：白底 ＋ 1px --line ＋ --radius
+    12. 表單設定的四個新元件：Badge／Switch／Radio group／Conditional Reveal
 
    這一支不需要 Firestore，只要 hosting 起得來就跑得動
    （頁面停在登入門也沒關係 —— 要量的是 CSS 與 HTML 屬性）。
@@ -371,6 +372,79 @@ for(const c of cards){
      c.bg === 'rgb(255, 255, 255)' && c.bw === '1px' && c.radius === '4px',
      `${c.bg} / ${c.bw} / ${c.radius}`);
 }
+
+/* ------------------------------------------------------------
+   12. 表單設定新增的四個元件
+   ------------------------------------------------------------
+   Badge、Switch、Radio group、Conditional Reveal（UI-SPEC 3.5b／3.6b／
+   3.6c／3.6d）。這一段守的是「它們沒有變成第五種長得差不多的東西」：
+     ・Badge 是膠囊、字級 11px、不可點（沒有 hover 反應）
+     ・Switch 的原生 checkbox 要留在無障礙樹裡（不能 display:none）
+       而且掛 role="switch"
+     ・Radio 是方框（--radius）不是膠囊 —— 它是輸入元件，chip 是篩選器
+     ・Reveal 收起來時是 display:none，不是灰掉
+------------------------------------------------------------ */
+console.log('\n【表單設定：Badge／Switch／Radio／Reveal】');
+await go(ADMIN);
+const bits = await page.evaluate(() => {
+  const read = (sel) => {
+    const el = document.querySelector(sel);
+    if(!el) return null;
+    const holder = el.closest('[hidden]');
+    const was = holder && holder.hidden;
+    if(holder) holder.hidden = false;
+    const cs = getComputedStyle(el);
+    const out = { size:cs.fontSize, radius:cs.borderTopLeftRadius, font:cs.fontFamily,
+                  display:cs.display, minH:cs.minHeight, opacity:cs.opacity };
+    if(holder) holder.hidden = was;
+    return out;
+  };
+  const sw = document.querySelector('.ad-switch input');
+  const swBox = document.querySelector('.ad-switch-box');
+  const swCs = swBox ? getComputedStyle(swBox) : null;
+  const swInCs = sw ? getComputedStyle(sw) : null;
+  const reveal = document.querySelector('.ad-reveal');
+  let revealHidden = null;
+  if(reveal){
+    reveal.hidden = true;
+    revealHidden = getComputedStyle(reveal).display;
+    reveal.hidden = false;
+  }
+  return {
+    badge: read('.ad-badge'),
+    radio: read('.ad-radio'),
+    switchRole: sw ? sw.getAttribute('role') : null,
+    /* 藏起來但仍然在無障礙樹裡：不能是 display:none／visibility:hidden */
+    switchInput: swInCs ? { display:swInCs.display, vis:swInCs.visibility } : null,
+    switchBox: swCs ? { w:swCs.width, h:swCs.height, radius:swCs.borderTopLeftRadius } : null,
+    revealHidden,
+  };
+});
+ok('找得到 Badge 與 Radio', !!bits.badge && !!bits.radio);
+if(bits.badge){
+  ok('.ad-badge 是膠囊', parseFloat(bits.badge.radius) >= 999, bits.badge.radius);
+  ok('.ad-badge 字級 11px（不低於最小字級）', bits.badge.size === '11px', bits.badge.size);
+  ok('.ad-badge 走 UI 軌', /system-ui|PingFang|Noto Sans/.test(bits.badge.font));
+}
+if(bits.radio){
+  /* 方框而不是膠囊：和 .ad-chip 分得出來 */
+  ok('.ad-radio 是 4px 方框（不是膠囊）', bits.radio.radius === '4px', bits.radio.radius);
+  ok('.ad-radio 熱區 ≥40px（桌機）', parseFloat(bits.radio.minH) >= 40, bits.radio.minH);
+}
+ok('Switch 掛 role="switch"', bits.switchRole === 'switch', String(bits.switchRole));
+if(bits.switchInput){
+  ok('Switch 的原生 checkbox 仍在無障礙樹裡',
+     bits.switchInput.display !== 'none' && bits.switchInput.vis !== 'hidden',
+     `${bits.switchInput.display} / ${bits.switchInput.vis}`);
+}
+if(bits.switchBox){
+  ok('Switch 的軌道是 42×24 的膠囊',
+     bits.switchBox.w === '42px' && bits.switchBox.h === '24px'
+       && parseFloat(bits.switchBox.radius) >= 999,
+     `${bits.switchBox.w}×${bits.switchBox.h} / ${bits.switchBox.radius}`);
+}
+ok('Conditional Reveal 收起來是整塊不見（不是灰掉）',
+   bits.revealHidden === 'none', String(bits.revealHidden));
 
 await browser.close();
 console.log(failures ? `\n有 ${failures} 項未通過。` : '\n全部通過。');

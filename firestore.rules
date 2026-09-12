@@ -63,6 +63,12 @@ service cloud.firestore {
                 rsvpEnabled／rsvpDeadline，那兩個依舊改不動）。 */
              'rsvpAskCard', 'rsvpAskGift', 'rsvpAskMessage', 'rsvpMailEnabled',
              'rsvpContactMethods', 'rsvpShowStory', 'rsvpShowGallery',
+             /* 基本問題的全域開關（出席人數／餐點分配／兒童座椅／飲食習慣補充
+                ／其他備註）。一場婚禮有幾個活動都問同一件事，所以開關在
+                站台這一層＝所有場次共用；個別活動要少問一題時，
+                用 events[].ask* 那一份單獨關掉（見 common.js 的 eventAsks()）。 */
+             'rsvpAskCount', 'rsvpAskMeal', 'rsvpAskChildSeat', 'rsvpAskDiet',
+             'rsvpAskNote',
              /* 賓客標籤庫（VIP、長輩、大學同學…）：新人自己維護，
                 但「這個站台要不要用標籤」的總開關 guestTagsEnabled
                 不在名單內 —— 和 pages 一樣，只能由我們用 Admin SDK／
@@ -128,6 +134,12 @@ service cloud.firestore {
         && (!('rsvpAskCard'    in d) || d.rsvpAskCard is bool)
         && (!('rsvpAskGift'    in d) || d.rsvpAskGift is bool)
         && (!('rsvpAskMessage' in d) || d.rsvpAskMessage is bool)
+        /* 基本問題的全域開關，同理 —— 只改變賓客看到的表單長什麼樣 */
+        && (!('rsvpAskCount'     in d) || d.rsvpAskCount is bool)
+        && (!('rsvpAskMeal'      in d) || d.rsvpAskMeal is bool)
+        && (!('rsvpAskChildSeat' in d) || d.rsvpAskChildSeat is bool)
+        && (!('rsvpAskDiet'      in d) || d.rsvpAskDiet is bool)
+        && (!('rsvpAskNote'      in d) || d.rsvpAskNote is bool)
         /* 有沒有「郵寄」這個選項（喜帖怎麼給、喜餅怎麼領） */
         && (!('rsvpMailEnabled' in d) || d.rsvpMailEnabled is bool)
         && (!('rsvpShowStory'   in d) || d.rsvpShowStory is bool)
