@@ -303,6 +303,9 @@
 }
 .lc-modal-img{display:block;width:100%;max-height:340px;object-fit:cover;
   border-radius:var(--radius);margin-bottom:16px;background:var(--bg2);}
+/* 照片集：一疊照片排成兩欄，一次看得到多一點 */
+.lc-modal-body.is-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.lc-modal-body.is-grid .lc-modal-img{margin-bottom:0;aspect-ratio:4/5;max-height:none;}
 .lc-modal-text{
   font-size:15px;line-height:2.1;letter-spacing:.04em;color:var(--ink);
   white-space:pre-wrap;word-break:break-word;

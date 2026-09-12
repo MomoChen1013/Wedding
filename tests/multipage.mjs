@@ -1047,19 +1047,20 @@ const MULTI_EVENTS = [
 }
 
 {
-  /* ---- 邀請函的資訊列 ＋ 大廳 ---- */
+  /* ---- 出席回覆那一頁 ＋ 大廳 ----
+     那一頁已經不放婚禮資訊了（見 js/invitation.js），
+     每一場的日期、地點與地圖改為掛在自己的活動卡上。
+     不需要回覆的活動（文訂）只出現在大廳的資訊卡。 */
   const { page } = await visit(`/w/${SLUG}/invitation`);
   const inv = await page.evaluate(() => ({
-    rows: [...document.querySelectorAll('.inv-ev .ir-label')].map((e) => e.textContent),
-    hasVenueRow: !!document.getElementById('venueRow'),
-    maps: document.querySelectorAll('.inv-ev .ir-jump').length,
+    names: [...document.querySelectorAll('.ev-card .ev-name')].map((e) => e.textContent),
+    hasInfoRows: !!document.querySelector('.inv-rows'),
+    maps: document.querySelectorAll('.ev-card .ev-map').length,
   }));
-  ok('邀請函資訊列變成四列活動（含文訂）',
-    inv.rows.join(',') === '文訂,證婚,婚宴,派對', inv.rows.join(','));
-  ok('原本那一列「地點」不見了', !inv.hasVenueRow);
-  /* 地址留白時沿用既有規則：拿場地名去搜 Google Maps
-     （見 invitation.js 原本的 renderVenue），所以「女方家」那一場也有一顆 */
-  ok('每個有地點的活動各有一個地圖連結', inv.maps === 4, String(inv.maps));
+  ok('活動卡是需要回覆的那三場',
+    inv.names.join(',') === '證婚,婚宴,派對', inv.names.join(','));
+  ok('那一頁不再放婚禮資訊列', !inv.hasInfoRows);
+  ok('每張活動卡各有一個地圖連結', inv.maps === 3, String(inv.maps));
   await page.close();
 
   const lob = await visit(`/w/${SLUG}/`);
@@ -1144,9 +1145,7 @@ const MULTI_EVENTS = [
     (await page.locator('.ev-card').count()) === 0);
   ok('「能來參加嗎」回來了', (await page.locator('#attendRow').count()) === 1);
   ok('人數／葷素回到共用區', (await page.locator('#detailBox').count()) === 1);
-  ok('資訊列也回到原本的「地點」那一列',
-    (await page.locator('#venueRow').count()) === 1
-      && (await page.locator('.inv-ev').count()) === 0);
+  ok('沒有活動卡留下來', (await page.locator('.ev-card').count()) === 0);
   await page.close();
 }
 
@@ -1372,7 +1371,7 @@ console.log('\n[11] 桌次查詢');
   const text = await page.innerText('#stResult');
   ok('查得到自己的桌次', text.includes('第 3 桌'), text.replace(/\n/g, ' ').slice(0, 60));
   ok('顯示備註', text.includes('素食'), text.replace(/\n/g, ' ').slice(0, 60));
-  ok('列出同桌的人', text.includes('林美美'), text.replace(/\n/g, ' ').slice(0, 60));
+  ok('不列出同桌的人', !text.includes('林美美'), text.replace(/\n/g, ' ').slice(0, 60));
 
   /* 只打名字（沒有姓）也要找得到 */
   await page.fill('#stInput', '小明');
@@ -2236,6 +2235,118 @@ console.log('\n[18] 大廳的選填區塊與預設 hashtag');
   await page.close();
 }
 
+/* ---------- 後台首頁的「頁面設定」 ---------- */
+console.log('\n[18c] 新人自己收起某一頁');
+{
+  const siteRef = adb.collection('sites').doc(siteIds[SLUG]);
+  const { page, errors } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  await page.waitForSelector('#adPagesSec:not([hidden])', { timeout:10000 });
+
+  const rows = await page.$$eval('#adPageList [data-page-row]',
+    (els) => els.map((e) => e.dataset.pageRow));
+  ok('一列一頁，出席回覆不在裡面',
+    rows.includes('wall') && rows.includes('quiz') && !rows.includes('rsvp'),
+    rows.join(','));
+  ok('預設每一頁都是開著的',
+    await page.evaluate(() => [...document.querySelectorAll('#adPageList [data-page-on]')]
+      .every((el) => el.checked)));
+  ok('手機示意列出同樣那幾頁',
+    (await page.locator('#adPagePreview .ad-phone-item').count()) === rows.length,
+    String(await page.locator('#adPagePreview .ad-phone-item').count()));
+
+  /* 收起祝福牆 */
+  await page.uncheck('#adPageList [data-page-row="wall"] [data-page-on]');
+  await page.waitForTimeout(1500);
+  const off = (await siteRef.get()).data().pagePublish || {};
+  ok('收起來會寫回 pagePublish',
+    off.wall && off.wall.on === false && !off.wall.at,
+    JSON.stringify(off.wall || null));
+  ok('手機示意把它畫成收起來的樣子',
+    await page.evaluate(() => {
+      const items = [...document.querySelectorAll('#adPagePreview .ad-phone-item')];
+      const hit = items.find((el) => el.textContent.includes('祝福牆'));
+      return !!hit && hit.classList.contains('is-off');
+    }));
+  ok('收起來之後後台照樣進得去那一頁的內容',
+    !(await page.evaluate(() =>
+      document.querySelector('#adSide .ad-tab[data-tab="inbox"]').hidden)));
+
+  /* 排程：小測驗排在一小時後才開 */
+  await page.click('#adPageList [data-page-row="quiz"] [data-page-when]');
+  const at = new Date(Date.now() + 3600000);
+  const p2 = (n) => String(n).padStart(2, '0');
+  await page.fill('#adPageList [data-page-row="quiz"] [data-page-at]',
+    `${at.getFullYear()}-${p2(at.getMonth() + 1)}-${p2(at.getDate())}`
+    + `T${p2(at.getHours())}:${p2(at.getMinutes())}`);
+  await page.click('#adPageList [data-page-row="quiz"] [data-page-sched-save]');
+  await page.waitForTimeout(1500);
+  const sched = (await siteRef.get()).data().pagePublish || {};
+  ok('排程存的是 on:false ＋ 時間',
+    sched.quiz && sched.quiz.on === false && Math.abs(sched.quiz.at - at.getTime()) < 61000,
+    JSON.stringify(sched.quiz || null));
+  ok('那一列寫出什麼時候會自己開',
+    (await page.innerText('#adPageList [data-page-row="quiz"] .ad-page-state'))
+      .includes('自動開啟'),
+    await page.innerText('#adPageList [data-page-row="quiz"] .ad-page-state'));
+
+  ok('頁面設定無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+}
+{
+  /* 我們沒開通的頁面：那一列是灰的、掛鎖頭、開關按不動 */
+  const siteRef = adb.collection('sites').doc(siteIds[SLUG]);
+  await siteRef.update({ pages: { ...allOnPlusAdmin, letter: false } });
+
+  const { page } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPagesSec:not([hidden])', { timeout:15000 });
+  const row = '#adPageList [data-page-row="letter"]';
+  ok('沒開通的那一列掛鎖頭',
+    (await page.locator(`${row} .ad-ic-lock`).count()) === 1);
+  ok('沒開通的那一列開關按不動',
+    await page.isDisabled(`${row} [data-page-on]`));
+  ok('沒開通的那一列也沒有排程',
+    (await page.locator(`${row} [data-page-when]`).count()) === 0);
+  await page.close();
+
+  await siteRef.update({ pages: allOnPlusAdmin });
+}
+{
+  /* 賓客那一側：收起來的那兩頁沒有入口，直接打網址也會被導回大廳 */
+  const { page } = await visit(`/w/${SLUG}/`);
+  const links = await page.$$eval('.link-grid .link-card',
+    (els) => els.map((e) => e.getAttribute('href') || ''));
+  ok('大廳沒有祝福牆的入口', !links.some((h) => h.endsWith('/wall')), links.join(','));
+  ok('排程還沒到的小測驗也沒有入口',
+    !links.some((h) => h.endsWith('/quiz')), links.join(','));
+  await page.close();
+
+  const direct = await newPage();
+  await direct.goto(`${BASE}/w/${SLUG}/wall`, { waitUntil:'domcontentloaded' });
+  await direct.waitForURL(`**/w/${SLUG}/`, { timeout: 20000 }).catch(() => {});
+  ok('收起來的頁面直接打網址會導回大廳',
+    direct.url().endsWith(`/w/${SLUG}/`), direct.url());
+  await direct.close();
+}
+{
+  /* 排程的時間到了就自己開，沒有人回去改資料庫 */
+  await adb.collection('sites').doc(siteIds[SLUG]).update({
+    pagePublish: { quiz: { on:false, at: Date.now() - 60000 } },
+  });
+  const { page } = await visit(`/w/${SLUG}/`);
+  const links = await page.$$eval('.link-grid .link-card',
+    (els) => els.map((e) => e.getAttribute('href') || ''));
+  ok('時間過了之後小測驗自己出現',
+    links.some((h) => h.endsWith('/quiz')), links.join(','));
+  await page.close();
+
+  /* 還原，後面的測試還要用 */
+  await adb.collection('sites').doc(siteIds[SLUG]).update({ pagePublish: {} });
+}
+
 /* ---------- 開放桌次功能 ---------- */
 console.log('\n[18b] 桌次功能可以整個關掉');
 {
@@ -2814,8 +2925,8 @@ console.log('\n[14c] 後台開關表單題目');
   ok('固定題目用關不掉的勾選框列出來',
     (await page.locator(fixedQs).count()) === 8,
     String(await page.locator(fixedQs).count()));
-  ok('表單資訊列出婚禮資訊的內容',
-    (await page.innerText('#adRsvpInfoList')).includes('地點名稱'),
+  ok('表單資訊列出封面那一段的內容',
+    (await page.innerText('#adRsvpInfoList')).includes('婚禮 hashtag'),
     (await page.innerText('#adRsvpInfoList')).replace(/\n/g, ' ').slice(0, 80));
 
   ok('題目預設全部開著',
@@ -2825,14 +2936,21 @@ console.log('\n[14c] 後台開關表單題目');
     (await page.isChecked('#adContactPhone')) && (await page.isChecked('#adContactLine'))
       && (await page.isChecked('#adContactEmail')));
 
-  /* 關掉喜餅與留言，聯絡方式只留 Email，照片集也收起來 */
+  /* 關掉喜餅與留言，聯絡方式只留 Email */
   await page.uncheck('#adAskGift');
   await page.uncheck('#adAskMessage');
   await page.uncheck('#adContactPhone');
   await page.uncheck('#adContactLine');
-  await page.uncheck('#adShowGallery');
   await page.click('#adRsvpForm button[type="submit"]');
   await page.waitForTimeout(1500);
+
+  /* 照片集搬到「婚禮資訊 → 自訂內容」（它現在是首頁 Explore 的最後一張卡），
+     那一顆是按下去就存，不跟著這張表單走 */
+  await page.click('.ad-tab[data-tab="lobby"]');
+  await page.click('.ad-subtabs[data-subtabs="lobby"] .ad-subtab[data-subtab="explore"]');
+  await page.waitForTimeout(200);
+  await page.uncheck('#adShowGallery');
+  await page.waitForTimeout(1200);
 
   const site = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
   ok('開關寫回 sites 文件',
@@ -2874,8 +2992,6 @@ console.log('\n[14c] 後台開關表單題目');
   ok('聯絡方式只剩 Email',
     (await page.locator('.rf-contact-name').allTextContents()).join('／') === 'Email',
     (await page.locator('.rf-contact-name').allTextContents()).join('／'));
-  ok('照片集整塊收起來', !(await page.isVisible('#galleryBlock')));
-  ok('兩人的故事還在', await page.isVisible('#storyBlock'));
 
   /* 關掉的題目不會擋住送出 */
   await page.fill('#rName', '設定測試');
@@ -3859,11 +3975,11 @@ console.log('\n[25] Dress Code 的顏色與參考圖');
     realErrors(guest2.errors).slice(0, 2).join(' | '));
   await guest2.page.close();
 
-  /* 邀請函也帶同一組色塊 */
+  /* 出席回覆那一頁不再放婚禮資訊，所以也不會有第二組色塊 */
   const inv = await visit(`/w/${SLUG}/invitation`);
   await inv.page.waitForTimeout(800);
-  ok('邀請函的「服裝」也畫出色塊',
-    (await inv.page.locator('#dressSwatches .dress-swatch').count()) === 4);
+  ok('出席回覆那一頁沒有第二組色塊',
+    (await inv.page.locator('.dress-swatch').count()) === 0);
   await inv.page.close();
 
   ok('Dress Code 後台無 console 錯誤', realErrors(errors).length === 0,

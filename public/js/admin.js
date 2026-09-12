@@ -1402,7 +1402,8 @@ function openAdmin(){
   });
   /* 表單設定裡的兩顆按鈕指的都是賓客那一頁（分享出去的就是這個網址） */
   document.getElementById('adRsvpViewForm').href = sitePath('rsvp');
-  document.getElementById('adRsvpGalleryView').href = sitePath('rsvp');
+  /* 照片集現在在首頁 Explore 的最後一張卡 */
+  document.getElementById('adRsvpGalleryView').href = sitePath('lobby');
   /* 首頁上的兩個出口：「賓客現在看到的樣子」與「賓客要填的那張表單」 */
   const homeSite = document.getElementById('adHomeViewSite');
   const homeForm = document.getElementById('adHomeViewForm');
@@ -1425,6 +1426,7 @@ function openAdmin(){
   syncStickyMetrics();
 
   renderHome();
+  renderPageSettings();
   initRouter();
 
   /* 訂閱各份資料，畫面隨著資料變動重畫。
@@ -1478,6 +1480,7 @@ function openAdmin(){
      只有 Dress Code 的參考圖是子集合（整段 data URL，放不進站台文件） */
   DataStore.subscribeDressImages();
   syncSeatFeatureUI();
+  syncGalleryUI();
   fillSiteForm();
   renderSchedule(siteSchedule());
   /* 婚禮流程：沒開多活動的站台連草稿都不用備，那一頁根本不存在 */
@@ -2972,8 +2975,8 @@ const RSVP_FORM_TOGGLES = {
   adAskCard:      'rsvpAskCard',
   adAskGift:      'rsvpAskGift',
   adAskMessage:   'rsvpAskMessage',
-  adShowStory:    'rsvpShowStory',
-  adShowGallery:  'rsvpShowGallery',
+  /* 有沒有「郵寄」這個選項；關掉時喜帖與喜餅各少一個選項 */
+  adAskMail:      'rsvpMailEnabled',
 };
 const RSVP_CONTACT_BOXES = {
   adContactPhone: 'phone',
@@ -2985,7 +2988,7 @@ function fillRsvpFormSettings(){
   const cfg = rsvpConfig();
   const on = {
     adAskCard: cfg.askCard, adAskGift: cfg.askGift, adAskMessage: cfg.askMessage,
-    adShowStory: cfg.showStory, adShowGallery: cfg.showGallery,
+    adAskMail: cfg.allowMail,
   };
   Object.keys(RSVP_FORM_TOGGLES).forEach(id => {
     document.getElementById(id).checked = on[id];
@@ -3025,20 +3028,10 @@ function weddingDateText(){
   return `${p.year}.${p.month}.${p.day}（${(p.weekday || '').replace('週', '')}）${hour}:${p.minute}`;
 }
 
-/* 「服裝」這一列現在有三種內容（文字、色票、參考圖），
-   任何一種有填就不是空的 —— 只看文字的話，只選了顏色的新人
-   會在這裡看到「還沒填」，然後跑去多打一段其實不必要的字 */
-function dressCodeSummary(d){
-  const bits = [];
-  const text = clip(d.dressCode);
-  if(text) bits.push(text);
-  const colors = Array.isArray(d.dressCodeColors) ? d.dressCodeColors.filter(Boolean) : [];
-  if(colors.length) bits.push(`${colors.length} 個顏色`);
-  const imgs = DataStore.getDressImages().length;
-  if(imgs) bits.push(`${imgs} 張參考圖`);
-  return bits.join('・');
-}
-
+/* 出席表單那一頁只剩「封面 → 表單 → hashtag」，
+   所以這裡也只列封面那一段真的會出現的幾項 ——
+   地點、交通、Dress Code、禮金那些只在首頁，列在這裡會讓新人
+   以為表單上也看得到。 */
 function rsvpInfoRows(){
   const d = siteData();
   const tags = Array.isArray(d.hashtags) ? d.hashtags.filter(Boolean) : [];
@@ -3047,12 +3040,6 @@ function rsvpInfoRows(){
   return [
     { name:'日期與開始時間', value: weddingDateText(),
       empty:'婚禮日期還沒設定，請先找我們排定' },
-    { name:'地點名稱',   value: clip(d.venueName) },
-    { name:'地址',       value: clip(d.venueAddress) },
-    { name:'地圖連結',   value: clip(d.venueMapUrl),
-      empty:'留白就用地址自動開 Google 地圖' },
-    { name:'服裝',       value: dressCodeSummary(d) },
-    { name:'關於禮金',   value: clip(d.giftNote) },
     { name:'婚禮 hashtag', value: clip(tags.join('　')),
       empty:'留白就用預設的 #我們結婚了 #Married' },
     { name:'封面照',     value: cover ? '已經放好了' : '',
@@ -3075,12 +3062,6 @@ function renderRsvpFormInfo(){
   list.innerHTML = rsvpInfoRows().map(infoRowHtml).join('');
 
   const d = siteData();
-  const story = String(d.story || '').trim();
-  document.getElementById('adRsvpStoryInfo').innerHTML = infoRowHtml({
-    name:'目前的內容', value: clip(story),
-    empty:'還沒填，就算打開也不會出現這一塊',
-  });
-
   const photos = (Array.isArray(d.photos) ? d.photos : []).filter(Boolean);
   document.getElementById('adRsvpGalleryInfo').innerHTML = infoRowHtml({
     name:'目前的照片', value: photos.length ? `${photos.length} 張` : '',
@@ -3104,9 +3085,29 @@ function jumpToLobbyInfo(fieldId){
 }
 
 document.getElementById('adRsvpInfoJump')
-  .addEventListener('click', ()=> jumpToLobbyInfo('adVenueName'));
-document.getElementById('adRsvpStoryJump')
-  .addEventListener('click', ()=> jumpToLobbyInfo('adStory'));
+  .addEventListener('click', ()=> jumpToLobbyInfo('adHashtags'));
+
+/* ---------- 照片集（首頁 Explore 的最後一張卡） ----------
+   它不在「表單設定」那張表單裡，所以按下去就直接存 ——
+   和交通圖片、Dress Code 色票同一套「不用按儲存」的做法。 */
+const showGalleryEl = document.getElementById('adShowGallery');
+
+function syncGalleryUI(){
+  showGalleryEl.checked = rsvpConfig().showGallery;
+}
+
+showGalleryEl.addEventListener('change', async ()=>{
+  const on = showGalleryEl.checked;
+  try{
+    await DataStore.saveSiteFields({ rsvpShowGallery: on });
+    syncGalleryUI();
+    toast(on ? '已在首頁 Explore 放上照片集' : '已收起照片集');
+  }catch(err){
+    /* 存不進去就把開關扳回原本的狀態，畫面不要和資料庫說不一樣的話 */
+    syncGalleryUI();
+    writeFailed(err);
+  }
+});
 
 document.getElementById('adRsvpForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
@@ -3553,7 +3554,8 @@ document.getElementById('adInboxExport').addEventListener('click', ()=>{
 ============================================================ */
 const seatFeatureEl = document.getElementById('adSeatFeature');
 
-function seatFeatureOn(){ return siteData().seatingFeatureEnabled !== false; }
+/* 排程到了的話也算開著 —— 首頁「頁面設定」那一列與這裡讀的是同一件事 */
+function seatFeatureOn(){ return pageLiveNow('seating'); }
 
 function syncSeatFeatureUI(){
   seatFeatureEl.checked = seatFeatureOn();
@@ -3562,7 +3564,10 @@ function syncSeatFeatureUI(){
 seatFeatureEl.addEventListener('change', async ()=>{
   const on = seatFeatureEl.checked;
   try{
-    await DataStore.saveSiteFields({ seatingFeatureEnabled: on });
+    /* 首頁「頁面設定」那一列講的是同一件事，所以走同一支 ——
+       savePagePublish() 會連 seatingFeatureEnabled 一起寫，
+       順手清掉排程（不清的話等一下又自己開回來，那不是按下去的意思） */
+    await savePagePublish('seating', { on, at:null });
     syncSeatFeatureUI();
     toast(on ? '已開放桌次功能，賓客現在看得到「尋找我的座位」'
              : '已關閉桌次功能，賓客那邊不會出現桌次');
@@ -4454,7 +4459,6 @@ async function saveDressColors(list){
   await runSave(null, async ()=>{
     await DataStore.saveSiteFields({ dressCodeColors: rows });
     renderDressColors();
-    renderRsvpFormInfo();
     toast('顏色已更新（這一區不用按下面的儲存）');
   });
 }
@@ -6595,6 +6599,273 @@ function homeStepDone(step){
   if(typeof step.done !== 'function') return null;
   try{ return !!step.done(); }
   catch{ return null; }
+}
+
+/* ============================================================
+   頁面設定（後台首頁最下面）
+   ------------------------------------------------------------
+   「這一頁現在要不要讓賓客看到」由新人自己決定 —— 內容還沒寫完的
+   先收起來、婚禮當天再打開，也可以排一個時間讓它自己開。
+
+   和側欄的鎖頭是**兩層不同的開關**，不要混在一起看：
+
+     sites.pages         我們幫這組新人開了哪幾頁（＝買了什麼）。
+                         新人改不動，關著的那幾頁在這裡是灰的、掛鎖頭。
+     sites.pagePublish   新人自己的「現在公開了沒」＋排程時間。
+                         只影響賓客看不看得到入口，規則不讀它
+                         （判斷在 js/wed-model.js 的 pageVisible()）。
+
+   桌次是唯一的例外：它的開／關早就存在 seatingFeatureEnabled
+   （「桌次」分頁上那一顆），所以這裡寫的時候兩個欄位一起更新，
+   兩個地方看到的永遠是同一件事。
+
+   排程沒有後端：時間到了不會有人寫回資料庫，而是賓客每次開頁面
+   都重新判斷一次「現在過了那個時間沒有」。所以新人排完就可以關掉後台。
+============================================================ */
+const pagesSecEl  = document.getElementById('adPagesSec');
+const pageListEl  = document.getElementById('adPageList');
+const pagePrevEl  = document.getElementById('adPagePreview');
+
+/* 一句話說明。新人不會每個名字都記得那一頁在做什麼 */
+const PAGE_SETTING_NOTES = {
+  wall:       '賓客寫下祝福，也讀得到別人寫的',
+  cake:       '挑一份甜點放上桌，替你們集氣',
+  draw:       '抽一張婚禮限定小卡，收進收藏',
+  exhibition: '沿著時間線，走過你們一路走來的日子',
+  quiz:       '一份小測驗，看賓客有多了解你們',
+  seating:    '輸入名字就查得到自己坐哪一桌',
+  letter:     '你們寫給賓客的信，輸入名字拆開來看',
+};
+
+/* 這一區要列哪幾頁：賓客看得到、而且可以關掉的那些。
+   出席回覆（邀請函）不列 —— 那是對外分享的那個連結本身，
+   要停止收回覆的話在「表單設定」設截止日，不是把整頁收起來。
+   ★ 清單是從 site-context.js 的 PAGES 長出來的，
+     之後新增的頁面會自己出現在這裡，不必回來改這一份。 */
+function pageSettingRows(){
+  const S = window.SITE;
+  if(!S || !S.pages) return [];
+  return Object.keys(S.pages)
+    .filter(key => S.pages[key].optional && key !== 'rsvp')
+    .map(key => {
+      const open = S.isPageOn(key);
+      /* 還沒對外開放的功能連鎖頭都不掛（和側欄的 'off' 同一個判斷）：
+         賣不出去的東西不該出現在新人的清單上 */
+      if(!open && S.isUnreleased && S.isUnreleased(key)) return null;
+      const e = S.pagePublish(key);
+      return {
+        key,
+        label:  S.pages[key].label,
+        note:   PAGE_SETTING_NOTES[key] || '',
+        locked: !open,
+        on:     e.on,
+        at:     e.at,
+      };
+    })
+    .filter(Boolean);
+}
+
+function pageRowLive(row){
+  return row.on || (row.at !== null && Date.now() >= row.at);
+}
+
+/* 賓客現在看不看得到這一頁（＝ wed-model.js 的 pageVisible()，
+   只是後台這一側沒有那支 module 可以 import）。
+   排程時間到了的那一頁，開關要跟著是「開」的樣子 ——
+   畫面上關著、賓客卻看得到，是最糟的一種不一致。 */
+function pageLiveNow(key){
+  const S = window.SITE;
+  if(!S || typeof S.pagePublish !== 'function') return true;
+  return pageRowLive(S.pagePublish(key));
+}
+
+/* epoch ms ↔ <input type="datetime-local">。
+   輸入框給的是「新人自己電腦上的牆上時間」，存進去的是絕對時間 ——
+   排程是給新人自己看的（他就在婚禮現場），不換算婚禮時區。 */
+function toLocalInput(ms){
+  const d = new Date(ms);
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+       + `T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+function pageStateText(row){
+  if(row.locked) return '還沒開通這個功能';
+  if(row.on) return '賓客現在看得到';
+  if(row.at === null) return '已收起來，賓客看不到';
+  return Date.now() >= row.at
+    ? `已自動開啟（${fmtTime(row.at)}）`
+    : `${fmtTime(row.at)} 自動開啟`;
+}
+
+function pageRowHtml(row){
+  const live = pageRowLive(row);
+  const schedFuture = !row.on && row.at !== null && Date.now() < row.at;
+  return `
+  <div class="ad-page-row${row.locked ? ' is-locked' : ''}${live ? ' is-live' : ''}"
+       data-page-row="${escapeHtml(row.key)}">
+    <div class="ad-page-main">
+      <div class="ad-page-name">${escapeHtml(row.label)}${
+        row.locked ? lockIconHtml('ad-ic-lock') : ''}</div>
+      ${row.note ? `<div class="ad-page-note">${escapeHtml(row.note)}</div>` : ''}
+      <div class="ad-page-state${schedFuture ? ' is-sched' : ''}">${
+        escapeHtml(pageStateText(row))}</div>
+    </div>
+
+    <div class="ad-page-act">
+      ${row.locked ? '' : `<button class="ad-page-when" type="button" data-page-when
+        aria-expanded="false">${schedFuture ? '改排程' : '排程開啟'}</button>`}
+      <label class="ad-toggle">
+        <input type="checkbox" data-page-on ${live ? 'checked' : ''}
+               ${row.locked ? 'disabled' : ''}
+               aria-label="${escapeHtml(row.label)}要不要讓賓客看到">
+        <span class="ad-toggle-track" aria-hidden="true"></span>
+      </label>
+    </div>
+
+    ${row.locked ? '' : `
+    <div class="ad-page-sched" data-page-sched hidden>
+      <label class="ad-page-sched-lab">
+        什麼時候自動開啟
+        <input class="ad-input ad-input-when" type="datetime-local" data-page-at
+               value="${row.at !== null ? escapeHtml(toLocalInput(row.at)) : ''}">
+      </label>
+      <div class="ad-row">
+        <button class="btn small" type="button" data-page-sched-save>設定排程</button>
+        ${row.at !== null
+          ? '<button class="btn small ghost" type="button" data-page-sched-clear>取消排程</button>'
+          : ''}
+      </div>
+      <div class="ad-hint">
+        時間到了這一頁就會自己出現，<b>不用回來按任何東西</b>。
+        時間以你現在這台裝置的時間為準。
+      </div>
+    </div>`}
+  </div>`;
+}
+
+/* 手機示意：賓客現在打開首頁看到的入口清單。
+   收起來的那幾頁留在畫面上但是灰的 —— 直接消失的話，
+   新人分不出「我關掉了」跟「這個功能我本來就沒有」。 */
+function renderPagePreview(rows){
+  if(!pagePrevEl) return;
+  const items = rows.map(row => {
+    const live = pageRowLive(row);
+    const cls = live ? '' : ' is-off';
+    const tail = live ? '' : (row.locked ? '未開通' : '已收起');
+    return `<li class="ad-phone-item${cls}">
+      <span class="ad-phone-item-name">${escapeHtml(row.label)}</span>
+      ${tail ? `<span class="ad-phone-item-tag">${escapeHtml(tail)}</span>` : ''}
+    </li>`;
+  }).join('');
+  pagePrevEl.innerHTML = items || '<li class="ad-phone-item is-off">沒有可以設定的頁面</li>';
+}
+
+function renderPageSettings(){
+  if(!pageListEl || !pagesSecEl) return;
+
+  /* 手機示意的標題就寫這組新人的名字，一眼看得出那是自己的網站 */
+  const phoneTitle = document.getElementById('adPhoneTitle');
+  const couple = (window.WED && window.WED.couple) || '';
+  if(phoneTitle && couple) phoneTitle.textContent = couple;
+
+  const rows = pageSettingRows();
+  pagesSecEl.hidden = !rows.length;
+  pageListEl.innerHTML = rows.map(pageRowHtml).join('');
+  renderPagePreview(rows);
+}
+
+/* 寫回資料庫：整份 pagePublish 一起送（Firestore 的 map 是整欄覆蓋）。
+   只保留認得的頁面代號 —— 規則擋的是筆數，這裡負責不讓它長出垃圾。 */
+async function savePagePublish(key, next){
+  const S = window.SITE;
+  const known = new Set(Object.keys((S && S.pages) || {}));
+  const cur = siteData().pagePublish;
+  const map = {};
+  if(cur && typeof cur === 'object'){
+    Object.keys(cur).forEach(k => {
+      if(!known.has(k) || k === key) return;
+      const row = cur[k] && typeof cur[k] === 'object' ? cur[k] : null;
+      if(!row) return;
+      const at = Number(row.at);
+      map[k] = { on: row.on === true, at: Number.isFinite(at) && at > 0 ? at : null };
+    });
+  }
+  map[key] = { on: next.on === true, at: next.at || null };
+
+  const patch = { pagePublish: map };
+  /* 桌次的開關本來就在 seatingFeatureEnabled，兩邊一起更新 */
+  if(key === 'seating') patch.seatingFeatureEnabled = next.on === true;
+
+  await DataStore.saveSiteFields(patch);
+  renderPageSettings();
+  if(key === 'seating') syncSeatFeatureUI();
+}
+
+function pageRowKey(el){
+  const box = el.closest('[data-page-row]');
+  return box ? box.dataset.pageRow : '';
+}
+
+if(pageListEl){
+  pageListEl.addEventListener('change', async (e)=>{
+    const el = e.target.closest('[data-page-on]');
+    if(!el) return;
+    const key = pageRowKey(el);
+    const on = el.checked;
+    el.disabled = true;
+    try{
+      /* 打開＝現在就公開，排程沒有意義了；關掉也一併清掉排程，
+         不然「關起來」過幾小時又自己開回來，那不是新人按下去的意思 */
+      await savePagePublish(key, { on, at: null });
+      toast(on ? '已開放，賓客現在看得到這一頁' : '已收起來，賓客看不到這一頁');
+    }catch(err){
+      /* 存不進去就把開關扳回原本的狀態，畫面不要和資料庫說不一樣的話 */
+      renderPageSettings();
+      writeFailed(err);
+    }
+  });
+
+  pageListEl.addEventListener('click', async (e)=>{
+    const openBtn = e.target.closest('[data-page-when]');
+    if(openBtn){
+      const box = openBtn.closest('[data-page-row]').querySelector('[data-page-sched]');
+      const show = box.hidden;
+      box.hidden = !show;
+      openBtn.setAttribute('aria-expanded', String(show));
+      if(show) box.querySelector('[data-page-at]').focus();
+      return;
+    }
+
+    const saveBtn = e.target.closest('[data-page-sched-save]');
+    if(saveBtn){
+      const key = pageRowKey(saveBtn);
+      const input = saveBtn.closest('[data-page-sched]').querySelector('[data-page-at]');
+      const at = new Date(input.value).getTime();
+      if(!input.value || !Number.isFinite(at)){
+        toast('請先選一個日期與時間', true);
+        return;
+      }
+      if(at <= Date.now()){
+        toast('這個時間已經過了，直接把上面的開關打開就好', true);
+        return;
+      }
+      await runSave(saveBtn, async ()=>{
+        await savePagePublish(key, { on:false, at });
+        toast(`已排程：${fmtTime(at)} 自動開啟`);
+      });
+      return;
+    }
+
+    const clearBtn = e.target.closest('[data-page-sched-clear]');
+    if(clearBtn){
+      const key = pageRowKey(clearBtn);
+      await runSave(clearBtn, async ()=>{
+        await savePagePublish(key, { on:false, at:null });
+        toast('已取消排程，這一頁維持收起來');
+      });
+    }
+  });
 }
 
 function renderHome(){

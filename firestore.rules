@@ -61,7 +61,7 @@ service cloud.firestore {
              /* 出席回覆頁的題目與區塊開關：只改變賓客看到的表單長什麼樣，
                 規則本身不拿它們做任何判斷（能不能寫回覆仍然只看
                 rsvpEnabled／rsvpDeadline，那兩個依舊改不動）。 */
-             'rsvpAskCard', 'rsvpAskGift', 'rsvpAskMessage',
+             'rsvpAskCard', 'rsvpAskGift', 'rsvpAskMessage', 'rsvpMailEnabled',
              'rsvpContactMethods', 'rsvpShowStory', 'rsvpShowGallery',
              /* 賓客標籤庫（VIP、長輩、大學同學…）：新人自己維護，
                 但「這個站台要不要用標籤」的總開關 guestTagsEnabled
@@ -78,6 +78,13 @@ service cloud.firestore {
                 OG 分享文字都還是讀那一份。 */
              'events',
              'seatingSearchEnabled', 'seatingFeatureEnabled', 'eventDate', 'updatedAt',
+             /* 頁面公開狀態（新人在後台首頁的「頁面設定」自己開關／排程）。
+                和 pages 不一樣：pages 是**我們**開了哪幾頁，是規則的判斷依據；
+                這一份只決定賓客現在看不看得到入口，規則一個字都不讀它
+                （和 seatingFeatureEnabled 同一個層級）。
+                所以新人把某一頁收起來時，已經送出的資料照樣進得來、
+                也不會因此得到任何本來沒有的權限。 */
+             'pagePublish',
            ])
         /* 只放行「幾點開始」：後台只送整個 Timestamp 進來（年月日沿用原本設定好的），
            日期本身還是要透過我們才能改，不然出席回覆的判斷、網址都可能跟著跑掉 */
@@ -112,10 +119,17 @@ service cloud.firestore {
            （桌次名單本來就只有新人寫得進去），所以放行給新人自己控制 —— 
            婚禮當天才打開，賓客就不會提早跑去找位子。 */
         && (!('seatingFeatureEnabled' in d) || d.seatingFeatureEnabled is bool)
+        /* 頁面公開狀態：key → { on: bool, at: number|null }。
+           規則語言逐筆檢查不了 map 裡的內容（和 schedule、guestTags 同一個限制），
+           所以只擋型別與筆數，每一筆在後台送出前先切好。 */
+        && (!('pagePublish' in d)
+            || (d.pagePublish is map && d.pagePublish.keys().size() <= 20))
         /* 出席回覆的題目開關，同理 */
         && (!('rsvpAskCard'    in d) || d.rsvpAskCard is bool)
         && (!('rsvpAskGift'    in d) || d.rsvpAskGift is bool)
         && (!('rsvpAskMessage' in d) || d.rsvpAskMessage is bool)
+        /* 有沒有「郵寄」這個選項（喜帖怎麼給、喜餅怎麼領） */
+        && (!('rsvpMailEnabled' in d) || d.rsvpMailEnabled is bool)
         && (!('rsvpShowStory'   in d) || d.rsvpShowStory is bool)
         && (!('rsvpShowGallery' in d) || d.rsvpShowGallery is bool)
         /* 要問哪幾種聯絡方式；最多就那三種，規則語言檢查不了每個元素的值，
@@ -523,7 +537,7 @@ service cloud.firestore {
          cardType     喜帖形式：paper／digital／none
          cardDelivery 紙本喜帖的給法：pickup／mail（其餘情況為空字串）
          cardZip／cardAddress    喜帖郵寄地址
-         giftDelivery 喜餅：pickup／mail
+         giftDelivery 喜餅：pickup（現場領取）／self（自行領取）／mail（郵寄）
          giftZip／giftAddress    喜餅郵寄地址
          note         其他備註
          meal         舊版表單的單一餐點欄位，保留相容
@@ -576,7 +590,7 @@ service cloud.firestore {
         && (!('cardZip' in data) || isStr(data.cardZip, 10))
         && (!('cardAddress' in data) || isStr(data.cardAddress, 200))
         && (!('cardEmail' in data) || isStr(data.cardEmail, 120))
-        && (!('giftDelivery' in data) || data.giftDelivery in ['pickup', 'mail', ''])
+        && (!('giftDelivery' in data) || data.giftDelivery in ['pickup', 'self', 'mail', ''])
         && (!('giftZip' in data) || isStr(data.giftZip, 10))
         && (!('giftAddress' in data) || isStr(data.giftAddress, 200))
         /* 賓客自己選的那一個標籤（單選，選填）。存的是標籤 id，

@@ -28,7 +28,7 @@ const LABELS = {
   relation:     { groom:'男方親友', bride:'女方親友', both:'雙方親友', other:'其他' },
   cardType:     { paper:'需要紙本喜帖', digital:'需要電子喜帖', none:'不需要喜帖' },
   cardDelivery: { pickup:'自行領取', mail:'郵寄' },
-  giftDelivery: { pickup:'現場領取', mail:'郵寄' },
+  giftDelivery: { pickup:'現場領取', self:'自行領取', mail:'郵寄' },
 };
 
 /* 多活動：每一場多出幾欄（出席／人數／素食／追加題目）。

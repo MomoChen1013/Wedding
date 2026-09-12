@@ -78,6 +78,56 @@ export function templateKey(name) {
   return Object.hasOwn(TEMPLATES, name) ? name : DEFAULT_TEMPLATE;
 }
 
+/* ============================================================
+   頁面公開狀態（sites.pagePublish）
+   ------------------------------------------------------------
+   `pages` 是**我們**幫這組新人開了哪幾頁（規則的判斷依據，新人改不動）。
+   這裡這一份是再往下一層：**新人自己決定「現在要不要讓賓客看到」**。
+
+     pagePublish = {
+       wall:       { on: true,  at: null },
+       quiz:       { on: false, at: null },          // 關著
+       exhibition: { on: false, at: 1774000000000 }, // 排程：時間到了自己打開
+     }
+
+   ・沒有這個欄位、或某一頁沒有自己的那一筆 → **視為公開**
+     （舊站台不會因為多了這個欄位就整站消失）
+   ・`on: true` → 現在就看得到
+   ・`on: false` ＋ `at` → 到了 `at`（epoch ms）自動公開。
+     刻意不做「時間到了寫回資料庫」那一套：沒有後端排程，
+     而且賓客每次開頁面都會重新判斷一次，比較誰都不會漏。
+   ・桌次比較特別：它的開關早就存在 `seatingFeatureEnabled`
+     （後台「桌次」分頁那一顆），所以這裡只接手它的排程時間，
+     開／關仍然讀那一個欄位 —— 兩個地方不會各自記一份然後對不起來。
+
+   和 `pages` 的差別還有一個：**它不參與 Security Rules 的判斷**。
+   規則只認我們開了哪幾頁（`pageOn()`），新人把某一頁收起來
+   只是賓客看不到入口、直接打網址會被導回大廳 —— 和
+   `seatingFeatureEnabled` 一樣是「畫面層」的開關。
+============================================================ */
+export function pagePublishEntry(site, key) {
+  const map = site && typeof site.pagePublish === 'object' && site.pagePublish
+    ? site.pagePublish : {};
+  const row = map && typeof map[key] === 'object' && map[key] ? map[key] : null;
+
+  const raw = row ? Number(row.at) : NaN;
+  const at = Number.isFinite(raw) && raw > 0 ? raw : null;
+
+  /* 桌次的開／關仍然是 seatingFeatureEnabled 那一個欄位 */
+  const on = key === 'seating'
+    ? site.seatingFeatureEnabled !== false
+    : (row ? row.on === true : true);
+
+  return { on, at };
+}
+
+/* 賓客現在看不看得到這一頁（只看新人這一層，`pages` 另外判斷） */
+export function pageVisible(site, key, now) {
+  const e = pagePublishEntry(site, key);
+  if (e.on) return true;
+  return e.at !== null && (now == null ? Date.now() : now) >= e.at;
+}
+
 /* ---------- 把站台設定攤平成各頁看得懂的 WED ---------- */
 const WEEKDAYS = ['日','一','二','三','四','五','六'];
 
@@ -157,8 +207,9 @@ export function buildWed(site) {
     entryLogin: site.entryLoginEnabled === true,
     /* 沒設定過就視為開著，舊站台的桌次搜尋不會突然消失 */
     seatingSearch: site.seatingSearchEnabled !== false,
-    /* 桌次功能的總開關，同樣是沒設定過就視為開著 */
-    seatingFeature: site.seatingFeatureEnabled !== false,
+    /* 桌次功能的總開關，同樣是沒設定過就視為開著；
+       新人排了「幾點自動開啟」的話，時間到了也算開著 */
+    seatingFeature: pageVisible(site, 'seating'),
     story: site.story || '',
     coverImageUrl: site.coverImageUrl || '',
     photos: Array.isArray(site.photos) ? site.photos : [],

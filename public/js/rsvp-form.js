@@ -25,7 +25,11 @@
     phone: 30, line: 60, email: 120, guest: 10, child: 10,
   };
 
+  /* 選項的文字只有一份（common.js 的 RSVP_OPTIONS），
+     但「這一題現在要給賓客看哪幾個」由 rsvpOptions() 決定 ——
+     新人把郵寄關掉時，喜帖與喜餅各少一個選項。 */
   function opts(key) {
+    if (typeof rsvpOptions === 'function') return rsvpOptions(key);
     return (window.RSVP_OPTIONS && window.RSVP_OPTIONS[key]) || [];
   }
 
@@ -371,6 +375,10 @@ ${messageBlock}
   <p id="tkMsg">謝謝你，我們超期待與你相見</p>
   <!-- 多活動時逐條列出每一場的答案（單一活動不會出現這一塊） -->
   <ul class="tk-events" id="tkEvents" hidden></ul>
+  <!-- 回覆完就是這一頁的終點了，總得有下一步可以走：
+       去大廳看婚禮資訊，或直接翻兩人的故事。連結由 mount() 依
+       這組新人開了哪幾頁產生（沒開的那一頁不會出現死入口）。 -->
+  <div class="tk-next" id="tkNext" hidden></div>
   <button type="button" class="btn ghost small" id="editBtn">修改我的回覆</button>
 </div>
 
@@ -1136,8 +1144,12 @@ ${messageBlock}
       /* 新人事後把標籤拿掉或改成不當選項時，本機記的那個就當作沒選過 */
       state.tag = cfg.tagOptions.some((t) => t.id === mine.tag) ? mine.tag : null;
       state.card = mine.card || null;
-      state.cardDelivery = mine.cardDelivery || null;
-      state.gift = mine.gift || null;
+      /* 新人事後把郵寄關掉時，上一次選的「郵寄」就當作沒選過 ——
+         留著的話畫面上沒有任何按鈕是亮的，卻會展開地址欄 */
+      const stillThere = (group, v) => opts(group).some(([k]) => k === v);
+      state.cardDelivery = stillThere('cardDelivery', mine.cardDelivery)
+        ? mine.cardDelivery : null;
+      state.gift = stillThere('gift', mine.gift) ? mine.gift : null;
       state.head = mine.headcount || 1;
       state.veg = mine.veg || 0;
       state.childSeat = mine.childSeat || 0;
@@ -1195,6 +1207,30 @@ ${messageBlock}
       syncCounts();
       showThanks(mine);
     }
+
+    /* ---------- 結果卡的下一步 ----------
+       這一頁只剩表單，所以回覆完之後得有出口：大廳（婚禮資訊、
+       當日流程、照片集都在那裡）與兩人的故事。
+       「我們的故事」沒開給這組新人時就只留大廳那一顆。 */
+    function buildNext(){
+      const box = $('tkNext');
+      const S = window.SITE;
+      if (!box || !S || typeof S.pathFor !== 'function') return;
+
+      const acts = [];
+      if (typeof S.isEnabled !== 'function' || S.isEnabled('exhibition')) {
+        acts.push({ href: S.pathFor('exhibition'), label: '看我們的故事', ghost: true });
+      }
+      acts.push({ href: S.pathFor('lobby'), label: '回婚禮大廳', ghost: false });
+      if (!acts.length) return;
+
+      box.innerHTML = acts.map((a) =>
+        `<a class="btn small${a.ghost ? ' ghost' : ''}" href="${esc(a.href)}">${esc(a.label)}</a>`
+      ).join('');
+      box.hidden = false;
+    }
+    buildNext();
+
     restore();
 
     return { closed: false, state, config: cfg };

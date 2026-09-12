@@ -370,6 +370,8 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 | `.ad-hint` | 11.5px `--ink-soft`，說明**後果**不是重複欄位名 |
 | `.ad-field-err` | `#a4677a`，`:empty` 時不佔高度 |
 | `.ad-check` | checkbox ＋ 文字，`accent-color: --primary-deep` |
+| `.ad-toggle` | 開關：一顆真的 checkbox（鍵盤、讀螢幕都照舊）藏在上面，畫面上是 44×24 的軌道 ＋ 16px 的把手。**只用在「按下去就生效」的地方**（首頁的頁面設定），要按儲存才算數的維持 `.ad-check` |
+| `.ad-input-when` | `<input type="datetime-local">` 專用寬度（`max-width:240px`） |
 | `.ad-sub-sec` | 表單裡的小節：左邊一道細線，**不是一張卡** |
 
 > 輸入框的字級固定 16px：iOS Safari 只要聚焦 <16px 的欄位就會把整頁放大，
