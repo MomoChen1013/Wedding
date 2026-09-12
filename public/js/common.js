@@ -1684,11 +1684,24 @@ const NAV_ITEMS = [
    ・rsvp  ：邀請函是單獨分享出去的一頁，只留邀請函本身的內容 */
 const NO_NAV_PAGES = new Set(['admin', 'rsvp']);
 
+/* 開到幾個功能就把手機的導覽列收成漢堡。
+   實測（375／393／360px 的 Chromium）：連結列七項要 312px，但手機
+   實際分到的寬度只有 135–229px —— 新人姓名多兩個字吃掉 29px、還沒署名的
+   「留下名字」比署名後的頭像多吃 32px，各自都剛好是一項的寬度。
+   結果是第 4 項開始橫捲，而且不管開幾個，完整看得到的永遠只有 2–5 項。
+   橫捲在這裡撐不住：捲軸是藏起來的（見 common.css 的 .nav-links），
+   看不到的那幾項賓客不知道存在；連結熱區也只有 31.5px 高，放在橫捲容器裡，
+   手指斜一點就被判成捲動而不是點擊。
+   所以 4 項起改漢堡；3 項以內照舊橫排 —— 那時候全部看得到，漢堡只是
+   多要一次點擊。桌機不受影響，永遠是橫排。 */
+const NAV_DRAWER_MIN = 4;
+
 /* 入場前（大廳的 gate、信箱的登入畫面）先不顯示導覽列 */
 function setNavVisible(on){
   const nav = document.getElementById('siteNav');
   if(nav) nav.hidden = !on;
   document.body.classList.toggle('nav-off', !on);
+  if(!on) closeNavDrawer({ silent:true });
 }
 
 function buildSiteNav(){
@@ -1696,11 +1709,19 @@ function buildSiteNav(){
   if(!S || document.getElementById('siteNav')) return;
 
   const couple = (window.WED && window.WED.couple) || '婚禮';
-  const links = NAV_ITEMS
-    .filter(it => S.isEnabled(it.key))
+  const items = NAV_ITEMS.filter(it => S.isEnabled(it.key));
+  const links = items
     .map(it => `<a class="nav-link${it.key === S.page ? ' current' : ''}" `
               + `href="${S.pathFor(it.key)}">${escapeHtml(it.label)}</a>`)
     .join('');
+
+  /* 連結列與抽屜兩份都畫進 DOM，由 CSS 決定哪一份生效（桌機橫排、
+     手機抽屜），另一份是 display:none —— 同一時間只有一份看得到、
+     也只有一份進得了 tab 順序與朗讀。 */
+  const useDrawer = items.length >= NAV_DRAWER_MIN;
+  /* 收進抽屜之後，列上就沒有 .current 那條底線了；
+     「我現在在哪一頁」要另外有人講，所以把頁名補在新人名字旁邊。 */
+  const here = useDrawer ? items.find(it => it.key === S.page) : null;
 
   /* 還沒留過名字的訪客不該看到「朋友 ▾ / 登出（換一位賓客）」—— 他根本沒登入過。
      取而代之的是一顆很輕的「留下名字」：想主動署名的人有地方按，
@@ -1721,14 +1742,19 @@ function buildSiteNav(){
       </div>`;
 
   const nav = document.createElement('header');
-  nav.className = 'site-nav';
+  nav.className = useDrawer ? 'site-nav has-drawer' : 'site-nav';
   nav.id = 'siteNav';
   nav.innerHTML = `
     <nav class="nav-inner">
+      ${useDrawer ? `<button class="nav-burger" id="navBurger" type="button"
+        aria-label="開啟選單" aria-expanded="false" aria-controls="navDrawer"
+        ><span></span><span></span><span></span></button>` : ''}
       <a class="nav-brand" href="${S.pathFor('lobby')}">${escapeHtml(couple)}</a>
+      ${here ? `<span class="nav-here">${escapeHtml(here.label)}</span>` : ''}
       <div class="nav-links">${links}</div>${userBox}
     </nav>`;
   document.body.insertBefore(nav, document.body.firstChild);
+  if(useDrawer) buildNavDrawer(items);
 
   syncNavUser();
 
@@ -1761,13 +1787,100 @@ function buildSiteNav(){
   setNavVisible(!(gate && gate.style.display !== 'none'));
 }
 
+/* ---------- 手機的漢堡抽屜（功能開到 NAV_DRAWER_MIN 以上才長出來） ----------
+   抽屜與遮罩掛在 body 上，不放進 .site-nav 裡面：導覽列有 backdrop-filter，
+   那會讓它變成 fixed 子孫的定位基準，遮罩會被關進 52px 高的那一條裡面。 */
+let navDrawerOpen = false;
+let navDrawerMq   = null;
+
+function buildNavDrawer(items){
+  const S = window.SITE;
+  const row = (key, label) =>
+    `<a class="nav-drawer-item${key === S.page ? ' is-on' : ''}"`
+    + ` href="${S.pathFor(key)}"${key === S.page ? ' aria-current="page"' : ''}`
+    + `>${escapeHtml(label)}</a>`;
+
+  const mask = document.createElement('div');
+  mask.className = 'nav-drawer-mask';
+  mask.id = 'navDrawerMask';
+
+  const drawer = document.createElement('nav');
+  drawer.className = 'nav-drawer';
+  drawer.id = 'navDrawer';
+  drawer.setAttribute('aria-label', '網站導覽');
+  /* 抽屜打開時會蓋住漢堡鈕，所以自己帶一顆關得掉的 ✕（後台的側欄同理）。
+     首頁擺第一個：新人名字那顆連結也在抽屜底下，這裡要有路回得去。 */
+  drawer.innerHTML =
+    `<button class="nav-drawer-close" id="navDrawerClose" type="button"
+       aria-label="關閉選單">✕</button>`
+    + row('lobby', '首頁')
+    + items.map(it => row(it.key, it.label)).join('');
+
+  document.body.appendChild(mask);
+  document.body.appendChild(drawer);
+
+  const burger = document.getElementById('navBurger');
+  burger.addEventListener('click', ()=>{
+    navDrawerOpen ? closeNavDrawer() : openNavDrawer();
+  });
+  mask.addEventListener('click', ()=> closeNavDrawer());
+  drawer.querySelector('#navDrawerClose').addEventListener('click', ()=> closeNavDrawer());
+
+  /* 轉成橫向、或在平板上把視窗拉寬，橫排會回來 —— 這時抽屜還開著就是
+     一塊蓋住半個畫面、卻沒有入口可以關的東西 */
+  if(!navDrawerMq){
+    navDrawerMq = window.matchMedia('(max-width:720px)');
+    navDrawerMq.addEventListener('change', (e)=>{
+      if(!e.matches) closeNavDrawer({ silent:true });
+    });
+  }
+}
+
+const onNavDrawerKey = (e) => {
+  if(e.key === 'Escape'){ e.stopPropagation(); closeNavDrawer(); }
+};
+
+function openNavDrawer(){
+  const drawer = document.getElementById('navDrawer');
+  if(!drawer || navDrawerOpen) return;
+  navDrawerOpen = true;
+  drawer.classList.add('is-open');
+  document.getElementById('navDrawerMask').classList.add('is-on');
+  const burger = document.getElementById('navBurger');
+  if(burger) burger.setAttribute('aria-expanded', 'true');
+  /* Esc 收起來。用 capture 才不會被頁面上其他的 Esc 處理搶先（同 askName） */
+  document.addEventListener('keydown', onNavDrawerKey, true);
+  document.getElementById('navDrawerClose').focus({ preventScroll:true });
+}
+
+/* silent：不是使用者自己關的（入場前收起導覽列、視窗拉寬回橫排），
+   這種時候把焦點丟回漢堡鈕反而會把畫面捲回最上面 */
+function closeNavDrawer(opts){
+  if(!navDrawerOpen) return;
+  navDrawerOpen = false;
+  const drawer = document.getElementById('navDrawer');
+  const mask   = document.getElementById('navDrawerMask');
+  if(drawer) drawer.classList.remove('is-open');
+  if(mask)   mask.classList.remove('is-on');
+  document.removeEventListener('keydown', onNavDrawerKey, true);
+  const burger = document.getElementById('navBurger');
+  if(burger){
+    burger.setAttribute('aria-expanded', 'false');
+    if(!(opts && opts.silent)) burger.focus({ preventScroll:true });
+  }
+}
+
 /* 從沒名字變成有名字（入場登入關著的站台，在祝福牆填完名字）時，
    整塊 User 要重新長出來 —— syncNavUser() 只改得動已經存在的節點 */
 function refreshSiteNav(){
   const nav = document.getElementById('siteNav');
   if(!nav) return;                       /* 沒有導覽列的頁面（邀請函／後台）不用管 */
   const visible = !nav.hidden;
+  closeNavDrawer({ silent:true });
   nav.remove();
+  /* 抽屜與遮罩是 body 的子節點，不會跟著 nav 一起被拿掉 */
+  document.getElementById('navDrawer')?.remove();
+  document.getElementById('navDrawerMask')?.remove();
   buildSiteNav();
   setNavVisible(visible);
 }

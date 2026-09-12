@@ -3165,6 +3165,105 @@ for(const key of ['', 'wall', 'invitation', 'quiz', 'seating', 'letter', 'exhibi
   await page.close();
 }
 
+/* ---------- 手機導覽列：功能多的時候收成漢堡 ----------
+   為什麼是 4：見 js/common.js 的 NAV_DRAWER_MIN。這裡守住兩件事 ——
+   超過門檻要真的收起來（而不是又變回一列點不到的橫捲），
+   沒超過的站台不能被波及（3 項以內橫排看得完，漢堡只是多一次點擊）。 */
+console.log('\n[8b] 手機導覽列的漢堡選單');
+{
+  const PHONE = { viewport:{ width:375, height:812 } };
+
+  /* SLUG 是全開的站台：導覽列七項（rsvp 不進導覽列），超過門檻 */
+  const { page, errors } = await visit(`/w/${SLUG}/letter`, { pageOpts: PHONE });
+  await page.waitForSelector('#navBurger', { timeout: 10000 }).catch(() => {});
+
+  ok('七項功能：手機收成漢堡，連結列不出現',
+    (await page.locator('#navBurger').count()) === 1
+    && !(await page.isVisible('#siteNav .nav-links')));
+  ok('列上補了當前頁名（底線收進抽屜之後，總要有人講在哪一頁）',
+    (await page.locator('.nav-here').textContent()) === '給你的信');
+  ok('導覽列不再溢出',
+    await page.evaluate(() => {
+      const el = document.querySelector('.nav-inner');
+      return el.scrollWidth - el.clientWidth <= 1;
+    }));
+
+  /* 關著的時候不能還躲在 tab 順序與朗讀裡 */
+  ok('抽屜關著時是 visibility:hidden',
+    await page.evaluate(() =>
+      getComputedStyle(document.getElementById('navDrawer')).visibility === 'hidden'));
+
+  await page.click('#navBurger');
+  await page.waitForTimeout(360);
+  ok('點漢堡打開抽屜',
+    await page.evaluate(() =>
+      document.getElementById('navDrawer').classList.contains('is-open')
+      && getComputedStyle(document.getElementById('navDrawer')).visibility === 'visible'));
+  ok('漢堡鈕的 aria-expanded 跟著變',
+    (await page.getAttribute('#navBurger', 'aria-expanded')) === 'true');
+
+  const rows = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('#navDrawer .nav-drawer-item'))
+      .map((a) => ({ t:a.textContent, h:a.getBoundingClientRect().height,
+                     on:a.classList.contains('is-on') })));
+  ok('抽屜列出首頁＋七項功能', rows.length === 8, `${rows.length} 項`);
+  /* 這一版的重點：原本的連結只有 31.5px，還擺在會橫捲的容器裡 */
+  ok('抽屜每一項熱區 ≥44px', rows.every((r) => r.h >= 44),
+    rows.map((r) => Math.round(r.h)).join(','));
+  ok('抽屜標出當前頁',
+    rows.filter((r) => r.on).length === 1 && rows.find((r) => r.on).t === '給你的信');
+
+  /* 點遮罩露出來的那一側（抽屜壓在畫面左邊，遮罩的正中心在它底下，
+     真人也是點右邊那塊空白才關得掉） */
+  const bare = await page.evaluate(() => {
+    const d = document.getElementById('navDrawer').getBoundingClientRect();
+    return { x: Math.round((d.right + window.innerWidth) / 2), y: 400 };
+  });
+  await page.mouse.click(bare.x, bare.y);
+  await page.waitForTimeout(360);
+  ok('點抽屜外面關得掉',
+    await page.evaluate(() =>
+      !document.getElementById('navDrawer').classList.contains('is-open')),
+    `點在 x=${bare.x}`);
+
+  await page.click('#navBurger');
+  await page.waitForTimeout(360);
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(360);
+  ok('Esc 也關得掉',
+    await page.evaluate(() =>
+      !document.getElementById('navDrawer').classList.contains('is-open'))
+    && (await page.getAttribute('#navBurger', 'aria-expanded')) === 'false');
+  ok('漢堡選單無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+
+  /* 桌機不受影響：同一個站台照舊橫排 */
+  const wide = await newPage({ viewport:{ width:1024, height:768 } });
+  await wide.goto(`${BASE}/w/${SLUG}/letter`, { waitUntil:'domcontentloaded' });
+  await wide.waitForFunction(() => document.documentElement.dataset.siteReady === '1',
+    null, { timeout: 20000 }).catch(() => {});
+  ok('桌機照舊七項橫排、沒有漢堡',
+    await wide.evaluate(() =>
+      document.querySelectorAll('#siteNav .nav-link').length === 7
+      && getComputedStyle(document.querySelector('#siteNav .nav-links')).display !== 'none'
+      && getComputedStyle(document.getElementById('navBurger')).display === 'none'
+      && getComputedStyle(document.getElementById('navDrawer')).display === 'none'));
+  await wide.close();
+
+  /* 門檻以下的站台不能被波及：no-login-2027 只開桌次與祝福 */
+  const few = await newPage(PHONE);
+  await few.goto(`${BASE}/w/no-login-2027/`, { waitUntil:'domcontentloaded' });
+  await few.waitForSelector('#app', { state:'visible', timeout: 20000 }).catch(() => {});
+  ok('只開兩項的站台維持橫排、不長漢堡',
+    await few.evaluate(() =>
+      document.querySelectorAll('#siteNav .nav-link').length === 2
+      && !document.getElementById('navBurger')
+      && !document.getElementById('navDrawer')
+      && getComputedStyle(document.querySelector('#siteNav .nav-links')).display !== 'none'));
+  await few.close();
+}
+
 /* ---------- 排桌管理 ---------- */
 console.log('\n[21] 後台排桌管理');
 {

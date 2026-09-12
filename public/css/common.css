@@ -309,11 +309,19 @@ body.nav-off{padding-top:0;}
   padding:6px 12px;white-space:nowrap;transition:border-color .2s,color .2s;}
 .nav-signin:hover{border-color:var(--ink);color:var(--ink);}
 
+/* ---------- 手機的漢堡選單 ----------
+   功能開到 4 個以上（js/common.js 的 NAV_DRAWER_MIN），手機這一列就換成
+   漢堡＋抽屜，.site-nav 會多一個 .has-drawer。為什麼是 4：見那支檔案裡的
+   量測註解 —— 一句話是第 4 項開始橫捲，而橫捲在這個寬度撐不住。
+
+   桌機不受影響：下面三條只在 @media(max-width:720px) 裡面打開，
+   這裡先一律 display:none，連結列照舊橫排。 */
+.nav-burger,.nav-here,.nav-drawer,.nav-drawer-mask{display:none;}
+
 @media(max-width:720px){
   :root{--nav-h:52px;}
   .nav-inner{gap:12px;padding:0 12px;}
-  /* 新人姓名是兩個中文名字加 &，8em 會被切掉，留寬一點；
-     擠到的話 .nav-links 本來就可以橫向捲動 */
+  /* 新人姓名是兩個中文名字加 &，8em 會被切掉，留寬一點 */
   .nav-brand{font-size:13.5px;letter-spacing:.08em;max-width:13em;overflow:hidden;text-overflow:ellipsis;}
   .nav-links{gap:16px;}
   .nav-link{font-size:12.5px;letter-spacing:.08em;}
@@ -321,6 +329,63 @@ body.nav-off{padding-top:0;}
   .nav-user-btn{padding:5px;}
   /* 手機的導覽列本來就擠，這顆只是「想署名的人有地方按」，不該搶走連結的位置 */
   .nav-signin{font-size:11.5px;letter-spacing:.04em;padding:5px 9px;}
+
+  /* ---- 收成漢堡的那一版 ---- */
+  .site-nav.has-drawer .nav-links{display:none;}
+  /* 連結列不見了就沒人把 User 推到右邊，改由它自己靠右 */
+  .site-nav.has-drawer .nav-user{margin-left:auto;}
+  /* 左邊多了一顆漢堡，名字要讓得出空間（本來是 flex:0 0 auto 不縮） */
+  .site-nav.has-drawer .nav-brand{flex:0 1 auto;min-width:0;}
+
+  /* 熱區 44×44（對齊後台 .ad-menu-btn 與 ui-consistency 的門檻），
+     但圖示只有 17px 寬；負的 margin 把按鈕吃回容器的 12px 留白，
+     線條才會跟頁面左緣對齊，而不是縮在 25px 的地方 */
+  .nav-burger{display:flex;flex-direction:column;justify-content:center;gap:4px;
+    width:44px;height:44px;padding:0;margin-left:-12px;flex:0 0 auto;
+    background:none;border:none;cursor:pointer;}
+  .nav-burger span{display:block;width:17px;height:1px;background:var(--ink);margin:0 auto;}
+
+  /* 「現在在哪一頁」：底線收進抽屜之後，改由名字旁邊這個字講 */
+  .site-nav.has-drawer .nav-here{display:block;flex:0 1 auto;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    font-size:12.5px;letter-spacing:.08em;color:var(--ink-soft);}
+  .site-nav.has-drawer .nav-here::before{content:'／';margin-left:-4px;opacity:.45;}
+
+  /* 抽屜本體。z-index 夾在導覽列(950)與「留下名字」那張底卡(1200)中間：
+     蓋得過導覽列，但署名的底卡永遠在最上面 */
+  .nav-drawer{display:flex;flex-direction:column;
+    position:fixed;top:0;left:0;bottom:0;z-index:1100;
+    width:min(76vw,272px);
+    background:var(--bg1);border-right:1px solid var(--line);
+    box-shadow:2px 0 34px rgba(var(--ink-rgb),.16);
+    padding:calc(10px + env(safe-area-inset-top)) 10px calc(16px + env(safe-area-inset-bottom));
+    /* visibility 一起換：收起來的時候只是移到畫面外，不關掉的話
+       它照樣按得到、也還在 tab 順序與朗讀裡 */
+    transform:translateX(-100%);visibility:hidden;
+    transition:transform .28s cubic-bezier(.22,.9,.3,1),visibility 0s linear .28s;}
+  .nav-drawer.is-open{transform:none;visibility:visible;
+    transition:transform .28s cubic-bezier(.22,.9,.3,1),visibility 0s;}
+
+  .nav-drawer-close{align-self:flex-end;width:44px;height:44px;margin-bottom:4px;
+    background:none;border:none;cursor:pointer;
+    font-family:inherit;font-size:19px;line-height:1;color:var(--ink-soft);}
+
+  /* 每一項都是 44px 高的整條熱區 —— 這一版的重點就在這裡：
+     原本的連結只有 31.5px，還擺在會橫捲的容器裡 */
+  .nav-drawer-item{display:flex;align-items:center;min-height:44px;
+    padding:0 14px;border-left:2px solid transparent;border-radius:var(--radius);
+    font-size:14px;letter-spacing:.12em;color:var(--ink-soft);text-decoration:none;
+    transition:color .2s,background .2s,border-color .2s;}
+  .nav-drawer-item.is-on{color:var(--ink);font-weight:500;
+    background:var(--surface);border-left-color:var(--primary-deep);}
+
+  .nav-drawer-mask{display:block;position:fixed;inset:0;z-index:1090;
+    background:rgba(var(--ink-rgb),.26);opacity:0;pointer-events:none;
+    /* 遮罩擋住的不只是點擊：不寫這兩條，手指在遮罩上滑，
+       底下那一頁還是會跟著捲 */
+    overscroll-behavior:contain;touch-action:none;
+    transition:opacity .28s ease;}
+  .nav-drawer-mask.is-on{opacity:1;pointer-events:auto;}
 }
 
 /* ============================================================
