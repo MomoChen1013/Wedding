@@ -1,5 +1,31 @@
 {
   "slug": "ivory",
   "cover": "/assets/ivory/cover.jpg",
-  "lobby": "/assets/ivory/lobby.jpg"
+  "lobby": "/assets/ivory/lobby.jpg",
+  "gallery": [
+    {
+      "src": "/assets/ivory/gallery/01.jpg",
+      "order": 1
+    },
+    {
+      "src": "/assets/ivory/gallery/gallery02.jpg",
+      "order": 2
+    },
+    {
+      "src": "/assets/ivory/gallery/gallery03.jpg",
+      "order": 3
+    },
+    {
+      "src": "/assets/ivory/gallery/gallery04.jpg",
+      "order": 4
+    },
+    {
+      "src": "/assets/ivory/gallery/gallery05.jpg",
+      "order": 5
+    },
+    {
+      "src": "/assets/ivory/gallery/gallery06.jpg",
+      "order": 6
+    }
+  ]
 }
