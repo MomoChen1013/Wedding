@@ -3603,11 +3603,9 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:11px;}
   border:1px solid var(--line);border-radius:999px;padding:2px 9px;
   font-size:11px;letter-spacing:.08em;line-height:1.7;
   color:var(--ink-soft);background:var(--bg2);}
-/* 「已套用」這種「正在生效」的狀態：和品牌色同一支，但用面不用字
+/* 「主要活動」這種「正在生效」的狀態：和品牌色同一支，但用面不用字
    （--primary-deep 當小字對比不足，見 UI-SPEC 的已知落差） */
 .ad-badge.is-on{color:var(--ink);border-color:var(--primary);background:var(--primary-soft);}
-/* 「僅此場次停用」＝這一格和全域設定不一樣，要被看到 */
-.ad-badge.is-warn{color:#8a5765;border-color:rgba(164,103,122,.45);background:#fdf6f7;}
 
 /* ---------- 一列設定 ＋ 它的狀態 ----------
    .ad-check 自己是 flex 而且帶 margin-top，直接塞一顆 Badge 進去會被拉開，
@@ -3692,28 +3690,33 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:11px;}
 .ad-actlist{display:flex;flex-direction:column;gap:16px;margin-top:18px;}
 .ad-actcard{border:1px solid var(--line);border-radius:var(--radius);
   background:var(--surface);padding:14px 16px 16px;}
-/* 不用回覆的活動：整張淡出視野（和名單上「無法出席」同一套做法），
+/* 不用回覆的行程：整張淡出視野（和名單上「無法出席」同一套做法），
    但不隱藏 —— 新人要看得到它還在，只是不在表單裡 */
 .ad-actcard.is-off{background:var(--bg2);}
-.ad-actcard-head{display:flex;align-items:flex-start;gap:10px 14px;flex-wrap:wrap;}
+/* 一行放得下就一行：要不要回覆 → 名稱 → 時間地點 → 編輯。
+   放不下時時間地點自己換行（它是唯一可以掉下去而不影響操作的東西）。 */
+.ad-actcard-head{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;
+  padding-bottom:12px;border-bottom:1px solid var(--line-soft);}
+.ad-actcard-rsvp{flex:0 0 auto;margin-top:0;}
 .ad-actcard-id{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0;}
 .ad-actcard-name{font-family:var(--font-display);font-weight:500;font-size:15px;
   letter-spacing:.1em;color:var(--ink);}
-.ad-actcard-meta{flex:1 1 100%;display:flex;flex-direction:column;gap:3px;min-width:0;}
+.ad-actcard-meta{flex:1 1 200px;display:flex;flex-direction:column;gap:3px;min-width:0;}
 .ad-actcard-when{font-size:12.5px;color:var(--ink-soft);
   font-variant-numeric:tabular-nums;letter-spacing:.04em;}
 .ad-actcard-where{font-size:12px;line-height:1.8;color:var(--ink-soft);}
 .ad-actcard-where.is-empty{opacity:.75;}
-.ad-actcard-acts{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-  margin-top:12px;padding-top:12px;border-top:1px solid var(--line-soft);}
-.ad-actcard-acts > .ad-check{margin-top:0;}
-.ad-actcard-acts .btn{margin-left:auto;}
+.ad-actcard-head > .btn{flex:0 0 auto;margin-left:auto;}
 .ad-actcard-body{margin-top:2px;}
 .ad-actcard-body .ad-sub-sec{margin-top:18px;}
 .ad-actcard-note{margin:14px 0 0;font-size:12px;line-height:1.9;color:var(--ink-soft);}
 @media(max-width:560px){
   .ad-actcard{padding:12px 13px 14px;}
-  .ad-actcard-acts .btn{margin-left:0;}
+  /* 手機上「名稱＋時間」自己一段，編輯鈕退到下一行的最左邊 */
+  .ad-actcard-head{align-items:flex-start;}
+  .ad-actcard-rsvp{flex:1 1 100%;}
+  .ad-actcard-meta{flex:1 1 100%;}
+  .ad-actcard-head > .btn{margin-left:0;}
 }
 
 /* ---------- 本場次專屬問題 ----------

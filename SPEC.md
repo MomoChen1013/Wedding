@@ -121,8 +121,9 @@ sites/{siteId}
   rsvpAskGift     : boolean  # 要不要問「喜餅領取方式」
   rsvpAskMessage  : boolean  # 要不要問「想對新人說的話」
   rsvpAskNote     : boolean  # 要不要問「其他備註」
-  # ↓ 基本問題的**全域**開關（不分活動）。events[].ask* 是單一場次的
-  #   override，只能往下關：效果值 = 這裡 && events[].askX（見 eventAsks()）
+  # ↓ 基本問題的開關。站台還沒有 events[] 時（合成出來的那一張活動卡）
+  #   四題沒有別的地方存，就存這裡；效果值 = 這裡 && events[].askX
+  #   （見 common.js 的 eventAsks()）
   rsvpAskCount    : boolean  # 要不要問「包含你，共幾位出席？」
   rsvpAskMeal     : boolean  # 要不要問餐點分配（葷／素）
   rsvpAskChildSeat: boolean  # 要不要問兒童座椅
@@ -340,7 +341,7 @@ short/{code}                # 短連結
 | `venueName`／`address`／`mapUrl` | 這個活動自己的地點。`mapUrl` 留白時前端用 `address` 組 Google Maps |
 | `desc` | 活動說明，≤300 |
 | `requiresRsvp` | `false` 時出現在婚禮流程／邀請函，**但不出現在 RSVP 表單**（文訂、迎娶通常是這樣） |
-| `askCount`／`askMeal`／`askChildSeat`／`askDiet` | 這個活動**要不要少問**這一題（證婚通常沒有餐）。★ 它是 **override**：效果值＝站台的 `rsvpAsk*`（全域）**且** 這一欄，見下方「兩層開關」 |
+| `askCount`／`askMeal`／`askChildSeat`／`askDiet` | 這一場要不要問這一題（證婚通常沒有餐）。★ 效果值＝這一欄 **且** 站台的 `rsvpAsk*`，見下方說明 |
 | `questions` | 這個活動自己的題目，≤3；見下方 |
 
 **為什麼日期時間存字串不存 Timestamp**：一來 `schedule[].time` 本來就是字串，
@@ -352,20 +353,21 @@ short/{code}                # 短連結
 它們代表**主要活動**（婚宴）。倒數計時、`rsvpDeadline` 的比較、OG 分享文字
 都還是讀那一份，所以既有站台不會因為多了 `events` 就變樣。
 
-**基本問題的兩層開關**：「出席人數／餐點分配／兒童座椅／飲食習慣補充」
-問的是同一件事，所以**全域一份**（站台文件的 `rsvpAskCount`／`rsvpAskMeal`／
-`rsvpAskChildSeat`／`rsvpAskDiet`，沒設定過＝開著），`events[].ask*` 是
-**單一場次的 override，只能往下關**：
+**基本問題的開關存在兩個地方，但畫面上只有一個勾選框**：
+「出席人數／餐點分配／兒童座椅／飲食習慣補充」原則上存在 `events[].ask*`
+（那是「這一場要不要問」）；但站台還沒有 `events[]` 時（只辦一場婚宴、
+從沒在後台存過活動的那 80%），活動卡是 `mainEventFromSite()` 合成出來的、
+存不回去，所以那四題寫回站台文件的 `rsvpAskCount`／`rsvpAskMeal`／
+`rsvpAskChildSeat`／`rsvpAskDiet`（沒設定過＝開著）。兩份疊起來才是效果值：
 
 ```
 效果值 = sites.rsvpAskX !== false  &&  events[].askX !== false
 ```
 
-收斂在 `common.js` 的 `eventAsks()`／`rsvpEventsAsked()`，賓客表單與後台統計
-讀的都是它。**後台編輯時讀的仍然是 `events[]` 原本那一份**（override 本身）——
-不然全域一關，個別場次的設定就會被效果值覆蓋掉。
-後台的畫法見 `docs/RSVP-FORM-UX.md`：全域那一層在活動卡**上面**，
-單一場次被關掉的那一列掛「僅此場次停用」，並且給得回去。
+收斂在 `common.js` 的 `eventAsks()`／`rsvpEventsAsked()`，賓客表單、後台統計
+與後台那個勾選框讀的都是它 —— 所以「畫面上打勾」＝「賓客真的看得到」。
+後台**刻意不做一層「所有場次」的總開關**（見 `docs/RSVP-FORM-UX.md`）：
+那要新人先分辨「我改的是全部還是只有這一場」，而那正是要解決的問題本身。
 
 **`events[].questions`（活動自己的題目）**：題型三種（`choice` 單選／
 `multi` 多選／`text` 簡答）、每個活動最多 3 題、選擇題最多 8 個選項，一律選填。
@@ -1347,8 +1349,8 @@ allow read: if request.auth != null
 表單只在要動它的時候才出現。
 彈窗裡叫得出裁切器（故事牆的照片），所以裁切器的 z-index 壓在所有彈窗之上。
 
-**「表單設定」整頁不跳頁**：它管的是三種不同層級的設定（只屬於某一場的、
-所有場次共用的、不分活動的），所以資訊架構就照那三層排，
+**「表單設定」整頁不跳頁**：它管的是兩種層級的設定（只屬於某一場的、
+不分活動的），所以資訊架構就照那兩層排，
 需要進一步設定時開彈窗 —— 而不是把新人送去另一個分頁再叫他自己找回來。
 每一組的標題就要回答「這個設定會影響誰」；
 元件的選法（Checkbox／Switch／Radio／Badge／Chips／Conditional Reveal）

@@ -361,20 +361,20 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 
 ```html
 <div class="ad-askrow">
-  <label class="ad-check"><input type="checkbox"><span>餐點分配</span></label>
-  <span class="ad-badge is-on">來自所有場次</span>
+  <label class="ad-check is-fixed"><input type="checkbox" checked disabled><span>與新人的關係？</span></label>
+  <span class="ad-badge">固定題目</span>
 </div>
 ```
 
 | 變體 | 樣子 | 用在哪 |
 |---|---|---|
-| `.ad-badge` | `--bg2` 底 ＋ `--line` 框 ＋ `--ink-soft` | 系統固定、必填、活動種類 |
-| `.ad-badge.is-on` | `--primary-soft` 底 ＋ `--primary` 框 ＋ `--ink` | 正在生效（已套用、主要活動） |
-| `.ad-badge.is-warn` | `#fdf6f7` 底 ＋ 危險色的字 | 這一格和全域設定不一樣（僅此場次停用） |
+| `.ad-badge` | `--bg2` 底 ＋ `--line` 框 ＋ `--ink-soft` | 固定題目、活動種類 |
+| `.ad-badge.is-on` | `--primary-soft` 底 ＋ `--primary` 框 ＋ `--ink` | 正在生效（主要活動） |
 
-和 `.ad-tag`（3.5）的分工：**`.ad-tag` 講「這一筆資料是什麼」，Badge 講
-「這個設定現在的狀態」。** 所以 Badge 更小、更輕，而且永遠跟在一個控制項旁邊
-（包在 `.ad-askrow` 裡），不會單獨佔一列。
+和 `.ad-tag`（3.5）的分工：**`.ad-tag` 講「這一筆資料是什麼」（題型、
+現在有幾個選項），Badge 講「這個題目關不掉」或「這一筆不一樣」。**
+所以 Badge 更小、更輕，而且永遠跟在一個控制項旁邊（包在 `.ad-askrow` 裡），
+不會單獨佔一列。
 
 > `--primary-deep` 當小字的對比只有 2.57:1（見「已知落差」），所以 `.is-on`
 > 用**面**（`--primary-soft`）強調，字仍然是 `--ink`。
