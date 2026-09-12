@@ -598,7 +598,7 @@ function renderExploreCards(){
 }
 
 /* ============================================================
-   Gallery 照片迴廊
+   Moments 相遇之間
    ------------------------------------------------------------
    本來是 Explore 的最後一張卡（點開才跳出一疊照片）。但照片不是
    「另一個可以去玩的活動」，它就是這場婚禮本身 —— 藏在一張卡後面，
@@ -668,7 +668,7 @@ function renderPhotoGallery(){
     frame.appendChild(img);
     item.appendChild(frame);
     item.addEventListener('click', () => openInfoModal({
-      title: '照片迴廊',
+      title: '相遇之間',
       sub: photos.length > 1 ? `第 ${i + 1} 張，共 ${photos.length} 張` : '',
       imgSrc: src, photo: true,
     }));
@@ -735,7 +735,7 @@ function openInfoModal({ title, sub, bodyText, imgSrc, grid, photo }){
   const bodyEl = document.getElementById('lcModalBody');
   bodyEl.innerHTML = '';
   /* 一次給一疊圖時排成兩欄（Dress Code 的「查看更多」）；交通資訊與
-     照片迴廊的單張放大是「一張圖配一段說明」，維持整欄一張 */
+     「相遇之間」的單張放大是「一張圖配一段說明」，維持整欄一張 */
   bodyEl.classList.toggle('is-grid', !!grid);
   /* 迴廊點開的那一張是「把照片看清楚」：整張放進來、不裁切。
      交通圖與 Dress Code 是配著文字看的示意圖，維持原本的定高裁切。 */
@@ -775,7 +775,7 @@ document.addEventListener('data:explore', renderExploreCards);
 DataStore.subscribeExplore();
 renderExploreCards();
 
-/* 照片迴廊的照片來自站台設定（同步就有），和 Explore 的自訂卡片
+/* 「相遇之間」的照片來自站台設定（同步就有），和 Explore 的自訂卡片
    是兩件事，所以自己畫自己的 */
 renderPhotoGallery();
 

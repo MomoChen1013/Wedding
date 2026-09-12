@@ -238,9 +238,9 @@
 .rsvp-cta .btn{display:inline-block;width:auto;text-decoration:none;padding:14px 34px;}
 
 /* ============================================================
-   Gallery 照片迴廊
+   Moments 相遇之間
    ------------------------------------------------------------
-   一條往下走的照片迴廊：兩欄錯落，捲到哪一張才載哪一張
+   一條往下走的照片長廊：兩欄錯落，捲到哪一張才載哪一張
    （src 由 js/index.js 補上），進場是淡入 ＋ 往上浮一小段。
 
    為什麼用 columns 而不是 grid：照片有直有橫，grid 的同一列會被
@@ -376,7 +376,7 @@
 /* 一次給一疊圖時排成兩欄，看得到多一點（Dress Code 的「查看更多」） */
 .lc-modal-body.is-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
 .lc-modal-body.is-grid .lc-modal-img{margin-bottom:0;aspect-ratio:4/5;max-height:none;}
-/* 照片迴廊點開的那一張：整張看完，不要為了對齊而裁掉人 */
+/* 「相遇之間」點開的那一張：整張看完，不要為了對齊而裁掉人 */
 .lc-modal-body.is-photo .lc-modal-img{
   height:auto;max-height:min(62vh,560px);object-fit:contain;margin-bottom:0;}
 .lc-modal-text{

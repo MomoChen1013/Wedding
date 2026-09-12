@@ -1175,10 +1175,10 @@ console.log('\n[9] 素材資料夾自動載入');
       return !!bg && bg.getAttribute('src').includes('/assets/');
     }));
 
-  /* ---- Gallery 照片迴廊 ----
+  /* ---- Moments 相遇之間 ----
      素材資料夾掃到幾張就是幾格。src 一開始是空的（捲到附近才填），
      所以這裡要真的捲下去，才看得到「載進來 ＋ 浮出來」那件事。 */
-  ok('首頁有 Gallery 照片迴廊', await page.isVisible('#photoGallery'));
+  ok('首頁有 Moments 相遇之間', await page.isVisible('#photoGallery'));
   const railCount = await page.locator('#photoRail .pr-item').count();
   ok('迴廊＝素材資料夾的三張', railCount === 3, String(railCount));
   await page.locator('#photoRail .pr-item').last().scrollIntoViewIfNeeded();
@@ -2958,7 +2958,7 @@ console.log('\n[14c] 後台開關表單題目');
   await page.click('#adRsvpForm button[type="submit"]');
   await page.waitForTimeout(1500);
 
-  /* 照片迴廊的開關在「婚禮資訊 → 自訂內容」（它現在是首頁上自己的一段），
+  /* 「相遇之間」的開關在「婚禮資訊 → 自訂內容」（它現在是首頁上自己的一段），
      那一顆是按下去就存，不跟著這張表單走 */
   await page.click('.ad-tab[data-tab="lobby"]');
   await page.click('.ad-subtabs[data-subtabs="lobby"] .ad-subtab[data-subtab="explore"]');

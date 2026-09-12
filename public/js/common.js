@@ -173,7 +173,7 @@ function rsvpConfig(){
     allowMail:   on(d.rsvpMailEnabled),
     askMessage:  on(d.rsvpAskMessage),   // 想對新人說的話
     contacts,                            // 要問哪幾種聯絡方式
-    /* 照片：現在是首頁上的「Gallery 照片迴廊」（本來在邀請函上、
+    /* 照片：現在是首頁上的「Moments 相遇之間」（本來在邀請函上、
        中間待過 Explore 的最後一張卡）。
        欄位沿用 rsvpShowGallery —— 已經關掉的站台不會因為搬家又打開。
        rsvpShowStory 則整個不再讀：出席表單那一頁已經不放兩人的故事，

@@ -232,11 +232,11 @@ console.log('\n[1] /w/chen-lin-0315/invitation');
   ok('RSVP 表單顯示', formVisible);
   ok('未顯示找不到畫面', notFound === 0);
 
-  /* 這一頁只剩出席回覆：婚禮資訊、兩人的故事、照片迴廊都回到大廳 */
+  /* 這一頁只剩出席回覆：婚禮資訊、兩人的故事、「相遇之間」都回到大廳 */
   ok('不再重放婚禮資訊', await page.locator('#venueName').count() === 0);
   ok('不再重放兩人的故事', await page.locator('#storyBlock').count() === 0);
   /* #galleryBlock 是它以前在這一頁的身分，#photoGallery 是它現在在大廳的身分 —— 兩個都不該出現 */
-  ok('不再重放照片迴廊',
+  ok('不再重放「相遇之間」',
     await page.locator('#photoGallery, #galleryBlock').count() === 0);
   ok('表單是內容區的第一塊',
     await page.evaluate(() =>
