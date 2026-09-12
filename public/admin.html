@@ -237,6 +237,22 @@
       <circle cx="40.5" cy="24" r="4.2"/>
     </symbol>
 
+    <!-- 頁面設定：Feather 的 sliders（24 格）等比放大到 48 格。
+         三支推桿＝「這幾頁現在各自開著還是收起來」，和側欄那顆 toggle 同一個語彙 -->
+    <symbol id="shin9-sliders" viewBox="0 0 48 48">
+      <path d="M8 42V28M8 20V6"/>
+      <path d="M24 42V24M24 16V6"/>
+      <path d="M40 42V32M40 24V6"/>
+      <path d="M2 28h12M18 16h12M34 32h12"/>
+    </symbol>
+
+    <!-- 常見問題：Feather 的 help-circle（24 格）等比放大到 48 格 -->
+    <symbol id="shin9-help" viewBox="0 0 48 48">
+      <circle cx="24" cy="24" r="20"/>
+      <path d="M18.18 18a6 6 0 0 1 11.66 2c0 4-6 6-6 6"/>
+      <path d="M24 34h.02"/>
+    </symbol>
+
     <!-- 進階方案的鎖頭：Feather 的 lock（24 格）等比放大到 48 格。
          只掛在「這組新人沒開的功能」上，見 admin.js 的 applyTabVisibility -->
     <symbol id="shin9-lock" viewBox="0 0 48 48">
@@ -392,6 +408,17 @@
         </div>
       </div>
 
+      <!-- 「頁面設定」與「常見問題」原本埋在首頁最下面，要捲過五步上手指南才看得到。
+           兩件事都是「隨時會回來用一下」——
+             頁面設定：婚禮當天要把抽卡打開，得先找得到它
+             常見問題：卡住的時候才會想找，找不到就等於沒有
+           它們和三個工作分組不是同一層（不是在編輯某一塊賓客內容），
+           所以跟「首頁」一樣不進任何一組，擺在側欄最底下自成一區。 -->
+      <div class="ad-navbot">
+        <button class="ad-tab" type="button" data-tab="pages"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-sliders"/></svg>頁面設定</button>
+        <button class="ad-tab" type="button" data-tab="help"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-help"/></svg>常見問題</button>
+      </div>
+
       <!-- <900px 才看得到。「查看網站」與「登出」桌機收在頂列的帳號選單裡，
            但抽屜開著時那顆按鈕被遮住了，所以窄螢幕在抽屜底部保留一份出口。 -->
       <div class="ad-side-foot">
@@ -448,19 +475,48 @@
       <ol class="ad-steps" id="adHomeSteps"></ol>
     </section>
 
-    <!-- ============================================================
-         頁面設定
-         ------------------------------------------------------------
-         哪幾頁「現在」讓賓客看得到，由新人自己決定：
-         內容還沒寫完的先收起來，婚禮當天再打開；
-         也可以排一個時間，到了自己開（例如喜宴當天中午開放抽卡）。
+    <!-- 「頁面設定」與「常見問題」已經搬到側欄自己的分頁（見上面的 .ad-navbot）。
+         上手指南的最後留兩個出口 —— 第一次照著五步走下來的人，
+         下一件事通常就是「決定現在讓賓客看到哪幾頁」。 -->
+    <section class="ad-sec">
+      <h2 class="ad-sec-title">還有這兩個地方</h2>
+      <div class="ad-more">
+        <button class="ad-more-item" type="button" data-empty-hash="pages">
+          <svg class="ad-ic ad-ic-more" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-sliders"/></svg>
+          <span class="ad-more-main">
+            <span class="ad-more-title">頁面設定</span>
+            <span class="ad-more-note">決定賓客現在看得到哪幾頁，也可以排時間讓它自己開</span>
+          </span>
+          <i class="ad-more-go" aria-hidden="true">→</i>
+        </button>
+        <button class="ad-more-item" type="button" data-empty-hash="help">
+          <svg class="ad-ic ad-ic-more" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-help"/></svg>
+          <span class="ad-more-main">
+            <span class="ad-more-title">常見問題</span>
+            <span class="ad-more-note">卡住的時候先看這裡，找不到答案可以直接私訊我們</span>
+          </span>
+          <i class="ad-more-go" aria-hidden="true">→</i>
+        </button>
+      </div>
+    </section>
 
-         ・沒開通的功能是灰的、掛一顆鎖頭 —— 那是我們這一層的開關
-         ・右邊那支手機就是賓客現在打開首頁看到的入口清單
-         列表與手機示意都由 js/admin.js 的 renderPageSettings() 產生。
-    ============================================================ -->
+  </div>
+
+  <!-- ============================================================
+       分頁：頁面設定
+       ------------------------------------------------------------
+       哪幾頁「現在」讓賓客看得到，由新人自己決定：
+       內容還沒寫完的先收起來，婚禮當天再打開；
+       也可以排一個時間，到了自己開（例如喜宴當天中午開放抽卡）。
+
+       ・沒開通的功能是灰的、掛一顆鎖頭 —— 那是我們這一層的開關，
+         按下去會展開一張說明卡，告訴他要找誰才開得起來
+       ・右邊那支手機就是賓客現在打開首頁看到的入口清單
+       列表與手機示意都由 js/admin.js 的 renderPageSettings() 產生。
+  ============================================================ -->
+  <div class="ad-panel" data-panel="pages">
     <section class="ad-sec" id="adPagesSec" hidden>
-      <h2 class="ad-sec-title">頁面設定</h2>
+      <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-sliders"/></svg>頁面設定</h2>
       <p class="ad-sec-note">
         決定<b>賓客現在看得到哪幾頁</b>。收起來的頁面，首頁不會出現入口，
         直接打網址也會被帶回首頁 —— <b>裡面的內容不會消失</b>，
@@ -486,35 +542,164 @@
         </figure>
       </div>
     </section>
+  </div>
 
+  <!-- ============================================================
+       分頁：常見問題
+       ------------------------------------------------------------
+       原本是首頁最下面的四則。問題一多，平鋪就找不到東西了 ——
+       所以分成五類，每一類是一疊 <details>（不做自己的手風琴）。
+       最後一塊是官方帳號：這一頁回答不了的，讓他一鍵去問人。
+  ============================================================ -->
+  <div class="ad-panel" data-panel="help">
     <section class="ad-sec">
-      <h2 class="ad-sec-title">幾件常被問到的事</h2>
-      <div class="ad-faq">
-        <details class="ad-faq-item">
-          <summary>改了東西，賓客什麼時候看得到？</summary>
-          <p>按下儲存就生效了。賓客那一頁重新整理就是新的內容，不用等我們。</p>
-        </details>
-        <details class="ad-faq-item">
-          <summary>哪些東西後台改不動？</summary>
-          <p>
-            婚禮<b>日期</b>、網址、要開哪幾個功能，這幾件會牽動倒數計時與分享連結，
-            要改請直接告訴我們。日期以外的「開始時間、地點、交通」你們自己改得動。
+      <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-help"/></svg>常見問題</h2>
+      <p class="ad-sec-note">
+        新人最常問到的幾件事，照類別分好了。
+        這裡沒寫到的，<b>直接用 LINE 官方帳號私訊我們</b>就好（見最下面）。
+      </p>
+
+      <div class="ad-faq-group">
+        <h3 class="ad-faq-cat">開始使用</h3>
+        <div class="ad-faq">
+          <details class="ad-faq-item">
+            <summary>改了東西，賓客什麼時候看得到？</summary>
+            <p>按下儲存就生效了。賓客那一頁重新整理就是新的內容，不用等我們。</p>
+          </details>
+          <details class="ad-faq-item">
+            <summary>哪些東西後台改不動？</summary>
+            <p>
+              婚禮<b>日期</b>、網址、要開哪幾個功能，這幾件會牽動倒數計時與分享連結，
+              要改請直接告訴我們。日期以外的「開始時間、地點、交通」你們自己改得動。
+            </p>
+          </details>
+          <details class="ad-faq-item">
+            <summary>兩個人可以同時登入後台改東西嗎？</summary>
+            <p>
+              可以。只要兩個 Google 帳號都在新人名單裡，各自登入就好，
+              一邊存的東西另一邊會即時看到。<b>唯一要避開的是兩個人同時改同一個欄位</b>——
+              後存的那一份會蓋過先存的。分頭做不同區塊就不會有這個問題。
+            </p>
+          </details>
+          <details class="ad-faq-item">
+            <summary>手機可以進後台嗎？</summary>
+            <p>
+              可以，同一個網址用手機打開就是了，選單收在左上角。
+              上傳照片、貼桌次名單這種要打很多字的事，還是建議用電腦。
+            </p>
+          </details>
+        </div>
+      </div>
+
+      <div class="ad-faq-group">
+        <h3 class="ad-faq-cat">頁面與功能開關</h3>
+        <div class="ad-faq">
+          <details class="ad-faq-item">
+            <summary>側欄有幾顆掛著鎖頭，那是什麼？</summary>
+            <p>那是還沒開通的功能。點得進去看它長什麼樣子，想開通請用官方帳號告訴我們，現有的資料都不會動。</p>
+          </details>
+          <details class="ad-faq-item">
+            <summary>內容還沒填完，可以先把網址發給賓客嗎？</summary>
+            <p>
+              可以。到「<b>頁面設定</b>」把還沒寫完的那幾頁先收起來，賓客就只會看到你們準備好的部分，
+              填完再打開。首頁與邀請函一直都在，發出去的連結不會因此失效。
+            </p>
+          </details>
+          <details class="ad-faq-item">
+            <summary>把一頁收起來，裡面的資料會不見嗎？</summary>
+            <p>
+              不會。收起來只是<b>賓客看不到入口</b>，你在後台照樣編輯得動，
+              重新打開就整份回來了，一個字都不會少。
+            </p>
+          </details>
+          <details class="ad-faq-item">
+            <summary>可以排一個時間，讓某一頁自己打開嗎？</summary>
+            <p>
+              可以。「頁面設定」每一列都有「<b>排程開啟</b>」——
+              例如把抽卡排在喜宴當天中午，時間到了它自己出現，你不用回來按任何東西。
+              時間以你設定當下那台裝置的時間為準。
+            </p>
+          </details>
+        </div>
+      </div>
+
+      <div class="ad-faq-group">
+        <h3 class="ad-faq-cat">照片與內容</h3>
+        <div class="ad-faq">
+          <details class="ad-faq-item">
+            <summary>照片可以自己上傳嗎？</summary>
+            <p>
+              交通圖、桌次圖、婚禮小卡、故事牆、Dress Code 參考圖都可以自己上傳。
+              大廳的封面照與「相遇之間」的照片放在這場婚禮的素材資料夾裡，要換的話把檔案給我們。
+            </p>
+          </details>
+          <details class="ad-faq-item">
+            <summary>照片有大小限制嗎？傳不上去怎麼辦？</summary>
+            <p>
+              直接傳原圖就好，<b>系統會自己縮到適合網頁的大小</b>，不用先修圖。
+              傳不上去通常是兩件事：檔案不是圖片（例如 PDF），
+              或是 iPhone 的 HEIC 在某些瀏覽器讀不到 —— 存成 JPG 再傳一次就好。
+            </p>
+          </details>
+        </div>
+      </div>
+
+      <div class="ad-faq-group">
+        <h3 class="ad-faq-cat">出席回覆與名單</h3>
+        <div class="ad-faq">
+          <details class="ad-faq-item">
+            <summary>出席回覆可以匯出嗎？</summary>
+            <p>
+              可以。「出席回覆」右上角有「匯出 CSV」，Excel、Numbers、Google 試算表都打得開，
+              交給宴會廳或婚禮顧問很方便。
+            </p>
+          </details>
+          <details class="ad-faq-item">
+            <summary>賓客填錯了，我可以幫他改嗎？</summary>
+            <p>
+              已經送出的回覆<b>不能編輯</b>（這是刻意的，不然誰都能改別人填的內容）。
+              請他用同一個連結<b>重新填一次</b>，你再到「出席回覆」把舊的那一筆刪掉就好。
+            </p>
+          </details>
+          <details class="ad-faq-item">
+            <summary>想停止收出席回覆怎麼辦？</summary>
+            <p>
+              回覆的截止時間是我們這一層的設定，後台改不動 ——
+              用官方帳號告訴我們要截止到哪一天，我們幫你設。
+              截止之後賓客打開那一頁會看到一句說明，不會是壞掉的畫面。
+            </p>
+          </details>
+        </div>
+      </div>
+
+      <div class="ad-faq-group">
+        <h3 class="ad-faq-cat">婚禮當天</h3>
+        <div class="ad-faq">
+          <details class="ad-faq-item">
+            <summary>當天會場收訊不好，賓客打不開怎麼辦？</summary>
+            <p>
+              網站本身放在 Google 的機房，只要手機有訊號就打得開。
+              但地下宴會廳的收訊我們決定不了 —— 所以<b>桌次表建議也印一份貼在門口</b>，
+              這樣就算有人連不上，找位子這件最要緊的事不會卡住。
+            </p>
+          </details>
+        </div>
+      </div>
+
+      <!-- 這一頁回答不了的，讓他一鍵去問人。
+           官方帳號的網址集中在 js/admin.js 的 SUPPORT_LINE_URL，
+           要換帳號只改那一行（那邊的鎖頭說明卡也用同一個網址）。 -->
+      <div class="ad-support" id="adSupport">
+        <div class="ad-support-main">
+          <div class="ad-support-title">還是沒找到答案？</div>
+          <p class="ad-support-note">
+            直接用 LINE 官方帳號私訊我們就好 —— 想開通功能、要改日期或網址、
+            或是哪裡怪怪的，都在那裡講最快。
           </p>
-        </details>
-        <details class="ad-faq-item">
-          <summary>側欄有幾顆掛著鎖頭，那是什麼？</summary>
-          <p>那是還沒開通的功能。點得進去看它長什麼樣子，想開通再告訴我們，現有的資料都不會動。</p>
-        </details>
-        <details class="ad-faq-item">
-          <summary>照片可以自己上傳嗎？</summary>
-          <p>
-            交通圖、桌次圖、婚禮小卡、故事牆、Dress Code 參考圖都可以自己上傳。
-            大廳的封面照與「相遇之間」的照片放在這場婚禮的素材資料夾裡，要換的話把檔案給我們。
-          </p>
-        </details>
+        </div>
+        <a class="btn" id="adSupportBtn" href="#" target="_blank" rel="noopener noreferrer">用官方帳號聯繫 ↗</a>
       </div>
     </section>
-
   </div>
 
   <!-- ============================================================

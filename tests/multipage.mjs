@@ -2249,14 +2249,19 @@ console.log('\n[18] 大廳的選填區塊與預設 hashtag');
   await page.close();
 }
 
-/* ---------- 後台首頁的「頁面設定」 ---------- */
+/* ---------- 側欄的「頁面設定」分頁 ---------- */
 console.log('\n[18c] 新人自己收起某一頁');
 {
   const siteRef = adb.collection('sites').doc(siteIds[SLUG]);
   const { page, errors } = await visit(`/w/${SLUG}/admin`);
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  /* 頁面設定原本在首頁最下面，現在是側欄自己的一顆分頁 */
+  await page.click('.ad-tab[data-tab="pages"]');
   await page.waitForSelector('#adPagesSec:not([hidden])', { timeout:10000 });
+  ok('頁面設定是側欄自己的分頁',
+    await page.evaluate(() => document.querySelector('.ad-tab.is-on')?.dataset.tab === 'pages'
+      && location.hash === '#pages'));
 
   const rows = await page.$$eval('#adPageList [data-page-row]',
     (els) => els.map((e) => e.dataset.pageRow));
@@ -2313,14 +2318,34 @@ console.log('\n[18c] 新人自己收起某一頁');
 
   const { page } = await visit(`/w/${SLUG}/admin`);
   await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  await page.click('.ad-tab[data-tab="pages"]');
   await page.waitForSelector('#adPagesSec:not([hidden])', { timeout:15000 });
   const row = '#adPageList [data-page-row="letter"]';
   ok('沒開通的那一列掛鎖頭',
     (await page.locator(`${row} .ad-ic-lock`).count()) === 1);
   ok('沒開通的那一列開關按不動',
     await page.isDisabled(`${row} [data-page-on]`));
-  ok('沒開通的那一列也沒有排程',
-    (await page.locator(`${row} [data-page-when]`).count()) === 0);
+  ok('沒開通的那一列不能排程',
+    (await page.locator(`${row} [data-page-sched]`).count()) === 0);
+
+  /* 死掉的開關按下去不能什麼都不發生：要說清楚要找誰才開得起來 */
+  ok('說明預設是收起來的', await page.isHidden(`${row} [data-page-lock]`));
+  await page.click(`${row} .ad-toggle`);
+  await page.waitForSelector(`${row} [data-page-lock]:not([hidden])`, { timeout:5000 });
+  ok('按下開關會說「要透過官方帳號聯繫」',
+    (await page.innerText(`${row} .ad-page-lock-msg`))
+      .includes('這個功能需要管理員才能開啟，請透過官方帳號聯繫'),
+    await page.innerText(`${row} .ad-page-lock-msg`));
+  ok('說明裡附上官方帳號的連結',
+    (await page.getAttribute(`${row} [data-page-lock] a`, 'href') || '')
+      .startsWith('https://line.me/R/ti/p/'),
+    await page.getAttribute(`${row} [data-page-lock] a`, 'href'));
+  ok('「為什麼不能開？」再按一次收回去',
+    await (async () => {
+      await page.click(`${row} [data-page-why]`);
+      return page.isHidden(`${row} [data-page-lock]`);
+    })());
   await page.close();
 
   await siteRef.update({ pages: allOnPlusAdmin });
@@ -2356,6 +2381,40 @@ console.log('\n[18c] 新人自己收起某一頁');
 
   /* 還原，後面的測試還要用 */
   await adb.collection('sites').doc(siteIds[SLUG]).update({ pagePublish: {} });
+}
+
+/* ---------- 側欄的「常見問題」分頁 ---------- */
+console.log('\n[18d] 常見問題');
+{
+  const { page, errors } = await visit(`/w/${SLUG}/admin`);
+  await signInAsOwner(page, 'couple@example.com');
+  await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
+  await page.click('.ad-tab[data-tab="help"]');
+  await page.waitForSelector('.ad-panel[data-panel="help"].is-on', { timeout:10000 });
+
+  const cats = await page.$$eval('.ad-panel[data-panel="help"] .ad-faq-cat',
+    (els) => els.map((e) => e.textContent.trim()));
+  ok('問題有分類', cats.length >= 4, cats.join(','));
+  ok('十四則問答', (await page.locator(
+    '.ad-panel[data-panel="help"] .ad-faq-item').count()) === 14,
+    String(await page.locator('.ad-panel[data-panel="help"] .ad-faq-item').count()));
+  ok('附上官方帳號的連結',
+    (await page.getAttribute('#adSupportBtn', 'href') || '')
+      .startsWith('https://line.me/R/ti/p/'),
+    await page.getAttribute('#adSupportBtn', 'href'));
+  ok('官方帳號是另開新分頁',
+    (await page.getAttribute('#adSupportBtn', 'target')) === '_blank');
+
+  /* 首頁最下面留著兩個出口，第一次進來的人才找得到這兩顆新分頁 */
+  await page.click('.ad-tab[data-tab="home"]');
+  await page.click('.ad-more-item[data-empty-hash="pages"]');
+  ok('首頁的出口會帶到頁面設定',
+    await page.evaluate(() => location.hash === '#pages'),
+    await page.evaluate(() => location.hash));
+
+  ok('常見問題無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
 }
 
 /* ---------- 開放桌次功能 ---------- */

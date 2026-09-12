@@ -1197,6 +1197,9 @@ const TAB_PAGE = {
   cards:    'draw',
   exhibits: 'exhibition',
   quiz:     'quiz',
+  /* 頁面設定與常見問題是後台自己的兩頁（不對應任何賓客頁面），永遠開著 */
+  pages:    null,
+  help:     null,
 };
 
 /* 一個分頁有三種狀態：
@@ -1237,6 +1240,11 @@ function tabEnabled(tab){
    所以遮罩底下看到的是空的骨架，那正好就是「這個功能長什麼樣子」。
 ============================================================ */
 const LOCK_NOTE = '這是進階方案的功能。想開通再告訴我們，我們幫你打開，現有的資料都不會動。';
+
+/* 官方帳號：要開通功能、改日期或網址，新人都從這裡找得到人。
+   ★ 全站只有這一個地方寫這個網址 —— 常見問題最下面那顆按鈕、
+     頁面設定裡沒開通那幾列的說明，讀的都是它。換帳號只改這一行。 */
+const SUPPORT_LINE_URL = 'https://line.me/R/ti/p/@381tboky';
 
 function lockIconHtml(cls){
   return `<svg class="ad-ic ${cls}" viewBox="0 0 48 48" aria-hidden="true">`
@@ -1411,6 +1419,9 @@ function openAdmin(){
   if(homeForm) homeForm.href = sitePath('rsvp');
   const homeTitle = document.getElementById('adHomeTitle');
   if(homeTitle && couple) homeTitle.textContent = `${couple} 的新人後台`;
+  /* 常見問題最下面那顆「用官方帳號聯繫」。網址只寫在 SUPPORT_LINE_URL 一個地方 */
+  const support = document.getElementById('adSupportBtn');
+  if(support) support.href = SUPPORT_LINE_URL;
 
   applyTabVisibility();
 
@@ -1774,6 +1785,8 @@ const NAV_TIPS = {
   exhibits:    '新人的故事牆：一張照片配一段文字，賓客可以慢慢看完你們的故事。',
   inbox:       '賓客留給新人的悄悄話。只有你們讀得到，別人在祝福牆上看不到內容。',
   quiz:        '賓客玩的「你有多認識新人」小測驗：出題、設定正確答案，也看得到大家答了什麼。',
+  pages:       '決定賓客現在看得到哪幾頁。內容還沒寫完的先收起來，也可以排一個時間讓它自己開。',
+  help:        '新人最常問到的幾件事，照類別分好了。這裡沒寫到的可以直接用官方帳號私訊我們。',
 };
 
 (function bindNavTips(){
@@ -6602,7 +6615,7 @@ function homeStepDone(step){
 }
 
 /* ============================================================
-   頁面設定（後台首頁最下面）
+   頁面設定（側欄最下面那顆分頁）
    ------------------------------------------------------------
    「這一頁現在要不要讓賓客看到」由新人自己決定 —— 內容還沒寫完的
    先收起來、婚禮當天再打開，也可以排一個時間讓它自己開。
@@ -6698,6 +6711,10 @@ function pageStateText(row){
     : `${fmtTime(row.at)} 自動開啟`;
 }
 
+/* 沒開通的那一列，開關是死的。死的開關按下去什麼都不發生，
+   新人只會以為壞掉了 —— 所以按下去要有人回他一句話，並且說清楚要找誰。 */
+const PAGE_LOCK_MSG = '這個功能需要管理員才能開啟，請透過官方帳號聯繫';
+
 function pageRowHtml(row){
   const live = pageRowLive(row);
   const schedFuture = !row.on && row.at !== null && Date.now() < row.at;
@@ -6713,8 +6730,11 @@ function pageRowHtml(row){
     </div>
 
     <div class="ad-page-act">
-      ${row.locked ? '' : `<button class="ad-page-when" type="button" data-page-when
-        aria-expanded="false">${schedFuture ? '改排程' : '排程開啟'}</button>`}
+      ${row.locked
+        ? `<button class="ad-page-when" type="button" data-page-why
+            aria-expanded="false">為什麼不能開？</button>`
+        : `<button class="ad-page-when" type="button" data-page-when
+            aria-expanded="false">${schedFuture ? '改排程' : '排程開啟'}</button>`}
       <label class="ad-toggle">
         <input type="checkbox" data-page-on ${live ? 'checked' : ''}
                ${row.locked ? 'disabled' : ''}
@@ -6722,6 +6742,19 @@ function pageRowHtml(row){
         <span class="ad-toggle-track" aria-hidden="true"></span>
       </label>
     </div>
+
+    ${!row.locked ? '' : `
+    <div class="ad-page-lock" data-page-lock hidden>
+      <p class="ad-page-lock-msg">${escapeHtml(PAGE_LOCK_MSG)}</p>
+      <div class="ad-row">
+        <a class="btn small" href="${escapeHtml(SUPPORT_LINE_URL)}"
+           target="_blank" rel="noopener noreferrer">用官方帳號聯繫 ↗</a>
+      </div>
+      <div class="ad-hint">
+        開通之後這一列就會活過來，換你自己決定什麼時候讓賓客看到。
+        <b>現有的資料一筆都不會動。</b>
+      </div>
+    </div>`}
 
     ${row.locked ? '' : `
     <div class="ad-page-sched" data-page-sched hidden>
@@ -6768,6 +6801,14 @@ function renderPageSettings(){
 
   const rows = pageSettingRows();
   pagesSecEl.hidden = !rows.length;
+  /* 一頁都沒得收的站台（理論上只有全部功能都還沒對外開放時才會發生），
+     側欄那顆分頁也一起收起來 —— 點進去只有一片空白比沒有這顆按鈕更糟。
+     這一支在 applyTabVisibility 之後才跑，所以蓋得過它的 hidden。 */
+  const pagesTab = document.querySelector('#adSide .ad-tab[data-tab="pages"]');
+  if(pagesTab) pagesTab.hidden = !rows.length;
+  /* 首頁最下面那張「頁面設定」的出口卡同理，不要指向一顆不存在的分頁 */
+  const pagesCta = document.querySelector('.ad-more-item[data-empty-hash="pages"]');
+  if(pagesCta) pagesCta.hidden = !rows.length;
   pageListEl.innerHTML = rows.map(pageRowHtml).join('');
   renderPagePreview(rows);
 }
@@ -6824,6 +6865,22 @@ if(pageListEl){
   });
 
   pageListEl.addEventListener('click', async (e)=>{
+    /* 沒開通的那一列：開關是 disabled 的，按在它身上不會有 change 事件
+       （CSS 把 disabled 的 input 設成 pointer-events:none，點擊才落到外層的
+       <label> 上、冒泡到這裡）。按開關、按「為什麼不能開？」都是同一件事 ——
+       他想打開這個功能 —— 所以一律展開那張說明，並且吐一句話給他。
+       說明卡裡面的連結不算（點那顆是要去聯繫我們，不是要把它收回去）。 */
+    const lockedRow = e.target.closest('.ad-page-row.is-locked');
+    if(lockedRow && !e.target.closest('[data-page-lock]')){
+      const box  = lockedRow.querySelector('[data-page-lock]');
+      const why  = lockedRow.querySelector('[data-page-why]');
+      const show = box.hidden;
+      box.hidden = !show;
+      if(why) why.setAttribute('aria-expanded', String(show));
+      if(show) toast(PAGE_LOCK_MSG);
+      return;
+    }
+
     const openBtn = e.target.closest('[data-page-when]');
     if(openBtn){
       const box = openBtn.closest('[data-page-row]').querySelector('[data-page-sched]');
