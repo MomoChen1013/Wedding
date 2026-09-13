@@ -754,11 +754,19 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-step.is-done .ad-step-no{border-color:var(--primary-deep);color:var(--primary-deep);}
 .ad-step.is-done .ad-step-no .ad-ic{width:18px;height:18px;}
 .ad-step-main{flex:1 1 auto;min-width:0;}
+/* 標題那一行。第一步（放到手機主畫面）的按鈕站在這裡而不是右邊那一欄 ——
+   那一欄垂直置中，操作步驟展開時按鈕會掉到整疊清單的中間 */
+.ad-step-head{display:flex;align-items:flex-start;gap:12px;}
+.ad-step-head .ad-step-title{flex:1 1 auto;min-width:0;}
+.ad-step-head .btn{flex:0 0 auto;}
 .ad-step-title{font-size:14px;letter-spacing:.06em;color:var(--ink);line-height:1.7;}
 .ad-step.is-done .ad-step-title{color:var(--ink-soft);}
 .ad-step-note{margin:5px 0 0;font-size:12.5px;line-height:1.9;
   letter-spacing:.04em;color:var(--ink-soft);}
-.ad-step-state{margin:6px 0 0;font-size:11.5px;letter-spacing:.06em;color:var(--primary-deep);}
+/* 完成訊息接在標題後面（省一行）。字窄的螢幕上它會跟著標題折行 ——
+   那仍然比原本「標題一行 ＋ 自己一行」省，而且折的是同一句話 */
+.ad-step-state{margin-left:8px;font-size:11.5px;letter-spacing:.06em;
+  color:var(--primary-deep);}
 .ad-step-act{flex:0 0 auto;align-self:center;}
 
 /* 第一步（放到手機主畫面）就地展開的操作步驟。

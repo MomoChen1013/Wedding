@@ -7773,7 +7773,11 @@ function renderHome(){
 
     /* 有操作步驟的那一步（第一步）不跳去別的分頁，就在這一列裡展開／收起。
        做完之前一直開著，按了「我已經完成」才收 —— 那一刻他手上就拿著手機，
-       收起來之後這一列只剩一行字，不會再擋著下面真正要填的東西 */
+       收起來之後這一列只剩一行字，不會再擋著下面真正要填的東西。
+
+       它的按鈕也不站在右邊那一欄：那一欄是垂直置中的，展開時會被拉到
+       整疊操作步驟的中間，離「我已經完成」在講的那一行標題很遠。
+       所以這一步的按鈕跟著標題走，就在標題右邊。 */
     const guideOn = !!s.guide && (!done || homeGuideOpen);
     const act = s.guide
       ? `<button class="btn small ${guideOn ? '' : 'ghost'}" type="button"
@@ -7788,12 +7792,15 @@ function renderHome(){
         ? `<svg class="ad-ic" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-check"/></svg>`
         : String(i + 1)}</span>
       <div class="ad-step-main">
-        <div class="ad-step-title">${escapeHtml(s.title)}</div>
+        <div class="ad-step-head">
+          <div class="ad-step-title">${escapeHtml(s.title)}${
+            state ? `<span class="ad-step-state">✓ ${escapeHtml(state)}</span>` : ''}</div>
+          ${s.guide ? act : ''}
+        </div>
         ${s.note ? `<p class="ad-step-note">${escapeHtml(s.note)}</p>` : ''}
-        ${state ? `<p class="ad-step-state">✓ ${escapeHtml(state)}</p>` : ''}
         ${guideOn ? `<div class="ad-step-guide">${s.guide}</div>` : ''}
       </div>
-      <div class="ad-step-act">${act}</div>
+      ${s.guide ? '' : `<div class="ad-step-act">${act}</div>`}
     </li>`;
   }).join('');
 
