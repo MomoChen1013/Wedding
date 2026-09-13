@@ -345,39 +345,23 @@
       <!-- 抽屜的不透明底色會蓋住左上角的漢堡鈕，所以抽屜自己要有出口 -->
       <button class="ad-side-close" id="adSideClose" type="button" aria-label="關閉選單">✕</button>
       <!-- ============================================================
-           十顆平鋪的分頁按鈕看不出「哪幾件事是同一類」，
+           十幾顆平鋪的分頁按鈕看不出「哪幾件事是同一類」，
            分成三組之後才讀得出後台在做什麼：
-             婚禮管理 —— 賓客名單怎麼安排（回覆、桌次、排桌、收禮）
-             婚禮內容 —— 賓客會看到什麼（資訊、感謝信、小卡、故事牆）
-             賓客互動 —— 賓客留給新人的東西（悄悄話、測驗）
+             婚禮內容 —— 賓客會看到什麼（婚禮資訊、自訂內容、出席表單、賓客標籤）
+             婚宴管理 —— 賓客名單怎麼安排（回覆、桌次圖、排桌、收禮）
+             賓客互動 —— 新人與賓客互相留下的東西（信、小卡、故事牆、悄悄話、測驗）
 
            分組是「多包一層 <div>」，.ad-tab 本身完全沒動 ——
            點擊是委派的（closest('.ad-tab')）、tabButtons() 是後代選擇器，
            tests/multipage.mjs 裡那些 .ad-tab[data-tab="…"] 也照樣指得到。
       ============================================================ -->
-      <!-- 首頁不屬於任何一組：它是「回到起點」，和三個工作分組是不同層級的東西 -->
+      <!-- 首頁與頁面設定都不屬於任何一組：
+             首頁     回到起點
+             頁面設定 現在讓賓客看到哪幾頁（婚禮當天要把抽卡打開，得先找得到它）
+           兩件事都不是「在編輯某一塊內容」，所以擺在三個工作分組之上。 -->
       <div class="ad-navtop">
         <button class="ad-tab is-on" type="button" data-tab="home"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-home"/></svg>首頁</button>
-      </div>
-
-      <div class="ad-navgroup" data-navgroup="manage">
-        <button class="ad-navgroup-lab" type="button"
-                aria-expanded="true" aria-controls="adNavManage">
-          <span>婚禮管理</span><i class="ad-navgroup-caret" aria-hidden="true"></i>
-        </button>
-        <div class="ad-navgroup-body" id="adNavManage">
-          <div class="ad-navgroup-items">
-            <!-- 「先決定要問什麼」排在「已經收到什麼」上面。
-                 原本它是出席回覆底下的第三顆子分頁，新人測試時找不到。 -->
-            <button class="ad-tab" type="button" data-tab="rsvpForm"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-form"/></svg>表單設定</button>
-            <button class="ad-tab" type="button" data-tab="rsvp"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-rsvp"/></svg>出席回覆</button>
-            <button class="ad-tab" type="button" data-tab="seating"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-findseat"/></svg>桌次</button>
-            <!-- 排桌管理是「桌次」的工作區（桌次名單的同步鈕也依賴它有沒有開），
-                 縮排一階，從屬關係就看得出來 -->
-            <button class="ad-tab is-sub" type="button" data-tab="seatingPlan"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-seating"/></svg>排桌管理</button>
-            <button class="ad-tab" type="button" data-tab="butler"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-gift-desk"/></svg>收禮小幫手</button>
-          </div>
-        </div>
+        <button class="ad-tab" type="button" data-tab="pages"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-sliders"/></svg>頁面設定</button>
       </div>
 
       <div class="ad-navgroup" data-navgroup="content">
@@ -388,9 +372,29 @@
         <div class="ad-navgroup-body" id="adNavContent">
           <div class="ad-navgroup-items">
             <button class="ad-tab" type="button" data-tab="lobby"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-info"/></svg>婚禮資訊</button>
-            <button class="ad-tab" type="button" data-tab="letters"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-letter"/></svg>感謝信</button>
-            <button class="ad-tab" type="button" data-tab="cards"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-carddraw"/></svg>婚禮小卡</button>
-            <button class="ad-tab" type="button" data-tab="exhibits"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-storywall"/></svg>新人故事牆</button>
+            <!-- 自訂內容原本埋在「婚禮資訊」底下的第四顆子分頁，找不到的東西等於不存在 -->
+            <button class="ad-tab" type="button" data-tab="explore"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-custom"/></svg>自訂內容</button>
+            <!-- 「先決定要問什麼」和賓客會看到的其他內容同一組 -->
+            <button class="ad-tab" type="button" data-tab="rsvpForm"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-form"/></svg>出席表單設定</button>
+            <!-- 賓客標籤原本是「出席回覆」底下的第三顆子分頁 -->
+            <button class="ad-tab" type="button" data-tab="guestTags"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-tag"/></svg>設定賓客標籤</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ad-navgroup" data-navgroup="manage">
+        <button class="ad-navgroup-lab" type="button"
+                aria-expanded="true" aria-controls="adNavManage">
+          <span>婚宴管理</span><i class="ad-navgroup-caret" aria-hidden="true"></i>
+        </button>
+        <div class="ad-navgroup-body" id="adNavManage">
+          <div class="ad-navgroup-items">
+            <button class="ad-tab" type="button" data-tab="rsvp"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-rsvp"/></svg>出席回覆</button>
+            <button class="ad-tab" type="button" data-tab="seating"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-findseat"/></svg>桌次圖</button>
+            <!-- 排桌管理是「桌次圖」的工作區（桌次名單的同步鈕也依賴它有沒有開），
+                 縮排一階，從屬關係就看得出來 -->
+            <button class="ad-tab is-sub" type="button" data-tab="seatingPlan"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-seating"/></svg>排桌管理</button>
+            <button class="ad-tab" type="button" data-tab="butler"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-gift-desk"/></svg>收禮小幫手</button>
           </div>
         </div>
       </div>
@@ -402,8 +406,11 @@
         </button>
         <div class="ad-navgroup-body" id="adNavGuests">
           <div class="ad-navgroup-items">
+            <button class="ad-tab" type="button" data-tab="letters"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-letter"/></svg>感謝信</button>
+            <button class="ad-tab" type="button" data-tab="cards"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-carddraw"/></svg>婚禮小卡</button>
+            <button class="ad-tab" type="button" data-tab="exhibits"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-storywall"/></svg>新人故事牆</button>
             <button class="ad-tab" type="button" data-tab="inbox"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-message"/></svg>悄悄話</button>
-            <button class="ad-tab" type="button" data-tab="quiz"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-quiz"/></svg>新人熟悉測驗</button>
+            <button class="ad-tab" type="button" data-tab="quiz"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-quiz"/></svg>新人測驗</button>
           </div>
         </div>
       </div>
@@ -415,16 +422,14 @@
            它們和三個工作分組不是同一層（不是在編輯某一塊賓客內容），
            所以跟「首頁」一樣不進任何一組，擺在側欄最底下自成一區。 -->
       <div class="ad-navbot">
-        <button class="ad-tab" type="button" data-tab="pages"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-sliders"/></svg>頁面設定</button>
         <button class="ad-tab" type="button" data-tab="help"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-help"/></svg>常見問題</button>
       </div>
 
-      <!-- <900px 才看得到。「查看網站」與「登出」桌機收在頂列的帳號選單裡，
-           但抽屜開著時那顆按鈕被遮住了，所以窄螢幕在抽屜底部保留一份出口。 -->
+      <!-- <900px 才看得到。「登出」桌機收在頂列的帳號選單裡，
+           但抽屜開著時那顆按鈕被遮住了，所以窄螢幕在抽屜底部保留一份出口。
+           「查看網站」與 email 不放這裡：前者頂列一直看得到，
+           後者是「我用哪個帳號登入」，屬於帳號選單。 -->
       <div class="ad-side-foot">
-        <div class="ad-side-foot-who" id="adSideWho"></div>
-        <a class="btn small ghost" id="adViewBtnDrawer" href="/"
-           target="_blank" rel="noopener noreferrer">查看網站 <i aria-hidden="true">↗</i></a>
         <button class="btn small ghost" id="adLockMobile" type="button">登出</button>
       </div>
     </nav>
@@ -772,12 +777,11 @@
   ============================================================ -->
   <div class="ad-panel" data-panel="rsvp">
 
+    <!-- 「設定賓客標籤」原本是這裡的第三顆子分頁，現在是側欄「婚禮內容」裡自己的一頁 -->
     <nav class="ad-subtabs" data-subtabs="rsvp">
       <button class="ad-subtab is-on" type="button" data-subtab="overview">出席回覆總覽</button>
       <!-- 筆數由 js/admin.js 的 renderRsvpSubtabCount() 填，見 renderRsvps() -->
       <button class="ad-subtab" type="button" data-subtab="replies" id="adRepliesSubtab">回覆</button>
-      <!-- 賓客標籤整個功能預設是關的（guestTagsEnabled），關著時這一顆連同內容都收起來 -->
-      <button class="ad-subtab" type="button" data-subtab="tags" id="adTagSubtab" hidden>設定賓客標籤</button>
     </nav>
 
     <!-- 0-1 出席回覆總覽 -->
@@ -874,10 +878,18 @@
     </section>
     </div>
 
-    <!-- 0-3 表單設定 -->
+  </div>
 
-    <!-- 0-4 設定賓客標籤：整個功能預設是關的，由我們在 Firebase 打開（guestTagsEnabled） -->
-    <div class="ad-subpanel" data-subpanel="tags">
+  <!-- ============================================================
+       分頁 0a：設定賓客標籤
+       ------------------------------------------------------------
+       原本是「出席回覆」底下的第三顆子分頁。標籤是「名單怎麼分類」的
+       設定，不是「已經收到的回覆」的一部分 —— 拉成側欄自己的一頁，
+       和其他「賓客會看到什麼」的設定放在同一組。
+       功能的總開關仍然是站台文件上的 guestTagsEnabled（新人改不動）：
+       沒開的時候這一顆分頁留在側欄、掛鎖頭，點得進去看預覽。
+  ============================================================ -->
+  <div class="ad-panel" data-panel="guestTags">
     <section class="ad-sec" id="adTagSec" hidden>
       <div class="ad-sec-head">
         <div class="ad-sec-head-main">
@@ -903,7 +915,6 @@
         （賓客當初送出的回覆本身不會被改動，只是那個標籤不再顯示）。
       </div>
     </section>
-    </div>
   </div>
 
   <!-- ============================================================
@@ -918,7 +929,7 @@
 
     <section class="ad-sec">
       <div class="ad-sec-head">
-        <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-form"/></svg>表單設定</h2>
+        <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-form"/></svg>出席表單設定</h2>
         <div class="ad-sec-head-actions">
           <!-- 網址由 js/admin.js 填成 /w/{slug}/invitation，就是分享給賓客的那一頁。
                「複製表單連結」排在左邊：新人最常做的事是把連結貼給賓客，
@@ -1136,20 +1147,24 @@
   </div>
 
   <!-- ============================================================
-       分頁 2：大廳內容（寫回 sites/{siteId} 的文案欄位）
+       分頁 2：婚禮資訊（寫回 sites/{siteId} 的文案欄位）
+       ------------------------------------------------------------
+       原本是四個橫向子分頁（婚禮資訊／其他流程／當日流程／自訂內容）。
+       新人要填的其實是「首頁上那一頁」，切來切去只是在找欄位 ——
+       所以自訂內容拉成側欄自己的一頁，其餘三件事收成同一頁的幾個段落，
+       由上到下就是賓客在首頁上讀到的順序：
+
+         標題 → 婚禮 hashtag → 婚禮流程 → 交通資訊 → Dress Code
+         → 關於禮金 → 兩人的故事 → 相遇之間
+
+       「婚禮流程」那一段裡有兩件事：
+         ・活動（時間與地點）—— 只辦一場婚宴時就是下面那幾欄；
+           有其他流程（多活動）時改成一張一張的活動卡，
+           順序用拖的、內容點「編輯」在彈窗裡改（見 js/admin.js 的活動資訊彈窗）
+         ・當日流程 —— 大廳時間軸的那幾列
   ============================================================ -->
   <div class="ad-panel" data-panel="lobby">
 
-    <nav class="ad-subtabs" data-subtabs="lobby">
-      <button class="ad-subtab is-on" type="button" data-subtab="info">婚禮資訊</button>
-      <!-- 多活動的站台才看得到（multiEventEnabled，由我們用 set-pages 打開） -->
-      <button class="ad-subtab" type="button" data-subtab="events"
-              id="adEventsSubtab" hidden>其他流程</button>
-      <button class="ad-subtab" type="button" data-subtab="schedule">當日流程</button>
-      <button class="ad-subtab" type="button" data-subtab="explore">自訂內容</button>
-    </nav>
-
-    <div class="ad-subpanel is-on" data-subpanel="info">
     <section class="ad-sec">
       <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-info"/></svg>婚禮資訊</h2>
       <p class="ad-sec-note">
@@ -1161,35 +1176,72 @@
         <input class="ad-input" id="adCoupleTitle" type="text" maxlength="20">
         <div class="ad-count"><span id="adCoupleTitleLen">0</span> / 20</div>
 
-        <!-- 多活動時，場地改由「其他流程」管理，這三欄轉成唯讀的鏡像 -->
-        <div class="ad-callout" id="adVenueManaged" hidden>
-          <p class="ad-callout-note">
-            這場婚禮有多個活動，<b>地點改在「其他流程」設定</b>。
-            下面三欄顯示的是<b id="adVenueManagedName">主要活動</b>的地點，改不動。
+        <label class="ad-label" for="adHashtags">婚禮 hashtag（最多 3 個）</label>
+        <input class="ad-input" id="adHashtags" type="text" maxlength="120"
+               placeholder="#married #我們結婚了（用空格或逗號分開）">
+
+        <!-- ============ 婚禮流程 ============ -->
+        <div class="ad-sub-sec">
+          <div class="ad-sub-sec-title"><svg class="ad-ic ad-ic-sub" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-timeline"/></svg>婚禮流程</div>
+
+          <!-- 多活動時，地點與時間改由下面的活動卡管理，上面那幾欄就不再出現 -->
+          <div class="ad-callout" id="adVenueManaged" hidden>
+            <p class="ad-callout-note">
+              這場婚禮有多個活動，<b>每個活動的時間與地點都在自己的卡片上設定</b>。
+              分享縮圖與倒數計時看的是<b id="adVenueManagedName">主要活動</b>那一張。
+            </p>
+          </div>
+
+          <!-- 只辦一場婚宴時：時間與地點就是這幾欄 -->
+          <div id="adVenueFields">
+            <label class="ad-label" for="adVenueName">地點名稱</label>
+            <input class="ad-input" id="adVenueName" type="text" maxlength="80"
+                   placeholder="台北婚宴大飯店・二樓宴會廳">
+            <div class="ad-hint">例如：台北婚宴大飯店・二樓宴會廳</div>
+
+            <label class="ad-label" for="adVenueAddress">地址</label>
+            <input class="ad-input" id="adVenueAddress" type="text" maxlength="200"
+                   placeholder="台北市中山區中山北路二段 63 號">
+
+            <label class="ad-label" for="adVenueMapUrl">地圖連結</label>
+            <input class="ad-input" id="adVenueMapUrl" type="url" maxlength="500"
+                   placeholder="未填寫時，自動用地址自動開 Google 地圖">
+
+            <label class="ad-label" for="adEventTime">開始時間</label>
+            <input class="ad-input ad-input-time" id="adEventTime" type="time">
+
+            <div class="ad-count" id="adEventTimeOff" hidden>婚禮日期還沒設定，請先找我們排定日期</div>
+          </div>
+
+          <!-- 有其他流程（多活動）時：一個活動一張卡。
+               順序用拖的（拖完就存），內容點「編輯」在彈窗裡改。 -->
+          <div id="adEvBox" hidden>
+            <!-- 主日期對不上時的提醒（js/admin.js 判斷） -->
+            <div class="ad-callout" id="adEvDateWarn" hidden>
+              <p class="ad-callout-note" id="adEvDateWarnText"></p>
+            </div>
+
+            <div class="ad-evlist" id="adEvList"></div>
+
+            <div class="ad-row">
+              <button class="btn small ghost" id="adEvAdd" type="button">＋ 新增活動</button>
+              <span class="ad-hint" id="adEvHint">拖左邊的握把可以調整順序，改完立刻生效。</span>
+            </div>
+          </div>
+
+          <!-- ---------- 當日流程 ---------- -->
+          <div class="ad-sub-sec-title ad-sub-sec-title-2"><svg class="ad-ic ad-ic-sub" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-timeline"/></svg>當日流程</div>
+          <p class="ad-sec-note">
+            未填寫時，大廳會顯示「流程稍後公布，敬請期待」。
+            由上到下就是大廳時間軸的顯示順序（<b>不會依時間重新排</b>），拖左邊的握把調整。
           </p>
+
+          <div class="ad-sch" id="adSchList"></div>
           <div class="ad-row">
-            <button class="btn small ghost" id="adVenueManagedJump" type="button">
-              去設定其他流程</button>
+            <button class="btn small ghost" id="adSchAdd" type="button">＋ 加一列</button>
+            <button class="btn small ghost" id="adSchSave" type="button">儲存流程</button>
           </div>
         </div>
-
-        <label class="ad-label" for="adVenueName">地點名稱</label>
-        <input class="ad-input" id="adVenueName" type="text" maxlength="80"
-               placeholder="台北婚宴大飯店・二樓宴會廳">
-        <div class="ad-hint">例如：台北婚宴大飯店・二樓宴會廳</div>
-
-        <label class="ad-label" for="adVenueAddress">地址</label>
-        <input class="ad-input" id="adVenueAddress" type="text" maxlength="200"
-               placeholder="台北市中山區中山北路二段 63 號">
-
-        <label class="ad-label" for="adVenueMapUrl">地圖連結</label>
-        <input class="ad-input" id="adVenueMapUrl" type="url" maxlength="500"
-               placeholder="未填寫時，自動用地址自動開 Google 地圖">
-
-        <label class="ad-label" for="adEventTime">開始時間</label>
-        <input class="ad-input ad-input-time" id="adEventTime" type="time">
-        
-        <div class="ad-count" id="adEventTimeOff" hidden>婚禮日期還沒設定，請先找我們排定日期</div>
 
         <div class="ad-sub-sec">
           <div class="ad-sub-sec-title"><svg class="ad-ic ad-ic-sub" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-location"/></svg>交通資訊</div>
@@ -1265,10 +1317,6 @@
         <textarea class="ad-textarea" id="adStory" rows="5" maxlength="2000"
                   placeholder="第一次見面是在朋友的聚會上…"></textarea>
 
-        <label class="ad-label" for="adHashtags">婚禮 hashtag（最多 3 個）</label>
-        <input class="ad-input" id="adHashtags" type="text" maxlength="120"
-               placeholder="#married #我們結婚了（用空格或逗號分開）">
-
         <!-- 這一頁在手機上要捲 5–6 個螢幕高才會走到底，所以儲存自己浮在底部。
              有沒存的變更時，右邊那行字會變色（.btn.is-dirty 的紅點也會亮） -->
         <div class="ad-savebar">
@@ -1278,53 +1326,9 @@
         </div>
       </form>
     </section>
-    </div>
 
-    <div class="ad-subpanel" data-subpanel="events">
-    <section class="ad-sec">
-      <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-rsvp-multi"/></svg>其他流程</h2>
-      <p class="ad-sec-note">
-        一場婚禮可能有好幾個活動：文訂、迎娶、證婚、婚宴、After 派對，
-        <b>每個活動都可以設定日期、時間與地點</b>。<br>
-        需要賓客回覆的題目可以在側欄的「<b>表單設定</b>」調整。
-      </p>
-
-      <!-- 主日期對不上時的提醒（js/admin.js 判斷） -->
-      <div class="ad-callout" id="adEvDateWarn" hidden>
-        <p class="ad-callout-note" id="adEvDateWarnText"></p>
-      </div>
-
-      <div class="ad-evlist" id="adEvList"></div>
-
-      <div class="ad-savebar">
-        <span class="ad-savebar-note" id="adEvDirty">目前沒有未儲存的變更</span>
-        <button class="btn small ghost" id="adEvAdd" type="button">＋ 新增活動</button>
-        <button class="btn small ghost" id="adEvReset" type="button">還原</button>
-        <button class="btn small" id="adEvSave" type="button">儲存</button>
-      </div>
-    </section>
-    </div>
-
-    <div class="ad-subpanel" data-subpanel="schedule">
-    <section class="ad-sec">
-      <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-timeline"/></svg>當日流程</h2>
-      <p class="ad-sec-note">
-        未填寫時，大廳會顯示「流程稍後公布，敬請期待」。
-     由上到下就是大廳時間軸的顯示順序，<b>不會依時間重新排</b>。
-      </p>
-
-      <div class="ad-sch" id="adSchList"></div>
-      <div class="ad-savebar">
-        <button class="btn small ghost" id="adSchAdd" type="button">＋ 加一列</button>
-        <button class="btn small" id="adSchSave" type="button">儲存流程</button>
-      </div>
-    </section>
-    </div>
-
-    <div class="ad-subpanel" data-subpanel="explore">
-
-    <!-- 「相遇之間」是首頁上自己的一段（本來是 Explore 的最後一張卡）。
-         開關留在這一頁：這裡管的是「首頁要多出現什麼」，和自訂內容同一件事。 -->
+    <!-- 「相遇之間」是首頁上自己的一段（本來收在「自訂內容」那個子分頁裡）。
+         它就是婚禮資訊的最後一段，所以排在這一頁的最後面。 -->
     <section class="ad-sec">
       <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-storywall"/></svg>相遇之間</h2>
       <p class="ad-sec-note">
@@ -1344,6 +1348,17 @@
       </div>
     </section>
 
+  </div>
+
+  <!-- ============================================================
+       分頁 2b：自訂內容
+       ------------------------------------------------------------
+       原本是「婚禮資訊」底下的第四顆子分頁。它和婚禮資訊那幾欄不是同一件事
+       （那是我們準備好的欄位，這是新人自己要多放的東西），
+       而且是「會出現在首頁上的一塊內容」—— 所以拉成側欄自己的一頁。
+  ============================================================ -->
+  <div class="ad-panel" data-panel="explore">
+
     <section class="ad-sec">
       <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-custom"/></svg>自訂內容</h2>
       <p class="ad-sec-note">
@@ -1358,8 +1373,6 @@
         <button class="btn small" id="adExpAddBtn" type="button">新增自訂內容</button>
       </div>
     </section>
-    </div>
-
   </div>
 
   <!-- ============================================================
@@ -2389,6 +2402,9 @@
 
       <div class="ad-modal-actions">
         <button class="btn small ghost" id="adActCancel" type="button">取消</button>
+        <!-- 刪除收在彈窗裡（清單上只留「編輯」，和自訂內容、感謝信同一套）。
+             只剩一個活動時、以及合成出來的那一個（站台還沒有 events）看不到它 -->
+        <button class="btn small ghost" id="adActDelete" type="button" hidden>刪除活動</button>
         <button class="btn small" type="submit">儲存活動資訊</button>
       </div>
     </form>

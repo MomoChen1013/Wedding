@@ -2630,7 +2630,7 @@
         if (what === 'add-table') openTableModal('');
         if (what === 'batch-table') batchAddTables();
         /* 標籤庫住在「出席回覆」那一頁，直接帶過去，不用自己找 */
-        if (what === 'goto-tags') location.hash = 'rsvp/tags';
+        if (what === 'goto-tags') location.hash = 'guestTags';
         if (what === 'goto-import') location.hash = 'seatingPlan/io';
         return;
       }

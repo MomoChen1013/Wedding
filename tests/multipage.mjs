@@ -1848,9 +1848,7 @@ console.log('\n[15] 後台改得動大廳文案');
     site.status === 'published' && site.ownerEmails.join() === 'couple@example.com',
     `${site.status} / ${site.ownerEmails.join()}`);
 
-  /* 當日流程：現在是大廳內容底下的子分頁，要先切過去 */
-  await page.click('.ad-subtabs[data-subtabs="lobby"] .ad-subtab[data-subtab="schedule"]');
-  await page.waitForSelector('.ad-subpanel[data-subpanel="schedule"].is-on');
+  /* 當日流程：現在是「婚禮資訊」頁上「婚禮流程」那一段裡的一塊，同一頁就看得到 */
   await page.fill('#adSchList .ad-sch-row:nth-child(1) .ad-sch-time', '11:30');
   await page.fill('#adSchList .ad-sch-row:nth-child(1) .ad-sch-title', '入場迎賓');
   await page.fill('#adSchList .ad-sch-row:nth-child(1) .ad-sch-desc', '簽到、拍照');
@@ -2096,18 +2094,19 @@ console.log('\n[17] 後台只顯示有開的頁面');
       .map((b) => ({ tab:b.dataset.tab, locked:b.classList.contains('is-locked') })));
   const open = tabs.filter((t) => !t.locked).map((t) => t.tab);
   const locked = tabs.filter((t) => t.locked).map((t) => t.tab);
-  /* 側欄最上面是首頁（永遠在，不屬於任何一組），下面分成三組：
-       婚禮管理  rsvpForm, rsvp, seating, seatingPlan, butler
-       婚禮內容  lobby, letters, cards, exhibits
-       賓客互動  inbox, quiz
-     minimal-site 只開 rsvp（表單設定跟著同一個開關），
-     加上永遠都在的 home、lobby 與沒有開關的 inbox，
+  /* 側欄最上面是首頁與頁面設定（永遠在，不屬於任何一組），下面分成三組：
+       婚禮內容  lobby, explore, rsvpForm, guestTags
+       婚宴管理  rsvp, seating, seatingPlan, butler
+       賓客互動  letters, cards, exhibits, inbox, quiz
+     minimal-site 只開 rsvp（出席表單設定跟著同一個開關），
+     加上永遠都在的 home、lobby、explore 與沒有開關的 inbox，
      再加上不分方案的 pages（頁面設定）與 help（常見問題）。
-     其餘的不再收起來，而是鎖著留在側欄（進階方案）。 */
+     其餘的不再收起來，而是鎖著留在側欄（進階方案）——
+     設定賓客標籤看的是站台的 guestTagsEnabled，沒開也是鎖著。 */
   ok('有開的頁面正常可用',
-    open.join(',') === 'home,rsvpForm,rsvp,lobby,inbox,pages,help', open.join(','));
+    open.join(',') === 'home,pages,lobby,explore,rsvpForm,rsvp,inbox,help', open.join(','));
   ok('沒開的頁面留在側欄、鎖起來',
-    locked.join(',') === 'seating,seatingPlan,butler,letters,cards,exhibits,quiz',
+    locked.join(',') === 'guestTags,seating,seatingPlan,butler,letters,cards,exhibits,quiz',
     locked.join(','));
   ok('大廳內容永遠在', open.includes('lobby'));
   ok('鎖起來的分頁有鎖頭圖示',
@@ -2762,20 +2761,27 @@ console.log('\n[14d] 後台婚禮流程');
   const { page } = await visit(`/w/${SLUG}/admin`);
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
-  ok('旗標關著時看不到「婚禮流程」子分頁',
-    await page.isHidden('#adEventsSubtab'));
-  ok('旗標關著時場地三欄照常可以改',
-    !(await page.getAttribute('#adVenueName', 'readonly')) !== false
-      || !(await page.$eval('#adVenueName', (el) => el.readOnly)));
-  ok('旗標關著時場地不會出現「改在婚禮流程設定」',
+  await page.click('.ad-tab[data-tab="lobby"]');
+  await page.waitForTimeout(200);
+  ok('旗標關著時看不到活動卡那一段', await page.isHidden('#adEvBox'));
+  ok('旗標關著時場地那幾欄照常可以改',
+    (await page.isVisible('#adVenueFields'))
+      && !(await page.$eval('#adVenueName', (el) => el.readOnly)));
+  ok('旗標關著時場地不會出現「改在活動卡設定」',
     await page.isHidden('#adVenueManaged'));
 
-  /* 打不進去的網址要退回第一個子分頁，不能卡在空白 */
+  /* 搬過家的舊網址要落在同一頁，不能卡在空白 */
   await page.evaluate(() => { location.hash = 'lobby/events'; });
   await page.waitForTimeout(300);
-  ok('旗標關著時 #lobby/events 退回「婚禮資訊」',
-    await page.$eval('.ad-subpanel[data-subpanel="info"]',
-      (el) => el.classList.contains('is-on')));
+  ok('舊網址 #lobby/events 落在「婚禮資訊」',
+    await page.evaluate(() =>
+      document.querySelector('.ad-tab.is-on')?.dataset.tab === 'lobby'
+      && location.hash === '#lobby'));
+  await page.evaluate(() => { location.hash = 'lobby/explore'; });
+  await page.waitForTimeout(300);
+  ok('舊網址 #lobby/explore 轉到「自訂內容」',
+    await page.evaluate(() =>
+      document.querySelector('.ad-tab.is-on')?.dataset.tab === 'explore'));
   await page.close();
 }
 
@@ -2788,92 +2794,83 @@ console.log('\n[14d] 後台婚禮流程');
 
   await page.click('.ad-tab[data-tab="lobby"]');
   await page.waitForTimeout(200);
-  ok('旗標開了才看得到「婚禮流程」', await page.isVisible('#adEventsSubtab'));
+  ok('旗標開了才看得到婚禮流程的活動卡', await page.isVisible('#adEvBox'));
 
-  await page.click('.ad-subtabs[data-subtabs="lobby"] .ad-subtab[data-subtab="events"]');
-  await page.waitForTimeout(300);
-
-  /* 第一次打開：用既有的婚禮資訊帶出一張填好的婚宴卡（還沒寫進資料庫） */
+  /* 第一次打開：用既有的婚禮資訊帶出一張婚宴卡（還沒寫進資料庫） */
   const first = await page.evaluate(() => ({
     cards: document.querySelectorAll('#adEvList .ad-ev').length,
     name: document.querySelector('#adEvList .ad-ev-name')?.textContent,
     flag: document.querySelector('#adEvList .ad-ev-flag')?.textContent,
+    handle: !!document.querySelector('#adEvList .ad-ev .ad-drag-handle'),
     savedEvents: (window.SITE.data.events || []).length,
   }));
   ok('第一次打開帶出一張婚宴卡', first.cards === 1 && first.name === '婚宴',
     `${first.cards} 張 / ${first.name}`);
   ok('那一張是「需要回覆」', first.flag === '需要回覆', first.flag);
+  ok('每一張卡都有拖曳握把', first.handle === true);
   ok('這一刻還沒寫進資料庫', first.savedEvents === 0, String(first.savedEvents));
 
-  /* 加兩個活動：證婚（預設就是證婚）＋ 派對 */
-  await page.click('#adEvAdd');
-  await page.waitForTimeout(200);
-  await page.click('#adEvAdd');
-  await page.waitForTimeout(200);
-  ok('加得出第二、三個活動',
-    (await page.locator('#adEvList .ad-ev').count()) === 3,
-    String(await page.locator('#adEvList .ad-ev').count()));
-  ok('加完會說還沒儲存',
-    (await page.innerText('#adEvDirty')).includes('還沒儲存'));
-
-  /* 最後一張改成派對，順便驗「換型別會帶預設」 */
-  const last = page.locator('#adEvList .ad-ev').last();
-  await last.locator('[data-ev-field="type"]').selectOption('afterparty');
-  await page.waitForTimeout(200);
-  ok('換型別會帶出預設名稱',
-    (await last.locator('.ad-ev-name').textContent()) === '派對',
-    await last.locator('.ad-ev-name').textContent());
-
-  /* 中間那張（證婚）填地點與時間 */
-  const mid = page.locator('#adEvList .ad-ev').nth(1);
-  await mid.locator('[data-ev-toggle]').click();
-  await page.waitForTimeout(200);
-
-  /* 這一頁只管活動本身（時間、地點、說明）——
-     「要不要回覆、要問什麼」都在側欄的「表單設定」，同一件事不給兩個入口 */
-  ok('其他流程不再出現題目設定',
-    (await mid.locator('[data-evq-add]').count()) === 0
-      && (await mid.locator('[data-ev-field="requiresRsvp"]').count()) === 0,
-    `evq=${await mid.locator('[data-evq-add]').count()}`);
-  ok('改成一句話指回「表單設定」',
-    (await mid.locator('.ad-ev-note').innerText()).includes('表單設定'),
-    (await mid.locator('.ad-ev-note').innerText()).replace(/\s+/g, ' ').slice(0, 60));
-
-  await mid.locator('[data-ev-field="startTime"]').fill('14:00');
-  await mid.locator('[data-ev-field="venueName"]').fill('台北真理堂');
-  await mid.locator('[data-ev-field="address"]').fill('台北市大安區新生南路三段86號');
-  await page.waitForTimeout(200);
-  ok('一次只展開一張卡',
-    (await page.locator('#adEvList .ad-ev.is-open').count()) === 1,
-    String(await page.locator('#adEvList .ad-ev.is-open').count()));
-
-  /* 文訂：換成不需要回覆的型別，flag 要跟著變 */
-  await page.click('#adEvAdd');
-  await page.waitForTimeout(200);
-  const fourth = page.locator('#adEvList .ad-ev').last();
-  await fourth.locator('[data-ev-field="type"]').selectOption('engagement');
-  await page.waitForTimeout(200);
-  ok('文訂自動變成「不用回覆」',
-    (await fourth.locator('.ad-ev-flag').textContent()) === '不用回覆',
-    await fourth.locator('.ad-ev-flag').textContent());
-
-  /* ↑↓ 排序：把文訂一路移到最前面。
-     每一次都要重新抓「文訂」那一張 —— 移動之後它就不是最後一張了 */
-  const engageCard = () => page.locator('#adEvList .ad-ev')
-    .filter({ has: page.locator('.ad-ev-name', { hasText:'文訂' }) });
-  for(let i = 0; i < 3; i++){
-    await engageCard().locator('[data-ev-move="up"]').click();
+  /* ---- 新增活動：存下去之後直接開彈窗填內容 ---- */
+  const addEvent = async (type, fill) => {
+    await page.click('#adEvAdd');
+    await page.waitForSelector('#adActModalMask:not([hidden])', { timeout:8000 });
+    if(type) await page.selectOption('#adActType', type);
     await page.waitForTimeout(150);
-  }
-  ok('↑↓ 排得動',
+    if(fill) await fill();
+    await page.click('#adActForm button[type="submit"]');
+    await page.waitForSelector('#adActModalMask', { state:'hidden', timeout:8000 });
+    await page.waitForTimeout(400);
+  };
+
+  await page.click('#adEvAdd');
+  await page.waitForSelector('#adActModalMask:not([hidden])', { timeout:8000 });
+  ok('新增活動會直接打開活動資訊彈窗',
+    (await page.inputValue('#adActName')) === '證婚',
+    await page.inputValue('#adActName'));
+  ok('新增的那一個當場就寫進資料庫了',
+    await page.evaluate(() => (window.SITE.data.events || []).length === 2),
+    String(await page.evaluate(() => (window.SITE.data.events || []).length)));
+  await page.fill('#adActStart', '14:00');
+  await page.fill('#adActVenue', '台北真理堂');
+  await page.fill('#adActAddr', '台北市大安區新生南路三段86號');
+  await page.click('#adActForm button[type="submit"]');
+  await page.waitForSelector('#adActModalMask', { state:'hidden', timeout:8000 });
+  await page.waitForTimeout(400);
+
+  /* 派對：換種類時名稱要跟著換（新人沒自己打過字的話） */
+  await addEvent('afterparty');
+  /* 文訂：那幾種預設就是不用回覆 */
+  await page.click('#adEvAdd');
+  await page.waitForSelector('#adActModalMask:not([hidden])', { timeout:8000 });
+  await page.selectOption('#adActType', 'engagement');
+  await page.waitForTimeout(150);
+  ok('換種類會帶出預設名稱',
+    (await page.inputValue('#adActName')) === '文訂',
+    await page.inputValue('#adActName'));
+  ok('文訂自動變成「不用回覆」', !(await page.isChecked('#adActRsvp')));
+  ok('不只一個活動時，彈窗裡有刪除', await page.isVisible('#adActDelete'));
+  await page.click('#adActForm button[type="submit"]');
+  await page.waitForSelector('#adActModalMask', { state:'hidden', timeout:8000 });
+  await page.waitForTimeout(500);
+
+  ok('四張活動卡',
+    (await page.locator('#adEvList .ad-ev').count()) === 4,
+    String(await page.locator('#adEvList .ad-ev').count()));
+  ok('卡片上看得到時間與地點',
+    (await page.locator('#adEvList .ad-ev').nth(1).innerText()).includes('台北真理堂'),
+    (await page.locator('#adEvList .ad-ev').nth(1).innerText()).replace(/\s+/g, ' '));
+
+  /* ---- 排序：拖曳放開就存（這裡直接驗儲存那一段，拖曳本身是共用的 setupDragSort） ---- */
+  await page.evaluate(() => {
+    const ids = Array.from(document.querySelectorAll('#adEvList .ad-ev'))
+      .map((el) => el.dataset.ev);
+    /* 把最後一張（文訂）拉到最前面 */
+    return saveEventOrder([ids[3], ids[0], ids[1], ids[2]]);
+  });
+  await page.waitForTimeout(1200);
+  ok('排完的順序立刻反映在畫面上',
     (await page.locator('#adEvList .ad-ev-name').first().textContent()) === '文訂',
     await page.locator('#adEvList .ad-ev-name').first().textContent());
-  ok('第一張的「往上」是關的',
-    await page.locator('#adEvList .ad-ev').first()
-      .locator('[data-ev-move="up"]').isDisabled());
-
-  await page.click('#adEvSave');
-  await page.waitForTimeout(1500);
 
   const site = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
   ok('四個活動寫進 sites.events', (site.events || []).length === 4,
@@ -2896,21 +2893,13 @@ console.log('\n[14d] 後台婚禮流程');
     site.venueName === evByName('婚宴').venueName
       && site.venueAddress === evByName('婚宴').address,
     `${site.venueName} ← ${evByName('婚宴').venueName}`);
-  ok('存完就不再說有未儲存的變更',
-    !(await page.innerText('#adEvDirty')).includes('還沒儲存'));
 
-  /* ---- 場地三欄轉唯讀 ---- */
-  await page.click('.ad-subtabs[data-subtabs="lobby"] .ad-subtab[data-subtab="info"]');
-  await page.waitForTimeout(300);
-  ok('婚禮資訊出現「改在婚禮流程設定」', await page.isVisible('#adVenueManaged'));
-  ok('場地三欄轉成唯讀',
-    await page.evaluate(() => ['adVenueName','adVenueAddress','adVenueMapUrl']
-      .every((id) => document.getElementById(id).readOnly)));
-  await page.click('#adVenueManagedJump');
-  await page.waitForTimeout(300);
-  ok('「去設定婚禮流程」跳得過去',
-    await page.$eval('.ad-subpanel[data-subpanel="events"]',
-      (el) => el.classList.contains('is-on')));
+  /* ---- 有多個活動時，上面那幾欄就交給活動卡 ---- */
+  ok('婚禮資訊出現「地點在活動卡上設定」', await page.isVisible('#adVenueManaged'));
+  ok('場地那幾欄整段收起來', await page.isHidden('#adVenueFields'));
+
+  ok('婚禮流程無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
 
   /* ============================================================
      表單設定：活動場次
@@ -3224,11 +3213,10 @@ console.log('\n[14c] 後台開關表單題目');
   ok('存完就不再說有未儲存的變更',
     !(await page.innerText('#adRsvpFormDirty')).includes('還沒儲存'));
 
-  /* 「相遇之間」的開關在「婚禮資訊 → 自訂內容」（它現在是首頁上自己的一段），
+  /* 「相遇之間」的開關在「婚禮資訊」那一頁的最後面（它是首頁上自己的一段），
      那一顆是按下去就存，不跟著這張表單走 */
   await page.click('.ad-tab[data-tab="lobby"]');
-  await page.click('.ad-subtabs[data-subtabs="lobby"] .ad-subtab[data-subtab="explore"]');
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(300);
   await page.uncheck('#adShowGallery');
   await page.waitForTimeout(1200);
 
@@ -3328,11 +3316,13 @@ console.log('\n[14d] 後台賓客標籤');
     (await page.locator('#adPreviewTags .ad-tag').allInnerTexts()).includes('大學同學'),
     (await page.locator('#adPreviewTags .ad-tag').allInnerTexts()).join('／'));
 
-  /* 標籤設定是「出席回覆」底下的橫向子分頁（表單設定已經搬成獨立分頁了） */
-  await page.click('.ad-tab[data-tab="rsvp"]');
-  await page.waitForTimeout(200);
-  ok('看得到「設定賓客標籤」子分頁', await page.isVisible('#adTagSubtab'));
-  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="tags"]');
+  /* 標籤設定是側欄「婚禮內容」裡自己的一頁（原本是出席回覆底下的子分頁） */
+  ok('開了標籤功能的站台，那一顆分頁不掛鎖頭',
+    await page.evaluate(() => {
+      const b = document.querySelector('#adSide .ad-tab[data-tab="guestTags"]');
+      return !!b && !b.hidden && !b.classList.contains('is-locked');
+    }));
+  await page.click('#adSide .ad-tab[data-tab="guestTags"]');
   await page.waitForTimeout(300);
   ok('標籤區塊看得到', await page.isVisible('#adTagSec'));
   const names = await page.$$eval('#adTagList .ad-tagrow-name', (els) => els.map((e) => e.value));
@@ -3366,7 +3356,9 @@ console.log('\n[14d] 後台賓客標籤');
     renamed && renamed.name === '伴娘伴郎' && renamed.onForm === true,
     JSON.stringify(renamed));
 
-  /* 名單：標籤篩選 */
+  /* 名單：標籤篩選（標籤設定已經是另一顆分頁了，要先切回「出席回覆」） */
+  await page.click('.ad-tab[data-tab="rsvp"]');
+  await page.waitForTimeout(200);
   await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="replies"]');
   await page.waitForTimeout(400);
   ok('名單上看得到標籤篩選', await page.isVisible('#adRsvpTagChips'));
@@ -3393,7 +3385,9 @@ console.log('\n[14d] 後台賓客標籤');
   await lastChip.click();
   await page.waitForTimeout(300);
   ok('「設定標籤 ↗」跳到設定賓客標籤那一頁',
-    page.url().endsWith('#rsvp/tags'), page.url());
+    page.url().endsWith('#guestTags'), page.url());
+  await page.click('.ad-tab[data-tab="rsvp"]');
+  await page.waitForTimeout(200);
   await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="replies"]');
   await page.waitForTimeout(300);
 
@@ -3420,7 +3414,7 @@ console.log('\n[14d] 後台賓客標籤');
       .docs.every((d) => !('tags' in d.data())));
 
   /* 刪掉標籤：連掛在賓客身上的那一份一起拿掉 */
-  await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="tags"]');
+  await page.click('#adSide .ad-tab[data-tab="guestTags"]');
   await page.waitForTimeout(300);
   const vipRow = page.locator('#adTagList .ad-tagrow[data-id="tag-vip"]');
   ok('標籤列出用了幾次', (await vipRow.innerText()).includes('1 位'), await vipRow.innerText());
@@ -3453,37 +3447,39 @@ console.log('\n[14d] 後台賓客標籤');
   ok('而且說出「目前方案還沒開通」',
     (await page.innerText('#adAskTagHint')).includes('還沒開通'),
     (await page.innerText('#adAskTagHint')).slice(0, 30));
-  ok('標籤子分頁留著、掛鎖頭',
+  ok('「設定賓客標籤」留在側欄、掛鎖頭',
     await page.evaluate(() => {
-      const b = document.getElementById('adTagSubtab');
+      const b = document.querySelector('#adSide .ad-tab[data-tab="guestTags"]');
       return !b.hidden && b.classList.contains('is-locked')
           && !!b.querySelector('.ad-ic-lock');
     }));
-  ok('標籤子分頁蓋上說明卡',
+  ok('「設定賓客標籤」蓋上說明卡',
     await page.evaluate(() =>
-      !!document.querySelector('.ad-subpanel[data-subpanel="tags"] > .ad-lock-cover')));
-  ok('鎖著的標籤子分頁點得進去、但裡面碰不到',
+      !!document.querySelector('.ad-panel[data-panel="guestTags"] > .ad-lock-cover')));
+  ok('鎖著的「設定賓客標籤」點得進去、但裡面碰不到',
     await (async () => {
-      /* 標籤子分頁掛在「出席回覆」底下，先切過去（現在停在「表單設定」） */
-      await page.click('.ad-tab[data-tab="rsvp"]');
-      await page.waitForTimeout(200);
-      await page.click('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab[data-subtab="tags"]');
+      await page.click('#adSide .ad-tab[data-tab="guestTags"]');
       await page.waitForTimeout(200);
       return page.evaluate(() => {
-        const sp = document.querySelector('.ad-subpanel[data-subpanel="tags"]');
-        return sp.classList.contains('is-on')
-          && Array.from(sp.children)
+        const p = document.querySelector('.ad-panel[data-panel="guestTags"]');
+        return p.classList.contains('is-on')
+          && Array.from(p.children)
                .filter((el) => !el.classList.contains('ad-lock-cover'))
                .every((el) => el.inert);
       });
     })());
-  /* 對不上的子分頁要退回第一個「用得到」的，不能退到鎖著的那一個 */
+  /* 舊網址（#rsvp/tags）要轉到新的那一頁，不能落在空白 */
+  await page.evaluate(() => { location.hash = '#rsvp/tags'; });
+  await page.waitForTimeout(300);
+  ok('舊網址 #rsvp/tags 轉到「設定賓客標籤」',
+    await page.evaluate(() =>
+      document.querySelector('.ad-tab.is-on')?.dataset.tab === 'guestTags'));
+  /* 對不上的子分頁要退回第一個用得到的 */
   await page.evaluate(() => { location.hash = '#rsvp/nope'; });
   await page.waitForTimeout(300);
   const fallback = await page.evaluate(() =>
     document.querySelector('.ad-subtabs[data-subtabs="rsvp"] .ad-subtab.is-on')?.dataset.subtab);
-  ok('子分頁對不上時退回第一個用得到的（不是鎖著的）',
-    fallback === 'overview', String(fallback));
+  ok('子分頁對不上時退回第一個用得到的', fallback === 'overview', String(fallback));
   await page.close();
 
   const guest = await visit('/w/minimal-site-2027/invitation');
@@ -4165,7 +4161,7 @@ console.log('\n[24] 後台首頁與表單設定分頁');
   await page.click('#adHomeSteps .ad-step:nth-child(2) [data-empty-hash]');
   await page.waitForTimeout(300);
   ok('上手指南的按鈕跳得到那一頁',
-    await page.evaluate(() => location.hash === '#lobby/info'), await page.evaluate(() => location.hash));
+    await page.evaluate(() => location.hash === '#lobby'), await page.evaluate(() => location.hash));
 
   /* 頂列的「新人後台」＝回首頁 */
   await page.click('#adHomeBtn');
