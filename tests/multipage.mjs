@@ -2101,10 +2101,11 @@ console.log('\n[17] 後台只顯示有開的頁面');
        婚禮內容  lobby, letters, cards, exhibits
        賓客互動  inbox, quiz
      minimal-site 只開 rsvp（表單設定跟著同一個開關），
-     加上永遠都在的 home、lobby 與沒有開關的 inbox。
+     加上永遠都在的 home、lobby 與沒有開關的 inbox，
+     再加上不分方案的 pages（頁面設定）與 help（常見問題）。
      其餘的不再收起來，而是鎖著留在側欄（進階方案）。 */
   ok('有開的頁面正常可用',
-    open.join(',') === 'home,rsvpForm,rsvp,lobby,inbox', open.join(','));
+    open.join(',') === 'home,rsvpForm,rsvp,lobby,inbox,pages,help', open.join(','));
   ok('沒開的頁面留在側欄、鎖起來',
     locked.join(',') === 'seating,seatingPlan,butler,letters,cards,exhibits,quiz',
     locked.join(','));
@@ -2988,12 +2989,13 @@ console.log('\n[14d] 後台婚禮流程');
   ok('勾回來又問這一題了',
     site3.events.find((e) => e.name === '婚宴').askChildSeat === true);
 
-  /* 飲食習慣補充要標出題型（賓客是自己打字，不是勾選） */
-  ok('飲食習慣補充標了「簡答題」',
-    (await banquetCard().locator('[data-askrow="askDiet"] .ad-tag').innerText()) === '簡答題',
-    await banquetCard().locator('[data-askrow="askDiet"] .ad-tag').innerText());
+  /* 飲食習慣補充要說出題型（賓客是自己打字，不是勾選） */
+  ok('飲食習慣補充的說明開頭標了「簡答題」',
+    (await banquetCard().locator('[data-askrow="askDiet"] small').innerText())
+      .startsWith('簡答題'),
+    await banquetCard().locator('[data-askrow="askDiet"] small').innerText());
 
-  /* ---- 本場次專屬問題：新增一題多選 ---- */
+  /* ---- 自訂問題：新增一題多選 ---- */
   await banquetCard().locator('[data-q-add]').click();
   await page.waitForSelector('#adEvqModalMask:not([hidden])', { timeout:5000 });
   ok('題型是 Radio Group（三個裡選一個）',
@@ -3046,9 +3048,9 @@ console.log('\n[14d] 後台婚禮流程');
     `${b6.venueName} / ${b6.startTime}`);
   ok('主要活動的地點同時鏡像回站台文件（大廳與分享縮圖讀那一份）',
     site6.venueName === '晶華酒店・三樓宴會廳', site6.venueName);
-  ok('卡片上的時間地點跟著更新',
-    (await banquetCard().locator('.ad-actcard-where').innerText()).includes('晶華酒店'),
-    await banquetCard().locator('.ad-actcard-where').innerText());
+  ok('卡片上的時間跟著更新',
+    (await banquetCard().locator('.ad-actcard-when').innerText()).includes('12:30'),
+    await banquetCard().locator('.ad-actcard-when').innerText());
 
     ok('婚禮流程無 console 錯誤', realErrors(errors).length === 0,
     realErrors(errors).slice(0, 2).join(' | '));
@@ -3086,15 +3088,17 @@ console.log('\n[14d] 後台婚禮流程');
   await page.check('#adActList [data-act-ask="askMeal"]');
   await page.waitForTimeout(1200);
 
-  /* 關不掉的題目：稱呼、關係、是哪一組關係（有選項所以打勾）、聯絡方式、
+  /* 關不掉的題目：稱呼、關係、是哪種關係（有選項所以打勾）、聯絡方式、
      ＋ 卡上的「能來參加嗎」＝ 5 條 */
   const fixedQs = '#adRsvpForm .ad-check.is-fixed input:disabled:checked';
   ok('關不掉的題目用「打勾但點不動」列出來',
     (await page.locator(fixedQs).count()) === 5,
     String(await page.locator(fixedQs).count()));
-  ok('關不掉的那幾題掛「固定題目」badge',
-    (await page.locator('#adRsvpForm .ad-badge', { hasText:'固定題目' }).count()) === 3,
-    String(await page.locator('#adRsvpForm .ad-badge', { hasText:'固定題目' }).count()));
+  /* 稱呼、關係、聯絡方式 ＋ 卡上的「能來參加嗎」＝ 4 條標了「必填」
+     （「更近一步說明是哪種關係」關不掉，但它是選填的，所以不算） */
+  ok('關不掉的那幾題在標籤上標「必填」',
+    (await page.locator('#adRsvpForm .ad-check.is-fixed', { hasText:'必填' }).count()) === 4,
+    String(await page.locator('#adRsvpForm .ad-check.is-fixed', { hasText:'必填' }).count()));
   await page.close();
 
   /* 還原：關掉旗標、清空 events，後面的測試看到的是原本的站台。
@@ -3134,10 +3138,10 @@ console.log('\n[14c] 後台開關表單題目');
     String(await page.locator('#adActList .ad-actcard').count()));
   ok('那一張卡上的「需要賓客回覆」改不動（它就是這場婚禮本身）',
     await page.locator('#adActList [data-act-rsvp]').isDisabled());
-  ok('那一張卡沒有「本場次專屬問題」（沒有地方存）',
+  ok('那一張卡沒有「自訂問題」（沒有地方存）',
     (await page.locator('#adActList [data-q-add]').count()) === 0);
 
-  /* 稱呼、關係、是哪一組關係、聯絡方式 ＋ 卡上的「需要賓客回覆」與
+  /* 稱呼、關係、是哪種關係、聯絡方式 ＋ 卡上的「需要賓客回覆」與
      「能來參加嗎」＝ 6 條（這個站台沒有 events[]，所以連回覆開關也是固定的） */
   const fixedQs = '#adRsvpForm .ad-check.is-fixed input:disabled:checked';
   ok('關不掉的題目用「打勾但點不動」列出來',
@@ -3167,14 +3171,10 @@ console.log('\n[14c] 後台開關表單題目');
     (await page.locator('#adPreviewRelation button').count()) === 0);
 
   /* ---- Conditional reveal ---- */
-  ok('郵寄開著時才看得到「會多出來的」那一段',
-    await page.isVisible('#adMailReveal'));
   ok('喜餅選項預覽含郵寄',
     (await page.locator('#adPreviewGift .ad-tag').allInnerTexts()).includes('郵寄'));
   await page.uncheck('#adAskMail');
   await page.waitForTimeout(200);
-  ok('關掉郵寄之後那一段整塊不見（不是灰掉）',
-    await page.isHidden('#adMailReveal'));
   ok('關掉郵寄之後預覽也少一顆',
     !(await page.locator('#adPreviewGift .ad-tag').allInnerTexts()).includes('郵寄'),
     (await page.locator('#adPreviewGift .ad-tag').allInnerTexts()).join('／'));
@@ -3182,6 +3182,16 @@ console.log('\n[14c] 後台開關表單題目');
   await page.waitForTimeout(200);
   ok('喜餅不問時，它的選項預覽跟著收起來',
     await page.isHidden('#adGiftReveal'));
+  /* 喜帖、喜餅都不問時，郵寄根本沒有東西可以寄 —— 整段收起來，不是灰掉。
+     喜帖等一下要存成「有問」，所以這裡關掉只是為了看那一段的反應 */
+  await page.uncheck('#adAskCard');
+  await page.waitForTimeout(200);
+  ok('兩題都不問時，郵寄那一段整塊不見',
+    await page.isHidden('#adMailSec'));
+  await page.check('#adAskCard');
+  await page.waitForTimeout(200);
+  ok('喜帖問回來，郵寄那一段也回來',
+    await page.isVisible('#adMailSec'));
 
   /* ---- 至少要留一種聯絡方式 ---- */
   await page.uncheck('#adAskMessage');
@@ -3190,9 +3200,6 @@ console.log('\n[14c] 後台開關表單題目');
   await page.waitForTimeout(200);
   ok('只剩一種聯絡方式時，那一顆自己變成關不掉的',
     await page.locator('#adContactEmail').isDisabled());
-  ok('而且說得出原因',
-    (await page.innerText('#adContactHint')).includes('關不掉'),
-    (await page.innerText('#adContactHint')).slice(0, 40));
   await page.check('#adContactPhone');
   await page.waitForTimeout(200);
   ok('勾了第二種之後，第一種就解開了',
@@ -3307,8 +3314,8 @@ console.log('\n[14d] 後台賓客標籤');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
   await page.click('.ad-tab[data-tab="rsvpForm"]');
   await page.waitForTimeout(300);
-  /* 有標籤當選項時，「是哪一組關係」那一格會打勾，並且把選項列出來 */
-  ok('「是哪一組關係」有選項時會打勾',
+  /* 有標籤當選項時，「是哪種關係」那一格會打勾，並且把選項列出來 */
+  ok('「是哪種關係」有選項時會打勾',
     await page.isChecked('#adAskTagBox'));
   ok('而且把選項列出來',
     (await page.locator('#adPreviewTags .ad-tag').allInnerTexts()).includes('大學同學'),

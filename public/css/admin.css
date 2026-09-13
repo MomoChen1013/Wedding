@@ -409,11 +409,6 @@ select.ad-input{appearance:none;cursor:pointer;
   color:var(--ink);word-break:break-word;}
 .ad-info-val.is-empty{color:var(--ink-soft);opacity:.75;}
 
-/* 小節標題下面的一句說明 */
-.ad-sub-sec-note{margin:0 0 12px;font-size:11.5px;line-height:1.9;
-  letter-spacing:.02em;color:var(--ink-soft);}
-.ad-sub-sec-note b{color:var(--ink);font-weight:500;}
-
 /* 欄位底下的小提示：比 .ad-sec-note 更貼著它說明的那一組欄位 */
 .ad-hint{margin-top:10px;font-size:11.5px;line-height:1.9;letter-spacing:.02em;
   color:var(--ink-soft);}
@@ -697,19 +692,24 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-tagpick .ad-check{margin-top:10px;}
 .ad-tagpick .ad-check:first-child{margin-top:6px;}
 
-.ad-del,.ad-edit{background:none;border:none;cursor:pointer;
+.ad-del,.ad-edit,.ad-linkbtn{background:none;border:none;cursor:pointer;
   font-family:var(--font-body);font-size:12px;letter-spacing:.1em;padding:2px 0;
   border-bottom:1px solid transparent;}
 .ad-edit{color:var(--ink-soft);}
 .ad-del{color:var(--ink-soft);}
+/* 接在一句說明後面的出口（「前往設定 ↗」）：跟著那句話走，
+   所以是底線文字按鈕而不是 pill —— 一句話裡冒出一顆膠囊會變成兩個重點 */
+.ad-linkbtn{margin-left:6px;color:var(--ink-soft);}
 @media (hover:hover) and (pointer:fine){
   .ad-edit:hover{color:var(--ink);border-bottom-color:var(--ink);}
   .ad-del:hover{color:#a4677a;border-bottom-color:#a4677a;}
+  .ad-linkbtn:hover{color:var(--ink);border-bottom-color:var(--ink);}
 }
 /* 觸控沒有 hover，改成按下去的當下給回饋 */
 @media (hover:none){
   .ad-edit:active{color:var(--ink);}
   .ad-del:active{color:#a4677a;}
+  .ad-linkbtn:active{color:var(--ink);}
 }
 
 .ad-empty{padding:30px 6px;text-align:center;font-size:13px;
@@ -2687,7 +2687,6 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-tag,
 body:is([data-page="admin"],[data-page="butler"]) .ad-badge,
 body:is([data-page="admin"],[data-page="butler"]) .ad-radio,
 body:is([data-page="admin"],[data-page="butler"]) .ad-switch,
-body:is([data-page="admin"],[data-page="butler"]) .ad-reveal-lab,
 body:is([data-page="admin"],[data-page="butler"]) .ad-hint,
 body:is([data-page="admin"],[data-page="butler"]) .ad-count,
 body:is([data-page="admin"],[data-page="butler"]) .ad-field-err,
@@ -2702,13 +2701,13 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-item-title,
 body:is([data-page="admin"],[data-page="butler"]) .ad-item-sub,
 body:is([data-page="admin"],[data-page="butler"]) .ad-edit,
 body:is([data-page="admin"],[data-page="butler"]) .ad-del,
+body:is([data-page="admin"],[data-page="butler"]) .ad-linkbtn,
 body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu,
 body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-btn,
 body:is([data-page="admin"],[data-page="butler"]) .ad-toast,
 body:is([data-page="admin"],[data-page="butler"]) .ad-modal-msg,
 body:is([data-page="admin"],[data-page="butler"]) .ad-modal-note,
 body:is([data-page="admin"],[data-page="butler"]) .ad-sec-note,
-body:is([data-page="admin"],[data-page="butler"]) .ad-sub-sec-note,
 body:is([data-page="admin"],[data-page="butler"]) .ad-savebar-note,
 body:is([data-page="admin"],[data-page="butler"]) .ad-rcard,
 body:is([data-page="admin"],[data-page="butler"]) .ad-btcard,
@@ -3801,16 +3800,15 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:11px;}
 
 /* ---------- Conditional reveal ----------
    有前置條件的設定：條件不成立時整塊不存在（不是灰掉）。
-   左邊那道細線就是「這一段隸屬於上面那個開關」的唯一視覺線索。 */
-.ad-reveal{margin-top:12px;padding:2px 0 2px 14px;border-left:2px solid var(--line-soft);}
+   不勾就整排膠囊消失，本身已經說得夠清楚，不再加標題與左邊那道線。 */
+.ad-reveal{margin-top:4px;}
 .ad-reveal[hidden]{display:none;}
-.ad-reveal-lab{font-size:11px;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--ink-soft);}
-.ad-reveal .ad-chips{margin-top:8px;}
-.ad-reveal .ad-info{margin-top:8px;border-top:none;}
 
 /* 預覽用的膠囊排：容器沿用 .ad-chips，裡面放不可點的 .ad-tag */
 .ad-chips-preview{margin-top:10px;}
+/* 純粹在說「賓客會看到這幾個選項」的那幾排：它是背景資訊不是重點，
+   所以字色收到 --ink-soft，不跟旁邊的設定搶 */
+.ad-chips-soft .ad-tag{color:var(--ink-soft);}
 
 /* ============================================================
    表單設定：活動卡
@@ -3838,8 +3836,6 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:11px;}
 .ad-actcard-meta{flex:1 1 200px;display:flex;flex-direction:column;gap:3px;min-width:0;}
 .ad-actcard-when{font-size:12.5px;color:var(--ink-soft);
   font-variant-numeric:tabular-nums;letter-spacing:.04em;}
-.ad-actcard-where{font-size:12px;line-height:1.8;color:var(--ink-soft);}
-.ad-actcard-where.is-empty{opacity:.75;}
 .ad-actcard-head > .btn{flex:0 0 auto;margin-left:auto;}
 .ad-actcard-body{margin-top:2px;}
 .ad-actcard-body .ad-sub-sec{margin-top:18px;}
