@@ -805,7 +805,7 @@ function renumberLinkCards(){
   const cta = document.querySelector('.rsvp-cta');
   if(cta && !cta.querySelector('a')) cta.closest('.info-block').hidden = true;
 
-  /* 新人把「開放桌次功能」關起來 → 連結已被移掉，外框也一起收 */
+  /* 新人在「頁面設定」把「桌次」收起來 → 連結已被移掉，外框也一起收 */
   const seatCta = document.getElementById('infoSeatCta');
   if(seatCta && !seatCta.querySelector('a')) seatCta.hidden = true;
 

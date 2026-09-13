@@ -414,7 +414,7 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 | `.ad-hint` | 11.5px `--ink-soft`，說明**後果**不是重複欄位名 |
 | `.ad-field-err` | `#a4677a`，`:empty` 時不佔高度 |
 | `.ad-check` | checkbox ＋ 文字，`accent-color: --primary-deep` |
-| `.ad-toggle` | 開關：一顆真的 checkbox（鍵盤、讀螢幕都照舊）藏在上面，畫面上是 44×24 的軌道 ＋ 16px 的把手。**只用在「按下去就生效」的地方**（「頁面設定」分頁），要按儲存才算數的維持 `.ad-check`。沒開通那幾列的 toggle 是 `disabled` 的：CSS 給它 `pointer-events:none`，點擊才落到外層的 `<label>` 上，按下去才有話回他 |
+| `.ad-toggle` | 開關：一顆真的 checkbox（鍵盤、讀螢幕都照舊）藏在上面，畫面上是 44×24 的軌道 ＋ 16px 的把手（`.ad-toggle-track`，**Switch 用的也是這一條**，見 3.6b）。**只用在「按下去就生效」的地方**（「頁面設定」分頁），要按儲存才算數的維持 `.ad-check`。沒開通那幾列的 toggle 是 `disabled` 的：CSS 給它 `pointer-events:none`，點擊才落到外層的 `<label>` 上，按下去才有話回他 |
 | `.ad-input-when` | `<input type="datetime-local">` 專用寬度（`max-width:240px`） |
 | `.ad-sub-sec` | 表單裡的小節：左邊一道細線，**不是一張卡** |
 | `.ad-sub-sec-bare` | 同上但不畫那道線。給「一顆 Switch ＋ 一句說明」這種小節（郵寄服務）：前面已經有一排膠囊在分段，再加一道線只是多一層框 |
@@ -429,12 +429,15 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 ```html
 <label class="ad-switch">
   <input type="checkbox" id="adAskMail" role="switch">
-  <span class="ad-switch-box" aria-hidden="true"><span class="ad-switch-knob"></span></span>
+  <span class="ad-toggle-track" aria-hidden="true"></span>
   <span class="ad-switch-lab">提供喜帖／喜餅郵寄</span>
 </label>
 ```
 
-- 42×24 的軌道 ＋ 18px 的把手，開啟時軌道轉 `--ink`。
+- **軌道就是 `.ad-toggle-track` 本人**（見 3.6 的 `.ad-toggle`）：
+  44×24 ＋ 16px 的把手，開啟時轉 `--primary-deep`。
+  後台只有一種開關長相 —— `.ad-switch` 在它外面多做的只有「右邊接一行字」，
+  不另外畫一條自己的軌道。
 - 原生 checkbox `opacity:0` **疊在軌道上**（**不是 `display:none`**，也不是
   縮成 1px 藏到角落）—— 它仍然在無障礙樹裡、`role="switch"` 掛在它身上，
   而且點擊、螢幕閱讀器與自動化測試點到的都是它本人。焦點框畫在軌道上。

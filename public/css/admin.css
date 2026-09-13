@@ -273,6 +273,9 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
   border-bottom:1px solid var(--line-soft);}
 .ad-sec-head .ad-sec-title{border-bottom:none;padding-bottom:0;margin-bottom:0;}
 .ad-sec-head-actions{display:flex;gap:8px;flex-wrap:wrap;flex:0 0 auto;}
+/* 這一排有幾顆是 <a class="btn">（查看婚禮網站、查看表單）——
+   連結的預設底線會讓它看起來像半顆按鈕半條連結，關掉 */
+.ad-sec-head-actions .btn{text-decoration:none;}
 
 /* 一句話的重點框：開關擺在最上面，說明接在下面 */
 .ad-callout{border:1px solid var(--line);border-left:4px solid var(--primary-deep);
@@ -288,6 +291,12 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
 .ad-callout.is-todo{margin:0 0 22px;background:var(--bg1);}
 .ad-callout.is-todo .ad-callout-note{margin-top:0;padding-left:0;}
 .ad-callout.is-todo .ad-row{margin-top:14px;}
+
+/* 開關是 .ad-switch 的版本：軌道比勾選框寬得多，26px 的縮排對不到
+   任何東西，說明改成貼齊左邊（說明自己帶狀態記號，不必再對齊標題）。
+   .ad-switch 自己帶 margin-top，站在框的最上面時要收掉。 */
+.ad-callout.is-switch .ad-callout-head{margin-top:0;}
+.ad-callout.is-switch .ad-callout-note{padding-left:0;}
 
 /* ============================================================
    表單元件
@@ -734,7 +743,7 @@ select.ad-input{appearance:none;cursor:pointer;
   font-family:var(--font-ui);font-size:12px;color:var(--ink);background:#fff;cursor:pointer;}
 
 /* ============================================================
-   後台首頁：上手指南
+   後台首頁：開始製作（上手指南）
    ------------------------------------------------------------
    一步一列：左邊編號、中間說明、右邊一顆「去設定」。
    做完的那幾步不會消失，只是編號換成打勾、字轉淡 ——
@@ -752,18 +761,39 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-step.is-done .ad-step-no{border-color:var(--primary-deep);color:var(--primary-deep);}
 .ad-step.is-done .ad-step-no .ad-ic{width:18px;height:18px;}
 .ad-step-main{flex:1 1 auto;min-width:0;}
+/* 標題那一行。第一步（放到手機主畫面）的按鈕站在這裡而不是右邊那一欄 ——
+   那一欄垂直置中，操作步驟展開時按鈕會掉到整疊清單的中間 */
+.ad-step-head{display:flex;align-items:flex-start;gap:12px;}
+.ad-step-head .ad-step-title{flex:1 1 auto;min-width:0;}
+.ad-step-head .btn{flex:0 0 auto;}
 .ad-step-title{font-size:14px;letter-spacing:.06em;color:var(--ink);line-height:1.7;}
 .ad-step.is-done .ad-step-title{color:var(--ink-soft);}
 .ad-step-note{margin:5px 0 0;font-size:12.5px;line-height:1.9;
   letter-spacing:.04em;color:var(--ink-soft);}
-.ad-step-state{margin:6px 0 0;font-size:11.5px;letter-spacing:.06em;color:var(--primary-deep);}
+/* 完成訊息接在標題後面（省一行）。字窄的螢幕上它會跟著標題折行 ——
+   那仍然比原本「標題一行 ＋ 自己一行」省，而且折的是同一句話 */
+.ad-step-state{margin-left:8px;font-size:11.5px;letter-spacing:.06em;
+  color:var(--primary-deep);}
 .ad-step-act{flex:0 0 auto;align-self:center;}
+
+/* 第一步（放到手機主畫面）就地展開的操作步驟。
+   兩台系統各一疊，字級比說明再小一階 —— 它是「照著做」的清單，
+   不是要先讀完的說明，視覺重量不能壓過上面那一行標題。 */
+.ad-step-guide{margin:12px 0 2px;padding:14px 16px;
+  border:1px solid var(--line-soft);border-radius:var(--radius);
+  background:rgba(var(--ink-rgb),.02);}
+.ad-step-guide-grp + .ad-step-guide-grp{margin-top:14px;}
+.ad-step-guide-hd{font-family:var(--font-ui);font-size:11.5px;letter-spacing:.12em;
+  color:var(--ink);text-transform:uppercase;}
+.ad-step-guide-list{margin:6px 0 0;padding-left:1.4em;}
+.ad-step-guide-list li{font-size:12.5px;line-height:1.9;letter-spacing:.04em;
+  color:var(--ink-soft);}
 
 /* ============================================================
    首頁最下面的兩個出口（頁面設定、常見問題）
    ------------------------------------------------------------
    兩張一模一樣的卡，圖示與側欄那兩顆分頁是同一顆 ——
-   第一次照著五步走完的人，下一步要去哪裡，用看的就認得出來。
+   第一次照著走完的人，下一步要去哪裡，用看的就認得出來。
 ============================================================ */
 .ad-more{display:grid;gap:10px;}
 .ad-more-item{
@@ -790,6 +820,47 @@ select.ad-input{appearance:none;cursor:pointer;
 }
 
 /* ============================================================
+   首頁的製作筆記（.ad-note）
+   ------------------------------------------------------------
+   一張和上面兩張出口卡同語彙的卡，差別只在點下去不是換頁，
+   而是就地長出一份時程。收起來時只有標題與副標題兩行 ——
+   「什麼時候做」是想起來才會問的事，不該一進來就攤開五段清單。
+
+   <details> 自己就會開合，所以這裡一行 JS 都不用；
+   右邊那支箭頭打開時轉 90°，和 .ad-more-go 是同一支箭頭。
+============================================================ */
+.ad-note{
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  transition:border-color var(--dur-hover) ease-out;
+}
+.ad-note > summary{
+  display:flex;align-items:center;gap:14px;
+  padding:16px 18px;cursor:pointer;list-style:none;
+}
+.ad-note > summary::-webkit-details-marker{display:none;}
+.ad-note > summary:focus-visible{outline:1px solid var(--ink);outline-offset:2px;}
+@media (hover:hover) and (pointer:fine){
+  .ad-note:hover{border-color:var(--primary-deep);}
+  .ad-note:hover .ad-note-go{opacity:1;}
+}
+.ad-note-main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:4px;}
+.ad-note-title{font-size:14px;letter-spacing:.06em;color:var(--ink);line-height:1.7;}
+.ad-note-sub{font-size:12px;line-height:1.8;letter-spacing:.04em;color:var(--ink-soft);}
+.ad-note-go{
+  flex:0 0 auto;font-style:normal;font-size:13px;color:var(--ink-soft);opacity:.6;
+  transition:transform var(--dur-pop) var(--ease),opacity var(--dur-hover) ease-out;
+}
+.ad-note[open] .ad-note-go{transform:rotate(90deg);opacity:1;}
+.ad-note-body{padding:2px 18px 20px;border-top:1px solid var(--line-soft);
+  margin-top:2px;padding-top:18px;}
+.ad-note-grp + .ad-note-grp{margin-top:20px;}
+.ad-note-hd{margin:0;font-family:var(--font-ui);font-size:11.5px;letter-spacing:.12em;
+  color:var(--ink);font-weight:500;}
+.ad-note-list{margin:8px 0 0;padding-left:1.3em;}
+.ad-note-list li{font-size:12.5px;line-height:1.95;letter-spacing:.04em;
+  color:var(--ink-soft);}
+
+/* ============================================================
    頁面設定（側欄最下面那顆分頁）
    ------------------------------------------------------------
    左邊一列一頁（開關 ＋ 排程），右邊一支手機示意賓客現在看到什麼。
@@ -800,19 +871,23 @@ select.ad-input{appearance:none;cursor:pointer;
 @media(max-width:719px){.ad-pages{grid-template-columns:1fr;gap:26px;}}
 
 .ad-pages-list{border-top:1px solid var(--line-soft);}
-.ad-page-row{display:grid;grid-template-columns:1fr auto;gap:10px 16px;
-  padding:16px 2px;border-bottom:1px solid var(--line-soft);align-items:center;}
+/* 一列＝頁名（＋「排程開啟」）ㄧ左、開關一右。說明拿掉了：
+   十來頁排下來，每一列多一行字就多滾一整頁，而頁名自己說得夠清楚。 */
+.ad-page-row{display:grid;grid-template-columns:1fr auto;gap:6px 16px;
+  padding:8px 2px;border-bottom:1px solid var(--line-soft);align-items:center;}
 .ad-page-main{min-width:0;}
-.ad-page-name{display:flex;align-items:center;gap:8px;
+/* 「排程開啟」就站在頁名右邊 —— 它講的是這一頁什麼時候開，
+   和右邊那顆「現在開不開」是兩件事，擺在一起反而容易按錯。 */
+.ad-page-name{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
   font-size:14px;letter-spacing:.06em;color:var(--ink);line-height:1.7;}
+.ad-page-name-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .ad-page-row.is-locked .ad-page-name{color:var(--ink-soft);}
-.ad-page-note{margin-top:4px;font-size:12px;line-height:1.9;
-  letter-spacing:.04em;color:var(--ink-soft);}
-.ad-page-state{margin-top:5px;font-size:11.5px;letter-spacing:.06em;color:var(--ink-soft);}
+/* 只有排了程的那幾列才長出這一行（見 admin.js 的 pageStateText） */
+.ad-page-state{margin-top:2px;font-size:11.5px;letter-spacing:.06em;color:var(--ink-soft);}
 .ad-page-row.is-live .ad-page-state{color:var(--primary-deep);}
 .ad-page-state.is-sched{color:var(--primary-deep);}
 .ad-page-act{display:flex;align-items:center;gap:14px;justify-self:end;}
-.ad-page-when{background:none;border:none;cursor:pointer;padding:0 0 2px;
+.ad-page-when{flex:0 0 auto;background:none;border:none;cursor:pointer;padding:0 0 2px;
   font-family:var(--font-ui);font-size:12px;letter-spacing:.08em;
   color:var(--ink-soft);border-bottom:1px solid var(--line);transition:.2s;}
 .ad-page-when:hover{color:var(--ink);border-bottom-color:var(--ink);}
@@ -823,11 +898,12 @@ select.ad-input{appearance:none;cursor:pointer;
   color:var(--ink-soft);margin-bottom:8px;}
 .ad-page-sched-lab .ad-input-when{margin-top:6px;max-width:240px;}
 
-/* 沒開通的那一列，開關旁邊那顆問號（Feather 的 help-circle）。
+/* 沒開通的那一列，頁名旁邊那顆問號（Feather 的 help-circle）——
+   站在「排程開啟」的位置上（那一列排不了程）。
    照 §3.2 的圖示按鈕規格：桌機 36×36、觸控 44×44，透明框、hover 才顯 ——
    它站在內容上（不是站在一張面上），沒有框就看不出是可以按的。
-   刻意不寫文字：一列裡已經有頁名、說明、狀態三行字，再多一句
-   「為什麼不能開？」會蓋過它們。無障礙的名字掛在 aria-label 上。 */
+   刻意不寫文字：「為什麼不能開？」一整句會比頁名自己還長。
+   無障礙的名字掛在 aria-label 上。 */
 .ad-page-why{
   flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
   width:36px;height:36px;padding:0;
@@ -879,28 +955,36 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-page-lock-msg{margin:0 0 10px;font-size:12.5px;line-height:1.9;
   letter-spacing:.04em;color:var(--ink);}
 
-/* 手機：一列裡「頁名 ＋ 說明」和「排程／問號 ＋ 開關」擠不進同一行
-   （420px 的畫面上右邊那一欄會被切掉），所以讓動作整排掉到文字下面，
-   按鈕靠左、開關靠右，兩端對齊才點得準。 */
-@media(max-width:599px){
-  .ad-page-row{grid-template-columns:1fr;}
-  .ad-page-act{justify-self:stretch;justify-content:space-between;}
-}
+/* 手機：說明拿掉之後左邊只剩「頁名 ＋ 排程開啟」，兩欄擠得進 400px 了，
+   所以不再讓開關整排掉到文字下面 —— 那會讓每一列高一倍。
+   窄到連「排程開啟」都放不下時，.ad-page-name 自己會把它折到第二行。 */
 
 /* 開關本體：一顆真的 checkbox（鍵盤、讀螢幕都照舊），
-   只是把它藏起來，畫面上顯示旁邊那條軌道 */
+   只是把它藏起來，畫面上顯示旁邊那條軌道。
+
+   .ad-toggle-track 是**後台唯一一條開關軌道**：「頁面設定」那一列用它，
+   帶一行字的 Switch（.ad-switch，見 3.6b）也用它 —— 所以下面每一條
+   狀態規則都同時收 .ad-toggle 與 .ad-switch 裡的那顆 input。
+   同一個手勢只能有一種樣子，分成兩份寫遲早會漂掉。 */
 .ad-toggle{position:relative;flex:0 0 auto;display:inline-flex;cursor:pointer;}
 .ad-toggle input{position:absolute;inset:0;width:100%;height:100%;
   margin:0;opacity:0;cursor:pointer;}
-.ad-toggle-track{display:block;width:44px;height:24px;border-radius:999px;
+.ad-toggle-track{flex:0 0 auto;display:block;width:44px;height:24px;border-radius:999px;
   border:1px solid var(--line);background:var(--bg1);transition:.2s;}
 .ad-toggle-track::after{content:'';display:block;width:16px;height:16px;border-radius:50%;
   background:var(--ink-soft);margin:3px;transition:transform .2s,background .2s;}
-.ad-toggle input:checked + .ad-toggle-track{
+.ad-toggle input:checked + .ad-toggle-track,
+.ad-switch input:checked + .ad-toggle-track{
   border-color:var(--primary-deep);background:var(--primary-deep);}
-.ad-toggle input:checked + .ad-toggle-track::after{
+.ad-toggle input:checked + .ad-toggle-track::after,
+.ad-switch input:checked + .ad-toggle-track::after{
   background:#fff;transform:translateX(20px);}
-.ad-toggle input:focus-visible + .ad-toggle-track{outline:1px solid var(--ink);outline-offset:2px;}
+.ad-toggle input:focus-visible + .ad-toggle-track,
+.ad-switch input:focus-visible + .ad-toggle-track{
+  outline:1px solid var(--ink);outline-offset:2px;}
+@media (prefers-reduced-motion:reduce){
+  .ad-toggle-track,.ad-toggle-track::after{transition:none;}
+}
 /* pointer-events:none 是有意的：disabled 的 input 不會發事件也不會冒泡，
    點擊要落到外層的 <label> 上，admin.js 才接得到「他想打開這個功能」。
    游標改成 help（不是 not-allowed）—— 按下去確實會發生事情，只是不是開啟。 */
@@ -1889,11 +1973,12 @@ select.ad-input{appearance:none;cursor:pointer;
    文字才跟上一行的「未安排」對齊，不會多縮排 10px。 */
 .sp-pool-add{flex:0 0 100%;justify-content:flex-start;margin:2px -10px 0;}
 
-/* 從排桌管理跳過來打開「開放桌次功能」時，閃一下讓人看到是哪一個開關 */
-.ad-callout.is-flash{animation:adFlash 1.6s ease-out;}
-@keyframes adFlash{
-  0%,100%{background:#fff;}
-  15%,55%{background:var(--primary-soft);border-color:var(--primary-deep);}
+/* 從排桌管理跳過來打開桌次時，閃一下讓人看到是「頁面設定」的哪一列
+   （那一列本身沒有底色，所以頭尾收在 transparent，不是白色） */
+.ad-page-row.is-flash{animation:adFlashRow 1.6s ease-out;border-radius:var(--radius);}
+@keyframes adFlashRow{
+  0%,100%{background:transparent;}
+  15%,55%{background:var(--primary-soft);}
 }
 
 /* ============================================================
@@ -3724,35 +3809,26 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:11px;}
 
 /* ---------- Switch ----------
    「要不要開啟這個服務」。原生的 checkbox 藏起來但留在無障礙樹裡
-   （role="switch" 寫在 HTML 上），焦點框掛在可見的那顆軌道上。 */
+   （role="switch" 寫在 HTML 上），焦點框掛在可見的那顆軌道上。
+
+   **軌道就是 .ad-toggle-track 本人**（見「開關本體」那一段）——
+   後台只有一種開關長相，兩個地方共用同一份規格。
+   .ad-switch 在它外面多做的只有一件事：右邊接一行字。
+   （以前這裡另外畫了一條 42×24、開啟時轉 --ink 的軌道，
+     和「頁面設定」那一顆不一樣 —— 同一個手勢不該有兩種樣子。） */
 .ad-switch{position:relative;display:inline-flex;align-items:center;gap:12px;
   cursor:pointer;margin-top:6px;font-size:14px;letter-spacing:.04em;color:var(--ink);}
 /* 原生 checkbox 疊在軌道上（透明但**照樣接得到點擊**）：
    它仍然在無障礙樹裡、role="switch" 掛在它身上，而且自動化測試
-   與螢幕閱讀器點的就是它本人 —— 不是一顆被 span 蓋住的 1px 元素。 */
-.ad-switch input{position:absolute;left:0;top:0;height:100%;width:42px;
+   與螢幕閱讀器點的就是它本人 —— 不是一顆被 span 蓋住的 1px 元素。
+   寬度對齊軌道的 44px。 */
+.ad-switch input{position:absolute;left:0;top:0;height:100%;width:44px;
   margin:0;opacity:0;cursor:pointer;z-index:1;}
-/* 軌道與把手是純裝飾（aria-hidden），點擊一律交給上面那顆 input ——
-   不然 .ad-switch-knob（絕對定位、又排在 input 後面）會蓋在它的正中間，
-   變成「看得到、也點得到，但點到的是一個 span」 */
-.ad-switch-box{position:relative;flex:0 0 auto;width:42px;height:24px;
-  pointer-events:none;
-  border:1px solid var(--line);border-radius:999px;background:var(--bg2);
-  transition:background var(--dur-btn) var(--ease),border-color var(--dur-btn) var(--ease);}
-.ad-switch-knob{position:absolute;top:2px;left:2px;width:18px;height:18px;
-  border-radius:50%;background:#fff;border:1px solid var(--line);
-  transition:transform var(--dur-btn) var(--ease),border-color var(--dur-btn) var(--ease);}
-.ad-switch input:checked + .ad-switch-box{background:var(--ink);border-color:var(--ink);}
-.ad-switch input:checked + .ad-switch-box .ad-switch-knob{
-  transform:translateX(18px);border-color:var(--ink);}
-.ad-switch input:focus-visible + .ad-switch-box{
-  outline:2px solid var(--primary-deep);outline-offset:2px;}
+/* 軌道是純裝飾（aria-hidden），點擊一律交給上面那顆 input */
+.ad-switch .ad-toggle-track{pointer-events:none;}
 .ad-switch-lab{min-width:0;}
 @media (pointer:coarse){
   .ad-switch{min-height:44px;}
-}
-@media (prefers-reduced-motion:reduce){
-  .ad-switch-box,.ad-switch-knob{transition:none;}
 }
 
 /* ---------- Radio group ----------

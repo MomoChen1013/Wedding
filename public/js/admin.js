@@ -1367,8 +1367,6 @@ function openAdmin(){
   const homeForm = document.getElementById('adHomeViewForm');
   if(homeSite) homeSite.href = sitePath('lobby');
   if(homeForm) homeForm.href = sitePath('rsvp');
-  const homeTitle = document.getElementById('adHomeTitle');
-  if(homeTitle && couple) homeTitle.textContent = `首頁`;
   /* 常見問題最下面那顆「用官方帳號聯繫」。網址只寫在 SUPPORT_LINE_URL 一個地方 */
   const support = document.getElementById('adSupportBtn');
   if(support) support.href = SUPPORT_LINE_URL;
@@ -1440,7 +1438,6 @@ function openAdmin(){
   /* 大廳文案不是子集合，是站台文件本身；載入時已經讀進 window.SITE.data。
      只有 Dress Code 的參考圖是子集合（整段 data URL，放不進站台文件） */
   DataStore.subscribeDressImages();
-  syncSeatFeatureUI();
   syncGalleryUI();
   fillSiteForm();
   renderSchedule(siteSchedule());
@@ -1727,7 +1724,7 @@ document.getElementById('adSide').addEventListener('click', (e)=>{
         「點一下跳出說明、再點一次才切分頁」是壞掉的互動。
 ============================================================ */
 const NAV_TIPS = {
-  home:        '這個後台怎麼用、從哪裡開始。也放著「查看目前網站」與「查看表單」兩個出口。',
+  home:        '這個後台怎麼用、從哪裡開始。也放著「查看婚禮網站」與「查看表單」兩個出口。',
   rsvpForm:    '決定出席表單要問賓客什麼、那一頁還要放哪些內容。先設定好這裡，再把連結發出去。',
   guestTags:   '分類賓客用的標籤（行動不便、大學同學…），一位賓客可以掛好幾個，排桌時可以照標籤分組，也可以讓賓客在出席回覆時自己選。',
   rsvp:        '賓客填的出席回覆都在這裡：人數、葷素、聯絡方式、喜帖與喜餅的寄送，也能篩選、貼標籤、匯出 CSV。',
@@ -4292,44 +4289,13 @@ document.getElementById('adInboxExport').addEventListener('click', ()=>{
 });
 
 /* ============================================================
-   1-0 開放桌次功能（放在「桌次 → 桌次圖」最上面）
-   ------------------------------------------------------------
-   關著的時候賓客那邊完全看不到桌次：大廳沒有「尋找我的座位」、
-   導覽列沒有「桌次」、直接打網址也會被導回大廳（見 site-context.js）。
-   新人這邊不受影響，「桌次」分頁照樣可以先把名單與桌次圖準備好。
-   沒設定過的舊站台一律視為開著，不會因為多了這個欄位就突然關掉。
-============================================================ */
-const seatFeatureEl = document.getElementById('adSeatFeature');
-
-/* 排程到了的話也算開著 —— 首頁「頁面設定」那一列與這裡讀的是同一件事 */
-function seatFeatureOn(){ return pageLiveNow('seating'); }
-
-function syncSeatFeatureUI(){
-  seatFeatureEl.checked = seatFeatureOn();
-}
-
-seatFeatureEl.addEventListener('change', async ()=>{
-  const on = seatFeatureEl.checked;
-  try{
-    /* 首頁「頁面設定」那一列講的是同一件事，所以走同一支 ——
-       savePagePublish() 會連 seatingFeatureEnabled 一起寫，
-       順手清掉排程（不清的話等一下又自己開回來，那不是按下去的意思） */
-    await savePagePublish('seating', { on, at:null });
-    syncSeatFeatureUI();
-    toast(on ? '已開放桌次功能，賓客現在看得到「尋找我的座位」'
-             : '已關閉桌次功能，賓客那邊不會出現桌次');
-  }catch(err){
-    /* 存不進去就把開關扳回原本的狀態，畫面不要和資料庫說不一樣的話 */
-    syncSeatFeatureUI();
-    writeFailed(err);
-  }
-});
-
-/* ============================================================
-   1-2 桌次搜尋開關
+   1-2 桌次搜尋開關（「桌次 → 桌次搜尋及名單」最上面那顆 switch）
    ------------------------------------------------------------
    關掉的話，賓客的桌次頁只剩下新人上傳的桌次圖。
    沒設定過的舊站台一律視為開著，不會因為多了這個欄位就突然關掉。
+
+   「這一整頁要不要讓賓客看到」是另一件事，統一在「頁面設定」那一頁
+   （seatingFeatureEnabled，見 savePagePublish），這裡不重複放一顆。
 ============================================================ */
 const seatSearchEl = document.getElementById('adSeatSearch');
 const seatListOffEl = document.getElementById('adSeatListOff');
@@ -4347,7 +4313,8 @@ seatSearchEl.addEventListener('change', async ()=>{
   try{
     await DataStore.saveSiteFields({ seatingSearchEnabled: on });
     syncSeatSearchUI();
-    toast(on ? '已開啟桌次搜尋' : '已關閉桌次搜尋，賓客只會看到桌次圖');
+    toast(on ? '已開啟，賓客可以輸入名字查詢桌次'
+             : '已關閉，賓客只能查看桌次圖');
   }catch(err){
     /* 存不進去就把開關扳回原本的狀態，畫面不要和資料庫說不一樣的話 */
     syncSeatSearchUI();
@@ -5779,6 +5746,8 @@ document.getElementById('adSchSave').addEventListener('click', async ()=>{
   await runSave(document.getElementById('adSchSave'), async ()=>{
     await DataStore.saveSiteFields({ schedule: rows });
     renderSchedule(rows);
+    /* 首頁的「讓婚禮資訊更豐富」是拿這一份判斷的，存完要跟著打勾 */
+    renderHome();
     toast(rows.length ? `已儲存 ${rows.length} 個流程項目` : '流程已清空');
   });
 });
@@ -7002,19 +6971,75 @@ document.getElementById('adQuizWipe').addEventListener('click', async ()=>{
    沒有任何一句話說「先做哪一個」。這一頁補上那句話。
 
    三塊：
-     1. 開場 —— 這是什麼、賓客會看到什麼，兩個出口擺在最上面
-        （查看目前網站／查看表單）
-     2. 上手指南 —— 有順序的幾步，每一步右邊一顆直達的按鈕，
+     1. 開場 —— 網站已經做好了，接下來要放什麼內容都在這裡改。
+        兩個出口擺在最上面（查看婚禮網站／查看表單）
+     2. 開始製作 —— 有順序的幾步，每一步右邊一顆直達的按鈕，
         已經填好的打勾
-     3. 常被問到的事
+     3. 還有這兩個頁面 —— 指到「頁面設定」與「常見問題」
 
    「已經填好了嗎」一律用資料本身判斷，不另外記狀態 ——
    我們沒有辦法保證新人只用同一台裝置，也不該讓一個進度條
    在他換手機之後歸零。
+
+   唯一的例外是第一步「把後台放到手機主畫面」：那件事問的本來就是
+   「這一台裝置做過了沒」，資料庫裡沒有、也不該有它的答案，
+   所以記在 localStorage（HOME_PIN_KEY，LS 以 siteId 分隔）——
+   換一台手機就該再問一次，因為那台確實還沒放。
 ============================================================ */
+
+/* 第一步的操作步驟。按「我已經完成」就收起來，按「再看一次」再打開。
+   這是我們自己寫的說明文字（不是使用者資料），所以直接當 HTML 用。 */
+const HOME_PIN_KEY = 'homePinned';
+const HOME_PIN_GUIDE = `
+  <div class="ad-step-guide-grp">
+    <div class="ad-step-guide-hd">iPhone / iPad</div>
+    <ol class="ad-step-guide-list">
+      <li>用 Safari 打開後台網址（這一步要用 Safari，其他瀏覽器沒有這個選單）</li>
+      <li>先登入一次</li>
+      <li>按畫面下方中間的「分享」鍵（一個方框往上的箭頭）</li>
+      <li>往下滑，找到「加入主畫面」</li>
+      <li>名稱改成看得懂的，例如「婚禮後台」，按右上角「加入」</li>
+    </ol>
+  </div>
+  <div class="ad-step-guide-grp">
+    <div class="ad-step-guide-hd">Android</div>
+    <ol class="ad-step-guide-list">
+      <li>用 Chrome 打開後台網址</li>
+      <li>先登入一次</li>
+      <li>按右上角的「⋮」</li>
+      <li>選「加到主畫面」或「安裝應用程式」（看手機版本，兩個都對）</li>
+      <li>名稱改成「婚禮後台」，按「新增」</li>
+    </ol>
+  </div>`;
+
+/* 「婚禮前有空可以慢慢做」那一步涵蓋的四個功能。
+   沒開通的不算在裡面（分母只數他真的有的東西），
+   按鈕指向第一個還空著的那一頁 —— 「還沒做的下一件事」才是他要去的地方。
+   感謝信存在 blessings（letters 是賓客投進來的悄悄話，不是同一份東西）。 */
+const HOME_EXTRAS = [
+  { tab:'letters',  hash:'letters',        has: () => DataStore.getBlessings().length > 0 },
+  { tab:'quiz',     hash:'quiz/questions', has: () => DataStore.getQuiz().length      > 0 },
+  { tab:'exhibits', hash:'exhibits',       has: () => DataStore.getExhibits().length  > 0 },
+  { tab:'cards',    hash:'cards',          has: () => DataStore.getCards().length     > 0 },
+];
+const homeExtrasOn    = () => HOME_EXTRAS.filter(x => tabEnabled(x.tab));
+const homeExtrasCount = () => homeExtrasOn().filter(x => x.has()).length;
+function homeExtrasHash(){
+  const on = homeExtrasOn();
+  return (on.find(x => !x.has()) || on[0] || {}).hash || 'home';
+}
+
 const HOME_STEPS = [
   {
     tab: 'lobby', hash: 'lobby',
+    title: '第一件事：把後台放到手機主畫面',
+    note: '先把它放到主畫面，之後就像一個 App，不用再找那串長長的網址。',
+    guide: HOME_PIN_GUIDE,
+    done: () => LS.get(HOME_PIN_KEY, false),
+    doneText: '已經放到主畫面了',
+  },
+  {
+    tab: 'lobby', hash: 'lobby/info',
     title: '填好婚禮資訊',
     note: '地點、時間、交通、Dress Code、關於禮金..等',
     done: () => !!(siteData().venueName || siteData().venueAddress),
@@ -7023,33 +7048,42 @@ const HOME_STEPS = [
   {
     tab: 'rsvpForm', hash: 'rsvpForm',
     title: '決定出席表單要問什麼',
-    note: '設定題目「出席人數、素食、兒童座椅..等」，',
+    note: '設定題目「出席人數、素食、兒童座椅..等」',
     done: () => 'rsvpContactMethods' in siteData(),
     doneText: '已經設定過了',
   },
   {
-    tab: 'lobby', hash: 'lobby',
-    title: '寫當日流程',
-    note: '沒填的話，會顯示「流程稍後公布」。',
-    done: () => Array.isArray(siteData().schedule) && siteData().schedule.length > 0,
-    doneText: () => `已經填寫了`,
+    /* 當日流程與自訂內容是同一件事的兩半（都是「大廳還能再放什麼」），
+       所以合成一步。按鈕指到自訂內容 —— 流程那一頁多數人填完就不再回來 */
+    tab: 'lobby', hash: 'lobby/explore',
+    title: '讓婚禮資訊更豐富',
+    note: '填寫當日流程、新增自訂內容，放上更多資訊吧！',
+    done: () => siteSchedule().length > 0 || DataStore.getExplore().length > 0,
+    doneText: () => [
+      siteSchedule().length ? '已經填寫當日流程' : '',
+      DataStore.getExplore().length ? `自訂內容有 ${DataStore.getExplore().length} 項` : '',
+    ].filter(Boolean).join('、'),
   },
   {
-    tab: 'letters', hash: 'letters',
-    title: '寫封給賓客的感謝信',
-    done: () => DataStore.getLetters().length > 0,
-    doneText: () => `已經寫了 ${DataStore.getLetters().length} 封`,
-  },
-  {
-    tab: 'rsvp', hash: 'rsvp/overview',
+    /* 發連結之前的最後一關是「現在賓客看得到哪幾頁」，所以指到頁面設定；
+       做完了沒有還是看回覆進來了沒 */
+    tab: 'rsvp', hash: 'pages',
     title: '發送連結給賓客',
-    note: '收到的每一份回覆都會出現在「出席回覆」，人數、葷素、兒童椅都幫你加好。',
+    note: '送出前，可以到頁面設定調整目前賓客可以看到的內容。',
     done: () => DataStore.getRSVPCount() > 0,
     doneText: () => `已經收到 ${DataStore.getRSVPCount()} 份回覆`,
   },
   {
+    tabs: ['letters', 'quiz', 'exhibits', 'cards'],
+    hash: homeExtrasHash,
+    title: '婚禮前有空可以慢慢做',
+    note: '感謝信、測驗、故事牆、婚禮小卡..等',
+    done: () => homeExtrasCount() > 0,
+    doneText: () => `已經完成 ${homeExtrasCount()} 項`,
+  },
+  {
     tab: 'seatingPlan', hash: 'seatingPlan/board',
-    title: '有回覆就可以開始排桌',
+    title: '收到回覆就可以排桌管理',
     note: '回覆名單可以直接同步排桌。',
   },
   {
@@ -7061,8 +7095,20 @@ const HOME_STEPS = [
 
 const homeStepsEl = document.getElementById('adHomeSteps');
 
+/* 第一步的操作步驟現在是打開的嗎。
+   打勾之後預設收起來，按「再看一次」才又打開 —— 只記在這一次瀏覽裡，
+   重新整理就回到「做完了就收好」的樣子。 */
+let homeGuideOpen = false;
+
 function homeStepText(v){
   return typeof v === 'function' ? v() : v;
+}
+
+/* 這一步要不要出現。tabs 是「涵蓋好幾個功能」的那一步（婚禮前慢慢做）：
+   只要其中一個開通了就該看得到，四個都沒開才整步收掉 */
+function homeStepShown(s){
+  if(Array.isArray(s.tabs)) return s.tabs.some(tabEnabled);
+  return !s.tab || tabEnabled(s.tab);
 }
 
 /* 這一步「做完了沒有」。判斷不出來（例如排桌、收禮那種沒有明確終點的）
@@ -7088,8 +7134,9 @@ function homeStepDone(step){
                          （判斷在 js/wed-model.js 的 pageVisible()）。
 
    桌次是唯一的例外：它的開／關早就存在 seatingFeatureEnabled
-   （「桌次」分頁上那一顆），所以這裡寫的時候兩個欄位一起更新，
-   兩個地方看到的永遠是同一件事。
+   （前台與 check-site.js 都還讀那一欄），所以這裡寫的時候
+   兩個欄位一起更新。這一列就是桌次唯一的開關，「桌次」分頁上
+   不再另外放一顆。
 
    排程沒有後端：時間到了不會有人寫回資料庫，而是賓客每次開頁面
    都重新判斷一次「現在過了那個時間沒有」。所以新人排完就可以關掉後台。
@@ -7097,17 +7144,6 @@ function homeStepDone(step){
 const pagesSecEl  = document.getElementById('adPagesSec');
 const pageListEl  = document.getElementById('adPageList');
 const pagePrevEl  = document.getElementById('adPagePreview');
-
-/* 一句話說明。新人不會每個名字都記得那一頁在做什麼 */
-const PAGE_SETTING_NOTES = {
-  wall:       '賓客寫下祝福，也看得到別人寫的',
-  cake:       '挑一個圖案丟進桶子，替你們集氣',
-  draw:       '抽一張婚禮限定小卡，收進收藏',
-  exhibition: '沿著時間線，走過你們一路走來的日子',
-  quiz:       '一份小測驗，看賓客有多了解你們',
-  seating:    '輸入名字就查得到自己坐哪一桌',
-  letter:     '你們寫給賓客的信，輸入名字拆開來看',
-};
 
 /* 這一區要列哪幾頁：賓客看得到、而且可以關掉的那些。
    出席回覆（邀請函）不列 —— 那是對外分享的那個連結本身，
@@ -7128,7 +7164,6 @@ function pageSettingRows(){
       return {
         key,
         label:  S.pages[key].label,
-        note:   PAGE_SETTING_NOTES[key] || '',
         locked: !open,
         /* 沒開通的那一頁一律當成「關著」：pagePublish 沒設定過的預設是
            on:true（見 wed-model.js 的 pagePublishEntry），照著畫的話
@@ -7145,16 +7180,6 @@ function pageRowLive(row){
   return row.on || (row.at !== null && Date.now() >= row.at);
 }
 
-/* 賓客現在看不看得到這一頁（＝ wed-model.js 的 pageVisible()，
-   只是後台這一側沒有那支 module 可以 import）。
-   排程時間到了的那一頁，開關要跟著是「開」的樣子 ——
-   畫面上關著、賓客卻看得到，是最糟的一種不一致。 */
-function pageLiveNow(key){
-  const S = window.SITE;
-  if(!S || typeof S.pagePublish !== 'function') return true;
-  return pageRowLive(S.pagePublish(key));
-}
-
 /* epoch ms ↔ <input type="datetime-local">。
    輸入框給的是「新人自己電腦上的牆上時間」，存進去的是絕對時間 ——
    排程是給新人自己看的（他就在婚禮現場），不換算婚禮時區。 */
@@ -7165,10 +7190,12 @@ function toLocalInput(ms){
        + `T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
+/* 一列裡只留「標題 ＋ 排程 ＋ 開關」，狀態不再每一列都寫一句：
+   開著沒開著開關自己就看得出來，鎖頭那一列旁邊有問號。
+   剩下唯一沒地方講的是**排程的那個時間**，所以只有排了程的那幾列
+   才長出這一行 —— 它是這一列裡唯一還有新資訊的一句話。 */
 function pageStateText(row){
-  if(row.locked) return '還沒開通這個功能';
-  if(row.on) return '賓客現在看得到';
-  if(row.at === null) return '已收起來，賓客看不到';
+  if(row.locked || row.at === null) return '';
   return Date.now() >= row.at
     ? `已自動開啟（${fmtTime(row.at)}）`
     : `${fmtTime(row.at)} 自動開啟`;
@@ -7180,8 +7207,8 @@ const PAGE_LOCK_MSG = '這個功能需要管理員才能開啟，請透過官方
 
 /* 那一句話由旁邊的問號（Feather 的 help-circle）帶出來：
    桌機滑過去就看得到，觸控裝置點一下 —— 兩邊都不必先按下一顆看起來
-   按不動的開關才知道發生什麼事。按鈕上刻意沒有文字：一列裡已經有
-   頁名、說明、狀態三行字了，再多一句「為什麼不能開？」會蓋過它們。
+   按不動的開關才知道發生什麼事。按鈕上刻意沒有文字：
+   「為什麼不能開？」一整句會比頁名自己還長。
 
    形狀是**浮在上面的 tooltip**，不是長在那一列裡的一塊說明：
    說明如果撐開那一列，滑過去、滑開就會把下面整排往下推再收回來——
@@ -7301,26 +7328,28 @@ const pageLockTip = (function(){
 function pageRowHtml(row){
   const live = pageRowLive(row);
   const schedFuture = !row.on && row.at !== null && Date.now() < row.at;
+  const state = pageStateText(row);
   return `
   <div class="ad-page-row${row.locked ? ' is-locked' : ''}${
          !row.locked && live ? ' is-live' : ''}"
        data-page-row="${escapeHtml(row.key)}">
     <div class="ad-page-main">
-      <div class="ad-page-name">${escapeHtml(row.label)}${
-        row.locked ? lockIconHtml('ad-ic-lock') : ''}</div>
-      ${row.note ? `<div class="ad-page-note">${escapeHtml(row.note)}</div>` : ''}
-      <div class="ad-page-state${schedFuture ? ' is-sched' : ''}">${
-        escapeHtml(pageStateText(row))}</div>
+      <div class="ad-page-name">
+        <span class="ad-page-name-text">${escapeHtml(row.label)}</span>${
+        row.locked ? lockIconHtml('ad-ic-lock') : ''}
+        ${row.locked
+          ? `<button class="ad-page-why" type="button" data-page-why
+              aria-expanded="false" aria-label="為什麼不能開？">
+              <svg class="ad-ic" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-help"/></svg>
+            </button>`
+          : `<button class="ad-page-when" type="button" data-page-when
+              aria-expanded="false">${schedFuture ? '改排程' : '排程開啟'}</button>`}
+      </div>
+      ${state ? `<div class="ad-page-state${schedFuture ? ' is-sched' : ''}">${
+        escapeHtml(state)}</div>` : ''}
     </div>
 
     <div class="ad-page-act">
-      ${row.locked
-        ? `<button class="ad-page-why" type="button" data-page-why
-            aria-expanded="false" aria-label="為什麼不能開？">
-            <svg class="ad-ic" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-help"/></svg>
-          </button>`
-        : `<button class="ad-page-when" type="button" data-page-when
-            aria-expanded="false">${schedFuture ? '改排程' : '排程開啟'}</button>`}
       <label class="ad-toggle">
         <input type="checkbox" data-page-on
                ${!row.locked && live ? 'checked' : ''}
@@ -7413,7 +7442,6 @@ async function savePagePublish(key, next){
 
   await DataStore.saveSiteFields(patch);
   renderPageSettings();
-  if(key === 'seating') syncSeatFeatureUI();
 }
 
 function pageRowKey(el){
@@ -7566,26 +7594,44 @@ if(pageListEl){
 function renderHome(){
   if(!homeStepsEl) return;
 
-  /* 沒開的功能不該出現在「從這裡開始」——
+  /* 沒開的功能不該出現在「開始製作」——
      叫新人去點一顆鎖著的分頁是最糟的第一步 */
-  const steps = HOME_STEPS.filter(s => !s.tab || tabEnabled(s.tab));
+  const steps = HOME_STEPS.filter(homeStepShown);
 
   homeStepsEl.innerHTML = steps.map((s, i) => {
-    const done = homeStepDone(s);
+    const done  = homeStepDone(s);
     const state = done ? homeStepText(s.doneText) : '';
+
+    /* 有操作步驟的那一步（第一步）不跳去別的分頁，就在這一列裡展開／收起。
+       做完之前一直開著，按了「我已經完成」才收 —— 那一刻他手上就拿著手機，
+       收起來之後這一列只剩一行字，不會再擋著下面真正要填的東西。
+
+       它的按鈕也不站在右邊那一欄：那一欄是垂直置中的，展開時會被拉到
+       整疊操作步驟的中間，離「我已經完成」在講的那一行標題很遠。
+       所以這一步的按鈕跟著標題走，就在標題右邊。 */
+    const guideOn = !!s.guide && (!done || homeGuideOpen);
+    const act = s.guide
+      ? `<button class="btn small ${guideOn ? '' : 'ghost'}" type="button"
+                data-home-guide="${guideOn ? 'done' : 'open'}">${
+                  guideOn ? '我已經完成' : '再看一次'}</button>`
+      : `<button class="btn small ${done ? 'ghost' : ''}" type="button"
+                data-empty-hash="${escapeHtml(homeStepText(s.hash))}">${
+                  done ? '再看一次' : '去設定'}</button>`;
+
     return `<li class="ad-step${done ? ' is-done' : ''}">
       <span class="ad-step-no">${done
         ? `<svg class="ad-ic" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-check"/></svg>`
         : String(i + 1)}</span>
       <div class="ad-step-main">
-        <div class="ad-step-title">${escapeHtml(s.title)}</div>
-        <p class="ad-step-note">${escapeHtml(s.note)}</p>
-        ${state ? `<p class="ad-step-state">✓ ${escapeHtml(state)}</p>` : ''}
+        <div class="ad-step-head">
+          <div class="ad-step-title">${escapeHtml(s.title)}${
+            state ? `<span class="ad-step-state">✓ ${escapeHtml(state)}</span>` : ''}</div>
+          ${s.guide ? act : ''}
+        </div>
+        ${s.note ? `<p class="ad-step-note">${escapeHtml(s.note)}</p>` : ''}
+        ${guideOn ? `<div class="ad-step-guide">${s.guide}</div>` : ''}
       </div>
-      <div class="ad-step-act">
-        <button class="btn small ${done ? 'ghost' : ''}" type="button"
-                data-empty-hash="${escapeHtml(s.hash)}">${done ? '再看一次' : '去設定'}</button>
-      </div>
+      ${s.guide ? '' : `<div class="ad-step-act">${act}</div>`}
     </li>`;
   }).join('');
 
@@ -7595,9 +7641,20 @@ function renderHome(){
     : '該填的都填得差不多了，隨時可以回來改');
 }
 
-/* 回覆與感謝信進來之後，「這一步做完了沒」的答案會變，重畫一次 */
-document.addEventListener('data:rsvps', renderHome);
-document.addEventListener('data:letters', renderHome);
+/* 「我已經完成」＝打勾並把操作步驟收起來；「再看一次」＝再打開。
+   再看一次不會把勾拿掉 —— 放到主畫面這件事做過就是做過了。 */
+homeStepsEl?.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-home-guide]');
+  if(!btn) return;
+  homeGuideOpen = btn.dataset.homeGuide === 'open';
+  if(!homeGuideOpen) LS.set(HOME_PIN_KEY, true);
+  renderHome();
+});
+
+/* 資料進來之後，「這一步做完了沒」的答案會變，重畫一次。
+   感謝信是 blessings，letters 是悄悄話（首頁不看它） */
+['rsvps', 'blessings', 'cards', 'exhibits', 'quiz', 'explore']
+  .forEach(key => document.addEventListener(`data:${key}`, renderHome));
 
 /* 頂列的「新人後台」＝回首頁（和一般網站點 logo 回首頁一樣） */
 document.getElementById('adHomeBtn')?.addEventListener('click', ()=>{
