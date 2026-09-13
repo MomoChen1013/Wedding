@@ -959,19 +959,31 @@ select.ad-input{appearance:none;cursor:pointer;
    窄到連「排程開啟」都放不下時，.ad-page-name 自己會把它折到第二行。 */
 
 /* 開關本體：一顆真的 checkbox（鍵盤、讀螢幕都照舊），
-   只是把它藏起來，畫面上顯示旁邊那條軌道 */
+   只是把它藏起來，畫面上顯示旁邊那條軌道。
+
+   .ad-toggle-track 是**後台唯一一條開關軌道**：「頁面設定」那一列用它，
+   帶一行字的 Switch（.ad-switch，見 3.6b）也用它 —— 所以下面每一條
+   狀態規則都同時收 .ad-toggle 與 .ad-switch 裡的那顆 input。
+   同一個手勢只能有一種樣子，分成兩份寫遲早會漂掉。 */
 .ad-toggle{position:relative;flex:0 0 auto;display:inline-flex;cursor:pointer;}
 .ad-toggle input{position:absolute;inset:0;width:100%;height:100%;
   margin:0;opacity:0;cursor:pointer;}
-.ad-toggle-track{display:block;width:44px;height:24px;border-radius:999px;
+.ad-toggle-track{flex:0 0 auto;display:block;width:44px;height:24px;border-radius:999px;
   border:1px solid var(--line);background:var(--bg1);transition:.2s;}
 .ad-toggle-track::after{content:'';display:block;width:16px;height:16px;border-radius:50%;
   background:var(--ink-soft);margin:3px;transition:transform .2s,background .2s;}
-.ad-toggle input:checked + .ad-toggle-track{
+.ad-toggle input:checked + .ad-toggle-track,
+.ad-switch input:checked + .ad-toggle-track{
   border-color:var(--primary-deep);background:var(--primary-deep);}
-.ad-toggle input:checked + .ad-toggle-track::after{
+.ad-toggle input:checked + .ad-toggle-track::after,
+.ad-switch input:checked + .ad-toggle-track::after{
   background:#fff;transform:translateX(20px);}
-.ad-toggle input:focus-visible + .ad-toggle-track{outline:1px solid var(--ink);outline-offset:2px;}
+.ad-toggle input:focus-visible + .ad-toggle-track,
+.ad-switch input:focus-visible + .ad-toggle-track{
+  outline:1px solid var(--ink);outline-offset:2px;}
+@media (prefers-reduced-motion:reduce){
+  .ad-toggle-track,.ad-toggle-track::after{transition:none;}
+}
 /* pointer-events:none 是有意的：disabled 的 input 不會發事件也不會冒泡，
    點擊要落到外層的 <label> 上，admin.js 才接得到「他想打開這個功能」。
    游標改成 help（不是 not-allowed）—— 按下去確實會發生事情，只是不是開啟。 */
@@ -3828,35 +3840,26 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:11px;}
 
 /* ---------- Switch ----------
    「要不要開啟這個服務」。原生的 checkbox 藏起來但留在無障礙樹裡
-   （role="switch" 寫在 HTML 上），焦點框掛在可見的那顆軌道上。 */
+   （role="switch" 寫在 HTML 上），焦點框掛在可見的那顆軌道上。
+
+   **軌道就是 .ad-toggle-track 本人**（見「開關本體」那一段）——
+   後台只有一種開關長相，兩個地方共用同一份規格。
+   .ad-switch 在它外面多做的只有一件事：右邊接一行字。
+   （以前這裡另外畫了一條 42×24、開啟時轉 --ink 的軌道，
+     和「頁面設定」那一顆不一樣 —— 同一個手勢不該有兩種樣子。） */
 .ad-switch{position:relative;display:inline-flex;align-items:center;gap:12px;
   cursor:pointer;margin-top:6px;font-size:14px;letter-spacing:.04em;color:var(--ink);}
 /* 原生 checkbox 疊在軌道上（透明但**照樣接得到點擊**）：
    它仍然在無障礙樹裡、role="switch" 掛在它身上，而且自動化測試
-   與螢幕閱讀器點的就是它本人 —— 不是一顆被 span 蓋住的 1px 元素。 */
-.ad-switch input{position:absolute;left:0;top:0;height:100%;width:42px;
+   與螢幕閱讀器點的就是它本人 —— 不是一顆被 span 蓋住的 1px 元素。
+   寬度對齊軌道的 44px。 */
+.ad-switch input{position:absolute;left:0;top:0;height:100%;width:44px;
   margin:0;opacity:0;cursor:pointer;z-index:1;}
-/* 軌道與把手是純裝飾（aria-hidden），點擊一律交給上面那顆 input ——
-   不然 .ad-switch-knob（絕對定位、又排在 input 後面）會蓋在它的正中間，
-   變成「看得到、也點得到，但點到的是一個 span」 */
-.ad-switch-box{position:relative;flex:0 0 auto;width:42px;height:24px;
-  pointer-events:none;
-  border:1px solid var(--line);border-radius:999px;background:var(--bg2);
-  transition:background var(--dur-btn) var(--ease),border-color var(--dur-btn) var(--ease);}
-.ad-switch-knob{position:absolute;top:2px;left:2px;width:18px;height:18px;
-  border-radius:50%;background:#fff;border:1px solid var(--line);
-  transition:transform var(--dur-btn) var(--ease),border-color var(--dur-btn) var(--ease);}
-.ad-switch input:checked + .ad-switch-box{background:var(--ink);border-color:var(--ink);}
-.ad-switch input:checked + .ad-switch-box .ad-switch-knob{
-  transform:translateX(18px);border-color:var(--ink);}
-.ad-switch input:focus-visible + .ad-switch-box{
-  outline:2px solid var(--primary-deep);outline-offset:2px;}
+/* 軌道是純裝飾（aria-hidden），點擊一律交給上面那顆 input */
+.ad-switch .ad-toggle-track{pointer-events:none;}
 .ad-switch-lab{min-width:0;}
 @media (pointer:coarse){
   .ad-switch{min-height:44px;}
-}
-@media (prefers-reduced-motion:reduce){
-  .ad-switch-box,.ad-switch-knob{transition:none;}
 }
 
 /* ---------- Radio group ----------

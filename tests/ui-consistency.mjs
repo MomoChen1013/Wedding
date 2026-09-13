@@ -415,7 +415,9 @@ const bits = await page.evaluate(() => {
     return out;
   };
   const sw = document.querySelector('.ad-switch input');
-  const swBox = document.querySelector('.ad-switch-box');
+  /* Switch 用的軌道就是「頁面設定」那一顆的 .ad-toggle-track —— 一份規格，
+     所以這裡量到的尺寸與顏色，和頁面設定那一列量到的是同一份 CSS */
+  const swBox = document.querySelector('.ad-switch .ad-toggle-track');
   const swCs = swBox ? getComputedStyle(swBox) : null;
   const swInCs = sw ? getComputedStyle(sw) : null;
   const reveal = document.querySelector('.ad-reveal');
@@ -432,6 +434,10 @@ const bits = await page.evaluate(() => {
     /* 藏起來但仍然在無障礙樹裡：不能是 display:none／visibility:hidden */
     switchInput: swInCs ? { display:swInCs.display, vis:swInCs.visibility } : null,
     switchBox: swCs ? { w:swCs.width, h:swCs.height, radius:swCs.borderTopLeftRadius } : null,
+    /* 後台只有一種開關長相：Switch 不准自己另外畫一條軌道 */
+    switchOwnTrack: !!document.querySelector('.ad-switch-box,.ad-switch-knob'),
+    switchTracks: document.querySelectorAll('.ad-switch .ad-toggle-track').length,
+    switchCount: document.querySelectorAll('.ad-switch').length,
     revealHidden,
   };
 });
@@ -453,11 +459,16 @@ if(bits.switchInput){
      `${bits.switchInput.display} / ${bits.switchInput.vis}`);
 }
 if(bits.switchBox){
-  ok('Switch 的軌道是 42×24 的膠囊',
-     bits.switchBox.w === '42px' && bits.switchBox.h === '24px'
+  /* 和「頁面設定」那一顆同一條軌道，所以量到的是 .ad-toggle 的規格 */
+  ok('Switch 的軌道是 44×24 的膠囊（＝ .ad-toggle-track）',
+     bits.switchBox.w === '44px' && bits.switchBox.h === '24px'
        && parseFloat(bits.switchBox.radius) >= 999,
      `${bits.switchBox.w}×${bits.switchBox.h} / ${bits.switchBox.radius}`);
 }
+ok('Switch 沒有自己另外畫一條軌道', !bits.switchOwnTrack);
+ok('每一顆 Switch 都用 .ad-toggle-track',
+   bits.switchCount > 0 && bits.switchTracks === bits.switchCount,
+   `${bits.switchTracks}/${bits.switchCount}`);
 ok('Conditional Reveal 收起來是整塊不見（不是灰掉）',
    bits.revealHidden === 'none', String(bits.revealHidden));
 
