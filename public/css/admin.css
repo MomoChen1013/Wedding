@@ -3686,19 +3686,22 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
 .ad-sec > .ad-sec-title.ad-page-title + .ad-page-sub{margin-top:-6px;margin-bottom:16px;}
 
 /* ============================================================
-   問句 .ad-ask ＋ 細節 .ad-fine
+   開場白 .ad-ask ＋ 細節 .ad-fine
    ------------------------------------------------------------
-   「婚禮資訊」那六個階段是先問一句話（.ad-wz-title），再給要填的東西。
-   其他分頁原本沒有那一句 —— 標題是一個名詞（「自訂內容」「感謝信」），
-   接著就是一段三四行的說明，新人得先讀完才知道自己在這一頁要做什麼。
+   一頁要說清楚「現在在做什麼」，最短的路是**標題 ＋ 一行 .ad-sec-note**。
+   絕大多數分頁就到此為止：標題已經是「桌次圖」「收禮明細」，
+   再補一句「賓客怎麼找到自己的位子？」只是把同一件事說兩次。
 
-   所以每一頁的標題底下補一行 .ad-ask：用人話問「現在要完成什麼」。
-   字級刻意排在標題與說明之間 ——
+   .ad-ask 是那個規則的例外，只給**標題撐不住的兩個地方**：
+     ・後台首頁    標題是「首頁」，等於沒說；那一行才是開場白
+     ・排桌工作區  這個 subpanel 根本沒有標題，一打開就是一整片工具
+
+   目前全站就這兩處。要再加第三處之前，先問「一行 .ad-sec-note 夠不夠」。
 
      .ad-page-title  21px 明朝體   這一頁叫什麼（和側欄那顆分頁同名）
-     .ad-ask         17px 明朝體   這一頁在問你什麼          ← 這裡
+     .ad-ask         17px 明朝體   標題說不出來的那一句        ← 這裡
      .ad-page-sub    12px sans     現在的狀態（幾筆、幾位）
-     .ad-sec-note    12.5px sans   真的能降低理解成本的那一行
+     .ad-sec-note    12.5px sans   一行講完，講不完的收進 .ad-fine
 
    .ad-fine 是「其餘的細節」：原本那幾段長說明沒有消失，只是預設收起來。
    需要的時候點開，不需要的時候不佔用第一眼。純 <details>，
@@ -3709,11 +3712,6 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
   font-family:var(--font-display);font-weight:500;
   font-size:17px;line-height:1.75;letter-spacing:.04em;color:var(--ink);
 }
-/* 問句底下若還有一行說明（或 JS 填的現況），兩者是同一組，距離收窄 */
-.ad-ask + .ad-sec-note{margin-top:-8px;}
-.ad-ask + .ad-page-sub{margin-top:-8px;margin-bottom:18px;}
-/* 標題自己畫底線的那幾頁：底線與問句之間不要再多一段 */
-.ad-sec > .ad-sec-title.ad-page-title + .ad-ask{margin-top:-2px;}
 /* 工作台（排桌）用的緊湊版：那一頁的高度要留給版面本身 */
 .ad-ask-tight{margin-bottom:12px;font-size:15.5px;}
 @media(max-width:560px){

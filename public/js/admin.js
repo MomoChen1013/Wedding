@@ -1516,7 +1516,7 @@ document.getElementById('adLockMobile').addEventListener('click', ownerLogout);
 
 if(!ownerEmails().length){
   loginBtn.disabled = true;
-  pwErr.textContent = '這場婚禮還沒設定登入帳號，跟我們說一聲就可以加';
+  pwErr.textContent = '看起來還沒設定新人登入帳號，跟我們說一聲吧！';
 }else{
   window.fb.onAuthStateChanged(window.fb.auth, ()=>{
     if(isSiteOwner()) openAdmin();
@@ -1731,7 +1731,7 @@ document.getElementById('adSide').addEventListener('click', (e)=>{
         「點一下跳出說明、再點一次才切分頁」是壞掉的互動。
 ============================================================ */
 const NAV_TIPS = {
-  home:        '從哪裡開始、接下來做什麼，都寫在這一頁。',
+  home:        '幫你統整好的筆記都在這裡。',
   rsvpForm:    '決定出席表單要問賓客哪些事。',
   guestTags:   '分類賓客用的標籤（行動不便、大學同學…），排桌與篩名單都用得上。',
   rsvp:        '賓客填的出席回覆都在這裡，也可以篩選、貼標籤、匯出 CSV。',
@@ -3030,7 +3030,7 @@ function renderActCards(){
     note.innerHTML = evs.length > 1
       ? `這場婚禮有 <b>${evs.length}</b> 個行程`
       : '行程的時間、地點與要問的題目都在這張卡上。'
-        + '<b>時間與地點一改，賓客首頁與邀請函會一起更新。</b>';
+        + '<b>時間與地點一改，賓客首頁會一起更新。</b>';
   }
 
   actListEl.innerHTML = evs.map(ev => actCardHtml(ev)).join('');
@@ -3251,8 +3251,8 @@ function openActModal(id){
   if(del) del.hidden = !saved || weddingEvents().length <= 1;
   document.getElementById('adActModalTitle').textContent = `「${ev.name}」的時間與地點`;
   document.getElementById('adActHint').innerHTML = saved
-    ? '存好之後，<b>賓客首頁、邀請函與出席表單</b>上這個活動的時間與地點會一起更新。'
-    : '存好之後，<b>賓客首頁、邀請函與出席表單</b>上的時間與地點會一起更新。'
+    ? '存好之後，<b>賓客首頁</b>上的活動會一起更新。'
+    : '存好之後，<b>賓客首頁</b>上的活動會一起更新。'
       + '日期要透過我們才改得動。';
 
   actModalMask.hidden = false;
@@ -3663,7 +3663,7 @@ function syncRsvpFormDirty(){
   const btn  = document.getElementById('adRsvpFormSave');
   const dirty = rsvpFormSnapshot() !== rsvpFormBaseline;
   if(note){
-    note.textContent = dirty ? '有還沒儲存的變更' : '都存好了';
+    note.textContent = dirty ? '有還沒儲存的變更' : '目前都很好';
     note.classList.toggle('is-dirty', dirty);
   }
   if(btn) btn.classList.toggle('is-dirty', dirty);
@@ -5652,7 +5652,7 @@ function syncSiteDirtyUI(){
   const btn  = document.getElementById('adSiteSave');
   const d = siteFormDirty();
   if(note){
-    note.textContent = d ? '有還沒儲存的變更' : '都存好了';
+    note.textContent = d ? '有還沒儲存的變更' : '目前都很好';
     note.classList.toggle('is-dirty', d);
   }
   if(btn) btn.classList.toggle('is-dirty', d);
@@ -6899,7 +6899,7 @@ function wzSyncStepBar(){
   wzStepsEl.querySelectorAll('.ad-wz-step').forEach(step => {
     const note = step.querySelector('[data-wz-note]');
     if(note){
-      note.textContent = d ? '有還沒儲存的變更' : '都存好了';
+      note.textContent = d ? '有還沒儲存的變更' : '目前都很好';
       note.classList.toggle('is-dirty', d);
     }
     const next = step.querySelector('[data-wz-next]');
@@ -7107,7 +7107,7 @@ function renderCards(){
     cardListEl.innerHTML =
       emptyState({
         title: '還沒有婚禮小卡',
-        body: '賓客抽到的就是這裡的照片。空著的話會先用我們準備的圖，'
+        body: '賓客抽到的就是這裡的照片。空著的話會先用你給過我們的照片，'
             + '兩邊都沒有時賓客會看到「等待新人上傳照片」。',
       });
     return;
