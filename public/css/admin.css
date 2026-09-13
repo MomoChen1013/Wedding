@@ -3686,6 +3686,69 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
 .ad-sec > .ad-sec-title.ad-page-title + .ad-page-sub{margin-top:-6px;margin-bottom:16px;}
 
 /* ============================================================
+   問句 .ad-ask ＋ 細節 .ad-fine
+   ------------------------------------------------------------
+   「婚禮資訊」那六個階段是先問一句話（.ad-wz-title），再給要填的東西。
+   其他分頁原本沒有那一句 —— 標題是一個名詞（「自訂內容」「感謝信」），
+   接著就是一段三四行的說明，新人得先讀完才知道自己在這一頁要做什麼。
+
+   所以每一頁的標題底下補一行 .ad-ask：用人話問「現在要完成什麼」。
+   字級刻意排在標題與說明之間 ——
+
+     .ad-page-title  21px 明朝體   這一頁叫什麼（和側欄那顆分頁同名）
+     .ad-ask         17px 明朝體   這一頁在問你什麼          ← 這裡
+     .ad-page-sub    12px sans     現在的狀態（幾筆、幾位）
+     .ad-sec-note    12.5px sans   真的能降低理解成本的那一行
+
+   .ad-fine 是「其餘的細節」：原本那幾段長說明沒有消失，只是預設收起來。
+   需要的時候點開，不需要的時候不佔用第一眼。純 <details>，
+   和首頁的製作筆記（.ad-note）、常見問題同一套，不另外寫 JS。
+============================================================ */
+.ad-ask{
+  margin:0 0 16px;
+  font-family:var(--font-display);font-weight:500;
+  font-size:17px;line-height:1.75;letter-spacing:.04em;color:var(--ink);
+}
+/* 問句底下若還有一行說明（或 JS 填的現況），兩者是同一組，距離收窄 */
+.ad-ask + .ad-sec-note{margin-top:-8px;}
+.ad-ask + .ad-page-sub{margin-top:-8px;margin-bottom:18px;}
+/* 標題自己畫底線的那幾頁：底線與問句之間不要再多一段 */
+.ad-sec > .ad-sec-title.ad-page-title + .ad-ask{margin-top:-2px;}
+/* 工作台（排桌）用的緊湊版：那一頁的高度要留給版面本身 */
+.ad-ask-tight{margin-bottom:12px;font-size:15.5px;}
+@media(max-width:560px){
+  .ad-ask{font-size:16px;letter-spacing:.02em;}
+  .ad-ask-tight{font-size:14.5px;}
+}
+
+.ad-fine{margin:-4px 0 18px;}
+.ad-fine > summary{
+  display:inline-flex;align-items:center;gap:6px;
+  list-style:none;cursor:pointer;padding:4px 0;min-height:28px;
+  font-family:var(--font-ui);font-size:12px;letter-spacing:.06em;
+  color:var(--ink-soft);
+  transition:color var(--dur-hover) ease-out;
+}
+.ad-fine > summary::-webkit-details-marker{display:none;}
+.ad-fine > summary::after{
+  content:'›';font-size:13px;line-height:1;opacity:.7;
+  transition:transform var(--dur-pop) var(--ease);
+}
+.ad-fine[open] > summary::after{transform:rotate(90deg);}
+@media (hover:hover) and (pointer:fine){
+  .ad-fine > summary:hover{color:var(--ink);}
+}
+.ad-fine > summary:focus-visible{outline:1px solid var(--ink);outline-offset:2px;}
+/* 內文就是 .ad-sec-note 那一階的字，只是靠一道線和上面的問句分開 */
+.ad-fine-body{
+  margin:6px 0 0;padding:12px 0 0;border-top:1px solid var(--line-soft);
+  font-size:12.5px;line-height:2;letter-spacing:.04em;color:var(--ink-soft);
+}
+.ad-fine-body b{color:var(--ink);font-weight:500;}
+.ad-fine-body p{margin:0;}
+.ad-fine-body p + p{margin-top:10px;}
+
+/* ============================================================
    空狀態
    ------------------------------------------------------------
    .ad-donuts-empty 已經做對了（虛線框 ＋ 兩行說明 ＋ 出口），
