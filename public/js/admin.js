@@ -3612,7 +3612,7 @@ function renderFormPreviews(){
 }
 
 /* ---------- 「是哪一組關係」 ----------
-   選項就是賓客標籤裡勾了「當表單選項」的那幾個，所以這一題會不會出現
+   選項就是賓客標籤裡放在「賓客表單自選」那一組的那幾個，所以這一題會不會出現
    不是一個開關、而是一個**結果**：勾選框照現況打勾（點不動），
    旁邊那顆 tag 直接說出現況。 */
 function renderFormTagPreview(){
@@ -3631,7 +3631,7 @@ function renderFormTagPreview(){
   const hint = document.getElementById('adAskTagHint');
   if(hint){
     hint.innerHTML = on
-      ? '勾「當表單選項」的標籤才會出現在這裡，'
+      ? '放在「賓客表單自選標籤」那一組的標籤才會出現在這裡，'
         + '會即時同步標籤。'
         + '<button class="ad-linkbtn" type="button" id="adAskTagJump">前往設定 ↗</button>'
       : '這是進階功能，<b>目前方案還沒開通</b>，'
@@ -3721,7 +3721,7 @@ document.getElementById('adAskTagAdd')?.addEventListener('click', async ()=>{
   if(list.some(t => t.name === name)){ toast('已經有同名的標籤了', true); return; }
 
   try{
-    /* onForm:true —— 從這一頁新增的標籤，本來就是要當表單選項的 */
+    /* onForm:true —— 從這一頁新增的標籤，本來就是要給賓客自己選的 */
     await saveGuestTags([...list, { id:newTagId(), name, onForm:true }]);
     renderTagsAndList();
     renderFormPreviews();
@@ -3887,9 +3887,9 @@ document.getElementById('adRsvpForm').addEventListener('submit', async (e)=>{
    這是要配合排桌次一起用的進階功能，由我們決定哪一組新人要用
    （Firebase Console，或 `npm run set-pages -- --guest-tags on`）。
 ============================================================ */
-const tagSecEl   = document.getElementById('adTagSec');
-const tagListEl  = document.getElementById('adTagList');
-const tagChipsEl = document.getElementById('adRsvpTagChips');
+const tagSecEl    = document.getElementById('adTagSec');
+const tagGroupsEl = document.getElementById('adTagGroups');
+const tagChipsEl  = document.getElementById('adRsvpTagChips');
 
 /* 標籤存的是 id 不是名字，改名才不會讓已經掛好的分類對不到 */
 function newTagId(){
@@ -3919,6 +3919,35 @@ function tagUseCount(){
   return count;
 }
 
+/* ---------- 兩組 chip ----------
+   賓客表單自選（onForm:true）／後台管理（onForm:false）。
+   分組本身就是設定：把一顆標籤從下面那組搬到上面那組，
+   等於原本那個「當表單選項」的勾選框 —— 只是現在看得出它的後果。 */
+const TAG_GROUPS = [
+  {
+    onForm: true,
+    title:  '賓客表單自選標籤',
+    note:   '賓客填出席回覆時，可以自己勾這幾個。',
+    empty:  '還沒有讓賓客自己選的標籤。比較適合的是賓客自己答得出來的分類（大學同學、公司同事…）。',
+    add:    '＋ 新增表單選項',
+  },
+  {
+    onForm: false,
+    title:  '後台管理標籤',
+    note:   '只有你和工作人員看得到，賓客不會看到。',
+    empty:  '還沒有只給後台用的標籤。像 VIP、行動不便這種由你自己判斷的分類，放這裡。',
+    add:    '＋ 新增標籤',
+  },
+];
+
+function tagChipHtml(t, count){
+  return `<button class="ad-chip ad-tagchip" type="button" data-tag-edit-id="${escapeHtml(t.id)}">
+      <span class="ad-tagchip-name">${escapeHtml(t.name)}</span>
+      <span class="ad-tagchip-count">共 ${count} 位</span>
+      <svg class="ad-ic" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-pencil"/></svg>
+    </button>`;
+}
+
 function renderTags(){
   const on = guestTagsOn();
   /* 標籤是側欄自己的一頁。沒開的時候那一頁是鎖著的（分頁鈕留著、掛鎖頭、
@@ -3931,39 +3960,39 @@ function renderTags(){
   renderFormTagPreview();
   if(!on) return;
 
-  const list = guestTagList();
-  if(!list.length){
-    tagListEl.innerHTML =
-      emptyState({
-        title: '還沒有任何標籤',
-        body: '標籤是給賓客分類用的（VIP、長輩、小孩、大學同學…），'
-            + '貼上之後名單可以照標籤篩選，排桌也會照著分組。',
-        action: { label:'加入常用標籤', id:'adTagPresetEmptyBtn' },
-      });
-    return;
-  }
-
+  const list  = guestTagList();
   const count = tagUseCount();
-  tagListEl.innerHTML = list.map(t => `
-    <div class="ad-tagrow" data-id="${escapeHtml(t.id)}">
-      <input class="ad-input ad-tagrow-name" type="text" maxlength="${GUEST_TAG_NAME_MAX}"
-             value="${escapeHtml(t.name)}" aria-label="標籤名稱">
-      <label class="ad-check ad-tagrow-check">
-        <input type="checkbox" class="ad-tagrow-onform"${t.onForm ? ' checked' : ''}>
-        <span>當表單選項</span>
-      </label>
-      <span class="ad-tagrow-count">${count[t.id] || 0} 位</span>
-      <button class="ad-del" type="button" data-del-tag="${escapeHtml(t.id)}">刪除</button>
-    </div>`).join('');
+  const onFormCount = list.filter(t => t.onForm).length;
+
+  /* 標題底下那一句：新人一眼知道自己走到哪了 */
+  setPageSub('adTagPageSub', list.length
+    ? `目前有 <b>${list.length}</b> 個標籤，其中 <b>${onFormCount}</b> 個賓客可以自己選`
+    : '還沒有任何標籤 —— 從「加入常用標籤」開始最快');
+
+  tagGroupsEl.innerHTML = TAG_GROUPS.map(g => {
+    const mine = list.filter(t => t.onForm === g.onForm);
+    return `<section class="ad-formgroup">
+      <div class="ad-formgroup-head">
+        <h3 class="ad-formgroup-title">${escapeHtml(g.title)}</h3>
+        <p class="ad-formgroup-note">${escapeHtml(g.note)}</p>
+      </div>
+      ${mine.length ? '' : `<p class="ad-taggroup-empty">${escapeHtml(g.empty)}</p>`}
+      <div class="ad-chips ad-tagchips">
+        ${mine.map(t => tagChipHtml(t, count[t.id] || 0)).join('')}
+        <button class="ad-chip ad-chip-link ad-tagchip-add" type="button"
+                data-tag-add-group="${g.onForm ? 'form' : 'admin'}">${escapeHtml(g.add)}</button>
+      </div>
+    </section>`;
+  }).join('');
 }
 
-/* 回覆進來時只換數字，不重畫整排 —— 正在改名字的欄位不會被抽掉 */
+/* 回覆進來時只換數字，不重畫整排 —— 正在按的那一顆 chip 不會被抽掉 */
 function refreshTagCounts(){
   if(tagSecEl.hidden) return;
   const count = tagUseCount();
-  tagListEl.querySelectorAll('.ad-tagrow').forEach(row => {
-    const el = row.querySelector('.ad-tagrow-count');
-    if(el) el.textContent = `${count[row.dataset.id] || 0} 位`;
+  tagGroupsEl.querySelectorAll('[data-tag-edit-id]').forEach(chip => {
+    const el = chip.querySelector('.ad-tagchip-count');
+    if(el) el.textContent = `共 ${count[chip.dataset.tagEditId] || 0} 位`;
   });
 }
 
@@ -3974,29 +4003,93 @@ function renderTagsAndList(){
   renderRsvps();
 }
 
-/* 改名或改「當表單選項」：離開欄位就存 */
-tagListEl.addEventListener('change', async (e)=>{
-  const row = e.target.closest('.ad-tagrow');
-  if(!row) return;
-  const name = row.querySelector('.ad-tagrow-name').value.trim();
-  if(!name){
-    toast('標籤名稱不能空白', true);
-    renderTags();
+/* ---------- 新增／編輯一個標籤 ----------
+   新增和編輯是同一個彈窗（<560px 自動變 bottom sheet）：
+   差別只有標題、有沒有「刪除標籤」、radio 預填哪一顆、有沒有「目前有 N 位」。
+   分組用 radio 而不是勾選框 —— 兩個選項都寫出來，新人才不用自己推論
+   「沒有勾的話會怎樣」。 */
+const tagEditMask    = document.getElementById('adTagEditMask');
+const tagEditFormEl  = document.getElementById('adTagEditForm');
+const tagEditNameEl  = document.getElementById('adTagEditName');
+const tagEditTitleEl = document.getElementById('adTagEditTitle');
+const tagEditDelBtn  = document.getElementById('adTagEditDel');
+const tagEditUsedEl  = document.getElementById('adTagEditUsed');
+let tagEditId = '';
+const closeTagEdit = registerFormModal(tagEditMask);
+
+function tagEditGroup(){
+  const hit = tagEditMask.querySelector('input[name="adTagEditGroup"]:checked');
+  return hit ? hit.value : 'admin';
+}
+
+function openTagEdit(id, group){
+  const tag  = id ? guestTagList().find(t => t.id === id) : null;
+  const used = id ? (tagUseCount()[id] || 0) : 0;
+  /* 上限擋在開彈窗之前：讓新人填完名字才說「滿了」是最差的一種 */
+  if(!tag && guestTagList().length >= GUEST_TAG_MAX){
+    toast(`標籤最多 ${GUEST_TAG_MAX} 個`, true);
     return;
   }
-  const onForm = row.querySelector('.ad-tagrow-onform').checked;
+
+  tagEditId = tag ? tag.id : '';
+  tagEditTitleEl.textContent = tag ? '編輯標籤' : '新增標籤';
+  tagEditNameEl.value = tag ? tag.name : '';
+  tagEditDelBtn.hidden = !tag;
+
+  const want = tag ? (tag.onForm ? 'form' : 'admin') : (group || 'admin');
+  tagEditMask.querySelectorAll('input[name="adTagEditGroup"]')
+    .forEach(r => { r.checked = r.value === want; });
+
+  /* 已經有人掛著的時候先講清楚：改分組不會動到他們的資料。
+     不講的話新人會不敢按 —— 而不敢按的設定等於沒有這個設定。 */
+  tagEditUsedEl.hidden = !used;
+  if(used) tagEditUsedEl.innerHTML =
+    `目前有 <b>${used}</b> 位賓客套用這個標籤，修改分類不會影響他們的資料。`;
+
+  tagEditMask.hidden = false;
+  /* 手機鍵盤一彈出來就把彈窗頂上去，所以只在桌機自動聚焦 */
+  if(matchMedia('(pointer:fine)').matches) tagEditNameEl.focus();
+}
+
+tagGroupsEl.addEventListener('click', (e)=>{
+  const add = e.target.closest('[data-tag-add-group]');
+  if(add){ openTagEdit('', add.dataset.tagAddGroup); return; }
+  const chip = e.target.closest('[data-tag-edit-id]');
+  if(chip) openTagEdit(chip.dataset.tagEditId);
+});
+
+document.getElementById('adTagEditCancel').addEventListener('click', ()=> closeTagEdit());
+
+tagEditFormEl.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const name = tagEditNameEl.value.trim();
+  if(!name){ toast('標籤名稱不能空白', true); tagEditNameEl.focus(); return; }
+
+  const list   = guestTagList();
+  const onForm = tagEditGroup() === 'form';
+  if(list.some(t => t.name === name && t.id !== tagEditId)){
+    toast('已經有同名的標籤了', true);
+    tagEditNameEl.focus();
+    return;
+  }
+
+  const next = tagEditId
+    ? list.map(t => (t.id === tagEditId ? { ...t, name, onForm } : t))
+    : [...list, { id:newTagId(), name, onForm }];
+
   try{
-    await saveGuestTags(guestTagList().map(t =>
-      (t.id === row.dataset.id ? { ...t, name, onForm } : t)));
-    toast('標籤已更新');
+    await saveGuestTags(next);
+    closeTagEdit();
+    toast(tagEditId ? '標籤已更新' : '標籤已新增');
     renderTagsAndList();
+    renderFormPreviews();
   }catch(err){ writeFailed(err); }
 });
 
-tagListEl.addEventListener('click', async (e)=>{
-  const id = e.target.dataset.delTag;
+tagEditDelBtn.addEventListener('click', async ()=>{
+  const id = tagEditId;
   if(!id) return;
-  const tag = guestTagList().find(t => t.id === id);
+  const tag  = guestTagList().find(t => t.id === id);
   const used = tagUseCount()[id] || 0;
 
   const ok = await confirmModal({
@@ -4016,52 +4109,56 @@ tagListEl.addEventListener('click', async (e)=>{
     await Promise.all(Object.entries(map)
       .filter(([, ids]) => ids.includes(id))
       .map(([rsvpId, ids]) => DataStore.saveRsvpTags(rsvpId, ids.filter(x => x !== id))));
+    closeTagEdit();
     toast('標籤已刪除');
     renderTagsAndList();
+    renderFormPreviews();
   }catch(err){ writeFailed(err); }
 });
 
-/* 空狀態上的「加入常用標籤」指的是右上角那一顆，走同一條路徑 */
-document.addEventListener('click', (e)=>{
-  if(e.target.id === 'adTagPresetEmptyBtn'){
-    const btn = document.getElementById('adTagPresetBtn');
-    if(btn) btn.click();
-  }
+/* 頁面頂部的「新增標籤」：預設落在後台那一組 —— 從這裡開始的新人
+   通常還沒想到「要不要讓賓客自己選」，先建起來再改比較安全 */
+document.getElementById('adTagAddBtn').addEventListener('click', ()=> openTagEdit('', 'admin'));
+
+/* ---------- 加入常用標籤 ----------
+   原本是一鍵把八個全部倒進去。多數新人只要其中兩三個，
+   剩下的又得一個一個刪 —— 改成可複選，已經有同名的標成「已加入」並停用。 */
+const tagPresetMask   = document.getElementById('adTagPresetMask');
+const tagPresetListEl = document.getElementById('adTagPresetList');
+const closeTagPreset  = registerFormModal(tagPresetMask);
+
+document.getElementById('adTagPresetBtn').addEventListener('click', ()=>{
+  const list = guestTagList();
+  tagPresetListEl.innerHTML = DEFAULT_GUEST_TAGS.map(p => {
+    const had = list.some(t => t.name === p.name);
+    return `<label class="ad-check${had ? ' is-fixed' : ''}">
+      <input type="checkbox" value="${escapeHtml(p.name)}"${had ? ' checked disabled' : ''}>
+      <span>${escapeHtml(p.name)}${had ? '<small>已加入</small>' : ''}</span>
+    </label>`;
+  }).join('');
+  tagPresetMask.hidden = false;
 });
 
-document.getElementById('adTagAddBtn').addEventListener('click', async ()=>{
+document.getElementById('adTagPresetCancel').addEventListener('click', ()=> closeTagPreset());
+
+document.getElementById('adTagPresetSave').addEventListener('click', async ()=>{
+  const names = [...tagPresetListEl.querySelectorAll('input:checked:not(:disabled)')]
+    .map(el => el.value);
+  if(!names.length){ toast('先勾要加入的標籤', true); return; }
+
   const list = guestTagList();
-  if(list.length >= GUEST_TAG_MAX){ toast(`標籤最多 ${GUEST_TAG_MAX} 個`, true); return; }
+  const room = Math.max(GUEST_TAG_MAX - list.length, 0);
+  if(!room){ toast(`標籤最多 ${GUEST_TAG_MAX} 個`, true); return; }
+  const add = names.slice(0, room).map(name => ({ id:newTagId(), name, onForm:false }));
 
-  const name = await promptModal({
-    title: '新增標籤',
-    message: '例如：大學同學、公司同事、教會朋友、伴郎伴娘',
-    placeholder: '標籤名稱',
-    maxLength: GUEST_TAG_NAME_MAX,
-    confirmText: '新增',
-  });
-  if(!name) return;
-  if(list.some(t => t.name === name)){ toast('已經有同名的標籤了', true); return; }
-
-  try{
-    await saveGuestTags([...list, { id:newTagId(), name, onForm:false }]);
-    toast('標籤已新增');
-    renderTagsAndList();
-  }catch(err){ writeFailed(err); }
-});
-
-document.getElementById('adTagPresetBtn').addEventListener('click', async ()=>{
-  const list = guestTagList();
-  const add = DEFAULT_GUEST_TAGS
-    .filter(p => !list.some(t => t.name === p.name))
-    .map(p => ({ id:newTagId(), name:p.name, onForm:p.onForm }))
-    .slice(0, Math.max(GUEST_TAG_MAX - list.length, 0));
-
-  if(!add.length){ toast('常用標籤都已經在清單裡了'); return; }
   try{
     await saveGuestTags([...list, ...add]);
-    toast(`加入了 ${add.length} 個常用標籤`);
+    closeTagPreset();
+    toast(add.length < names.length
+      ? `標籤最多 ${GUEST_TAG_MAX} 個，只加入了前 ${add.length} 個`
+      : `加入了 ${add.length} 個常用標籤`);
     renderTagsAndList();
+    renderFormPreviews();
   }catch(err){ writeFailed(err); }
 });
 
