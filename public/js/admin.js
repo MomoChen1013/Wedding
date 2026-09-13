@@ -1540,7 +1540,10 @@ const SUBTABS = {
 /* 搬過家的網址：新人書籤裡、我們寄出去的信裡都還留著舊的那幾個。
      rsvp/form    表單設定原本是「出席回覆」底下的子分頁
      rsvp/tags    設定賓客標籤同上，現在是側欄自己的一頁
-     lobby/*      婚禮資訊原本有四顆子分頁，現在收成同一頁（自訂內容獨立出去） */
+     lobby/*      婚禮資訊原本有四顆子分頁，現在是總覽 ＋ 六個階段
+                  （#lobby/01…06，見「4c. 婚禮資訊精靈」）——
+                  舊網址一律落在總覽，那裡看得到六段各自填到哪裡了；
+                  自訂內容則獨立成側欄自己的一頁 */
 const LEGACY_HASH = {
   'rsvp/form':     { tab:'rsvpForm',  subtab:'' },
   'rsvp/tags':     { tab:'guestTags', subtab:'' },
@@ -1611,6 +1614,10 @@ function activateTab(tab, subtab){
   if(SUBTABS[target.dataset.tab]){
     const want = subtab || defaultSubtab(target.dataset.tab);
     wantHash = `#${target.dataset.tab}/${activateSubtab(target.dataset.tab, want)}`;
+  }else if(target.dataset.tab === 'lobby'){
+    /* 婚禮資訊沒有橫向子分頁，但有六個階段（#lobby/03）——
+       那不是分頁，是「現在停在哪一步」，所以由精靈自己認 */
+    wantHash = `#lobby${wzActivate(subtab)}`;
   }
 
   closeDrawer();
@@ -5505,16 +5512,18 @@ function fillSiteForm(){
   sf.tags.value  = Array.isArray(d.hashtags) ? d.hashtags.join(', ') : '';
 
   /* 出席回覆的「表單資訊」列的就是這些欄位，改完要跟著重畫；
-     首頁的上手指南是拿同一份資料判斷「這一步做完了沒」，一起更新 */
+     首頁的上手指南是拿同一份資料判斷「這一步做完了沒」，一起更新；
+     婚禮資訊總覽的六張卡也是同一份資料算出來的 */
   renderRsvpFormInfo();
   renderHome();
+  if(typeof wzRenderHome === 'function') wzRenderHome();
   siteFormBaseline = siteFormSnapshot();
   syncSiteDirtyUI();
 }
-document.getElementById('adSiteReset').addEventListener('click', ()=>{
-  fillSiteForm();
-  markSiteFormClean();
-});
+/* 「還原成目前的內容」在改版後沒有自己的按鈕了：每一階段底部只有
+   「上一步」與「儲存並繼續」兩顆，第三顆 ghost 只會稀釋主要動作。
+   要丟掉沒存的內容，離開那一階段再回來就是（草稿仍在 localStorage，
+   下次進後台時 offerSiteDraft() 會問要不要接回）。 */
 
 /* ---------- 有沒有還沒存的變更 ----------
    這一頁在手機上要捲 5–6 個螢幕高，中途沒有自動存檔，
@@ -5553,9 +5562,15 @@ function syncSiteDirtyUI(){
     note.classList.toggle('is-dirty', d);
   }
   if(btn) btn.classList.toggle('is-dirty', d);
+  /* 新人看到的是階段底部那一列（<form> 本身在畫面上是收起來的） */
+  if(typeof wzSyncStepBar === 'function') wzSyncStepBar();
 }
 
-sf.form.addEventListener('input', ()=>{
+/* 欄位現在分散在六個階段裡，不再全部包在 <form> 裡面 ——
+   所以 input 事件掛在整個分頁上，而不是 sf.form 上。
+   （sf.form 只剩下 submit 與那顆儲存鈕，其餘一字未改。） */
+const lobbyPanelEl = document.querySelector('.ad-panel[data-panel="lobby"]');
+lobbyPanelEl?.addEventListener('input', ()=>{
   syncSiteDirtyUI();
   clearTimeout(siteDraftTimer);
   siteDraftTimer = setTimeout(()=>{
@@ -5570,7 +5585,7 @@ window.addEventListener('hashchange', ()=>{
   /* 還留在同一頁（例如只是切到「當日流程」再切回來）就不用囉嗦 */
   const h = parseHash();
   if(h.tab === 'lobby') return;
-  showToast('婚禮資訊還有沒儲存的變更，回到那一頁按「儲存婚禮資訊」才會存進去', {
+  showToast('婚禮資訊還有沒儲存的變更，回去按「儲存並繼續」才會存進去', {
     isError: true,
     duration: 6000,
     actionLabel: '回去存',
@@ -5608,13 +5623,20 @@ async function offerSiteDraft(){
     fields.forEach((el, i) => { if(el) el.value = vals[i] ?? el.value; });
   }catch{ return; }
   syncSiteDirtyUI();
-  toast('已接回上次沒存完的內容，記得按「儲存婚禮資訊」');
+  toast('已接回上次沒存完的內容，記得按「儲存並繼續」');
 }
 
-sf.form.addEventListener('submit', async (e)=>{
-  e.preventDefault();
+/* 整張表單存回站台文件。
+   欄位散在六個階段裡，但**存的一律是完整的一份**（每一欄都還在 DOM 上，
+   只是隱藏著）—— 和改版前按一次「儲存婚禮資訊」寫進去的內容一模一樣，
+   所以不管新人現在停在哪一個階段，存下去的結果都不會少一塊。
+   回傳 true／false 給精靈判斷「可不可以進到下一階段」。 */
+async function saveSiteForm(btn){
   const map = sf.map.value.trim();
-  if(!sf.map._adValidate()){ sf.map.focus(); return; }
+  if(!sf.map._adValidate()){
+    wzGoField(sf.map);
+    return false;
+  }
 
   /* hashtag 沒寫 # 就自動補上，大廳才不會出現光禿禿的字；最多 3 個 */
   const hashtags = sf.tags.value
@@ -5652,105 +5674,209 @@ sf.form.addEventListener('submit', async (e)=>{
     patch.eventDate = zonedTimeToDate(+dp.year, +dp.month, +dp.day, hh, mm, tz);
   }
 
-  const btn = document.getElementById('adSiteSave');
-  await runSave(btn, async ()=>{
+  return runSave(btn || document.getElementById('adSiteSave'), async ()=>{
     await DataStore.saveSiteFields(patch);
     fillSiteForm();
     markSiteFormClean();
-    toast('婚禮資訊已更新，重新整理大廳就看得到');
   });
+}
+
+sf.form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(await saveSiteForm()) toast('婚禮資訊已更新，重新整理大廳就看得到');
 });
 
-/* ---------- 當日流程 ----------
-   一列一個項目，順序就是大廳時間軸的顯示順序（不依時間重排）。
-   ★ 排序用拖的：原本是每一列兩顆 ↑↓，要把第五列搬到第一位得按四次。
-     和故事牆、測驗題共用同一套 setupDragSort()。 */
+/* ---------- 04 婚禮流程 ----------
+   一筆一列的時間軸，順序就是大廳時間軸的顯示順序（不依時間重排）。
+
+   ---------- 改版前後 ----------
+   原本是「一列三個輸入框」整疊攤在畫面上：十筆流程就是三十個輸入框，
+   新人要先看懂欄位長相才知道自己在填什麼，刪除鈕還和內容擠在同一列。
+
+   現在畫面上是**讀得懂的時間軸**（10:00 賓客入場），要改內容才長出
+   一組 inline form —— 新增與編輯共用同一組，所以同一時間最多一組輸入框。
+   刪除收進 ⋯ 裡（和婚禮小卡、故事牆同一套 rowMenu）。
+
+   草稿仍然是「按了儲存並繼續才算數」：schDraft 是畫面上的那一份，
+   siteSchedule() 是資料庫裡的那一份，兩份不一樣就是有未儲存的變更。 */
 const schListEl = document.getElementById('adSchList');
+const schEditEl = document.getElementById('adSchEdit');
 
 function siteSchedule(){
   const s = siteData().schedule;
   return Array.isArray(s) ? s : [];
 }
 
-/* 拖曳要有東西認得出「這是哪一列」（setupDragSort 回傳的是 dataset.id）。
-   流程本身沒有 id，畫面上給一個就好 —— 不會寫進資料庫。 */
-let schRowSeq = 0;
+/* 一列的清洗：三欄各自的長度上限和送出前那一份一致 */
+function cleanSchRow(r){
+  return {
+    time:  String((r && r.time)  || '').trim().slice(0, 20),
+    title: String((r && r.title) || '').trim().slice(0, 40),
+    desc:  String((r && r.desc)  || '').trim().slice(0, 80),
+  };
+}
 
-function schRowHtml(item){
-  const it = item || {};
+/* 畫面上的那一份。id 只是拖曳與 ⋯ 選單要認得出「這是哪一列」，不寫進資料庫 */
+let schRowSeq = 0;
+let schDraft = [];
+/* 正在編輯哪一列（null＝正在新增，undefined／''＝沒有在編輯） */
+let schEditId = '';
+
+function schSetDraft(list){
+  schDraft = (Array.isArray(list) ? list : []).map(r => ({
+    _id: `s${++schRowSeq}`, ...cleanSchRow(r),
+  }));
+}
+
+function schDirty(){
+  const saved = JSON.stringify(siteSchedule().map(cleanSchRow));
+  const now   = JSON.stringify(schDraft.map(cleanSchRow));
+  return saved !== now;
+}
+
+function schRowHtml(it){
   return `
-    <div class="ad-sch-row" data-id="s${++schRowSeq}">
+    <div class="ad-sch-row" data-id="${escapeHtml(it._id)}" data-sch="${escapeHtml(it._id)}">
       <button class="ad-drag-handle" type="button" aria-label="拖曳調整順序">⠿</button>
-      <input class="ad-input ad-sch-time"  type="text" maxlength="20"
-             value="${escapeHtml(it.time || '')}"  placeholder="11:30">
-      <input class="ad-input ad-sch-title" type="text" maxlength="40"
-             value="${escapeHtml(it.title || '')}" placeholder="入場迎賓">
-      <input class="ad-input ad-sch-desc"  type="text" maxlength="80"
-             value="${escapeHtml(it.desc || '')}"  placeholder="說明（選填）">
-      <button class="ad-del ad-sch-del" type="button" data-sch-del="1"
-              aria-label="刪除這一列">刪除</button>
+      <div class="ad-sch-time">${escapeHtml(it.time || '—')}</div>
+      <div class="ad-sch-dot" aria-hidden="true"></div>
+      <div class="ad-sch-main">
+        <div class="ad-sch-title">${escapeHtml(it.title || '（還沒填名稱）')}</div>
+        ${it.desc ? `<div class="ad-sch-desc">${escapeHtml(it.desc)}</div>` : ''}
+      </div>
+      ${rowMenuBtn('sch', it._id)}
     </div>`;
 }
 
+/* 草稿載進來了沒。精靈重進 04 時要接回新人還沒存的那一份，
+   而不是每次都從資料庫重讀（那等於把他剛打的東西洗掉） */
+let schLoaded = false;
+
 function renderSchedule(list){
-  schListEl.innerHTML = (list && list.length)
-    ? list.map(schRowHtml).join('')
-    : schRowHtml(null);
-  schBaseline = schSnapshot();
+  if(Array.isArray(list)){ schSetDraft(list); schLoaded = true; }
+  if(!schListEl) return;
+  schListEl.innerHTML = schDraft.length
+    ? schDraft.map(schRowHtml).join('')
+    : emptyState({
+        title: '還沒有流程',
+        body: '賓客那一頁現在會顯示「流程稍後公布，敬請期待」。',
+      });
   syncSchDirty();
 }
 
-document.getElementById('adSchAdd').addEventListener('click', ()=>{
-  schListEl.insertAdjacentHTML('beforeend', schRowHtml(null));
-  syncSchDirty();
-});
-
-schListEl.addEventListener('click', (e)=>{
-  if(!e.target.closest('[data-sch-del]')) return;
-  e.target.closest('.ad-sch-row').remove();
-  if(!schListEl.children.length) renderSchedule([]);
-  syncSchDirty();
-});
-
-/* 拖完的順序和打字一樣，是「畫面上改了、還沒存」—— 一樣要按「儲存流程」 */
-setupDragSort(schListEl, '.ad-sch-row', ()=> syncSchDirty());
-
-/* 流程也是「按了儲存才算數」，所以要看得出來還沒存 */
-function schSnapshot(){
-  return JSON.stringify(Array.from(schListEl.querySelectorAll('.ad-sch-row')).map(row => [
-    row.querySelector('.ad-sch-time').value,
-    row.querySelector('.ad-sch-title').value,
-    row.querySelector('.ad-sch-desc').value,
-  ]));
-}
-let schBaseline = '';
+/* 流程也是「按了儲存才算數」，所以那顆按鈕要看得出來還沒存 */
 function syncSchDirty(){
-  document.getElementById('adSchSave').classList.toggle('is-dirty', schSnapshot() !== schBaseline);
+  if(typeof wzSyncStepBar === 'function') wzSyncStepBar();
 }
-schListEl.addEventListener('input', syncSchDirty);
 
-document.getElementById('adSchSave').addEventListener('click', async ()=>{
-  /* 整列都空白的就當作沒填，新人不用先刪乾淨才存得起來 */
-  const rows = Array.from(schListEl.querySelectorAll('.ad-sch-row')).map(row => ({
-    time:  row.querySelector('.ad-sch-time').value.trim().slice(0, 20),
-    title: row.querySelector('.ad-sch-title').value.trim().slice(0, 40),
-    desc:  row.querySelector('.ad-sch-desc').value.trim().slice(0, 80),
-  })).filter(r => r.time || r.title || r.desc).slice(0, 40);
+/* ---------- 新增／編輯共用的 inline form ---------- */
+const schF = {
+  time:  document.getElementById('adSchTime'),
+  title: document.getElementById('adSchTitle'),
+  desc:  document.getElementById('adSchDesc'),
+  ok:    document.getElementById('adSchOk'),
+  addRow: document.getElementById('adSchAddRow'),
+};
 
+function openSchEdit(id){
+  if(!schEditEl) return;
+  const it = id ? schDraft.find(x => x._id === id) : null;
+  schEditId = it ? it._id : null;
+  schF.time.value  = it ? (it.time  || '') : '';
+  schF.title.value = it ? (it.title || '') : '';
+  schF.desc.value  = it ? (it.desc  || '') : '';
+  schF.ok.textContent = it ? '儲存這一筆' : '加入流程';
+  schEditEl.hidden = false;
+  if(schF.addRow) schF.addRow.hidden = true;
+  schF.time.focus({ preventScroll:true });
+  schEditEl.scrollIntoView({ block:'nearest', behavior:'smooth' });
+}
+
+function closeSchEdit(){
+  schEditId = '';
+  if(schEditEl) schEditEl.hidden = true;
+  if(schF.addRow) schF.addRow.hidden = false;
+}
+
+document.getElementById('adSchAdd')?.addEventListener('click', ()=> openSchEdit(null));
+document.getElementById('adSchCancel')?.addEventListener('click', ()=> closeSchEdit());
+
+schF.ok?.addEventListener('click', ()=>{
+  const row = cleanSchRow({
+    time: schF.time.value, title: schF.title.value, desc: schF.desc.value,
+  });
+  if(!row.title){ toast('這一筆還沒填活動名稱', true); schF.title.focus(); return; }
+  if(schEditId){
+    const hit = schDraft.find(x => x._id === schEditId);
+    if(hit) Object.assign(hit, row);
+  }else{
+    if(schDraft.length >= SCHEDULE_MAX){
+      toast(`流程最多 ${SCHEDULE_MAX} 筆`, true);
+      return;
+    }
+    schDraft.push({ _id:`s${++schRowSeq}`, ...row });
+  }
+  closeSchEdit();
+  renderSchedule();
+});
+
+/* Enter 直接送出：三個都是單行輸入框，不會誤觸 */
+[schF.time, schF.title, schF.desc].forEach(el => el?.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){ e.preventDefault(); schF.ok.click(); }
+}));
+
+/* ---------- 一列的 ⋯ 選單 ----------
+   刪除不是主要按鈕：它和「上移／下移」一樣，是偶爾才會用到的東西。 */
+registerRowMenu('sch', (id)=>{
+  const i = schDraft.findIndex(x => x._id === id);
+  const move = (to)=>{
+    if(to < 0 || to >= schDraft.length) return;
+    schDraft.splice(to, 0, schDraft.splice(i, 1)[0]);
+    renderSchedule();
+  };
+  return [
+    { label:'編輯', run: ()=> openSchEdit(id) },
+    ...(i > 0 ? [{ label:'往上移', run: ()=> move(i - 1) }] : []),
+    ...(i < schDraft.length - 1 ? [{ label:'往下移', run: ()=> move(i + 1) }] : []),
+    '-',
+    { label:'刪除這一筆', danger:true, run(){
+      const gone = schDraft[i];
+      schDraft.splice(i, 1);
+      if(schEditId === id) closeSchEdit();
+      renderSchedule();
+      showToast(`已刪除「${(gone && gone.title) || '這一筆'}」`, {
+        actionLabel:'復原', duration:5000,
+        onAction(){ schDraft.splice(i, 0, gone); renderSchedule(); },
+      });
+    } },
+  ];
+});
+
+/* 拖完的順序和打字一樣，是「畫面上改了、還沒存」 */
+if(schListEl){
+  setupDragSort(schListEl, '.ad-sch-row', (order)=>{
+    const next = order.map(id => schDraft.find(x => x._id === id)).filter(Boolean);
+    if(next.length === schDraft.length) schDraft = next;
+    renderSchedule();
+  });
+}
+
+/* 送出：整列都空白的就當作沒填，新人不用先刪乾淨才存得起來 */
+async function saveSchedule(btn){
+  const rows = schDraft.map(cleanSchRow)
+    .filter(r => r.time || r.title || r.desc).slice(0, SCHEDULE_MAX);
   const bad = rows.findIndex(r => !r.title);
   if(bad >= 0){
-    toast(`第 ${bad + 1} 列還沒填項目名稱`, true);
-    return;
+    toast(`第 ${bad + 1} 筆還沒填活動名稱`, true);
+    return false;
   }
-
-  await runSave(document.getElementById('adSchSave'), async ()=>{
+  return runSave(btn, async ()=>{
     await DataStore.saveSiteFields({ schedule: rows });
     renderSchedule(rows);
     /* 首頁的「讓婚禮資訊更豐富」是拿這一份判斷的，存完要跟著打勾 */
     renderHome();
-    toast(rows.length ? `已儲存 ${rows.length} 個流程項目` : '流程已清空');
   });
-});
+}
 
 /* ============================================================
    4b. 婚禮流程的活動（sites.events）
@@ -5927,6 +6053,8 @@ function renderEvents(){
 /* 活動一改，讀同一份資料的地方要一起重畫：
    婚禮資訊的場地欄位、表單設定的活動卡、表單上方的資訊列 */
 function renderEventViews(){
+  /* 活動變了（含在卡片彈窗裡新增／刪除），02 的勾選要重新從資料推一次 */
+  wzActPicks = null;
   renderEvents();
   renderFormSettings();
   renderRsvpFormInfo();
@@ -6031,22 +6159,13 @@ async function deleteEvent(id){
   return true;
 }
 
-/* ---------- 婚禮資訊那一頁的場地欄位 ----------
-   只辦一場婚宴時，時間與地點就是這幾欄。
-   有多個活動時它們變成主要活動的鏡像 —— 整段收起來（上面那幾張卡才是真的），
-   只留一句話說明現在是誰在管。 */
+/* ---------- 03 時間與地點要重畫 ----------
+   只辦一場婚宴時，時間與地點就是站台文件上的 venue* 那幾欄；
+   有多個活動時改成一個活動一組欄位。兩種長相都由精靈那一段畫
+   （見 wzRenderPlaces），這裡只是既有呼叫點的入口，名字保持不變。 */
 function syncVenueManagedUI(){
-  const box = document.getElementById('adVenueManaged');
-  const fields = document.getElementById('adVenueFields');
-  const on = multiEventOn() && savedEvents().length > 0;
-  if(box) box.hidden = !on;
-  if(fields) fields.hidden = on;
-  if(on){
-    const primary = weddingEvents().find(e => e.type === 'reception')
-                 || weddingEvents().find(e => e.requiresRsvp) || weddingEvents()[0];
-    const name = document.getElementById('adVenueManagedName');
-    if(name) name.textContent = primary ? `「${primary.name}」` : '主要活動';
-  }
+  /* 呼叫點都在「活動剛存完」之後，所以一律用資料庫那一份重畫 */
+  if(typeof wzRenderPlaces === 'function') wzRenderPlaces(true);
 }
 
 /* 活動卡存完之後，鏡像的那幾欄要跟著換。
@@ -6067,6 +6186,740 @@ function refillVenueFields(){
   }
   syncSiteDirtyUI();
 }
+
+/* ============================================================
+   4c. 婚禮資訊精靈
+   ------------------------------------------------------------
+   這一段是「婚禮資訊」那一頁的外殼，不是新的資料層 ——
+   一個欄位都沒有新增，寫回去的仍然是 sites/{siteId} 上原本那幾欄
+   （見 firestore.rules 的 isValidSiteContentUpdate 白名單）。
+
+   為什麼要重做外殼：改版前這一頁是一張捲 5–6 個螢幕高的長表單。
+   欄位不缺，缺的是「我應該先填什麼、為什麼要填、填完會影響哪裡」。
+
+   現在是一個總覽 ＋ 六個階段：
+     #lobby      總覽（進度 ＋ 六張卡）
+     #lobby/01…06  各階段
+
+   ---------- 三件刻意的設計 ----------
+
+   1. **一次只問一件事，而且用問句問。**
+      「當天會有哪些活動？」而不是「設定場次」。新人腦子裡有的是
+      婚禮，不是系統的資料模型。
+
+   2. **選擇優先於輸入。** 02 與 05 都是先勾選，勾了才長出要填的欄位。
+      一次攤開四塊 textarea 等於要新人先讀完才決定要不要填。
+
+   3. **存的一律是完整的一份。** 每一階段底部那顆「儲存並繼續」
+      走的是同一個 saveSiteForm()（＝改版前那顆「儲存婚禮資訊」）。
+      欄位藏起來不等於不存在，所以停在哪一階段存都不會少一塊。
+
+   ---------- 相容性 ----------
+   ・所有 input 的 id 維持原樣，fillSiteForm()／未儲存追蹤／localStorage
+     草稿一字未改。
+   ・02 在 multiEventEnabled 關著時只維持單一婚宴 —— 因為前台的
+     weddingEvents() 不看那個旗標，只要 events[] 寫進去，賓客那一頁
+     立刻就會變成多活動的樣子。所以那裡改成一句「請聯繫管理員」。
+============================================================ */
+
+const WZ_STEPS = [
+  { no:'01', name:'基本資料',   note:'婚禮名稱、Hashtag' },
+  { no:'02', name:'婚禮活動',   note:'證婚、婚宴、文訂、迎娶、After Party 等' },
+  { no:'03', name:'時間與地點', note:'活動時間、地點地址' },
+  { no:'04', name:'婚禮流程',   note:'當日婚禮的流程時間軸' },
+  { no:'05', name:'賓客指南',   note:'交通與停車資訊、Dress Code、禮金' },
+  { no:'06', name:'你們的故事', note:'文字故事、照片' },
+];
+
+const wzHomeEl  = document.getElementById('adWzHome');
+const wzStepsEl = document.getElementById('adWzSteps');
+const wzCardsEl = document.getElementById('adWzCards');
+
+/* 0 ＝ 總覽，1…6 ＝ 各階段 */
+let wzStep = 0;
+
+function wzStepEl(n){
+  return wzStepsEl ? wzStepsEl.querySelector(`.ad-wz-step[data-step="${n}"]`) : null;
+}
+
+/* ---------- 每一階段「做到哪裡了」 ----------
+   選填的階段留白時說「選填」而不是「尚未填寫」：
+   後者會讓人以為自己漏了什麼。 */
+function wzDressFilled(){
+  const d = siteData();
+  return !!(d.dressCode
+    || (Array.isArray(d.dressCodeColors) && d.dressCodeColors.length)
+    || dressImgList().length);
+}
+function wzTransitFilled(){
+  const d = siteData();
+  return !!(d.transportPublic || d.transportPublicImg
+         || d.transportParking || d.transportParkingImg);
+}
+function wzPlaceFilled(){
+  if(!multiEventOn()) {
+    const d = siteData();
+    return !!(d.venueName || d.venueAddress);
+  }
+  return weddingEvents().every(ev => ev.venueName || ev.address);
+}
+function wzGalleryCount(){
+  const p = siteData().photos;
+  return Array.isArray(p) ? p.filter(Boolean).length : 0;
+}
+
+function wzStatus(n){
+  const d = siteData();
+  switch(n){
+    case 1:
+      return d.coupleTitle
+        ? { done:true,  text:'已完成' }
+        : { done:false, text:'尚未設定' };
+    case 2: {
+      const evs = weddingEvents();
+      return { done: evs.length > 0, text:`${evs.length} 個活動` };
+    }
+    case 3:
+      return wzPlaceFilled()
+        ? { done:true,  text:'已完成' }
+        : { done:false, text:'尚未設定' };
+    case 4: {
+      const n2 = siteSchedule().length;
+      return n2
+        ? { done:true,  text:`${n2} 個流程` }
+        : { done:false, text:'選填', soft:true };
+    }
+    case 5: {
+      const got = [wzTransitFilled(), wzDressFilled(), !!d.giftNote].filter(Boolean).length;
+      return got
+        ? { done:true,  text:'已完成' }
+        : { done:false, text:'選填', soft:true };
+    }
+    default: {
+      const on = !!d.story || (rsvpConfig().showGallery && wzGalleryCount() > 0);
+      return on
+        ? { done:true,  text:'已完成' }
+        : { done:false, text:'選填', soft:true };
+    }
+  }
+}
+
+/* ---------- 總覽 ---------- */
+function wzRenderHome(){
+  if(!wzCardsEl) return;
+  const states = WZ_STEPS.map((_, i) => wzStatus(i + 1));
+
+  const dots = document.getElementById('adWzDots');
+  if(dots){
+    dots.innerHTML = states.map(st =>
+      `<span class="ad-wz-dot${st.done ? ' is-on' : ''}"></span>`).join('');
+  }
+  const ptext = document.getElementById('adWzProgText');
+  if(ptext){
+    const done = states.filter(s => s.done).length;
+    ptext.textContent = done >= WZ_STEPS.length
+      ? '六個段落都填好了'
+      : `已完成 ${done} / ${WZ_STEPS.length}`;
+  }
+
+  wzCardsEl.innerHTML = WZ_STEPS.map((s, i) => {
+    const st = states[i];
+    const cls = st.done ? ' is-done' : (st.soft ? ' is-soft' : '');
+    return `
+      <button class="ad-wz-card" type="button" data-wz-go="${i + 1}">
+        <span class="ad-wz-card-no">${s.no}</span>
+        <span class="ad-wz-card-main">
+          <span class="ad-wz-card-name">${escapeHtml(s.name)}</span>
+          <span class="ad-wz-card-note">${escapeHtml(s.note)}</span>
+        </span>
+        <span class="ad-wz-card-state${cls}">${escapeHtml(st.text)}</span>
+        <i class="ad-wz-card-go" aria-hidden="true">→</i>
+      </button>`;
+  }).join('');
+}
+
+/* ---------- 02 婚禮活動 ----------
+   新人勾的是「我們有什麼活動」。順序照婚禮當天實際的先後排，
+   不是照系統的型別順序。 */
+const WZ_ACTS = [
+  { type:'ceremony',   label:'證婚' },
+  { type:'reception',  label:'婚宴', fixed:true },
+  { type:'engagement', label:'文訂' },
+  { type:'fetching',   label:'迎娶' },
+  { type:'afterparty', label:'After Party' },
+  { type:'custom',     label:'其他' },
+];
+/* 寫進 events[] 時的排列順序（＝婚禮當天的先後） */
+const WZ_ACT_ORDER = ['engagement', 'fetching', 'ceremony', 'reception', 'afterparty', 'custom'];
+
+/* 畫面上現在勾了哪幾種。第一次進來時由既有的 events[] 推出來 */
+let wzActPicks = null;
+
+function wzActPicksFromData(){
+  const set = new Set(weddingEvents().map(ev => ev.type));
+  set.add('reception');            /* 至少要留一場，婚宴永遠勾著 */
+  return set;
+}
+
+/* 勾選以外會跟著變的兩塊：「其他」的名稱欄、還沒開通時的那一句提示。
+   勾一下不重畫整組勾選框 —— 重畫會把使用者剛按下去的那一顆換掉，
+   用鍵盤操作的人焦點就掉回頁面最上面了。 */
+function wzSyncActExtras(){
+  const customBox = document.getElementById('adWzActCustomBox');
+  if(customBox){
+    customBox.hidden = !wzActPicks.has('custom');
+    const input = document.getElementById('adWzActCustom');
+    if(input && !input.value){
+      const hit = weddingEvents().find(ev => ev.type === 'custom');
+      if(hit) input.value = hit.name || '';
+    }
+  }
+  /* 沒開通多場次時，勾了第二項就出這一句（勾選本身會被打回去） */
+  const lock = document.getElementById('adWzActLock');
+  if(lock) lock.hidden = multiEventOn() || wzActPicks.size <= 1;
+}
+
+function wzRenderActs(){
+  const box = document.getElementById('adWzActPicks');
+  if(!box) return;
+  if(!wzActPicks) wzActPicks = wzActPicksFromData();
+
+  box.innerHTML = WZ_ACTS.map(a => {
+    const on = wzActPicks.has(a.type);
+    return `<label class="ad-check ad-wz-pick${a.fixed ? ' is-fixed' : ''}">
+      <input type="checkbox" data-wz-act="${a.type}"${on ? ' checked' : ''}${a.fixed ? ' disabled' : ''}>
+      <span>${escapeHtml(a.label)}</span>
+      ${a.fixed ? '<small>一定會有</small>' : ''}
+    </label>`;
+  }).join('');
+
+  wzSyncActExtras();
+  renderEvents();
+}
+
+document.getElementById('adWzActPicks')?.addEventListener('change', (e)=>{
+  const box = e.target.closest('[data-wz-act]');
+  if(!box) return;
+
+  if(box.checked && !multiEventOn()){
+    /* 前台的 weddingEvents() 不看 multiEventEnabled —— 只要 events[] 寫進去，
+       賓客那一頁立刻就變成多活動。所以旗標關著時這裡只能擋下來。 */
+    box.checked = false;
+    const lock = document.getElementById('adWzActLock');
+    if(lock) lock.hidden = false;
+    toast('多場次為進階功能，請聯繫管理員', true);
+    return;
+  }
+
+  box.checked ? wzActPicks.add(box.dataset.wzAct) : wzActPicks.delete(box.dataset.wzAct);
+  wzSyncActExtras();
+  wzSyncStepBar();
+});
+
+/* 勾選 → events[]。已經存在的同型別活動整筆留著（id、時間、地點都不動），
+   只有新勾的才建立、只有取消勾選的才移除。 */
+function wzNewEvent(type, name){
+  const def = EVENT_TYPES[type] || EVENT_TYPES.custom;
+  /* 日期預設落在婚禮當天，新人就不必在下一階段再填一次年月日 */
+  return {
+    id: newEventId(type), type,
+    name: name || def.name || '', nameEn: def.nameEn,
+    date: wzMainDate(), startTime:'', endTime:'',
+    venueName:'', address:'', mapUrl:'', desc:'',
+    requiresRsvp: def.requiresRsvp,
+    askCount: def.ask.count, askMeal: def.ask.meal,
+    askChildSeat: def.ask.childSeat, askDiet: def.ask.diet,
+    questions: [],
+  };
+}
+
+/* 婚禮主日期的 YYYY-MM-DD（照婚禮當地時區）。沒設定過就回空字串 */
+function wzMainDate(){
+  const d = siteData();
+  const ev = toJsDate(d.eventDate);
+  if(!ev) return '';
+  const p = {};
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: d.timezone || 'Asia/Taipei',
+    year:'numeric', month:'2-digit', day:'2-digit',
+  }).formatToParts(ev).forEach(x => { p[x.type] = x.value; });
+  return `${p.year}-${p.month}-${p.day}`;
+}
+
+/* 02 的勾選和資料庫現在那一份對不對得起來（含「其他」的名字） */
+function wzActsDirty(){
+  if(!multiEventOn() || !wzActPicks) return false;
+  const now = wzActPicksFromData();
+  if(now.size !== wzActPicks.size) return true;
+  for(const t of wzActPicks){ if(!now.has(t)) return true; }
+  if(wzActPicks.has('custom')){
+    const typed = (document.getElementById('adWzActCustom')?.value || '').trim();
+    const saved = weddingEvents().find(ev => ev.type === 'custom');
+    if(typed && saved && typed !== saved.name) return true;
+  }
+  return false;
+}
+
+async function wzApplyActs(btn){
+  if(!multiEventOn()) return true;          /* 單一婚宴：沒有 events[] 要寫 */
+  if(!wzActPicks) wzActPicks = wzActPicksFromData();
+
+  const custom = (document.getElementById('adWzActCustom')?.value || '').trim();
+  if(wzActPicks.has('custom') && !custom){
+    toast('「其他」還沒填名稱', true);
+    wzGoField(document.getElementById('adWzActCustom'));
+    return false;
+  }
+
+  const rows = materializedEvents();
+  const keep = [];
+  const drop = [];
+  rows.forEach(ev => (wzActPicks.has(ev.type) ? keep : drop).push(ev));
+
+  if(drop.length){
+    const answered = drop.reduce((n, ev) => {
+      const st = DataStore.getEventStats(ev.id);
+      return n + (st ? st.yes + st.no : 0);
+    }, 0);
+    const ok = await confirmModal({
+      title: `要移除「${drop.map(e => e.name).join('、')}」嗎？`,
+      message: answered
+        ? `已經有 ${answered} 筆回覆包含這些活動。移除之後那些回覆仍然保留，`
+          + '只是不會再顯示。'
+        : '賓客不會再看到這些活動的時間與地點，出席表單上也不會再問。',
+      confirmText: '移除',
+      danger: true,
+    });
+    if(!ok) return false;
+  }
+
+  /* 新勾的補上；同型別已經有的整筆留著 */
+  const have = new Set(keep.map(ev => ev.type));
+  wzActPicks.forEach(type => {
+    if(!have.has(type)) keep.push(wzNewEvent(type, type === 'custom' ? custom : ''));
+  });
+  /* 「其他」的名字改了要跟著換 */
+  if(custom){
+    const hit = keep.find(ev => ev.type === 'custom');
+    if(hit) hit.name = custom.slice(0, EVENT_NAME_MAX);
+  }
+
+  keep.sort((a, b) => WZ_ACT_ORDER.indexOf(a.type) - WZ_ACT_ORDER.indexOf(b.type));
+  if(keep.length > EVENT_MAX){
+    toast(`最多 ${EVENT_MAX} 個活動`, true);
+    return false;
+  }
+
+  const same = JSON.stringify(savedEvents().map(cleanEventRow))
+            === JSON.stringify(keep.map(cleanEventRow));
+  if(same) return true;
+
+  return runSave(btn, async ()=>{
+    await DataStore.saveSiteFields(eventsPatch(keep.map(cleanEventRow)));
+    renderEventViews();
+  });
+}
+
+/* ---------- 03 時間與地點 ----------
+   單一婚宴走站台文件上的 venue* 那幾欄（#adVenueFields，id 一字未改）。
+   多活動則一個活動一組欄位，含「和其他活動使用相同地點」。
+
+   ★「相同地點」不是新欄位：勾了就把主要活動的地點抄進這一筆再存。
+     載入時反推（地址和主要活動一樣、或整個沒填 ＝ 勾著），
+     所以舊資料不必 migration，前台也不知道有這件事。 */
+const wzPlacesEl = document.getElementById('adWzPlaces');
+
+function wzPrimaryEvent(){
+  const list = weddingEvents();
+  return list.find(e => e.type === 'reception')
+      || list.find(e => e.requiresRsvp) || list[0];
+}
+
+function wzSameAsPrimary(ev, primary){
+  if(!primary || ev.id === primary.id) return false;
+  if(!ev.venueName && !ev.address) return true;          /* 還沒填 ＝ 跟著主場 */
+  return ev.venueName === primary.venueName && ev.address === primary.address;
+}
+
+function wzPlaceHtml(ev, primary){
+  const same = wzSameAsPrimary(ev, primary);
+  const isPrimary = primary && ev.id === primary.id;
+  return `
+  <div class="ad-wz-place" data-wzp="${escapeHtml(ev.id)}">
+    <div class="ad-wz-place-hd">${escapeHtml(ev.name || '這個活動')}</div>
+
+    <label class="ad-label">時間</label>
+    <input class="ad-input ad-input-time" type="time"
+           data-wzp-f="startTime" value="${escapeHtml(ev.startTime || '')}">
+
+    ${isPrimary ? '' : `
+    <label class="ad-check">
+      <input type="checkbox" data-wzp-same${same ? ' checked' : ''}>
+      <span>和${escapeHtml(primary.name)}同一個地點</span>
+    </label>`}
+
+    <div class="ad-wz-place-loc" data-wzp-loc${!isPrimary && same ? ' hidden' : ''}>
+      <label class="ad-label">地點名稱</label>
+      <input class="ad-input" type="text" maxlength="80" data-wzp-f="venueName"
+             value="${escapeHtml(ev.venueName || '')}"
+             placeholder="台北婚宴大飯店・二樓宴會廳">
+
+      <label class="ad-label">地址</label>
+      <input class="ad-input" type="text" maxlength="200" data-wzp-f="address"
+             value="${escapeHtml(ev.address || '')}"
+             placeholder="台北市中山區中山北路二段 63 號">
+
+      <label class="ad-label">地圖連結（選填）</label>
+      <input class="ad-input" type="url" maxlength="500" data-wzp-f="mapUrl"
+             value="${escapeHtml(ev.mapUrl || '')}"
+             placeholder="沒填的話自動用地址開啟 Google 地圖">
+    </div>
+
+    <label class="ad-label">活動說明（選填）</label>
+    <input class="ad-input" type="text" maxlength="300" data-wzp-f="desc"
+           value="${escapeHtml(ev.desc || '')}"
+           placeholder="例如：僅限雙方家人">
+  </div>`;
+}
+
+/* 現在畫出來的是哪幾個活動。活動沒變就不重畫 ——
+   重畫會把新人正在打、還沒存的地址洗掉（他可能只是切去 02 看一眼就回來）。
+   存完之後由 renderEventViews() 帶 force 進來，畫面才會換成資料庫那一份。 */
+let wzPlacesSig = '';
+
+function wzRenderPlaces(force){
+  const multi = multiEventOn();
+  const fields = document.getElementById('adVenueFields');
+  if(fields) fields.hidden = multi;
+  if(wzPlacesEl) wzPlacesEl.hidden = !multi;
+
+  const sub = document.getElementById('adWzPlaceSub');
+  const mainName = document.getElementById('adWzMainName');
+
+  if(!multi){
+    const p = wzPrimaryEvent();
+    if(mainName) mainName.textContent = (p && p.name) || '婚宴';
+    if(sub) sub.textContent = '';
+    wzPlacesSig = '';
+    return;
+  }
+
+  const list = weddingEvents();
+  const primary = wzPrimaryEvent();
+  if(sub){
+    sub.textContent = list.length > 1
+      ? `你們有 ${list.length} 個活動，一個一個來。`
+      : '';
+  }
+  if(!wzPlacesEl) return;
+  const sig = JSON.stringify(list.map(ev => [ev.id, ev.name]));
+  if(!force && wzPlacesEl.innerHTML && sig === wzPlacesSig) return;
+  wzPlacesSig = sig;
+  wzPlacesEl.innerHTML = list.map(ev => wzPlaceHtml(ev, primary)).join('');
+}
+
+/* ---------- 03 的畫面 → 一份新的 events[] ----------
+   讀畫面、抄「相同地點」、擋掉不合法的地圖連結。
+   wzPlacesDirty() 與 wzApplyPlaces() 走的是同一段程式，
+   所以「說有沒有變」和「真的存下去什麼」不可能對不起來。 */
+function wzReadPlaces(){
+  const rows = materializedEvents();
+  if(!multiEventOn() || !wzPlacesEl || !wzPlacesEl.innerHTML){
+    return { rows, bad:null };
+  }
+  const byId = new Map(rows.map(ev => [ev.id, ev]));
+  const cards = Array.from(wzPlacesEl.querySelectorAll('[data-wzp]'));
+  if(!cards.length) return { rows, bad:null };
+
+  const read = (card, key)=> (card.querySelector(`[data-wzp-f="${key}"]`)?.value || '').trim();
+  /* 主要活動先算好，「相同地點」的那幾筆才有東西可以抄 */
+  const primary = wzPrimaryEvent();
+  const primaryCard = cards.find(c => primary && c.dataset.wzp === primary.id);
+  const base = primaryCard
+    ? { venueName: read(primaryCard, 'venueName'),
+        address:   read(primaryCard, 'address'),
+        mapUrl:    read(primaryCard, 'mapUrl') }
+    : { venueName:'', address:'', mapUrl:'' };
+
+  let bad = null;
+  cards.forEach(card => {
+    const ev = byId.get(card.dataset.wzp);
+    if(!ev) return;
+    const same = card.querySelector('[data-wzp-same]')?.checked;
+    const loc = same ? base
+      : { venueName: read(card, 'venueName'),
+          address:   read(card, 'address'),
+          mapUrl:    read(card, 'mapUrl') };
+    if(!bad && loc.mapUrl && !/^https?:\/\//i.test(loc.mapUrl)){
+      bad = card.querySelector('[data-wzp-f="mapUrl"]');
+    }
+    Object.assign(ev, loc, {
+      startTime: read(card, 'startTime'),
+      desc:      read(card, 'desc'),
+      /* 沒設定過日期的活動，預設就落在婚禮當天 */
+      date: ev.date || wzMainDate(),
+    });
+  });
+  return { rows, bad };
+}
+
+function wzPlacesDirty(){
+  if(!multiEventOn() || !wzPlacesEl || !wzPlacesEl.innerHTML) return false;
+  const { rows } = wzReadPlaces();
+  return JSON.stringify(savedEvents().map(cleanEventRow))
+      !== JSON.stringify(rows.map(cleanEventRow));
+}
+
+wzPlacesEl?.addEventListener('change', (e)=>{
+  const box = e.target.closest('[data-wzp-same]');
+  if(!box) return;
+  const loc = box.closest('.ad-wz-place')?.querySelector('[data-wzp-loc]');
+  if(loc) loc.hidden = box.checked;
+  /* 勾這一顆等於換了那一場的地點，底下那一列要跟著說有未儲存的變更 */
+  wzSyncStepBar();
+});
+
+async function wzApplyPlaces(btn){
+  if(!multiEventOn() || !wzPlacesEl || !wzPlacesEl.innerHTML) return true;
+
+  const { rows, bad } = wzReadPlaces();
+  if(bad){
+    toast('地圖連結要以 https:// 開頭', true);
+    wzGoField(bad);
+    return false;
+  }
+  const unchanged = JSON.stringify(savedEvents().map(cleanEventRow))
+                 === JSON.stringify(rows.map(cleanEventRow));
+  if(unchanged) return true;
+
+  return runSave(btn, async ()=>{
+    await DataStore.saveSiteFields(eventsPatch(rows.map(cleanEventRow)));
+    renderEventViews();
+  });
+}
+
+/* ---------- 05 賓客指南 ----------
+   先問「想提醒賓客什麼」，勾了才展開那一段。
+   有內容的那幾項一進來就是勾著的 —— 舊資料不會被藏起來。 */
+const WZ_GUIDES = [
+  { key:'transit', label:'交通方式：大眾運輸', has: ()=> {
+      const d = siteData(); return !!(d.transportPublic || d.transportPublicImg); } },
+  { key:'parking', label:'交通方式：停車資訊', has: ()=> {
+      const d = siteData(); return !!(d.transportParking || d.transportParkingImg); } },
+  { key:'dress',   label:'Dress Code',        has: ()=> wzDressFilled() },
+  { key:'gift',    label:'禮金',              has: ()=> !!siteData().giftNote },
+];
+
+/* 這一次瀏覽勾了哪幾項（含還沒填內容的）。null ＝ 還沒從資料推過 */
+let wzGuideOn = null;
+
+function wzGuideText(key){
+  return {
+    transit: [sf.transitPub],
+    parking: [sf.transitPark],
+    dress:   [sf.dress],
+    gift:    [sf.gift],
+  }[key] || [];
+}
+
+/* 哪幾段要展開。勾一下只走這一支，不重畫整組勾選框 ——
+   重畫會把使用者剛按下去的那一顆換掉（同 02 的理由）。 */
+function wzSyncGuideReveals(){
+  wzStepEl(5)?.querySelectorAll('[data-guide]').forEach(el => {
+    el.hidden = !wzGuideOn.has(el.dataset.guide);
+  });
+}
+
+function wzRenderGuides(){
+  const box = document.getElementById('adWzGuidePicks');
+  if(!box) return;
+  if(!wzGuideOn){
+    wzGuideOn = new Set(WZ_GUIDES.filter(g => g.has()).map(g => g.key));
+  }
+
+  box.innerHTML = WZ_GUIDES.map(g => `
+    <label class="ad-check ad-wz-pick">
+      <input type="checkbox" data-wz-guide="${g.key}"${wzGuideOn.has(g.key) ? ' checked' : ''}>
+      <span>${escapeHtml(g.label)}</span>
+    </label>`).join('');
+
+  wzSyncGuideReveals();
+}
+
+document.getElementById('adWzGuidePicks')?.addEventListener('change', async (e)=>{
+  const box = e.target.closest('[data-wz-guide]');
+  if(!box) return;
+  const key = box.dataset.wzGuide;
+
+  if(box.checked){ wzGuideOn.add(key); wzSyncGuideReveals(); return; }
+
+  /* 收起一塊已經寫了東西的內容 ＝ 賓客那一頁會少一段，所以問一句。
+     色票與參考圖是「選好就存」的獨立資料，這裡不動它們。 */
+  const filled = wzGuideText(key).some(el => el && el.value.trim());
+  if(filled){
+    const ok = await confirmModal({
+      title: '要拿掉這一段嗎？',
+      message: '已經寫好的文字會清掉，賓客那一頁就不會出現這一段。',
+      confirmText: '拿掉',
+      danger: true,
+    });
+    if(!ok){ box.checked = true; return; }
+    wzGuideText(key).forEach(el => { if(el) el.value = ''; });
+    syncSiteDirtyUI();
+    if(key === 'dress' && wzDressFilled()){
+      toast('說明文字清掉了。顏色與參考圖要另外刪除');
+    }
+  }
+  wzGuideOn.delete(key);
+  wzSyncGuideReveals();
+});
+
+/* ---------- 階段切換 ---------- */
+
+/* 有欄位擋下儲存時，先把那一欄捲到畫面上再對焦。
+   那一欄可能住在別的階段（存的一律是完整的一份），
+   所以要先切過去，不然新人只會看到一句錯誤卻找不到是哪一格。 */
+function wzGoField(el){
+  if(!el) return;
+  const owner = el.closest('.ad-wz-step');
+  const n = owner ? Number(owner.dataset.step) : 0;
+  if(n && n !== wzStep) wzGo(n);
+  setTimeout(()=>{
+    el.scrollIntoView({ block:'center', behavior:'smooth' });
+    el.focus({ preventScroll:true });
+  }, n && n !== wzStep ? 120 : 0);
+}
+
+/* 這一頁有沒有還沒存的東西。
+   草稿放在四個不同的地方（表單欄位、流程、活動的勾選、多活動的地點），
+   但新人看到的是同一句話 —— 而且「儲存並繼續」會把四份一起存掉，
+   所以這裡就該把四份加起來看。 */
+function wzDirty(){
+  return siteFormDirty() || schDirty() || wzPlacesDirty() || wzActsDirty();
+}
+
+/* 階段底部那一列（「有還沒儲存的變更」＋ 按鈕上的紅點） */
+function wzSyncStepBar(){
+  if(!wzStepsEl) return;
+  const d = wzDirty();
+  wzStepsEl.querySelectorAll('.ad-wz-step').forEach(step => {
+    const note = step.querySelector('[data-wz-note]');
+    if(note){
+      note.textContent = d ? '有還沒儲存的變更' : '目前沒有未儲存的變更';
+      note.classList.toggle('is-dirty', d);
+    }
+    const next = step.querySelector('[data-wz-next]');
+    if(next) next.classList.toggle('is-dirty', d);
+  });
+}
+
+/* 進到某一階段之前，把那一階段要用的畫面先畫好 */
+function wzPrepareStep(n){
+  if(n === 2) wzRenderActs();
+  if(n === 3) wzRenderPlaces();
+  if(n === 4) renderSchedule(schLoaded ? undefined : siteSchedule());
+  if(n === 5) wzRenderGuides();
+  if(n === 6) syncGalleryUI();
+}
+
+function wzShow(n){
+  wzStep = Number(n) || 0;
+  if(wzHomeEl)  wzHomeEl.hidden  = wzStep !== 0;
+  if(wzStepsEl) wzStepsEl.hidden = wzStep === 0;
+  if(wzStepsEl){
+    wzStepsEl.querySelectorAll('.ad-wz-step').forEach(step => {
+      step.hidden = Number(step.dataset.step) !== wzStep;
+    });
+  }
+  if(wzStep === 0) wzRenderHome();
+  else wzPrepareStep(wzStep);
+  wzSyncStepBar();
+}
+
+/* 網址：#lobby ＝ 總覽、#lobby/03 ＝ 第三階段。
+   activateTab() 會把回傳的字串接在 #lobby 後面。 */
+function wzActivate(subtab){
+  const n = /^0?([1-6])$/.test(String(subtab || ''))
+    ? Number(String(subtab).replace(/^0/, '')) : 0;
+  wzShow(n);
+  return n ? `/${WZ_STEPS[n - 1].no}` : '';
+}
+
+function wzGo(n){
+  location.hash = n ? `lobby/${WZ_STEPS[n - 1].no}` : 'lobby';
+}
+
+wzCardsEl?.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-wz-go]');
+  if(btn) wzGo(Number(btn.dataset.wzGo));
+});
+
+wzStepsEl?.addEventListener('click', async (e)=>{
+  if(e.target.closest('[data-wz-home]')){ wzGo(0); return; }
+  if(e.target.closest('[data-wz-prev]')){ wzGo(Math.max(1, wzStep - 1)); return; }
+
+  const next = e.target.closest('[data-wz-next]');
+  if(!next) return;
+  if(await wzSaveStep(wzStep, next)){
+    if(wzStep >= WZ_STEPS.length) wzOpenDone();
+    else wzGo(wzStep + 1);
+  }
+});
+
+/* 「儲存並繼續」一律把整頁還沒存的東西一起存掉 ——
+   停在哪一階段按，結果都一樣完整。沒有變動的那幾份直接跳過，
+   不會每按一次就多寫幾個欄位回資料庫。 */
+async function wzSaveStep(n, btn){
+  if(n === 2 && !await wzApplyActs(btn)) return false;
+  if(!await wzApplyPlaces(btn)) return false;
+  if(schDirty() && !await saveSchedule(btn)) return false;
+  if(siteFormDirty() && !await saveSiteForm(btn)) return false;
+  return true;
+}
+
+/* ---------- 完成畫面 ----------
+   「儲存成功」講的是系統做了什麼；這裡講的是新人準備好了什麼。
+   還沒填的那幾項用「還有 N 個項目可以補充」，不用「尚未填寫」。 */
+const WZ_DONE_ITEMS = [
+  { label:'基本資訊',   has: ()=> !!siteData().coupleTitle },
+  { label:'日期時間',   has: ()=> !!toJsDate(siteData().eventDate) },
+  { label:'婚禮地點',   has: ()=> wzPlaceFilled() },
+  { label:'交通資訊',   has: ()=> wzTransitFilled() },
+  { label:'婚禮流程',   has: ()=> siteSchedule().length > 0 },
+  { label:'Dress Code', has: ()=> wzDressFilled() },
+  { label:'關於禮金',   has: ()=> !!siteData().giftNote },
+  { label:'你們的故事', has: ()=> !!siteData().story },
+];
+
+const wzDoneMask = document.getElementById('adWzDoneMask');
+const closeWzDone = wzDoneMask
+  ? registerFormModal(wzDoneMask, ()=>{ wzDoneMask.hidden = true; wzGo(0); })
+  : ()=>{};
+
+function wzOpenDone(){
+  if(!wzDoneMask){ wzGo(0); return; }
+  const done = WZ_DONE_ITEMS.filter(x => { try{ return x.has(); }catch{ return false; } });
+  const todo = WZ_DONE_ITEMS.filter(x => !done.includes(x));
+
+  document.getElementById('adWzDoneList').innerHTML = done.map(x =>
+    `<li class="ad-wz-done-i is-on"><span aria-hidden="true">✓</span>${escapeHtml(x.label)}</li>`).join('');
+
+  const restBox = document.getElementById('adWzDoneRest');
+  restBox.hidden = !todo.length;
+  if(todo.length){
+    document.getElementById('adWzDoneRestHd').textContent =
+      `還有 ${todo.length} 個項目可以補充`;
+    document.getElementById('adWzDoneRestList').innerHTML = todo.map(x =>
+      `<li class="ad-wz-done-i"><span aria-hidden="true">○</span>${escapeHtml(x.label)}</li>`).join('');
+  }
+
+  const view = document.getElementById('adWzDoneView');
+  if(view) view.href = sitePath('lobby');
+  wzDoneMask.hidden = false;
+  document.getElementById('adWzDoneClose')?.focus({ preventScroll:true });
+}
+
+document.getElementById('adWzDoneClose')?.addEventListener('click', ()=> closeWzDone());
 
 /* ============================================================
    5. 婚禮小卡（抽卡頁的卡池）
@@ -7039,9 +7892,9 @@ const HOME_STEPS = [
     doneText: '已經放到主畫面了',
   },
   {
-    tab: 'lobby', hash: 'lobby/info',
+    tab: 'lobby', hash: 'lobby',
     title: '填好婚禮資訊',
-    note: '地點、時間、交通、Dress Code、關於禮金..等',
+    note: '六個段落，一次填一段就好：名稱、活動、時間地點、流程、賓客指南、你們的故事',
     done: () => !!(siteData().venueName || siteData().venueAddress),
     doneText: '已經填好了',
   },
