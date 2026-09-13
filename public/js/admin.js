@@ -1418,7 +1418,7 @@ function openAdmin(){
   if(homeSite) homeSite.href = sitePath('lobby');
   if(homeForm) homeForm.href = sitePath('rsvp');
   const homeTitle = document.getElementById('adHomeTitle');
-  if(homeTitle && couple) homeTitle.textContent = `${couple} 的新人後台`;
+  if(homeTitle && couple) homeTitle.textContent = `首頁`;
   /* 常見問題最下面那顆「用官方帳號聯繫」。網址只寫在 SUPPORT_LINE_URL 一個地方 */
   const support = document.getElementById('adSupportBtn');
   if(support) support.href = SUPPORT_LINE_URL;
@@ -7137,47 +7137,45 @@ const HOME_STEPS = [
   {
     tab: 'lobby', hash: 'lobby/info',
     title: '填好婚禮資訊',
-    note: '地點、時間、交通、Dress Code、關於禮金。留白的那一塊不會出現在賓客那一頁。',
+    note: '地點、時間、交通、Dress Code、關於禮金..等',
     done: () => !!(siteData().venueName || siteData().venueAddress),
-    doneText: '地點已經填好了',
+    doneText: '已經填好了',
   },
   {
     tab: 'rsvpForm', hash: 'rsvpForm',
     title: '決定出席表單要問什麼',
-    note: '固定題目不用管，這裡是決定要不要問喜帖、喜餅、聯絡方式，'
-        + '以及邀請函上還要放哪些內容。',
+    note: '設定題目「出席人數、素食、兒童座椅..等」，',
     done: () => 'rsvpContactMethods' in siteData(),
     doneText: '已經設定過了',
   },
   {
     tab: 'lobby', hash: 'lobby/schedule',
-    title: '排當日流程',
-    note: '婚宴當天的時間軸。沒填的話，大廳會顯示「流程稍後公布」。',
+    title: '寫當日流程',
+    note: '沒填的話，會顯示「流程稍後公布」。',
     done: () => Array.isArray(siteData().schedule) && siteData().schedule.length > 0,
-    doneText: () => `已經有 ${siteData().schedule.length} 個段落`,
+    doneText: () => `已經填寫了`,
   },
   {
     tab: 'letters', hash: 'letters',
-    title: '寫一封給賓客的感謝信',
-    note: '賓客在婚禮當天抽到的那一封。可以寫好幾封，抽到哪一封由你們決定。',
+    title: '寫封給賓客的感謝信',
     done: () => DataStore.getLetters().length > 0,
     doneText: () => `已經寫了 ${DataStore.getLetters().length} 封`,
   },
   {
     tab: 'rsvp', hash: 'rsvp/overview',
-    title: '把連結發給賓客，等回覆進來',
+    title: '發送連結給賓客',
     note: '收到的每一份回覆都會出現在「出席回覆」，人數、葷素、兒童椅都幫你加好。',
     done: () => DataStore.getRSVPCount() > 0,
     doneText: () => `已經收到 ${DataStore.getRSVPCount()} 份回覆`,
   },
   {
     tab: 'seatingPlan', hash: 'seatingPlan/board',
-    title: '回覆差不多了就開始排桌',
-    note: '把人拖到桌上，排完再一次同步給門口那張桌次表。',
+    title: '有回覆就可以開始排桌',
+    note: '回覆名單可以直接同步排桌。',
   },
   {
     tab: 'butler', hash: 'butler/links',
-    title: '婚宴前產生收禮連結',
+    title: '婚宴當天的收禮小幫手',
     note: '交給當天幫忙收禮的親友，他們記下的每一筆都會即時回到後台。',
   },
 ];
@@ -7223,8 +7221,8 @@ const pagePrevEl  = document.getElementById('adPagePreview');
 
 /* 一句話說明。新人不會每個名字都記得那一頁在做什麼 */
 const PAGE_SETTING_NOTES = {
-  wall:       '賓客寫下祝福，也讀得到別人寫的',
-  cake:       '挑一份甜點放上桌，替你們集氣',
+  wall:       '賓客寫下祝福，也看得到別人寫的',
+  cake:       '挑一個圖案丟進桶子，替你們集氣',
   draw:       '抽一張婚禮限定小卡，收進收藏',
   exhibition: '沿著時間線，走過你們一路走來的日子',
   quiz:       '一份小測驗，看賓客有多了解你們',
@@ -7714,8 +7712,8 @@ function renderHome(){
 
   const left = steps.filter(s => homeStepDone(s) === false).length;
   setPageSub('adHomeSub', left
-    ? `照下面的順序走一遍就差不多了，目前還有 <b>${left}</b> 步沒動過`
-    : '該填的都填得差不多了 —— 隨時可以回來改');
+    ? `目前還有 <b>${left}</b> 步沒動過`
+    : '該填的都填得差不多了，隨時可以回來改');
 }
 
 /* 回覆與感謝信進來之後，「這一步做完了沒」的答案會變，重畫一次 */
