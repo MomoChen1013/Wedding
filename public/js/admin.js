@@ -2895,10 +2895,10 @@ document.getElementById('adRsvpExport').addEventListener('click', async ()=>{
 /* [欄位, 名稱, 說明, 題型]。順序＝賓客在活動卡上看到的順序。
    題型只標「不是勾選／數字」的那一種（飲食習慣補充是賓客自己打字）。 */
 const EV_ASK_ROWS = [
-  ['askCount',     '出席人數',     '包含你，共幾位出席？',        ''],
-  ['askMeal',      '餐點分配',     '葷食／素食各幾位',            ''],
-  ['askChildSeat', '兒童座椅',     '需要幾張',                    ''],
-  ['askDiet',      '飲食習慣補充', '不吃牛、海鮮過敏、孕婦餐…',   '簡答題'],
+  ['askCount',     '出席人數',     '包含你，共幾位出席？',        ],
+  ['askMeal',      '餐點分配',     '葷食／素食各幾位',            ],
+  ['askChildSeat', '兒童座椅',     '需要幾張',                    ],
+  ['askDiet',      '飲食習慣補充', '簡答題，不吃牛、海鮮過敏、孕婦餐…',  ],
 ];
 
 /* events[].askCount → sites.rsvpAskCount（站台那一份的欄位名） */
@@ -2962,7 +2962,7 @@ function actAskRowsHtml(ev){
     <div class="ad-askrow">
       <label class="ad-check is-fixed">
         <input type="checkbox" checked disabled>
-        <span>能來參加嗎<small>就是活動卡本身，關不掉</small></span></label>
+        <span>能來參加嗎？<small>必填</small></span></label>
     </div>
     ${EV_ASK_ROWS.map(([key, label, note, kind]) => {
       /* 勾選框代表「這一場要不要問」：效果值是站台層與這個活動疊起來的
@@ -3005,12 +3005,10 @@ function actQuestionRowHtml(ev, q){
 function actQuestionsHtml(ev){
   const qs = Array.isArray(ev.questions) ? ev.questions : [];
   return `
+ <div class="ad-sub-sec-title">自訂問題<small>最多 ${EVENT_QUESTION_MAX} 題，都是選填。</small></div>
+
     <div class="ad-sub-sec">
-      <div class="ad-sub-sec-title">本場次專屬問題</div>
-      <p class="ad-sub-sec-note">
-        只有<b>這一場</b>會問，其他活動不會出現。
-        最多 ${EVENT_QUESTION_MAX} 題，一律選填。
-      </p>
+
       <div class="ad-qlist" data-qlist="${escapeHtml(ev.id)}">${
         qs.map(q => actQuestionRowHtml(ev, q)).join('')
         || '<div class="ad-qrow-empty">尚未新增問題</div>'}</div>
@@ -3045,8 +3043,6 @@ function actCardHtml(ev){
       </div>
       <div class="ad-actcard-meta">
         <span class="ad-actcard-when">${escapeHtml(actWhenText(ev) || '時間未定')}</span>
-        <span class="ad-actcard-where${where ? '' : ' is-empty'}">${
-          escapeHtml(where || '地點還沒填')}</span>
       </div>
       <button class="btn small ghost" type="button" data-act-edit>編輯活動資訊</button>
     </div>
@@ -3056,8 +3052,7 @@ function actCardHtml(ev){
       ${saved ? actQuestionsHtml(ev) : ''}
     </div>`
     : `<p class="ad-actcard-note">
-        這個行程<b>不會出現在出席表單</b>裡 ——
-        賓客只會在大廳與邀請函上看到它的時間與地點。</p>`}
+        這個行程<b>不會出現在出席表單</b>裡，賓客只會在首頁上看到它的時間與地點。</p>`}
   </article>`;
 }
 
@@ -3068,8 +3063,7 @@ function renderActCards(){
   const note = document.getElementById('adFormActNote');
   if(note){
     note.innerHTML = evs.length > 1
-      ? `這場婚禮有 <b>${evs.length}</b> 個行程，一個行程一張卡 ——`
-        + '改一張卡<b>不會</b>動到別的場次。'
+      ? `這場婚禮有 <b>${evs.length}</b> 個行程`
       : '行程的時間、地點與要問的題目都在這張卡上。'
         + '<b>時間與地點一改，大廳與邀請函會一起更新。</b>';
   }
@@ -3207,7 +3201,7 @@ async function deleteQuestion(evId, qId){
 
   const ok = await confirmModal({
     title: `刪除「${q.label}」`,
-    message: '賓客不會再看到這一題。已經送出的回覆仍然保留（回覆本來就改不動），'
+    message: '賓客不會再看到這一題。已經送出的回覆仍然保留，'
            + '只是這一題不會再出現在名單與匯出的 CSV 裡。',
     danger: true,
     confirmText: '刪除',
@@ -3633,16 +3627,7 @@ function renderFormPreviews(){
   set('adPreviewCard', RSVP_OPTIONS.card.map(([, l]) => l));
   set('adPreviewGift', opts('gift'));
 
-  /* 郵寄開啟後會多出來的東西：講具體的欄位，不要只說「會收集更多資料」 */
-  const info = document.getElementById('adMailRevealInfo');
-  if(info){
-    const card = !!document.getElementById('adAskCard')?.checked;
-    const gift = !!document.getElementById('adAskGift')?.checked;
-    info.innerHTML = [
-      card ? { name:'喜帖', value:'「紙本要怎麼給你？」多一個「郵寄」' } : null,
-      gift ? { name:'喜餅', value:'領取方式多一個「郵寄」' } : null,
-      { name:'收件地址', value:'選了郵寄才出現：郵遞區號＋地址（喜餅可以沿用喜帖的）' },
-    ].filter(Boolean).map(infoRowHtml).join('');
+
   }
 
   renderFormTagPreview();
@@ -3663,7 +3648,7 @@ function renderFormTagPreview(){
   const state = document.getElementById('adAskTagState');
   if(state){
     state.textContent = list.length
-      ? `${list.length} 個選項`
+      ?''
       : '目前沒有選項，這一題不會出現';
     state.classList.toggle('ad-tag-maybe', !list.length);
   }
@@ -3675,10 +3660,10 @@ function renderFormTagPreview(){
   const hint = document.getElementById('adAskTagHint');
   if(hint){
     hint.innerHTML = on
-      ? '在「設定賓客標籤」那一頁勾「當表單選項」的標籤才會出現在這裡，'
-        + '在這裡新增也會<b>同時出現在那一頁</b>。'
+      ? '勾「當表單選項」的標籤才會出現在這裡，'
+        + '會即時同步標籤。'
         + '<button class="ad-th-link" type="button" id="adAskTagJump">前往設定 ↗</button>'
-      : '這是要配合排桌一起用的進階功能，<b>目前方案還沒開通</b>，'
+      : '這是進階功能，<b>目前方案還沒開通</b>，'
         + '需要管理員協助打開。';
   }
 }
@@ -3744,8 +3729,8 @@ document.getElementById('adAskTagAdd')?.addEventListener('click', async ()=>{
   if(!guestTagsOn()){
     await confirmModal({
       title: '賓客標籤還沒開通',
-      message: '「是哪一組關係」的選項來自賓客標籤 —— 這是要配合排桌一起用的'
-             + '進階功能，目前的方案還沒有這個權限，需要管理員協助開通。',
+      message: '這些選項來自賓客標籤，'
+             + '目前的方案還沒有這個權限，需要管理員協助開通。',
       confirmText: '知道了',
       cancelText: '關閉',
     });
@@ -3756,7 +3741,7 @@ document.getElementById('adAskTagAdd')?.addEventListener('click', async ()=>{
 
   const name = await promptModal({
     title: '新增關係標籤',
-    message: '例如：大學同學、公司同事、教會朋友、親戚',
+    message: '例如：大學同學、公司同事',
     placeholder: '標籤名稱',
     maxLength: GUEST_TAG_NAME_MAX,
     confirmText: '新增',
@@ -3815,14 +3800,14 @@ function rsvpInfoRows(){
   const cover = d.coverImageUrl
     || ((window.SITE && window.SITE.assets && window.SITE.assets.cover) || '');
   return [
-    { name:'日期與開始時間', value: weddingDateText(),
+    { name:'日期與時間', value: weddingDateText(),
       empty:'婚禮日期還沒設定，請先找我們排定' },
     /* hashtag 是一串各自獨立的東西，不是一句話 —— 畫成膠囊比用空白串起來好讀 */
     { name:'婚禮 hashtag', value: clip(tags.join('　')),
       html: tags.length ? previewTags(tags) : '',
       empty:'留白就用預設的 #我們結婚了 #Married' },
-    { name:'封面照',     value: cover ? '已經放好了' : '',
-      empty:'還沒有封面照，需要的話把照片給我們' },
+    { name:'封面照',     value: cover ? '管理員已經放好了' : '',
+      empty:'還沒有封面照，照片要透過管理員放' },
   ];
 }
 
