@@ -7292,8 +7292,12 @@ function pageSettingRows(){
         label:  S.pages[key].label,
         note:   PAGE_SETTING_NOTES[key] || '',
         locked: !open,
-        on:     e.on,
-        at:     e.at,
+        /* 沒開通的那一頁一律當成「關著」：pagePublish 沒設定過的預設是
+           on:true（見 wed-model.js 的 pagePublishEntry），照著畫的話
+           開關會亮著、右邊那支手機也會多列一行 —— 但賓客根本進不去
+           （判斷先卡在 isPageOn）。畫面不能和賓客看到的說不一樣。 */
+        on:     open ? e.on : false,
+        at:     open ? e.at : null,
       };
     })
     .filter(Boolean);
@@ -7339,26 +7343,129 @@ const PAGE_LOCK_MSG = '這個功能需要管理員才能開啟，請透過官方
 /* 那一句話由旁邊的問號（Feather 的 help-circle）帶出來：
    桌機滑過去就看得到，觸控裝置點一下 —— 兩邊都不必先按下一顆看起來
    按不動的開關才知道發生什麼事。按鈕上刻意沒有文字：一列裡已經有
-   頁名、說明、狀態三行字了，再多一句「為什麼不能開？」會蓋過它們。 */
-function setLockNote(row, show){
-  if(!row) return;
-  const box = row.querySelector('[data-page-lock]');
-  if(!box || box.hidden === !show) return;
-  box.hidden = !show;
-  const why = row.querySelector('[data-page-why]');
-  if(why) why.setAttribute('aria-expanded', String(show));
-}
+   頁名、說明、狀態三行字了，再多一句「為什麼不能開？」會蓋過它們。
 
-function lockNoteOpen(row){
-  const box = row && row.querySelector('[data-page-lock]');
-  return !!box && !box.hidden;
-}
+   形狀是**浮在上面的 tooltip**，不是長在那一列裡的一塊說明：
+   說明如果撐開那一列，滑過去、滑開就會把下面整排往下推再收回來——
+   只是想知道「為什麼不能開」，整頁跟著跳兩次。所以照側欄 tooltip
+   （bindNavTips）那一套：render 到 body、position:fixed，開關收合
+   都不動到版面。
+
+   和側欄那一顆的差別是它**收得到滑鼠**：裡面有一顆「用官方帳號聯繫」，
+   所以游標從問號滑進 tooltip 不算離開（pointer-events 是開的），
+   點一下開起來的那次還會釘住，不會滑開就跑掉。 */
+const pageLockTip = (function(){
+  let el = null, forBtn = null, pinned = false, timer = 0;
+
+  function build(){
+    if(el) return el;
+    el = document.createElement('div');
+    el.className = 'ad-page-tip';
+    el.id = 'adPageLockTip';
+    el.setAttribute('role', 'tooltip');
+    el.setAttribute('data-page-lock', '');
+    el.hidden = true;
+    el.innerHTML = `
+      <p class="ad-page-lock-msg">${escapeHtml(PAGE_LOCK_MSG)}</p>
+      <div class="ad-row">
+        <a class="btn small" href="${escapeHtml(SUPPORT_LINE_URL)}"
+           target="_blank" rel="noopener noreferrer">用官方帳號聯繫 ↗</a>
+      </div>
+      <div class="ad-hint">
+        開通之後這一列就會活過來，換你自己決定什麼時候讓賓客看到。
+        <b>現有的資料一筆都不會動。</b>
+      </div>`;
+    /* 游標停在 tooltip 上就不要收 —— 那顆連結是要點得到的 */
+    el.addEventListener('pointerenter', ()=> clearTimeout(timer));
+    el.addEventListener('pointerleave', ()=>{ if(!pinned) hide(); });
+    document.body.appendChild(el);
+    return el;
+  }
+
+  /* 貼在問號下面、對著它置中；下面塞不下就翻到上面去。
+     兩邊各留 10px，窄螢幕上不會被切掉。 */
+  function place(anchor){
+    const r = anchor.getBoundingClientRect();
+    const w = el.offsetWidth, h = el.offsetHeight;
+    const gap = 10, edge = 10;
+
+    let below = true;
+    let top = r.bottom + gap;
+    if(top + h > window.innerHeight - edge && r.top - gap - h > edge){
+      below = false;
+      top = r.top - gap - h;
+    }
+    top = Math.max(edge, Math.min(top, window.innerHeight - h - edge));
+
+    let left = r.left + r.width / 2 - w / 2;
+    left = Math.max(edge, Math.min(left, window.innerWidth - w - edge));
+
+    el.classList.toggle('is-below', below);
+    el.classList.toggle('is-above', !below);
+    /* 箭頭指回那顆問號 —— tooltip 被畫面邊緣推開時也還指得準 */
+    const arrow = Math.max(14, Math.min(r.left + r.width / 2 - left, w - 14));
+    el.style.setProperty('--tip-arrow', `${Math.round(arrow)}px`);
+    el.style.top  = `${Math.round(top)}px`;
+    el.style.left = `${Math.round(left)}px`;
+  }
+
+  /* pin＝他自己點開的（或用鍵盤打開的）：滑開不收，要按 Esc、
+     點別的地方、或再按一次那顆問號才收。滑過去帶出來的那次不釘。 */
+  function show(btn, opts){
+    if(!btn) return;
+    clearTimeout(timer);
+    build();
+    const same = forBtn === btn;
+    if(forBtn && !same) forget(forBtn);
+    forBtn = btn;
+    /* 滑過去（不帶 pin）不會把已經釘住的那一則解開 */
+    pinned = !!(opts && opts.pin) || (pinned && same);
+    el.hidden = false;
+    place(btn);
+    btn.setAttribute('aria-expanded', 'true');
+    btn.setAttribute('aria-describedby', el.id);
+    requestAnimationFrame(()=> el.classList.add('is-on'));
+  }
+
+  function forget(btn){
+    btn.setAttribute('aria-expanded', 'false');
+    btn.removeAttribute('aria-describedby');
+  }
+
+  function hide(){
+    clearTimeout(timer);
+    pinned = false;
+    if(forBtn){ forget(forBtn); forBtn = null; }
+    if(!el || el.hidden) return;
+    el.classList.remove('is-on');
+    /* 等淡出跑完再收起來，不然下一次會從上一則的位置閃現
+       （和側欄 tooltip 同一套） */
+    timer = setTimeout(()=>{ el.hidden = true; }, 200);
+  }
+
+  /* 滑鼠離開問號之後留一點時間走到 tooltip 上（中間隔著 10px） */
+  function hideSoon(){
+    if(pinned) return;
+    clearTimeout(timer);
+    timer = setTimeout(hide, 140);
+  }
+
+  return {
+    show, hide, hideSoon,
+    isOpenFor: (btn) => !!el && !el.hidden && forBtn === btn,
+    contains:  (node) => !!el && !!node && el.contains(node),
+    /* 鍵盤打開的那次把焦點送進去，不然 tooltip 在 body 最後面，
+       Tab 過去要先走完整頁 —— 那顆連結等於按不到 */
+    focusIn(){ el && el.querySelector('a')?.focus(); },
+  };
+})();
 
 function pageRowHtml(row){
   const live = pageRowLive(row);
   const schedFuture = !row.on && row.at !== null && Date.now() < row.at;
   return `
-  <div class="ad-page-row${row.locked ? ' is-locked' : ''}${live ? ' is-live' : ''}"
+  <div class="ad-page-row${row.locked ? ' is-locked' : ''}${
+         !row.locked && live ? ' is-live' : ''}"
        data-page-row="${escapeHtml(row.key)}">
     <div class="ad-page-main">
       <div class="ad-page-name">${escapeHtml(row.label)}${
@@ -7377,25 +7484,13 @@ function pageRowHtml(row){
         : `<button class="ad-page-when" type="button" data-page-when
             aria-expanded="false">${schedFuture ? '改排程' : '排程開啟'}</button>`}
       <label class="ad-toggle">
-        <input type="checkbox" data-page-on ${live ? 'checked' : ''}
+        <input type="checkbox" data-page-on
+               ${!row.locked && live ? 'checked' : ''}
                ${row.locked ? 'disabled' : ''}
                aria-label="${escapeHtml(row.label)}要不要讓賓客看到">
         <span class="ad-toggle-track" aria-hidden="true"></span>
       </label>
     </div>
-
-    ${!row.locked ? '' : `
-    <div class="ad-page-lock" data-page-lock hidden>
-      <p class="ad-page-lock-msg">${escapeHtml(PAGE_LOCK_MSG)}</p>
-      <div class="ad-row">
-        <a class="btn small" href="${escapeHtml(SUPPORT_LINE_URL)}"
-           target="_blank" rel="noopener noreferrer">用官方帳號聯繫 ↗</a>
-      </div>
-      <div class="ad-hint">
-        開通之後這一列就會活過來，換你自己決定什麼時候讓賓客看到。
-        <b>現有的資料一筆都不會動。</b>
-      </div>
-    </div>`}
 
     ${row.locked ? '' : `
     <div class="ad-page-sched" data-page-sched hidden>
@@ -7434,6 +7529,8 @@ function renderPagePreview(rows){
 
 function renderPageSettings(){
   if(!pageListEl || !pagesSecEl) return;
+  /* 重畫會把問號整顆換掉，浮在上面的那一則先收起來（不然它會指著空氣） */
+  pageLockTip.hide();
 
   /* 手機示意的標題就寫這組新人的名字，一眼看得出那是自己的網站 */
   const phoneTitle = document.getElementById('adPhoneTitle');
@@ -7506,20 +7603,28 @@ if(pageListEl){
   });
 
   pageListEl.addEventListener('click', async (e)=>{
-    /* 沒開通的那一列。兩個入口，做的是同一件事：
+    /* 沒開通的那一列。兩個入口，帶出來的是同一則 tooltip：
          問號  —— 「這是什麼？」（觸控靠點的；桌機滑過去就開了，見下面）
          開關  —— 「我要打開它」。開關是 disabled 的，按在它身上不會有
                    change 事件（CSS 把 disabled 的 input 設成
                    pointer-events:none，點擊才落到外層的 <label> 上、
                    冒泡到這裡），所以按下去的回應要在這裡給。
-       說明本身裡面的點擊不算（點那顆連結是要去聯繫我們，不是要收回去）。 */
+       tooltip 本身在 <body> 上，點裡面那顆連結不會走到這裡。 */
     const lockedRow = e.target.closest('.ad-page-row.is-locked');
-    if(lockedRow && !e.target.closest('[data-page-lock]')){
+    if(lockedRow){
+      const why    = lockedRow.querySelector('[data-page-why]');
       const viaWhy = !!e.target.closest('[data-page-why]');
-      const show   = viaWhy ? !lockNoteOpen(lockedRow) : true;
-      setLockNote(lockedRow, show);
+      /* 問號：點一下開、再點一下收（觸控就是這樣用的）。
+         開關：他要的是「打開它」，一律給說明，不會不小心收掉。 */
+      if(viaWhy && pageLockTip.isOpenFor(why)) pageLockTip.hide();
+      else {
+        pageLockTip.show(why, { pin:true });
+        /* detail:0 ＝ 用鍵盤按下去的：焦點送進 tooltip，
+           那顆「用官方帳號聯繫」才按得到 */
+        if(viaWhy && e.detail === 0) pageLockTip.focusIn();
+      }
       /* 按了那顆按不動的開關才吐 toast —— 問號是「我想知道」，
-         畫面上那段說明就是答案，不必再有人在角落喊一次。 */
+         浮出來那段說明就是答案，不必再有人在角落喊一次。 */
       if(!viaWhy) toast(PAGE_LOCK_MSG);
       return;
     }
@@ -7567,38 +7672,56 @@ if(pageListEl){
   /* 桌機：滑過問號就看得到那句話，不必先點。
      能力判斷不是寬度判斷 —— iPad 橫向有 1194px，但它是觸控裝置
      （和側欄 tooltip 的 bindNavTips 同一套判斷）。
-     說明是長在那一列裡面的，所以從問號滑到底下那顆「用官方帳號聯繫」
-     不算離開，滑得到也點得到；真的離開那一列才收起來。 */
+     從問號滑進 tooltip 不算離開：那裡面有一顆「用官方帳號聯繫」，
+     滑得到也點得到。 */
   const finePointer = window.matchMedia('(hover:hover) and (pointer:fine)');
 
   pageListEl.addEventListener('pointerover', (e)=>{
     if(!finePointer.matches || e.pointerType === 'touch') return;
     const why = e.target.closest('[data-page-why]');
-    if(why) setLockNote(why.closest('.ad-page-row.is-locked'), true);
+    if(why) pageLockTip.show(why);
   });
 
   pageListEl.addEventListener('pointerout', (e)=>{
     if(!finePointer.matches || e.pointerType === 'touch') return;
-    const row = e.target.closest('.ad-page-row.is-locked');
-    if(!row) return;
-    if(e.relatedTarget && row.contains(e.relatedTarget)) return;
-    setLockNote(row, false);
+    const why = e.target.closest('[data-page-why]');
+    if(!why) return;
+    /* 還在問號裡面移動、或正要滑進 tooltip，都不算離開 */
+    const to = e.relatedTarget;
+    if(to && (why.contains(to) || pageLockTip.contains(to))) return;
+    pageLockTip.hideSoon();
   });
 
-  /* 鍵盤：Tab 到問號上和滑過去是同一件事。
-     再按一次 Tab 會落到說明裡那顆連結（還在同一列裡），所以不會收起來。 */
+  /* 鍵盤：Tab 到問號上和滑過去是同一件事（Enter 按下去才釘住並把焦點
+     送進 tooltip，見上面的 click）。 */
   pageListEl.addEventListener('focusin', (e)=>{
     const why = e.target.closest('[data-page-why]');
-    if(why) setLockNote(why.closest('.ad-page-row.is-locked'), true);
+    if(why) pageLockTip.show(why);
   });
 
   pageListEl.addEventListener('focusout', (e)=>{
-    const row = e.target.closest('.ad-page-row.is-locked');
-    if(!row) return;
-    if(e.relatedTarget && row.contains(e.relatedTarget)) return;
-    /* 滑鼠還停在那一列上時不收 —— 焦點離開不代表他不看了 */
-    if(row.matches(':hover')) return;
-    setLockNote(row, false);
+    const why = e.target.closest('[data-page-why]');
+    if(!why) return;
+    if(e.relatedTarget && pageLockTip.contains(e.relatedTarget)) return;
+    /* 滑鼠還停在問號上時不收 —— 焦點離開不代表他不看了 */
+    if(why.matches(':hover')) return;
+    pageLockTip.hideSoon();
+  });
+
+  /* 浮層的通則：版面一動就指不準了，捲動、轉向、換分頁一律先收起來；
+     Esc 與點別的地方也收（點開來釘住的那一則只剩這幾個出口）。 */
+  window.addEventListener('scroll', ()=> pageLockTip.hide(), true);
+  window.addEventListener('resize', ()=> pageLockTip.hide());
+  window.addEventListener('hashchange', ()=> pageLockTip.hide());
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape') pageLockTip.hide();
+  });
+  document.addEventListener('click', (e)=>{
+    /* 沒開通的那一列裡面點哪裡都是「我想知道為什麼」（問號、那顆按不動
+       的開關都算），上面的 handler 剛開起來，別在這裡馬上關掉 */
+    if(e.target.closest('.ad-page-row.is-locked')) return;
+    if(pageLockTip.contains(e.target)) return;
+    pageLockTip.hide();
   });
 }
 

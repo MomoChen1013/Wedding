@@ -2312,9 +2312,14 @@ console.log('\n[18c] 新人自己收起某一頁');
   await page.close();
 }
 {
-  /* 我們沒開通的頁面：那一列是灰的、掛鎖頭、開關按不動 */
+  /* 我們沒開通的頁面：那一列是灰的、掛鎖頭、開關預設關著而且按不動 */
   const siteRef = adb.collection('sites').doc(siteIds[SLUG]);
-  await siteRef.update({ pages: { ...allOnPlusAdmin, letter: false } });
+  await siteRef.update({
+    pages: { ...allOnPlusAdmin, letter: false },
+    /* 故意寫一筆「開著」：沒開通的那一列不該照著它畫 ——
+       賓客根本進不去（判斷先卡在 pages），開關亮著只會騙人 */
+    'pagePublish.letter': { on: true, at: null },
+  });
 
   const { page } = await visit(`/w/${SLUG}/admin`);
   await signInAsOwner(page, 'couple@example.com');
@@ -2326,42 +2331,57 @@ console.log('\n[18c] 新人自己收起某一頁');
     (await page.locator(`${row} .ad-ic-lock`).count()) === 1);
   ok('沒開通的那一列開關按不動',
     await page.isDisabled(`${row} [data-page-on]`));
+  ok('沒開通的那一列開關預設是關著的（不照 pagePublish 畫）',
+    (await page.isChecked(`${row} [data-page-on]`)) === false);
+  ok('沒開通的那一頁不會出現在手機示意裡',
+    !(await page.innerText('#adPagePreview')).includes('給你的信'),
+    await page.innerText('#adPagePreview'));
   ok('沒開通的那一列不能排程',
     (await page.locator(`${row} [data-page-sched]`).count()) === 0);
 
-  /* 死掉的開關按下去不能什麼都不發生：要說清楚要找誰才開得起來 */
-  ok('說明預設是收起來的', await page.isHidden(`${row} [data-page-lock]`));
-  await page.click(`${row} .ad-toggle`);
-  await page.waitForSelector(`${row} [data-page-lock]:not([hidden])`, { timeout:5000 });
+  /* 死掉的開關按下去不能什麼都不發生：要說清楚要找誰才開得起來。
+     說明是浮在上面的 tooltip（#adPageLockTip，掛在 <body> 上），
+     不是長在那一列裡 —— 開關收合都不該動到版面。 */
+  const tip = '#adPageLockTip';
+  ok('說明預設是收起來的', await page.isHidden(tip));
+  const rowH = (await page.locator(row).boundingBox()).height;
+  /* force：那顆開關本來就是 disabled 的（按下去交給外層 <label> 接，
+     見 admin.js），Playwright 的 actionability 會替我們擋下來 */
+  await page.click(`${row} .ad-toggle`, { force: true });
+  await page.waitForSelector(`${tip}:not([hidden])`, { timeout:5000 });
   ok('按下開關會說「要透過官方帳號聯繫」',
-    (await page.innerText(`${row} .ad-page-lock-msg`))
+    (await page.innerText(`${tip} .ad-page-lock-msg`))
       .includes('這個功能需要管理員才能開啟，請透過官方帳號聯繫'),
-    await page.innerText(`${row} .ad-page-lock-msg`));
+    await page.innerText(`${tip} .ad-page-lock-msg`));
   ok('說明裡附上官方帳號的連結',
-    (await page.getAttribute(`${row} [data-page-lock] a`, 'href') || '')
+    (await page.getAttribute(`${tip} a`, 'href') || '')
       .startsWith('https://line.me/R/ti/p/'),
-    await page.getAttribute(`${row} [data-page-lock] a`, 'href'));
+    await page.getAttribute(`${tip} a`, 'href'));
+  ok('說明是浮起來的：那一列沒有被撐開',
+    Math.abs((await page.locator(row).boundingBox()).height - rowH) < 1,
+    `${rowH} → ${(await page.locator(row).boundingBox()).height}`);
+  ok('說明浮在列表外面（掛在 body 上）',
+    await page.$eval(tip, (el) => el.parentElement === document.body));
   ok('問號沒有文字，名字掛在 aria-label 上',
     (await page.innerText(`${row} [data-page-why]`)).trim() === ''
       && (await page.getAttribute(`${row} [data-page-why]`, 'aria-label')) === '為什麼不能開？',
     await page.getAttribute(`${row} [data-page-why]`, 'aria-label'));
-  ok('問號再按一次收回去',
-    await (async () => {
-      await page.click(`${row} [data-page-why]`);
-      return page.isHidden(`${row} [data-page-lock]`);
-    })());
+  await page.click(`${row} [data-page-why]`);
+  await page.waitForSelector(tip, { state:'hidden', timeout:5000 });
+  ok('問號再按一次收回去', await page.isHidden(tip));
 
-  /* 桌機不必點：滑過問號就看得到。離開那一列才收起來 */
+  /* 桌機不必點：滑過問號就看得到。滑開就收起來 */
   await page.hover('.ad-panel[data-panel="pages"] .ad-sec-title');
   await page.hover(`${row} [data-page-why]`);
-  await page.waitForSelector(`${row} [data-page-lock]:not([hidden])`, { timeout:5000 });
-  ok('滑過問號就看得到（不必點）',
-    await page.isVisible(`${row} [data-page-lock]`));
+  await page.waitForSelector(`${tip}:not([hidden])`, { timeout:5000 });
+  ok('滑過問號就看得到（不必點）', await page.isVisible(tip));
   await page.hover('.ad-panel[data-panel="pages"] .ad-sec-title');
-  await page.waitForSelector(`${row} [data-page-lock][hidden]`, { timeout:5000 });
-  ok('滑開那一列就收起來', await page.isHidden(`${row} [data-page-lock]`));
+  await page.waitForSelector(tip, { state:'hidden', timeout:5000 });
+  ok('滑開問號就收起來', await page.isHidden(tip));
   await page.close();
 
+  /* 還原 pages；上面那一筆 pagePublish.letter 寫的就是原本的預設值
+     （沒設定過＝on:true），而且下一段會整份覆寫掉 */
   await siteRef.update({ pages: allOnPlusAdmin });
 }
 {
