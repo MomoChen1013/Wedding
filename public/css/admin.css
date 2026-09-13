@@ -692,12 +692,40 @@ select.ad-input{appearance:none;cursor:pointer;
   margin-right:6px;}
 .ad-item-tags{display:flex;flex-wrap:wrap;gap:4px 0;align-items:center;}
 
-/* 標籤庫的一列：名稱、要不要當表單選項、用了幾次、刪除 */
-.ad-tagrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-  padding:12px 0;border-bottom:1px solid var(--line-soft);}
-.ad-tagrow-name{flex:1 1 180px;min-width:0;padding:9px 12px;font-size:14px;}
-.ad-tagrow-check{margin-top:0;flex:0 0 auto;white-space:nowrap;}
-.ad-tagrow-count{flex:0 0 auto;font-size:11.5px;letter-spacing:.1em;color:var(--ink-soft);}
+/* ---------- 標籤庫的一顆 chip ----------
+   原本一個標籤是一列：輸入框 ＋「當表單選項」勾選框 ＋ 次數 ＋ 刪除。
+   十個標籤就是十列，手機上滑三頁還沒看完，而且「這個標籤賓客看不看得到」
+   要一格一格讀勾選框才知道。
+
+   現在改成兩組 chip，「放在哪一組」就是那個答案，一頁裝得下十幾顆。
+   .ad-chip 的尺寸變體（不是新元件）：篩選鈕那一階只有 30px，
+   而這顆要裝名稱、用了幾次、一支鉛筆三件事，也要是可以用手指點的 40px。
+   它沒有 .is-on —— 它不是篩選器，點下去是打開編輯彈窗。 */
+.ad-tagchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;}
+.ad-tagchip{
+  display:inline-flex;align-items:center;gap:9px;
+  min-height:40px;padding:6px 15px;
+  font-size:13px;letter-spacing:.06em;color:var(--ink);
+}
+.ad-tagchip-count{flex:0 0 auto;font-size:11.5px;letter-spacing:.1em;
+  color:var(--ink-soft);white-space:nowrap;}
+.ad-tagchip .ad-ic{width:15px;height:15px;stroke-width:3;opacity:.55;
+  transition:opacity var(--dur-hover) ease-out;}
+@media (hover:hover) and (pointer:fine){
+  .ad-tagchip:hover{background:var(--bg2);}
+  .ad-tagchip:hover .ad-ic{opacity:1;}
+}
+/* 每一組末尾的「＋ 新增」：沿用 .ad-chip-link 的虛線框（那是「出口」的語彙），
+   只把高度對齊同一排的標籤 */
+.ad-tagchip-add{min-height:40px;padding:6px 15px;font-size:13px;}
+/* 一組裡一顆標籤都沒有時，只有那顆虛線 chip —— 再補一句話說明這一組是空的，
+   不然新人會以為是還沒載入 */
+.ad-taggroup-empty{margin:16px 0 0;font-size:12.5px;line-height:2;
+  letter-spacing:.04em;color:var(--ink-soft);}
+
+/* 「目前有 N 位賓客套用」：接在分組 radio 後面，所以留白在上面不在下面 */
+.ad-tagedit-used{margin:18px 0 0;}
+.ad-tagedit-used[hidden]{display:none;}
 
 /* 幫某一位賓客勾標籤的彈窗：一列一個，超過就自己捲 */
 .ad-tagpick{max-height:46dvh;overflow-y:auto;margin-top:6px;
@@ -1347,6 +1375,12 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-modal-card-form{width:min(92vw,560px);max-height:88dvh;overflow-y:auto;}
 .ad-modal-card-form .ad-form > .ad-label:first-of-type{margin-top:0;}
 .ad-modal-card-form .ad-modal-actions{justify-content:flex-end;}
+/* 標題那一列可以站第二顆東西（標籤編輯的「刪除標籤」）——
+   它不是這張表單的主要動作，和底部的「儲存」並排會變成一樣重要 */
+.ad-modal-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;}
+.ad-modal-head .ad-modal-title{margin-bottom:0;}
+.ad-modal-head-del{flex:0 0 auto;color:#a4677a;}
+.ad-modal-head + .ad-form{margin-top:10px;}
 /* 彈窗標題底下的說明文字 */
 .ad-modal-note{margin:0 0 18px;font-size:12.5px;line-height:2;
   letter-spacing:.04em;color:var(--ink-soft);}
@@ -2076,7 +2110,7 @@ select.ad-input{appearance:none;cursor:pointer;
 @media (pointer:coarse){
   .ad-input,.ad-textarea,.ad-filter,.ad-filter-sm,.sp-search,
   .ad-card .ad-input,.ad-quiz-opt .ad-input,
-  .ad-tagrow-name,.ad-sch-row .ad-input,
+  .ad-sch-row .ad-input,
   .ad-bt-key .ad-input,.sp-select select,.sp-map-row select,
   .ad-pager-size select,.ad-img-title,
   input[type="text"],input[type="search"],input[type="number"],

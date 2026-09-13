@@ -3325,36 +3325,63 @@ console.log('\n[14d] 後台賓客標籤');
   await page.click('#adSide .ad-tab[data-tab="guestTags"]');
   await page.waitForTimeout(300);
   ok('標籤區塊看得到', await page.isVisible('#adTagSec'));
-  const names = await page.$$eval('#adTagList .ad-tagrow-name', (els) => els.map((e) => e.value));
-  ok('列出目前的標籤', names.join('／') === '大學同學／VIP', names.join('／'));
+  /* 兩組 chip：上面那組是賓客自己勾得到的，下面那組只有後台看得到 */
+  const groupNames = async (i) => page.$$eval(
+    `#adTagGroups .ad-formgroup:nth-of-type(${i}) .ad-tagchip-name`,
+    (els) => els.map((e) => e.textContent.trim()),
+  );
+  ok('賓客自選那一組列出 onForm 的標籤',
+    (await groupNames(1)).join('／') === '大學同學', (await groupNames(1)).join('／'));
+  ok('後台管理那一組列出其餘的標籤',
+    (await groupNames(2)).join('／') === 'VIP', (await groupNames(2)).join('／'));
+  ok('chip 上帶著套用人數',
+    (await page.innerText('#adTagGroups')).includes('共 1 位'));
 
-  /* 一鍵帶入常用標籤：已經有的不重複加 */
+  /* 常用標籤：可複選，已經有的標成「已加入」並停用 */
   await page.click('#adTagPresetBtn');
-  await page.waitForTimeout(1200);
+  await page.waitForSelector('#adTagPresetMask:not([hidden])', { timeout:5000 });
+  ok('已經有的常用標籤停用並標「已加入」',
+    await page.isDisabled('#adTagPresetList input[value="大學同學"]')
+      && (await page.innerText('#adTagPresetList')).includes('已加入'));
+  await page.check('#adTagPresetList input[value="孕婦"]');
+  await page.check('#adTagPresetList input[value="長輩"]');
+  await page.click('#adTagPresetSave');
+  await page.waitForTimeout(1500);
   const preset = await readTags();
-  ok('常用標籤只補沒有的那幾個', preset.length === 8, `${preset.length} 個`);
-  ok('常用標籤的表單選項預設值正確',
-    preset.filter((t) => t.onForm).map((t) => t.name).join('／') === '大學同學／公司同事／教會朋友／親戚',
-    preset.filter((t) => t.onForm).map((t) => t.name).join('／'));
+  ok('只加入勾起來的那幾個', preset.length === 4, `${preset.length} 個`);
+  ok('常用標籤一律放進後台那一組',
+    preset.filter((t) => ['孕婦', '長輩'].includes(t.name)).every((t) => t.onForm === false),
+    JSON.stringify(preset.map((t) => [t.name, t.onForm])));
 
-  /* 自訂標籤：走輸入視窗 */
-  await page.click('#adTagAddBtn');
-  await page.waitForSelector('#adModalMask:not([hidden])', { timeout:5000 });
-  await page.fill('#adModalPhrase', '伴娘團');
-  await page.click('#adModalConfirm');
-  await page.waitForTimeout(1200);
+  /* 自訂標籤：走同一個編輯彈窗，從「＋ 新增表單選項」進去預填賓客自選 */
+  await page.click('#adTagGroups .ad-formgroup:nth-of-type(1) [data-tag-add-group]');
+  await page.waitForSelector('#adTagEditMask:not([hidden])', { timeout:5000 });
+  ok('從表單選項那一組進來，分組預填「賓客自選」',
+    await page.isChecked('#adTagEditGroup input[value="form"]'));
+  ok('新增時沒有「刪除標籤」', await page.isHidden('#adTagEditDel'));
+  await page.fill('#adTagEditName', '伴娘團');
+  await page.click('#adTagEditForm button[type="submit"]');
+  await page.waitForTimeout(1500);
   const added = await readTags();
   ok('新人加得了自訂標籤',
-    added.length === 9 && added.some((t) => t.name === '伴娘團'), `${added.length} 個`);
+    added.length === 5 && added.some((t) => t.name === '伴娘團' && t.onForm === true),
+    `${added.length} 個`);
 
-  /* 改名與「當表單選項」都是離開欄位就存 */
-  await page.fill('#adTagList .ad-tagrow:last-child .ad-tagrow-name', '伴娘伴郎');
-  await page.locator('#adTagList .ad-tagrow:last-child .ad-tagrow-onform').check();
-  await page.waitForTimeout(1200);
-  const renamed = (await readTags()).find((t) => t.id === added[added.length - 1].id);
-  ok('改名與表單選項都存得回去',
-    renamed && renamed.name === '伴娘伴郎' && renamed.onForm === true,
-    JSON.stringify(renamed));
+  /* 點 chip 打開同一個彈窗：改名 ＋ 換組一次做完，不用刪掉重建 */
+  await page.click('#adTagGroups [data-tag-edit-id="' + added.find((t) => t.name === '伴娘團').id + '"]');
+  await page.waitForSelector('#adTagEditMask:not([hidden])', { timeout:5000 });
+  ok('編輯既有標籤時「刪除標籤」在標題右邊',
+    await page.isVisible('#adTagEditDel')
+      && (await page.$eval('#adTagEditDel', (el) => !!el.closest('.ad-modal-head'))));
+  await page.fill('#adTagEditName', '伴娘伴郎');
+  await page.check('#adTagEditGroup input[value="admin"]');
+  await page.click('#adTagEditForm button[type="submit"]');
+  await page.waitForTimeout(1500);
+  const renamed = (await readTags()).find((t) => t.name === '伴娘伴郎');
+  ok('改名與換組一次存得回去',
+    renamed && renamed.onForm === false, JSON.stringify(renamed));
+  ok('換完組就出現在後台那一組',
+    (await groupNames(2)).includes('伴娘伴郎'), (await groupNames(2)).join('／'));
 
   /* 名單：標籤篩選（標籤設定已經是另一顆分頁了，要先切回「出席回覆」） */
   await page.click('.ad-tab[data-tab="rsvp"]');
@@ -3416,16 +3443,22 @@ console.log('\n[14d] 後台賓客標籤');
   /* 刪掉標籤：連掛在賓客身上的那一份一起拿掉 */
   await page.click('#adSide .ad-tab[data-tab="guestTags"]');
   await page.waitForTimeout(300);
-  const vipRow = page.locator('#adTagList .ad-tagrow[data-id="tag-vip"]');
-  ok('標籤列出用了幾次', (await vipRow.innerText()).includes('1 位'), await vipRow.innerText());
-  await vipRow.locator('.ad-del').click();
+  const vipChip = page.locator('#adTagGroups [data-tag-edit-id="tag-vip"]');
+  ok('chip 上寫著用了幾次', (await vipChip.innerText()).includes('共 1 位'), await vipChip.innerText());
+  await vipChip.click();
+  await page.waitForSelector('#adTagEditMask:not([hidden])', { timeout:5000 });
+  ok('已經有人套用時，彈窗先說清楚改分類不影響他們',
+    (await page.innerText('#adTagEditUsed')).includes('1')
+      && (await page.innerText('#adTagEditUsed')).includes('不會影響'),
+    await page.innerText('#adTagEditUsed'));
+  await page.click('#adTagEditDel');
   await page.waitForSelector('#adModalMask:not([hidden])', { timeout:5000 });
   await page.click('#adModalConfirm');
   await page.waitForTimeout(1800);
 
   const afterDel = await readTags();
   ok('標籤刪得掉',
-    afterDel.length === 8 && !afterDel.some((t) => t.name === 'VIP'), `${afterDel.length} 個`);
+    afterDel.length === 4 && !afterDel.some((t) => t.name === 'VIP'), `${afterDel.length} 個`);
   const leftovers = (await tagCol.get()).docs.flatMap((d) => d.data().tags || []);
   ok('賓客身上的那個標籤也跟著拿掉',
     !leftovers.includes('tag-vip'), leftovers.join(','));

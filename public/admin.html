@@ -253,6 +253,12 @@
       <path d="M24 34h.02"/>
     </symbol>
 
+    <!-- 標籤 chip 上的鉛筆：Feather 的 edit-2（24 格）等比放大到 48 格。
+         chip 只有 40px 高，塞得下一個圖示塞不下「編輯」兩個字 -->
+    <symbol id="shin9-pencil" viewBox="0 0 48 48">
+      <path d="M34 6a5.656 5.656 0 1 1 8 8L15 41 4 44l3-11L34 6z"/>
+    </symbol>
+
     <!-- 進階方案的鎖頭：Feather 的 lock（24 格）等比放大到 48 格。
          只掛在「這組新人沒開的功能」上，見 admin.js 的 applyTabVisibility -->
     <symbol id="shin9-lock" viewBox="0 0 48 48">
@@ -904,11 +910,14 @@
       <p class="ad-sec-note">
         分類賓客用的標籤（行動不便、大學同學…），一位賓客可以有好幾個標籤，可以在名單編輯每個人的標籤。
         <br>
-        勾了<b>「當表單選項」</b>，出席回覆時賓客可以自己選；沒勾的只有在後台出現。<br>
-
+        標籤<b>放在哪一組</b>，就決定賓客看不看得到 —— 點任何一顆標籤都可以改。
       </p>
 
-      <div class="ad-list" id="adTagList"></div>
+      <!-- 兩組 chip：上面那組賓客自己勾得到，下面那組只有後台看得到。
+           「放在哪一組」取代了原本每一列的「當表單選項」勾選框 ——
+           資料上仍然是同一個 guestTags[].onForm，見 js/admin.js 的 renderTags()。 -->
+      <div id="adTagGroups"></div>
+
       <div class="ad-hint">
         改標籤名稱不會影響已經掛好的分類。
         刪掉標籤時，掛在賓客身上的那一份也會一起拿掉，救不回來
@@ -1016,7 +1025,7 @@
             </div>
           <div class="ad-sub-sec" id="adAskTagSec">
             <!-- 勾選框是「現在的狀態」而不是開關：這一題有沒有出現，
-                 由「有沒有標籤勾了當表單選項」決定，所以它點不動。 -->
+                 由「有沒有標籤放在賓客表單自選那一組」決定，所以它點不動。 -->
 
             <div class="ad-chips ad-chips-preview ad-chips-soft" id="adPreviewTags"
                  aria-label="目前會出現在表單上的標籤"></div>
@@ -2080,6 +2089,68 @@
         <button class="btn small" type="submit">儲存</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- ============================================================
+     新增／編輯一個標籤
+     ------------------------------------------------------------
+     新增與編輯是同一個元件：差別只在標題、有沒有「刪除標籤」、
+     radio 預填哪一顆、有沒有那句「目前有 N 位」。
+
+     為什麼不是行內編輯：一顆 chip 只有 40px 高，名稱、分組、刪除
+     三件事排不進去；而且「改分組」是一個需要看得懂後果的決定
+     （賓客看不看得到），不該和改錯字一樣隨手發生。
+     沿用 .ad-modal-card-form：≤560px 它本來就是 bottom sheet。
+============================================================ -->
+<div class="ad-modal-mask" id="adTagEditMask" hidden>
+  <div class="ad-modal-card ad-modal-card-form">
+    <!-- 刪除放在標題右邊，不是底部那一列 —— 它不是這張表單的主要動作，
+         和「儲存」並排會讓兩者看起來一樣重要 -->
+    <div class="ad-modal-head">
+      <div class="ad-modal-title" id="adTagEditTitle">新增標籤</div>
+      <button class="ad-del ad-modal-head-del" id="adTagEditDel" type="button" hidden>刪除標籤</button>
+    </div>
+
+    <form class="ad-form" id="adTagEditForm">
+      <label class="ad-label" for="adTagEditName">標籤名稱</label>
+      <input class="ad-input" id="adTagEditName" type="text" maxlength="20"
+             placeholder="例如：大學同學" autocomplete="off">
+
+      <label class="ad-label" id="adTagEditGroupLab">這個標籤用在哪裡？</label>
+      <div class="ad-radios" id="adTagEditGroup" role="radiogroup" aria-labelledby="adTagEditGroupLab">
+        <label class="ad-radio">
+          <input type="radio" name="adTagEditGroup" value="form"><span>賓客自選</span></label>
+        <label class="ad-radio">
+          <input type="radio" name="adTagEditGroup" value="admin" checked><span>僅後台管理</span></label>
+      </div>
+
+      <p class="ad-modal-note ad-tagedit-used" id="adTagEditUsed" hidden></p>
+
+      <div class="ad-modal-actions">
+        <button class="btn small ghost" id="adTagEditCancel" type="button">取消</button>
+        <button class="btn small" type="submit">儲存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 加入常用標籤：可複選，已經有同名的那幾個標成「已加入」並停用。
+     排版和下面「幫賓客掛標籤」那個彈窗一模一樣，沿用 .ad-tagpick -->
+<div class="ad-modal-mask" id="adTagPresetMask" hidden>
+  <div class="ad-modal-card ad-modal-card-form">
+    <div class="ad-modal-title">加入常用標籤</div>
+    <p class="ad-modal-note">
+      勾選要加入的標籤，會放進<b>後台管理標籤</b>那一組；
+      加完之後點它就可以改成賓客自選。
+    </p>
+
+    <div class="ad-tagpick" id="adTagPresetList"></div>
+
+    <div class="ad-modal-actions">
+      <button class="btn small ghost" id="adTagPresetCancel" type="button">取消</button>
+      <button class="btn small" id="adTagPresetSave" type="button">加入</button>
+    </div>
   </div>
 </div>
 
