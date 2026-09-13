@@ -1488,7 +1488,6 @@ function openAdmin(){
   /* 大廳文案不是子集合，是站台文件本身；載入時已經讀進 window.SITE.data。
      只有 Dress Code 的參考圖是子集合（整段 data URL，放不進站台文件） */
   DataStore.subscribeDressImages();
-  syncSeatFeatureUI();
   syncGalleryUI();
   fillSiteForm();
   renderSchedule(siteSchedule());
@@ -4297,44 +4296,13 @@ document.getElementById('adInboxExport').addEventListener('click', ()=>{
 });
 
 /* ============================================================
-   1-0 開放桌次功能（放在「桌次 → 桌次圖」最上面）
-   ------------------------------------------------------------
-   關著的時候賓客那邊完全看不到桌次：大廳沒有「尋找我的座位」、
-   導覽列沒有「桌次」、直接打網址也會被導回大廳（見 site-context.js）。
-   新人這邊不受影響，「桌次」分頁照樣可以先把名單與桌次圖準備好。
-   沒設定過的舊站台一律視為開著，不會因為多了這個欄位就突然關掉。
-============================================================ */
-const seatFeatureEl = document.getElementById('adSeatFeature');
-
-/* 排程到了的話也算開著 —— 首頁「頁面設定」那一列與這裡讀的是同一件事 */
-function seatFeatureOn(){ return pageLiveNow('seating'); }
-
-function syncSeatFeatureUI(){
-  seatFeatureEl.checked = seatFeatureOn();
-}
-
-seatFeatureEl.addEventListener('change', async ()=>{
-  const on = seatFeatureEl.checked;
-  try{
-    /* 首頁「頁面設定」那一列講的是同一件事，所以走同一支 ——
-       savePagePublish() 會連 seatingFeatureEnabled 一起寫，
-       順手清掉排程（不清的話等一下又自己開回來，那不是按下去的意思） */
-    await savePagePublish('seating', { on, at:null });
-    syncSeatFeatureUI();
-    toast(on ? '已開放桌次功能，賓客現在看得到「尋找我的座位」'
-             : '已關閉桌次功能，賓客那邊不會出現桌次');
-  }catch(err){
-    /* 存不進去就把開關扳回原本的狀態，畫面不要和資料庫說不一樣的話 */
-    syncSeatFeatureUI();
-    writeFailed(err);
-  }
-});
-
-/* ============================================================
-   1-2 桌次搜尋開關
+   1-2 桌次搜尋開關（「桌次 → 桌次搜尋及名單」最上面那顆 switch）
    ------------------------------------------------------------
    關掉的話，賓客的桌次頁只剩下新人上傳的桌次圖。
    沒設定過的舊站台一律視為開著，不會因為多了這個欄位就突然關掉。
+
+   「這一整頁要不要讓賓客看到」是另一件事，統一在「頁面設定」那一頁
+   （seatingFeatureEnabled，見 savePagePublish），這裡不重複放一顆。
 ============================================================ */
 const seatSearchEl = document.getElementById('adSeatSearch');
 const seatListOffEl = document.getElementById('adSeatListOff');
@@ -4352,7 +4320,8 @@ seatSearchEl.addEventListener('change', async ()=>{
   try{
     await DataStore.saveSiteFields({ seatingSearchEnabled: on });
     syncSeatSearchUI();
-    toast(on ? '已開啟桌次搜尋' : '已關閉桌次搜尋，賓客只會看到桌次圖');
+    toast(on ? '已開啟，賓客可以輸入名字查詢桌次'
+             : '已關閉，賓客只能查看桌次圖');
   }catch(err){
     /* 存不進去就把開關扳回原本的狀態，畫面不要和資料庫說不一樣的話 */
     syncSeatSearchUI();
@@ -7285,8 +7254,9 @@ function homeStepDone(step){
                          （判斷在 js/wed-model.js 的 pageVisible()）。
 
    桌次是唯一的例外：它的開／關早就存在 seatingFeatureEnabled
-   （「桌次」分頁上那一顆），所以這裡寫的時候兩個欄位一起更新，
-   兩個地方看到的永遠是同一件事。
+   （前台與 check-site.js 都還讀那一欄），所以這裡寫的時候
+   兩個欄位一起更新。這一列就是桌次唯一的開關，「桌次」分頁上
+   不再另外放一顆。
 
    排程沒有後端：時間到了不會有人寫回資料庫，而是賓客每次開頁面
    都重新判斷一次「現在過了那個時間沒有」。所以新人排完就可以關掉後台。
@@ -7294,17 +7264,6 @@ function homeStepDone(step){
 const pagesSecEl  = document.getElementById('adPagesSec');
 const pageListEl  = document.getElementById('adPageList');
 const pagePrevEl  = document.getElementById('adPagePreview');
-
-/* 一句話說明。新人不會每個名字都記得那一頁在做什麼 */
-const PAGE_SETTING_NOTES = {
-  wall:       '賓客寫下祝福，也看得到別人寫的',
-  cake:       '挑一個圖案丟進桶子，替你們集氣',
-  draw:       '抽一張婚禮限定小卡，收進收藏',
-  exhibition: '沿著時間線，走過你們一路走來的日子',
-  quiz:       '一份小測驗，看賓客有多了解你們',
-  seating:    '輸入名字就查得到自己坐哪一桌',
-  letter:     '你們寫給賓客的信，輸入名字拆開來看',
-};
 
 /* 這一區要列哪幾頁：賓客看得到、而且可以關掉的那些。
    出席回覆（邀請函）不列 —— 那是對外分享的那個連結本身，
@@ -7325,7 +7284,6 @@ function pageSettingRows(){
       return {
         key,
         label:  S.pages[key].label,
-        note:   PAGE_SETTING_NOTES[key] || '',
         locked: !open,
         /* 沒開通的那一頁一律當成「關著」：pagePublish 沒設定過的預設是
            on:true（見 wed-model.js 的 pagePublishEntry），照著畫的話
@@ -7342,16 +7300,6 @@ function pageRowLive(row){
   return row.on || (row.at !== null && Date.now() >= row.at);
 }
 
-/* 賓客現在看不看得到這一頁（＝ wed-model.js 的 pageVisible()，
-   只是後台這一側沒有那支 module 可以 import）。
-   排程時間到了的那一頁，開關要跟著是「開」的樣子 ——
-   畫面上關著、賓客卻看得到，是最糟的一種不一致。 */
-function pageLiveNow(key){
-  const S = window.SITE;
-  if(!S || typeof S.pagePublish !== 'function') return true;
-  return pageRowLive(S.pagePublish(key));
-}
-
 /* epoch ms ↔ <input type="datetime-local">。
    輸入框給的是「新人自己電腦上的牆上時間」，存進去的是絕對時間 ——
    排程是給新人自己看的（他就在婚禮現場），不換算婚禮時區。 */
@@ -7362,10 +7310,12 @@ function toLocalInput(ms){
        + `T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
+/* 一列裡只留「標題 ＋ 排程 ＋ 開關」，狀態不再每一列都寫一句：
+   開著沒開著開關自己就看得出來，鎖頭那一列旁邊有問號。
+   剩下唯一沒地方講的是**排程的那個時間**，所以只有排了程的那幾列
+   才長出這一行 —— 它是這一列裡唯一還有新資訊的一句話。 */
 function pageStateText(row){
-  if(row.locked) return '還沒開通這個功能';
-  if(row.on) return '賓客現在看得到';
-  if(row.at === null) return '已收起來，賓客看不到';
+  if(row.locked || row.at === null) return '';
   return Date.now() >= row.at
     ? `已自動開啟（${fmtTime(row.at)}）`
     : `${fmtTime(row.at)} 自動開啟`;
@@ -7377,8 +7327,8 @@ const PAGE_LOCK_MSG = '這個功能需要管理員才能開啟，請透過官方
 
 /* 那一句話由旁邊的問號（Feather 的 help-circle）帶出來：
    桌機滑過去就看得到，觸控裝置點一下 —— 兩邊都不必先按下一顆看起來
-   按不動的開關才知道發生什麼事。按鈕上刻意沒有文字：一列裡已經有
-   頁名、說明、狀態三行字了，再多一句「為什麼不能開？」會蓋過它們。
+   按不動的開關才知道發生什麼事。按鈕上刻意沒有文字：
+   「為什麼不能開？」一整句會比頁名自己還長。
 
    形狀是**浮在上面的 tooltip**，不是長在那一列裡的一塊說明：
    說明如果撐開那一列，滑過去、滑開就會把下面整排往下推再收回來——
@@ -7498,26 +7448,28 @@ const pageLockTip = (function(){
 function pageRowHtml(row){
   const live = pageRowLive(row);
   const schedFuture = !row.on && row.at !== null && Date.now() < row.at;
+  const state = pageStateText(row);
   return `
   <div class="ad-page-row${row.locked ? ' is-locked' : ''}${
          !row.locked && live ? ' is-live' : ''}"
        data-page-row="${escapeHtml(row.key)}">
     <div class="ad-page-main">
-      <div class="ad-page-name">${escapeHtml(row.label)}${
-        row.locked ? lockIconHtml('ad-ic-lock') : ''}</div>
-      ${row.note ? `<div class="ad-page-note">${escapeHtml(row.note)}</div>` : ''}
-      <div class="ad-page-state${schedFuture ? ' is-sched' : ''}">${
-        escapeHtml(pageStateText(row))}</div>
+      <div class="ad-page-name">
+        <span class="ad-page-name-text">${escapeHtml(row.label)}</span>${
+        row.locked ? lockIconHtml('ad-ic-lock') : ''}
+        ${row.locked
+          ? `<button class="ad-page-why" type="button" data-page-why
+              aria-expanded="false" aria-label="為什麼不能開？">
+              <svg class="ad-ic" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-help"/></svg>
+            </button>`
+          : `<button class="ad-page-when" type="button" data-page-when
+              aria-expanded="false">${schedFuture ? '改排程' : '排程開啟'}</button>`}
+      </div>
+      ${state ? `<div class="ad-page-state${schedFuture ? ' is-sched' : ''}">${
+        escapeHtml(state)}</div>` : ''}
     </div>
 
     <div class="ad-page-act">
-      ${row.locked
-        ? `<button class="ad-page-why" type="button" data-page-why
-            aria-expanded="false" aria-label="為什麼不能開？">
-            <svg class="ad-ic" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-help"/></svg>
-          </button>`
-        : `<button class="ad-page-when" type="button" data-page-when
-            aria-expanded="false">${schedFuture ? '改排程' : '排程開啟'}</button>`}
       <label class="ad-toggle">
         <input type="checkbox" data-page-on
                ${!row.locked && live ? 'checked' : ''}
@@ -7610,7 +7562,6 @@ async function savePagePublish(key, next){
 
   await DataStore.saveSiteFields(patch);
   renderPageSettings();
-  if(key === 'seating') syncSeatFeatureUI();
 }
 
 function pageRowKey(el){

@@ -291,6 +291,12 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
 .ad-callout.is-todo .ad-callout-note{margin-top:0;padding-left:0;}
 .ad-callout.is-todo .ad-row{margin-top:14px;}
 
+/* 開關是 .ad-switch 的版本：軌道比勾選框寬得多，26px 的縮排對不到
+   任何東西，說明改成貼齊左邊（說明自己帶狀態記號，不必再對齊標題）。
+   .ad-switch 自己帶 margin-top，站在框的最上面時要收掉。 */
+.ad-callout.is-switch .ad-callout-head{margin-top:0;}
+.ad-callout.is-switch .ad-callout-note{padding-left:0;}
+
 /* ============================================================
    表單元件
 ============================================================ */
@@ -864,19 +870,23 @@ select.ad-input{appearance:none;cursor:pointer;
 @media(max-width:719px){.ad-pages{grid-template-columns:1fr;gap:26px;}}
 
 .ad-pages-list{border-top:1px solid var(--line-soft);}
-.ad-page-row{display:grid;grid-template-columns:1fr auto;gap:10px 16px;
-  padding:16px 2px;border-bottom:1px solid var(--line-soft);align-items:center;}
+/* 一列＝頁名（＋「排程開啟」）ㄧ左、開關一右。說明拿掉了：
+   十來頁排下來，每一列多一行字就多滾一整頁，而頁名自己說得夠清楚。 */
+.ad-page-row{display:grid;grid-template-columns:1fr auto;gap:6px 16px;
+  padding:8px 2px;border-bottom:1px solid var(--line-soft);align-items:center;}
 .ad-page-main{min-width:0;}
-.ad-page-name{display:flex;align-items:center;gap:8px;
+/* 「排程開啟」就站在頁名右邊 —— 它講的是這一頁什麼時候開，
+   和右邊那顆「現在開不開」是兩件事，擺在一起反而容易按錯。 */
+.ad-page-name{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
   font-size:14px;letter-spacing:.06em;color:var(--ink);line-height:1.7;}
+.ad-page-name-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .ad-page-row.is-locked .ad-page-name{color:var(--ink-soft);}
-.ad-page-note{margin-top:4px;font-size:12px;line-height:1.9;
-  letter-spacing:.04em;color:var(--ink-soft);}
-.ad-page-state{margin-top:5px;font-size:11.5px;letter-spacing:.06em;color:var(--ink-soft);}
+/* 只有排了程的那幾列才長出這一行（見 admin.js 的 pageStateText） */
+.ad-page-state{margin-top:2px;font-size:11.5px;letter-spacing:.06em;color:var(--ink-soft);}
 .ad-page-row.is-live .ad-page-state{color:var(--primary-deep);}
 .ad-page-state.is-sched{color:var(--primary-deep);}
 .ad-page-act{display:flex;align-items:center;gap:14px;justify-self:end;}
-.ad-page-when{background:none;border:none;cursor:pointer;padding:0 0 2px;
+.ad-page-when{flex:0 0 auto;background:none;border:none;cursor:pointer;padding:0 0 2px;
   font-family:var(--font-ui);font-size:12px;letter-spacing:.08em;
   color:var(--ink-soft);border-bottom:1px solid var(--line);transition:.2s;}
 .ad-page-when:hover{color:var(--ink);border-bottom-color:var(--ink);}
@@ -887,11 +897,12 @@ select.ad-input{appearance:none;cursor:pointer;
   color:var(--ink-soft);margin-bottom:8px;}
 .ad-page-sched-lab .ad-input-when{margin-top:6px;max-width:240px;}
 
-/* 沒開通的那一列，開關旁邊那顆問號（Feather 的 help-circle）。
+/* 沒開通的那一列，頁名旁邊那顆問號（Feather 的 help-circle）——
+   站在「排程開啟」的位置上（那一列排不了程）。
    照 §3.2 的圖示按鈕規格：桌機 36×36、觸控 44×44，透明框、hover 才顯 ——
    它站在內容上（不是站在一張面上），沒有框就看不出是可以按的。
-   刻意不寫文字：一列裡已經有頁名、說明、狀態三行字，再多一句
-   「為什麼不能開？」會蓋過它們。無障礙的名字掛在 aria-label 上。 */
+   刻意不寫文字：「為什麼不能開？」一整句會比頁名自己還長。
+   無障礙的名字掛在 aria-label 上。 */
 .ad-page-why{
   flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
   width:36px;height:36px;padding:0;
@@ -943,13 +954,9 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-page-lock-msg{margin:0 0 10px;font-size:12.5px;line-height:1.9;
   letter-spacing:.04em;color:var(--ink);}
 
-/* 手機：一列裡「頁名 ＋ 說明」和「排程／問號 ＋ 開關」擠不進同一行
-   （420px 的畫面上右邊那一欄會被切掉），所以讓動作整排掉到文字下面，
-   按鈕靠左、開關靠右，兩端對齊才點得準。 */
-@media(max-width:599px){
-  .ad-page-row{grid-template-columns:1fr;}
-  .ad-page-act{justify-self:stretch;justify-content:space-between;}
-}
+/* 手機：說明拿掉之後左邊只剩「頁名 ＋ 排程開啟」，兩欄擠得進 400px 了，
+   所以不再讓開關整排掉到文字下面 —— 那會讓每一列高一倍。
+   窄到連「排程開啟」都放不下時，.ad-page-name 自己會把它折到第二行。 */
 
 /* 開關本體：一顆真的 checkbox（鍵盤、讀螢幕都照舊），
    只是把它藏起來，畫面上顯示旁邊那條軌道 */
@@ -1953,11 +1960,12 @@ select.ad-input{appearance:none;cursor:pointer;
    文字才跟上一行的「未安排」對齊，不會多縮排 10px。 */
 .sp-pool-add{flex:0 0 100%;justify-content:flex-start;margin:2px -10px 0;}
 
-/* 從排桌管理跳過來打開「開放桌次功能」時，閃一下讓人看到是哪一個開關 */
-.ad-callout.is-flash{animation:adFlash 1.6s ease-out;}
-@keyframes adFlash{
-  0%,100%{background:#fff;}
-  15%,55%{background:var(--primary-soft);border-color:var(--primary-deep);}
+/* 從排桌管理跳過來打開桌次時，閃一下讓人看到是「頁面設定」的哪一列
+   （那一列本身沒有底色，所以頭尾收在 transparent，不是白色） */
+.ad-page-row.is-flash{animation:adFlashRow 1.6s ease-out;border-radius:var(--radius);}
+@keyframes adFlashRow{
+  0%,100%{background:transparent;}
+  15%,55%{background:var(--primary-soft);}
 }
 
 /* ============================================================

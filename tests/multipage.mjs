@@ -2452,18 +2452,23 @@ console.log('\n[18d] 常見問題');
   await page.close();
 }
 
-/* ---------- 開放桌次功能 ---------- */
+/* ---------- 桌次功能的總開關（頁面設定） ---------- */
 console.log('\n[18b] 桌次功能可以整個關掉');
 {
   const { page } = await visit(`/w/${SLUG}/admin`);
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
 
-  /* 開關在「桌次 → 桌次圖」那一頁最上面（桌次圖是預設的子分頁） */
-  await page.click('.ad-tab[data-tab="seating"]');
-  ok('桌次功能開關預設是開著的', await page.isChecked('#adSeatFeature'));
+  /* 開關只有一顆，在「頁面設定」的桌次那一列 ——
+     「桌次」分頁上不再另外放一顆意思一樣的 */
+  await page.click('.ad-tab[data-tab="pages"]');
+  await page.waitForSelector('#adPagesSec:not([hidden])', { timeout:10000 });
+  const seatRow = '#adPageList [data-page-row="seating"]';
+  ok('桌次分頁上不再有第二顆開關',
+    (await page.locator('#adSeatFeature').count()) === 0);
+  ok('桌次功能開關預設是開著的', await page.isChecked(`${seatRow} [data-page-on]`));
 
-  await page.uncheck('#adSeatFeature');
+  await page.uncheck(`${seatRow} [data-page-on]`);
   await page.waitForTimeout(1500);
   const site = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
   ok('開關寫回 sites 文件', site.seatingFeatureEnabled === false,
@@ -2504,6 +2509,8 @@ console.log('\n[19] 桌次搜尋可以關掉');
   await page.click('.ad-subtabs[data-subtabs="seating"] .ad-subtab[data-subtab="list"]');
   await page.waitForSelector('.ad-subpanel[data-subpanel="list"].is-on');
   ok('搜尋開關預設是開著的', await page.isChecked('#adSeatSearch'));
+  ok('搜尋開關是一顆 switch',
+    (await page.getAttribute('#adSeatSearch', 'role')) === 'switch');
 
   await page.uncheck('#adSeatSearch');
   await page.waitForTimeout(1500);

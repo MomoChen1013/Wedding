@@ -519,7 +519,7 @@
             <ul class="ad-note-list">
               <li>把收禮連結＋通行碼傳給幫忙的親友，請他們先點開試一次</li>
               <li>桌次有異動的話，記得重新同步、重新匯入收禮名單</li>
-              <li>「頁面設定」把「開放桌次功能」排程打開</li>
+              <li>「頁面設定」把「桌次」排程打開</li>
             </ul>
           </div>
 
@@ -599,7 +599,7 @@
               <span class="ad-phone-title" id="adPhoneTitle">婚禮邀請函</span>
             </div>
             <div class="ad-phone-body">
-              <div class="ad-phone-lab">Explore</div>
+              <div class="ad-phone-lab">Menu</div>
               <ul class="ad-phone-list" id="adPagePreview"></ul>
             </div>
           </div>
@@ -1374,21 +1374,8 @@
 
     <!-- 1-1 桌次圖 -->
     <div class="ad-subpanel is-on" data-subpanel="map">
-    <!-- 桌次功能的總開關：婚禮當天再打開就好。
-         和桌次的其他設定放在同一頁，開關與它管的東西才在同一個地方。 -->
-    <section class="ad-sec">
-      <div class="ad-callout">
-        <label class="ad-callout-head">
-          <input type="checkbox" id="adSeatFeature">
-          <span>開放桌次功能</span>
-        </label>
-        <p class="ad-callout-note">
-          可以婚禮前一天再開啟。打開之後，婚禮資訊會出現「<b>尋找我的座位</b>」按鈕，
-          導覽列也會多一個「桌次」。<br>
-        </p>
-      </div>
-    </section>
-
+    <!-- 桌次要不要讓賓客看到，統一在「頁面設定」那一頁決定（含排程），
+         不在這裡再放一顆意思一樣的開關。 -->
     <section class="ad-sec">
       <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-seatmap"/></svg>桌次圖</h2>
       <p class="ad-sec-note">
@@ -1417,14 +1404,15 @@
     <!-- 1-2 桌次搜尋及名單 -->
     <div class="ad-subpanel" data-subpanel="list">
     <section class="ad-sec">
-      <div class="ad-callout">
-        <label class="ad-callout-head">
-          <input type="checkbox" id="adSeatSearch">
-          <span>開啟「輸入名字查桌次」的搜尋功能</span>
+      <div class="ad-callout is-switch">
+        <label class="ad-callout-head ad-switch">
+          <input type="checkbox" id="adSeatSearch" role="switch">
+          <span class="ad-switch-box" aria-hidden="true"><span class="ad-switch-knob"></span></span>
+          <span class="ad-switch-lab">讓賓客輸入名字查詢桌次</span>
         </label>
         <p class="ad-callout-note">
-          預設開啟，改完馬上生效，賓客重新整理就看得到。
-          關掉的話，只會看到你上傳的桌次圖，沒有輸入名字的欄位。
+          🟢 (預設)已開啟，賓客可以輸入名字查詢桌次。<br>
+          ⚪ 已關閉，賓客只能查看桌次圖。
         </p>
       </div>
     </section>
