@@ -697,7 +697,8 @@
       duration: 9000,
       actionLabel: '現在打開',
       onAction() {
-        location.hash = 'lobby/info';
+        /* 「開放桌次功能」那顆開關在「桌次圖」那一頁（不是婚禮資訊） */
+        location.hash = 'seating/map';
         /* 換分頁要一點時間，等畫面切過去再把開關捲進視野並閃一下 */
         setTimeout(() => {
           const box = document.getElementById('adSeatFeature');
@@ -2630,7 +2631,7 @@
         if (what === 'add-table') openTableModal('');
         if (what === 'batch-table') batchAddTables();
         /* 標籤庫住在「出席回覆」那一頁，直接帶過去，不用自己找 */
-        if (what === 'goto-tags') location.hash = 'rsvp/tags';
+        if (what === 'goto-tags') location.hash = 'guestTags';
         if (what === 'goto-import') location.hash = 'seatingPlan/io';
         return;
       }

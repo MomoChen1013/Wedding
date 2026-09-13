@@ -275,7 +275,7 @@ sticky 的位置不能寫死（婚禮名稱換一行、離線橫幅出現，高�
 | `.ad-drawer-close` `.sp-drawer-close` | ✕ | padding 2/4・**16px** | 44×44／**24px** | 無框 |
 | `.sp-touch-tip-close` | ✕ | —（只在觸控出現） | 44×44／**24px** | 無框 |
 | `.ad-rowmenu-btn` | ⋮ | **36×36**／16px | 44×44／18px | 透明框，hover 才顯 `--line` |
-| `.sp-move-btn` `.ad-sch-move [data-sch-move]` | ↑ ↓ ⇤ ⇥ | **36×36**／13px | **44×44** | 1px `--line` ＋ radius |
+| `.sp-move-btn` | ↑ ↓ ⇤ ⇥ | **36×36**／13px | **44×44** | 1px `--line` ＋ radius |
 | `.sp-card-move` | ↔ | **36×36**／16px | 同左（只在觸控出現） | 透明框，`:active` 才顯 |
 | `.sp-table-fold` | ▾（收起來轉 −90°） | **36×36**／12px | 36×36 ＋ `::after` 補到 **44×44** | 透明框，`:active` 才顯 |
 | `.ad-page-why` | ？（`#shin9-help`） | **36×36**／19px | **44×44**／21px | 透明框，hover 才顯 `--line`；`cursor:help`；帶出浮在上面的 `.ad-page-tip`（不展開那一列） |
@@ -289,9 +289,11 @@ sticky 的位置不能寫死（婚禮名稱換一行、離線橫幅出現，高�
 3. **框的有無看它站在哪**：站在一張面上（抽屜的 head、選單列）不用框，
    站在內容上（頂列的 ☰、抽屜左上的 ✕、排序的 ↑↓）要框，不然看不出是按鈕。
 
-> `.sp-move-btn` 與 `.ad-sch-move` 已經共用同一條宣告 —— 桌位管理和當日流程
-> 的排序鈕做的是同一件事，就該長得一樣。新加的排序鈕請併進那一條，
-> 不要再抄一份 36×36。
+> 只剩桌位管理還用 ↑↓（一次挪一格，30 桌要按很多下，所以「⋮」裡另外有
+> 「移到最前／最後」）。**清單的排序一律用拖曳**（`setupDragSort()`）：
+> 故事牆、測驗題目、表單的自訂題目、當日流程、婚禮流程的活動卡都是同一套 ——
+> 一顆 `.ad-drag-handle` 在最左邊，放開就是新的順序。
+> 新加的排序鈕請併進 `.sp-move-btn` 那一條，不要再抄一份 36×36。
 
 ---
 
@@ -585,7 +587,7 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
   就不用捲了（收禮台的三顆就是這樣）。
 - 窄螢幕 `.ad-subtabs` sticky 在頂列下面，高度餵給 `--ad-subtabs-h`，
   下面的 `.ad-list-head.is-sticky` 才黏得準。
-- `.ad-tab.is-sub` 是側欄的第二階（「排桌管理」從屬於「桌次」）：
+- `.ad-tab.is-sub` 是側欄的第二階（「排桌管理」從屬於「桌次圖」）：
   縮排到 27px，並用一道 6×1px 的 `::before` 短線接住。
   分組用 `.ad-navgroup`（可摺疊，`grid-template-rows: 1fr → 0fr` 做動畫，
   因為 `height:auto` 沒辦法 transition）。
