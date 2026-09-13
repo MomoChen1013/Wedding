@@ -4131,14 +4131,31 @@ console.log('\n[24] 後台首頁與表單設定分頁');
   ok('已經填好的步驟打勾',
     (await page.locator('#adHomeSteps .ad-step.is-done').count()) >= 1,
     String(await page.locator('#adHomeSteps .ad-step.is-done').count()));
-  ok('首頁有「查看目前網站」與「查看表單」',
+  ok('首頁有「查看婚禮網站」與「查看表單」',
     (await page.getAttribute('#adHomeViewSite', 'href')) === `/w/${SLUG}/`
       && (await page.getAttribute('#adHomeViewForm', 'href')) === `/w/${SLUG}/invitation`,
     `${await page.getAttribute('#adHomeViewSite', 'href')} ／ ${
       await page.getAttribute('#adHomeViewForm', 'href')}`);
 
-  /* 上手指南上的按鈕就是分頁捷徑 */
-  await page.click('#adHomeSteps .ad-step:first-child [data-empty-hash]');
+  /* 第一步（放到手機主畫面）不跳分頁：操作步驟就地展開，
+     按了「我已經完成」才收起來，而且會打勾 */
+  const guideStep = '#adHomeSteps .ad-step:first-child';
+  ok('第一步就地展開操作步驟',
+    (await page.locator(`${guideStep} .ad-step-guide`).count()) === 1
+      && (await page.locator(`${guideStep} [data-empty-hash]`).count()) === 0);
+  await page.click(`${guideStep} [data-home-guide]`);
+  await page.waitForTimeout(300);
+  ok('按了「我已經完成」就收起來並打勾',
+    (await page.locator(`${guideStep} .ad-step-guide`).count()) === 0
+      && (await page.locator(`${guideStep}.is-done`).count()) === 1);
+  await page.click(`${guideStep} [data-home-guide]`);
+  await page.waitForTimeout(300);
+  ok('按了「再看一次」又打得開（勾還在）',
+    (await page.locator(`${guideStep} .ad-step-guide`).count()) === 1
+      && (await page.locator(`${guideStep}.is-done`).count()) === 1);
+
+  /* 其他每一步右邊那顆按鈕就是分頁捷徑 */
+  await page.click('#adHomeSteps .ad-step:nth-child(2) [data-empty-hash]');
   await page.waitForTimeout(300);
   ok('上手指南的按鈕跳得到那一頁',
     await page.evaluate(() => location.hash === '#lobby/info'), await page.evaluate(() => location.hash));

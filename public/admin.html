@@ -408,7 +408,7 @@
         </div>
       </div>
 
-      <!-- 「頁面設定」與「常見問題」原本埋在首頁最下面，要捲過五步上手指南才看得到。
+      <!-- 「頁面設定」與「常見問題」原本埋在首頁最下面，要捲過「開始製作」那幾步才看得到。
            兩件事都是「隨時會回來用一下」——
              頁面設定：婚禮當天要把抽卡打開，得先找得到它
              常見問題：卡住的時候才會想找，找不到就等於沒有
@@ -436,19 +436,21 @@
        ------------------------------------------------------------
        第一次登入的新人看到的是一整排他沒看過的分頁名稱。
        這一頁只做三件事：
-         ・說一次這個後台是什麼、賓客會看到什麼
-         ・把「先做這個、再做那個」排成有順序的五步
-         ・兩個最常用的出口（查看目前網站、查看表單）擺在最上面
+         ・說一次網站已經做好了，接下來的內容在哪裡改
+         ・把「先做這個、再做那個」排成有順序的幾步
+         ・兩個最常用的出口（查看婚禮網站、查看表單）擺在最上面
 
        每一步右邊那顆按鈕就是 location.hash，點了直接到那一頁；
        已經填好的步驟由 js/admin.js 的 renderHome() 打勾。
+       第一步是例外：它不跳分頁，就地展開「怎麼放到手機主畫面」，
+       按「我已經完成」才收起來（記在 localStorage，見 HOME_PIN_KEY）。
   ============================================================ -->
   <div class="ad-panel is-on" data-panel="home">
 
     <section class="ad-sec">
       <div class="ad-sec-head">
         <div class="ad-sec-head-main">
-          <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-home"/></svg><span id="adHomeTitle">新人後台</span></h2>
+          <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-home"/></svg><span id="adHomeTitle">首頁</span></h2>
           <p class="ad-page-sub" id="adHomeSub"></p>
         </div>
         <div class="ad-sec-head-actions">
@@ -458,7 +460,10 @@
              target="_blank" rel="noopener noreferrer">查看表單 ↗</a>
         </div>
       </div>
-
+      <p class="ad-sec-note">
+        網站已經幫你們做好了囉！
+        接下來要放什麼內容，都可以在新人後台裡操作。
+      </p>
     </section>
 
     <section class="ad-sec">
@@ -466,8 +471,76 @@
       <ol class="ad-steps" id="adHomeSteps"></ol>
     </section>
 
+    <!-- 製作筆記：上面那幾步是「做什麼」，這一段是「什麼時候做」。
+         平常只露出標題與副標題 —— 一整份時程攤開來比十顆分頁名稱更嚇人，
+         而它要回答的是「我現在該不該急」，那是想起來才會問的問題。
+         純 <details>，不做自己的手風琴（和常見問題同一套）。 -->
+    <section class="ad-sec">
+      <details class="ad-note">
+        <summary>
+          <span class="ad-note-main">
+            <span class="ad-note-title">給你的製作筆記</span>
+            <span class="ad-note-sub">不用一次做完，這是我們建議的節奏</span>
+          </span>
+          <i class="ad-note-go" aria-hidden="true">→</i>
+        </summary>
+
+        <div class="ad-note-body">
+          <div class="ad-note-grp">
+            <h3 class="ad-note-hd">拿到後台的第一週</h3>
+            <ul class="ad-note-list">
+              <li>兩個人的手機都把後台加到主畫面</li>
+              <li>填「婚禮資訊」：地點、地址、開始時間、交通</li>
+              <li>確認「表單設定」問的題目是你們要的</li>
+              <li>把邀請函網址發出去（後台「表單設定 → 查看表單」那一頁）</li>
+            </ul>
+          </div>
+
+          <div class="ad-note-grp">
+            <h3 class="ad-note-hd">有空的時候慢慢做</h3>
+            <ul class="ad-note-list">
+              <li>「當日流程」</li>
+              <li>「兩人的故事」跟「新人故事牆」</li>
+              <li>「新人熟悉測驗」的題目</li>
+              <li>「婚禮小卡」挑照片（30 張以內）</li>
+              <li>「感謝信」寫給重要的人</li>
+            </ul>
+          </div>
+
+          <div class="ad-note-grp">
+            <h3 class="ad-note-hd">婚禮前一到兩週</h3>
+            <ul class="ad-note-list">
+              <li>「出席回覆 → 總覽」看素食幾份、兒童椅幾張，回報飯店</li>
+              <li>「排桌管理」排桌（或「桌次」直接匯入名單）</li>
+              <li>排好後按「儲存排桌」→「同步至桌次查詢」</li>
+              <li>上傳「桌次圖」</li>
+              <li>「收禮小幫手 → 連結與名單」產生連結、匯入名單</li>
+            </ul>
+          </div>
+
+          <div class="ad-note-grp">
+            <h3 class="ad-note-hd">婚禮前一天</h3>
+            <ul class="ad-note-list">
+              <li>把收禮連結＋通行碼傳給幫忙的親友，請他們先點開試一次</li>
+              <li>桌次有異動的話，記得重新同步、重新匯入收禮名單</li>
+              <li>「頁面設定」把「開放桌次功能」排程打開</li>
+            </ul>
+          </div>
+
+          <div class="ad-note-grp">
+            <h3 class="ad-note-hd">結束後</h3>
+            <ul class="ad-note-list">
+              <li>「收禮小幫手」匯出 CSV 存一份，然後按「停用」</li>
+              <li>「悄悄話」讀完，匯出存一份</li>
+              <li>「出席回覆」匯出 CSV 存一份</li>
+            </ul>
+          </div>
+        </div>
+      </details>
+    </section>
+
     <!-- 「頁面設定」與「常見問題」已經搬到側欄自己的分頁（見上面的 .ad-navbot）。
-         上手指南的最後留兩個出口 —— 第一次照著五步走下來的人，
+         「開始製作」的最後留兩個出口 —— 第一次照著走下來的人，
          下一件事通常就是「決定現在讓賓客看到哪幾頁」。 -->
     <section class="ad-sec">
       <h2 class="ad-sec-title">還有這兩個頁面</h2>
