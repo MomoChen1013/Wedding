@@ -840,13 +840,38 @@ select.ad-input{appearance:none;cursor:pointer;
   .ad-page-why .ad-ic{width:21px;height:21px;}
 }
 
-/* 按下那顆死掉的開關、或問號，就展開這一塊 ——
+/* 按下那顆死掉的開關、或問號，就浮出這一則 ——
    一句話說清楚要找誰，加一顆直接找得到人的按鈕。
-   和排程那一塊共用同一種展開形狀，新人不必學第二種。 */
-.ad-page-lock{grid-column:1/-1;border-top:1px dashed var(--line);
-  margin-top:4px;padding-top:14px;}
-.ad-page-lock[hidden]{display:none;}
-.ad-page-lock-msg{margin:0 0 12px;font-size:12.5px;line-height:1.9;
+
+   它是**浮在上面的 tooltip**，不是長在那一列裡的一塊說明：
+   說明如果撐開那一列，滑過去、滑開會把下面整排往下推再收回來，
+   只是想知道「為什麼不能開」，整頁跟著跳兩次。
+   所以照側欄 tooltip（.ad-nav-tip）那一套 render 到 body、position:fixed，
+   定位由 admin.js 算。差別是它**收得到滑鼠**：裡面那顆
+   「用官方帳號聯繫」要滑得到也點得到，所以不寫 pointer-events:none。 */
+.ad-page-tip{
+  position:fixed;z-index:1200;width:max-content;
+  max-width:min(290px,calc(100vw - 20px));
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:12px 14px;box-shadow:var(--shadow-pop);
+  opacity:0;transform:translateY(-4px);
+  transition:opacity var(--dur-pop) ease-out,transform var(--dur-pop) var(--ease);
+}
+.ad-page-tip[hidden]{display:none;}
+.ad-page-tip.is-above{transform:translateY(4px);}
+.ad-page-tip.is-on{transform:none;opacity:1;}
+
+/* 箭頭指回那顆問號。--tip-arrow 由 JS 給（tooltip 被畫面邊緣推開時
+   也還指得準），翻到上面去的時候換成指下面。 */
+.ad-page-tip::after{
+  content:'';position:absolute;left:var(--tip-arrow,20px);
+  width:9px;height:9px;background:#fff;border:1px solid var(--line);
+  transform:translateX(-50%) rotate(45deg);
+}
+.ad-page-tip.is-below::after{top:-5px;border-right:0;border-bottom:0;}
+.ad-page-tip.is-above::after{bottom:-5px;border-left:0;border-top:0;}
+
+.ad-page-lock-msg{margin:0 0 10px;font-size:12.5px;line-height:1.9;
   letter-spacing:.04em;color:var(--ink);}
 
 /* 手機：一列裡「頁名 ＋ 說明」和「排程／問號 ＋ 開關」擠不進同一行

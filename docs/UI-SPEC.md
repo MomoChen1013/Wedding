@@ -172,7 +172,7 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-xxx { … }
 | 頂列 | 950 | `.ad-bar` |
 | 帳號選單 | 960 | `.ad-acct-pop` |
 | 側欄遮罩／側欄 | 990 / 1000 | `.ad-side-backdrop` / `.ad-side` |
-| 懸浮小卡 | 1200 | `.sp-peek`、`.ad-nav-tip` |
+| 懸浮小卡 | 1200 | `.sp-peek`、`.ad-nav-tip`、`.ad-page-tip` |
 | **抽屜遮罩／抽屜** | **1300 / 1310** | `.sp-drawer-mask` `.ad-drawer-mask` / `.sp-drawer` `.ad-drawer` |
 | 行內選單 | 1400 | `.ad-rowmenu` |
 | **彈窗** | **1450** | `.ad-modal-mask` |
@@ -278,7 +278,7 @@ sticky 的位置不能寫死（婚禮名稱換一行、離線橫幅出現，高�
 | `.sp-move-btn` `.ad-sch-move [data-sch-move]` | ↑ ↓ ⇤ ⇥ | **36×36**／13px | **44×44** | 1px `--line` ＋ radius |
 | `.sp-card-move` | ↔ | **36×36**／16px | 同左（只在觸控出現） | 透明框，`:active` 才顯 |
 | `.sp-table-fold` | ▾（收起來轉 −90°） | **36×36**／12px | 36×36 ＋ `::after` 補到 **44×44** | 透明框，`:active` 才顯 |
-| `.ad-page-why` | ？（`#shin9-help`） | **36×36**／19px | **44×44**／21px | 透明框，hover 才顯 `--line`；`cursor:help` |
+| `.ad-page-why` | ？（`#shin9-help`） | **36×36**／19px | **44×44**／21px | 透明框，hover 才顯 `--line`；`cursor:help`；帶出浮在上面的 `.ad-page-tip`（不展開那一列） |
 | `.ad-drag-handle` | ⠿ | 16px | — | 無框，`cursor:grab`／`grabbing` |
 
 三條規則：
@@ -632,6 +632,7 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 |---|---|---|
 | `.ad-navgroup` | 側欄裡可摺疊的分組 | 它是導覽結構，不是一疊動作 |
 | `.ad-nav-tip` | 側欄項目的說明泡泡 | `pointer-events:none`，只給有滑鼠的機器（`<900px` 側欄是觸控抽屜，「點一下先跳說明、再點一次才切分頁」是壞掉的互動） |
+| `.ad-page-tip` | 頁面設定裡那顆問號帶出來的說明 | 同樣 render 到 `body` ＋ `position:fixed`，但**收得到滑鼠**（裡面有一顆「用官方帳號聯繫」要點得到）。說明不長在那一列裡：撐開一列會把下面整排推下去再收回來，只是想看一句話，整頁跳兩次 |
 
 ---
 

@@ -1304,7 +1304,7 @@ allow read: if request.auth != null
 
 | 這一列 | 怎麼來的 | 新人看到 |
 |---|---|---|
-| 我們沒開通的頁面 | `isPageOn(key) === false` | 灰的、掛鎖頭、toggle `disabled`（按下去會說要找誰，見下面） |
+| 我們沒開通的頁面 | `isPageOn(key) === false` | 灰的、掛鎖頭、toggle **預設關著**且 `disabled`（按下去會說要找誰，見下面） |
 | 還沒對外開放的功能 | 上面那個 ＋ `UNRELEASED_FEATURES` | 整列不出現（和側欄的 `off` 同一個判斷） |
 | 已經開通的頁面 | 其餘 | toggle 可按，下面一行寫現在的狀態 |
 
@@ -1317,27 +1317,43 @@ allow read: if request.auth != null
 打開＝現在就公開，所以會順手清掉排程；關掉也一樣清掉 ——
 不清的話「我明明關起來了」過幾小時又自己開回來，那不是他按下去的意思。
 
-**沒開通那幾列的 `disabled` toggle 按下去要有人回話**（`PAGE_LOCK_MSG`）：
-死掉的開關按下去什麼都不發生，新人只會以為是壞的。那一列因此有兩個入口，
-帶出同一塊說明 —— 一句「這個功能需要管理員才能開啟，請透過官方帳號聯繫」、
+**沒開通那幾列的 toggle 一律是「關著 ＋ `disabled`」**：`pagePublish` 沒設定過
+的預設是 `on:true`（見 `wed-model.js` 的 `pagePublishEntry`），照著畫的話開關
+會亮著、右邊那支手機也會多列一行 —— 但賓客根本進不去（判斷先卡在 `pages`）。
+所以 `pageSettingRows()` 在 `locked` 時直接把 `on/at` 壓成 `false/null`：
+後台畫面不能和賓客看到的說不一樣。
+
+**按下去要有人回話**（`PAGE_LOCK_MSG`）：死掉的開關按下去什麼都不發生，
+新人只會以為是壞的。那一列因此有兩個入口，帶出同一則說明 ——
+一句「這個功能需要管理員才能開啟，請透過官方帳號聯繫」、
 一顆直接連到官方帳號的按鈕（`SUPPORT_LINE_URL`），
 外加一句「開通之後現有的資料一筆都不會動」：
 
 | 入口 | 桌機 | 觸控 |
 |---|---|---|
-| 開關旁邊的**問號**（`.ad-page-why`，Feather 的 help-circle） | 滑過去就看得到，離開那一列才收 | 點一下展開，再點一下收 |
-| **開關本身**（「我要打開它」） | 按下去展開 ＋ 一則 toast | 同左 |
+| 開關旁邊的**問號**（`.ad-page-why`，Feather 的 help-circle） | 滑過去就看得到，滑開就收 | 點一下開，再點一下收 |
+| **開關本身**（「我要打開它」） | 按下去浮出來 ＋ 一則 toast | 同左 |
+
+說明的形狀是**浮在上面的 tooltip**（`.ad-page-tip` / `#adPageLockTip`），
+不是長在那一列裡的一塊：說明如果撐開那一列，滑過去、滑開就會把下面整排
+往下推再收回來 —— 只是想知道「為什麼不能開」，整頁跟著跳兩次。
+所以照側欄 tooltip（`bindNavTips`）那一套 render 到 `body` ＋ `position:fixed`，
+貼著問號置中、下面塞不下就翻到上面，箭頭（`--tip-arrow`）永遠指得回去。
 
 問號上刻意沒有文字：一列裡已經有頁名、說明、狀態三行字，
 再多一句「為什麼不能開？」會蓋過它們（名字掛在 `aria-label` 上）。
-toast 只在按開關時吐 —— 問號是「我想知道」，畫面上那段說明就是答案。
+toast 只在按開關時吐 —— 問號是「我想知道」，浮出來那段說明就是答案。
 
-兩個實作細節：`disabled` 的 `<input>` 不發事件也不冒泡，
-所以 CSS 給它 `pointer-events:none`，點擊才落到外層的 `<label>` 上；
-hover 那一套走 `matchMedia('(hover:hover) and (pointer:fine)')`
-（能力判斷不是寬度判斷，和側欄 tooltip 的 `bindNavTips` 同一套），
-而且說明是長在**那一列裡面**的，所以從問號滑到底下那顆按鈕不算離開，
-滑得到也點得到。鍵盤走 `focusin`／`focusout`，Tab 上去等於滑過去。
+實作細節：`disabled` 的 `<input>` 不發事件也不冒泡，所以 CSS 給它
+`pointer-events:none`，點擊才落到外層的 `<label>` 上；hover 那一套走
+`matchMedia('(hover:hover) and (pointer:fine)')`（能力判斷不是寬度判斷，
+和 `bindNavTips` 同一套）。和側欄那一顆 tooltip 的差別是它**收得到滑鼠**：
+裡面那顆「用官方帳號聯繫」要滑得到也點得到，所以從問號滑進 tooltip 不算離開，
+而且點開來的那一次會**釘住**（Esc、點別的地方、再按一次問號才收；
+捲動、轉向、換分頁、重畫也一律先收，不然它會指著空氣）。
+鍵盤走 `focusin`／`focusout`，Tab 上去等於滑過去；用 Enter 打開的那次
+（`e.detail === 0`）焦點會送進 tooltip —— 它掛在 `body` 最後面，
+不送進去的話那顆連結要 Tab 過整頁才碰得到。
 
 **「常見問題」分頁**：原本是首頁最下面的四則，現在是十四則，分成五類
 （開始使用／頁面與功能開關／照片與內容／出席回覆與名單／婚禮當天），
