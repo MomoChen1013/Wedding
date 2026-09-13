@@ -730,7 +730,7 @@ function pickCsvColumns({ name, note, columns }){
       if(raw) saved = new Set(JSON.parse(raw));
     }catch{}
 
-    csvNoteEl.textContent = note || '選擇要匯出的內容：';
+    csvNoteEl.textContent = note || '勾起來的會出現在檔案裡。';
     csvColsEl.innerHTML = columns.map((c, i) => {
       /* 上次沒存過就全選；存過的話照上次，但新增的欄位預設也是勾的
          （新欄位是新功能，預設不給他反而像壞了） */
@@ -1516,7 +1516,7 @@ document.getElementById('adLockMobile').addEventListener('click', ownerLogout);
 
 if(!ownerEmails().length){
   loginBtn.disabled = true;
-  pwErr.textContent = '這個站台還沒設定新人帳號名單（要新增請告訴我們）';
+  pwErr.textContent = '看起來還沒設定新人登入帳號，跟我們說一聲吧！';
 }else{
   window.fb.onAuthStateChanged(window.fb.auth, ()=>{
     if(isSiteOwner()) openAdmin();
@@ -1731,22 +1731,22 @@ document.getElementById('adSide').addEventListener('click', (e)=>{
         「點一下跳出說明、再點一次才切分頁」是壞掉的互動。
 ============================================================ */
 const NAV_TIPS = {
-  home:        '這個後台怎麼用、從哪裡開始。也放著「查看婚禮網站」與「查看表單」兩個出口。',
-  rsvpForm:    '決定出席表單要問賓客什麼、那一頁還要放哪些內容。先設定好這裡，再把連結發出去。',
-  guestTags:   '分類賓客用的標籤（行動不便、大學同學…），一位賓客可以掛好幾個，排桌時可以照標籤分組，也可以讓賓客在出席回覆時自己選。',
-  rsvp:        '賓客填的出席回覆都在這裡：人數、葷素、聯絡方式、喜帖與喜餅的寄送，也能篩選、貼標籤、匯出 CSV。',
-  seating:     '婚宴當天貼在門口的那張桌次圖：整理賓客與桌號的對照名單，也可以直接上傳桌次圖。',
-  seatingPlan: '把人拖到桌上的工作區：看得到每一桌坐了幾位、還剩幾個位子，排完再一次同步給桌次名單。',
-  butler:      '婚宴當天收禮金、送禮餅用的工具。產生連結交給幫忙的親友，他們記的每一筆都會即時回到這裡。',
-  lobby:       '賓客會在首頁看見的婚禮重要資訊：標題、婚禮流程、交通資訊、Dress Code、禮金、兩人的故事與「相遇之間」。',
-  explore:     '首頁上自己加的那幾塊內容：接駁車時刻、電子紅包連結、現場活動說明…點了可以開連結，也可以跳出一段說明。',
-  letters:     '寫給賓客的感謝信。可以寫好幾封，賓客抽到的是哪一封由這裡決定。',
-  cards:       '賓客抽卡時會抽到的婚禮小卡：上傳圖片、設定卡名與稀有度。',
-  exhibits:    '新人的故事牆：一張照片配一段文字，賓客可以慢慢看完你們的故事。',
-  inbox:       '賓客留給新人的悄悄話。只有你們讀得到，別人在祝福牆上看不到內容。',
-  quiz:        '賓客玩的「你有多認識新人」小測驗：出題、設定正確答案，也看得到大家答了什麼。',
-  pages:       '決定賓客現在看得到哪幾頁。內容還沒寫完的先收起來，也可以排一個時間讓它自己開。',
-  help:        '新人最常問到的幾件事，照類別分好了。這裡沒寫到的可以直接用官方帳號私訊我們。',
+  home:        '幫你統整好的筆記都在這裡。',
+  rsvpForm:    '決定出席表單要問賓客哪些事。',
+  guestTags:   '分類賓客用的標籤（行動不便、大學同學…），排桌與篩名單都用得上。',
+  rsvp:        '賓客填的出席回覆都在這裡，也可以篩選、貼標籤、匯出 CSV。',
+  seating:     '婚宴當天貼在門口的那張桌次圖，加上賓客查自己坐哪一桌的名單。',
+  seatingPlan: '把人拖到桌上的工作區，排完再一次送到賓客的查座位頁。',
+  butler:      '產生連結交給幫忙收禮的親友，他們記的每一筆都會即時回到這裡。',
+  lobby:       '賓客在首頁看見的婚禮資訊：時間地點、流程、交通、Dress Code、你們的故事。',
+  explore:     '我們準備好的內容以外，你們自己想告訴賓客的事。',
+  letters:     '寫給賓客的感謝信，賓客輸入名字就會領到你們寫給他的那一封。',
+  cards:       '賓客抽卡時會抽到的婚禮小卡。',
+  exhibits:    '一張照片配一段文字，賓客可以慢慢看完你們的故事。',
+  inbox:       '賓客留給你們的悄悄話，只有你們讀得到。',
+  quiz:        '「你有多認識新人」的小測驗，也看得到大家答了什麼。',
+  pages:       '現在讓賓客看到哪幾頁，也可以排一個時間讓它自己開。',
+  help:        '大家最常問到的幾件事，照類別分好了。',
 };
 
 (function bindNavTips(){
@@ -2144,7 +2144,7 @@ function renderRsvps(){
           body: '把篩選條件放寬一點，或清掉搜尋關鍵字再看一次。',
         })
       : emptyState({
-          title: '尚未收到賓客回覆',
+          title: '還沒有人回覆',
           body: '賓客在邀請函上按下送出之後，回覆就會一筆一筆出現在這裡。'
               + '現在可以先去確認表單問了哪些問題。',
           action: { label:'去看表單設定', hash:'rsvpForm' },
@@ -2404,7 +2404,7 @@ function rsvpDrawerHtml(r){
       <div class="ad-drawer-sec-title">各活動出席</div>
       <div class="ad-drawer-rows">${rsvpEventsAsked().map(ev => {
         const res = eventResponse(r, ev.id);
-        const ans = !res || res.tentative ? '尚未回覆'
+        const ans = !res || res.tentative ? '還沒回覆'
           : (res.going ? (ev.askCount ? `會參加・${res.count} 位` : '會參加') : '無法參加');
         const extras = res && res.going ? [
           ev.askMeal && res.veg ? `素食 ${res.veg} 位` : '',
@@ -2781,7 +2781,7 @@ function evCsvColumns(){
   evs.forEach(ev => {
     out.push({ key:`ev_${ev.id}`, label:`${ev.name}・出席`, val:(r)=>{
       const res = eventResponse(r, ev.id);
-      if(!res || res.tentative) return '尚未回覆';
+      if(!res || res.tentative) return '還沒回覆';
       return res.going ? '會參加' : '無法參加';
     } });
     if(ev.askCount){
@@ -2815,7 +2815,7 @@ document.getElementById('adRsvpExport').addEventListener('click', async ()=>{
   const columns = rsvpCsvColumns();
   const keys = await pickCsvColumns({
     name: 'rsvp',
-    note: `要匯出目前篩選出來的 ${rows.length} 筆回覆。選擇要帶哪幾欄：`,
+    note: `這次會匯出 ${rows.length} 筆回覆，要帶上哪幾欄？`,
     columns,
   });
   if(!keys) return;
@@ -2978,7 +2978,7 @@ function actQuestionsHtml(ev){
 
       <div class="ad-qlist" data-qlist="${escapeHtml(ev.id)}">${
         qs.map(q => actQuestionRowHtml(ev, q)).join('')
-        || '<div class="ad-qrow-empty">尚未新增問題</div>'}</div>
+        || '<div class="ad-qrow-empty">還沒有只問這一場的題目</div>'}</div>
       <div class="ad-row">
         ${qs.length < EVENT_QUESTION_MAX
           ? `<button class="btn small ghost" type="button"
@@ -3030,7 +3030,7 @@ function renderActCards(){
     note.innerHTML = evs.length > 1
       ? `這場婚禮有 <b>${evs.length}</b> 個行程`
       : '行程的時間、地點與要問的題目都在這張卡上。'
-        + '<b>時間與地點一改，大廳與邀請函會一起更新。</b>';
+        + '<b>時間與地點一改，賓客首頁會一起更新。</b>';
   }
 
   actListEl.innerHTML = evs.map(ev => actCardHtml(ev)).join('');
@@ -3249,10 +3249,10 @@ function openActModal(id){
   /* 刪除：只有「存得進 events[] 而且不只一個」的活動刪得掉 —— 至少要留一場 */
   const del = document.getElementById('adActDelete');
   if(del) del.hidden = !saved || weddingEvents().length <= 1;
-  document.getElementById('adActModalTitle').textContent = `編輯「${ev.name}」`;
+  document.getElementById('adActModalTitle').textContent = `「${ev.name}」的時間與地點`;
   document.getElementById('adActHint').innerHTML = saved
-    ? '儲存後，<b>大廳、邀請函與出席表單</b>上這個活動的時間與地點會一起更新。'
-    : '儲存後，<b>大廳、邀請函與出席表單</b>上的時間與地點會一起更新。'
+    ? '存好之後，<b>賓客首頁</b>上的活動會一起更新。'
+    : '存好之後，<b>賓客首頁</b>上的活動會一起更新。'
       + '日期要透過我們才改得動。';
 
   actModalMask.hidden = false;
@@ -3638,11 +3638,9 @@ function renderFormTagPreview(){
   const hint = document.getElementById('adAskTagHint');
   if(hint){
     hint.innerHTML = on
-      ? '放在「賓客表單自選標籤」那一組的標籤才會出現在這裡，'
-        + '會即時同步標籤。'
-        + '<button class="ad-linkbtn" type="button" id="adAskTagJump">前往設定 ↗</button>'
-      : '這是進階功能，<b>目前方案還沒開通</b>，'
-        + '需要管理員協助打開。';
+      ? '放在「賓客自己選得到」那一組的標籤才會出現在這裡，改了立刻同步。'
+        + '<button class="ad-linkbtn" type="button" id="adAskTagJump">去設定標籤 ↗</button>'
+      : '這是進階功能，<b>還沒開通</b>，想用的話跟我們說一聲。';
   }
 }
 
@@ -3665,7 +3663,7 @@ function syncRsvpFormDirty(){
   const btn  = document.getElementById('adRsvpFormSave');
   const dirty = rsvpFormSnapshot() !== rsvpFormBaseline;
   if(note){
-    note.textContent = dirty ? '有還沒儲存的變更' : '目前沒有未儲存的變更';
+    note.textContent = dirty ? '有還沒儲存的變更' : '目前都很好';
     note.classList.toggle('is-dirty', dirty);
   }
   if(btn) btn.classList.toggle('is-dirty', dirty);
@@ -3707,8 +3705,7 @@ document.getElementById('adAskTagAdd')?.addEventListener('click', async ()=>{
   if(!guestTagsOn()){
     await confirmModal({
       title: '賓客標籤還沒開通',
-      message: '這些選項來自賓客標籤，'
-             + '目前的方案還沒有這個權限，需要管理員協助開通。',
+      message: '這些選項來自賓客標籤，目前還沒開通，跟我們說一聲就可以開。',
       confirmText: '知道了',
       cancelText: '關閉',
     });
@@ -3784,8 +3781,8 @@ function rsvpInfoRows(){
     { name:'婚禮 hashtag', value: clip(tags.join('　')),
       html: tags.length ? previewTags(tags) : '',
       empty:'留白就用預設的 #我們結婚了 #Married' },
-    { name:'封面照',     value: cover ? '管理員已經放好了' : '',
-      empty:'還沒有封面照，照片要透過管理員放' },
+    { name:'封面照',     value: cover ? '我們已經放好了' : '',
+      empty:'還沒有封面照，把照片給我們就可以放上去' },
   ];
 }
 
@@ -3933,16 +3930,16 @@ function tagUseCount(){
 const TAG_GROUPS = [
   {
     onForm: true,
-    title:  '賓客表單自選標籤',
+    title:  '賓客自己選得到',
     note:   '賓客填出席回覆時，可以自己勾這幾個。',
     empty:  '還沒有讓賓客自己選的標籤。比較適合的是賓客自己答得出來的分類（大學同學、公司同事…）。',
     add:    '＋ 新增表單選項',
   },
   {
     onForm: false,
-    title:  '後台管理標籤',
-    note:   '只有你和工作人員看得到，賓客不會看到。',
-    empty:  '還沒有只給後台用的標籤。像 VIP、行動不便這種由你自己判斷的分類，放這裡。',
+    title:  '只有你們看得到',
+    note:   '像 VIP、行動不便這種你們自己判斷的分類。',
+    empty:  '還沒有只有你們看得到的標籤。像 VIP、行動不便這種你們自己判斷的分類，放這裡。',
     add:    '＋ 新增標籤',
   },
 ];
@@ -4740,7 +4737,7 @@ document.getElementById('adSeatImportOpen').addEventListener('click', openSeatMo
    也有一顆（儲存後會問），這裡只是讓人在桌次名單這邊也按得到。 */
 const seatSyncPlanBtn = document.getElementById('adSeatSyncPlan');
 seatSyncPlanBtn.addEventListener('click', async ()=>{
-  if(!window.SeatingPlan){ toast('尚無排桌資料', true); return; }
+  if(!window.SeatingPlan){ toast('還沒有排好的桌可以同步', true); return; }
   seatSyncPlanBtn.disabled = true;
   try{ await SeatingPlan.syncNow(); }
   finally{ seatSyncPlanBtn.disabled = false; }
@@ -5194,8 +5191,8 @@ function renderExplore(){
   if(!list.length){
     ef.list.innerHTML = emptyState({
       title: '還沒有自訂內容',
-      body: '想放的東西如果不在既有的欄位裡（停車資訊、包車時刻、電子紅包連結…），'
-          + '就從這裡加上去，它會出現在賓客首頁 Explore 區的後面。',
+      body: '接駁車時刻、電子紅包連結、現場活動怎麼玩…我們沒問到的，都可以從這裡加上去，'
+          + '它會出現在賓客首頁的下半部。',
       action: { label:'新增自訂內容', id:'adExpEmptyAddBtn' },
     });
     return;
@@ -5655,7 +5652,7 @@ function syncSiteDirtyUI(){
   const btn  = document.getElementById('adSiteSave');
   const d = siteFormDirty();
   if(note){
-    note.textContent = d ? '有還沒儲存的變更' : '目前沒有未儲存的變更';
+    note.textContent = d ? '有還沒儲存的變更' : '目前都很好';
     note.classList.toggle('is-dirty', d);
   }
   if(btn) btn.classList.toggle('is-dirty', d);
@@ -5780,7 +5777,7 @@ async function saveSiteForm(btn){
 
 sf.form.addEventListener('submit', async (e)=>{
   e.preventDefault();
-  if(await saveSiteForm()) toast('婚禮資訊已更新，重新整理大廳就看得到');
+  if(await saveSiteForm()) toast('婚禮資訊存好了，賓客那一頁重新整理就看得到');
 });
 
 /* ---------- 04 婚禮流程 ----------
@@ -6371,7 +6368,7 @@ function wzStatus(n){
     case 1:
       return d.coupleTitle
         ? { done:true,  text:'已完成' }
-        : { done:false, text:'尚未設定' };
+        : { done:false, text:'還沒填' };
     case 2: {
       const evs = weddingEvents();
       return { done: evs.length > 0, text:`${evs.length} 個活動` };
@@ -6379,7 +6376,7 @@ function wzStatus(n){
     case 3:
       return wzPlaceFilled()
         ? { done:true,  text:'已完成' }
-        : { done:false, text:'尚未設定' };
+        : { done:false, text:'還沒填' };
     case 4: {
       const n2 = siteSchedule().length;
       return n2
@@ -6504,7 +6501,7 @@ document.getElementById('adWzActPicks')?.addEventListener('change', (e)=>{
     box.checked = false;
     const lock = document.getElementById('adWzActLock');
     if(lock) lock.hidden = false;
-    toast('多場次為進階功能，請聯繫管理員', true);
+    toast('一次辦好幾場是進階功能，想開的話跟我們說一聲', true);
     return;
   }
 
@@ -6902,7 +6899,7 @@ function wzSyncStepBar(){
   wzStepsEl.querySelectorAll('.ad-wz-step').forEach(step => {
     const note = step.querySelector('[data-wz-note]');
     if(note){
-      note.textContent = d ? '有還沒儲存的變更' : '目前沒有未儲存的變更';
+      note.textContent = d ? '有還沒儲存的變更' : '目前都很好';
       note.classList.toggle('is-dirty', d);
     }
     const next = step.querySelector('[data-wz-next]');
@@ -7110,8 +7107,8 @@ function renderCards(){
     cardListEl.innerHTML =
       emptyState({
         title: '還沒有婚禮小卡',
-        body: '賓客抽到的就是這裡的卡片。這裡空著的話，抽卡頁會用素材資料夾裡的圖；'
-            + '兩邊都沒有的時候，抽卡按鈕會停用，並顯示「等待新人上傳照片」。',
+        body: '賓客抽到的就是這裡的照片。空著的話會先用你給過我們的照片，'
+            + '兩邊都沒有時賓客會看到「等待新人上傳照片」。',
       });
     return;
   }
@@ -7369,7 +7366,7 @@ function renderExhibits(){
     xf.list.innerHTML = emptyState({
       title: '還沒有故事牆內容',
       body: '一張照片配一段文字，賓客可以慢慢看完你們的故事。'
-          + '先不設定也可以 —— 戀愛時光會沿用素材資料夾或內建的範例。',
+          + '先放著也沒關係 —— 賓客那一頁會先用我們準備好的範例。',
       action: { label:'載入預設內容來改', id:'adExhSeed' },
     });
     return;
@@ -7944,7 +7941,7 @@ const HOME_PIN_GUIDE = `
   <div class="ad-step-guide-grp">
     <div class="ad-step-guide-hd">iPhone / iPad</div>
     <ol class="ad-step-guide-list">
-      <li>用 Safari 打開後台網址（這一步要用 Safari，其他瀏覽器沒有這個選單）</li>
+      <li>用 Safari 打開這一頁的網址（要用 Safari，其他瀏覽器沒有這個選單）</li>
       <li>先登入一次</li>
       <li>按畫面下方中間的「分享」鍵（一個方框往上的箭頭）</li>
       <li>往下滑，找到「加入主畫面」</li>
@@ -7954,7 +7951,7 @@ const HOME_PIN_GUIDE = `
   <div class="ad-step-guide-grp">
     <div class="ad-step-guide-hd">Android</div>
     <ol class="ad-step-guide-list">
-      <li>用 Chrome 打開後台網址</li>
+      <li>用 Chrome 打開這一頁的網址</li>
       <li>先登入一次</li>
       <li>按右上角的「⋮」</li>
       <li>選「加到主畫面」或「安裝應用程式」（看手機版本，兩個都對）</li>
@@ -7982,23 +7979,23 @@ function homeExtrasHash(){
 const HOME_STEPS = [
   {
     tab: 'lobby', hash: 'lobby',
-    title: '第一件事：把後台放到手機主畫面',
-    note: '先把它放到主畫面，之後就像一個 App，不用再找那串長長的網址。',
+    title: '先把這一頁加到手機的主畫面',
+    note: '之後打開就像一個 App，不用再找那串長長的網址。',
     guide: HOME_PIN_GUIDE,
     done: () => LS.get(HOME_PIN_KEY, false),
     doneText: '已經放到主畫面了',
   },
   {
     tab: 'lobby', hash: 'lobby',
-    title: '填好婚禮資訊',
-    note: '六個段落，一次填一段就好：名稱、活動、時間地點、流程、賓客指南、你們的故事',
+    title: '把婚禮資訊填好',
+    note: '六個段落，一次填一段就好：名稱、活動、時間地點、流程、賓客指南、你們的故事。',
     done: () => !!(siteData().venueName || siteData().venueAddress),
     doneText: '已經填好了',
   },
   {
     tab: 'rsvpForm', hash: 'rsvpForm',
-    title: '決定出席表單要問什麼',
-    note: '設定題目「出席人數、素食、兒童座椅..等」',
+    title: '想問賓客哪些事',
+    note: '出席人數、素食幾份、要不要兒童座椅…想問的都可以打開。',
     done: () => 'rsvpContactMethods' in siteData(),
     doneText: '已經設定過了',
   },
@@ -8006,8 +8003,8 @@ const HOME_STEPS = [
     /* 當日流程與自訂內容是同一件事的兩半（都是「大廳還能再放什麼」），
        所以合成一步。按鈕指到自訂內容 —— 流程那一頁多數人填完就不再回來 */
     tab: 'lobby', hash: 'lobby/explore',
-    title: '讓婚禮資訊更豐富',
-    note: '填寫當日流程、新增自訂內容，放上更多資訊吧！',
+    title: '再多放一點內容',
+    note: '當天的流程、接駁車、電子紅包…想告訴賓客的都放得進去。',
     done: () => siteSchedule().length > 0 || DataStore.getExplore().length > 0,
     doneText: () => [
       siteSchedule().length ? '已經填寫當日流程' : '',
@@ -8019,7 +8016,7 @@ const HOME_STEPS = [
        做完了沒有還是看回覆進來了沒 */
     tab: 'rsvp', hash: 'pages',
     title: '發送連結給賓客',
-    note: '送出前，可以到頁面設定調整目前賓客可以看到的內容。',
+    note: '發之前先看一眼：現在想讓賓客看到哪幾頁。',
     done: () => DataStore.getRSVPCount() > 0,
     doneText: () => `已經收到 ${DataStore.getRSVPCount()} 份回覆`,
   },
@@ -8027,19 +8024,19 @@ const HOME_STEPS = [
     tabs: ['letters', 'quiz', 'exhibits', 'cards'],
     hash: homeExtrasHash,
     title: '婚禮前有空可以慢慢做',
-    note: '感謝信、測驗、故事牆、婚禮小卡..等',
+    note: '感謝信、新人測驗、故事牆、婚禮小卡，有空再一樣一樣來。',
     done: () => homeExtrasCount() > 0,
     doneText: () => `已經完成 ${homeExtrasCount()} 項`,
   },
   {
     tab: 'seatingPlan', hash: 'seatingPlan/board',
-    title: '收到回覆就可以排桌管理',
-    note: '回覆名單可以直接同步排桌。',
+    title: '開始安排座位',
+    note: '已經回覆的賓客可以直接抓進來排，不用重打一次。',
   },
   {
     tab: 'butler', hash: 'butler/links',
-    title: '婚宴當天的收禮小幫手',
-    note: '交給當天幫忙收禮的親友，他們記下的每一筆都會即時回到後台。',
+    title: '婚宴當天的收禮',
+    note: '產生連結交給幫忙的親友，他們記的每一筆都會即時回到這裡。',
   },
 ];
 
@@ -8153,7 +8150,7 @@ function pageStateText(row){
 
 /* 沒開通的那一列，開關是死的。死的開關按下去什麼都不發生，
    新人只會以為壞掉了 —— 所以按下去要有人回他一句話，並且說清楚要找誰。 */
-const PAGE_LOCK_MSG = '這個功能需要管理員才能開啟，請透過官方帳號聯繫';
+const PAGE_LOCK_MSG = '這個功能還沒開通，用官方帳號跟我們說一聲就可以開';
 
 /* 那一句話由旁邊的問號（Feather 的 help-circle）帶出來：
    桌機滑過去就看得到，觸控裝置點一下 —— 兩邊都不必先按下一顆看起來
@@ -8566,7 +8563,7 @@ function renderHome(){
                   guideOn ? '我已經完成' : '再看一次'}</button>`
       : `<button class="btn small ${done ? 'ghost' : ''}" type="button"
                 data-empty-hash="${escapeHtml(homeStepText(s.hash))}">${
-                  done ? '再看一次' : '去設定'}</button>`;
+                  done ? '再看一次' : '開始'}</button>`;
 
     return `<li class="ad-step${done ? ' is-done' : ''}">
       <span class="ad-step-no">${done
@@ -8585,10 +8582,13 @@ function renderHome(){
     </li>`;
   }).join('');
 
+  /* 「還剩幾步」會讓人覺得自己落後了。改成說「已經完成幾件」——
+     同一份進度，講的是他做到哪裡，不是他欠了什麼。 */
   const left = steps.filter(s => homeStepDone(s) === false).length;
+  const done = steps.filter(s => homeStepDone(s) === true).length;
   setPageSub('adHomeSub', left
-    ? `目前還有 <b>${left}</b> 步沒動過`
-    : '該填的都填得差不多了，隨時可以回來改');
+    ? `已經完成 <b>${done}</b> 件，剩下的不用急，隨時回來做`
+    : '該做的都差不多了，隨時可以回來改');
 }
 
 /* 「我已經完成」＝打勾並把操作步驟收起來；「再看一次」＝再打開。
@@ -9257,7 +9257,7 @@ const Butler = (() => {
 
     const keys = await pickCsvColumns({
       name: 'butler',
-      note: `要匯出 ${list.length} 筆收禮紀錄。選擇要帶哪幾欄：`,
+      note: `這次會匯出 ${list.length} 筆收禮紀錄，要帶上哪幾欄？`,
       columns: BT_CSV_COLUMNS,
     });
     if(!keys) return;

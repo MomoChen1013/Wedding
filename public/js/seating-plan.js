@@ -863,7 +863,7 @@
     if (pending.length) {
       const who = pending.slice(0, 3).map((g) => g.code || g.name).join('、');
       list.push({ level:'info',
-        text:`${who}${pending.length > 3 ? ` 等 ${pending.length} 位` : ''} 尚未確認 RSVP` });
+        text:`${who}${pending.length > 3 ? ` 等 ${pending.length} 位` : ''} 還沒確認會不會來` });
     }
 
     /* 每一桌的特殊需求（素食、行動不便、兒童、VIP）刻意不做成提醒：
@@ -2893,7 +2893,7 @@
     if (!started) init();
     if (loadPromise) await loadPromise;
     if (!allGuests().some((g) => g.tableId)) {
-      toast('尚無排桌資料', true);
+      toast('還沒有人被排到桌上，先排幾位再同步', true);
       return false;
     }
     await syncToSeating();

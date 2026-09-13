@@ -2438,9 +2438,9 @@ console.log('\n[18c] 新人自己收起某一頁');
      見 admin.js），Playwright 的 actionability 會替我們擋下來 */
   await page.click(`${row} .ad-toggle`, { force: true });
   await page.waitForSelector(`${tip}:not([hidden])`, { timeout:5000 });
-  ok('按下開關會說「要透過官方帳號聯繫」',
+  ok('按下開關會說「用官方帳號跟我們說一聲」',
     (await page.innerText(`${tip} .ad-page-lock-msg`))
-      .includes('這個功能需要管理員才能開啟，請透過官方帳號聯繫'),
+      .includes('用官方帳號跟我們說一聲就可以開'),
     await page.innerText(`${tip} .ad-page-lock-msg`));
   ok('說明裡附上官方帳號的連結',
     (await page.getAttribute(`${tip} a`, 'href') || '')
@@ -2867,7 +2867,7 @@ console.log('\n[14d] 後台婚禮流程');
     await page.evaluate(() =>
       document.querySelector('[data-wz-act="ceremony"]').checked === false));
   ok('而且說清楚要找誰開通',
-    (await page.locator('#adWzActLock').innerText()).includes('聯繫管理員'),
+    (await page.locator('#adWzActLock').innerText()).includes('跟我們說'),
     (await page.locator('#adWzActLock').innerText()).trim().slice(0, 30));
   /* 打回去不能連整組勾選框一起重畫 —— 那會把使用者剛按的那一顆換掉，
      用鍵盤操作的人焦點就掉回頁面最上面 */
