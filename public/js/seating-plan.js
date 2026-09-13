@@ -685,7 +685,7 @@
   }
 
   /* 同步完不代表賓客看得到 —— 桌次那一頁還有一個總開關
-     （「婚禮資訊」分頁最上面的「開放桌次功能」），關著的話前台什麼都沒有。
+     （「頁面設定」裡的「桌次」那一列），關著的話前台什麼都沒有。
      這是婚禮當天最容易卡住的地方，所以同步成功就直接問。 */
   function afterSyncToast(n) {
     const off = siteData().seatingFeatureEnabled === false;
@@ -693,18 +693,18 @@
       toast(`已同步 ${n} 位賓客到桌次查詢`);
       return;
     }
-    showToast(`已同步 ${n} 位，但「開放桌次功能」還關著，賓客目前還看不到`, {
+    showToast(`已同步 ${n} 位，但「桌次」還沒開放，賓客目前還看不到`, {
       duration: 9000,
       actionLabel: '現在打開',
       onAction() {
-        location.hash = 'lobby/info';
-        /* 換分頁要一點時間，等畫面切過去再把開關捲進視野並閃一下 */
+        location.hash = 'pages';
+        /* 換分頁要一點時間，等畫面切過去再把那一列捲進視野並閃一下 */
         setTimeout(() => {
-          const box = document.getElementById('adSeatFeature');
-          if (!box) return;
-          box.closest('.ad-callout').scrollIntoView({ block:'center', behavior:'smooth' });
-          box.closest('.ad-callout').classList.add('is-flash');
-          setTimeout(() => box.closest('.ad-callout').classList.remove('is-flash'), 1600);
+          const row = document.querySelector('[data-page-row="seating"]');
+          if (!row) return;
+          row.scrollIntoView({ block:'center', behavior:'smooth' });
+          row.classList.add('is-flash');
+          setTimeout(() => row.classList.remove('is-flash'), 1600);
         }, 260);
       },
     });
