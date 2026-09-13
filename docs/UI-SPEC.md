@@ -305,6 +305,10 @@ sticky 的位置不能寫死（婚禮名稱換一行、離線橫幅出現，高�
 hover 時線與字一起變深（刪除變 `#a4677a`），觸控沒有 hover 所以改成 `:active` 給回饋。
 `(pointer:coarse)` 靠 padding 把熱區撐到 **44×44**，視覺不變。
 
+`.ad-linkbtn` 是同一種樣子的第三個成員：接在一句說明**後面**的出口
+（表單設定裡的「前往設定 ↗」）。它跟著那句話走，所以不做成 pill ——
+一句話裡冒出一顆膠囊，會變成兩個重點。
+
 > 同一列有三個以上動作時，改用 `.ad-rowmenu-btn`（⋮），不要並排三顆。
 > `.ad-item-actions` 在觸控時 `gap:16px`；已經收進 ⋮ 的那幾份反而收緊到 `gap:4px`。
 
@@ -340,7 +344,10 @@ hover 時線與字一起變深（刪除變 `#a4677a`），觸控沒有 hover 所
 - 已選：`.is-on` → 實心 `--ink` ＋ 白字
 - 容器變體：`.ad-chips-oneline`（固定顆數，放不下就左右滑）、
   `.ad-chips-clamp` ＋ `.ad-chips-more`（數量無上限，先露兩排）、
-  `.ad-chips-sub`（次級一排，字小一號）
+  `.ad-chips-sub`（次級一排，字小一號）、
+  `.ad-chips-preview`（裡面放不可點的 `.ad-tag`，見 3.5）
+  ＋ `.ad-chips-soft`（字色收到 `--ink-soft`：純粹在說「賓客會看到這幾個選項」，
+  不跟旁邊的設定搶重點）
 - `.ad-chip-link` 是虛線框 —— 它是**出口**（「設定標籤 ↗」），不是篩選條件
 
 Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發送」、金額捷徑）。
@@ -361,21 +368,26 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 ### 3.5b Badge `.ad-badge`（設定的狀態標記）
 
 ```html
-<div class="ad-askrow">
-  <label class="ad-check is-fixed"><input type="checkbox" checked disabled><span>與新人的關係？</span></label>
-  <span class="ad-badge">固定題目</span>
+<div class="ad-actcard-id">
+  <span class="ad-actcard-name">婚宴</span>
+  <span class="ad-badge">宴客</span>
+  <span class="ad-badge is-on">主要活動</span>
 </div>
 ```
 
 | 變體 | 樣子 | 用在哪 |
 |---|---|---|
-| `.ad-badge` | `--bg2` 底 ＋ `--line` 框 ＋ `--ink-soft` | 固定題目、活動種類 |
+| `.ad-badge` | `--bg2` 底 ＋ `--line` 框 ＋ `--ink-soft` | 活動種類 |
 | `.ad-badge.is-on` | `--primary-soft` 底 ＋ `--primary` 框 ＋ `--ink` | 正在生效（主要活動） |
 
 和 `.ad-tag`（3.5）的分工：**`.ad-tag` 講「這一筆資料是什麼」（題型、
-現在有幾個選項），Badge 講「這個題目關不掉」或「這一筆不一樣」。**
-所以 Badge 更小、更輕，而且永遠跟在一個控制項旁邊（包在 `.ad-askrow` 裡），
-不會單獨佔一列。
+現在有幾個選項），Badge 講「這一筆不一樣」。**
+所以 Badge 更小、更輕，而且永遠跟在它在說的那個東西旁邊，不會單獨佔一列。
+
+> **關不掉的題目不掛 Badge**，活動卡上關不掉的那一張也不掛。
+> 它的寫法是「打勾但點不動」（`.ad-check.is-fixed` ＋ `disabled`），
+> 必填與否寫在標籤本文裡（`與新人的關係？(必填)`）——
+> 一列裡同時有灰掉的勾選框和一顆 Badge，讀起來像兩個互相解釋的狀態。
 
 > `--primary-deep` 當小字的對比只有 2.57:1（見「已知落差」），所以 `.is-on`
 > 用**面**（`--primary-soft`）強調，字仍然是 `--ink`。
@@ -403,6 +415,7 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 | `.ad-toggle` | 開關：一顆真的 checkbox（鍵盤、讀螢幕都照舊）藏在上面，畫面上是 44×24 的軌道 ＋ 16px 的把手。**只用在「按下去就生效」的地方**（「頁面設定」分頁），要按儲存才算數的維持 `.ad-check`。沒開通那幾列的 toggle 是 `disabled` 的：CSS 給它 `pointer-events:none`，點擊才落到外層的 `<label>` 上，按下去才有話回他 |
 | `.ad-input-when` | `<input type="datetime-local">` 專用寬度（`max-width:240px`） |
 | `.ad-sub-sec` | 表單裡的小節：左邊一道細線，**不是一張卡** |
+| `.ad-sub-sec-bare` | 同上但不畫那道線。給「一顆 Switch ＋ 一句說明」這種小節（郵寄服務）：前面已經有一排膠囊在分段，再加一道線只是多一層框 |
 
 > 輸入框的字級固定 16px：iOS Safari 只要聚焦 <16px 的欄位就會把整頁放大，
 > 之後版面往右偏，使用者得自己雙指縮回來。
@@ -456,13 +469,13 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 ```html
 <label class="ad-check"><input type="checkbox" id="adAskCard"><span>喜帖領取方式</span></label>
 <div class="ad-reveal" id="adCardReveal">
-  <div class="ad-reveal-lab">賓客會看到的選項</div>
-  …
+  <div class="ad-chips ad-chips-preview ad-chips-soft" id="adPreviewCard"></div>
 </div>
 ```
 
 有前置條件的設定：**條件不成立時整塊不存在（`hidden`），不是灰掉。**
-左邊那道 2px `--line-soft` 是「這一段隸屬於上面那個開關」的唯一線索。
+不另外加標題或左邊的分隔線 —— 勾了才出現、取消就整塊消失，
+「這一段隸屬於上面那個勾選框」已經由出現／消失本身講完了。
 
 > 灰掉的欄位仍然佔著版面、仍然會被讀出來，而且看不出「要怎樣才會變成可以改」。
 > 收起來比較誠實：**沒有前提就沒有這一段。**

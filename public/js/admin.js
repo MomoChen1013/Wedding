@@ -2892,13 +2892,12 @@ document.getElementById('adRsvpExport').addEventListener('click', async ()=>{
      新人可能剛在「其他流程」改過活動，用快照會把那邊的改動蓋掉。
 ============================================================ */
 
-/* [欄位, 名稱, 說明, 題型]。順序＝賓客在活動卡上看到的順序。
-   題型只標「不是勾選／數字」的那一種（飲食習慣補充是賓客自己打字）。 */
+/* [欄位, 名稱, 說明]。順序＝賓客在活動卡上看到的順序。 */
 const EV_ASK_ROWS = [
-  ['askCount',     '出席人數',     '包含你，共幾位出席？',        ],
-  ['askMeal',      '餐點分配',     '葷食／素食各幾位',            ],
-  ['askChildSeat', '兒童座椅',     '需要幾張',                    ],
-  ['askDiet',      '飲食習慣補充', '簡答題，不吃牛、海鮮過敏、孕婦餐…',  ],
+  ['askCount',     '出席人數',     '包含你，共幾位出席？'],
+  ['askMeal',      '餐點分配',     '葷食／素食各幾位'],
+  ['askChildSeat', '兒童座椅',     '需要幾張'],
+  ['askDiet',      '飲食習慣補充', '簡答題，不吃牛、海鮮過敏、孕婦餐…'],
 ];
 
 /* events[].askCount → sites.rsvpAskCount（站台那一份的欄位名） */
@@ -2964,7 +2963,7 @@ function actAskRowsHtml(ev){
         <input type="checkbox" checked disabled>
         <span>能來參加嗎？<small>必填</small></span></label>
     </div>
-    ${EV_ASK_ROWS.map(([key, label, note, kind]) => {
+    ${EV_ASK_ROWS.map(([key, label, note]) => {
       /* 勾選框代表「這一場要不要問」：效果值是站台層與這個活動疊起來的
          結果（見 common.js 的 eventAsks()），所以勾選框也照效果值畫 */
       const on = ev[key] !== false && cfg[key] !== false;
@@ -2973,7 +2972,6 @@ function actAskRowsHtml(ev){
         <label class="ad-check">
           <input type="checkbox" data-act-ask="${key}"${on ? ' checked' : ''}>
           <span>${escapeHtml(label)}<small>${escapeHtml(note)}</small></span></label>
-        ${kind ? `<span class="ad-tag">${escapeHtml(kind)}</span>` : ''}
       </div>`;
     }).join('')}`;
 }
@@ -3024,7 +3022,6 @@ function actQuestionsHtml(ev){
 function actCardHtml(ev){
   const saved = actSaved(ev);
   const kind  = (EVENT_TYPES[ev.type] || {}).name || '自訂';
-  const where = [ev.venueName, ev.address].filter(Boolean).join('・');
   const rsvp  = ev.requiresRsvp === true;
   return `
   <article class="ad-actcard${rsvp ? '' : ' is-off'}" data-act="${escapeHtml(ev.id)}">
@@ -3039,7 +3036,6 @@ function actCardHtml(ev){
         ${kind && kind !== ev.name ? `<span class="ad-badge">${escapeHtml(kind)}</span>` : ''}
         ${ev.id === primaryEventId()
           ? '<span class="ad-badge is-on">主要活動</span>' : ''}
-        ${saved ? '' : '<span class="ad-badge">固定題目</span>'}
       </div>
       <div class="ad-actcard-meta">
         <span class="ad-actcard-when">${escapeHtml(actWhenText(ev) || '時間未定')}</span>
@@ -3277,7 +3273,6 @@ function openActModal(id){
   document.getElementById('adActDateNote').hidden = saved;
   af.rsvp.disabled = !saved;
   document.getElementById('adActRsvpRow').classList.toggle('is-fixed', !saved);
-  document.getElementById('adActRsvpBadge').hidden = saved;
   document.getElementById('adActModalTitle').textContent = `編輯「${ev.name}」`;
   document.getElementById('adActHint').innerHTML = saved
     ? '儲存後，<b>大廳、邀請函與出席表單</b>上這個活動的時間與地點會一起更新。'
@@ -3578,13 +3573,6 @@ function syncContactBoxes(){
   const boxes = contactBoxEls();
   const on = boxes.filter(b => b.checked);
   boxes.forEach(b => { b.disabled = on.length <= 1 && b.checked; });
-  const hint = document.getElementById('adContactHint');
-  if(!hint) return;
-  hint.innerHTML = !on.length
-    ? '<b>目前沒有問任何聯絡方式</b>，至少勾一種才存得起來。'
-    : (on.length === 1
-      ? '至少要留一種，所以<b>現在勾著的這一種關不掉</b>；先勾第二種，就可以把它取消。'
-      : '賓客要<b>至少填其中一種</b>，不必全部填。');
 }
 
 /* ---------- 條件顯示 ----------
@@ -3593,13 +3581,11 @@ function syncContactBoxes(){
 function syncRsvpFormReveals(){
   const card = document.getElementById('adAskCard');
   const gift = document.getElementById('adAskGift');
-  const mail = document.getElementById('adAskMail');
-  if(!card || !gift || !mail) return;
+  if(!card || !gift) return;
   document.getElementById('adCardReveal').hidden = !card.checked;
   document.getElementById('adGiftReveal').hidden = !gift.checked;
   /* 兩題都不問的話，「要不要幫賓客郵寄」根本沒有東西可以寄 */
   document.getElementById('adMailSec').hidden = !card.checked && !gift.checked;
-  document.getElementById('adMailReveal').hidden = !mail.checked;
 }
 
 /* ---------- 預覽用的膠囊 ----------
@@ -3627,9 +3613,6 @@ function renderFormPreviews(){
   set('adPreviewCard', RSVP_OPTIONS.card.map(([, l]) => l));
   set('adPreviewGift', opts('gift'));
 
-
-  }
-
   renderFormTagPreview();
 }
 
@@ -3645,13 +3628,6 @@ function renderFormTagPreview(){
 
   const box = document.getElementById('adAskTagBox');
   if(box) box.checked = list.length > 0;
-  const state = document.getElementById('adAskTagState');
-  if(state){
-    state.textContent = list.length
-      ?''
-      : '目前沒有選項，這一題不會出現';
-    state.classList.toggle('ad-tag-maybe', !list.length);
-  }
   const chips = document.getElementById('adPreviewTags');
   if(chips){
     chips.innerHTML = list.length ? previewTags(list.map(t => t.name)) : '';
@@ -3662,7 +3638,7 @@ function renderFormTagPreview(){
     hint.innerHTML = on
       ? '勾「當表單選項」的標籤才會出現在這裡，'
         + '會即時同步標籤。'
-        + '<button class="ad-th-link" type="button" id="adAskTagJump">前往設定 ↗</button>'
+        + '<button class="ad-linkbtn" type="button" id="adAskTagJump">前往設定 ↗</button>'
       : '這是進階功能，<b>目前方案還沒開通</b>，'
         + '需要管理員協助打開。';
   }
