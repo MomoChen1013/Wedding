@@ -873,7 +873,7 @@
              ② 基本資料       不分活動，每份回覆問一次
              ③ 喜帖／喜餅     不分活動，只要填一次；郵寄是一個「服務開關」
              ④ 其他資料       兩個自由填寫欄位
-             ⑤ 表單上的其他內容（唯讀，內容在「婚禮資訊」填）
+             ⑤ 表單上的其他資訊（唯讀，內容在「婚禮資訊」填）
            改版前這一頁是一串從頭排到尾的勾選框，新人看不出
            「這一項會影響誰」；現在每一組的標題就回答了那個問題。 -->
       <form class="ad-form" id="adRsvpForm">
@@ -914,54 +914,50 @@
             <h3 class="ad-formgroup-title">
               <span class="ad-formgroup-no" aria-hidden="true">2</span>基本資料
             </h3>
-            <p class="ad-formgroup-note">
-              不分活動、<b>每一份回覆只問一次</b>。
-            </p>
+
           </div>
 
           <div class="ad-askrow">
             <label class="ad-check is-fixed">
-              <input type="checkbox" checked disabled><span>怎麼稱呼你？</span></label>
-            <span class="ad-badge">固定題目</span>
+              <input type="checkbox" checked disabled><span>怎麼稱呼你？(必填)</span></label>
+
           </div>
 
           <div class="ad-askrow">
             <label class="ad-check is-fixed">
-              <input type="checkbox" checked disabled><span>與新人的關係？</span></label>
-            <span class="ad-badge">固定題目</span>
+              <input type="checkbox" checked disabled><span>與新人的關係？(必填)</span></label>
+
           </div>
           <!-- Chips 只是預覽：賓客看到的就是這四顆，這裡改不動 -->
           <div class="ad-chips ad-chips-preview" id="adPreviewRelation"
                aria-label="與新人的關係的選項"></div>
 
+          <div class="ad-askrow">
+              <label class="ad-check is-fixed">
+                <input type="checkbox" id="adAskTagBox" disabled>
+                <span>更近一步說明是哪種關係？</span></label>
+                <button class="ad-th-link" id="adAskTagAdd" type="button">新增標籤</button>
+            </div>
           <div class="ad-sub-sec" id="adAskTagSec">
             <!-- 勾選框是「現在的狀態」而不是開關：這一題有沒有出現，
                  由「有沒有標籤勾了當表單選項」決定，所以它點不動。 -->
-            <div class="ad-askrow">
-              <label class="ad-check is-fixed">
-                <input type="checkbox" id="adAskTagBox" disabled>
-                <span>是哪一組關係<small>選填</small></span></label>
-              <span class="ad-tag" id="adAskTagState"></span>
-            </div>
+
             <div class="ad-chips ad-chips-preview" id="adPreviewTags"
                  aria-label="目前會出現在表單上的標籤"></div>
             <div class="ad-row">
-              <button class="btn small ghost" id="adAskTagAdd" type="button">新增關係標籤</button>
+              <button class="ad-th-link" id="adAskTagAdd" type="button">新增標籤</button>
             </div>
             <div class="ad-hint" id="adAskTagHint"></div>
           </div>
-
-          <div class="ad-sub-sec">
             <div class="ad-askrow">
               <label class="ad-check is-fixed">
                 <input type="checkbox" checked disabled>
-                <span>聯絡方式<small>勾了就一定要填，至少留一種</small></span></label>
-              <span class="ad-badge">固定題目</span>
+                <span>聯絡方式(必填)<small>賓客要至少填其中一種</small></span></label>
             </div>
+          <div class="ad-sub-sec">
             <label class="ad-check"><input type="checkbox" id="adContactPhone"><span>電話號碼</span></label>
             <label class="ad-check"><input type="checkbox" id="adContactLine"><span>LINE ID</span></label>
             <label class="ad-check"><input type="checkbox" id="adContactEmail"><span>Email</span></label>
-            <div class="ad-hint" id="adContactHint"></div>
           </div>
         </section>
 
@@ -978,9 +974,6 @@
             <h3 class="ad-formgroup-title">
               <span class="ad-formgroup-no" aria-hidden="true">3</span>喜帖／喜餅
             </h3>
-            <p class="ad-formgroup-note">
-              預設兩題都開。不發喜餅（或不用線上問）的話，取消勾選就整題不出現。
-            </p>
           </div>
 
           <label class="ad-check"><input type="checkbox" id="adAskCard"><span>喜帖領取方式</span></label>
@@ -1006,30 +999,23 @@
             <div class="ad-hint">
               開啟後，賓客可以選擇郵寄，系統會進一步收集收件地址。
             </div>
-            <div class="ad-reveal" id="adMailReveal">
-              <div class="ad-reveal-lab">開啟後會多出來的</div>
-              <div class="ad-info" id="adMailRevealInfo"></div>
-            </div>
           </div>
         </section>
 
         <!-- ============================================================
-             ④ 其他資料
+             ④ 其他資料、賓客選填
         ============================================================ -->
         <section class="ad-formgroup">
           <div class="ad-formgroup-head">
             <h3 class="ad-formgroup-title">
-              <span class="ad-formgroup-no" aria-hidden="true">4</span>其他資料
+              <span class="ad-formgroup-no" aria-hidden="true">4</span>賓客選填
             </h3>
-            <p class="ad-formgroup-note">
-              表單最後面的兩個自由填寫欄位。
-            </p>
           </div>
 
           <label class="ad-check"><input type="checkbox" id="adAskMessage">
-            <span>想對新人說的話<small>會出現在回覆明細與匯出的 CSV</small></span></label>
+            <span>想對新人說的話(選填)<small>會出現在回覆明細與匯出的 CSV</small></span></label>
           <label class="ad-check"><input type="checkbox" id="adAskNote">
-            <span>其他備註</span></label>
+            <span>其他備註(選填)</span></label>
         </section>
 
         <!-- ============================================================
@@ -1041,12 +1027,8 @@
         <section class="ad-formgroup">
           <div class="ad-formgroup-head">
             <h3 class="ad-formgroup-title">
-              <span class="ad-formgroup-no" aria-hidden="true">5</span>表單上的其他內容
+              <span class="ad-formgroup-no" aria-hidden="true">5</span>表單上的資訊
             </h3>
-            <p class="ad-formgroup-note">
-              題目以外，出席表單那一頁還會出現這些內容。
-              在「婚禮資訊」分頁填寫，這裡只列出目前的內容。
-            </p>
           </div>
 
           <div class="ad-info" id="adRsvpInfoList"></div>
