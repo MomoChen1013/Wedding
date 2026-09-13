@@ -1116,12 +1116,233 @@ select.ad-input{appearance:none;cursor:pointer;
   white-space:pre-wrap;word-break:break-word;}
 
 /* ============================================================
-   當日流程（一列一個項目）
+   當日流程（時間軸）
+   ------------------------------------------------------------
+   改版前這裡是「一列三個輸入框」整疊攤開：十筆流程 ＝ 三十個框，
+   新人得先看懂欄位長相才知道自己在填什麼。
+
+   現在畫面上是讀得懂的一條時間軸（10:00　賓客入場），
+   要改內容才長出一組 inline form（見 .ad-wz-inline）。
+   時間欄固定寬 ＋ 一顆點 ＋ 一條線 —— 線畫在點的容器上，
+   最後一列不畫（:last-child），不然線會拖出一截。
 ============================================================ */
-.ad-sch{display:flex;flex-direction:column;gap:10px;}
-.ad-sch-row{display:grid;grid-template-columns:110px 1fr 1fr auto;gap:8px;align-items:center;}
-.ad-sch-row .ad-input{padding:9px 11px;font-size:13.5px;}
-/* 手機的欄位配置見檔案後段「當日流程：↑↓ 在時間欄左邊」那一段 */
+.ad-sch{display:flex;flex-direction:column;}
+.ad-sch .ad-empty{padding:26px 6px;}
+.ad-sch-row{
+  display:grid;grid-template-columns:auto 62px 16px 1fr auto;
+  gap:0 12px;align-items:start;padding:12px 2px;
+}
+.ad-sch-time{
+  font-family:var(--font-ui);font-size:13px;letter-spacing:.04em;
+  color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.7;
+  padding-top:1px;text-align:right;
+}
+/* 點與線：線是這一格的 ::after，往下拉到下一列的點 */
+.ad-sch-dot{position:relative;width:16px;align-self:stretch;min-height:22px;}
+.ad-sch-dot::before{
+  content:'';position:absolute;left:50%;top:7px;width:5px;height:5px;
+  margin-left:-2.5px;border-radius:50%;background:var(--primary-deep);
+}
+.ad-sch-dot::after{
+  content:'';position:absolute;left:50%;top:15px;bottom:-12px;width:1px;
+  margin-left:-.5px;background:var(--line);
+}
+.ad-sch-row:last-child .ad-sch-dot::after{display:none;}
+.ad-sch-main{min-width:0;}
+.ad-sch-title{font-size:14px;letter-spacing:.04em;color:var(--ink);line-height:1.7;
+  word-break:break-word;}
+.ad-sch-desc{margin-top:3px;font-size:12px;line-height:1.8;letter-spacing:.03em;
+  color:var(--ink-soft);word-break:break-word;}
+/* 手機的欄位配置見檔案後段「當日流程」那一段 */
+
+
+/* ============================================================
+   婚禮資訊精靈（總覽 ＋ 六個階段）
+   ------------------------------------------------------------
+   視覺語彙一個字都沒有換：1px 線、無陰影、明朝體標題、
+   --radius:2px、同一組 --ink／--line／--primary-deep。
+   改的是層級 —— 改版前這一頁只有「段落標題」一階，
+   十幾組欄位平鋪在同一個平面上；現在是
+
+     總覽（大標 ＋ 六張卡）
+       └ 階段（編號 ＋ 一句問句 ＋ 那一段真正要填的東西）
+
+   刻意不加轉場動畫：這裡的互動是為了降低理解成本，
+   不是為了讓畫面動起來。
+============================================================ */
+
+/* ---------- 進度 ----------
+   六顆點就夠了。進度條要標題、要百分比、要動畫，
+   而新人真正想知道的只有「還剩幾段」。 */
+.ad-wz-prog{display:flex;align-items:center;gap:12px;margin:0 0 26px;}
+.ad-wz-dots{display:flex;gap:7px;}
+.ad-wz-dot{
+  width:8px;height:8px;border-radius:50%;
+  border:1px solid var(--line);background:transparent;
+}
+.ad-wz-dot.is-on{background:var(--primary-deep);border-color:var(--primary-deep);}
+.ad-wz-prog-text{font-size:11.5px;letter-spacing:.1em;color:var(--ink-soft);}
+
+/* ---------- 六張卡 ----------
+   和首頁的 .ad-more-item 是同一張卡（同樣的框線、hover、箭頭）——
+   第一次照著走完的人，看到這個形狀就知道「點下去會換頁」。 */
+.ad-wz-cards{display:grid;gap:10px;}
+.ad-wz-card{
+  display:flex;align-items:center;gap:16px;width:100%;
+  padding:17px 18px;text-align:left;cursor:pointer;
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  font-family:inherit;
+  transition:border-color var(--dur-hover) ease-out;
+}
+@media (hover:hover) and (pointer:fine){
+  .ad-wz-card:hover{border-color:var(--primary-deep);}
+  .ad-wz-card:hover .ad-wz-card-go{transform:translateX(3px);opacity:1;}
+}
+.ad-wz-card:focus-visible{outline:1px solid var(--ink);outline-offset:2px;}
+.ad-wz-card-no{
+  flex:0 0 auto;font-family:var(--font-display);font-size:13px;
+  letter-spacing:.12em;color:var(--ink-soft);font-variant-numeric:tabular-nums;
+}
+.ad-wz-card-main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:4px;}
+.ad-wz-card-name{font-size:14.5px;letter-spacing:.06em;color:var(--ink);line-height:1.6;}
+.ad-wz-card-note{font-size:12px;line-height:1.8;letter-spacing:.03em;color:var(--ink-soft);}
+/* 狀態：已完成用主色，選填用最淡的灰 —— 選填的那幾段不該看起來像待辦 */
+.ad-wz-card-state{
+  flex:0 0 auto;font-size:11.5px;letter-spacing:.08em;color:var(--ink-soft);
+}
+.ad-wz-card-state.is-done{color:var(--primary-deep);}
+.ad-wz-card-state.is-soft{opacity:.7;}
+.ad-wz-card-go{
+  flex:0 0 auto;font-style:normal;font-size:13px;color:var(--ink-soft);opacity:.6;
+  transition:transform var(--dur-pop) var(--ease),opacity var(--dur-hover) ease-out;
+}
+@media(max-width:560px){
+  .ad-wz-card{gap:12px;padding:15px 14px;}
+  /* 狀態掉到說明那一行的下面，名稱才不會被擠成兩行 */
+  .ad-wz-card{flex-wrap:wrap;}
+  .ad-wz-card-main{flex:1 1 100%;order:2;}
+  .ad-wz-card-no{order:1;}
+  .ad-wz-card-state{order:1;margin-left:auto;}
+  .ad-wz-card-go{display:none;}
+}
+
+/* ---------- 一個階段 ---------- */
+.ad-wz-step[hidden]{display:none;}
+.ad-wz-head{margin-bottom:28px;}
+/* 回總覽：不是麵包屑，是一顆真的可以按的返回鍵。
+   擺在編號上面 —— 「我在哪裡」之前要先能「回去」 */
+.ad-wz-back{
+  display:inline-flex;align-items:center;margin:0 0 18px -4px;padding:4px;
+  background:none;border:0;cursor:pointer;font-family:var(--font-ui);
+  font-size:12px;letter-spacing:.08em;color:var(--ink-soft);
+  transition:color var(--dur-hover) ease-out;
+}
+@media (hover:hover) and (pointer:fine){ .ad-wz-back:hover{color:var(--ink);} }
+.ad-wz-back:focus-visible{outline:1px solid var(--ink);outline-offset:2px;}
+.ad-wz-no{
+  font-family:var(--font-display);font-size:12px;letter-spacing:.28em;
+  color:var(--primary-deep);margin-bottom:8px;
+}
+/* 這一行是「現在要完成什麼」，所以它是整個畫面上最大的字。
+   改版前這裡是 15px 的段落標題，和旁邊十幾組欄位一樣重。 */
+.ad-wz-title{
+  margin:0;font-family:var(--font-display);font-weight:500;
+  font-size:21px;line-height:1.65;letter-spacing:.04em;color:var(--ink);
+}
+.ad-wz-sub{
+  margin:10px 0 0;font-size:12.5px;line-height:1.9;letter-spacing:.03em;
+  color:var(--ink-soft);
+}
+.ad-wz-body > .ad-label:first-child{margin-top:0;}
+
+/* 階段裡的小標（「大眾運輸怎麼到？」「目前的活動」）。
+   比 .ad-wz-title 小一階，比 .ad-label 大一階 */
+.ad-wz-subhd{
+  display:flex;align-items:center;gap:8px;
+  margin:32px 0 4px;padding-bottom:10px;border-bottom:1px solid var(--line-soft);
+  font-size:13.5px;letter-spacing:.08em;color:var(--ink);
+}
+.ad-wz-body > .ad-wz-subhd:first-child{margin-top:0;}
+
+/* ---------- 勾選清單（02 的活動、05 的提醒項目） ----------
+   一行一個，整行都是點擊區 —— 手機上只點得到那顆 12px 的方框
+   是這一頁改版前最常見的誤觸來源。 */
+.ad-wz-picks{display:grid;gap:2px;margin-bottom:8px;}
+.ad-wz-pick{
+  margin:0;padding:13px 14px;
+  border:1px solid var(--line-soft);border-radius:var(--radius);
+  background:#fff;transition:border-color var(--dur-hover) ease-out;
+}
+@media (hover:hover) and (pointer:fine){
+  .ad-wz-pick:hover{border-color:var(--line);}
+}
+.ad-wz-pick:has(input:checked){border-color:var(--primary-deep);}
+.ad-wz-pick.is-fixed{opacity:.85;}
+.ad-wz-pick + .ad-wz-pick{margin-top:0;}
+
+/* 勾了才出現的那一段。不加展開動畫：內容高度差很多，
+   高度動畫在慢一點的手機上只會看到一段抖動 */
+.ad-wz-reveal[hidden]{display:none;}
+.ad-wz-reveal{margin-top:6px;}
+
+/* ---------- 03 的一組地點欄位 ---------- */
+.ad-wz-place + .ad-wz-place{
+  margin-top:30px;padding-top:26px;border-top:1px solid var(--line-soft);
+}
+.ad-wz-place-hd{
+  font-family:var(--font-display);font-size:15px;letter-spacing:.1em;
+  color:var(--ink);margin-bottom:4px;
+}
+.ad-wz-place .ad-label:first-of-type{margin-top:14px;}
+.ad-wz-place-loc[hidden]{display:none;}
+
+/* ---------- 04 的 inline form ----------
+   新增與編輯共用同一組，所以同一時間畫面上最多一組輸入框 */
+.ad-wz-inline{
+  margin:16px 0 4px;padding:16px 16px 18px;
+  border:1px solid var(--line);border-radius:var(--radius);
+  background:rgba(var(--ink-rgb),.02);
+}
+.ad-wz-inline[hidden]{display:none;}
+.ad-wz-inline .ad-label:first-child{margin-top:0;}
+.ad-wz-inline-row{display:flex;gap:12px;}
+.ad-wz-inline-f{flex:1 1 auto;min-width:0;}
+.ad-wz-inline-f-time{flex:0 0 118px;}
+.ad-wz-inline-f .ad-label{margin-top:0;}
+@media(max-width:480px){
+  .ad-wz-inline-row{flex-wrap:wrap;}
+  .ad-wz-inline-f-time{flex:1 1 100%;}
+}
+
+/* ---------- 階段底部那一列 ----------
+   沿用長表單原本的 sticky 儲存列（.ad-savebar），
+   只是這裡一定有兩顆按鈕（上一步／儲存並繼續） */
+.ad-wz-bar .btn{flex:0 0 auto;}
+@media(max-width:899px){
+  /* 「上一步」是次要動作，窄螢幕不讓它和主要動作等寬 */
+  .ad-wz-bar .btn.ghost{flex:0 0 auto;}
+  .ad-wz-bar .btn:not(.ghost){flex:1 1 auto;}
+}
+
+/* ---------- 完成畫面 ---------- */
+.ad-wz-done{text-align:left;}
+.ad-wz-done-hd{
+  font-family:var(--font-display);font-weight:500;font-size:20px;
+  letter-spacing:.1em;color:var(--ink);line-height:1.6;
+}
+.ad-wz-done-sub{
+  margin:20px 0 10px;font-size:12.5px;letter-spacing:.06em;color:var(--ink-soft);
+}
+.ad-wz-done-list{list-style:none;margin:0;padding:0;display:grid;gap:7px;}
+.ad-wz-done-i{
+  display:flex;align-items:baseline;gap:10px;
+  font-size:13.5px;letter-spacing:.04em;color:var(--ink-soft);line-height:1.7;
+}
+.ad-wz-done-i.is-on{color:var(--ink);}
+.ad-wz-done-i.is-on span{color:var(--primary-deep);}
+.ad-wz-done-i span{flex:0 0 auto;font-size:12px;opacity:.75;}
+.ad-wz-done .ad-modal-actions{margin-top:26px;}
+.ad-wz-done .ad-modal-actions .btn{text-decoration:none;}
 
 /* ============================================================
    感謝信
@@ -2734,21 +2955,16 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
 
 /* ---------- 當日流程：拖曳握把在時間欄左邊 ----------
    這一列在講「第幾個發生」，排序的施力點就該和時間站在一起 */
-.ad-sch-row{grid-template-columns:auto 110px 1fr 1fr auto;align-items:center;}
-.ad-sch-del{align-self:center;}
 .ad-sch-row.is-dragging{opacity:.55;box-shadow:var(--shadow-drag);
   position:relative;z-index:2;background:var(--surface);}
 .ad-sch-row.is-dragging .ad-drag-handle{cursor:grabbing;}
+.ad-sch-row.is-dragging .ad-sch-dot::after{display:none;}
+.ad-sch-row .ad-drag-handle{margin-top:-2px;}
 @media(max-width:560px){
-  /* 第一排是「順序 ＋ 時間 ＋ 刪除」，項目名稱與說明各自佔滿一整排。
-     每一格都指定位置：只寫 grid-column:1/-1 的話，
-     後面的「刪除」會被擠到自己一整排去 */
-  .ad-sch-row{grid-template-columns:auto 1fr auto;}
-  .ad-sch-row .ad-drag-handle{grid-area:1 / 1;}
-  .ad-sch-row .ad-sch-time {grid-area:1 / 2;}
-  .ad-sch-row .ad-sch-del  {grid-area:1 / 3;}
-  .ad-sch-row .ad-sch-title{grid-area:2 / 1 / auto / -1;}
-  .ad-sch-row .ad-sch-desc {grid-area:3 / 1 / auto / -1;}
+  /* 窄螢幕把時間縮短一點就好 —— 時間軸的重點是「先後」，
+     所以那一欄與那條線不能拿掉，拿掉就只剩一疊文字 */
+  .ad-sch-row{grid-template-columns:auto 50px 14px 1fr auto;gap:0 9px;}
+  .ad-sch-time{font-size:12.5px;}
 }
 
 /* ---------- 婚禮小卡：手機兩欄 ----------
@@ -3799,9 +4015,6 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:11px;}
   .ad-ev-head > .btn{margin-left:auto;}
 }
 
-/* 同一段裡的第二個小標（婚禮流程底下的「當日流程」）要和上一塊拉開 */
-.ad-sub-sec-title-2{margin-top:26px;padding-top:18px;
-  border-top:1px solid var(--line-soft);}
 
 /* 彈窗裡改不動的欄位（例如合成出來的那個活動的日期）：看得到但改不動 */
 .ad-input.is-locked{background:var(--bg2);color:var(--ink-soft);cursor:not-allowed;}

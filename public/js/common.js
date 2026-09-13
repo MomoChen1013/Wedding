@@ -280,6 +280,9 @@ function guestTagName(id){
      大廳與邀請函仍然是單一活動的樣子。
 ============================================================ */
 
+/* 當日流程最多幾筆（規則也擋同一個數字，見 firestore.rules 的 schedule） */
+const SCHEDULE_MAX = 40;
+
 const EVENT_MAX = 10;              // 規則也擋同一個數字
 const EVENT_QUESTION_MAX = 3;      // 一個活動最多幾個專屬問題
 const EVENT_OPT_MAX = 8;           // 一個選擇題最多幾個選項

@@ -497,7 +497,7 @@
             <h3 class="ad-note-hd">拿到後台的第一週</h3>
             <ul class="ad-note-list">
               <li>兩個人的手機都把後台加到主畫面</li>
-              <li>填「婚禮資訊」：地點、地址、開始時間、交通</li>
+              <li>填「婚禮資訊」：六個段落一次填一段（名稱、活動、時間地點、流程、賓客指南、故事）</li>
               <li>確認「表單設定」問的題目是你們要的</li>
               <li>把邀請函網址發出去（後台「表單設定 → 查看表單」那一頁）</li>
             </ul>
@@ -1158,73 +1158,108 @@
   <!-- ============================================================
        分頁 2：婚禮資訊（寫回 sites/{siteId} 的文案欄位）
        ------------------------------------------------------------
-       原本是四個橫向子分頁（婚禮資訊／其他流程／當日流程／自訂內容）。
-       新人要填的其實是「首頁上那一頁」，切來切去只是在找欄位 ——
-       所以自訂內容拉成側欄自己的一頁，其餘三件事收成同一頁的幾個段落，
-       由上到下就是賓客在首頁上讀到的順序：
+       改版前：一張捲 5–6 個螢幕高的長表單。欄位不缺，缺的是
+       「我應該先填什麼、為什麼要填、填完會影響哪裡」。
 
-         標題 → 婚禮 hashtag → 婚禮流程 → 交通資訊 → Dress Code
-         → 關於禮金 → 兩人的故事 → 相遇之間
+       改版後：一個總覽 ＋ 六個階段。一次只處理一件事，
+       每一階段先用一句話問，再顯示最必要的欄位：
 
-       「婚禮流程」那一段裡有兩件事：
-         ・活動（時間與地點）—— 只辦一場婚宴時就是下面那幾欄；
-           有其他流程（多活動）時改成一張一張的活動卡，
-           順序用拖的、內容點「編輯」在彈窗裡改（見 js/admin.js 的活動資訊彈窗）
-         ・當日流程 —— 大廳時間軸的那幾列
+         01 基本資料    婚禮名稱、Hashtag
+         02 婚禮活動    當天有哪些活動（複選 → 自動建立 events[]）
+         03 時間與地點  依 02 建立的活動逐一設定
+         04 婚禮流程    當日的時間軸
+         05 賓客指南    先選要提醒什麼，才展開對應欄位
+         06 你們的故事  文字故事、照片集
+
+       ★ 資料結構一個欄位都沒有新增，全部沿用 sites/{siteId} 上原本那幾欄
+         （見 firestore.rules 的 isValidSiteContentUpdate 白名單）。
+         所有 input 的 id 也刻意維持原樣 —— fillSiteForm()、
+         表單送出、既有的草稿追蹤讀的都是同一批節點，
+         這次改的是「它們被放在哪一個畫面上」，不是它們本身。
+
+       「自訂內容」與「相遇之間」：前者是側欄自己的一頁（#explore），
+       後者收進 06 你們的故事（它就是故事的另一半 —— 照片）。
   ============================================================ -->
   <div class="ad-panel" data-panel="lobby">
 
-    <section class="ad-sec">
+    <!-- ---------- 總覽 ----------
+         六張卡片＋進度圓點。不把表單攤在這裡：新人在這一頁要決定的
+         只有一件事 —— 「接下來去填哪一段」。 -->
+    <section class="ad-sec" id="adWzHome">
       <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-info"/></svg>婚禮資訊</h2>
-      <p class="ad-sec-note">
-        「交通、Dress Code、禮金、兩人的故事」留白的話，就不會出現那一塊資訊。
-      </p>
+      <p class="ad-sec-note">不用一次填完，之後都可以回來修改。</p>
 
-      <form class="ad-form" id="adSiteForm">
-        <label class="ad-label" for="adCoupleTitle">標題（最多 20 個字）</label>
-        <input class="ad-input" id="adCoupleTitle" type="text" maxlength="20">
-        <div class="ad-count"><span id="adCoupleTitleLen">0</span> / 20</div>
+      <div class="ad-wz-prog">
+        <div class="ad-wz-dots" id="adWzDots" role="img" aria-label="填寫進度"></div>
+        <span class="ad-wz-prog-text" id="adWzProgText"></span>
+      </div>
 
-        <label class="ad-label" for="adHashtags">婚禮 hashtag（最多 3 個）</label>
-        <input class="ad-input" id="adHashtags" type="text" maxlength="120"
-               placeholder="#married #我們結婚了（用空格或逗號分開）">
+      <div class="ad-wz-cards" id="adWzCards"></div>
+    </section>
 
-        <!-- ============ 婚禮流程 ============ -->
-        <div class="ad-sub-sec">
-          <div class="ad-sub-sec-title"><svg class="ad-ic ad-ic-sub" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-timeline"/></svg>婚禮流程</div>
+    <!-- ---------- 六個階段 ----------
+         同一時間只有一個 .ad-wz-step 是 .is-on（其餘 hidden）。
+         每一階段的頁首長得一樣：編號、一句問句、（選填）一行提示。 -->
+    <div class="ad-wz-steps" id="adWzSteps" hidden>
 
-          <!-- 多活動時，地點與時間改由下面的活動卡管理，上面那幾欄就不再出現 -->
-          <div class="ad-callout" id="adVenueManaged" hidden>
+      <!-- ============ 01 基本資料 ============ -->
+      <section class="ad-sec ad-wz-step" data-step="1" hidden>
+        <div class="ad-wz-head">
+          <button class="ad-wz-back" type="button" data-wz-home>← 婚禮資訊</button>
+          <div class="ad-wz-no">01</div>
+          <h2 class="ad-wz-title">先告訴我，你們的婚禮名稱是什麼？</h2>
+        </div>
+
+        <div class="ad-wz-body">
+          <label class="ad-label" for="adCoupleTitle">婚禮名稱</label>
+          <input class="ad-input" id="adCoupleTitle" type="text" maxlength="20">
+          <div class="ad-count"><span id="adCoupleTitleLen">0</span> / 20</div>
+          <div class="ad-hint">賓客打開邀請函，最上面看到的就是這一行。</div>
+
+          <label class="ad-label" for="adHashtags">婚禮 Hashtag</label>
+          <input class="ad-input" id="adHashtags" type="text" maxlength="120"
+                 placeholder="#我們結婚了 #Married（用空格或逗號分開，最多 3 個）">
+          <div class="ad-hint">留白也可以，會用 #我們結婚了、#Married。</div>
+        </div>
+
+        <div class="ad-savebar ad-wz-bar">
+          <span class="ad-savebar-note" data-wz-note></span>
+          <button class="btn small" type="button" data-wz-next>儲存並繼續</button>
+        </div>
+      </section>
+
+      <!-- ============ 02 婚禮活動 ============
+           新人選的是「我們有什麼活動」，不是「建立場次」。
+           勾完之後由 js/admin.js 的 wzApplyActs() 換算成 events[]。 -->
+      <section class="ad-sec ad-wz-step" data-step="2" hidden>
+        <div class="ad-wz-head">
+          <button class="ad-wz-back" type="button" data-wz-home>← 婚禮資訊</button>
+          <div class="ad-wz-no">02</div>
+          <h2 class="ad-wz-title">當天會有哪些活動？</h2>
+          <p class="ad-wz-sub">可以複選。選好之後下一步再填各自的時間和地點。</p>
+        </div>
+
+        <div class="ad-wz-body">
+          <div class="ad-wz-picks" id="adWzActPicks"></div>
+
+          <!-- 「其他」勾起來才出現：自訂活動要有名字才存得起來 -->
+          <div id="adWzActCustomBox" hidden>
+            <label class="ad-label" for="adWzActCustom">這個活動叫什麼？</label>
+            <input class="ad-input" id="adWzActCustom" type="text" maxlength="30"
+                   placeholder="例如：歸寧">
+          </div>
+
+          <!-- 多活動還沒開通時的提示（勾第二項就會出現） -->
+          <div class="ad-callout" id="adWzActLock" hidden>
             <p class="ad-callout-note">
-              這場婚禮有多個活動，<b>每個活動的時間與地點都在自己的卡片上設定</b>。
-              分享縮圖與倒數計時看的是<b id="adVenueManagedName">主要活動</b>那一張。
+              多場次為進階功能，請聯繫管理員。開通之後，這裡選的活動都會自動建立起來。
             </p>
           </div>
 
-          <!-- 只辦一場婚宴時：時間與地點就是這幾欄 -->
-          <div id="adVenueFields">
-            <label class="ad-label" for="adVenueName">地點名稱</label>
-            <input class="ad-input" id="adVenueName" type="text" maxlength="80"
-                   placeholder="台北婚宴大飯店・二樓宴會廳">
-            <div class="ad-hint">例如：台北婚宴大飯店・二樓宴會廳</div>
-
-            <label class="ad-label" for="adVenueAddress">地址</label>
-            <input class="ad-input" id="adVenueAddress" type="text" maxlength="200"
-                   placeholder="台北市中山區中山北路二段 63 號">
-
-            <label class="ad-label" for="adVenueMapUrl">地圖連結</label>
-            <input class="ad-input" id="adVenueMapUrl" type="url" maxlength="500"
-                   placeholder="未填寫時，自動用地址自動開 Google 地圖">
-
-            <label class="ad-label" for="adEventTime">開始時間</label>
-            <input class="ad-input ad-input-time" id="adEventTime" type="time">
-
-            <div class="ad-count" id="adEventTimeOff" hidden>婚禮日期還沒設定，請先找我們排定日期</div>
-          </div>
-
-          <!-- 有其他流程（多活動）時：一個活動一張卡。
-               順序用拖的（拖完就存），內容點「編輯」在彈窗裡改。 -->
+          <!-- 已經建立的活動：一張一張，可以編輯或刪除 -->
           <div id="adEvBox" hidden>
+            <div class="ad-wz-subhd">目前的活動</div>
+
             <!-- 主日期對不上時的提醒（js/admin.js 判斷） -->
             <div class="ad-callout" id="adEvDateWarn" hidden>
               <p class="ad-callout-note" id="adEvDateWarnText"></p>
@@ -1237,126 +1272,231 @@
               <span class="ad-hint" id="adEvHint">拖左邊的握把可以調整順序，改完立刻生效。</span>
             </div>
           </div>
+        </div>
 
-          <!-- ---------- 當日流程 ---------- -->
-          <div class="ad-sub-sec-title ad-sub-sec-title-2"><svg class="ad-ic ad-ic-sub" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-timeline"/></svg>當日流程</div>
-          <p class="ad-sec-note">
-            未填寫時，大廳會顯示「流程稍後公布，敬請期待」。
-            由上到下就是大廳時間軸的顯示順序（<b>不會依時間重新排</b>），拖左邊的握把調整。
-          </p>
+        <div class="ad-savebar ad-wz-bar">
+          <span class="ad-savebar-note" data-wz-note></span>
+          <button class="btn small ghost" type="button" data-wz-prev>上一步</button>
+          <button class="btn small" type="button" data-wz-next>儲存並繼續</button>
+        </div>
+      </section>
 
+      <!-- ============ 03 時間與地點 ============
+           單一活動（多數站台）：就是站台文件上的 venue* 那幾欄。
+           多活動：依 02 建立的活動逐一設定，由 wzRenderPlaces() 畫出來。 -->
+      <section class="ad-sec ad-wz-step" data-step="3" hidden>
+        <div class="ad-wz-head">
+          <button class="ad-wz-back" type="button" data-wz-home>← 婚禮資訊</button>
+          <div class="ad-wz-no">03</div>
+          <h2 class="ad-wz-title">設定每個活動的時間和地點</h2>
+          <p class="ad-wz-sub" id="adWzPlaceSub"></p>
+        </div>
+
+        <div class="ad-wz-body">
+          <!-- 只辦一場婚宴時：時間與地點就是這幾欄 -->
+          <div id="adVenueFields">
+            <div class="ad-wz-place">
+              <div class="ad-wz-place-hd" id="adWzMainName">婚宴</div>
+
+              <label class="ad-label" for="adEventTime">時間</label>
+              <input class="ad-input ad-input-time" id="adEventTime" type="time">
+              <div class="ad-count" id="adEventTimeOff" hidden>婚禮日期還沒設定，請先找我們排定日期</div>
+
+              <label class="ad-label" for="adVenueName">地點名稱</label>
+              <input class="ad-input" id="adVenueName" type="text" maxlength="80"
+                     placeholder="台北婚宴大飯店・二樓宴會廳">
+
+              <label class="ad-label" for="adVenueAddress">地址</label>
+              <input class="ad-input" id="adVenueAddress" type="text" maxlength="200"
+                     placeholder="台北市中山區中山北路二段 63 號">
+
+              <label class="ad-label" for="adVenueMapUrl">地圖連結（選填）</label>
+              <input class="ad-input" id="adVenueMapUrl" type="url" maxlength="500"
+                     placeholder="沒填的話自動用地址開啟 Google 地圖">
+            </div>
+          </div>
+
+          <!-- 多活動：一個活動一組欄位（含「和其他活動使用相同地點」） -->
+          <div id="adWzPlaces" hidden></div>
+        </div>
+
+        <div class="ad-savebar ad-wz-bar">
+          <span class="ad-savebar-note" data-wz-note></span>
+          <button class="btn small ghost" type="button" data-wz-prev>上一步</button>
+          <button class="btn small" type="button" data-wz-next>儲存並繼續</button>
+        </div>
+      </section>
+
+      <!-- ============ 04 婚禮流程 ============
+           時間軸：一筆一列，點 ⋯ 才有編輯／刪除。
+           新增與編輯共用同一個 inline form（adSchEdit），
+           整頁不會同時出現一堆輸入框。 -->
+      <section class="ad-sec ad-wz-step" data-step="4" hidden>
+        <div class="ad-wz-head">
+          <button class="ad-wz-back" type="button" data-wz-home>← 婚禮資訊</button>
+          <div class="ad-wz-no">04</div>
+          <h2 class="ad-wz-title">婚禮當天，流程是怎麼安排的？</h2>
+          <p class="ad-wz-sub">未填寫時，大屏會顯示「流程稍後公布，敬請期待」。</p>
+        </div>
+
+        <div class="ad-wz-body">
           <div class="ad-sch" id="adSchList"></div>
+
+          <!-- 新增／編輯共用的 inline form -->
+          <div class="ad-wz-inline" id="adSchEdit" hidden>
+            <div class="ad-wz-inline-row">
+              <div class="ad-wz-inline-f ad-wz-inline-f-time">
+                <label class="ad-label" for="adSchTime">時間</label>
+                <input class="ad-input" id="adSchTime" type="text" maxlength="20" placeholder="11:30">
+              </div>
+              <div class="ad-wz-inline-f">
+                <label class="ad-label" for="adSchTitle">活動名稱</label>
+                <input class="ad-input" id="adSchTitle" type="text" maxlength="40" placeholder="賓客入場">
+              </div>
+            </div>
+            <label class="ad-label" for="adSchDesc">說明（選填）</label>
+            <input class="ad-input" id="adSchDesc" type="text" maxlength="80" placeholder="簽到、拍照">
+            <div class="ad-row">
+              <button class="btn small" id="adSchOk" type="button">加入流程</button>
+              <button class="btn small ghost" id="adSchCancel" type="button">取消</button>
+            </div>
+          </div>
+
+          <div class="ad-row" id="adSchAddRow">
+            <button class="btn small ghost" id="adSchAdd" type="button">＋ 新增流程</button>
+          </div>
+        </div>
+
+        <div class="ad-savebar ad-wz-bar">
+          <span class="ad-savebar-note" data-wz-note></span>
+          <button class="btn small ghost" type="button" data-wz-prev>上一步</button>
+          <button class="btn small" type="button" data-wz-next>儲存並繼續</button>
+        </div>
+      </section>
+
+      <!-- ============ 05 賓客指南 ============
+           先問「想提醒賓客什麼」，勾了才展開那一段。
+           一次攤開四塊 textarea 等於要新人先讀完再決定要不要填。 -->
+      <section class="ad-sec ad-wz-step" data-step="5" hidden>
+        <div class="ad-wz-head">
+          <button class="ad-wz-back" type="button" data-wz-home>← 婚禮資訊</button>
+          <div class="ad-wz-no">05</div>
+          <h2 class="ad-wz-title">想提醒賓客什麼？</h2>
+          <p class="ad-wz-sub">都是選填，勾起來才要填。</p>
+        </div>
+
+        <div class="ad-wz-body">
+          <div class="ad-wz-picks" id="adWzGuidePicks"></div>
+
+          <!-- ---- 大眾運輸 ---- -->
+          <div class="ad-wz-reveal" data-guide="transit" hidden>
+            <div class="ad-wz-subhd"><svg class="ad-ic ad-ic-sub" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-location"/></svg>大眾運輸怎麼到？</div>
+            <textarea class="ad-textarea" id="adTransportPublic" rows="3" maxlength="500"
+                      placeholder="捷運中山站 2 號出口步行 5 分鐘；公車 218、220 到中山北路口"></textarea>
+            <div class="ad-img-field" id="adTransportPublicImgField">
+              <img class="ad-img-field-prev" id="adTransportPublicImgPrev" alt="大眾運輸圖片" hidden>
+              <label class="btn small ghost">
+                上傳圖片
+                <input type="file" id="adTransportPublicImgFile" accept="image/*,image/heic,image/heif,.heic,.heif" hidden>
+              </label>
+              <button class="btn small ghost" type="button" id="adTransportPublicImgClear" hidden>移除圖片</button>
+            </div>
+          </div>
+
+          <!-- ---- 停車 ---- -->
+          <div class="ad-wz-reveal" data-guide="parking" hidden>
+            <div class="ad-wz-subhd"><svg class="ad-ic ad-ic-sub" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-location"/></svg>在哪邊可以停車？</div>
+            <textarea class="ad-textarea" id="adTransportParking" rows="3" maxlength="500"
+                      placeholder="飯店 B2 有停車場，用餐可折抵 3 小時；旁邊也有市民路邊停車格"></textarea>
+            <div class="ad-img-field" id="adTransportParkingImgField">
+              <img class="ad-img-field-prev" id="adTransportParkingImgPrev" alt="停車資訊圖片" hidden>
+              <label class="btn small ghost">
+                上傳圖片
+                <input type="file" id="adTransportParkingImgFile" accept="image/*,image/heic,image/heif,.heic,.heif" hidden>
+              </label>
+              <button class="btn small ghost" type="button" id="adTransportParkingImgClear" hidden>移除圖片</button>
+            </div>
+          </div>
+
+          <!-- ---- Dress Code ---- -->
+          <div class="ad-wz-reveal" data-guide="dress" hidden>
+            <div class="ad-wz-subhd"><svg class="ad-ic ad-ic-sub" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-dresscode"/></svg>想讓賓客穿什麼顏色？</div>
+
+            <div class="ad-swatches" id="adDressColors"></div>
+            <div class="ad-hint">選好就存起來了。賓客那一頁會畫成色塊，比「大地色系」四個字好懂得多。</div>
+
+            <label class="ad-label" for="adDressCode">想補一句話嗎（選填）</label>
+            <textarea class="ad-textarea" id="adDressCode" rows="2" maxlength="500"
+                      placeholder="溫柔大地色系，穿得舒服最重要"></textarea>
+
+            <label class="ad-label">參考圖片</label>
+            <div class="ad-dressimgs" id="adDressImgs"></div>
+            <div class="ad-img-field" id="adDressImgField">
+              <label class="btn small ghost" id="adDressImgAdd">
+                ＋ 上傳圖片
+                <input type="file" id="adDressImgFile" multiple
+                       accept="image/*,image/heic,image/heif,.heic,.heif" hidden>
+              </label>
+              <span class="ad-dressimgs-count" id="adDressImgCount"></span>
+            </div>
+            <div class="ad-hint">最多 5 張，賓客那一頁預設只看得到第一張。選好就存起來了。</div>
+          </div>
+
+          <!-- ---- 禮金 ---- -->
+          <div class="ad-wz-reveal" data-guide="gift" hidden>
+            <div class="ad-wz-subhd"><svg class="ad-ic ad-ic-sub" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-cashgift"/></svg>有什麼想跟賓客說禮金怎麼預備？</div>
+            <textarea class="ad-textarea" id="adGiftNote" rows="3" maxlength="500"
+                      placeholder="願意撥空前來就是最好的禮物～"></textarea>
+          </div>
+        </div>
+
+        <div class="ad-savebar ad-wz-bar">
+          <span class="ad-savebar-note" data-wz-note></span>
+          <button class="btn small ghost" type="button" data-wz-prev>上一步</button>
+          <button class="btn small" type="button" data-wz-next>儲存並繼續</button>
+        </div>
+      </section>
+
+      <!-- ============ 06 你們的故事 ============ -->
+      <section class="ad-sec ad-wz-step" data-step="6" hidden>
+        <div class="ad-wz-head">
+          <button class="ad-wz-back" type="button" data-wz-home>← 婚禮資訊</button>
+          <div class="ad-wz-no">06</div>
+          <h2 class="ad-wz-title">最後，留一點你們的故事</h2>
+          <p class="ad-wz-sub">不知道寫什麼也沒關係，可以之後再補。</p>
+        </div>
+
+        <div class="ad-wz-body">
+          <label class="ad-label" for="adStory">兩人的故事</label>
+          <textarea class="ad-textarea" id="adStory" rows="6" maxlength="2000"
+                    placeholder="第一次見面是在朋友的聚會上…"></textarea>
+
+          <div class="ad-wz-subhd"><svg class="ad-ic ad-ic-sub" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-storywall"/></svg>照片集（相遇之間）</div>
+          <label class="ad-check"><input type="checkbox" id="adShowGallery">
+            <span>在首頁放上你們的照片</span></label>
+          <div class="ad-info" id="adRsvpGalleryInfo"></div>
           <div class="ad-row">
-            <button class="btn small ghost" id="adSchAdd" type="button">＋ 加一列</button>
-            <button class="btn small ghost" id="adSchSave" type="button">儲存流程</button>
+            <a class="btn small ghost" id="adRsvpGalleryView" href="/"
+               target="_blank" rel="noopener noreferrer">看看現在的樣子</a>
           </div>
+          <div class="ad-hint">要新增或刪除照片，請聯繫管理員。這個開關按下去就存起來了。</div>
         </div>
 
-        <div class="ad-sub-sec">
-          <div class="ad-sub-sec-title"><svg class="ad-ic ad-ic-sub" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-location"/></svg>交通資訊</div>
-
-          <label class="ad-label" for="adTransportPublic">大眾運輸</label>
-          <textarea class="ad-textarea" id="adTransportPublic" rows="3" maxlength="500"
-                    placeholder="捷運中山站 2 號出口步行 5 分鐘；公車 218、220 到中山北路口"></textarea>
-          <div class="ad-img-field" id="adTransportPublicImgField">
-            <img class="ad-img-field-prev" id="adTransportPublicImgPrev" alt="大眾運輸圖片" hidden>
-            <label class="btn small ghost">
-              上傳圖片
-              <input type="file" id="adTransportPublicImgFile" accept="image/*,image/heic,image/heif,.heic,.heif" hidden>
-            </label>
-            <button class="btn small ghost" type="button" id="adTransportPublicImgClear" hidden>移除圖片</button>
-          </div>
-
-          <label class="ad-label" for="adTransportParking">停車資訊</label>
-          <textarea class="ad-textarea" id="adTransportParking" rows="3" maxlength="500"
-                    placeholder="飯店 B2 有停車場，用餐可折抵 3 小時；旁邊也有市民路邊停車格"></textarea>
-          <div class="ad-img-field" id="adTransportParkingImgField">
-            <img class="ad-img-field-prev" id="adTransportParkingImgPrev" alt="停車資訊圖片" hidden>
-            <label class="btn small ghost">
-              上傳圖片
-              <input type="file" id="adTransportParkingImgFile" accept="image/*,image/heic,image/heif,.heic,.heif" hidden>
-            </label>
-            <button class="btn small ghost" type="button" id="adTransportParkingImgClear" hidden>移除圖片</button>
-          </div>
-          <div class="ad-hint">
-            圖片和文字太長時，會收成「展開更多」，點開才看得到完整內容
-          </div>
+        <div class="ad-savebar ad-wz-bar">
+          <span class="ad-savebar-note" data-wz-note></span>
+          <button class="btn small ghost" type="button" data-wz-prev>上一步</button>
+          <button class="btn small" type="button" data-wz-next>儲存並完成</button>
         </div>
+      </section>
+    </div>
 
-        <div class="ad-sub-sec">
-          <div class="ad-sub-sec-title"><svg class="ad-ic ad-ic-sub" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-dresscode"/></svg>Dress Code</div>
-
-          <label class="ad-label" for="adDressCode">說明文字</label>
-          <textarea class="ad-textarea" id="adDressCode" rows="3" maxlength="500"
-                    placeholder="溫柔大地色系，穿得舒服最重要"></textarea>
-
-          <!-- 色票：最多四個。點一個色塊就跳出系統的顏色選擇器，
-               選好立刻存起來（和交通圖片同一套「不用按下面的儲存」）。
-               四個都用完之前，最後面永遠有一顆「＋」。 -->
-          <label class="ad-label">顏色（最多 4 個）</label>
-          <div class="ad-swatches" id="adDressColors"></div>
-          <div class="ad-hint">
-            賓客那一頁會用這幾個顏色畫出色塊，比「大地色系」四個字好懂得多。
-            <b>選好就存起來了，不用按下面的儲存。</b>
-          </div>
-
-          <!-- 參考圖：最多五張。賓客那一頁預設只顯示第一張，
-               其餘要點「查看更多」才展開。 -->
-          <label class="ad-label">參考圖（最多 5 張）</label>
-          <div class="ad-dressimgs" id="adDressImgs"></div>
-          <div class="ad-img-field" id="adDressImgField">
-            <label class="btn small ghost" id="adDressImgAdd">
-              上傳參考圖
-              <input type="file" id="adDressImgFile" multiple
-                     accept="image/*,image/heic,image/heif,.heic,.heif" hidden>
-            </label>
-            <span class="ad-dressimgs-count" id="adDressImgCount"></span>
-          </div>
-          <div class="ad-hint">
-            賓客那一頁預設只看得到<b>第一張</b>，其餘要點「查看更多」才展開。
-            順序就是這裡由左到右的順序。<b>選好就存起來了，不用按下面的儲存。</b>
-          </div>
-        </div>
-
-        <label class="ad-label" for="adGiftNote">關於禮金</label>
-        <textarea class="ad-textarea" id="adGiftNote" rows="3" maxlength="500"
-                  placeholder="願意撥空前來就是最好的禮物～"></textarea>
-
-        <label class="ad-label" for="adStory">兩人的故事</label>
-        <textarea class="ad-textarea" id="adStory" rows="5" maxlength="2000"
-                  placeholder="第一次見面是在朋友的聚會上…"></textarea>
-
-        <!-- 這一頁在手機上要捲 5–6 個螢幕高才會走到底，所以儲存自己浮在底部。
-             有沒存的變更時，右邊那行字會變色（.btn.is-dirty 的紅點也會亮） -->
-        <div class="ad-savebar">
-          <span class="ad-savebar-note" id="adSiteDirty">目前沒有未儲存的變更</span>
-          <button class="btn small ghost" id="adSiteReset" type="button">還原成目前的內容</button>
-          <button class="btn small" id="adSiteSave" type="submit">儲存婚禮資訊</button>
-        </div>
-      </form>
-    </section>
-
-    <!-- 「相遇之間」是首頁上自己的一段（本來收在「自訂內容」那個子分頁裡）。
-         它就是婚禮資訊的最後一段，所以排在這一頁的最後面。 -->
-    <section class="ad-sec">
-      <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-storywall"/></svg>相遇之間</h2>
-      <p class="ad-sec-note">
-        首頁上<b>自己的一段</b>：賓客往下捲，你們的照片會一張一張浮出來。
-      </p>
-      <label class="ad-check"><input type="checkbox" id="adShowGallery">
-        <span>在首頁放「Moments 相遇之間」</span></label>
-      <div class="ad-info" id="adRsvpGalleryInfo"></div>
-      <div class="ad-row">
-        <a class="btn small ghost" id="adRsvpGalleryView" href="/"
-           target="_blank" rel="noopener noreferrer">看看現在的「相遇之間」</a>
-      </div>
-      <div class="ad-hint">
-        「相遇之間」的照片放在<b>這場婚禮的素材資料夾</b>裡，後台不能自己上傳 ——
-        要新增或更換照片，把檔案給我們就會幫你換上。
-        <b>這個開關按下去就存起來了，不用按下面的儲存。</b>
-      </div>
-    </section>
-
+    <!-- 表單本體：欄位都在上面的階段裡，這裡只留一個 <form> 外殼，
+         讓既有的 submit／未儲存追蹤／草稿一字不改地繼續運作。
+         （階段底部那顆「儲存並繼續」按的就是這一顆。） -->
+    <form class="ad-form" id="adSiteForm" hidden>
+      <button type="submit" id="adSiteSave" hidden>儲存婚禮資訊</button>
+      <span id="adSiteDirty" hidden></span>
+    </form>
   </div>
 
   <!-- ============================================================
@@ -2031,6 +2171,28 @@
 
 <!-- 存檔提示：可以同時疊好幾則，各自獨立計時淡出 -->
 <div class="ad-toast-stack" id="adToastStack" aria-live="polite"></div>
+
+<!-- 婚禮資訊六個階段都走完之後的完成畫面。
+     刻意不是一句「儲存成功」——那講的是系統做了什麼。
+     這裡講的是新人準備好了什麼，還沒填的用「還有 N 個項目可以補充」，
+     不用「尚未填寫」（那會讓人以為自己漏了東西）。 -->
+<div class="ad-modal-mask" id="adWzDoneMask" hidden>
+  <div class="ad-modal-card ad-wz-done" role="dialog" aria-modal="true" aria-labelledby="adWzDoneTitle">
+    <div class="ad-wz-done-hd" id="adWzDoneTitle">婚禮資訊完成 <span aria-hidden="true">✦</span></div>
+    <p class="ad-wz-done-sub">你已經準備好：</p>
+    <ul class="ad-wz-done-list" id="adWzDoneList"></ul>
+
+    <div id="adWzDoneRest" hidden>
+      <p class="ad-wz-done-sub" id="adWzDoneRestHd"></p>
+      <ul class="ad-wz-done-list" id="adWzDoneRestList"></ul>
+    </div>
+
+    <div class="ad-modal-actions">
+      <button class="btn small ghost" id="adWzDoneClose" type="button">回到婚禮資訊</button>
+      <a class="btn small" id="adWzDoneView" href="/" target="_blank" rel="noopener noreferrer">查看我的婚禮</a>
+    </div>
+  </div>
+</div>
 
 <!-- 站內統一的確認視窗：取代原生 confirm()，高風險操作需要打「確認刪除」才能按確定 -->
 <div class="ad-modal-mask" id="adModalMask" hidden>

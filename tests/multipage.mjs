@@ -21,6 +21,27 @@ function findChromium(){
   return undefined;
 }
 
+/* ---------- 婚禮資訊精靈：切到某一個階段 ----------
+   改版後這一頁是「總覽 ＋ 六個階段」，欄位分別住在自己的階段裡。
+   測試要先走到那一階段，看到的才是新人真的會看到的畫面。 */
+async function wzStep(page, no){
+  await page.evaluate((n) => { location.hash = `lobby/${n}`; }, no);
+  await page.waitForTimeout(350);
+}
+/* 05 賓客指南：勾了才展開對應那一段 */
+async function wzGuide(page, key){
+  await page.evaluate((k) => {
+    const box = document.querySelector(`[data-wz-guide="${k}"]`);
+    if(box && !box.checked){ box.checked = true; box.dispatchEvent(new Event('change', { bubbles:true })); }
+  }, key);
+  await page.waitForTimeout(200);
+}
+/* 階段底部那顆「儲存並繼續」 */
+async function wzSave(page, no){
+  await page.click(`.ad-wz-step[data-step="${no}"] [data-wz-next]`);
+  await page.waitForTimeout(1500);
+}
+
 /* ---------- 種測試資料 ---------- */
 process.env.FIRESTORE_EMULATOR_HOST ||= '127.0.0.1:8080';
 process.env.FIREBASE_AUTH_EMULATOR_HOST ||= '127.0.0.1:9099';
@@ -1830,16 +1851,47 @@ console.log('\n[15] 後台改得動大廳文案');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
 
   await page.click('.ad-tab[data-tab="lobby"]');
+  await page.waitForTimeout(300);
+
+  /* 總覽：六張卡與進度圓點 */
+  ok('婚禮資訊落在總覽（六張卡）',
+    (await page.locator('#adWzCards .ad-wz-card').count()) === 6,
+    String(await page.locator('#adWzCards .ad-wz-card').count()));
+  ok('總覽有六顆進度圓點',
+    (await page.locator('#adWzDots .ad-wz-dot').count()) === 6);
+  ok('總覽上看不到表單欄位', await page.isHidden('#adVenueName'));
+
+  /* 03 時間與地點 */
+  await wzStep(page, '03');
+  ok('點進 03 才看得到地點欄位', await page.isVisible('#adVenueName'));
   ok('表單帶出目前的地點',
     (await page.inputValue('#adVenueName')) === '台北國賓大飯店・二樓國際廳',
     await page.inputValue('#adVenueName'));
 
   await page.fill('#adVenueName', '晶華酒店・三樓宴會廳');
   await page.fill('#adVenueAddress', '台北市中山區中山北路二段 39 巷 3 號');
+  await wzSave(page, 3);
+
+  /* 05 賓客指南：勾了才展開。
+     已經有內容的那幾項（這個站台種了 dressCode／giftNote）一進來就是
+     勾著的 —— 舊資料不會因為改版被藏起來。 */
+  await wzStep(page, '05');
+  ok('已經有內容的項目一進來就勾著、也展開著',
+    (await page.isChecked('[data-wz-guide="dress"]'))
+      && (await page.isVisible('#adDressCode')));
+  ok('還沒填的項目沒勾，那一段就不出現',
+    !(await page.isChecked('[data-wz-guide="transit"]'))
+      && (await page.isHidden('#adTransportPublic')));
+  await page.check('[data-wz-guide="transit"]');
+  await page.waitForTimeout(250);
+  ok('勾了才展開大眾運輸', await page.isVisible('#adTransportPublic'));
+  ok('勾一下不會把整組勾選框重畫掉（焦點還在那一顆）',
+    await page.evaluate(() => document.activeElement?.dataset?.wzGuide === 'transit'),
+    await page.evaluate(() => document.activeElement?.dataset?.wzGuide || '(none)'));
+  await page.fill('#adTransportPublic', '捷運中山站 2 號出口步行 5 分鐘');
   await page.fill('#adDressCode', '請穿得舒服就好');
   await page.fill('#adGiftNote', '人到就好，禮金真的不用');
-  await page.click('#adSiteForm button[type="submit"]');
-  await page.waitForTimeout(1500);
+  await wzSave(page, 5);
 
   const site = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
   ok('地點寫回 sites 文件', site.venueName === '晶華酒店・三樓宴會廳', site.venueName);
@@ -1848,15 +1900,52 @@ console.log('\n[15] 後台改得動大廳文案');
     site.status === 'published' && site.ownerEmails.join() === 'couple@example.com',
     `${site.status} / ${site.ownerEmails.join()}`);
 
-  /* 當日流程：現在是「婚禮資訊」頁上「婚禮流程」那一段裡的一塊，同一頁就看得到 */
-  await page.fill('#adSchList .ad-sch-row:nth-child(1) .ad-sch-time', '11:30');
-  await page.fill('#adSchList .ad-sch-row:nth-child(1) .ad-sch-title', '入場迎賓');
-  await page.fill('#adSchList .ad-sch-row:nth-child(1) .ad-sch-desc', '簽到、拍照');
+  /* 04 婚禮流程：時間軸 ＋ inline form（新增與編輯共用同一組） */
+  await wzStep(page, '04');
+  ok('一筆都沒有時是空狀態，不是一排空欄位',
+    (await page.locator('#adSchList .ad-empty').count()) === 1);
+
+  const schAdd = async (time, title, desc) => {
+    await page.click('#adSchAdd');
+    await page.waitForSelector('#adSchEdit:not([hidden])', { timeout:5000 });
+    await page.fill('#adSchTime', time);
+    await page.fill('#adSchTitle', title);
+    await page.fill('#adSchDesc', desc || '');
+    await page.click('#adSchOk');
+    await page.waitForTimeout(250);
+  };
+  await schAdd('11:30', '入場迎賓', '簽到、拍照');
+  await schAdd('12:00', '婚宴開始');
+
+  ok('時間軸上兩筆，時間與名稱直接讀得到',
+    (await page.locator('#adSchList .ad-sch-row').count()) === 2
+      && (await page.locator('#adSchList .ad-sch-time').first().textContent()) === '11:30'
+      && (await page.locator('#adSchList .ad-sch-title').first().textContent()) === '入場迎賓',
+    (await page.locator('#adSchList').innerText()).replace(/\s+/g, ' ').slice(0, 60));
+  ok('加完之後 inline form 收起來', await page.isHidden('#adSchEdit'));
+  ok('刪除不是主要按鈕（收在 ⋯ 裡）',
+    (await page.locator('#adSchList [data-rowmenu^="sch:"]').count()) === 2);
+
+  /* 離開再回來，還沒存的內容不能不見 */
   await page.click('#adSchAdd');
-  await page.fill('#adSchList .ad-sch-row:nth-child(2) .ad-sch-time', '12:00');
-  await page.fill('#adSchList .ad-sch-row:nth-child(2) .ad-sch-title', '婚宴開始');
-  await page.click('#adSchSave');
-  await page.waitForTimeout(1500);
+  await page.waitForSelector('#adSchEdit:not([hidden])', { timeout:5000 });
+  await page.fill('#adSchTime', '13:30');
+  await page.fill('#adSchTitle', '送客');
+  await page.click('#adSchOk');
+  await page.waitForTimeout(250);
+  await wzStep(page, '01');
+  await wzStep(page, '04');
+  ok('切去別的階段再回來，還沒存的那一筆還在',
+    (await page.locator('#adSchList .ad-sch-row').count()) === 3,
+    String(await page.locator('#adSchList .ad-sch-row').count()));
+  ok('而且說得出來「有還沒儲存的變更」',
+    (await page.textContent('.ad-wz-step[data-step="4"] [data-wz-note]')).includes('有還沒儲存'));
+  await page.click('#adSchList .ad-sch-row:nth-child(3) [data-rowmenu^="sch:"]');
+  await page.waitForTimeout(200);
+  await page.click('.ad-rowmenu-item:has-text("刪除")');
+  await page.waitForTimeout(300);
+
+  await wzSave(page, 4);
 
   const sch = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data().schedule;
   ok('流程存了兩列', Array.isArray(sch) && sch.length === 2, JSON.stringify(sch));
@@ -2763,17 +2852,40 @@ console.log('\n[14d] 後台婚禮流程');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
   await page.click('.ad-tab[data-tab="lobby"]');
   await page.waitForTimeout(200);
+
+  /* 02 婚禮活動：旗標關著時只有婚宴，勾別的會被打回去 */
+  await wzStep(page, '02');
   ok('旗標關著時看不到活動卡那一段', await page.isHidden('#adEvBox'));
+  ok('婚宴永遠勾著而且動不了',
+    await page.evaluate(() => {
+      const el = document.querySelector('[data-wz-act="reception"]');
+      return !!el && el.checked && el.disabled;
+    }));
+  await page.click('[data-wz-act="ceremony"]');
+  await page.waitForTimeout(300);
+  ok('旗標關著時勾第二個活動會被打回去',
+    await page.evaluate(() =>
+      document.querySelector('[data-wz-act="ceremony"]').checked === false));
+  ok('而且說清楚要找誰開通',
+    (await page.locator('#adWzActLock').innerText()).includes('聯繫管理員'),
+    (await page.locator('#adWzActLock').innerText()).trim().slice(0, 30));
+  /* 打回去不能連整組勾選框一起重畫 —— 那會把使用者剛按的那一顆換掉，
+     用鍵盤操作的人焦點就掉回頁面最上面 */
+  ok('打回去之後焦點還留在那一顆',
+    await page.evaluate(() => document.activeElement?.dataset?.wzAct === 'ceremony'),
+    await page.evaluate(() => document.activeElement?.dataset?.wzAct || '(none)'));
+
+  await wzStep(page, '03');
   ok('旗標關著時場地那幾欄照常可以改',
     (await page.isVisible('#adVenueFields'))
       && !(await page.$eval('#adVenueName', (el) => el.readOnly)));
-  ok('旗標關著時場地不會出現「改在活動卡設定」',
-    await page.isHidden('#adVenueManaged'));
+  ok('旗標關著時不會出現一個活動一組的地點欄位',
+    await page.isHidden('#adWzPlaces'));
 
   /* 搬過家的舊網址要落在同一頁，不能卡在空白 */
   await page.evaluate(() => { location.hash = 'lobby/events'; });
   await page.waitForTimeout(300);
-  ok('舊網址 #lobby/events 落在「婚禮資訊」',
+  ok('舊網址 #lobby/events 落在「婚禮資訊」總覽',
     await page.evaluate(() =>
       document.querySelector('.ad-tab.is-on')?.dataset.tab === 'lobby'
       && location.hash === '#lobby'));
@@ -2793,7 +2905,7 @@ console.log('\n[14d] 後台婚禮流程');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
 
   await page.click('.ad-tab[data-tab="lobby"]');
-  await page.waitForTimeout(200);
+  await wzStep(page, '02');
   ok('旗標開了才看得到婚禮流程的活動卡', await page.isVisible('#adEvBox'));
 
   /* 第一次打開：用既有的婚禮資訊帶出一張婚宴卡（還沒寫進資料庫） */
@@ -2894,9 +3006,46 @@ console.log('\n[14d] 後台婚禮流程');
       && site.venueAddress === evByName('婚宴').address,
     `${site.venueName} ← ${evByName('婚宴').venueName}`);
 
-  /* ---- 有多個活動時，上面那幾欄就交給活動卡 ---- */
-  ok('婚禮資訊出現「地點在活動卡上設定」', await page.isVisible('#adVenueManaged'));
-  ok('場地那幾欄整段收起來', await page.isHidden('#adVenueFields'));
+  /* ---- 有多個活動時，03 改成一個活動一組欄位 ---- */
+  await wzStep(page, '03');
+  ok('單一場地那幾欄整段收起來', await page.isHidden('#adVenueFields'));
+  ok('改成一個活動一組欄位',
+    (await page.locator('#adWzPlaces .ad-wz-place').count()) === 4,
+    String(await page.locator('#adWzPlaces .ad-wz-place').count()));
+  ok('主要活動沒有「和…同一個地點」（它就是那個地點）',
+    await page.evaluate(() => {
+      const cards = Array.from(document.querySelectorAll('#adWzPlaces .ad-wz-place'));
+      return cards.filter((c) => c.querySelector('[data-wzp-same]')).length === 3;
+    }));
+  ok('已經有自己地點的活動不會被勾成「相同地點」',
+    await page.evaluate(() => {
+      const card = Array.from(document.querySelectorAll('#adWzPlaces .ad-wz-place'))
+        .find((c) => c.querySelector('.ad-wz-place-hd').textContent === '證婚');
+      return card && card.querySelector('[data-wzp-same]').checked === false;
+    }));
+
+  /* 「和婚宴同一個地點」：勾了就不再要求重複輸入，存下去照樣有地址 */
+  await page.evaluate(() => {
+    const card = Array.from(document.querySelectorAll('#adWzPlaces .ad-wz-place'))
+      .find((c) => c.querySelector('.ad-wz-place-hd').textContent === '派對');
+    const box = card.querySelector('[data-wzp-same]');
+    box.checked = true;
+    box.dispatchEvent(new Event('change', { bubbles:true }));
+  });
+  await page.waitForTimeout(200);
+  ok('勾了「相同地點」就把地點欄位收起來',
+    await page.evaluate(() => {
+      const card = Array.from(document.querySelectorAll('#adWzPlaces .ad-wz-place'))
+        .find((c) => c.querySelector('.ad-wz-place-hd').textContent === '派對');
+      return card.querySelector('[data-wzp-loc]').hidden === true;
+    }));
+  await wzSave(page, 3);
+  const afterSame = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
+  const partyEv = (afterSame.events || []).find((e) => e.name === '派對') || {};
+  const banquetEv = (afterSame.events || []).find((e) => e.name === '婚宴') || {};
+  ok('「相同地點」存的是抄過去的地址，不是空白',
+    partyEv.venueName === banquetEv.venueName && partyEv.address === banquetEv.address,
+    `${partyEv.venueName} / ${banquetEv.venueName}`);
 
   ok('婚禮流程無 console 錯誤', realErrors(errors).length === 0,
     realErrors(errors).slice(0, 2).join(' | '));
@@ -3213,10 +3362,10 @@ console.log('\n[14c] 後台開關表單題目');
   ok('存完就不再說有未儲存的變更',
     !(await page.innerText('#adRsvpFormDirty')).includes('還沒儲存'));
 
-  /* 「相遇之間」的開關在「婚禮資訊」那一頁的最後面（它是首頁上自己的一段），
+  /* 「相遇之間」的照片開關收在「06 你們的故事」（照片就是故事的另一半），
      那一顆是按下去就存，不跟著這張表單走 */
   await page.click('.ad-tab[data-tab="lobby"]');
-  await page.waitForTimeout(300);
+  await wzStep(page, '06');
   await page.uncheck('#adShowGallery');
   await page.waitForTimeout(1200);
 
@@ -4100,19 +4249,30 @@ console.log('\n[21] 後台排桌管理');
     smallHits.length === 0,
     smallHits.slice(0, 4).map((h) => h.join(':')).join('｜') || '全部合格');
 
-  /* 長表單的儲存要浮在底部，不用捲五六個螢幕 */
+  /* 婚禮資訊：每一階段底部那一列要浮在底部，不用捲到最後才看得到儲存 */
   await page.evaluate(() => { location.hash = 'lobby/info'; });
   await page.waitForTimeout(600);
-  ok('婚禮資訊的儲存列是 sticky',
-    await page.$eval('#adSiteForm .ad-savebar',
+  ok('舊網址 #lobby/info 落在婚禮資訊總覽',
+    await page.evaluate(() => location.hash === '#lobby'
+      && !document.getElementById('adWzHome').hidden));
+  ok('總覽在手機上一張卡佔一列，不會爆版',
+    await page.$eval('#adWzCards .ad-wz-card',
+      (el) => el.getBoundingClientRect().width <= document.documentElement.clientWidth));
+
+  await wzStep(page, '05');
+  ok('階段底部的儲存列是 sticky',
+    await page.$eval('.ad-wz-step[data-step="5"] .ad-savebar',
       (el) => getComputedStyle(el).position === 'sticky'));
+  await wzGuide(page, 'dress');
   await page.fill('#adDressCode', '正式服裝');
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(300);
   ok('改了東西就說「有還沒儲存的變更」',
-    (await page.textContent('#adSiteDirty')).includes('有還沒儲存'),
-    await page.textContent('#adSiteDirty'));
-  await page.click('#adSiteReset');
-  await page.waitForTimeout(200);
+    (await page.textContent('.ad-wz-step[data-step="5"] [data-wz-note]')).includes('有還沒儲存'),
+    await page.textContent('.ad-wz-step[data-step="5"] [data-wz-note]'));
+  await wzSave(page, 5);
+  ok('存完就不再說有未儲存的變更',
+    !(await page.textContent('.ad-wz-step[data-step="6"] [data-wz-note]')).includes('有還沒儲存'),
+    await page.textContent('.ad-wz-step[data-step="6"] [data-wz-note]'));
 
   /* 排桌工作區：儲存不能每次都要捲回最上面 */
   await page.evaluate(() => { location.hash = 'seatingPlan/board'; });
@@ -4236,7 +4396,8 @@ console.log('\n[25] Dress Code 的顏色與參考圖');
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
   await page.click('.ad-tab[data-tab="lobby"]');
-  await page.waitForTimeout(400);
+  await wzStep(page, '05');
+  await wzGuide(page, 'dress');
 
   ok('還沒設定時預設攤開三格白色',
     await page.evaluate(() =>
