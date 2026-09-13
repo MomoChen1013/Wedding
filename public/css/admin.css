@@ -326,6 +326,10 @@ select.ad-input{appearance:none;cursor:pointer;
 .ad-sub-sec{margin-top:26px;padding:20px 18px;border:1px solid var(--line-soft);
   border-radius:var(--radius);background:rgba(255,255,255,.5);}
 .ad-sub-sec .ad-label:first-of-type{margin-top:0;}
+/* 例外：本身就是一顆 Switch ＋ 一句說明的小節（郵寄服務）。
+   它前面已經有一排膠囊把版面分好了，再多一道線只是多一層框。
+   兩個 class 是為了贏過下面主題那一段的 .ad-sub-sec，不靠先後順序。 */
+.ad-sub-sec.ad-sub-sec-bare{padding-left:0;border-left:none;}
 .ad-sub-sec-title{font-size:12.5px;letter-spacing:.18em;color:var(--ink);
   text-transform:uppercase;margin-bottom:6px;}
 

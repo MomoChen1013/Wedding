@@ -906,7 +906,7 @@
              ② 基本資料
              ------------------------------------------------------------
              不分活動、每一份回覆只問一次。
-             關不掉的題目一律用「打勾但點不動」的勾選框 ＋「固定題目」badge ——
+             關不掉的題目一律用「打勾但點不動」的勾選框，必填與否寫在標籤本文裡 ——
              灰掉而不說原因的勾選框，看起來只像壞了。
         ============================================================ -->
         <section class="ad-formgroup">
@@ -942,7 +942,7 @@
             <!-- 勾選框是「現在的狀態」而不是開關：這一題有沒有出現，
                  由「有沒有標籤勾了當表單選項」決定，所以它點不動。 -->
 
-            <div class="ad-chips ad-chips-preview" id="adPreviewTags"
+            <div class="ad-chips ad-chips-preview ad-chips-soft" id="adPreviewTags"
                  aria-label="目前會出現在表單上的標籤"></div>
             <div class="ad-hint" id="adAskTagHint"></div>
           </div>
@@ -985,7 +985,7 @@
                  aria-label="喜餅領取方式的選項"></div>
           </div>
 
-          <div class="ad-sub-sec" id="adMailSec">
+          <div class="ad-sub-sec ad-sub-sec-bare" id="adMailSec">
             <label class="ad-switch">
               <input type="checkbox" id="adAskMail" role="switch">
               <span class="ad-switch-box" aria-hidden="true"><span class="ad-switch-knob"></span></span>
@@ -2329,7 +2329,6 @@
             <input type="checkbox" id="adActRsvp">
             <span>需要賓客回覆<small>關起來的話，這個活動不會出現在出席表單裡</small></span>
           </label>
-          <span class="ad-badge" id="adActRsvpBadge" hidden>固定題目</span>
         </div>
       </div>
 

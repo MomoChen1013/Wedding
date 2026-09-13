@@ -399,6 +399,21 @@ const bits = await page.evaluate(() => {
     if(holder) holder.hidden = was;
     return out;
   };
+  /* .ad-badge 現在只由 admin.js 畫在活動卡上，登入門下的靜態 HTML 沒有 ——
+     量不到就自己種一顆來量：這一段守的是 CSS 的規格，不是誰把它畫出來 */
+  const readOrProbe = (sel, cls) => {
+    const got = read(sel);
+    if(got) return got;
+    const el = document.createElement('span');
+    el.className = cls;
+    el.textContent = '測';
+    document.body.appendChild(el);
+    const cs = getComputedStyle(el);
+    const out = { size:cs.fontSize, radius:cs.borderTopLeftRadius, font:cs.fontFamily,
+                  display:cs.display, minH:cs.minHeight, opacity:cs.opacity };
+    el.remove();
+    return out;
+  };
   const sw = document.querySelector('.ad-switch input');
   const swBox = document.querySelector('.ad-switch-box');
   const swCs = swBox ? getComputedStyle(swBox) : null;
@@ -411,7 +426,7 @@ const bits = await page.evaluate(() => {
     reveal.hidden = false;
   }
   return {
-    badge: read('.ad-badge'),
+    badge: readOrProbe('.ad-badge', 'ad-badge'),
     radio: read('.ad-radio'),
     switchRole: sw ? sw.getAttribute('role') : null,
     /* 藏起來但仍然在無障礙樹裡：不能是 display:none／visibility:hidden */

@@ -3036,7 +3036,6 @@ function actCardHtml(ev){
         ${kind && kind !== ev.name ? `<span class="ad-badge">${escapeHtml(kind)}</span>` : ''}
         ${ev.id === primaryEventId()
           ? '<span class="ad-badge is-on">主要活動</span>' : ''}
-        ${saved ? '' : '<span class="ad-badge">固定題目</span>'}
       </div>
       <div class="ad-actcard-meta">
         <span class="ad-actcard-when">${escapeHtml(actWhenText(ev) || '時間未定')}</span>
@@ -3274,7 +3273,6 @@ function openActModal(id){
   document.getElementById('adActDateNote').hidden = saved;
   af.rsvp.disabled = !saved;
   document.getElementById('adActRsvpRow').classList.toggle('is-fixed', !saved);
-  document.getElementById('adActRsvpBadge').hidden = saved;
   document.getElementById('adActModalTitle').textContent = `編輯「${ev.name}」`;
   document.getElementById('adActHint').innerHTML = saved
     ? '儲存後，<b>大廳、邀請函與出席表單</b>上這個活動的時間與地點會一起更新。'
