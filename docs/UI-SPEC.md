@@ -7,9 +7,15 @@
 > 這份文件寫的是**現在程式碼裡真的長這樣**的規格，不是願景。
 > 改了元件就回來改這裡；這裡寫的和 CSS 不一樣時，以 CSS 為準並回報。
 >
-> 色票、圓角、字級與 §3.1／3.2／3.3／3.8／3.9／3.10／3.14／3.20 的數值
-> 來自 `UI_Spec_Custom.md`（2026-08-25 匯出）。該檔沒有提到的部分
+> **色票、字體與字級這一版是 Ivory**（見 §2.1／2.2／2.3）：
+> 金色不再當文字、數字回到墨色、UI 軌固定 Noto Sans TC、
+> 字級從 320 處硬寫收成 14 支變數、輸入框從盒子改成一條線。
+> §3.1／3.2／3.3／3.8／3.9／3.10／3.14／3.20 的結構數值仍來自
+> `UI_Spec_Custom.md`（2026-08-25 匯出）；該檔沒有提到的部分
 > （彈窗、抽屜、搜尋框、清單、表格、數字面板…）維持原本的規格。
+>
+> 這份規範由 `tests/ui-consistency.mjs` 守著（72 條斷言）。
+> **改了規範沒改測試，三個月後它就會變成考古資料。**
 
 ---
 
@@ -33,12 +39,13 @@
 
 | 原則 | 具體做法 |
 |---|---|
-| 靠線條與留白撐層次 | 1px `--line`／`--line-soft`，不用色塊分區 |
+| 靠線條與留白撐層次 | 1px `--line`／`--line-soft`，不用色塊分區。輸入框也是一條線，不是一個盒子（3.6） |
 | 陰影只給「浮起來」的東西 | 抽屜、彈窗、行內選單、toast、拖曳中的列。其餘一律無陰影 |
-| 圓角克制 | 後台 `--radius: 4px`（賓客頁 `2px`）。只有膠囊（chip／tag／pill 按鈕）是 `999px` |
+| 圓角克制 | 後台 `--radius: 4px`（賓客頁 `2px`）。只有膠囊（chip／badge／pill 按鈕）是 `999px`；`.ad-tag` 是方的 |
 | 不用 emoji 當 UI 圖示 | 現有的 `✕ ＋ － ⋮ ↗` 是字元，不是圖示字型 |
 | 動效克制 | 只有 ease-out，時長 150–260ms，不用 bounce／overshoot |
-| 密度比賓客頁高 | 但字級不低於 11px，可輸入元件在觸控裝置一律 16px |
+| 顏色只標示狀態 | `--primary` 不准當文字（2.1）。數字是 `--ink`，不是品牌色 |
+| 密度比賓客頁高 | 但內容字級不低於 `--fs-pill`(11px)、欄位名不低於 `--fs-label`(10px)，可輸入元件一律 `--fs-input`(16px) |
 
 ### 1.1 文案語彙（和視覺同一份規格）
 
@@ -71,60 +78,130 @@
   這一層給定值。兩頁的 `data-template` 都寫死 `classic`、**不跟著版型走**，
   所以工作介面不需要跟著跑，直接定色比較穩。
 
+這一版是 **Ivory**。它的一句話是：**層級靠留白與字建立，顏色只用來標示狀態。**
+改版前品牌金放在「所有數字」上 —— 一個螢幕三十個金色數字，
+等於沒有任何一個數字被強調，而且那支金在白底只有 2.57:1。
+現在金色不當文字，降級成**記號**；數字回到墨色。
+
 | Token | 值 | 用途 |
 |---|---|---|
-| `--ink` | `#2f2b26` | 主要文字、實心按鈕底、可點浮層的框 |
-| `--ink-soft` | `#6a5e53` | 次要文字、metadata、時間戳、欄位名 |
-| `--primary` | `#e2bd79` | 淺色強調 |
-| `--primary-deep` | `#ca9a21` | **所有數字**、通行碼、pill 文字 |
-| `--primary-soft` | `#f0e6d0` | 焦點內光、選中的淡底 |
-| `--bg1` | `#faf8f4` | 頁面底 |
-| `--bg2` | `#f2ede4` | 次級底（表頭、唯讀欄位、hover、骨架） |
-| `--line` | `#c8bfb0` | 主線條、卡片外框 |
-| `--line-soft` | `#d9d1c4` | 分隔線 |
+| `--ink` | `#232020` | 主要文字、**所有數字**、實心按鈕底、可點浮層的框 |
+| `--ink-rgb` | `35,32,32` | 半透明的墨（按下去的底、hover）從這裡推導 |
+| `--ink-soft` | `#5C564C` | 次要文字、metadata、時間戳、欄位名 |
+| `--ink-3` | `#7A7167` | 第三階墨：placeholder、唯讀欄位、統計方格的欄位名 |
+| `--primary` | `#F09B7D` | **記號色**。只做面、線與圖示 —— 見下面的使用規則 |
+| `--primary-deep` | `#82412B` | 要拿 accent **寫字**時用這一支（7.22:1 ✅） |
+| `--primary-soft` | `#FDEEE7` | 「這一格正被選中／命中」的暫時底色 ⚠ 待設計覆核 |
+| `--alert` | `#B34A38` | 錯誤／刪除的線、框、實底與文字（**只有這一支**） |
+| `--alert-wash` | `#FBEDEA` | 錯誤 toast 的底 ⚠ 待設計覆核 |
+| `--alert-rgb` | `179,74,56` | 半透明的錯誤色（`rgba(var(--alert-rgb),.4)`） |
+| `--bg1` | `#FAF8F3` | 頁面底 |
+| `--bg1-rgb` | `250,248,243` | 頂列／浮動列的半透明底（backdrop-filter 那幾條） |
+| `--bg2` | `#F1ECE3` | 次級底（表頭、唯讀欄位、hover、骨架） |
+| `--surface` | `#FDFCF9` | 卡片、選中的分頁、浮層的面。**米白，不是純白** |
+| `--surface-rgb` | `253,252,249` | 半透明的面（統計方格、環狀圖、鎖住的遮罩） |
+| `--on-ink` | `#FAF8F3` | 壓在 `--ink` 實心上的字 |
+| `--line` | `#CFC7B9` | 主線條、卡片外框 |
+| `--line-soft` | `#DFD8CC` | 分隔線 |
+| `--bg-row-hover` | `#F4F3F0` | 表格列 hover 的**不透明**版（sticky 欄專用，見下） |
 
 線條是**定值不是半透明**：舊的 `rgba(47,43,38,.18/.09)` 會跟著底色變，
 同一條線在白卡和 `--bg2` 面板上是兩個深淺；定值就是同一條線。
 
-**排桌工作區是「所有數字都用 `--primary-deep`」的例外。** 那一頁一個螢幕上
-同時有幾十張桌卡，每一張都有桌號、人數、剩餘位子、標籤；數字全部上金色的話，
+#### 三條使用規則（會被測試守著）
+
+1. **`--primary` 不准出現在任何 `color` 屬性上。** 它出現的地方只有五種 ——
+   焦點框、選中的定位線、側欄圖示、未儲存的那一點、`.ad-badge.is-on` 的底。
+   想拿它寫字時改用 `--primary-deep`。
+   唯一的例外是 SVG 圖示（`.ad-ic`）：那裡的 `color` 餵給 `stroke:currentColor`，
+   是**線的顏色**不是文字顏色。`tests/ui-consistency.mjs` 第 13 段就在守這一條。
+2. **`--ink-3` 只能站在 `--bg1` 或 `--surface` 上。** 它站在 `--bg2` 上是
+   4.07:1，不過 AA —— 表頭、唯讀欄位、hover 底都是 `--bg2`，
+   那些地方的次要文字要用 `--ink-soft`。
+3. **`--surface` 和 `--bg1` 的對比只有 1.03:1，這是故意的**：
+   卡片靠那條 1px 線被看見，不靠底色。所以不要為了「讓卡片跳出來」把面加深。
+
+#### 為什麼 sticky 欄要一支不透明的 hover 色
+
+表格列 hover 是 `rgba(0,0,0,.035)` 疊色，但釘在左右兩側的
+`.is-name`／`.is-act` 是 `position:sticky` —— 半透明的 sticky 欄會讓底下
+捲過去的內容透出來。所以那兩欄吃 `--bg-row-hover`，它就是那個疊色算好的實色。
+**`--surface` 一改，這一支要跟著重算。**
+
+**排桌工作區是「所有數字都用記號色」的例外。** 那一頁一個螢幕上
+同時有幾十張桌卡，每一張都有桌號、人數、剩餘位子、標籤；數字全部上色的話，
 整片畫面會變成一堆彼此搶戲的顏色，反而看不出哪一桌要處理。所以：
 
 | 排桌的東西 | 顏色 |
 |---|---|
 | `.sp-table-no`（桌號） | `--ink`（就是字，不是強調） |
 | `--seat-full`（坐滿：桌卡外框與「已滿」） | `--ink` —— 坐滿是好事，不需要跳出來喊 |
-| `--seat-over`（超量：桌卡外框與「超過容量 N 位」） | `#E86C93` —— **整頁唯一要被看到的狀態** |
+| `--seat-over`（超量：桌卡**外框**） | `#E86C93` —— **整頁唯一要被看到的狀態** |
+| `--seat-over-ink`（超量：那一行**文字**） | `#A8425F` —— `#E86C93` 當文字只有 2.83:1 |
 
 #### 量過的對比（WCAG AA 需 4.5:1，大字 3:1）
 
 | 組合 | 比值 | |
 |---|---|---|
-| `--ink` 於 `--bg1` | 13.25:1 | ✅ |
-| `--ink-soft` 於 `--bg1` | 5.93:1 | ✅ |
-| `--ink-soft` 於 `--bg2` | 5.39:1 | ✅ |
-| `--ink-soft` 於 `#fff` | 6.29:1 | ✅ |
-| **`--primary-deep` 於 `#fff`** | **2.57:1** | ❌ 見「已知落差」 |
+| `--ink` 於 `--bg1` | 15.23:1 | ✅ |
+| `--ink` 於 `--surface` | 15.76:1 | ✅ |
+| `--ink-soft` 於 `--bg1` | 6.85:1 | ✅ |
+| `--ink-soft` 於 `--bg2` | 6.17:1 | ✅ |
+| `--ink-soft` 於 `--surface` | 7.08:1 | ✅ |
+| `--ink-3` 於 `--bg1` | 4.51:1 | ✅ |
+| `--ink-3` 於 `--surface` | 4.67:1 | ✅ |
+| **`--ink-3` 於 `--bg2`** | **4.07:1** | ❌ 所以有上面第 2 條規則 |
+| `--primary-deep` 於 `--bg1` | 7.22:1 | ✅（改版前的 `#ca9a21` 是 2.57） |
+| `--primary-deep` 於 `--surface` | 7.47:1 | ✅ |
+| `--primary-deep` 於 `--primary-soft` | 6.77:1 | ✅ |
+| `--alert` 於 `--bg1` | 5.00:1 | ✅（改版前硬寫的 `#a4677a` 是 4.12） |
+| `--alert` 於 `--surface` | 5.18:1 | ✅ |
+| `--alert` 於 `--alert-wash` | 4.66:1 | ✅ |
+| `--seat-over-ink` 於 `--bg1` | 5.48:1 | ✅ |
+| `--primary` 於 `--bg1` | 2.04:1 | 不當文字用，所以不適用 |
 
-**唯一寫死的色是「危險／錯誤」**，因為它不該跟著任何色票跑：
-
-| 情境 | 值 |
-|---|---|
-| 刪除、錯誤文字、`.ad-tag-no` | `#a4677a` |
-| 錯誤 toast 底／字 | `#fdf6f7` / `#8a5765` |
-| 離線橫幅 | `#8a5765` |
+**錯誤色改版前是硬寫的，現在不是。** 舊的三支（`#a4677a` 線與面、
+`#8a5765` 文字、`rgba(164,103,122,…)` 半透明）散在 59 處；
+`#B34A38` 對紙底已經 5.00 ✅，不需要再深一階，所以收成
+`--alert` ＋ `--alert-wash` ＋ `--alert-rgb` 三個變數。
 
 ### 2.2 字體：雙軌
 
 ```
---font-display  Noto Serif TC   Editorial 軌 —— 「婚禮」的部分
---font-ui       system-ui …     UI 軌      —— 「工作」的部分（僅後台覆寫）
+--font-display  'Optima','Noto Serif TC',serif          Editorial 軌 ——「婚禮」的部分
+--font-ui       'Noto Sans TC',system-ui,…              UI 軌       ——「工作」的部分
 ```
+
+兩支都只在後台這一層覆寫（`body:is([data-page="admin"],[data-page="butler"])`），
+賓客頁完全不受影響。
 
 | 軌 | 用在哪 |
 |---|---|
-| **Editorial（明朝）** | 頁標題、區塊標題、彈窗／抽屜標題、大數字（`.ad-hero-num` `.ad-stat-num`）、空狀態標題、編號（`.ad-btcard-code` `.bt-code` `.sp-card-code`）、通行碼（`.ad-bt-pass` `.bt-pass`）、悄悄話內文 |
+| **Editorial（明朝）** | 頁標題、區塊標題、彈窗／抽屜標題、開場白 `.ad-ask`、大數字（`.ad-hero-num` `.ad-stat-num`）、空狀態標題、編號（`.ad-btcard-code` `.bt-code` `.sp-card-code`）、通行碼（`.ad-bt-pass` `.bt-pass`）、悄悄話內文 |
 | **UI（sans）** | 表格、表單、按鈕、chip、tag、頁籤、清單列、分頁、toast、hint、metadata、時間戳 |
+
+#### 為什麼 UI 軌是 Noto Sans TC 而不是 `system-ui`
+
+`system-ui` 在 Mac 是蘋方、Windows 是微軟正黑、Android 是思源 ——
+三台裝置三種字重與字距。新人是在通勤、睡前、婚宴當天換著裝置開後台的人，
+不能每換一台就換一張臉。
+
+成本是可以接受的：Google Fonts 走 `unicode-range` 分片，只送這一頁真的用到的
+字段；`admin.html`／`butler.html` 本來就在載 Noto Serif TC 四個字重，
+這裡只多要 **400／500** 兩個字重，在同一個 `<link>` 裡一起要。
+fallback 仍然留著 `system-ui` 那一串 —— 字沒到之前畫面不會是空的（`display=swap`）。
+
+#### Optima 是**有裝置差異的優雅降級**
+
+`--font-display` 的第一順位是 Optima：macOS／iOS 系統內建，直接吃得到；
+Windows／Android／Linux 沒有這套字，逐字 fallback 到 Noto Serif TC。
+**不是所有平台都會看到 Optima，這是知道且接受的。**
+Optima 不涵蓋中文，所以中文本來就會落到 Noto Serif TC ——
+不必為中英混排改任何一行 HTML，瀏覽器的字族 fallback 本來就是逐字處理的。
+
+刻意不補 Cormorant Garamond 當中間層：後台沒有載它，
+為了一層 fallback 再多要一個拉丁家族不划算。
+要讓非 Apple 裝置也看到 Optima，得另外採購 web font 授權並自行 host。
 
 規則寫在 `admin.css` 尾段，選擇器一律是：
 
@@ -142,12 +219,83 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-xxx { … }
 | Token | 值 | 備註 |
 |---|---|---|
 | `--radius` / `--radius-sm` | `4px` | 後台層。賓客頁仍是 `2px` |
-| 基礎字級 | `14px` | 後台的 `body` |
-| 小字級 | `12px` | metadata、pill、chip |
-| 最小字級 | `11px` | 分頁器。**不要再往下** |
-| 輸入框字級 | `16px` | 固定，見 3.6 |
 
-膠囊（chip／tag／pill）維持 `999px`，不吃 `--radius`。
+膠囊（chip／badge／pill 按鈕）維持 `999px`，不吃 `--radius`。
+**`.ad-tag` 不再是膠囊**（見 3.5）—— 形狀是它和 Badge 唯一的區別。
+
+#### 字級：十四支變數，零處硬寫
+
+改版前全檔有 **320 處硬寫的 `font-size`**，用掉 **23 種值**（9px 到 26px），
+中間全是「差一點點」的階。差一點點的階讀者分不出來，只覺得亂。
+現在**一處都不准硬寫** —— `tests/ui-consistency.mjs` 第 13 段會擋下來。
+
+**文字層級（Ivory 的五階）**
+
+| Token | 值 | 用在哪 |
+|---|---|---|
+| `--fs-title` ＋ `--fw-title` | `20px` / `500` | 頁標題 `.ad-page-title`、頂列標題、彈窗大標 |
+| `--fs-sec` ＋ `--fw-sec` | `18px` / `500` | 區塊標題 `.ad-sec-title`、彈窗／抽屜標題、空狀態標題 |
+| `--fs-body` | `15px` | 內文段落、說明、callout、開場白 `.ad-ask` |
+| `--fs-meta` | `12px` | 次要資訊、時間戳、hint、分頁器、pill 按鈕 |
+| `--fs-label` | `10px` | 欄位名（`text-transform:uppercase` ＋ `--track-lab: .16em`） |
+
+**元件階（密度區）**
+
+Ivory 的五階講的是**文字層級**。它自己的元件 CSS 也沒有全部遵守 ——
+`.tbl` 是 12.5px、`.inp` 是 14px、`.tag` 是 11px。那是
+「**密度在資料裡，留白在框上**」的直接結果：表格列高不動，甚至更緊。
+所以五階之外另立三支，資料密集區不跟著內文一起變鬆。
+
+| Token | 值 | 用在哪 |
+|---|---|---|
+| `--fs-ctl` | `15px` | 清單主文、側欄分頁、選單項、就地編輯。**也是 `body` 的基準字級** |
+| `--fs-ctl-sm` | `13px` | 表格、按鈕、chip |
+| `--fs-pill` | `11px` | tag／badge／seat／旗標。**不要再往下** |
+
+**輸入框自己一階**
+
+| Token | 值 | 備註 |
+|---|---|---|
+| `--fs-input` | `16px` | **iOS 的硬下限，不是設計選擇** |
+
+iOS Safari 只要聚焦 <16px 的欄位就會把整頁放大，之後版面往右偏，
+使用者得自己雙指縮回來。後台有一半的時間是在手機上開的，
+所以這一階**不跟著 `--fs-ctl` 下修**。連沒有字的 `<input type="color">`
+（`.ad-swatch-pick`）都要給 —— 它一樣會觸發放大。
+
+**Editorial 數字階**
+
+Ivory 把 Editorial 軌收到只剩標題、數字、信件內文。數字自己三階：
+
+| Token | 值 | 用在哪 |
+|---|---|---|
+| `--fs-num-sm` | `17px` | 桌號、排桌的統計小數字、收禮金額 |
+| `--fs-num` | `22px` | 環狀圖中央 |
+| `--fs-num-lg` | `26px` | 通行碼 |
+
+`.ad-hero-num`／`.ad-stat-num` 用的是 `clamp()`（會自己跟著視窗縮放），
+不在這三階裡。
+
+**字元圖示**
+
+| Token | 值 | 用在哪 |
+|---|---|---|
+| `--fs-glyph` | `17px` | `✕ ＋ － ⋮ →` 一般尺寸 |
+| `--fs-glyph-lg` | `22px` | 同上，`(pointer:coarse)` 下要撐滿 44px 熱區 |
+
+它們是**圖示不是字**，所以不吃文字層級 ——
+跟著 `--fs-body` 走的話，關閉鈕會在不同斷點長成不同大小。
+
+**收禮台另外三支**（定義在 `butler.css`，只有 `/butler` 吃）
+
+| Token | 值 | 用在哪 |
+|---|---|---|
+| `--fs-bt-pass` | `26px` | 通行碼 |
+| `--fs-bt-amount` | `30px` | 禮金金額：整個工具最重要的一個輸入 |
+| `--fs-bt-step` / `--fs-bt-step-lg` | `17px` / `19px` | 盒數與人數（觸控再大一階） |
+
+它們大得出格是有理由的：現場是站著、單手拿手機、旁邊有人在等，
+通行碼與金額要「看一眼就知道打對沒」。三個都遠大於 16px，不會觸發自動放大。
 
 ### 2.4 Motion
 
@@ -167,15 +315,21 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-xxx { … }
 ### 2.5 遮罩與陰影
 
 ```css
---scrim-drawer : rgba(43,47,54,.2)   /* 抽屜：前提是背景要看得見 */
---scrim-nav    : rgba(43,47,54,.32)  /* 側邊選單 */
---scrim-modal  : rgba(43,47,54,.72)  /* 彈窗／裁切器：背景該退場 */
---shadow-pop        : 0 4px 14px rgba(43,47,54,.10)  /* 選單、tooltip、peek、toast、filtersum */
---shadow-drag       : 0 4px 12px rgba(43,47,54,.09)  /* 拖曳中的列（已 opacity:.55） */
+--scrim-drawer : rgba(35,32,32,.2)   /* 抽屜：前提是背景要看得見 */
+--scrim-nav    : rgba(35,32,32,.32)  /* 側邊選單 */
+--scrim-modal  : rgba(35,32,32,.72)  /* 彈窗／裁切器：背景該退場 */
+--shadow-pop        : 0 4px 14px rgba(35,32,32,.10)  /* 選單、tooltip、peek、toast、filtersum */
+--shadow-drag       : 0 4px 12px rgba(35,32,32,.09)  /* 拖曳中的列（已 opacity:.55） */
 --shadow-panel-blur / --shadow-panel-ink            /* 抽屜與側欄，方向各自給 */
 ```
 
-色相**一律** `43,47,54`，只有濃度不同。新增浮層時引用 token，不要再調一組新的。
+色相**一律** `35,32,32` —— 跟 `--ink` 同一支暖墨，只有濃度不同。
+改版前是 `43,47,54` 那支冷灰：蓋在米白紙底上會透出一層藍。
+新增浮層時引用 token，不要再調一組新的。
+
+> 這一組定義在 `:root`（不是後台那一層），所以**不能**寫成
+> `rgba(var(--ink-rgb),…)` —— 在 `:root` 那個位置 `--ink-rgb` 還是
+> `common.css` 的 `47,43,38`。元件層裡的半透明墨才用變數。
 
 ### 2.6 z-index 層級表
 
@@ -271,7 +425,7 @@ sticky 的位置不能寫死（婚禮名稱換一行、離線橫幅出現，高�
 | `.btn` | 實心 `--ink`、全寬、**16px**、padding **10/22** | 登入門、表單唯一的送出 |
 | `.btn.small` | 自動寬、**14px**、padding **8/20** | 區塊標題列、彈窗、抽屜底部 |
 | `.btn.ghost` | 透明底、`--line` 框 | 取消、匯出、次要動作 |
-| `.btn.btn-google` | 白底 | 只有登入門 |
+| `.btn.btn-google` | `--surface` 面 | 只有登入門 |
 | `.btn.is-dirty` | 右上角一點 | 有未儲存的變更 |
 | `.btn.is-saving` | `opacity:.55` ＋ `cursor:progress` | 寫入中 |
 
@@ -321,8 +475,8 @@ sticky 的位置不能寫死（婚禮名稱換一行、離線橫幅出現，高�
 
 #### (a) 底線文字按鈕 `.ad-edit` / `.ad-del`
 
-一列尾端的「編輯／刪除」。12px、`--ink-soft`、`border-bottom:1px solid transparent`；
-hover 時線與字一起變深（刪除變 `#a4677a`），觸控沒有 hover 所以改成 `:active` 給回饋。
+一列尾端的「編輯／刪除」。`--fs-meta`、`--ink-soft`、`border-bottom:1px solid transparent`；
+hover 時線與字一起變深（刪除變 `--alert`），觸控沒有 hover 所以改成 `:active` 給回饋。
 `(pointer:coarse)` 靠 padding 把熱區撐到 **44×44**，視覺不變。
 
 `.ad-linkbtn` 是同一種樣子的第三個成員：接在一句說明**後面**的出口
@@ -334,7 +488,7 @@ hover 時線與字一起變深（刪除變 `#a4677a`），觸控沒有 hover 所
 
 #### (b) 底線「展開」按鈕 `.ad-chips-more` / `.sp-warn-more`
 
-無框、`border-bottom:1px solid var(--line)`、11.5px。
+無框、`border-bottom:1px solid var(--line)`、`--fs-pill`。
 用在「還有更多、點開來看」——它不是動作，是**視野的開關**。
 `.sp-warn-more.has-warn` 右上角補一顆紅點：收起來的那幾項裡有要處理的。
 
@@ -382,13 +536,23 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 
 ---
 
-### 3.5 標籤 `.ad-tag`（唯讀狀態 pill）
+### 3.5 標籤 `.ad-tag`（唯讀狀態標記）
 
 `.ad-tag-yes` `.ad-tag-maybe` `.ad-tag-no` `.ad-tag-guest`。
-**永遠 `white-space:nowrap`** —— 膠囊一折行就完全不成形，欄位擠不下時該讓欄位變寬。
+**`border-radius: var(--radius)` —— 方的，不是膠囊。**
+**永遠 `white-space:nowrap`** —— 折行的標記完全不成形，欄位擠不下時該讓欄位變寬。
 
-> 和 pill 按鈕長得像，但**不可點**。可點的東西一定要有 hover／active 反應，
-> `.ad-tag` 一個都沒有 —— 那就是兩者唯一的區別，不要弄反。
+> **形狀就是「這個不能點」。** 改版前 tag 和 chip、Badge、pill 按鈕全都是
+> 999px 膠囊，唯一的區別是「可點的有 hover 反應」—— 那是一個要伸手去試
+> 才知道的區別。現在 `.ad-tag` 收成 4px 方角：
+>
+> | 形狀 | 是什麼 | 例子 |
+> |---|---|---|
+> | 方角 `--radius` | 唯讀的**資料狀態** | `.ad-tag`（會出席、素食、VIP） |
+> | 膠囊 `999px` | 可點的**篩選器**或**設定狀態** | `.ad-chip`、`.ad-badge`、pill 按鈕 |
+>
+> `.ad-badge` 刻意**維持膠囊**：它講的是「這個設定開了沒」，
+> 和 tag 的「這一筆資料是什麼」不同用途，形狀撞在一起反而混淆。
 
 ---
 
@@ -416,8 +580,11 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 > 必填與否寫在標籤本文裡（`與新人的關係？(必填)`）——
 > 一列裡同時有灰掉的勾選框和一顆 Badge，讀起來像兩個互相解釋的狀態。
 
-> `--primary-deep` 當小字的對比只有 2.57:1（見「已知落差」），所以 `.is-on`
-> 用**面**（`--primary-soft`）強調，字仍然是 `--ink`。
+> `.is-on` 用**面**（`--primary-soft`）強調、字仍然是 `--ink` ——
+> 這是 `--primary` 出現的五個地方之一（2.1）。
+> 改版前這樣寫是因為舊金當小字只有 2.57:1；現在 `--primary-deep` 是 7.22:1，
+> 已經可以當文字，但 Badge 仍然維持「面強調」：
+> 一整排 Badge 如果每顆都是彩色的字，那一列就變成彩虹。
 
 ---
 
@@ -430,22 +597,50 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 <div class="ad-field-err"></div>
 ```
 
+#### 輸入框是一條線，不是一個盒子
+
+改版前每個欄位都是一個有框、有圓角、有白底的盒子。一頁十二個欄位就是
+十二個矩形，盒子自己比裡面的內容還搶眼 —— 而使用者要讀的是
+「我填了什麼」，不是「這裡有一個欄位」。
+
+```css
+.ad-input,.ad-textarea{
+  padding:10px 2px;
+  border:0;border-bottom:1px solid var(--line);border-radius:0;
+  background:transparent;
+}
+.ad-input:focus{ border-bottom-color:var(--ink); }
+```
+
+- **左右內距收成 2px**：沒有框要躲，文字直接對齊欄位名 ——
+  標籤與值在同一條垂直線上。
+- **焦點只換那條線的顏色**，不長出任何新的東西。改版前是
+  「邊框變深 ＋ 一圈 `--primary-soft` 的光暈」，兩個訊號講同一件事就是噪音。
+  線本身從 1.58:1 跳到 15.23:1，比光暈明顯得多。
+- **唯讀／鎖住改用虛線底線**（`border-bottom-style:dashed`），
+  不再用 `--bg2` 灰底 —— 沒有框的時候，底色會糊成一塊。
+- **`<select>` 自己畫的箭頭吃 `background-position: … center`**，
+  不再寫死垂直偏移量：底線化之後各處 padding 不同，寫死的值在每一種欄位上
+  都會差幾 px。改版前為此在觸控斷點有三條修正，現在一條都不需要。
+
 | Class | 規格 |
 |---|---|
-| `.ad-label` | 11.5px／`.2em`／uppercase／`--ink-soft` |
-| `.ad-input` `.ad-textarea` | 全寬、12px 14px、16px 字、focus 時邊框轉 `--ink` |
+| `.ad-label` | `--fs-label`(10px)／`--track-lab`(.16em)／uppercase／`--ink-soft` |
+| `.ad-input` `.ad-textarea` | 全寬、`10px 2px`、`--fs-input`(16px)、底線 1px，focus 時底線轉 `--ink` |
+| `.ad-input.is-locked` `:disabled` | 虛線底線 ＋ `--ink-3`，**不是灰底** |
 | `.ad-input-sm` | `max-width:130px`（數字欄位） |
 | `.ad-input-time` | `<input type="time">` 專用寬度（瀏覽器會多畫 AM/PM 與時鐘） |
-| `.ad-hint` | 11.5px `--ink-soft`，說明**後果**不是重複欄位名 |
-| `.ad-field-err` | `#a4677a`，`:empty` 時不佔高度 |
+| `.ad-hint` | `--fs-pill` `--ink-soft`，說明**後果**不是重複欄位名 |
+| `.ad-field-err` | `--alert`，`:empty` 時不佔高度 |
 | `.ad-check` | checkbox ＋ 文字，`accent-color: --primary-deep` |
 | `.ad-toggle` | 開關：一顆真的 checkbox（鍵盤、讀螢幕都照舊）藏在上面，畫面上是 44×24 的軌道 ＋ 16px 的把手（`.ad-toggle-track`，**Switch 用的也是這一條**，見 3.6b）。**只用在「按下去就生效」的地方**（「頁面設定」分頁），要按儲存才算數的維持 `.ad-check`。沒開通那幾列的 toggle 是 `disabled` 的：CSS 給它 `pointer-events:none`，點擊才落到外層的 `<label>` 上，按下去才有話回他 |
 | `.ad-input-when` | `<input type="datetime-local">` 專用寬度（`max-width:240px`） |
 | `.ad-sub-sec` | 表單裡的小節：左邊一道細線，**不是一張卡** |
 | `.ad-sub-sec-bare` | 同上但不畫那道線。給「一顆 Switch ＋ 一句說明」這種小節（郵寄服務）：前面已經有一排膠囊在分段，再加一道線只是多一層框 |
 
-> 輸入框的字級固定 16px：iOS Safari 只要聚焦 <16px 的欄位就會把整頁放大，
-> 之後版面往右偏，使用者得自己雙指縮回來。
+> 輸入框的字級固定 `--fs-input`(16px)：iOS Safari 只要聚焦 <16px 的欄位就會
+> 把整頁放大，之後版面往右偏，使用者得自己雙指縮回來。
+> **這是平台的硬下限，不是設計選擇**，所以它沒有跟著 `--fs-ctl` 收到 15px。
 
 ---
 
@@ -490,7 +685,7 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 ```
 
 幾個模式只能選一個（題型、模式切換）。長得像 chip，但**圓角是 `--radius` 不是膠囊**
-—— 它是輸入元件，chip 是篩選器，兩者不要看起來一樣。選中的那一顆轉白底 ＋ `--ink` 框。
+—— 它是輸入元件，chip 是篩選器，兩者不要看起來一樣。選中的那一顆轉 `--surface` ＋ `--ink` 框。
 
 ---
 
@@ -560,7 +755,7 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 - 比對一律經過 `normKey()`（去空白、全形轉半形、英文轉小寫）。
   butler 不載入 `common.js`，自己有一份**完全相同**的實作。
 - 有分頁的清單，搜尋後 `pager.page = 1`。
-- 尺寸只有兩種：預設（8px 12px／13px）與 `.ad-filter-sm`（7px 10px／12.5px）。
+- 尺寸只有兩種：預設（`8px 2px`／`--fs-ctl-sm`）與 `.ad-filter-sm`（`7px 2px`／`--fs-meta`）。左右內距是 2px，不是 12px —— 它和 `.ad-input` 一樣是一條底線（3.6）。
 - 原生外觀已在 CSS 歸零，清除鈕維持原生但縮到與字級相稱，觸控放大到 19px。
 - 文案格式：**`搜尋 A、B、C…`**。不要寫「在名單裡找…」這種另一套動詞。
 - `.ad-list-head.is-sticky` 只給「婚宴當天要邊捲邊找人」的三處（見上表）。
@@ -580,7 +775,7 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 
 ### 3.8 Tab
 
-兩種，**共用同一套「選中」的語彙**：白底 ＋ 字重 500 ＋ 一道 `--primary-deep` 的定位線。
+兩種，**共用同一套「選中」的語彙**：`--surface` 面 ＋ 字重 500 ＋ 一道 `--primary-deep` 的定位線。
 
 | | `.ad-tab`（側欄・直式） | `.ad-subtab`（分頁內・橫式） |
 |---|---|---|
@@ -588,8 +783,8 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 | 字級 | **14px**／`.14em` | **14px**／`.14em` |
 | 內距 | 11px 14px（`padding-left:14px` 補回線寬） | 11px 20px |
 | 未選 | 透明底、`--ink-soft`、`border-left:2px transparent` | `rgba(255,255,255,.45)`、1px `--line` 框、`--ink-soft` |
-| hover | `--ink` ＋ 半透明白底 | `--ink` ＋ 白底 |
-| **選中** | 白底 ＋ `font-weight:500` ＋ **左邊 2px** `--primary-deep` | 白底 ＋ `font-weight:500` ＋ **下面 3px** `--primary-deep` |
+| hover | `--ink` ＋ 半透明 `--surface` | `--ink` ＋ `--surface` |
+| **選中** | `--surface` ＋ `font-weight:500` ＋ **左邊 2px** `--primary-deep` | `--surface` ＋ `font-weight:500` ＋ **下面 3px** `--primary-deep` |
 | 面板 | `.ad-panel.is-on` | `.ad-subpanel.is-on` |
 
 線寬不同是刻意的：
@@ -604,7 +799,7 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 > `.ad-tab.is-on` 在檔案裡出現兩次：前面那條是基礎，**真正生效的是
 > 「側欄導覽」那一段的覆寫**。改 active 的樣子要改後面那一條。
 >
-> 窄螢幕（≤899px）另有一條把 `.ad-subtab` 收到 12.5px 的密度覆寫 ——
+> 窄螢幕（≤899px）另有一條把 `.ad-subtab` 收到 `--fs-meta` 的密度覆寫 ——
 > 上表是桌機規格。
 
 - 兩者的 hover 都包在 `@media (hover:hover) and (pointer:fine)` 裡 ——
@@ -652,7 +847,7 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 | Class | 樣子 |
 |---|---|
 | （預設） | `--ink`，hover `background:var(--bg2)` |
-| `.is-danger` | `#a4677a`。**永遠排最後**，前面用 `.ad-rowmenu-sep` 隔開 |
+| `.is-danger` | `--alert`。**永遠排最後**，前面用 `.ad-rowmenu-sep` 隔開 |
 | `[disabled]` | `opacity:.32` ＋ `cursor:not-allowed` |
 
 #### 必備
@@ -688,7 +883,7 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 | 一筆的樣子 | 用什麼 |
 |---|---|
 | 一到兩行、右邊一個數字，上下對得起來 | **清單列**（`--line-soft` 一條線就夠） |
-| 三行以上、每行高低不一 | **卡片**（白底＋框，眼睛才分得出「這幾行是同一筆」） |
+| 三行以上、每行高低不一 | **卡片**（`--surface` ＋框，眼睛才分得出「這幾行是同一筆」） |
 
 所以名字裡有 card 的東西不一定是卡片，這是這份程式碼裡最容易踩的一個坑：
 
@@ -700,7 +895,7 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 
 #### 真的是卡片的那幾個
 
-一律：白底 ＋ 1px `--line` ＋ `--radius`（4px）。差別只在內距，而內距分四階：
+一律：`--surface` ＋ 1px `--line` ＋ `--radius`（4px）。差別只在內距，而內距分四階：
 
 | 階 | padding | 誰在用 |
 |---|---|---|
@@ -762,19 +957,22 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 - 一列一件事，`--line-soft` 分隔，**沒有框**（要不要給框見 3.10 的判準）。
 - 整列可點時把 `.ad-item` 換成 `<button class="ad-item">`（收禮台就是這樣），
   記得歸零 border 並保持 `font-family: var(--font-ui)`。
-- `.ad-list-panel` 是唯讀數字清單的變體（白底 ＋ 框），
+- `.ad-list-panel` 是唯讀數字清單的變體（`--surface` ＋ 框），
   和統計方格站在一起時才用 —— 不然同一頁上兩塊有框、第三塊突然沒有。
 
 ### 3.12 表格 `.ad-table` / `.ad-tablewrap`
 
-- 表頭 sticky、`--bg2` 底、11.5px `--ink-soft`；`.ad-th-link` 是表頭裡的 pill（3.3c）。
-- `.ad-tablewrap` 是一張白底的面（會列數字的地方才有面）。
+- 表頭 sticky、`--bg2` 底、`--fs-pill` `--ink-soft`；`.ad-th-link` 是表頭裡的 pill（3.3c）。
+- `.ad-tablewrap` 是一張 `--surface` 的面（會列數字的地方才有面）。
 - hover 整列 `rgba(0,0,0,.035)`，只給 `(hover:hover) and (pointer:fine)`。
+  釘住的 `.is-name`／`.is-act` 兩欄改吃 `--bg-row-hover`（同一個疊色的實色版）——
+  `position:sticky` 的欄位不能是半透明的，見 2.1。
 - **窄螢幕一定要有替代版**（見 3.10 末段），不要只加 `overflow-x:auto`。
 
 ### 3.13 數字面板
 
-**規則只有一條：要拿來比對的數字，站在一張白底圓角的面上；其餘只留線。**
+**規則只有一條：要拿來比對的數字，站在一張 `--surface` 圓角的面上；其餘只留線。**
+數字本身是 `--ink`，不是品牌色（2.1）。
 
 | Class | 用途 |
 |---|---|
@@ -832,7 +1030,7 @@ RSVP／桌次名單／悄悄話／感謝信／收禮明細共用。
 | `.ad-page-title` | 21px 明朝體 | 這一頁叫什麼（和側欄那顆分頁同名） |
 | `.ad-ask` | 17px 明朝體 | **標題說不出來的那一句**（例外，見下） |
 | `.ad-page-sub` | 12px sans | 現在的狀態（幾筆、幾位，由 JS 填） |
-| `.ad-sec-note` | 12.5px sans | 一行講完「現在在做什麼」 |
+| `.ad-sec-note` | `--fs-meta` sans | 一行講完「現在在做什麼」 |
 
 `.ad-ask` 只給**標題撐不住的地方**，全站目前就兩處：
 
@@ -960,7 +1158,7 @@ RSVP／桌次名單／悄悄話／感謝信／收禮明細共用。
 </div>
 ```
 
-- `min(92vw, 420px)`、白底、1px 框、`--scrim-modal`（.72）。
+- `min(92vw, 420px)`、`--surface` 面、1px 框、`--scrim-modal`（.72）。
 - `.ad-modal-card-form` 是可捲的 → `.ad-modal-actions` **sticky 在卡片底部**。
 - 標題那一列要站第二顆東西（標籤編輯的「刪除標籤」）時包一層 `.ad-modal-head`：
   次要的破壞性動作放**標題右邊**，不要和底部的「儲存」並排 —— 並排就是一樣重要。
@@ -974,7 +1172,7 @@ RSVP／桌次名單／悄悄話／感謝信／收禮明細共用。
 
 ### 3.19 Toast `.ad-toast`
 
-`.ad-toast-stack` 固定在底部置中、可疊。白底 ＋ `--ink` 框 ＋ `--shadow-pop`；
+`.ad-toast-stack` 固定在底部置中、可疊。`--surface` 面 ＋ `--ink` 框 ＋ `--shadow-pop`；
 `.is-error` 轉粉底 ＋ 危險色。可帶一顆 `.ad-toast-action`（例如「重試」）。
 
 > 寫入逾時的文案是「**還沒送出去**」不是「存檔失敗」——
@@ -1007,9 +1205,9 @@ RSVP／桌次名單／悄悄話／感謝信／收禮明細共用。
 
 | 項目 | 規則 |
 |---|---|
-| 焦點 | `:focus-visible` → 2px `--primary-deep` ＋ 2px offset。輸入框改成邊框轉深 ＋ 2px `--primary-soft` 內光。**兩頁都有**（規則掛 `body:is(admin, butler)`） |
+| 焦點 | `:focus-visible` → 2px `--primary-deep` ＋ 2px offset。輸入框是**底線轉 `--ink`**（1.58:1 → 15.23:1），不再加一圈光暈 —— 兩個訊號講同一件事就是噪音。**兩頁都有**（規則掛 `body:is(admin, butler)`） |
 | 觸控熱區 | 圖示按鈕（✕ ☰ ⋮ ↑↓）與選單項 `(pointer:coarse)` 一律 **44×44**；pill 與 chip 是 32（獨立）／28（嵌在一行字裡）—— 28 偏小，見「已知落差」 |
-| 對比 | 小字的次要色用 `--ink-soft`（`#6a5e53`，於 `--bg1` 5.93:1）；最小字級 11px。**`--primary-deep` 是已知的例外**（2.57:1，見「已知落差」） |
+| 對比 | 小字的次要色用 `--ink-soft`（`#5C564C`，於 `--bg1` 6.85:1）；內容最小字級 `--fs-pill`(11px)、欄位名 `--fs-label`(10px)。第三階墨 `--ink-3` **不准站在 `--bg2` 上**（4.07:1），見 2.1。改版前 `--primary-deep` 的 2.57:1 缺口已經補掉（現在 7.22:1） |
 | 圖示按鈕 | 一定要 `aria-label`（`✕` → `關閉`，`☰` → `開啟選單`，`⋮` → `更多`） |
 | 選單 | 面 `role="menu"`、項 `role="menuitem"`、觸發鈕 `aria-expanded` 同步 |
 | 摺疊 | `aria-expanded` ＋ `aria-controls`（`.ad-chips-more`、`.ad-navgroup`、排桌的「篩選」） |
@@ -1065,13 +1263,16 @@ npm run test:ui        # tests/ui-consistency.mjs（只需要 hosting emulator�
 
 | 項目 | 現況 |
 |---|---|
-| **`--primary-deep` 的對比** | `#ca9a21` 於白底只有 **2.57:1**，AA（4.5）與 AA Large（3.0）都不過。它被用在**所有數字**（`.ad-hero-num` 禮金總額、`.ad-stat-num` 統計方格）、通行碼 `.ad-bt-pass`，以及 `.ad-th-link`／`.ad-filtersum-clear`／`.ad-chip-link` 的文字。這是自訂規範指定的品牌色，所以照用；要補到 AA，最小的改法是另外給一支「當文字用」的深一階金（例如 `--primary-ink`），面與框仍用 `#ca9a21`，不動品牌調性 |
+| **`--primary-soft`／`--alert-wash` 的正式色值** | Ivory 這一版沒有拿到這兩支的正式色票，現在用的是試算值（`#FDEEE7`／`#FBEDEA`）。**待設計覆核。** 風險很低：`--primary-soft` 的 11 處全部是「這一格正被選中／命中」的暫時底色，`--alert-wash` 只有 2 處（錯誤 toast 的底、示範列的壞例子），沒有一處是永久的面 —— 改色值只要動 `admin.css` 那一行，不會動到任何選擇器 |
+| **Optima 有裝置差異** | `--font-display` 第一順位是 Optima，但它只有 macOS／iOS 內建。Windows／Android／Linux 會逐字 fallback 到 Noto Serif TC —— 標題與數字在非 Apple 裝置上看起來和改版前一樣。要讓所有平台一致，得採購 web font 授權並自行 host（`@font-face`），不在這一版的範圍 |
+| **底線輸入框的 `<textarea>`** | 四邊框改成底線之後，96px 高的 `.ad-textarea` 只剩最底下那一條線，多行欄位的邊界比單行欄位難認。這是底線式表單的已知取捨（Material 的 standard variant 也一樣），先照 Ivory 的規格上線；如果實際使用回饋說「不知道可以打字」，最小的改法是只給 textarea 一個 `--bg2` 的極淡填色，其餘欄位不動 |
+| **間距還沒收成九的級數** | Ivory §03 要把間距收成 9 的倍數（9/18/27/36/54/72/108/144）。目前全檔有 820 處 `padding`／`margin`／`gap`，光 `gap` 就用掉 1–34px 十幾種值。這是 Ivory §14 自己排在最後一批的事（「範圍最大、感受差最小」），這一版沒做 |
 | **Pill 的觸控熱區** | 自訂規範把 pill 從 36／32 收成 32／28。28px 低於一般建議的觸控下限，`.ad-eye`（顯示金額）與 `.ad-th-link`（表頭標籤）在手機上會比較難按。圖示按鈕與選單項仍是 44 |
 | `.ad-modal-mask` 的 dialog 語意 | 16 個彈窗（後台 14 ＋ 收禮台 2）都沒有 `role="dialog"`／`aria-modal`；抽屜兩個都有了。要補就一次補齊，不要補一半 |
 | 焦點歸還 | 抽屜／彈窗關閉後沒有把焦點還給觸發它的那顆按鈕 |
 | `.ad-side` 的 `inert` | <900px 收起來時只是 transform 移出畫面，內容仍可被 Tab 到 |
 | layer stack 兩份實作 | `admin.js` 的 `pushLayer()` 與 `butler.js` 的 `pushSheetLayer()` 邏輯相同（butler 不載入 `admin.js`）。改一邊要記得改另一邊 |
 | `normKey()` 兩份實作 | 同上（butler 不載入 `common.js`），內容必須保持一字不差 |
-| 排桌還有幾處 10.5px | `.sp-stats .ad-stat-lab`、`.sp-filter-declined small`、`.sp-group-head small`、`.sp-table-hidden`、`.ad-exh-kind` 等仍低於 11px 的最小字級。已經有一條 `10.5 → 11` 的清單，但只涵蓋 8 個選擇器；補齊會動到整個排桌工作區的行高，該獨立一次做 |
+| ~~排桌還有幾處 10.5px~~ | **已修掉。** 字級收成變數的那一輪把 9／10／10.5px 一律歸到 `--fs-label`(10px)、11／11.5px 歸到 `--fs-pill`(11px)，全檔沒有第三種小字了 |
 | `.sp-card-move` 熱區 | 32×32，而它只在 `(hover:none)` 出現 —— 也就是永遠在觸控上。放大到 44 需要賓客卡本身跟著長高，那是整個排桌板的版面變動 |
 | `.ad-btcard`／`.ad-msg` 的命名 | 名字有 card，實際是清單列（見 3.10）。改名要動 CSS、JS 與測試，值得做但不該夾在別的改動裡 |
