@@ -1360,8 +1360,6 @@ function openAdmin(){
   });
   /* 表單設定裡的兩顆按鈕指的都是賓客那一頁（分享出去的就是這個網址） */
   document.getElementById('adRsvpViewForm').href = sitePath('rsvp');
-  /* 「相遇之間」是首頁上自己的一段 */
-  document.getElementById('adRsvpGalleryView').href = sitePath('lobby');
   /* 首頁上的兩個出口：「賓客現在看到的樣子」與「賓客要填的那張表單」 */
   const homeSite = document.getElementById('adHomeViewSite');
   const homeForm = document.getElementById('adHomeViewForm');
@@ -3792,8 +3790,9 @@ function infoRowHtml(row){
   const empty = !row.value;
   const text = empty ? (row.empty || '還沒填，這一列就不會出現') : row.value;
   const val = (!empty && row.html) ? row.html : escapeHtml(text);
+  const name = row.name ? `<span class="ad-info-name">${escapeHtml(row.name)}</span>` : '';
   return `<div class="ad-info-row">
-    <span class="ad-info-name">${escapeHtml(row.name)}</span>
+    ${name}
     <span class="ad-info-val${empty ? ' is-empty' : ''}">${val}</span>
   </div>`;
 }
@@ -3806,7 +3805,7 @@ function renderRsvpFormInfo(){
   const d = siteData();
   const photos = (Array.isArray(d.photos) ? d.photos : []).filter(Boolean);
   document.getElementById('adRsvpGalleryInfo').innerHTML = infoRowHtml({
-    name:'目前的照片', value: photos.length ? `${photos.length} 張` : '',
+    name:'', value: photos.length ? `${photos.length} 張` : '',
     empty:'還沒有照片，就算打開也不會出現這一塊',
   });
 }

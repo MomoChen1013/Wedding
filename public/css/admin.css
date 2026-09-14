@@ -145,7 +145,7 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
   background:none;border:none;text-align:left;cursor:pointer;
   border-radius:var(--radius);
 }
-.ad-bar-title{display:block;font-family:var(--font-display);font-weight:var(--fw-title);font-size:var(--fs-title);
+.ad-bar-title{display:block;font-family:var(--font-display);font-weight:var(--fw-title);font-size:var(--fs-num-sm);
   letter-spacing:.2em;color:var(--ink);
   transition:color var(--dur-hover) ease-out;}
 .ad-bar-sub{display:block;margin-top:4px;font-size:var(--fs-meta);letter-spacing:.06em;
@@ -326,8 +326,8 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
 /* ============================================================
    表單元件
 ============================================================ */
-.ad-label{display:block;font-size:var(--fs-label);letter-spacing:var(--track-lab);text-transform:uppercase;
-  color:var(--ink-soft);margin:18px 0 7px;}
+.ad-label{display:block;font-size:var(--fs-body);letter-spacing:var(--track-lab);text-transform:uppercase;
+  color:var(--ink-soft);margin:36px 0 0;}
 .ad-form > .ad-label:first-of-type{margin-top:0;}
 
 /* ============================================================
@@ -360,10 +360,10 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
 /* 多行欄位多一層極淡的面。
    底線化之後，單行的 input 和 96px 高的 textarea 長得一模一樣 ——
    唯一的線索是右下角那顆極小的 resize 把手，空的時候更看不出來。
-   加一層 --bg2 之後，「一條線 ＝ 一行、一塊面 ＝ 一段」自己就說得通，
+   加一層底色之後，「一條線 ＝ 一行、一塊面 ＝ 一段」自己就說得通，
    而且沒有把四邊框加回來：線仍然是唯一的邊界，面只是襯底。
    左右內距跟著補回來 —— 字貼著面的邊緣會像沒對齊。 */
-.ad-textarea{background:var(--bg2);padding:10px 12px;}
+.ad-textarea{background:var(--bg1);padding:10px 12px;margin:12px 0 0;}
 .ad-textarea{resize:vertical;min-height:96px;}
 .ad-input-sm{max-width:130px;}
 /* <input type="time"> 的內容是瀏覽器畫的：12 小時制還多了 AM／PM 與時鐘圖示，
@@ -384,7 +384,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
   background-size:5px 5px, 5px 5px;background-repeat:no-repeat;}
 
 .ad-count{text-align:right;font-size:var(--fs-pill);color:var(--ink-soft);margin-top:5px;}
-.ad-hint{font-size:var(--fs-pill);color:var(--ink-soft);margin-top:5px;line-height:1.7;}
+.ad-hint{font-size:var(--fs-ctl-sm);color:var(--ink-soft);margin-top:5px;line-height:1.7;}
 
 /* 表單裡再分一個小節（例如「交通資訊」把兩個欄位圈在一起） */
 .ad-sub-sec{margin-top:26px;padding:20px 18px;border:1px solid var(--line-soft);
@@ -454,7 +454,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 /* 勾選框和字要對齊在同一條中線上。原本是 flex-start ＋ margin-top:5px 硬推，
    字級或行高一改就對不準了（看起來像沒對齊，勾選框浮在文字上緣）。 */
 .ad-check{display:flex;align-items:center;gap:9px;margin-top:18px;
-  font-size:var(--fs-ctl-sm);line-height:1.8;color:var(--ink);cursor:pointer;}
+  font-size:var(--fs-ctl);line-height:1.8;color:var(--ink);cursor:pointer;}
 .ad-check input{flex:0 0 auto;accent-color:var(--primary-deep);}
 /* display:flex 會蓋掉瀏覽器對 [hidden] 的 display:none，要自己補回來 */
 .ad-check[hidden]{display:none;}
@@ -468,9 +468,9 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 
 /* ---------- 只讀的內容清單（例如出席回覆的「表單資訊」） ----------
    內容在別的分頁編輯，這裡只把現在填了什麼列出來 */
-.ad-info{margin-top:12px;border-top:1px solid var(--line-soft);}
+.ad-info{margin:12px 0;border-top:0 solid var(--line-soft);}
 .ad-info-row{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;
-  padding:9px 0;border-bottom:1px solid var(--line-soft);}
+  padding:9px 0;border-bottom:0 solid var(--line-soft);}
 .ad-info-name{flex:0 0 auto;min-width:96px;font-size:var(--fs-pill);letter-spacing:.14em;
   color:var(--ink-soft);}
 .ad-info-val{flex:1 1 180px;min-width:0;font-size:var(--fs-ctl-sm);line-height:1.8;
@@ -478,11 +478,11 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .ad-info-val.is-empty{color:var(--ink-soft);opacity:.75;}
 
 /* 欄位底下的小提示：比 .ad-sec-note 更貼著它說明的那一組欄位 */
-.ad-hint{margin-top:10px;font-size:var(--fs-pill);line-height:1.9;letter-spacing:.02em;
+.ad-hint{margin-top:10px;font-size:var(--fs-ctl-sm);line-height:1.9;letter-spacing:.02em;
   color:var(--ink-soft);}
 .ad-hint b{color:var(--ink);font-weight:500;}
 
-.ad-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;}
+.ad-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:0;}
 
 /* ============================================================
    上傳區
@@ -731,7 +731,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 
 .ad-list{border-top:1px solid var(--line-soft);}
 .ad-item{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
-  padding:14px 2px;border-bottom:1px solid var(--line-soft);}
+  padding:14px 10px;border-bottom:1px solid var(--line-soft);background:var(--bg1);}
 .ad-item-main{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;min-width:0;}
 .ad-item-title{font-size:var(--fs-ctl);letter-spacing:.06em;color:var(--ink);}
 .ad-item-sub{flex:1 1 100%;font-size:var(--fs-meta);line-height:1.8;color:var(--ink-soft);
@@ -855,7 +855,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
   letter-spacing:.04em;color:var(--ink-soft);}
 /* 完成訊息接在標題後面（省一行）。字窄的螢幕上它會跟著標題折行 ——
    那仍然比原本「標題一行 ＋ 自己一行」省，而且折的是同一句話 */
-.ad-step-state{margin-left:8px;font-size:var(--fs-pill);letter-spacing:.06em;
+.ad-step-state{margin-left:8px;font-size:var(--fs-ctl-sm);letter-spacing:.06em;
   color:var(--primary-deep);}
 .ad-step-act{flex:0 0 auto;align-self:center;}
 
@@ -937,7 +937,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .ad-note-body{padding:2px 18px 20px;border-top:1px solid var(--line-soft);
   margin-top:2px;padding-top:18px;}
 .ad-note-grp + .ad-note-grp{margin-top:20px;}
-.ad-note-hd{margin:0;font-family:var(--font-ui);font-size:var(--fs-pill);letter-spacing:.12em;
+.ad-note-hd{margin:0;font-family:var(--font-ui);font-size:var(--fs-body);letter-spacing:.12em;
   color:var(--ink);font-weight:500;}
 .ad-note-list{margin:8px 0 0;padding-left:1.3em;}
 .ad-note-list li{font-size:var(--fs-meta);line-height:1.95;letter-spacing:.04em;
@@ -957,11 +957,11 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 /* 一列＝頁名（＋「排程開啟」）ㄧ左、開關一右。說明拿掉了：
    十來頁排下來，每一列多一行字就多滾一整頁，而頁名自己說得夠清楚。 */
 .ad-page-row{display:grid;grid-template-columns:1fr auto;gap:6px 16px;
-  padding:8px 2px;border-bottom:1px solid var(--line-soft);align-items:center;}
+  padding:16px 2px;border-bottom:1px solid var(--line-soft);align-items:center;}
 .ad-page-main{min-width:0;}
 /* 「排程開啟」就站在頁名右邊 —— 它講的是這一頁什麼時候開，
    和右邊那顆「現在開不開」是兩件事，擺在一起反而容易按錯。 */
-.ad-page-name{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+.ad-page-name{display:flex;align-items:center;gap:20px;flex-wrap:wrap;
   font-size:var(--fs-ctl);letter-spacing:.06em;color:var(--ink);line-height:1.7;}
 .ad-page-name-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .ad-page-row.is-locked .ad-page-name{color:var(--ink-soft);}
@@ -1127,14 +1127,14 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .ad-faq-group + .ad-faq-group{margin-top:30px;}
 .ad-faq-cat{
   margin:0 0 2px;padding:0 2px;
-  font-family:var(--font-ui);font-size:var(--fs-label);font-weight:400;
+  font-family:var(--font-ui);font-size:var(--fs-ctl-sm);font-weight:400;
   letter-spacing:.22em;color:var(--ink-soft);
 }
 .ad-faq{border-top:1px solid var(--line-soft);}
 .ad-faq-item{border-bottom:1px solid var(--line-soft);}
 .ad-faq-item > summary{
   list-style:none;cursor:pointer;padding:16px 2px;
-  font-size:var(--fs-ctl-sm);letter-spacing:.06em;color:var(--ink);
+  font-size:var(--fs-body);letter-spacing:.06em;color:var(--ink);
 }
 .ad-faq-item > summary::-webkit-details-marker{display:none;}
 .ad-faq-item > summary::before{
@@ -1332,10 +1332,10 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .ad-wz-body > .ad-label:first-child{margin-top:0;}
 
 /* 階段裡的小標（「大眾運輸怎麼到？」「目前的活動」）。
-   比 .ad-wz-title 小一階，比 .ad-label 大一階 */
+   比 .ad-wz-title 小一階；分隔線拿掉了，靠上方 32px 的留白斷句 */
 .ad-wz-subhd{
   display:flex;align-items:center;gap:8px;
-  margin:32px 0 4px;padding-bottom:10px;border-bottom:1px solid var(--line-soft);
+  margin:32px 0 4px;padding-bottom:10px;border-bottom:0 solid var(--line-soft);
   font-size:var(--fs-ctl-sm);letter-spacing:.08em;color:var(--ink);
 }
 .ad-wz-body > .ad-wz-subhd:first-child{margin-top:0;}
@@ -1343,7 +1343,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 /* ---------- 勾選清單（02 的活動、05 的提醒項目） ----------
    一行一個，整行都是點擊區 —— 手機上只點得到那顆 12px 的方框
    是這一頁改版前最常見的誤觸來源。 */
-.ad-wz-picks{display:grid;gap:2px;margin-bottom:8px;}
+.ad-wz-picks{display:grid;gap:8px;margin-bottom:8px;}
 .ad-wz-pick{
   margin:0;padding:13px 14px;
   border:1px solid var(--line-soft);border-radius:var(--radius);
@@ -1369,7 +1369,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
   font-family:var(--font-display);font-size:var(--fs-sec);letter-spacing:.1em;
   color:var(--ink);margin-bottom:4px;
 }
-.ad-wz-place .ad-label:first-of-type{margin-top:14px;}
+.ad-wz-place .ad-label:first-of-type{margin-top:20px;}
 .ad-wz-place-loc[hidden]{display:none;}
 
 /* ---------- 04 的 inline form ----------
@@ -1443,7 +1443,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .ad-letter-title{margin:0;flex:1 1 auto;min-width:0;
   font-family:var(--font-display);font-weight:500;font-size:var(--fs-sec);
   letter-spacing:.1em;color:var(--ink);word-break:break-word;}
-.ad-letter-terms{margin:9px 0 0;font-size:var(--fs-pill);line-height:1.8;
+.ad-letter-terms{margin:9px 0 0;font-size:var(--fs-ctl-sm);line-height:1.8;
   letter-spacing:.04em;color:var(--primary-deep);word-break:break-word;}
 .ad-letter-body{
   margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line-soft);
@@ -1563,7 +1563,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .ad-quiz-item{display:flex;align-items:flex-start;gap:4px;
   padding:10px 2px;border-bottom:1px solid var(--line-soft);background:var(--surface);}
 .ad-quiz-item .ad-item-main{flex:1 1 auto;}
-.ad-drag-handle{flex:0 0 auto;width:40px;height:40px;margin:-8px 0;
+.ad-drag-handle{flex:0 0 auto;width:20px;height:40px;margin:-8px 0;
   display:flex;align-items:center;justify-content:center;
   background:none;border:none;cursor:grab;color:var(--ink-soft);
   font-size:var(--fs-glyph);letter-spacing:.1em;touch-action:none;user-select:none;}
@@ -2651,7 +2651,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
   .ad-savebar{background:var(--bg1);}
 }
 .ad-savebar .btn{flex:0 0 auto;}
-.ad-savebar-note{flex:1 1 auto;min-width:0;font-size:var(--fs-pill);letter-spacing:.04em;
+.ad-savebar-note{flex:1 1 auto;min-width:0;font-size:var(--fs-ctl-sm);letter-spacing:.04em;
   color:var(--ink-soft);}
 .ad-savebar-note.is-dirty{color:var(--alert);}
 @media(max-width:899px){
@@ -3289,11 +3289,11 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
 
 /* 表單裡的小節：白框 → 左邊一道細線 */
 .ad-sub-sec{
-  margin-top:30px;padding:0 0 0 16px;
+  margin-top:8px;padding:0 0 0 16px;
   border:none;border-left:1px solid var(--line);
   border-radius:0;background:transparent;
 }
-.ad-sub-sec-title{margin-bottom:8px;color:var(--ink);}
+.ad-sub-sec-title{margin:20px 0 0;color:var(--ink);}
 
 /* 篩選工具列降一階：它是一組控制項，不是一張卡 */
 .ad-filterbar{background:transparent;border-color:var(--line-soft);}
@@ -3795,7 +3795,7 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
 
 /* 小節標題降階：它現在只是「這幾行是同一件事」的分隔線 */
 .ad-sec-title:not(.ad-page-title){
-  font-family:var(--font-ui);font-size:var(--fs-ctl-sm);font-weight:500;
+  font-family:var(--font-ui);font-size:var(--fs-body);font-weight:500;
   letter-spacing:.16em;color:var(--ink-soft);
   padding-bottom:9px;border-bottom:1px solid var(--line-soft);margin-bottom:13px;
 }
@@ -3847,7 +3847,7 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
   .ad-ask{letter-spacing:.02em;}
 }
 
-.ad-fine{margin:-4px 0 18px;}
+.ad-fine{margin:-4px 0 18px;padding:10px;border-radius:8px;background:var(--bg2);}
 .ad-fine > summary{
   display:inline-flex;align-items:center;gap:6px;
   list-style:none;cursor:pointer;padding:4px 0;min-height:28px;
@@ -4200,8 +4200,8 @@ body:is([data-page="admin"],[data-page="butler"]){
   --fs-title:20px;   --fw-title:500;   /* 頁標題、彈窗／抽屜標題 */
   --fs-sec:18px;     --fw-sec:500;     /* 區塊標題 */
   --fs-body:15px;                      /* 內文段落、說明、callout */
-  --fs-meta:12px;                      /* 次要資訊、時間戳、hint、分頁器 */
-  --fs-label:10px;                     /* 欄位名（大寫 ＋ .16em 字距） */
+  --fs-meta:14px;                      /* 次要資訊、時間戳、hint、分頁器 */
+  --fs-label:11px;                     /* 欄位名（大寫 ＋ .16em 字距） */
 
   /* 元件階（密度區） */
   --fs-ctl:15px;                       /* 清單主文、側欄分頁、就地編輯 */
@@ -4284,7 +4284,7 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:var(--f
    沿用既有語彙：1px 線、無陰影、4px 圓角、握把和故事牆／測驗題同一顆。
    沒有新的顏色，狀態全部靠線條與字重。
 ============================================================ */
-.ad-evlist{display:flex;flex-direction:column;gap:10px;}
+.ad-evlist{display:flex;flex-direction:column;gap:8px;}
 
 .ad-ev{border:1px solid var(--line);border-radius:var(--radius);
   background:var(--surface);}
@@ -4301,10 +4301,10 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:var(--f
 .ad-ev-where{font-size:var(--fs-meta);color:var(--ink-soft);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
 /* 「需要回覆／不用回覆」是這張卡最重要的一個狀態，
-   所以給它一個 pill；開著的用實心，關著的只有框 */
+   所以給它一個 pill；開著的襯一塊淡底，關著的只有框 */
 .ad-ev-flag{flex:0 0 auto;font-size:var(--fs-pill);letter-spacing:.1em;
   border:1px solid var(--line);border-radius:999px;padding:2px 9px;color:var(--ink-soft);}
-.ad-ev-flag.is-on{border-color:var(--ink);background:var(--ink);color:var(--on-ink);}
+.ad-ev-flag.is-on{border-color:var(--line);background:var(--bg2);color:var(--ink-3);}
 
 @media(max-width:560px){
   /* 窄螢幕上「編輯」自己一排，卡片上半部才不會被壓成三行 */
@@ -4448,7 +4448,7 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:var(--f
 /* ---------- 本場次專屬問題 ----------
    一題一列（UI-SPEC 3.10：一到兩行、右邊幾顆按鈕 → 清單列，不是卡片）。
    拖曳把手、⋮ 選單、undo 刪除全部沿用測驗題目那一份。 */
-.ad-qlist{border-top:1px solid var(--line-soft);margin-top:10px;}
+.ad-qlist{border-top:0 solid var(--line-soft);margin-top:10px;}
 .ad-qrow{display:flex;align-items:flex-start;gap:4px;
   padding:10px 2px;border-bottom:1px solid var(--line-soft);background:var(--surface);}
 .ad-qrow .ad-item-main{flex:1 1 auto;}

@@ -3240,7 +3240,7 @@ console.log('\n[14d] 後台婚禮流程');
     (await page.locator(fixedQs).count()) === 5,
     String(await page.locator(fixedQs).count()));
   /* 稱呼、關係、聯絡方式 ＋ 卡上的「能來參加嗎」＝ 4 條標了「必填」
-     （「更近一步說明是哪種關係」關不掉，但它是選填的，所以不算） */
+     （「更進一步說明是哪種關係」關不掉，但它是選填的，所以不算） */
   ok('關不掉的那幾題在標籤上標「必填」',
     (await page.locator('#adRsvpForm .ad-check.is-fixed', { hasText:'必填' }).count()) === 4,
     String(await page.locator('#adRsvpForm .ad-check.is-fixed', { hasText:'必填' }).count()));
