@@ -89,6 +89,14 @@
         attributes: true, attributeFilter: ['class', 'hidden', 'style'],
       });
     });
+    /* 面板自己也要看 —— 它是子分頁列的**祖先**，所以 .ad-panel 換 .is-on
+       的時候上面那一圈 observer 完全看不到。
+       分頁藏著的時候量不到位置（offsetParent 是 null），線會被收起來；
+       切回來時如果沒有人叫它重量，那一頁就永遠沒有底線 ——
+       「有時候看不到 on 的底線」講的就是這件事。 */
+    document.querySelectorAll('.ad-panel, .ad-subpanel').forEach((panel) => {
+      mo.observe(panel, { attributes: true, attributeFilter: ['class', 'hidden'] });
+    });
     schedule();
   }
 
@@ -99,6 +107,8 @@
      （捲動時線跟著內容走，但 offsetLeft 不變，所以捲動本身不必重量；
        這裡收的是「捲動改變了 flex 的換行」那種情形） */
   addEventListener('resize', schedule);
+  /* 網址列直接改 #hash 進某一頁時，切換是別人做的，這裡跟著重量一次 */
+  addEventListener('hashchange', schedule);
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', observe);

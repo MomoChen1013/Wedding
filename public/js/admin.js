@@ -3636,7 +3636,7 @@ function renderFormTagPreview(){
   const hint = document.getElementById('adAskTagHint');
   if(hint){
     hint.innerHTML = on
-      ? '放在「賓客自己選得到」那一組的標籤才會出現在這裡，改了立刻同步。'
+      ? '放在「賓客自己選得到」的才會出現在這裡，改了立刻同步。'
         + '<button class="ad-linkbtn" type="button" id="adAskTagJump">去設定標籤 ↗</button>'
       : '這是進階功能，<b>還沒開通</b>，想用的話跟我們說一聲。';
   }
@@ -8291,7 +8291,7 @@ function pageRowHtml(row){
               <svg class="ad-ic" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-help"/></svg>
             </button>`
           : `<button class="ad-page-when" type="button" data-page-when
-              aria-expanded="false">${schedFuture ? '改排程' : '排程開啟'}</button>`}
+              aria-expanded="false">${schedFuture ? '改排程' : '設定自動打開'}</button>`}
       </div>
       ${state ? `<div class="ad-page-state${schedFuture ? ' is-sched' : ''}">${
         !row.locked && live
