@@ -9,7 +9,7 @@
      2. 對比修正：--ink-soft 兩頁一致
      3. 焦點框：收禮台也要有（不然鍵盤使用者在那一頁是盲走的）
      4. 搜尋框：八個地方，一份 HTML 樣板
-     5. 抽屜：兩個實作（.sp-drawer／.ad-drawer）同一份規格
+     5. 抽屜：.ad-drawer 的規格（寬度、層級、遮罩、關閉鈕、貼底 CTA）
      6. 遮罩：全部收在同一支暖墨
      7. 選單：兩個下拉選單（.ad-rowmenu／.ad-acct-pop）面與項同一份規格
      8. 圖示按鈕：✕ 只有兩個字級、每一顆都有 aria-label
@@ -174,13 +174,30 @@ ok('八個搜尋框都還在（少了代表有人自己做了一個新的）', f
 /* ------------------------------------------------------------
    5. 抽屜
 ------------------------------------------------------------ */
-console.log('\n【抽屜：兩個實作同一份規格】');
+/* .ad-drawer 是 admin.js 的 Drawer 動態建出來的（登入門下還不存在），
+   所以這裡自己插一份一模一樣的骨架來量 —— 要驗的是 CSS 規格本身。
+   骨架與 js/admin.js 的 Drawer.ensure() 必須一致，改了那邊要改這裡。
+
+   （排桌的賓客詳細資料本來也是一個抽屜，後來改成彈窗 ——
+     後台只有它一個是抽屜，同一件事有兩種開法，使用者就得學兩次。） */
+console.log('\n【抽屜：.ad-drawer 的規格】');
 await go(ADMIN);
 const drawer = await page.evaluate(() => {
-  const d = document.querySelector('#spDrawer');
-  const m = document.querySelector('#spDrawerMask');
-  if(!d || !m) return null;
-  d.hidden = false; m.hidden = false;
+  const mask = document.createElement('div');
+  mask.className = 'ad-drawer-mask';
+  const d = document.createElement('aside');
+  d.className = 'ad-drawer';
+  d.setAttribute('role', 'dialog');
+  d.setAttribute('aria-modal', 'true');
+  d.setAttribute('aria-label', '詳細資料');
+  d.innerHTML = `
+    <div class="ad-drawer-head">
+      <div><div class="ad-drawer-title"></div><div class="ad-drawer-sub"></div></div>
+      <button class="ad-drawer-close" type="button" aria-label="關閉">✕</button>
+    </div>
+    <div class="ad-drawer-body"></div>
+    <div class="ad-drawer-foot"></div>`;
+  document.body.append(mask, d);
   const cs = getComputedStyle(d);
   const out = {
     role: d.getAttribute('role'),
@@ -188,23 +205,25 @@ const drawer = await page.evaluate(() => {
     label: d.getAttribute('aria-label'),
     width: cs.width,
     zBox: cs.zIndex,
-    zMask: getComputedStyle(m).zIndex,
-    scrim: getComputedStyle(m).backgroundColor,
-    close: !!d.querySelector('.sp-drawer-close[aria-label]'),
-    foot: !!d.querySelector('.sp-drawer-foot'),
+    zMask: getComputedStyle(mask).zIndex,
+    scrim: getComputedStyle(mask).backgroundColor,
+    close: !!d.querySelector('.ad-drawer-close[aria-label]'),
+    closeSize: getComputedStyle(d.querySelector('.ad-drawer-close')).fontSize,
+    foot: !!d.querySelector('.ad-drawer-foot'),
   };
-  d.hidden = true; m.hidden = true;
+  mask.remove(); d.remove();
   return out;
 });
-ok('找得到 .sp-drawer', !!drawer);
+ok('找得到 .ad-drawer', !!drawer);
 if(drawer){
-  ok('.sp-drawer 有 dialog 語意', drawer.role === 'dialog' && drawer.modal === 'true' && !!drawer.label,
+  ok('.ad-drawer 有 dialog 語意', drawer.role === 'dialog' && drawer.modal === 'true' && !!drawer.label,
      `role=${drawer.role} aria-modal=${drawer.modal}`);
-  ok('.sp-drawer 寬度 = min(92vw,400px)', drawer.width === '400px', drawer.width);
-  ok('.sp-drawer 層級 1300／1310', drawer.zMask === '1300' && drawer.zBox === '1310',
+  ok('.ad-drawer 寬度 = min(92vw,400px)', drawer.width === '400px', drawer.width);
+  ok('.ad-drawer 層級 1300／1310', drawer.zMask === '1300' && drawer.zBox === '1310',
      `mask=${drawer.zMask} box=${drawer.zBox}`);
   ok('遮罩 = --scrim-drawer(.2)', drawer.scrim === 'rgba(35, 32, 32, 0.2)', drawer.scrim);
   ok('關閉鈕有 aria-label', drawer.close);
+  ok('✕ 的字級 = --fs-glyph(17px)', drawer.closeSize === '17px', drawer.closeSize);
   ok('CTA 貼底（-foot）', drawer.foot);
 }
 
@@ -227,7 +246,13 @@ const scrims = await page.evaluate(() => {
     el.hidden = was;
     return v;
   };
-  return { nav: read('#adSideBackdrop'), modal: read('#adModalMask'), drawer: read('#spDrawerMask') };
+  /* 抽屜的遮罩同樣是動態建出來的，插一份來量 */
+  const probe = document.createElement('div');
+  probe.className = 'ad-drawer-mask';
+  document.body.append(probe);
+  const drawer = getComputedStyle(probe).backgroundColor;
+  probe.remove();
+  return { nav: read('#adSideBackdrop'), modal: read('#adModalMask'), drawer };
 });
 for(const [name, want] of [['側欄', 'rgba(35, 32, 32, 0.32)'],
                            ['彈窗', 'rgba(35, 32, 32, 0.72)'],
@@ -295,7 +320,9 @@ if(menus.acctPop && menus.acctItem){
 console.log('\n【圖示按鈕：aria-label ＋ ✕ 的字級】');
 await go(ADMIN);
 const icons = await page.evaluate(() => {
-  const sels = ['#adMenuBtn', '#adSideClose', '#spDrawerClose'];
+  /* .ad-drawer-close 在上面那一段量過了（它是動態建出來的），
+     這裡量的是 HTML 裡本來就有的那幾顆 */
+  const sels = ['#adMenuBtn', '#adSideClose'];
   return sels.map((sel) => {
     const el = document.querySelector(sel);
     if(!el) return { sel, missing:true };
@@ -312,7 +339,7 @@ for(const ic of icons){
   if(ic.missing){ ok(`找得到 ${ic.sel}`, false); continue; }
   ok(`${ic.sel} 有 aria-label`, !!ic.label, ic.label);
 }
-const closeSizes = icons.filter(i => i.sel !== '#adMenuBtn' && !i.missing).map(i => i.size);
+const closeSizes = icons.filter(i => i.sel === '#adSideClose' && !i.missing).map(i => i.size);
 /* ✕ ＋ ⋯ → 這些字元圖示吃 --fs-glyph，不吃文字層級 ——
    跟著內文走的話，關閉鈕會在不同斷點長成不同大小。 */
 ok('✕ 的字級只有 --fs-glyph(17px) 一種（桌機）',

@@ -308,12 +308,11 @@ function closeViaMask(mask){
 
 /* 全站的彈窗都掛上去。cropper 是動態插入的，另外用一個 observer 接。 */
 function bindAllLayers(){
+  /* 排桌的賓客詳細資料本來是一個抽屜，要另外接一次；
+     現在它也是 .ad-modal-mask，這一行就涵蓋得到了。 */
   document.querySelectorAll('.ad-modal-mask').forEach(mask => {
     watchLayer(mask, closeViaMask(mask));
   });
-  const spDrawer = document.getElementById('spDrawer');
-  const spClose  = document.getElementById('spDrawerClose');
-  if(spDrawer && spClose) watchLayer(spDrawer, ()=> spClose.click());
 }
 
 /* 裁切器（cropper.js）是 document.body.appendChild 進來的 */
@@ -416,9 +415,10 @@ function flashSaved(el, text){
 /* ============================================================
    Detail drawer（共用元件）
    ------------------------------------------------------------
-   規格不重新設計：min(92vw,400px)、暖白底、左側 1px border、
-   CTA 貼底 —— 排桌的賓客抽屜（.sp-drawer）本來就是這一套，
-   這裡只是把它抽出來讓出席回覆與收禮明細也用得到（CSS 兩邊共用選擇器）。
+   規格不重新設計：min(92vw,400px)、暖白底、左側 1px border、CTA 貼底。
+   出席回覆與收禮明細用的都是這一支。
+   （排桌的賓客詳細資料本來也是抽屜，後來改成彈窗 ——
+     後台只有它一個是抽屜，同一件事有兩種開法，使用者就得學兩次。）
 
    為什麼一定要接進 pushLayer()／popLayer()
    ・Android 的實體返回鍵、iOS 的邊緣手勢：使用者的直覺是「關掉這一層」，

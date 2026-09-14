@@ -377,7 +377,7 @@ Ivory 把 Editorial 軌收到只剩標題、數字、信件內文。數字自己
 | 帳號選單 | 960 | `.ad-acct-pop` |
 | 側欄遮罩／側欄 | 990 / 1000 | `.ad-side-backdrop` / `.ad-side` |
 | 懸浮小卡 | 1200 | `.sp-peek`、`.ad-nav-tip`、`.ad-page-tip` |
-| **抽屜遮罩／抽屜** | **1300 / 1310** | `.sp-drawer-mask` `.ad-drawer-mask` / `.sp-drawer` `.ad-drawer` |
+| **抽屜遮罩／抽屜** | **1300 / 1310** | `.ad-drawer-mask` / `.ad-drawer` |
 | 行內選單 | 1400 | `.ad-rowmenu` |
 | **彈窗** | **1450** | `.ad-modal-mask` |
 | Toast | 1500 | `.ad-toast-stack` |
@@ -479,7 +479,7 @@ sticky 的位置不能寫死（婚禮名稱換一行、離線橫幅出現，高�
 |---|---|---|---|---|
 | `.ad-menu-btn` | ☰（三條 16×1px 線） | **36×36** | **44×44** | 1px `--line` ＋ radius |
 | `.ad-side-close` | ✕ | 44×44／**16px** | 44×44／**24px** | 1px `--line` ＋ radius |
-| `.ad-drawer-close` `.sp-drawer-close` | ✕ | padding 2/4・**16px** | 44×44／**24px** | 無框 |
+| `.ad-drawer-close` | ✕ | padding 2/4・**16px** | 44×44／**24px** | 無框 |
 | `.sp-touch-tip-close` | ✕ | —（只在觸控出現） | 44×44／**24px** | 無框 |
 | `.ad-rowmenu-btn` | ⋮ | **36×36**／16px | 44×44／18px | 透明框，hover 才顯 `--line` |
 | `.sp-move-btn` | ↑ ↓ ⇤ ⇥ | **36×36**／13px | **44×44** | 1px `--line` ＋ radius |
@@ -760,7 +760,7 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 | 桌次名單 | `adSeatFilter` | 預設 | — |
 | 感謝信 | `adLetterFilter` | 預設 | — |
 | 收禮明細（後台） | `adBtFilter` | 預設 | ✔ |
-| 排桌・未安排名單 | `spSearch` | `.ad-filter-sm`＋`.sp-search` | — |
+| 排桌・待安排名單 | `spSearch` | `.ad-filter-sm`＋`.sp-search` | — |
 | 收禮台・賓客名單 | `btSearch` | 預設 | ✔ |
 | 收禮台・收禮紀錄 | `btLogSearch` | 預設 | ✔ |
 
@@ -1145,16 +1145,17 @@ RSVP／桌次名單／悄悄話／感謝信／收禮明細共用。
 
 ---
 
-### 3.16 詳細抽屜 `.ad-drawer` / `.sp-drawer`
-
-**同一個元件，兩個消費者，一份 CSS。**
+### 3.16 詳細抽屜 `.ad-drawer`
 
 | 選擇器 | 誰在用 | 產生方式 |
 |---|---|---|
-| `.sp-drawer` | 排桌的賓客詳細資料 | `admin.html` 靜態標記，`seating-plan.js` 填值 |
 | `.ad-drawer` | 出席回覆詳情、收禮明細詳情 | `admin.js` 的 `Drawer` 模組動態建立 |
 
-#### 規格（兩邊完全共用選擇器）
+> 排桌的賓客詳細資料本來也是一個抽屜（`.sp-drawer`），後來改成彈窗：
+> 後台只有它一個是抽屜，同一件事有兩種開法，使用者就得學兩次。
+> 規格本身沒有動 —— 下一個「看一筆的完整內容」仍然用這一份。
+
+#### 規格
 
 | 項目 | 值 |
 |---|---|
@@ -1178,7 +1179,7 @@ RSVP／桌次名單／悄悄話／感謝信／收禮明細共用。
    - 背景鎖捲（iOS 上 `overflow:hidden` 鎖不住，要 `position:fixed`）
    - `Esc` 走同一條路徑，桌機與手機的關法才是同一件事
 
-   `.ad-drawer` 在 `open()` 裡自己推一層；`.sp-drawer` 是靜態標記，
+   `.ad-drawer` 在 `open()` 裡自己推一層；靜態標記的彈窗（含排桌那幾個）
    由 `watchLayer()` 觀察 `[hidden]` 自動推退。
 4. 開啟時把焦點交進這一層：
    - 唯讀抽屜 → 焦點給關閉鈕（鍵盤使用者一按 Enter 就回得去）
@@ -1303,7 +1304,7 @@ npm run test:ui        # tests/ui-consistency.mjs（只需要 hosting emulator�
 | `--ink-soft` | 兩頁都要是後台那一階（`#6a5e53`，5.93:1） |
 | 焦點框 | 收禮台的 `.ad-input` 聚焦要有訊號 |
 | 搜尋框 | 八個都在，每一個六項屬性齊全、placeholder 以「搜尋」開頭 |
-| 抽屜 | `.sp-drawer` 的尺寸、層級、dialog 語意、遮罩、CTA 貼底 |
+| 抽屜 | `.ad-drawer` 的尺寸、層級、dialog 語意、遮罩、CTA 貼底 |
 | 遮罩 | 側欄／彈窗／抽屜三個濃度、同一支冷灰 |
 | 選單 | 兩個下拉選單的面與項規格一致、項 ≥44px、`role="menu"`／`"menuitem"` |
 | 圖示按鈕 | 每一顆都有 `aria-label`；✕ 桌機一律 16px |
