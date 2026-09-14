@@ -344,7 +344,7 @@ for(const p of pills){
   if(p.absent) continue;
   ok(`${p.sel} 是膠囊`, parseFloat(p.radius) >= 999 || p.radius === '999px', p.radius);
   if(p.want) ok(`${p.sel} min-height ${p.want}px`, parseFloat(p.minH) === p.want, p.minH);
-  ok(`${p.sel} 字級是 --fs-meta(12px)`, p.size === '12px', p.size);
+  ok(`${p.sel} 字級是 --fs-meta(14px)`, p.size === '14px', p.size);
 }
 
 /* ------------------------------------------------------------
