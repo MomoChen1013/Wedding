@@ -18,7 +18,12 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
+<!-- 雙軌字體（見 admin.css「雙軌字體」那一段）：
+     Editorial 軌＝中文 Noto Serif TC ＋ 拉丁字 Optima（Apple 裝置的系統字）
+       → 非 Apple 裝置吃 Marcellus，它是 Google Fonts 上最接近 Optima 的一支。
+         Marcellus 只有 400 一個字重，只涵蓋拉丁字，所以檔案很小。
+     UI 軌＝Noto Sans TC，只要 400／500 —— 後台的字重只有這兩階。 -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&family=Noto+Sans+TC:wght@400;500&family=Marcellus&display=swap" rel="stylesheet">
 
 <!-- 和新人後台同一套樣式：同樣的字族、色票、1px 線條與元件。
      butler.css 只補後台沒有的那幾樣（金額欄、加減鈕的排版）。 -->
@@ -270,6 +275,9 @@
 <div class="ad-toast-stack" id="btToasts"></div>
 
 <script defer src="/js/butler-key.js"></script>
+<!-- 分頁的定位線（會滑的那一條）。和後台同一組 .ad-* 元件，
+     但這一頁不載入 admin.js，所以要自己載一次 -->
+<script defer src="/js/ad-tabmarker.js"></script>
 <script type="module" src="/js/butler.js"></script>
 </body>
 </html>

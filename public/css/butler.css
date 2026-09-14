@@ -16,6 +16,23 @@
 /* common.css 幫賓客頁的導覽列留的 padding-top 由 admin.css 一起蓋掉
    （那條規則現在同時掛 admin 與 butler），這裡不用再寫一次。 */
 
+/* ============================================================
+   收禮台自己的字級
+   ------------------------------------------------------------
+   admin.css 的字級表（--fs-title…--fs-pill）這一頁照吃，這裡只補
+   後台沒有、而收禮台真的需要的三個 —— 它們大得出格是有理由的：
+   現場是站著、單手拿手機、旁邊有人在等，通行碼與金額要「看一眼就知道
+   打對沒」，而不是「湊近看」。三個都遠大於 16px，所以也不會觸發
+   iOS 的自動放大。
+============================================================ */
+body[data-page="butler"]{
+  --fs-bt-pass:26px;      /* 通行碼：跟後台 .ad-bt-pass 同一階 */
+  --fs-bt-amount:30px;    /* 禮金金額：整個工具最重要的一個輸入 */
+  --fs-bt-step:17px;      /* 盒數與人數 */
+  --fs-bt-step-lg:19px;   /* 同上，觸控裝置再大一階 */
+}
+
+
 /* 後台在 <900px 把頂列的動作搬進側邊抽屜，所以那裡 display:none；
    butler 沒有抽屜，「記錄者是誰」必須一直按得到 */
 body[data-page="butler"] .ad-bar-actions{display:flex;}
@@ -33,7 +50,7 @@ body[data-page="butler"] .ad-main{max-width:820px;margin:0 auto;}
    所以它只是告知，不擋任何操作 */
 .bt-dot{width:7px;height:7px;border-radius:50%;background:var(--primary-deep);
   flex:0 0 auto;margin-right:8px;display:inline-block;vertical-align:middle;}
-.bt-dot.is-off{background:#a4677a;}
+.bt-dot.is-off{background:var(--alert);}
 
 /* 通行碼：六位數字要一眼看清楚有沒有打錯。
    規格跟後台顯示這組通行碼的 .ad-bt-pass 對齊（26px／500／.34em／
@@ -41,7 +58,7 @@ body[data-page="butler"] .ad-main{max-width:820px;margin:0 auto;}
    打進去的那一串，本來就該長得一樣。
    唯一的差別是顏色：後台那個是「拿來讀的值」所以是金色，
    這裡是使用者自己在打的輸入框，維持 --ink 才讀得清楚。 */
-.bt-pass{text-align:center;font-size:26px;font-weight:500;
+.bt-pass{text-align:center;font-size:var(--fs-bt-pass);font-weight:500;
   letter-spacing:.34em;text-indent:.34em;font-variant-numeric:tabular-nums;
   padding:14px 12px;margin-bottom:14px;}
 .bt-pass::placeholder{letter-spacing:.34em;opacity:.35;}
@@ -52,29 +69,29 @@ body[data-page="butler"] .ad-main{max-width:820px;margin:0 auto;}
 .ad-stats-3{grid-template-columns:repeat(3,1fr);}
 @media(max-width:560px){
   .ad-stats-3 .ad-stat{padding:16px 6px;}
-  .ad-stats-3 .ad-stat-num{font-size:21px;}
+  .ad-stats-3 .ad-stat-num{font-size:var(--fs-num);}
   .ad-stats-3 .ad-stat-lab{letter-spacing:.06em;}
 }
 
 /* 禮金金額：這個工具最重要的一個欄位 */
-.bt-amount{font-size:30px;font-weight:500;letter-spacing:.06em;
+.bt-amount{font-size:var(--fs-bt-amount);font-weight:500;letter-spacing:.06em;
   font-variant-numeric:tabular-nums;padding:14px;}
 .bt-quick{margin-top:10px;}
 
 /* 盒數與人數：現場用加減鈕比叫鍵盤快 */
 .bt-step{display:flex;align-items:center;gap:8px;}
-.bt-step .btn{flex:0 0 auto;min-width:52px;padding:11px 0;font-size:16px;}
+.bt-step .btn{flex:0 0 auto;min-width:52px;padding:11px 0;font-size:var(--fs-glyph);}
 .bt-step .ad-input{flex:1 1 auto;text-align:center;
-  font-variant-numeric:tabular-nums;font-size:17px;}
+  font-variant-numeric:tabular-nums;font-size:var(--fs-bt-step);}
 
 /* 名單與紀錄的每一列：沿用 .ad-item，只多右邊那欄金額的排版 */
 .bt-side{display:flex;flex-direction:column;align-items:flex-end;gap:2px;
   text-align:right;}
-.bt-amt{font-size:15px;letter-spacing:.04em;color:var(--primary-deep);
+.bt-amt{font-size:var(--fs-ctl);letter-spacing:.04em;color:var(--primary-deep);
   font-variant-numeric:tabular-nums;}
-.bt-sub{font-size:11.5px;color:var(--ink-soft);letter-spacing:.04em;}
+.bt-sub{font-size:var(--fs-pill);color:var(--ink-soft);letter-spacing:.04em;}
 /* 編號（A01）：跟名字分得開，一眼掃得到 */
-.bt-code{font-size:11px;letter-spacing:.12em;color:var(--ink-soft);
+.bt-code{font-size:var(--fs-pill);letter-spacing:.12em;color:var(--ink-soft);
   border:1px solid var(--line-soft);border-radius:var(--radius);
   padding:1px 6px;margin-right:7px;font-style:normal;}
 
@@ -86,7 +103,7 @@ body[data-page="butler"] .ad-main{max-width:820px;margin:0 auto;}
 button.ad-item{width:100%;text-align:left;background:none;cursor:pointer;
   font-family:var(--font-ui);color:inherit;
   border:0;border-bottom:1px solid var(--line-soft);}
-button.ad-item:hover{background:rgba(255,255,255,.6);}
+button.ad-item:hover{background:rgba(var(--surface-rgb),.6);}
 
 /* 記帳表單的按鈕列黏在彈窗底部：現場最常做的事就是按「儲存」，
    捲到哪裡都要按得到（.ad-modal-card-form 本身是可捲的）。
@@ -94,7 +111,7 @@ button.ad-item:hover{background:rgba(255,255,255,.6);}
    本來就有的行為，這裡不覆蓋它。 */
 #btSheet .ad-modal-actions{
   position:sticky;bottom:0;margin-top:22px;padding:14px 0 2px;
-  background:#fff;border-top:1px solid var(--line-soft);
+  background:var(--surface);border-top:1px solid var(--line-soft);
   align-items:center;
 }
 #btSheet .ad-del{margin-right:auto;}
@@ -103,7 +120,7 @@ button.ad-item:hover{background:rgba(255,255,255,.6);}
 
 /* 現場是站著單手拿手機，觸控目標要夠大 —— 只加點擊區，不動視覺 */
 @media(pointer:coarse){
-  .ad-chip{padding:9px 16px;font-size:12.5px;}
+  .ad-chip{padding:9px 16px;font-size:var(--fs-meta);}
   .ad-subtab{padding:13px 20px;}
   button.ad-item{padding:16px 2px;}
   .bt-step .btn{padding:14px 0;}
@@ -129,7 +146,7 @@ button.ad-item:hover{background:rgba(255,255,255,.6);}
 
 /* 賓客名單的每一列：現場是靠拇指按的，熱區要夠大、金額要一眼看得到 */
 @media (pointer:coarse){
-  .bt-step .ad-input{font-size:19px;}
+  .bt-step .ad-input{font-size:var(--fs-bt-step-lg);}
   /* 加減鈕現場用得比鍵盤多，做大一點 */
   .bt-step .btn{min-width:60px;min-height:52px;}
   #btGiftSeg .ad-chip{min-height:44px;padding:11px 18px;}
@@ -137,8 +154,8 @@ button.ad-item:hover{background:rgba(255,255,255,.6);}
 }
 
 /* 通行碼與金額欄的字級刻意比 16px 大（不會觸發 iOS 的自動放大） */
-.bt-pass,.bt-amount{font-size:26px;}
-.bt-amount{font-size:30px;}
+.bt-pass,.bt-amount{font-size:var(--fs-bt-pass);}
+.bt-amount{font-size:var(--fs-bt-amount);}
 
 /* ============================================================
    名單改成「一個一個核對過去」
@@ -155,8 +172,8 @@ button.ad-item:hover{background:rgba(255,255,255,.6);}
   display:flex;align-items:center;justify-content:center;
   /* 這裡刻意不是 --radius(2px)：2px 在 22px 的方框上等於直角，
      看起來像表格的一格，不像可以打勾的框。原生 checkbox 也是這個圓角。 */
-  border:1px solid var(--line);border-radius:4px;background:#fff;
-  font-size:13px;line-height:1;color:#fff;
+  border:1px solid var(--line);border-radius:4px;background:var(--surface);
+  font-size:var(--fs-ctl-sm);line-height:1;color:var(--on-ink);
 }
 .bt-row.is-done .bt-check{
   background:var(--primary-deep);border-color:var(--primary-deep);
