@@ -533,7 +533,7 @@ hover 時線與字一起變深（刪除變 `--alert`），觸控沒有 hover 所
 
 | 階 | 字級 | min-height | 誰在用 |
 |---|---|---|---|
-| 獨立 | 12px | **32px** | `.ad-filtersum-clear`（清除篩選）、`.ad-rcard-more`（展開更多）、`.ad-chip`（觸控時 32） |
+| 獨立 | 12px | **32px** | `.ad-filtersum-clear`（清除篩選）、`.ad-rcard-more`（展開更多）、`.sp-pill`（排桌兩欄欄頭的入口）、`.ad-chip`（觸控時 32） |
 | 嵌在一行文字裡 | 12px | **28px** | `.ad-eye`（顯示金額，永遠 28）、`.ad-th-link`（表頭的「標籤」，觸控時 28） |
 
 > 不要再發明第三階。要一顆新的 pill，先問它是獨立的還是嵌在一行字裡。
@@ -779,6 +779,14 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 | `enterkeyhint="search"` | 同上 |
 | `autocomplete="off"` | 瀏覽器存的姓名地址會蓋住下面的清單 |
 | `aria-label` | 螢幕閱讀器只唸得到 placeholder —— 而 placeholder 一打字就消失 |
+
+提示字一律 `--ink-3`（`.ad-filter::placeholder`，和 `.ad-input` 同一條）。
+本來 `.ad-filter` 沒被寫進那條規則，吃的是瀏覽器預設的冷灰 —— 同一頁上兩種灰。
+
+排桌那一顆多一個放大鏡（`#shin9-search`，Feather 的 search）：
+**16×16、`--ink-3`**，畫在框裡不是框旁邊。它跟提示字同色是刻意的 ——
+它不是一顆可以按的東西，是那句提示字的一部分；染成主題色的話，
+空的輸入框裡最顯眼的會是它。
 
 #### JS 樣板
 

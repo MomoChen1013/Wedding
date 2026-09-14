@@ -361,7 +361,10 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
   transition:border-color var(--dur-hover) ease-out;
 }
 .ad-input:focus,.ad-textarea:focus{border-bottom-color:var(--ink);}
-.ad-input::placeholder,.ad-textarea::placeholder{color:var(--ink-3);opacity:1;}
+/* 搜尋框（.ad-filter）本來沒被寫進來，吃的是瀏覽器預設的那支冷灰 ——
+   同一頁上兩種灰的提示字。八個搜尋框一起收進 --ink-3。 */
+.ad-input::placeholder,.ad-textarea::placeholder,
+.ad-filter::placeholder{color:var(--ink-3);opacity:1;}
 /* 多行欄位多一層極淡的面。
    底線化之後，單行的 input 和 96px 高的 textarea 長得一模一樣 ——
    唯一的線索是右下角那顆極小的 resize 把手，空的時候更看不出來。
@@ -1853,14 +1856,18 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 
 /* 放大鏡畫在框裡（不是旁邊）：這樣它是輸入框的一部分，而不是第四個控制項 */
 .sp-search-box{position:relative;flex:1 1 auto;min-width:0;display:flex;}
-.sp-search-ic{position:absolute;left:9px;top:50%;transform:translateY(-50%);
-  width:15px;height:15px;stroke-width:3;color:var(--ink-soft);pointer-events:none;}
+/* 放大鏡跟 placeholder 同一個色（--ink-3）：它不是一顆可以按的東西，
+   是那句提示字的一部分。染成主題色的話，空的輸入框裡最顯眼的會是它。 */
+/* 選擇器多壓一層 .sp-search-box：.ad-ic 的 24px／--primary 宣告在檔案後面，
+   同權重的話會贏過這裡 */
+.sp-search-box .sp-search-ic{position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  width:16px;height:16px;stroke-width:2.4;color:var(--ink-3);pointer-events:none;}
 /* 搜尋框的小尺寸：塞在「待安排」那一欄裡，寬度本來就只有兩百多 px。
    .sp-search 是它在排桌工作區的位置名（寬度佔滿那一行），
    .ad-filter-sm 才是設計系統裡的那個尺寸 —— 別的地方要用小號搜尋框，
    用 .ad-filter-sm，不要再抄一份 padding。 */
 .ad-filter-sm{padding:7px 10px;font-size:var(--fs-meta);}
-.sp-search{flex:1 1 auto;min-width:0;padding-left:30px;}
+.sp-search{flex:1 1 auto;min-width:0;padding-left:32px;}
 
 /* 圖示鈕：平常只有一個圖示，按下去才浮出框 ——
    和賓客卡的「⇄」、桌卡的收合鈕同一個做法 */
@@ -1928,8 +1935,20 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .sp-col-count{border:1px solid var(--line);border-radius:999px;padding:2px 9px;
   background:var(--surface);font-size:var(--fs-pill);letter-spacing:.04em;color:var(--ink);
   font-variant-numeric:tabular-nums;white-space:nowrap;}
+/* 每一欄自己的入口。用 pill 而不是 .btn.small（UI-SPEC 3.3c 的「獨立」那一階，
+   和「清除篩選」同一種東西）：這一頁真正的動作只有「儲存」與「發布給賓客」，
+   欄頭上的四顆如果也長成按鈕，一個畫面上就會有六顆一樣重的東西。
+   收成 pill 之後兩顆並排放得進 280px 的欄寬，不會各佔一整行。 */
 .sp-col-acts{display:flex;gap:6px;flex-wrap:wrap;}
-.sp-col-acts .btn.small{padding:7px 11px;font-size:var(--fs-label);letter-spacing:.06em;}
+/* 字級走 --fs-ctl-sm（chip 的那一階）而不是 --fs-meta：
+   這兩顆住在 280px 寬的欄頭裡，14px 的話兩顆並排就差那十幾 px 放不下，
+   各佔一整行看起來反而比 .btn.small 還重。 */
+.sp-pill{flex:0 0 auto;background:none;border:1px solid var(--line);border-radius:999px;
+  cursor:pointer;font-family:var(--font-ui);font-size:var(--fs-ctl-sm);letter-spacing:.04em;
+  color:var(--ink);padding:5px 10px;min-height:32px;white-space:nowrap;
+  transition:border-color var(--dur-btn) ease-out,background var(--dur-btn) ease-out;}
+.sp-pill:hover{border-color:var(--ink);background:rgba(var(--ink-rgb),.035);}
+.sp-pill:active{background:rgba(var(--ink-rgb),.07);}
 
 /* 「待安排」不是一張桌子，所以刻意長得不一樣：
    淡色底、標題也比桌卡重一些。桌卡是白底細框，
@@ -2237,9 +2256,10 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 /* ---------- 一次加好幾桌 ----------
    一列一個類別：名字在左、−  N  ＋ 在右。
    欄寬固定，五列的數字才會對齊成一直行（掃一眼就知道哪一類開最多）。 */
-.sp-batch{display:flex;flex-direction:column;}
-.sp-batch-row{display:flex;align-items:center;gap:10px;padding:7px 0;
-  border-bottom:1px solid var(--line-soft);}
+.sp-batch{display:flex;flex-direction:column;gap:4px;}
+/* 不畫分隔線：五列是同一個問題的五個答案，不是五筆各自獨立的資料。
+   每一列自己的 −  N  ＋ 已經夠把它切開了，再加線只是把表單畫成表格。 */
+.sp-batch-row{display:flex;align-items:center;gap:10px;padding:4px 0;}
 .sp-batch-lab{flex:1 1 auto;min-width:0;font-size:var(--fs-ctl-sm);letter-spacing:.08em;
   color:var(--ink);}
 .sp-batch-name{flex:1 1 auto;min-width:0;margin:0;font-size:var(--fs-ctl-sm);}

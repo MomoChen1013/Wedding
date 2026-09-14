@@ -1311,6 +1311,8 @@
       const { rows, heads } = seatedOf(t.id, guests);
       const room = t.cap - heads;
       const state = heads > t.cap ? 'over' : (room === 0 ? 'full' : 'ok');
+      /* 這一句回答的是「這一桌還放不放得下」，所以講的是容量與空位，
+         不是「現在坐了幾個」——「3 / 10 人」要新人自己減一次才知道答案。 */
       const leftText = heads > t.cap
         ? `超過 ${heads - t.cap} 位`
         : (room === 0 ? '已滿' : `剩 ${room} 位`);
@@ -1343,7 +1345,7 @@
             </div>
             <div class="sp-table-meta">
               ${type ? `<span class="sp-table-type">${esc(type)}</span>` : '<span></span>'}
-              <span class="sp-table-cap">${heads} / ${t.cap} 人
+              <span class="sp-table-cap">${t.cap} 人
                 <b class="sp-table-left">・${esc(leftText)}</b></span>
             </div>
           </header>
@@ -2362,8 +2364,13 @@
     const { veg, seats } = tableNeeds(seated);
     rows.push([title, '', '', '', '']);
     rows.push(TABLE_SHEET_HEAD.slice());
+    /* 保留席跟在姓名後面（「王大明（保留席）」）。
+       這張表沒有 RSVP 欄，而印出來交給宴會廳的人必須看得出
+       「這個位子是留的、人不一定會到」—— 那是現場最常被問的一件事。
+       賓客明細那一張本來就有 RSVP 欄，不用再標一次。 */
     seated.forEach((g) => rows.push([
-      g.name, g.count, vegOf(g) || '', seatsOf(g) || '', g.note || '',
+      g.rsvp === 'maybe' ? `${g.name}（${RSVP_TEXT.maybe}）` : g.name,
+      g.count, vegOf(g) || '', seatsOf(g) || '', g.note || '',
     ]));
     /* 0 也要寫出來 —— 空白讀起來像「還沒算」，0 才是「這桌不用」 */
     rows.push(['小計', heads, veg, seats, tailNote || '']);

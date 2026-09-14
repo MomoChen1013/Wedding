@@ -261,9 +261,10 @@
 
     <!-- 排桌工作區的三顆工具鈕。都走同一套細線語彙（Feather 等比放大到 48 格），
          和側欄的分頁圖示放在一起才不會像貼上去的。 -->
+    <!-- Feather 的 search（24 格）等比放大到 48 格 -->
     <symbol id="shin9-search" viewBox="0 0 48 48">
-      <circle cx="21" cy="21" r="13"/>
-      <path d="M30.5 30.5 42 42"/>
+      <circle cx="22" cy="22" r="16"/>
+      <path d="M42 42 33.3 33.3"/>
     </symbol>
 
     <symbol id="shin9-filter" viewBox="0 0 48 48">
@@ -1694,8 +1695,8 @@
               <span class="sp-col-count" id="spPoolCount">0 組・0 人</span>
             </div>
             <div class="sp-col-acts">
-              <button class="btn small ghost" id="spGuestAddBtn" type="button">＋ 新增 1 位賓客</button>
-              <button class="btn small ghost" id="spPoolImportRsvp" type="button">匯入出席回覆</button>
+              <button class="sp-pill" id="spGuestAddBtn" type="button">＋ 新增 1 位賓客</button>
+              <button class="sp-pill" id="spPoolImportRsvp" type="button">匯入出席回覆</button>
             </div>
           </div>
 
@@ -1732,8 +1733,8 @@
               <span class="sp-col-count" id="spTableCount">0 桌</span>
             </div>
             <div class="sp-col-acts">
-              <button class="btn small ghost" id="spBoardAddTable" type="button">＋ 新增桌位</button>
-              <button class="btn small ghost" id="spBoardBatchTable" type="button">新增多個桌位</button>
+              <button class="sp-pill" id="spBoardAddTable" type="button">＋ 新增桌位</button>
+              <button class="sp-pill" id="spBoardBatchTable" type="button">新增多個桌位</button>
             </div>
           </div>
           <div class="sp-tables" id="spTablesBoard"></div>
@@ -2778,6 +2779,12 @@
       <label class="ad-label">類別</label>
       <div class="ad-radios sp-radios" id="spGuestCat" role="radiogroup" aria-label="類別"></div>
 
+      <label class="ad-label">標籤</label>
+      <div class="sp-guest-tags" id="spGuestTags"></div>
+      <div class="ad-hint" id="spGuestTagsOff" hidden>
+        這場婚禮還沒開賓客標籤，排桌時就只能用類別分群。
+      </div>
+
       <label class="ad-label">會不會來</label>
       <div class="ad-radios sp-radios" id="spGuestRsvp" role="radiogroup" aria-label="會不會來"></div>
       <div class="ad-hint" id="spGuestOverride" hidden>
@@ -2809,12 +2816,6 @@
       <label class="ad-label">餐點</label>
       <div class="ad-radios sp-radios" id="spGuestMeal" role="radiogroup" aria-label="餐點"></div>
       <div class="ad-hint" id="spGuestMealNote" hidden></div>
-
-      <label class="ad-label">標籤</label>
-      <div class="sp-guest-tags" id="spGuestTags"></div>
-      <div class="ad-hint" id="spGuestTagsOff" hidden>
-        這場婚禮還沒開賓客標籤，排桌時就只能用類別分群。
-      </div>
 
       <label class="ad-label" for="spGuestGift">喜餅</label>
       <div class="ad-stepper" data-stepper="spGuestGift">
