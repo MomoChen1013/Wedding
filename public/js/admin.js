@@ -6426,7 +6426,9 @@ function wzRenderHome(){
           <span class="ad-wz-card-name">${escapeHtml(s.name)}</span>
           <span class="ad-wz-card-note">${escapeHtml(s.note)}</span>
         </span>
-        <span class="ad-wz-card-state${cls}">${escapeHtml(st.text)}</span>
+        <span class="ad-wz-card-state${cls}">${st.done
+          ? `<svg class="ad-state-ic is-vb48" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-check"/></svg>`
+          : ''}<span>${escapeHtml(st.text)}</span></span>
         <i class="ad-wz-card-go" aria-hidden="true">→</i>
       </button>`;
   }).join('');
@@ -8293,7 +8295,9 @@ function pageRowHtml(row){
               aria-expanded="false">${schedFuture ? '改排程' : '排程開啟'}</button>`}
       </div>
       ${state ? `<div class="ad-page-state${schedFuture ? ' is-sched' : ''}">${
-        escapeHtml(state)}</div>` : ''}
+        !row.locked && live
+          ? `<svg class="ad-state-ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#shin9-eye"/></svg>`
+          : ''}<span>${escapeHtml(state)}</span></div>` : ''}
     </div>
 
     <div class="ad-page-act">

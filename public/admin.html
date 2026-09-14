@@ -15,9 +15,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- 雙軌字體（見 admin.css「雙軌字體」那一段）：
-     Editorial 軌 Noto Serif TC（拉丁字在 Apple 裝置上會先吃系統內建的 Optima）、
-     UI 軌 Noto Sans TC。UI 軌只要 400／500 兩個字重 —— 後台的字重只有這兩階。 -->
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+     Editorial 軌＝中文 Noto Serif TC ＋ 拉丁字 Optima（Apple 裝置的系統字）
+       → 非 Apple 裝置吃 Marcellus，它是 Google Fonts 上最接近 Optima 的一支。
+         Marcellus 只有 400 一個字重，只涵蓋拉丁字，所以檔案很小。
+     UI 軌＝Noto Sans TC，只要 400／500 —— 後台的字重只有這兩階。 -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&family=Noto+Sans+TC:wght@400;500&family=Marcellus&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="/css/common.css">
 <link rel="stylesheet" href="/css/admin.css">
@@ -133,6 +135,14 @@
       <path d="M9 22 24 9.5 39 22"/>
       <path d="M12.5 24.5V37a2 2 0 0 0 2 2h19a2 2 0 0 0 2-2V24.5"/>
       <path d="M20.5 39v-9h7v9"/>
+    </symbol>
+
+    <!-- 狀態列的小眼睛：「這一頁賓客現在看得到」。
+         和「顯示金額」那顆 .ad-eye-ic 是同一組 feather 眼睛（viewBox 24），
+         所以線寬由 .ad-state-ic 自己給，不吃 .ad-ic 的 2.4。 -->
+    <symbol id="shin9-eye" viewBox="0 0 24 24">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
     </symbol>
 
     <!-- 上手指南上的步驟編號用不到圖示，這一顆是「打勾」，標示已經做完的步驟 -->
@@ -2924,6 +2934,10 @@
 
 <!-- 收禮小幫手的鑰匙推導：後台產生連結、butler.html 進場，兩邊要算出同一個位置 -->
 <script defer src="/js/butler-key.js"></script>
+
+<!-- 分頁的定位線（會滑的那一條）。後台與收禮台共用同一組 .ad-* 元件，
+     但 butler 不載入 admin.js，所以和 cropper.js 一樣兩頁各自載一次 -->
+<script defer src="/js/ad-tabmarker.js"></script>
 
 <!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與本頁 JS -->
 <script type="module" src="/js/site-context.js"></script>

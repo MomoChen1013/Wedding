@@ -14,7 +14,7 @@
      7. 選單：兩個下拉選單（.ad-rowmenu／.ad-acct-pop）面與項同一份規格
      8. 圖示按鈕：✕ 只有兩個字級、每一顆都有 aria-label
      9. Pill 按鈕：只有 32／28 兩階
-    10. Tab：兩種 tab 共用「白底 ＋ 字重 500 ＋ --primary-deep 定位線」
+    10. Tab：選中的只有兩個訊號（字轉 ink ＋ 字重 500）＋ 一條會滑的定位線
     11. 卡片：白底 ＋ 1px --line ＋ --radius
     12. 表單設定的四個新元件：Badge／Switch／Radio group／Conditional Reveal
     13. Ivory：--primary 不得出現在任何 color 屬性上（它只做面、線與圖示）
@@ -348,39 +348,89 @@ for(const p of pills){
 }
 
 /* ------------------------------------------------------------
-   10. Tab：兩種 tab 共用同一套「選中」語彙
+   10. Tab：選中的只有兩個訊號 ＋ 一條會滑的定位線
+   ------------------------------------------------------------
+   Ivory §07：改版前是「白底 ＋ 字重 500 ＋ 同色定位線」三個訊號疊在一起。
+   現在只剩字轉墨色 ＋ 一條定位線，而且**線是滑的不是跳的** ——
+   那一下位移就是「我從哪一頁到哪一頁」，是這個元件唯一要講的事。
+
+   所以這一段守三件事：
+     ・選中時沒有底色（白底回來 = 三個訊號又疊回去了）
+     ・字是 --ink ＋ 字重 500
+     ・定位線真的存在、量到了位置，而且**會過渡**
+       （transition 被拿掉的話線就用跳的，等於沒有這個元件）
 ------------------------------------------------------------ */
-console.log('\n【Tab：--surface ＋ 字重 500 ＋ --primary-deep 定位線】');
+console.log('\n【Tab：字轉 ink ＋ 一條會滑的定位線】');
 await go(ADMIN);
 const tabs = await page.evaluate(() => {
-  const on = (sel) => {
+  /* 登入門下面板是收起來的，收起來的東西沒有版面就量不到位置。
+     這一段守的是 CSS 與定位線的行為，不是「誰有沒有登入」——
+     所以先把外殼打開（只動這一次 go(ADMIN) 的這一份 DOM）。 */
+  document.querySelector('#pwGate')?.remove();
+  document.querySelectorAll('.ad-page').forEach(e => { e.hidden = false; });
+  const panel = document.querySelector('.ad-panel[data-panel="seatingPlan"]');
+  if(panel){
+    panel.style.display = 'block';
+    panel.querySelectorAll('.ad-subpanel').forEach((sp, i) => { if(i === 0) sp.classList.add('is-on'); });
+  }
+  const read = (sel) => {
     const el = document.querySelector(sel);
     if(!el) return null;
     el.classList.add('is-on');
     const cs = getComputedStyle(el);
-    return { bg:cs.backgroundColor, weight:cs.fontWeight,
-             left:cs.borderLeftWidth + ' ' + cs.borderLeftColor,
-             bottom:cs.borderBottomWidth + ' ' + cs.borderBottomColor };
+    return { bg:cs.backgroundColor, weight:cs.fontWeight, color:cs.color,
+             left:cs.borderLeftWidth, bottom:cs.borderBottomWidth };
   };
-  return { tab:on('.ad-tab'), subtab:on('.ad-subtab') };
+  /* 子分頁要取**打開的那一個面板裡**的那一排 —— 文件裡第一顆 .ad-subtab
+     屬於還收著的「出席回覆」，那一顆永遠量不到位置。 */
+  return { tab:read('.ad-side .ad-tab'),
+           subtab:read('.ad-panel[data-panel="seatingPlan"] .ad-subtab'),
+           laidOut: !!document.querySelector('.ad-side .ad-tab')?.offsetParent
+                    && !!document.querySelector('.ad-panel[data-panel="seatingPlan"] .ad-subtab')?.offsetParent };
 });
+/* 定位線是 rAF 之後才量的（切分頁時 .is-on 會先拿掉再掛上，
+   只量最後一次）。所以要等一拍，不能在同一個 evaluate 裡讀。 */
+await page.waitForTimeout(150);
+const marks = await page.evaluate(() => {
+  const mark = (sel) => {
+    const el = document.querySelector(sel);
+    if(!el) return null;
+    const cs = getComputedStyle(el);
+    return { w:cs.width, h:cs.height, bg:cs.backgroundColor,
+             transition:cs.transitionProperty, ready:el.classList.contains('is-ready') };
+  };
+  return { navmark:mark('.ad-side .ad-navmark'),
+           tabmark:mark('.ad-panel[data-panel="seatingPlan"] .ad-tabmark') };
+});
+tabs.navmark = marks.navmark; tabs.tabmark = marks.tabmark;
 ok('找得到兩種 tab', !!tabs.tab && !!tabs.subtab);
 if(tabs.tab && tabs.subtab){
-  /* 選中的語彙是同一套：白底 ＋ 字重 500 ＋ 一道 --primary-deep 的定位線。
-     線寬刻意不同 —— 側欄 1px（字重才是主訊號）、子分頁 2px（要接上那條底線）。 */
-  /* --surface = #FDFCF9 = rgb(253, 252, 249)。Ivory 的卡片面是米白不是純白：
-     卡片靠那條 1px 線被看見，不靠底色。 */
-  ok('.ad-tab.is-on --surface ＋ 字重 500 ＋ 左邊 2px 定位線',
-     tabs.tab.bg === 'rgb(253, 252, 249)' && tabs.tab.weight === '500'
-       && tabs.tab.left.startsWith('2px'),
-     `${tabs.tab.bg} / ${tabs.tab.weight} / ${tabs.tab.left}`);
-  ok('.ad-subtab.is-on --surface ＋ 字重 500 ＋ 下面 3px 定位線',
-     tabs.subtab.bg === 'rgb(253, 252, 249)' && tabs.subtab.weight === '500'
-       && tabs.subtab.bottom.startsWith('3px'),
-     `${tabs.subtab.bg} / ${tabs.subtab.weight} / ${tabs.subtab.bottom}`);
-  ok('兩條定位線是同一個顏色',
-     tabs.tab.left.split(' ').slice(1).join(' ') === tabs.subtab.bottom.split(' ').slice(1).join(' '),
-     tabs.subtab.bottom.split(' ').slice(1).join(' '));
+  /* --ink = #232020 = rgb(35, 32, 32) */
+  for(const [name, t] of [['.ad-tab', tabs.tab], ['.ad-subtab', tabs.subtab]]){
+    ok(`${name}.is-on 沒有底色（不是白底）`,
+       t.bg === 'rgba(0, 0, 0, 0)' || t.bg === 'transparent', t.bg);
+    ok(`${name}.is-on 字是 --ink ＋ 字重 500`,
+       t.color === 'rgb(35, 32, 32)' && t.weight === '500', `${t.color} / ${t.weight}`);
+  }
+}
+/* 定位線由 js/ad-tabmarker.js 插進來。登入門下面板還沒畫出來，
+   量不到就不算失敗 —— 但只要它在，就必須有寬高、而且會過渡。 */
+for(const [name, m, dim] of [['側欄 .ad-navmark', tabs.navmark, 'h'],
+                             ['子分頁 .ad-tabmark', tabs.tabmark, 'w']]){
+  if(!m){ console.log(`  ·  ${name} 還沒被插進來，略過`); continue; }
+  /* 這一條是整個元件的重點：線會不會滑。transition 被拿掉的話線就用跳的，
+     等於沒有這個元件 —— 所以不管有沒有版面，這一條都要驗。 */
+  ok(`${name} 是滑的不是跳的`, /transform/.test(m.transition), m.transition);
+  if(!tabs.laidOut){ console.log(`  ·  ${name} 這一頁的分頁還沒有版面，位置略過`); continue; }
+  ok(`${name} 量到了位置`, m.ready && parseFloat(m[dim]) > 0,
+     `${dim === 'h' ? '高' : '寬'}=${m[dim]}`);
+}
+/* 兩條線刻意不同色：子分頁是 --ink（那一排字旁邊沒有別的顏色可以呼應），
+   側欄是 --primary（旁邊的圖示已經是同一支色，讀成同一件事）。
+   accent 的五個位置之一就是「選中的定位線」，見 docs/UI-SPEC.md §2.1。 */
+if(tabs.navmark && tabs.tabmark){
+  ok('子分頁的定位線是 --ink', tabs.tabmark.bg === 'rgb(35, 32, 32)', tabs.tabmark.bg);
+  ok('側欄的定位線是 --primary', tabs.navmark.bg === 'rgb(240, 155, 125)', tabs.navmark.bg);
 }
 
 /* ------------------------------------------------------------
@@ -508,6 +558,47 @@ ok('Conditional Reveal 收起來是整塊不見（不是灰掉）',
    bits.revealHidden === 'none', String(bits.revealHidden));
 
 /* ------------------------------------------------------------
+   12b. 開關打開＝實心墨色；多行欄位有面，單行欄位沒有
+   ------------------------------------------------------------
+   ・Switch／Toggle 打開的底色是 --ink，和 .ad-chip.is-on 同一套「選中」語彙。
+     accent 的職責是「記號」不是「開啟」—— 一排 accent 的開關讀起來像一排警示。
+   ・輸入框底線化之後，單行的 input 和 96px 高的 textarea 只差在高度。
+     多行那一個要有一層面，「一條線 ＝ 一行、一塊面 ＝ 一段」才說得通。
+------------------------------------------------------------ */
+console.log('\n【開關與多行欄位】');
+await go(ADMIN);
+const fields = await page.evaluate(() => {
+  const probe = (tag, cls) => {
+    const el = document.createElement(tag);
+    el.className = cls;
+    document.body.appendChild(el);
+    const cs = getComputedStyle(el);
+    const out = { bg:cs.backgroundColor, padL:cs.paddingLeft,
+                  bTop:cs.borderTopWidth, bBottom:cs.borderBottomWidth };
+    el.remove();
+    return out;
+  };
+  /* 打開的軌道：種一顆真的出來量，不依賴頁面上剛好有沒有被打開的那一顆 */
+  const wrap = document.createElement('label');
+  wrap.className = 'ad-toggle';
+  wrap.innerHTML = '<input type="checkbox" checked><span class="ad-toggle-track"></span>';
+  document.body.appendChild(wrap);
+  const trackOn = getComputedStyle(wrap.querySelector('.ad-toggle-track')).backgroundColor;
+  wrap.remove();
+  return { trackOn, input:probe('input','ad-input'), textarea:probe('textarea','ad-textarea') };
+});
+ok('Toggle 打開＝--ink 實心', fields.trackOn === 'rgb(35, 32, 32)', fields.trackOn);
+ok('.ad-input 沒有面（只有一條底線）',
+   fields.input.bg === 'rgba(0, 0, 0, 0)' && fields.input.bTop === '0px'
+     && fields.input.bBottom === '1px',
+   `${fields.input.bg} / 上${fields.input.bTop} 下${fields.input.bBottom}`);
+ok('.ad-textarea 有一層 --bg2 的面，底線留著',
+   fields.textarea.bg === 'rgb(241, 236, 227)' && fields.textarea.bBottom === '1px',
+   `${fields.textarea.bg} / 下${fields.textarea.bBottom}`);
+ok('.ad-textarea 的左右內距補回來了（字不貼著面的邊）',
+   parseFloat(fields.textarea.padL) >= 10, fields.textarea.padL);
+
+/* ------------------------------------------------------------
    13. Ivory：--primary 不得出現在任何 color 屬性上
    ------------------------------------------------------------
    改版前把品牌金放在**所有數字**上（禮金總額、統計方格、通行碼）。
@@ -556,6 +647,16 @@ console.log('\n【Ivory：--primary 只做面與線，不當文字】');
   ok('admin.css 沒有硬寫的白色', white.length === 0, `${white.length} 處`);
   const oldAlert = [...body.matchAll(/#a4677a\b|#8a5765\b/gi)];
   ok('admin.css 沒有硬寫的錯誤色', oldAlert.length === 0, `${oldAlert.length} 處`);
+
+  /* 按鈕自己一階（--fs-btn）：和 --fs-ctl-sm 同值但刻意分開，
+     不然「按鈕再大一點」會順手把整張表格一起改掉。 */
+  ok('.btn 吃 --fs-btn 而不是 --fs-ctl-sm',
+     /\.btn\{[^}]*font-size:var\(--fs-btn\)/.test(body.replace(/\s+/g, '')));
+
+  /* Editorial 軌的拉丁字：Apple 吃系統內建的 Optima，
+     其他裝置落到 Marcellus（Google Fonts 上最接近的一支），中文再落 Noto Serif TC。 */
+  ok('--font-display 是 Optima → Marcellus → Noto Serif TC',
+     /--font-display:'Optima','Marcellus','Noto Serif TC',serif/.test(body));
 }
 
 await browser.close();

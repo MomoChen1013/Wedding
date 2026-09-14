@@ -111,7 +111,9 @@
 #### 三條使用規則（會被測試守著）
 
 1. **`--primary` 不准出現在任何 `color` 屬性上。** 它出現的地方只有五種 ——
-   焦點框、選中的定位線、側欄圖示、未儲存的那一點、`.ad-badge.is-on` 的底。
+   焦點框、**側欄**選中的定位線（`.ad-navmark`，見 3.8）、側欄圖示、
+   未儲存的那一點、`.ad-badge.is-on` 的底。
+   子分頁那條定位線是 `--ink` 不是 accent，理由見 3.8。
    想拿它寫字時改用 `--primary-deep`。
    唯一的例外是 SVG 圖示（`.ad-ic`）：那裡的 `color` 餵給 `stroke:currentColor`，
    是**線的顏色**不是文字顏色。`tests/ui-consistency.mjs` 第 13 段就在守這一條。
@@ -120,6 +122,26 @@
    那些地方的次要文字要用 `--ink-soft`。
 3. **`--surface` 和 `--bg1` 的對比只有 1.03:1，這是故意的**：
    卡片靠那條 1px 線被看見，不靠底色。所以不要為了「讓卡片跳出來」把面加深。
+
+#### 狀態不靠顏色分，靠記號分
+
+`--primary-deep` 換成深磚紅之後，原本掛在它上面的幾個「狀態正常」的字
+（頁面設定的「已經看得到」、婚禮資訊的「已填好」）讀起來像在報錯。
+那幾處一律改回 `--ink-soft`，改用一顆小記號區分：
+
+| 狀態 | 記號 | 在哪 |
+|---|---|---|
+| 這一頁賓客現在看得到 | 眼睛 `#shin9-eye` | `.ad-page-row.is-live .ad-page-state` |
+| 這一段已經填好 | 打勾 `#shin9-check` | `.ad-wz-card-state.is-done` |
+| 排程開啟中 | 無（「9/19 12:00 自己開」本身已經說得夠清楚） | `.ad-page-state.is-sched` |
+
+記號走 `.ad-state-ic`（13px、`stroke:currentColor`），**和側欄的 `.ad-ic`
+分開** —— 那是 24px 的功能圖示，這是跟著 11–12px 文字走的標記，線寬要自己給。
+沿用 48×48 原稿的那幾顆（例如 `#shin9-check`）縮到 13px 時線會被抹掉，
+所以另有 `.ad-state-ic.is-vb48` 把線寬換算回去（48/13 ≈ 3.7 倍）。
+
+> **同一組裡只有一種狀態該有記號。** 婚禮資訊的六張卡有「已填好／還沒填／選填」
+> 三種，只有「已填好」掛打勾 —— 三種都掛記號等於三種都沒有記號。
 
 #### 為什麼 sticky 欄要一支不透明的 hover 色
 
@@ -168,7 +190,7 @@
 ### 2.2 字體：雙軌
 
 ```
---font-display  'Optima','Noto Serif TC',serif          Editorial 軌 ——「婚禮」的部分
+--font-display  'Optima','Marcellus','Noto Serif TC',serif   Editorial 軌 ——「婚禮」的部分
 --font-ui       'Noto Sans TC',system-ui,…              UI 軌       ——「工作」的部分
 ```
 
@@ -191,17 +213,29 @@
 這裡只多要 **400／500** 兩個字重，在同一個 `<link>` 裡一起要。
 fallback 仍然留著 `system-ui` 那一串 —— 字沒到之前畫面不會是空的（`display=swap`）。
 
-#### Optima 是**有裝置差異的優雅降級**
+#### Editorial 軌的拉丁字：Optima → Marcellus → Noto Serif TC
 
-`--font-display` 的第一順位是 Optima：macOS／iOS 系統內建，直接吃得到；
-Windows／Android／Linux 沒有這套字，逐字 fallback 到 Noto Serif TC。
-**不是所有平台都會看到 Optima，這是知道且接受的。**
-Optima 不涵蓋中文，所以中文本來就會落到 Noto Serif TC ——
+| 裝置 | 拉丁字與數字 | 中文 |
+|---|---|---|
+| macOS／iOS | **Optima**（系統內建） | Noto Serif TC |
+| 其他 | **Marcellus**（Google Fonts） | Noto Serif TC |
+
+Optima 是 Monotype 的商業字型，**不能**用 web font 載 —— 自行 host 要另外
+買授權（按月瀏覽量計價）。所以它只能吃 Apple 裝置的系統字。
+
+非 Apple 裝置落到 **Marcellus**：Google Fonts 上最接近 Optima 的一支 ——
+同樣是碑刻感的羅馬體、筆畫末端帶喇叭口、沒有真正的襯線。不是複製品
+（Optima 那種「有襯線的筆畫對比但沒有襯線」沒有免費字型做得到），
+但比直接掉回明朝體接近得多。它只涵蓋拉丁字，檔案很小。
+
+> ⚠ **Marcellus 只有 400 一個字重。** Editorial 的標題是 500 ——
+> CSS 的字體匹配在「要 500、只有 400」時會直接選 400 而不是合成假粗
+> （合成從 600 才開始），所以非 Apple 裝置上拉丁字會比旁邊的中文
+> （Noto Serif TC 500）略細一點點。這是知道且接受的：
+> 假粗在這種細筆畫的羅馬體上更難看。
+
+Optima 與 Marcellus 都不涵蓋中文，中文一律落到 Noto Serif TC ——
 不必為中英混排改任何一行 HTML，瀏覽器的字族 fallback 本來就是逐字處理的。
-
-刻意不補 Cormorant Garamond 當中間層：後台沒有載它，
-為了一層 fallback 再多要一個拉丁家族不划算。
-要讓非 Apple 裝置也看到 Optima，得另外採購 web font 授權並自行 host。
 
 規則寫在 `admin.css` 尾段，選擇器一律是：
 
@@ -249,7 +283,8 @@ Ivory 的五階講的是**文字層級**。它自己的元件 CSS 也沒有全�
 | Token | 值 | 用在哪 |
 |---|---|---|
 | `--fs-ctl` | `15px` | 清單主文、側欄分頁、選單項、就地編輯。**也是 `body` 的基準字級** |
-| `--fs-ctl-sm` | `13px` | 表格、按鈕、chip |
+| `--fs-ctl-sm` | `13px` | 表格、chip |
+| `--fs-btn` | `13px` | 按鈕。**和 `--fs-ctl-sm` 同值但刻意分開** —— 按鈕的字級是最常被要求「再大一點／再小一點」的東西，跟表格綁在一起的話，調按鈕就會順手把整張表格一起改掉 |
 | `--fs-pill` | `11px` | tag／badge／seat／旗標。**不要再往下** |
 
 **輸入框自己一階**
@@ -628,12 +663,19 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 | `.ad-label` | `--fs-label`(10px)／`--track-lab`(.16em)／uppercase／`--ink-soft` |
 | `.ad-input` `.ad-textarea` | 全寬、`10px 2px`、`--fs-input`(16px)、底線 1px，focus 時底線轉 `--ink` |
 | `.ad-input.is-locked` `:disabled` | 虛線底線 ＋ `--ink-3`，**不是灰底** |
+| `.ad-textarea` | 多一層 `--bg2` 的面 ＋ `padding:10px 12px`，底線留著 |
+
+> **多行欄位有面，單行欄位沒有。** 底線化之後單行 input 和 96px 高的
+> textarea 長得一模一樣 —— 唯一的線索是右下角那顆極小的 resize 把手，
+> 空的時候更看不出來。加一層 `--bg2` 之後「**一條線 ＝ 一行、一塊面 ＝ 一段**」
+> 自己就說得通，而且沒有把四邊框加回來：線仍然是唯一的邊界，面只是襯底。
+> 左右內距跟著補回來 —— 字貼著面的邊緣會像沒對齊。
 | `.ad-input-sm` | `max-width:130px`（數字欄位） |
 | `.ad-input-time` | `<input type="time">` 專用寬度（瀏覽器會多畫 AM/PM 與時鐘） |
 | `.ad-hint` | `--fs-pill` `--ink-soft`，說明**後果**不是重複欄位名 |
 | `.ad-field-err` | `--alert`，`:empty` 時不佔高度 |
 | `.ad-check` | checkbox ＋ 文字，`accent-color: --primary-deep` |
-| `.ad-toggle` | 開關：一顆真的 checkbox（鍵盤、讀螢幕都照舊）藏在上面，畫面上是 44×24 的軌道 ＋ 16px 的把手（`.ad-toggle-track`，**Switch 用的也是這一條**，見 3.6b）。**只用在「按下去就生效」的地方**（「頁面設定」分頁），要按儲存才算數的維持 `.ad-check`。沒開通那幾列的 toggle 是 `disabled` 的：CSS 給它 `pointer-events:none`，點擊才落到外層的 `<label>` 上，按下去才有話回他 |
+| `.ad-toggle` | 開關：一顆真的 checkbox（鍵盤、讀螢幕都照舊）藏在上面，畫面上是 44×24 的軌道 ＋ 16px 的把手（`.ad-toggle-track`，**Switch 用的也是這一條**，見 3.6b）。**打開＝ `--ink` 實心**，和 `.ad-chip.is-on` 同一套「選中」語彙 —— accent 的職責是「記號」不是「開啟」，一排 accent 的開關讀起來像一排警示。**只用在「按下去就生效」的地方**（「頁面設定」分頁），要按儲存才算數的維持 `.ad-check`。沒開通那幾列的 toggle 是 `disabled` 的：CSS 給它 `pointer-events:none`，點擊才落到外層的 `<label>` 上，按下去才有話回他 |
 | `.ad-input-when` | `<input type="datetime-local">` 專用寬度（`max-width:240px`） |
 | `.ad-sub-sec` | 表單裡的小節：左邊一道細線，**不是一張卡** |
 | `.ad-sub-sec-bare` | 同上但不畫那道線。給「一顆 Switch ＋ 一句說明」這種小節（郵寄服務）：前面已經有一排膠囊在分段，再加一道線只是多一層框 |
@@ -775,45 +817,74 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 
 ### 3.8 Tab
 
-兩種，**共用同一套「選中」的語彙**：`--surface` 面 ＋ 字重 500 ＋ 一道 `--primary-deep` 的定位線。
+**選中的分頁只有兩個訊號：字轉 `--ink` ＋ 一條定位線滑過去。**
+
+改版前是「白底 ＋ 字重 500 ＋ 同色定位線」三個疊在一起，而且子分頁每一顆
+都畫成實體頁籤（有框、有底、上面兩個圓角）—— 一排五顆就是五個矩形，
+比它們要分的內容還搶眼。
+
+**線是滑的不是跳的。** 那一下位移就是「我從哪一頁到哪一頁」，
+是這個元件唯一要講的事；換成靜態的框線就等於沒有這個元件。
+位置由 `js/ad-tabmarker.js` 量（見下），CSS 只管它長什麼樣與怎麼滑。
 
 | | `.ad-tab`（側欄・直式） | `.ad-subtab`（分頁內・橫式） |
 |---|---|---|
 | 位置 | `.ad-side`，≥900px 常駐 | `.ad-subtabs`，緊貼內容上方 |
-| 字級 | **14px**／`.14em` | **14px**／`.14em` |
-| 內距 | 11px 14px（`padding-left:14px` 補回線寬） | 11px 20px |
-| 未選 | 透明底、`--ink-soft`、`border-left:2px transparent` | `rgba(255,255,255,.45)`、1px `--line` 框、`--ink-soft` |
-| hover | `--ink` ＋ 半透明 `--surface` | `--ink` ＋ `--surface` |
-| **選中** | `--surface` ＋ `font-weight:500` ＋ **左邊 2px** `--primary-deep` | `--surface` ＋ `font-weight:500` ＋ **下面 3px** `--primary-deep` |
+| 字級 | `--fs-ctl`／`.14em` | `--fs-ctl`／`.14em` |
+| 內距 | `11px 14px`（`padding-left` 補回線寬） | `11px 0`，靠 `gap:26px` 分開 |
+| 未選 | 無底、`--ink-soft` | 無底、無框、`--ink-3` |
+| hover | `--ink` ＋ 半透明 `--surface` | `--ink-soft`（只有字變） |
+| **選中** | `--ink` ＋ `font-weight:500` | `--ink` ＋ `font-weight:500` |
+| **定位線** | `.ad-navmark`：左邊 **2px** `--primary` | `.ad-tabmark`：下面 **1px** `--ink` |
 | 面板 | `.ad-panel.is-on` | `.ad-subpanel.is-on` |
 
-線寬不同是刻意的：
+**兩條線刻意不同色，這是規則不是漏改：**
 
-- 側欄 **2px**。未選時是同寬的透明邊、`padding-left` 少 1px 補回來，
-  切分頁時字不會左右跳。
-- 橫式子分頁 **3px** —— 它要接上 `.ad-subtabs` 那條底線，所以
-  **三個數字要一起改**：`.ad-subtabs` 的 `border-bottom`、`.ad-subtab` 的
-  `border-bottom` 與 `margin-bottom`（負值）。只改一個就會對不齊。
+- 側欄是 `--primary`。它旁邊就是同一支色的圖示，兩者讀成同一件事；
+  而且「選中的定位線」本來就是 accent 的五個位置之一（§2.1）。
+- 子分頁是 `--ink`。那一排字旁邊沒有別的顏色可以呼應，accent 擺上去
+  會變成整片米色裡唯一一點彩色，搶過它要分的內容。
 
-> `.ad-tab` 的 `transition` 含 `font-weight`，不要當成沒用到的屬性刪掉。
-> `.ad-tab.is-on` 在檔案裡出現兩次：前面那條是基礎，**真正生效的是
-> 「側欄導覽」那一段的覆寫**。改 active 的樣子要改後面那一條。
->
-> 窄螢幕（≤899px）另有一條把 `.ad-subtab` 收到 `--fs-meta` 的密度覆寫 ——
-> 上表是桌機規格。
+線寬也不同：側欄 **2px**（一條長的直線，1px 會糊掉；未選時是同寬的透明邊，
+切分頁時字不會左右跳），子分頁 **1px**（貼著 `.ad-subtabs` 那條 1px 底線）。
+
+#### 定位線怎麼被放上去的
+
+`js/ad-tabmarker.js`（後台與收禮台**各自** `<script defer>` 載一次 ——
+butler 不載入 `admin.js`，同 `cropper.js` 的處理）。
+
+- 用 **MutationObserver** 看 `.is-on` 換人，不是在每個切分頁的地方補一行。
+  `.is-on` 在四個地方被掛上／拿掉（側欄點擊、hash 變更、鎖定重繪、
+  收禮台自己的切換）—— 補四行就是四個會各自漂掉的地方。
+- 量 `offsetLeft`／`offsetTop` 而不是 `getBoundingClientRect()`：
+  兩條線都是 `absolute` 掛在會捲動的容器裡，要的是「在內容裡的位置」。
+- 連續變動用 `requestAnimationFrame` 收斂成一次（切分頁時 `.is-on`
+  會先拿掉再掛上）。
+- `document.fonts.ready` 之後重量一次 —— 字還沒到之前量到的寬度是備用字算的。
+- 分頁收在摺起來的群組裡時 `offsetParent` 是 `null`，那時候拿掉 `.is-ready`
+  讓線淡掉，等群組展開再量。
+
+> **不要把 `transition` 從 `.ad-tabmark` / `.ad-navmark` 上拿掉。**
+> `tests/ui-consistency.mjs` 第 10 段會驗 `transition-property` 含 `transform`：
+> 那一條就是為了守住「線是滑的」。
+
+其餘：
 
 - 兩者的 hover 都包在 `@media (hover:hover) and (pointer:fine)` 裡 ——
   觸控裝置上 hover 會「黏住」，看起來像選錯了分頁。
 - `.ad-subtabs` 可橫捲，用 `.ad-scrollx` 的遮罩漸層暗示「右邊還有」
   （捲軸藏起來之後，那是唯一的線索）。
-- `data-count="2"` 或 `"3"` 時，窄螢幕排成**等寬 segmented control**，
-  就不用捲了（收禮台的三顆就是這樣）。
+- `data-count="2"` 或 `"3"` 時窄螢幕排成等寬三段（`gap:0` ＋ `flex:1`），
+  就不用捲了（收禮台的三顆就是這樣）。沒有框之後它不再是 segmented control，
+  只是三段等寬的字，定位線一樣滑得過去。
 - 窄螢幕 `.ad-subtabs` sticky 在頂列下面，高度餵給 `--ad-subtabs-h`，
   下面的 `.ad-list-head.is-sticky` 才黏得準。
 - `.ad-tab.is-sub` 是側欄的第二階（「排桌管理」從屬於「桌次圖」）：
   縮排到 27px，並用一道 6×1px 的 `::before` 短線接住。
   分組用 `.ad-navgroup`（可摺疊，`grid-template-rows: 1fr → 0fr` 做動畫，
   因為 `height:auto` 沒辦法 transition）。
+- `.ad-tab.is-on` 在檔案裡出現兩次：前面那條是基礎，**真正生效的是
+  「側欄導覽」那一段的覆寫**。改 active 的樣子要改後面那一條。
 
 ---
 

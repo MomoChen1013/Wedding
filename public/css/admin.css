@@ -178,9 +178,9 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
 @media (hover:hover) and (pointer:fine){
   .ad-tab:hover{color:var(--ink);background:rgba(var(--surface-rgb),.6);}
 }
-/* 注意：這一條會被後面「側欄導覽」那一段覆寫（線收成 1px、加上 font-weight:500）。
-   要改 active 的樣子請改那一條，不是這一條。 */
-.ad-tab.is-on{color:var(--ink);background:var(--surface);border-left-color:var(--primary-deep);}
+/* 注意：這一條會被後面「側欄導覽」那一段覆寫（拿掉底色、加上 font-weight:500，
+   定位線改成會滑的 .ad-navmark）。要改 active 的樣子請改那一條，不是這一條。 */
+.ad-tab.is-on{color:var(--ink);}
 .ad-tab[hidden]{display:none;}
 .ad-side-backdrop{display:none;}
 
@@ -196,7 +196,8 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
 /* touch-action:pan-x —— 這一列是橫向捲動的，但手指斜著滑的時候
    瀏覽器常常把它判成「要捲這一列的上下」，結果整頁跟著卡住。
    明講只吃左右，垂直的手勢就會直接交還給整頁。 */
-.ad-subtabs{display:flex;gap:6px;margin:0 0 24px;border-bottom:3px solid var(--line);
+.ad-subtabs{position:relative;display:flex;gap:26px;margin:0 0 24px;
+  border-bottom:1px solid var(--line-soft);
   overflow-x:auto;overscroll-behavior-x:contain;touch-action:pan-x;
   scrollbar-width:none;scroll-padding-inline:12px;}
 .ad-subtabs::-webkit-scrollbar{display:none;}
@@ -209,20 +210,43 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
     #000 calc(100% - var(--sx-r)),transparent 100%);}
 .ad-scrollx.can-left{--sx-l:22px;}
 .ad-scrollx.can-right{--sx-r:22px;}
+/* ============================================================
+   選中的分頁只有兩個訊號（Ivory §07）
+   ------------------------------------------------------------
+   改版前是「白底 ＋ 字重 500 ＋ 同色定位線」三個訊號疊在一起，
+   而且每一顆都畫成實體頁籤（有框、有底、上面兩個圓角）——
+   一排五顆就是五個矩形，比它們要分的內容還搶眼。
+
+   現在：字轉墨色 ＋ 一條 1px 的定位線**滑過去**。
+   線是滑的不是跳的，所以「我從哪一頁到哪一頁」看得見 ——
+   那一下位移就是這個元件唯一要講的事。
+   （字重 500 留著：.md §4 明確要求加回來，它是給「掃過去」用的，
+     滑線是給「正在切」用的，兩者服務的時刻不一樣。）
+============================================================ */
 .ad-subtab{
   flex:0 0 auto;white-space:nowrap;cursor:pointer;
-  background:rgba(var(--surface-rgb),.45);
-  border:1px solid var(--line);border-bottom:3px solid transparent;
-  border-radius:var(--radius) var(--radius) 0 0;
+  background:none;border:0;border-radius:0;
   font-family:var(--font-body);font-size:var(--fs-ctl);letter-spacing:.14em;
-  color:var(--ink-soft);padding:11px 20px;margin-bottom:-3px;
-  transition:color var(--dur-hover) ease-out,background var(--dur-hover) ease-out,border-color var(--dur-hover) ease-out;
+  color:var(--ink-3);padding:11px 0;
+  transition:color var(--dur-hover) ease-out;
 }
 @media (hover:hover) and (pointer:fine){
-  .ad-subtab:hover{color:var(--ink);background:var(--surface);}
+  .ad-subtab:hover{color:var(--ink-soft);}
 }
-.ad-subtab.is-on{color:var(--ink);background:var(--surface);font-weight:500;
-  border-color:var(--line);border-bottom-color:var(--primary-deep);}
+.ad-subtab.is-on{color:var(--ink);font-weight:500;}
+
+/* 定位線。由 js/ad-tabmarker.js 插進來並量位置，
+   CSS 只負責它長什麼樣、以及怎麼滑。 */
+.ad-tabmark{
+  position:absolute;left:0;bottom:-1px;height:1px;width:0;
+  background:var(--ink);pointer-events:none;
+  transform:translateX(0);
+  transition:transform var(--dur-drawer) var(--ease),
+             width var(--dur-drawer) var(--ease),
+             opacity var(--dur-hover) ease-out;
+}
+/* 還沒量到位置之前不要先畫在左上角 */
+.ad-tabmark:not(.is-ready){opacity:0;}
 .ad-subpanel{display:none;}
 .ad-subpanel.is-on{display:block;animation:scInF var(--dur-page) var(--ease);}
 
@@ -333,6 +357,13 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
 }
 .ad-input:focus,.ad-textarea:focus{border-bottom-color:var(--ink);}
 .ad-input::placeholder,.ad-textarea::placeholder{color:var(--ink-3);opacity:1;}
+/* 多行欄位多一層極淡的面。
+   底線化之後，單行的 input 和 96px 高的 textarea 長得一模一樣 ——
+   唯一的線索是右下角那顆極小的 resize 把手，空的時候更看不出來。
+   加一層 --bg2 之後，「一條線 ＝ 一行、一塊面 ＝ 一段」自己就說得通，
+   而且沒有把四邊框加回來：線仍然是唯一的邊界，面只是襯底。
+   左右內距跟著補回來 —— 字貼著面的邊緣會像沒對齊。 */
+.ad-textarea{background:var(--bg2);padding:10px 12px;}
 .ad-textarea{resize:vertical;min-height:96px;}
 .ad-input-sm{max-width:130px;}
 /* <input type="time"> 的內容是瀏覽器畫的：12 小時制還多了 AM／PM 與時鐘圖示，
@@ -935,9 +966,23 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .ad-page-name-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .ad-page-row.is-locked .ad-page-name{color:var(--ink-soft);}
 /* 只有排了程的那幾列才長出這一行（見 admin.js 的 pageStateText） */
-.ad-page-state{margin-top:2px;font-size:var(--fs-pill);letter-spacing:.06em;color:var(--ink-soft);}
-.ad-page-row.is-live .ad-page-state{color:var(--primary-deep);}
-.ad-page-state.is-sched{color:var(--primary-deep);}
+.ad-page-state{margin-top:2px;font-size:var(--fs-pill);letter-spacing:.06em;color:var(--ink-soft);
+  display:flex;align-items:center;gap:5px;}
+/* 「已經看得到」與「排程中」都維持 --ink-soft，不換顏色 ——
+   狀態靠**記號**分，不靠色。改版前兩者都是 --primary-deep：換成深磚紅之後，
+   一整排「已經看得到」讀起來像一整排警告。
+   已經看得到 → 一顆眼睛（和「顯示金額」是同一顆 feather 眼睛）
+   排程開啟中 → 維持純文字（「9/19 12:00 自己開」本身已經說得夠清楚） */
+.ad-page-row.is-live .ad-page-state,
+.ad-page-state.is-sched{color:var(--ink-soft);}
+
+/* 狀態列前面的小記號。和側欄的 .ad-ic 分開：那是 24px 的功能圖示，
+   這是跟著 11–12px 文字走的標記，線寬要自己給。 */
+.ad-state-ic{flex:0 0 auto;width:13px;height:13px;fill:none;stroke:currentColor;
+  stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+/* 沿用 48×48 原稿的那幾顆（例如 #shin9-check）縮到 13px 時線會被抹掉，
+   線寬要換算回去：48/13 ≈ 3.7 倍 */
+.ad-state-ic.is-vb48{stroke-width:3.6;}
 .ad-page-act{display:flex;align-items:center;gap:14px;justify-self:end;}
 .ad-page-when{flex:0 0 auto;background:none;border:none;cursor:pointer;padding:0 0 2px;
   font-family:var(--font-ui);font-size:var(--fs-meta);letter-spacing:.08em;
@@ -1027,7 +1072,10 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
   background:var(--ink-soft);margin:3px;transition:transform .2s,background .2s;}
 .ad-toggle input:checked + .ad-toggle-track,
 .ad-switch input:checked + .ad-toggle-track{
-  border-color:var(--primary-deep);background:var(--primary-deep);}
+  /* 打開＝實心墨色，和 .ad-chip.is-on 同一套「選中」語彙。
+     改版前是 --primary-deep：那支色換成深磚紅之後，一排開關看起來像
+     一排警示，而且 accent 的職責是「記號」不是「開啟」。 */
+  border-color:var(--ink);background:var(--ink);}
 .ad-toggle input:checked + .ad-toggle-track::after,
 .ad-switch input:checked + .ad-toggle-track::after{
   background:var(--surface);transform:translateX(20px);}
@@ -1234,7 +1282,11 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .ad-wz-card-state{
   flex:0 0 auto;font-size:var(--fs-pill);letter-spacing:.08em;color:var(--ink-soft);
 }
-.ad-wz-card-state.is-done{color:var(--primary-deep);}
+/* 「已填好」也維持 --ink-soft ＋ 一顆打勾。
+   六張卡上「已填好／還沒填／選填」三種狀態本來只差在字，掃過去分不出來；
+   打勾是唯一需要被一眼找到的那一種，所以只有它有記號。 */
+.ad-wz-card-state.is-done{color:var(--ink-soft);}
+.ad-wz-card-state{display:inline-flex;align-items:center;gap:5px;}
 .ad-wz-card-state.is-soft{opacity:.7;}
 .ad-wz-card-go{
   flex:0 0 auto;font-style:normal;font-size:var(--fs-ctl-sm);color:var(--ink-soft);opacity:.6;
@@ -2783,6 +2835,9 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
   .ad-subtabs{position:sticky;top:var(--ad-stick-top,63px);z-index:7;margin-bottom:18px;
     background:rgba(var(--bg1-rgb),.96);backdrop-filter:blur(6px);}
   /* 子分頁只有兩三個時排成等寬，就不用捲了 */
+  /* 只有兩三個時排成等寬，就不用捲了。沒有框之後它不再是 segmented control，
+     只是三段等寬的字 —— 定位線一樣滑得過去。 */
+  .ad-subtabs{gap:0;}
   .ad-subtabs[data-count="2"] .ad-subtab,
   .ad-subtabs[data-count="3"] .ad-subtab{flex:1 1 0;text-align:center;padding:11px 8px;}
   .ad-sec{margin-bottom:38px;}
@@ -3036,19 +3091,24 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inse
    ・fallback 仍然留著 system-ui 那一串：字還沒到之前畫面不會是空的
      （display=swap），而且載入失敗時退回去的仍然是一套完整的 CJK sans。
 
-   Editorial 軌的拉丁字／數字用 Optima（Ivory §06）
-   ・Optima 是系統字：macOS／iOS 內建，直接吃得到；Windows／Android／Linux
-     沒有這套字，逐字 fallback 到 Noto Serif TC。這是**有裝置差異的優雅降級**，
-     不是所有平台都會看到 Optima。
-   ・Optima 不涵蓋中文，所以中文本來就會落到 Noto Serif TC —— 不必為中英混排
-     改任何一行 HTML，瀏覽器的字族 fallback 本來就是逐字處理的。
-   ・刻意不補 Cormorant Garamond 當中間層：後台沒有載它，為了一層 fallback
-     再多要一個拉丁家族不划算。
+   Editorial 軌的拉丁字／數字：Optima → Marcellus → Noto Serif TC（Ivory §06）
+   ・Optima 是系統字：macOS／iOS 內建，直接吃得到，不必也不能用 web font
+     載（它是 Monotype 的商業字型，自行 host 要另外買授權）。
+   ・非 Apple 裝置落到 Marcellus —— 它是 Google Fonts 上最接近 Optima 的
+     那一支：同樣是碑刻感的羅馬體、筆畫末端帶喇叭口、沒有真正的襯線。
+     不是複製品（Optima 那種「有襯線的筆畫對比但沒有襯線」沒有免費字型做得到），
+     但比直接掉回明朝體接近得多。
+   ・⚠ Marcellus **只有 400 一個字重**。Editorial 的標題是 500 ——
+     CSS 的字體匹配在「要 500、只有 400」時會直接選 400 而不是合成假粗
+     （合成從 600 才開始），所以拉丁字會比旁邊的中文（Noto Serif TC 500）
+     略細一點點。這是知道且接受的：假粗在這種細筆畫的羅馬體上更難看。
+   ・Optima 與 Marcellus 都不涵蓋中文，中文一律落到 Noto Serif TC ——
+     不必為中英混排改任何一行 HTML，瀏覽器的字族 fallback 本來就是逐字處理的。
 ============================================================ */
 body:is([data-page="admin"],[data-page="butler"]){
   --font-ui:'Noto Sans TC',system-ui,-apple-system,"PingFang TC",
             "Microsoft JhengHei","Segoe UI",sans-serif;
-  --font-display:'Optima','Noto Serif TC',serif;
+  --font-display:'Optima','Marcellus','Noto Serif TC',serif;
 }
 
 /* UI 軌：導覽、表格、表單、按鈕、metadata、時間戳、狀態 */
@@ -3112,7 +3172,7 @@ body:is([data-page="admin"],[data-page="butler"]) .btn{
 /* 按鈕尺寸（自訂規範 §3.1）。common.css 的 .btn 是賓客頁也在用的，
    所以只在後台層覆寫，不動賓客頁那一份。 */
 body:is([data-page="admin"],[data-page="butler"]) .btn{
-  font-size:var(--fs-ctl-sm);padding:10px 22px;
+  font-size:var(--fs-btn);padding:10px 22px;
 }
 body:is([data-page="admin"],[data-page="butler"]) .btn.small{
   font-size:var(--fs-meta);padding:8px 20px;
@@ -3398,14 +3458,17 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
   display:flex;flex-direction:column;gap:1px;
 }
 
-/* Active：白底 ＋ 2px 金線 ＋ 字重 500（自訂規範 §3.8）。
-   線寬吃在 padding-left 裡（未選時是同寬的透明邊），切分頁時字不會左右跳。 */
+/* Active：字轉墨色 ＋ 字重 500 ＋ 一條 1px 定位線滑上來（Ivory §07）。
+   改版前是「白底 ＋ 2px 金線 ＋ 字重 500」三個訊號 —— 白底讓每一頁看起來
+   像被框起來的一張卡，而側欄本來就只是一份名單。
+   定位線用 --primary（Ivory 的 .lib-nav 就是這樣）：它在這裡是**記號**，
+   而且旁邊的圖示已經是同一支色，兩者讀成同一件事。
+   子分頁那條是 --ink，因為那裡沒有圖示可以呼應（見 .ad-tabmark）。 */
 .ad-tab.is-on{
-  color:var(--ink);background:var(--surface);font-weight:500;
-  border-left-color:var(--primary-deep);border-left-width:2px;
-  padding-left:14px;
+  color:var(--ink);background:none;font-weight:500;
 }
-.ad-tab{border-left-width:2px;padding-left:14px;}
+/* 未選時也留同寬的透明邊，切分頁時字不會左右跳 */
+.ad-tab{border-left-width:2px;padding-left:14px;border-left-color:transparent;}
 /* 「排桌管理」從屬於「桌次」：縮一階，並用一道更淡的線接住 */
 .ad-tab.is-sub{padding-left:27px;}
 .ad-tab.is-sub::before{
@@ -3442,7 +3505,20 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
    預設值刻意掛在 .ad-side／.ad-main 而不是 .ad-ic 上：寫在 svg 自己身上的話，
    .ad-tab.is-on 那一條就蓋不過來了（直接設定 > 繼承）。 */
 .ad-side,.ad-main{--ic-surface:var(--bg1);}
-.ad-tab.is-on{--ic-surface:var(--surface);}
+/* 選中的分頁不再有白底，圖示的實底就跟著側欄同色 */
+
+/* 側欄的定位線：1px，會滑。由 js/ad-tabmarker.js 插進來並量位置。
+   .ad-side 是 position:sticky —— sticky 本身就是 positioned，
+   所以這一條 absolute 會以它為基準，而且跟著它一起捲。 */
+.ad-navmark{
+  position:absolute;left:0;top:0;width:2px;height:0;
+  background:var(--primary);pointer-events:none;
+  transform:translateY(0);
+  transition:transform var(--dur-drawer) var(--ease),
+             height var(--dur-drawer) var(--ease),
+             opacity var(--dur-hover) ease-out;
+}
+.ad-navmark:not(.is-ready){opacity:0;}
 
 /* ---- 側欄分頁 ---- */
 /* 加了圖示之後 .ad-tab 要變成 flex 才對得齊（原本是 display:block）。
@@ -4129,7 +4205,11 @@ body:is([data-page="admin"],[data-page="butler"]){
 
   /* 元件階（密度區） */
   --fs-ctl:15px;                       /* 清單主文、側欄分頁、就地編輯 */
-  --fs-ctl-sm:13px;                    /* 表格、按鈕、chip */
+  --fs-ctl-sm:13px;                    /* 表格、chip */
+  /* 按鈕自己一階。值和 --fs-ctl-sm 一樣，但**刻意分開**：
+     按鈕的字級是最容易被要求「再大一點／再小一點」的東西，
+     跟表格綁在一起的話，調按鈕就會順手把整張表格一起改掉。 */
+  --fs-btn:13px;
   --fs-pill:11px;                      /* tag／badge／seat／旗標 */
 
   /* 輸入框自己一階。
