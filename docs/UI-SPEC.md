@@ -41,7 +41,7 @@
 |---|---|
 | 靠線條與留白撐層次 | 1px `--line`／`--line-soft`，不用色塊分區。輸入框也是一條線，不是一個盒子（3.6） |
 | 陰影只給「浮起來」的東西 | 抽屜、彈窗、行內選單、toast、拖曳中的列。其餘一律無陰影 |
-| 圓角克制 | 後台 `--radius: 4px`（賓客頁 `2px`）。只有膠囊（chip／badge／pill 按鈕）是 `999px`；`.ad-tag` 是方的 |
+| 圓角克制 | 後台 `--radius: 4px`（賓客頁 `2px`）。形狀只有一條規則：**膠囊 `999px` ＝ 可以點、方角 `--radius` ＝ 唯讀**，零例外 |
 | 不用 emoji 當 UI 圖示 | 現有的 `✕ ＋ － ⋮ ↗` 是字元，不是圖示字型 |
 | 動效克制 | 只有 ease-out，時長 150–260ms，不用 bounce／overshoot |
 | 顏色只標示狀態 | `--primary` 不准當文字（2.1）。數字是 `--ink`，不是品牌色 |
@@ -254,7 +254,7 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-xxx { … }
 |---|---|---|
 | `--radius` / `--radius-sm` | `4px` | 後台層。賓客頁仍是 `2px` |
 
-膠囊（chip／badge／pill 按鈕）維持 `999px`，不吃 `--radius`。
+膠囊（chip／pill 按鈕，＝可以點的東西）維持 `999px`，不吃 `--radius`。
 **`.ad-tag` 不再是膠囊**（見 3.5）—— 形狀是它和 Badge 唯一的區別。
 
 #### 字級：十四支變數，零處硬寫
@@ -377,7 +377,7 @@ Ivory 把 Editorial 軌收到只剩標題、數字、信件內文。數字自己
 | 帳號選單 | 960 | `.ad-acct-pop` |
 | 側欄遮罩／側欄 | 990 / 1000 | `.ad-side-backdrop` / `.ad-side` |
 | 懸浮小卡 | 1200 | `.sp-peek`、`.ad-nav-tip`、`.ad-page-tip` |
-| **抽屜遮罩／抽屜** | **1300 / 1310** | `.sp-drawer-mask` `.ad-drawer-mask` / `.sp-drawer` `.ad-drawer` |
+| **抽屜遮罩／抽屜** | **1300 / 1310** | `.ad-drawer-mask` / `.ad-drawer` |
 | 行內選單 | 1400 | `.ad-rowmenu` |
 | **彈窗** | **1450** | `.ad-modal-mask` |
 | Toast | 1500 | `.ad-toast-stack` |
@@ -479,7 +479,7 @@ sticky 的位置不能寫死（婚禮名稱換一行、離線橫幅出現，高�
 |---|---|---|---|---|
 | `.ad-menu-btn` | ☰（三條 16×1px 線） | **36×36** | **44×44** | 1px `--line` ＋ radius |
 | `.ad-side-close` | ✕ | 44×44／**16px** | 44×44／**24px** | 1px `--line` ＋ radius |
-| `.ad-drawer-close` `.sp-drawer-close` | ✕ | padding 2/4・**16px** | 44×44／**24px** | 無框 |
+| `.ad-drawer-close` | ✕ | padding 2/4・**16px** | 44×44／**24px** | 無框 |
 | `.sp-touch-tip-close` | ✕ | —（只在觸控出現） | 44×44／**24px** | 無框 |
 | `.ad-rowmenu-btn` | ⋮ | **36×36**／16px | 44×44／18px | 透明框，hover 才顯 `--line` |
 | `.sp-move-btn` | ↑ ↓ ⇤ ⇥ | **36×36**／13px | **44×44** | 1px `--line` ＋ radius |
@@ -533,7 +533,7 @@ hover 時線與字一起變深（刪除變 `--alert`），觸控沒有 hover 所
 
 | 階 | 字級 | min-height | 誰在用 |
 |---|---|---|---|
-| 獨立 | 12px | **32px** | `.ad-filtersum-clear`（清除篩選）、`.ad-rcard-more`（展開更多）、`.ad-chip`（觸控時 32） |
+| 獨立 | 12px | **32px** | `.ad-filtersum-clear`（清除篩選）、`.ad-rcard-more`（展開更多）、`.sp-pill`（排桌兩欄欄頭的入口）、`.ad-chip`（觸控時 32） |
 | 嵌在一行文字裡 | 12px | **28px** | `.ad-eye`（顯示金額，永遠 28）、`.ad-th-link`（表頭的「標籤」，觸控時 28） |
 
 > 不要再發明第三階。要一顆新的 pill，先問它是獨立的還是嵌在一行字裡。
@@ -549,8 +549,23 @@ hover 時線與字一起變深（刪除變 `--alert`），觸控沒有 hover 所
 </div>
 ```
 
-- 未選：透明底 ＋ `--line` 框 ＋ `--ink-soft`
-- 已選：`.is-on` → 實心 `--ink` ＋ 白字
+#### 五個狀態
+
+| 狀態 | 面 | 框 | 字 |
+|---|---|---|---|
+| Default | 透明 | 1px `--line` | `--ink-soft` |
+| Hover | `rgba(--ink-rgb,.04)` | 1px `--ink` | `--ink` |
+| Selected `.is-on` | `--ink` | 1px `--ink` | `--on-ink` |
+| Disabled `:disabled` | 透明 | 1px `--line-soft` | `--ink-3` ＋ `opacity:.55` ＋ `cursor:not-allowed` |
+| Read-only | — | — | — |
+
+> **Disabled ≠ Read-only。** Disabled 是「現在選不到」（篩選裡一個人都沒有的
+> 標籤）—— 條件變了它就會回來，所以它仍然是一顆 chip。
+> Read-only 是「這筆資料就是這樣」—— 它**不做成 chip**，改用方形的
+> `.ad-tag`（3.5）。
+>
+> 兩種都**不掛圖示**。一把鎖頭是在替形狀沒講清楚的事再解釋一次；
+> 形狀講清楚了就不需要它。
 - 容器變體：`.ad-chips-oneline`（固定顆數，放不下就左右滑）、
   `.ad-chips-clamp` ＋ `.ad-chips-more`（數量無上限，先露兩排）、
   `.ad-chips-sub`（次級一排，字小一號）、
@@ -577,17 +592,21 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 **`border-radius: var(--radius)` —— 方的，不是膠囊。**
 **永遠 `white-space:nowrap`** —— 折行的標記完全不成形，欄位擠不下時該讓欄位變寬。
 
-> **形狀就是「這個不能點」。** 改版前 tag 和 chip、Badge、pill 按鈕全都是
+`.ad-tag-need`（素食、行動不便、VIP…）：`--primary-deep` 字 ＋ `--primary` 框。
+語意比一般標籤重一階，形狀一樣。
+
+> **形狀就是「這個能不能點」。** 改版前 tag 和 chip、Badge、pill 按鈕全都是
 > 999px 膠囊，唯一的區別是「可點的有 hover 反應」—— 那是一個要伸手去試
-> 才知道的區別。現在 `.ad-tag` 收成 4px 方角：
+> 才知道的區別。現在只有一條規則，零例外：
 >
 > | 形狀 | 是什麼 | 例子 |
 > |---|---|---|
-> | 方角 `--radius` | 唯讀的**資料狀態** | `.ad-tag`（會出席、素食、VIP） |
-> | 膠囊 `999px` | 可點的**篩選器**或**設定狀態** | `.ad-chip`、`.ad-badge`、pill 按鈕 |
+> | 方角 `--radius` | **唯讀**（資料是什麼、設定現在是什麼狀態） | `.ad-tag`、`.ad-badge` |
+> | 膠囊 `999px` | **可以點**（篩選器、segmented control、pill 按鈕） | `.ad-chip`、`.sp-pill`、`.ad-filtersum-clear` |
 >
-> `.ad-badge` 刻意**維持膠囊**：它講的是「這個設定開了沒」，
-> 和 tag 的「這一筆資料是什麼」不同用途，形狀撞在一起反而混淆。
+> 所以「點不動的 chip」不存在：要嘛它是 Disabled（暫時選不到，見 3.4），
+> 要嘛它根本是唯讀的資料 —— 那就是一顆 `.ad-tag`，不是灰掉的 chip。
+> 唯讀的東西也**不掛鎖頭之類的圖示**：形狀已經講完了，圖示只是再解釋一次。
 
 ---
 
@@ -603,7 +622,7 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 
 | 變體 | 樣子 | 用在哪 |
 |---|---|---|
-| `.ad-badge` | `--bg2` 底 ＋ `--line` 框 ＋ `--ink-soft` | 活動種類 |
+| `.ad-badge` | `--bg2` 底 ＋ `--line` 框 ＋ `--ink-soft`，`--radius` 方角 | 活動種類 |
 | `.ad-badge.is-on` | `--primary-soft` 底 ＋ `--primary` 框 ＋ `--ink` | 正在生效（主要活動） |
 
 和 `.ad-tag`（3.5）的分工：**`.ad-tag` 講「這一筆資料是什麼」（題型、
@@ -760,7 +779,7 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 | 桌次名單 | `adSeatFilter` | 預設 | — |
 | 感謝信 | `adLetterFilter` | 預設 | — |
 | 收禮明細（後台） | `adBtFilter` | 預設 | ✔ |
-| 排桌・未安排名單 | `spSearch` | `.ad-filter-sm`＋`.sp-search` | — |
+| 排桌・待安排名單 | `spSearch` | `.ad-filter-sm`＋`.sp-search` | — |
 | 收禮台・賓客名單 | `btSearch` | 預設 | ✔ |
 | 收禮台・收禮紀錄 | `btLogSearch` | 預設 | ✔ |
 
@@ -779,6 +798,14 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 | `enterkeyhint="search"` | 同上 |
 | `autocomplete="off"` | 瀏覽器存的姓名地址會蓋住下面的清單 |
 | `aria-label` | 螢幕閱讀器只唸得到 placeholder —— 而 placeholder 一打字就消失 |
+
+提示字一律 `--ink-3`（`.ad-filter::placeholder`，和 `.ad-input` 同一條）。
+本來 `.ad-filter` 沒被寫進那條規則，吃的是瀏覽器預設的冷灰 —— 同一頁上兩種灰。
+
+排桌那一顆多一個放大鏡（`#shin9-search`，Feather 的 search）：
+**16×16、`--ink-3`**，畫在框裡不是框旁邊。它跟提示字同色是刻意的 ——
+它不是一顆可以按的東西，是那句提示字的一部分；染成主題色的話，
+空的輸入框裡最顯眼的會是它。
 
 #### JS 樣板
 
@@ -1145,16 +1172,17 @@ RSVP／桌次名單／悄悄話／感謝信／收禮明細共用。
 
 ---
 
-### 3.16 詳細抽屜 `.ad-drawer` / `.sp-drawer`
-
-**同一個元件，兩個消費者，一份 CSS。**
+### 3.16 詳細抽屜 `.ad-drawer`
 
 | 選擇器 | 誰在用 | 產生方式 |
 |---|---|---|
-| `.sp-drawer` | 排桌的賓客詳細資料 | `admin.html` 靜態標記，`seating-plan.js` 填值 |
 | `.ad-drawer` | 出席回覆詳情、收禮明細詳情 | `admin.js` 的 `Drawer` 模組動態建立 |
 
-#### 規格（兩邊完全共用選擇器）
+> 排桌的賓客詳細資料本來也是一個抽屜（`.sp-drawer`），後來改成彈窗：
+> 後台只有它一個是抽屜，同一件事有兩種開法，使用者就得學兩次。
+> 規格本身沒有動 —— 下一個「看一筆的完整內容」仍然用這一份。
+
+#### 規格
 
 | 項目 | 值 |
 |---|---|
@@ -1178,7 +1206,7 @@ RSVP／桌次名單／悄悄話／感謝信／收禮明細共用。
    - 背景鎖捲（iOS 上 `overflow:hidden` 鎖不住，要 `position:fixed`）
    - `Esc` 走同一條路徑，桌機與手機的關法才是同一件事
 
-   `.ad-drawer` 在 `open()` 裡自己推一層；`.sp-drawer` 是靜態標記，
+   `.ad-drawer` 在 `open()` 裡自己推一層；靜態標記的彈窗（含排桌那幾個）
    由 `watchLayer()` 觀察 `[hidden]` 自動推退。
 4. 開啟時把焦點交進這一層：
    - 唯讀抽屜 → 焦點給關閉鈕（鍵盤使用者一按 Enter 就回得去）
@@ -1303,7 +1331,7 @@ npm run test:ui        # tests/ui-consistency.mjs（只需要 hosting emulator�
 | `--ink-soft` | 兩頁都要是後台那一階（`#6a5e53`，5.93:1） |
 | 焦點框 | 收禮台的 `.ad-input` 聚焦要有訊號 |
 | 搜尋框 | 八個都在，每一個六項屬性齊全、placeholder 以「搜尋」開頭 |
-| 抽屜 | `.sp-drawer` 的尺寸、層級、dialog 語意、遮罩、CTA 貼底 |
+| 抽屜 | `.ad-drawer` 的尺寸、層級、dialog 語意、遮罩、CTA 貼底 |
 | 遮罩 | 側欄／彈窗／抽屜三個濃度、同一支冷灰 |
 | 選單 | 兩個下拉選單的面與項規格一致、項 ≥44px、`role="menu"`／`"menuitem"` |
 | 圖示按鈕 | 每一顆都有 `aria-label`；✕ 桌機一律 16px |

@@ -361,7 +361,10 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
   transition:border-color var(--dur-hover) ease-out;
 }
 .ad-input:focus,.ad-textarea:focus{border-bottom-color:var(--ink);}
-.ad-input::placeholder,.ad-textarea::placeholder{color:var(--ink-3);opacity:1;}
+/* 搜尋框（.ad-filter）本來沒被寫進來，吃的是瀏覽器預設的那支冷灰 ——
+   同一頁上兩種灰的提示字。八個搜尋框一起收進 --ink-3。 */
+.ad-input::placeholder,.ad-textarea::placeholder,
+.ad-filter::placeholder{color:var(--ink-3);opacity:1;}
 /* 多行欄位多一層極淡的面。
    底線化之後，單行的 input 和 96px 高的 textarea 長得一模一樣 ——
    唯一的線索是右下角那顆極小的 resize 把手，空的時候更看不出來。
@@ -610,8 +613,24 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
   font-family:var(--font-body);font-size:var(--fs-meta);letter-spacing:.08em;
   color:var(--ink-soft);transition:color var(--dur-hover) ease-out,background var(--dur-hover) ease-out,border-color var(--dur-hover) ease-out;
 }
-.ad-chip:hover{border-color:var(--ink);color:var(--ink);}
+/* ---------- Chip 的五個狀態 ----------
+   膠囊 ＝ 可以點。唯讀的東西一律用方形的 .ad-tag，不做成「點不動的 chip」——
+   一個看起來能點、按下去沒反應的東西，比長得不一樣更難理解。
+
+     Default   透明底 ＋ --line ＋ --ink-soft
+     Hover     極淡的面 ＋ --ink 框（跟 .btn.ghost、.sp-pill 同一套）
+     Selected  實心 --ink ＋ 白字
+     Disabled  框與字各退一階 ＋ .55 —— 不掛任何圖示
+     Read-only 不是 chip，見 3.5 的 .ad-tag
+
+   Disabled 講的是「現在選不到」（例如篩選裡一個人都沒有的標籤），
+   不是「這筆資料改不動」—— 後者是 Read-only。 */
+.ad-chip:hover:not(:disabled):not([aria-disabled="true"]){
+  background:rgba(var(--ink-rgb),.04);border-color:var(--ink);color:var(--ink);}
 .ad-chip.is-on{background:var(--ink);border-color:var(--ink);color:var(--on-ink);}
+.ad-chip:disabled,.ad-chip[aria-disabled="true"]{
+  background:transparent;border-color:var(--line-soft);color:var(--ink-3);
+  opacity:.55;cursor:not-allowed;}
 
 /* 回覆狀態的標籤 */
 /* 名單上的篩選鈕分兩排時，第二排（標籤）縮一點、和第一排拉開距離 */
@@ -630,7 +649,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
   flex-wrap:wrap;}
 /* ---------- 搜尋框（.ad-filter）----------
    後台只有這一種搜尋框。八個地方都在用它：出席回覆、悄悄話、桌次名單、
-   感謝信、收禮明細（後台）、排桌的未安排名單，以及收禮台的名單與紀錄。
+   感謝信、收禮明細（後台）、排桌的待安排名單，以及收禮台的名單與紀錄。
 
    同一個元件就要同一份規格，HTML 那邊也一樣（缺一個就長得不一樣）：
      type="search"          右邊有原生清除鈕，語意也對
@@ -746,6 +765,8 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 
 .ad-tag{border:1px solid var(--line);border-radius:var(--radius);padding:2px 10px;
   font-size:var(--fs-pill);letter-spacing:.08em;color:var(--ink-soft);flex:0 0 auto;}
+/* 特殊需求（素食、行動不便、VIP…）：語意比一般標籤重一階，形狀一樣 */
+.ad-tag-need{color:var(--primary-deep);border-color:var(--primary);}
 
 /* 賓客身上的標籤（VIP、長輩…）：和出席狀態的 pill 同一種形狀，換個顏色 */
 .ad-tag-guest{background:var(--bg2);border-color:var(--line);color:var(--ink);
@@ -1721,7 +1742,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 /* ============================================================
    排桌管理
    ------------------------------------------------------------
-   後台裡密度最高的一頁：左邊「未安排」永遠在，右邊是桌位。
+   後台裡密度最高的一頁：左邊「待安排」永遠在，右邊是「我的桌位」。
    語彙照舊（1px 線、無陰影、Noto Serif TC），只是把卡片縮小、
    間距收緊，一個螢幕才裝得下二十幾桌。
 ============================================================ */
@@ -1751,35 +1772,37 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .ad-main:has(.ad-panel[data-panel="seatingPlan"].is-on
              .ad-subpanel[data-subpanel="board"].is-on){max-width:1360px;}
 
-/* ---------- 最上面那一列：狀態 ＋ 統計 ＋ 儲存／同步 ----------
-   三塊收在同一列（桌機），工作區才拿得回螢幕的高度。
-   窄螢幕自己拆行，順序仍然是狀態 → 統計 → 按鈕。 */
+/* ---------- 最上面那一列：進度 ＋ 發布狀態 ＋ 儲存／發布 ----------
+   三件事收在同一列（窄螢幕會自己拆行），工作區才拿得回螢幕的高度。 */
 .sp-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;
   padding:12px 16px;margin-bottom:14px;
   border:1px solid var(--line);
   border-radius:var(--radius);background:var(--surface);}
-.sp-bar-status{display:flex;flex-direction:column;gap:4px;min-width:0;flex:0 1 auto;}
+.sp-bar-status{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1 1 240px;}
 .sp-bar-actions{display:flex;gap:8px;flex-wrap:wrap;flex:0 0 auto;margin-left:auto;}
 
 .sp-sync{align-self:flex-start;border:1px solid var(--line);border-radius:999px;
   padding:3px 12px;font-size:var(--fs-pill);letter-spacing:.1em;color:var(--ink-soft);
   white-space:nowrap;}
 .sp-sync[data-state="ok"]{color:var(--primary-deep);border-color:var(--primary);}
-.sp-sync[data-state="stale"]{color:var(--alert);border-color:rgba(var(--alert-rgb),.45);}
+.sp-sync[data-state="stale"],
+.sp-sync[data-state="dirty"]{color:var(--alert);border-color:rgba(var(--alert-rgb),.45);}
 .sp-sync-note{font-size:var(--fs-pill);line-height:1.7;letter-spacing:.02em;color:var(--ink-soft);}
 
-/* 有還沒存的修改時，「儲存排桌」自己站出來 */
+/* 有還沒存的修改時，「儲存」自己站出來 */
 .btn.is-dirty{position:relative;}
 .btn.is-dirty::after{content:'';position:absolute;top:-3px;right:-3px;
   width:7px;height:7px;border-radius:50%;background:var(--alert);}
 
 /* ---------- 統計 ----------
-   只留四個一直要盯著的數字。住在頂列裡，所以不用外框，
-   靠中間那幾條分隔線就夠了；手機也一列排得完。 */
+   只留三個數字：待安排、總人數、總桌數。
+   拿掉了「平均一桌人數」—— 沒有人是看著那個數字決定誰坐哪一桌的，
+   它只會把真正要盯的「待安排」擠小。
+   住在頂列裡，所以不用外框，靠中間那幾條分隔線就夠了。 */
 /* 選擇器都多壓一層 .ad-stats：後面「資料面板」那一段會把
    .ad-stats 統一成白底圓角框，頂列這一組要贏過它才留得住 */
-.ad-stats.sp-stats{flex:1 1 300px;min-width:0;
-  grid-template-columns:repeat(4,1fr);
+.ad-stats.sp-stats{flex:1 1 260px;min-width:0;margin:0;
+  grid-template-columns:repeat(3,1fr);
   gap:0;border:none;border-radius:0;background:transparent;overflow:visible;}
 .ad-stats.sp-stats .ad-stat{padding:2px 10px;background:transparent;
   border:none;border-left:1px solid var(--line-soft);}
@@ -1787,8 +1810,13 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .sp-stats .ad-stat-num{font-size:clamp(17px,1.7vw,23px);}
 .sp-stats .ad-stat-lab{margin-top:2px;font-size:var(--fs-label);letter-spacing:.04em;
   white-space:nowrap;}
-/* 窄螢幕拆成兩段：先四個統計，一條線之後才是同步狀態與按鈕。
-   先看「還剩幾個人沒排」，再決定要不要存、要不要同步。 */
+/* 還有人沒排 → 那一格整格轉成 alert 色。
+   這一頁只有這一件事會讓新人在婚宴前一晚睡不著，所以它有自己的顏色。 */
+.sp-stats .ad-stat.is-alert .ad-stat-num,
+.sp-stats .ad-stat.is-alert .ad-stat-lab{color:var(--alert);}
+.sp-stats .ad-stat.is-done .ad-stat-num{color:var(--primary-deep);}
+/* 窄螢幕拆成兩段：先三個統計，一條線之後才是發布狀態與按鈕。
+   先看「還剩幾組沒排」，再決定要不要存、要不要發布。 */
 @media(max-width:1180px){
   .sp-bar{gap:10px;}
   .sp-stats{flex:1 1 100%;order:1;}
@@ -1805,8 +1833,11 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 
 /* ---------- 提醒 ----------
    收起來只佔一行（最該處理的那一條 ＋「還有 N 項」），展開才列出其餘。
-   兩級：warn 要處理（粉底）、info 知道就好（淡框，不搶注意力）。 */
+   兩級：warn 要處理（粉底）、info 知道就好（淡框，不搶注意力）。
+   全部排完的時候整塊換成一句輕輕的「✓ 所有賓客都已安排」——
+   做完了不該還留著一條紅色的東西。 */
 .sp-warns{display:flex;flex-direction:column;gap:5px;margin:16px 0 16px;}
+.sp-warns:empty{margin:0;}
 
 .sp-warn{display:flex;align-items:baseline;gap:8px;
   border:1px solid var(--line-soft);border-radius:var(--radius);
@@ -1814,7 +1845,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
   font-size:var(--fs-meta);line-height:1.8;letter-spacing:.03em;color:var(--ink-soft);}
 .sp-warn.is-warn{border-color:rgba(var(--alert-rgb),.35);background:rgba(var(--alert-rgb),.06);
   color:var(--alert);}
-.sp-warn.is-ok{color:var(--ink-soft);}
+.sp-warn.is-ok{border-color:var(--primary);background:transparent;color:var(--primary-deep);}
 .sp-warn-ic{flex:0 0 auto;font-size:var(--fs-meta);line-height:1.6;}
 .sp-warn-text{flex:1 1 auto;min-width:0;}
 
@@ -1834,70 +1865,158 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
   animation:scInF var(--dur-pop) var(--ease);}
 .sp-warn-rest[hidden]{display:none;}
 
-/* ---------- 「未安排」面板裡的工具列 ----------
-   搜尋、篩選、排序整理的都是這一區，所以就住在這一區裡。
-   第一行找人（搜尋＋篩選），第二行決定順序。 */
+/* ---------- 待安排那一欄的工具列 ----------
+   九成的時候使用者只是要找一個人，所以只有搜尋是一直看得到的輸入框；
+   篩選（一場婚禮大概用三次）與排序收成兩顆圖示鈕。
+   三個控制項並排會讓人以為三件事一樣重要。 */
 .sp-tools{padding:9px 11px 10px;border-bottom:1px solid var(--line);}
-.sp-tools-row{display:flex;gap:8px;align-items:center;}
-.sp-tools-row + .sp-tools-row{margin-top:7px;}
-/* 搜尋框的小尺寸：塞在「未安排」那一欄裡，寬度本來就只有兩百多 px。
-   .sp-search 是它在排桌工作區的位置名（flex 佔滿那一行），
+.sp-tools-row{display:flex;gap:6px;align-items:center;}
+
+/* 放大鏡畫在框裡（不是旁邊）：這樣它是輸入框的一部分，而不是第四個控制項 */
+.sp-search-box{position:relative;flex:1 1 auto;min-width:0;display:flex;}
+/* 放大鏡跟 placeholder 同一個色（--ink-3）：它不是一顆可以按的東西，
+   是那句提示字的一部分。染成主題色的話，空的輸入框裡最顯眼的會是它。 */
+/* 選擇器多壓一層 .sp-search-box：.ad-ic 的 24px／--primary 宣告在檔案後面，
+   同權重的話會贏過這裡 */
+.sp-search-box .sp-search-ic{position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  width:16px;height:16px;stroke-width:2.4;color:var(--ink-3);pointer-events:none;}
+/* 搜尋框的小尺寸：塞在「待安排」那一欄裡，寬度本來就只有兩百多 px。
+   .sp-search 是它在排桌工作區的位置名（寬度佔滿那一行），
    .ad-filter-sm 才是設計系統裡的那個尺寸 —— 別的地方要用小號搜尋框，
    用 .ad-filter-sm，不要再抄一份 padding。 */
-.ad-filter-sm,
-.sp-search{padding:7px 10px;font-size:var(--fs-meta);}
-.sp-search{flex:1 1 auto;min-width:0;}
-.sp-tools .btn.small{padding:8px 12px;font-size:var(--fs-meta);letter-spacing:.06em;}
-.sp-tools-sort{justify-content:space-between;}
-.sp-select{display:flex;align-items:center;gap:6px;flex:1 1 auto;min-width:0;
-  font-size:var(--fs-pill);letter-spacing:.12em;color:var(--ink-soft);}
-.sp-select select{flex:1 1 auto;min-width:0;width:auto;
-  padding:7px 22px 7px 2px;font-size:var(--fs-meta);}
-#spFilterToggle{flex:0 0 auto;}
-#spFilterToggle.is-on{background:var(--ink);color:var(--on-ink);border-color:var(--ink);}
+.ad-filter-sm{padding:7px 10px;font-size:var(--fs-meta);}
+.sp-search{flex:1 1 auto;min-width:0;padding-left:32px;}
 
-.sp-filters{display:flex;flex-direction:column;gap:8px;margin-top:9px;
-  padding-top:9px;border-top:1px dashed var(--line-soft);}
-.sp-filters[hidden]{display:none;}
-.sp-filter-line{display:flex;flex-direction:column;gap:5px;}
+/* 圖示鈕：平常只有一個圖示，按下去才浮出框 ——
+   和賓客卡的「⇄」、桌卡的收合鈕同一個做法 */
+.sp-iconbtn{position:relative;flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:34px;height:34px;padding:0;cursor:pointer;
+  border:1px solid transparent;border-radius:var(--radius);background:none;
+  color:var(--ink-soft);
+  transition:border-color var(--dur-hover) ease-out,background var(--dur-hover) ease-out;}
+.sp-iconbtn .ad-ic{width:17px;height:17px;stroke-width:2.8;color:currentColor;}
+.sp-iconbtn:hover,.sp-iconbtn:focus-visible{border-color:var(--line);background:var(--surface);}
+.sp-iconbtn.is-on{border-color:var(--ink);background:var(--ink);color:var(--on-ink);}
+@media (pointer:coarse){
+  .sp-iconbtn{width:40px;height:40px;}
+  .sp-iconbtn::after{content:'';position:absolute;inset:-2px;}
+}
+/* 套了幾個條件：篩選收起來了，但「現在有在篩」不能跟著收起來 */
+.sp-iconbtn-n{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;
+  display:flex;align-items:center;justify-content:center;padding:0 4px;
+  border-radius:999px;background:var(--alert);color:var(--on-ink);
+  font-family:var(--font-ui);font-size:var(--fs-pill);line-height:1;
+  font-variant-numeric:tabular-nums;}
+.sp-iconbtn-n[hidden]{display:none;}
+
+/* 「現在正在篩什麼」寫在搜尋框底下。名單少了人卻看不出原因，
+   是這一頁最容易讓人以為「資料不見了」的地方。 */
+.sp-activefilters{display:flex;align-items:baseline;gap:8px;margin-top:7px;
+  font-size:var(--fs-label);letter-spacing:.04em;color:var(--ink-soft);line-height:1.7;}
+.sp-activefilters[hidden]{display:none;}
+.sp-activefilters-text{flex:1 1 auto;min-width:0;}
+.sp-activefilters-text b{color:var(--ink);font-weight:400;
+  font-variant-numeric:tabular-nums;white-space:nowrap;}
+.sp-activefilters-clear{flex:0 0 auto;background:none;border:none;cursor:pointer;padding:2px 0;
+  font-family:var(--font-ui);font-size:var(--fs-label);letter-spacing:.06em;
+  color:var(--ink-soft);border-bottom:1px solid var(--line);}
+.sp-activefilters-clear:hover{color:var(--ink);border-bottom-color:var(--ink);}
+
+/* 篩選彈窗裡的那幾行 */
+.sp-filters{display:flex;flex-direction:column;gap:14px;}
+.sp-filter-line{display:flex;flex-direction:column;gap:6px;}
 .sp-filter-line[hidden]{display:none;}
 .sp-filter-lab{font-size:var(--fs-label);letter-spacing:.14em;color:var(--ink-soft);}
-.sp-filters .ad-chip{font-size:var(--fs-pill);padding:3px 10px;}
-.sp-filter-declined{margin-top:2px;font-size:var(--fs-meta);}
+.sp-filters .ad-chip{font-size:var(--fs-pill);padding:4px 11px;}
+.sp-filter-declined{font-size:var(--fs-meta);}
 .sp-filter-declined small{display:block;margin-left:0;font-size:var(--fs-label);
   color:var(--ink-soft);}
 
-/* ---------- 工作區：左未安排、右桌位 ---------- */
+/* ---------- 工作區：左待安排、右我的桌位 ----------
+   整頁的主張就是這一條 grid：「還沒坐下的人在左邊，可以坐的桌子在右邊。」
+   有沒有資料都是同一副骨架 —— 缺什麼就在那一欄裡長出一張提示卡
+   （.sp-prompt），不會換成另外一頁 onboarding。 */
 .sp-board{display:grid;grid-template-columns:280px minmax(0,1fr);gap:16px;
-  align-items:start;}
-/* 筆電／橫向平板：未安排那一欄收窄一點，右邊才排得下兩桌以上 */
+  align-items:start;min-width:0;}
+/* 筆電／橫向平板：待安排那一欄收窄一點，右邊才排得下兩桌以上 */
 @media(max-width:1240px){
   .sp-board{grid-template-columns:232px minmax(0,1fr);gap:12px;}
 }
 
-/* 「未安排」不是一張桌子，所以刻意長得不一樣：
+/* 兩欄的標題長得一樣：名字 ＋ 一顆數字徽章 ＋ 這一欄自己的入口。
+   「待安排 1 組・1 人」與「我的桌位 10 桌」是同一種句子，
+   所以用同一組樣式，掃一眼就知道左右各是什麼。 */
+.sp-col-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;min-width:0;}
+.sp-col-title{font-family:var(--font-display);font-size:var(--fs-ctl);font-weight:500;
+  letter-spacing:.22em;color:var(--ink);}
+.sp-col-count{border:1px solid var(--line);border-radius:999px;padding:2px 9px;
+  background:var(--surface);font-size:var(--fs-pill);letter-spacing:.04em;color:var(--ink);
+  font-variant-numeric:tabular-nums;white-space:nowrap;}
+/* 每一欄自己的入口。用 pill 而不是 .btn.small（UI-SPEC 3.3c 的「獨立」那一階，
+   和「清除篩選」同一種東西）：這一頁真正的動作只有「儲存」與「發布給賓客」，
+   欄頭上的四顆如果也長成按鈕，一個畫面上就會有六顆一樣重的東西。
+   收成 pill 之後兩顆並排放得進 280px 的欄寬，不會各佔一整行。 */
+.sp-col-acts{display:flex;gap:6px;flex-wrap:wrap;}
+/* 字級走 --fs-ctl-sm（chip 的那一階）而不是 --fs-meta：
+   這兩顆住在 280px 寬的欄頭裡，14px 的話兩顆並排就差那十幾 px 放不下，
+   各佔一整行看起來反而比 .btn.small 還重。 */
+.sp-pill{flex:0 0 auto;background:none;border:1px solid var(--line);border-radius:999px;
+  cursor:pointer;font-family:var(--font-ui);font-size:var(--fs-ctl-sm);letter-spacing:.04em;
+  color:var(--ink);padding:5px 10px;min-height:32px;white-space:nowrap;
+  transition:border-color var(--dur-btn) ease-out,background var(--dur-btn) ease-out;}
+.sp-pill:hover{border-color:var(--ink);background:rgba(var(--ink-rgb),.035);}
+.sp-pill:active{background:rgba(var(--ink-rgb),.07);}
+
+/* 「待安排」不是一張桌子，所以刻意長得不一樣：
    淡色底、標題也比桌卡重一些。桌卡是白底細框，
    兩者放在一起一眼就分得出來 —— 不用再多一道彩色的粗邊來喊。 */
 .sp-pool{position:sticky;top:78px;display:flex;flex-direction:column;
-  max-height:calc(100svh - 100px);
+  max-height:calc(100svh - 100px);min-width:0;
   border:1px solid var(--line);
   border-radius:var(--radius);background:var(--bg2);}
-.sp-pool-head{display:flex;align-items:baseline;justify-content:space-between;
-  gap:6px 8px;flex-wrap:wrap;padding:11px 13px;
+.sp-pool-head{display:flex;flex-direction:column;gap:9px;padding:11px 13px;
   border-bottom:1px solid var(--line);}
-.sp-pool-title{font-family:var(--font-display);font-size:var(--fs-ctl);font-weight:500;
-  letter-spacing:.22em;color:var(--ink);}
-.sp-pool-count{border:1px solid var(--line);border-radius:999px;padding:2px 9px;
-  background:var(--surface);font-size:var(--fs-pill);letter-spacing:.04em;color:var(--ink);
-  font-variant-numeric:tabular-nums;}
 .sp-pool-body{flex:1 1 auto;overflow-y:auto;padding:9px;
   display:flex;flex-direction:column;gap:6px;min-height:120px;}
+
+/* 右欄的標題不在框裡（桌位是一格一格的卡片，沒有一個外框可以掛），
+   所以自己站一行，和左欄的標題對齊在同一條水平線上 */
+.sp-side{display:flex;flex-direction:column;gap:12px;min-width:0;}
+.sp-side-head{display:flex;align-items:flex-end;justify-content:space-between;
+  gap:10px 16px;flex-wrap:wrap;padding-bottom:2px;}
 
 .sp-group{display:flex;flex-direction:column;gap:6px;}
 .sp-group-head{display:flex;align-items:baseline;gap:8px;margin-top:6px;
   padding-bottom:5px;border-bottom:1px solid var(--line-soft);
   font-size:var(--fs-pill);letter-spacing:.16em;color:var(--ink);}
 .sp-group-head small{font-size:var(--fs-label);letter-spacing:.04em;color:var(--ink-soft);}
+
+/* ---------- 提示卡：現在缺什麼，就提示補什麼 ----------
+   取代了本來那一頁「開始排桌：四個步驟」。沒有編號、沒有「第一步」——
+   先建標籤、先匯名單、先開桌子都可以，編號只是在替新人決定順序。
+   它長在缺東西的那一欄裡：缺名單 → 左邊，缺桌位 → 右邊。 */
+.sp-prompt{border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--surface);padding:18px 18px 16px;}
+.sp-tables > .sp-prompt{grid-column:1 / -1;}
+.sp-prompt + .sp-prompt{margin-top:12px;}
+.sp-tables > .sp-prompt + .sp-prompt{margin-top:0;}
+.sp-prompt-title{font-family:var(--font-display);font-size:var(--fs-ctl);font-weight:500;
+  letter-spacing:.1em;color:var(--ink);}
+.sp-prompt-body{margin:7px 0 0;font-size:var(--fs-meta);line-height:1.9;
+  letter-spacing:.02em;color:var(--ink-soft);}
+.sp-prompt-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px;}
+/* 「排桌小技巧」是可以不做的事，所以連框都淡一階 */
+.sp-prompt.is-soft{border-style:dashed;background:transparent;}
+.sp-prompt.is-soft .sp-prompt-title{font-family:var(--font-ui);font-size:var(--fs-meta);
+  letter-spacing:.12em;color:var(--ink-soft);}
+
+/* 全部排完：不要再擺一條紅色的東西，一句輕輕的確認就夠了 */
+.sp-alldone{display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:26px 12px;text-align:center;
+  font-size:var(--fs-ctl-sm);letter-spacing:.08em;color:var(--primary-deep);}
+.sp-alldone-ic{font-size:var(--fs-sec);line-height:1;}
+.sp-alldone small{font-size:var(--fs-label);letter-spacing:.04em;color:var(--ink-soft);}
 
 /* ---------- 賓客卡 ----------
    兩行就好：第一行 編號＋姓名＋人數，第二行標籤（放不下就左右滑）。
@@ -1937,13 +2056,15 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
   overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
   scroll-snap-type:x proximity;overscroll-behavior-x:contain;}
 .sp-card-tags::-webkit-scrollbar{display:none;}
-.sp-chip{flex:0 0 auto;scroll-snap-align:start;white-space:nowrap;
-  border:1px solid var(--line);border-radius:999px;padding:1px 7px;
-  font-size:var(--fs-label);letter-spacing:.03em;color:var(--ink);background:var(--bg2);}
-.sp-chip.is-special{color:var(--primary-deep);border-color:var(--primary);
-  background:transparent;}
-.sp-chip.is-plain{background:transparent;border-color:transparent;
-  color:var(--ink-soft);padding-left:0;}
+/* 卡片上的標籤是「這個人是誰」，看的、不是點的 —— 所以是方形的 .ad-tag，
+   和名單、抽屜、桌位管理清單裡的同一顆長得一樣。
+   這一排住在一個一百多 px 寬的捲動容器裡，所以密度收一階。 */
+.sp-card-tags .ad-tag{scroll-snap-align:start;padding:1px 7px;letter-spacing:.03em;
+  color:var(--ink);background:var(--bg2);}
+.sp-card-tags .ad-tag-need{background:transparent;}
+/* 一個標籤都沒有的人退回顯示類別。那是一句話不是一顆標籤，所以不給它框 */
+.sp-card-cat{flex:0 0 auto;white-space:nowrap;
+  font-size:var(--fs-label);letter-spacing:.03em;color:var(--ink-soft);}
 
 /* ---------- 完整樣貌（peek） ---------- */
 .sp-peek{position:fixed;z-index:1200;background:var(--surface);border:1px solid var(--ink);
@@ -1971,9 +2092,8 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 /* ---------- 桌位 ---------- */
 /* align-items:start：每張桌卡只長到自己的內容高度，
    不會被同一列最高的那一桌拉長成一片空白 */
-.sp-tables{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));
-  gap:12px;align-content:start;align-items:start;}
-.sp-tables-empty{grid-column:1 / -1;}
+.sp-tables{display:grid;grid-template-columns:repeat(auto-fill,minmax(208px,1fr));
+  gap:12px;align-content:start;align-items:start;min-width:0;}
 
 /* 桌卡：白底細框。滿員與超量各自換成 3px 的粗框 ——
    box-sizing 是 border-box，所以加粗不會把版面推開。
@@ -1996,9 +2116,12 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .sp-table-name{flex:1 1 auto;min-width:0;font-size:var(--fs-ctl-sm);letter-spacing:.06em;
   color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .sp-table-name:empty{flex:1 1 auto;}
-.sp-table-type{flex:0 0 auto;border:1px solid var(--line);border-radius:999px;
-  padding:1px 8px;font-size:var(--fs-label);letter-spacing:.06em;color:var(--ink-soft);}
-.sp-table-edit{flex:0 0 auto;}
+/* 桌位類型（主桌、親友桌…）在「桌位管理」清單裡本來就是 .ad-tag，
+   桌卡上卻另外做了一顆膠囊 —— 同一筆資料在兩個畫面兩種形狀。收回同一顆。 */
+.sp-table-meta .ad-tag{flex:0 0 auto;padding:1px 8px;letter-spacing:.06em;}
+/* 編輯與刪除收進「⋮」：它們一年按不到三次，
+   卻一直站在桌名旁邊，把「這桌還剩幾位」擠到第二眼才看到 */
+.sp-table-head-row .ad-rowmenu-btn{flex:0 0 auto;margin:-6px -6px -6px 0;}
 
 /* ---------- 一桌收起來 ----------
    手機／平板一次只看得到一兩桌，排完的桌還一直佔著整個螢幕，
@@ -2032,17 +2155,26 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 /* 收起來又沒有標籤的話，分隔線下面什麼都沒有，就不要那條線 */
 .sp-table.is-folded:not(:has(.sp-table-flags)) .sp-table-head{border-bottom:none;}
 
-/* 人數與剩餘位子跟著桌號住在分隔線上方（見 seating-plan.js 的 renderBoard） */
-.sp-table-meta{display:flex;align-items:baseline;justify-content:space-between;gap:8px;
-  font-size:var(--fs-meta);letter-spacing:.04em;}
-.sp-table-count{color:var(--ink);font-variant-numeric:tabular-nums;}
-.sp-table-left{color:var(--ink-soft);}
+/* 第二行回答的是「現在坐得怎麼樣」：用途在左，幾人／還剩幾位在右。
+   兩個數字綁在同一句裡（「10 / 10 人・已滿」），中間不留空白 ——
+   隔太開的話會讀成兩件不相干的事。
+
+   整行可以換行、句子裡的每一段不可以（「10 /」後面斷掉就讀不成一個數字了）。
+   手機上兩欄的桌卡只有一百多 px 寬，不讓它換行的話這一句會撐破卡片，
+   而撐破的是整個版面 —— 看起來像「網頁比手機還寬」。 */
+.sp-table-meta{display:flex;align-items:baseline;justify-content:space-between;
+  gap:2px 6px;flex-wrap:wrap;
+  font-size:var(--fs-meta);letter-spacing:.02em;}
+.sp-table-cap{flex:0 1 auto;min-width:0;color:var(--ink);
+  font-variant-numeric:tabular-nums;}
+.sp-table-cap,.sp-table-left{white-space:nowrap;}
+.sp-table-left{display:inline-block;font-weight:400;color:var(--ink-soft);}
 .sp-table.is-full .sp-table-left{color:var(--seat-full);font-weight:500;}
 .sp-table.is-over .sp-table-left{color:var(--seat-over-ink);font-weight:500;}
 
 .sp-table-flags{display:flex;flex-wrap:wrap;gap:5px;padding:8px 12px;}
-.sp-flag{border:1px solid var(--line-soft);border-radius:999px;padding:1px 8px;
-  font-size:var(--fs-label);letter-spacing:.04em;color:var(--ink);background:var(--bg2);}
+.sp-table-flags .ad-tag{padding:1px 8px;letter-spacing:.04em;
+  color:var(--ink);background:var(--bg2);border-color:var(--line-soft);}
 
 .sp-table-body{flex:1 1 auto;display:flex;flex-direction:column;gap:5px;
   padding:9px 10px 11px;min-height:66px;}
@@ -2055,31 +2187,6 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
   color:var(--ink-soft);}
 .sp-table-hidden{font-size:var(--fs-label);letter-spacing:.04em;color:var(--ink-soft);
   text-align:center;padding-top:2px;}
-
-/* ---------- 第一次進來的引導 ---------- */
-.sp-start{grid-column:1 / -1;border:1px solid var(--line);border-radius:var(--radius);
-  background:var(--surface);padding:22px 24px 20px;}
-.sp-start-head{padding-bottom:14px;border-bottom:1px solid var(--line-soft);}
-.sp-start-title{font-family:var(--font-display);font-size:var(--fs-sec);font-weight:500;
-  letter-spacing:.2em;color:var(--ink);}
-.sp-start-sub{display:block;margin-top:6px;font-size:var(--fs-meta);letter-spacing:.04em;
-  color:var(--ink-soft);}
-.sp-start-steps{list-style:none;margin:0;padding:0;
-  display:flex;flex-direction:column;}
-.sp-start-step{display:flex;gap:14px;padding:16px 0;
-  border-bottom:1px solid var(--line-soft);}
-.sp-start-step:last-child{border-bottom:none;padding-bottom:2px;}
-.sp-start-no{flex:0 0 26px;height:26px;border-radius:50%;
-  border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
-  font-family:var(--font-display);font-size:var(--fs-meta);color:var(--ink-soft);}
-.sp-start-step.is-done .sp-start-no{background:var(--primary-deep);color:var(--on-ink);
-  border-color:var(--primary-deep);}
-.sp-start-body{flex:1 1 auto;min-width:0;}
-.sp-start-name{font-size:var(--fs-ctl);letter-spacing:.06em;color:var(--ink);}
-.sp-start-step.is-done .sp-start-name{color:var(--ink-soft);}
-.sp-start-text{margin:5px 0 0;font-size:var(--fs-meta);line-height:1.9;
-  letter-spacing:.02em;color:var(--ink-soft);}
-.sp-start .ad-row{margin-top:10px;}
 
 /* ---------- 拖曳回饋 ----------
    目標區塊變色，並直接在上面寫「放入第 05 桌」／「⚠️ 此桌將超過容量」 */
@@ -2101,56 +2208,130 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
    ------------------------------------------------------------
    規格是從排桌的賓客抽屜長出來的，而且它本來就對：
    min(92vw,400px)、暖白底、左側 1px border、CTA 貼底。
-   所以不要重新設計 —— 把選擇器抽成兩個消費者共用：
-     .sp-drawer  排桌的賓客詳細資料（seating-plan.js）
-     .ad-drawer  出席回覆與收禮明細（admin.js 的 Drawer）
-   兩邊都註冊進 pushLayer()／popLayer()，返回鍵與 Esc 才關得掉、
-   背景才鎖得住捲動。
+   現在的消費者是 .ad-drawer（admin.js 的 Drawer：出席回覆與收禮明細）。
+
+   排桌的賓客詳細資料本來也是一個抽屜，後來改成彈窗 —— 後台只有它一個是
+   抽屜，同一件事有兩種開法，使用者就得學兩次。規格留在這裡沒有動。
+
+   註冊進 pushLayer()／popLayer()，返回鍵與 Esc 才關得掉、背景才鎖得住捲動。
 
    遮罩用 --scrim-drawer（.2，見檔案開頭的 token）：「背景頁面保持可見」
    是這個元件的前提，壓到彈窗那個 .72 就跟開一個 modal 沒兩樣了。 */
-.sp-drawer-mask,.ad-drawer-mask{position:fixed;inset:0;z-index:1300;
+.ad-drawer-mask{position:fixed;inset:0;z-index:1300;
   background:var(--scrim-drawer);}
-.sp-drawer-mask[hidden],.ad-drawer-mask[hidden]{display:none;}
-.sp-drawer,.ad-drawer{position:fixed;top:0;right:0;bottom:0;z-index:1310;
+.ad-drawer-mask[hidden]{display:none;}
+.ad-drawer{position:fixed;top:0;right:0;bottom:0;z-index:1310;
   width:min(92vw,400px);display:flex;flex-direction:column;
   background:var(--bg1);border-left:1px solid var(--line);
   box-shadow:-4px 0 var(--shadow-panel-blur) var(--shadow-panel-ink);
-  animation:spDrawerIn var(--dur-drawer) var(--ease);}
-.sp-drawer[hidden],.ad-drawer[hidden]{display:none;}
-@keyframes spDrawerIn{from{transform:translateX(18px);opacity:.4}to{transform:none;opacity:1}}
-.sp-drawer-head,.ad-drawer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+  animation:adDrawerIn var(--dur-drawer) var(--ease);}
+.ad-drawer[hidden]{display:none;}
+@keyframes adDrawerIn{from{transform:translateX(18px);opacity:.4}to{transform:none;opacity:1}}
+.ad-drawer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
   padding:18px 20px 14px;border-bottom:1px solid var(--line);}
-.sp-drawer-title,.ad-drawer-title{font-family:var(--font-display);font-size:var(--fs-sec);font-weight:var(--fw-sec);
+.ad-drawer-title{font-family:var(--font-display);font-size:var(--fs-sec);font-weight:var(--fw-sec);
   letter-spacing:.12em;color:var(--ink);}
-.sp-drawer-sub,.ad-drawer-sub{margin-top:5px;font-family:var(--font-ui);font-size:var(--fs-meta);
+.ad-drawer-sub{margin-top:5px;font-family:var(--font-ui);font-size:var(--fs-meta);
   letter-spacing:.04em;color:var(--ink-soft);line-height:1.7;}
-.sp-drawer-close,.ad-drawer-close{background:none;border:none;cursor:pointer;font-size:var(--fs-glyph);
+.ad-drawer-close{background:none;border:none;cursor:pointer;font-size:var(--fs-glyph);
   color:var(--ink-soft);padding:2px 4px;flex:0 0 auto;}
-.sp-drawer-close:hover,.ad-drawer-close:hover{color:var(--ink);}
-.sp-drawer-body,.ad-drawer-body{flex:1 1 auto;overflow-y:auto;padding:18px 20px 30px;}
-/* 兩個抽屜的關閉鈕本來各自宣告了一次一模一樣的熱區（一個在這裡、
-   一個在下面「觸控目標」那一段），改成同一條 —— 這種重複就是
-   哪天只改到其中一個、兩個抽屜的 ✕ 開始不一樣大的起點。 */
+.ad-drawer-close:hover{color:var(--ink);}
+.ad-drawer-body{flex:1 1 auto;overflow-y:auto;padding:18px 20px 30px;}
 /* ---------- 圖示按鈕的觸控熱區 ----------
    後台的圖示按鈕（✕、☰、⋮）視覺大小各有各的理由，但在觸控裝置上
    熱區一律 44×44、✕ 的字級一律 19px —— 一顆按不到的關閉鈕，
    等於這一層關不掉。 */
 @media (pointer:coarse){
-  .sp-drawer-close,.ad-drawer-close,.ad-side-close{
+  .ad-drawer-close,.ad-side-close{
     min-width:44px;min-height:44px;font-size:var(--fs-glyph-lg);
   }
   /* 漢堡鈕是窄螢幕唯一的導覽入口，卻只有 34×34 */
   .ad-menu-btn{width:44px;height:44px;}
 }
-.sp-drawer-tags{display:flex;flex-direction:column;gap:2px;margin-top:6px;
-  max-height:180px;overflow-y:auto;padding:4px 2px;
-  border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);}
-.sp-drawer-tag{margin-top:8px;}
+
+/* ---------- −  N  ＋ ----------
+   數字欄位在手機上要叫出鍵盤才改得動，而排桌時改的都是 0→1、2→3
+   這種一格的量。加減鈕做的就是那一格；中間仍然是真的 <input>，
+   要一次改成 8 的人直接打字就好。 */
+.ad-stepper{display:inline-flex;align-items:stretch;margin-top:4px;
+  border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);
+  overflow:hidden;}
+.ad-stepper-btn{flex:0 0 auto;width:38px;min-height:38px;padding:0;cursor:pointer;
+  border:none;background:none;color:var(--ink-soft);
+  font-family:var(--font-ui);font-size:var(--fs-ctl);line-height:1;
+  transition:background var(--dur-hover) ease-out,color var(--dur-hover) ease-out;}
+.ad-stepper-btn:hover{background:var(--bg2);color:var(--ink);}
+.ad-stepper-btn:active{background:var(--primary-soft);}
+.ad-stepper .ad-stepper-input{width:56px;min-width:0;margin:0;padding:0;
+  border:none;border-left:1px solid var(--line-soft);border-right:1px solid var(--line-soft);
+  border-radius:0;background:transparent;text-align:center;
+  font-variant-numeric:tabular-nums;}
+/* 原生的上下箭頭和加減鈕是同一件事，留著只是兩套做法擠在一起 */
+.ad-stepper-input::-webkit-outer-spin-button,
+.ad-stepper-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.ad-stepper-input{-moz-appearance:textfield;appearance:textfield;}
+@media (pointer:coarse){
+  .ad-stepper-btn{width:44px;min-height:44px;}
+}
+
+/* ---------- 一次加好幾桌 ----------
+   一列一個類別：名字在左、−  N  ＋ 在右。
+   欄寬固定，五列的數字才會對齊成一直行（掃一眼就知道哪一類開最多）。 */
+.sp-batch{display:flex;flex-direction:column;gap:4px;}
+/* 不畫分隔線：五列是同一個問題的五個答案，不是五筆各自獨立的資料。
+   每一列自己的 −  N  ＋ 已經夠把它切開了，再加線只是把表單畫成表格。 */
+.sp-batch-row{display:flex;align-items:center;gap:10px;padding:4px 0;}
+.sp-batch-lab{flex:1 1 auto;min-width:0;font-size:var(--fs-ctl-sm);letter-spacing:.08em;
+  color:var(--ink);}
+.sp-batch-name{flex:1 1 auto;min-width:0;margin:0;font-size:var(--fs-ctl-sm);}
+.sp-batch-row .ad-stepper{flex:0 0 auto;margin-top:0;}
+.sp-batch-unit{flex:0 0 auto;font-size:var(--fs-label);letter-spacing:.1em;color:var(--ink-soft);}
+.sp-batch-add{margin-top:14px;}
+.sp-batch-total{flex:1 1 auto;margin-right:auto;font-size:var(--fs-meta);
+  letter-spacing:.06em;color:var(--ink-soft);font-variant-numeric:tabular-nums;}
+@media(max-width:560px){
+  /* 直排的時候合計要自己站一行，不然會被兩顆按鈕擠掉 */
+  .sp-batch-total{flex:1 1 100%;margin-right:0;text-align:center;}
+}
+
+/* ---------- 賓客詳細資料（彈窗） ----------
+   欄位全部改成「選的」而不是「打字的」：類別與會不會來是 radio group、
+   標籤是 chip、人數／兒童椅／喜餅是 −  N  ＋。
+   打字打出來的「女方朋友」「女方的朋友」永遠分不到同一組，
+   而排桌這件事從頭到尾都在分組。 */
+.sp-guest-card{width:min(94vw,600px);}
+.sp-guest-where{margin-bottom:16px;}
+/* 兩個短欄位並排（編號＋顯示名稱、人數＋兒童椅）：
+   這一張表單本來要捲兩個螢幕才看得完 */
+.sp-field-row{display:flex;gap:14px;flex-wrap:wrap;}
+.sp-field{flex:1 1 180px;min-width:0;display:flex;flex-direction:column;}
+.sp-field .ad-label{margin-top:16px;}
+.sp-radios{margin-top:6px;}
+.sp-guest-form .ad-stepper{align-self:flex-start;}
 /* 姓名跟著出席回覆走、改不動：畫成唯讀的樣子，不要看起來像可以打字 */
-.sp-drawer-body .ad-input:disabled{background:transparent;color:var(--ink-3);
+.sp-guest-form .ad-input:disabled{background:transparent;color:var(--ink-3);
   cursor:not-allowed;border-bottom-style:dashed;}
-#spDrawerDelete{color:var(--alert);border-color:rgba(var(--alert-rgb),.4);margin-right:auto;}
+#spGuestDelete{color:var(--alert);border-color:rgba(var(--alert-rgb),.4);margin-right:auto;}
+
+/* 標籤分兩組，和「設定賓客標籤」那一頁同一種分法
+   （賓客自己選得到／只有你們看得到）—— 同一個東西在兩頁長得一樣，
+   新人才不用學第二次。 */
+.sp-guest-tags{display:flex;flex-direction:column;gap:12px;margin-top:8px;
+  max-height:220px;overflow-y:auto;padding:2px;}
+.sp-guest-taggrp{display:flex;flex-direction:column;gap:6px;}
+.sp-guest-taglab{font-size:var(--fs-label);letter-spacing:.14em;color:var(--ink-soft);}
+.sp-guest-tags .ad-chip{font-size:var(--fs-meta);padding:5px 12px;}
+
+/* 改不動的那幾顆（賓客自己在表單上選的、出席回覆帶進來的、以及整組
+   「賓客自己選得到」的標籤）搬到名字旁邊，用方形的 .ad-tag。
+   本來它們是排在可勾的 chip 中間、掛一把 🔒 的 disabled chip ——
+   點不動的東西不該長得跟點得動的一樣，掛圖示只是再解釋一次形狀沒講清楚的事。 */
+/* 名字與那幾顆標籤同一條基線，放不下才換行 */
+.sp-guest-head{display:flex;align-items:baseline;flex-wrap:wrap;gap:5px 10px;
+  margin-bottom:10px;}
+.sp-guest-head .ad-modal-title{margin-bottom:0;}
+.sp-guest-head-tags{display:flex;flex-wrap:wrap;gap:5px;}
+.sp-guest-head-tags:empty{display:none;}
 
 /* ---------- 移動到桌位 ---------- */
 .sp-move-list{display:flex;flex-direction:column;gap:6px;max-height:52dvh;
@@ -2209,31 +2390,53 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 
 /* ---------- 平板／手機 ----------
    拖曳在觸控裝置上不好用，改成每張卡片自己的「移動到桌位」；
-   未安排區改成貼在最上面的一塊，仍然是先看到的東西。 */
+   「待安排」改成貼在最上面的一塊，仍然是先看到的東西 ——
+   直排之後「左邊是人、右邊是桌子」變成「上面是人、下面是桌子」，
+   前後關係還在，所以不用另外教一次。
+
+   ★ 這一整段的共同前提：不論多窄，都不可以有橫向捲動。
+   一個 minmax(172px,…) 的格子放在 320px 的螢幕上就會撐破版面，
+   而被撐破的是整個 .ad-main —— 看起來像「網頁比手機還寬」。
+   所以每一格的最小寬都跟著螢幕降，而且每一層都要 min-width:0。 */
 @media(max-width:960px){
-  .sp-board{grid-template-columns:1fr;}
+  .sp-board{grid-template-columns:minmax(0,1fr);}
   .sp-pool{position:static;max-height:none;}
-  /* 未安排改成一格一格排，整頁才不會被一長條卡片吃掉 */
+  /* 待安排改成一格一格排，整頁才不會被一長條卡片吃掉 */
   .sp-pool-body{max-height:44svh;display:grid;align-content:start;gap:6px;
-    grid-template-columns:repeat(auto-fill,minmax(172px,1fr));}
+    grid-template-columns:repeat(auto-fill,minmax(160px,1fr));}
   .sp-pool-body .sp-group{grid-column:1 / -1;display:grid;gap:6px;
-    grid-template-columns:repeat(auto-fill,minmax(172px,1fr));}
+    grid-template-columns:repeat(auto-fill,minmax(160px,1fr));}
   .sp-pool-body .sp-group-head{grid-column:1 / -1;}
+  /* 提示卡與「都排好了」是整段的話，不要被切進格子裡 */
+  .sp-pool-body > .sp-prompt,
+  .sp-pool-body > .sp-alldone,
+  .sp-pool-body > .ad-empty{grid-column:1 / -1;}
+  .sp-tables{grid-template-columns:repeat(auto-fill,minmax(168px,1fr));}
 }
 @media(max-width:560px){
   .sp-bar{flex-direction:column;align-items:stretch;}
   /* 這一列在窄螢幕變成「直的」，主軸也跟著轉了 90 度 ——
-     上面那兩段的 flex-basis（`1 1 300px`、`1 1 100%`）本來的意思是
-     「自己佔滿一整排寬」，轉成直的之後卻變成「基準高度 300px」，
+     上面那兩段的 flex-basis（`1 1 260px`、`1 1 240px`）本來的意思是
+     「自己佔滿一整排寬」，轉成直的之後卻變成「基準高度 260px」，
      統計那一塊就被撐成一大片空白。直的時候一律各自長到內容高度。
      選擇器要壓得比 `.ad-stats.sp-stats` 重，不然改不動。 */
   .sp-bar > .ad-stats.sp-stats,
   .sp-bar > .sp-bar-status,
   .sp-bar > .sp-bar-actions{flex:0 0 auto;}
   .sp-bar-actions .btn{flex:1 1 auto;}
-  .sp-filter-lab{flex:0 0 100%;}
-  .sp-tables{grid-template-columns:1fr;}
   .sp-steps li{flex:1 1 40%;}
+  /* 兩欄的標題與它自己的入口疊成上下兩行，按鈕各自撐滿一半 */
+  .sp-side-head{align-items:stretch;}
+  .sp-col-acts{flex:1 1 100%;}
+  .sp-col-acts .btn{flex:1 1 0;}
+}
+/* 小螢幕（iPhone SE 這一級）：格子再降一階，仍然是兩欄，
+   但不會有任何一格比螢幕寬 */
+@media(max-width:400px){
+  .sp-pool-body,
+  .sp-pool-body .sp-group{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));}
+  .sp-tables{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}
+  .sp-guest-card .sp-field{flex:1 1 100%;}
 }
 
 /* ============================================================
@@ -2310,12 +2513,6 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .ad-demo-row.is-bad{border-color:rgba(var(--alert-rgb),.35);
   border-left-color:var(--alert);background:rgba(var(--alert-rgb),.06);color:var(--alert);}
 .ad-demo-row.is-bad span{color:var(--alert);}
-
-/* 未安排區的「＋ 新增賓客」（沒填回覆的長輩、臨時加的親友）。
-   樣式跟頂列的「查看網站」同一支（.ad-bar-link）：淡色字、方形的點擊區、
-   hover 才浮出底色。左右的負邊距是把 .ad-bar-link 自己的 padding 吃掉，
-   文字才跟上一行的「未安排」對齊，不會多縮排 10px。 */
-.sp-pool-add{flex:0 0 100%;justify-content:flex-start;margin:2px -10px 0;}
 
 /* 從排桌管理跳過來打開桌次時，閃一下讓人看到是「頁面設定」的哪一列
    （那一列本身沒有底色，所以頭尾收在 transparent，不是白色） */
@@ -2421,7 +2618,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
   .ad-input,.ad-textarea,.ad-filter,.ad-filter-sm,.sp-search,
   .ad-card .ad-input,.ad-quiz-opt .ad-input,
   .ad-sch-row .ad-input,
-  .ad-bt-key .ad-input,.sp-select select,.sp-map-row select,
+  .ad-bt-key .ad-input,.sp-map-row select,
   .ad-pager-size select,.ad-img-title,
   input[type="text"],input[type="search"],input[type="number"],
   input[type="time"],input[type="date"],input[type="email"],
@@ -2723,29 +2920,42 @@ body.ad-lock{position:fixed;left:0;right:0;width:100%;overflow:hidden;}
 @keyframes adSheetIn{from{transform:translateY(14px);opacity:.6}to{transform:none;opacity:1}}
 
 /* 詳細抽屜：CTA 貼底，不用捲到最後才按得到儲存 */
-.sp-drawer-foot,.ad-drawer-foot{
+.ad-drawer-foot{
   flex:0 0 auto;display:flex;align-items:center;gap:10px;
   padding:12px 20px calc(12px + env(safe-area-inset-bottom));
   border-top:1px solid var(--line);background:var(--bg1);
 }
-.sp-drawer-foot .btn,.ad-drawer-foot .btn{flex:1 1 auto;}
+.ad-drawer-foot .btn{flex:1 1 auto;}
 .ad-drawer-foot[hidden]{display:none;}
-.sp-drawer-foot #spDrawerDelete{flex:0 0 auto;margin-right:auto;}
 
 /* ------------------------------------------------------------
    排桌工作區：手機的 sticky 儲存列
    ------------------------------------------------------------
    一場 30 桌的婚禮，「捲到最上面按儲存」這條路要走幾十遍。
-   只留最重要的兩件事：還剩幾位沒排、儲存；其餘收進「⋮」。
+   所以這裡放三件事：還剩幾組沒排、儲存、以及「現在存了沒、發布了沒」。
+
+   那一句狀態本來只寫在頁面最上面 —— 手機上等於看不到，
+   於是「已經改好了但沒存」就這樣被帶去婚宴現場。
+   其餘（復原、重做、發布、統計）收進「⋮」。
 ------------------------------------------------------------ */
 .sp-mobilebar{
   position:fixed;left:0;right:0;bottom:0;z-index:900;
-  display:flex;align-items:center;gap:10px;
-  padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+  display:flex;flex-direction:column;gap:7px;
+  padding:9px 14px calc(10px + env(safe-area-inset-bottom));
   border-top:1px solid var(--line);
   background:rgba(var(--bg1-rgb),.97);backdrop-filter:blur(8px);
 }
 .sp-mobilebar[hidden]{display:none;}
+.sp-mobilebar-row{display:flex;align-items:center;gap:10px;}
+/* 狀態那一句：一行放得下就一行，放不下也不要吃掉半個螢幕 */
+.sp-mobilebar-note{
+  margin:0;font-size:var(--fs-label);line-height:1.6;letter-spacing:.03em;
+  color:var(--ink-soft);
+  overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+}
+.sp-mobilebar-note:empty{display:none;}
+.sp-mobilebar-note[data-state="stale"],
+.sp-mobilebar-note[data-state="dirty"]{color:var(--alert);}
 .sp-mobilebar-pool{
   flex:0 0 auto;display:flex;align-items:baseline;gap:6px;
   background:none;border:1px solid var(--line);border-radius:var(--radius);
@@ -2756,15 +2966,15 @@ body.ad-lock{position:fixed;left:0;right:0;width:100%;overflow:hidden;}
   color:var(--primary-deep);font-variant-numeric:tabular-nums;}
 .sp-mobilebar .btn{min-height:44px;}
 /* 有 sticky 底列時，toast 要讓開，不然兩個疊在一起 */
-body[data-stickybar="1"] .ad-toast-stack{bottom:calc(80px + env(safe-area-inset-bottom));}
+body[data-stickybar="1"] .ad-toast-stack{bottom:calc(104px + env(safe-area-inset-bottom));}
 /* 底列會蓋住最後一段內容，整頁多留一點底部空間 */
-body[data-stickybar="1"] .ad-main{padding-bottom:calc(150px + env(safe-area-inset-bottom));}
+body[data-stickybar="1"] .ad-main{padding-bottom:calc(174px + env(safe-area-inset-bottom));}
 
 .sp-more-acts{flex-direction:column;align-items:stretch;}
 .sp-more-acts .btn{width:100%;}
-#spMoreMask .sp-stats{margin-bottom:6px;grid-template-columns:repeat(2,1fr);
+#spMoreMask .sp-stats{margin-bottom:6px;grid-template-columns:repeat(3,1fr);
   border-top:1px solid var(--line-soft);border-left:1px solid var(--line-soft);}
-#spMoreMask .sp-stats .ad-stat{padding:12px 8px;border-right:1px solid var(--line-soft);
+#spMoreMask .sp-stats .ad-stat{padding:12px 4px;border-right:1px solid var(--line-soft);
   border-bottom:1px solid var(--line-soft);border-left:none;}
 
 /* 賓客卡右側的「移動」：觸控裝置不用先開 peek 才碰得到（原本要 2 tap）。
@@ -3209,12 +3419,11 @@ body:is([data-page="admin"],[data-page="butler"]) .bt-pass,
 body:is([data-page="admin"],[data-page="butler"]) .bt-amount,
 body:is([data-page="admin"],[data-page="butler"]) .bt-code,
 body:is([data-page="admin"],[data-page="butler"]) .sp-table-no,
-body:is([data-page="admin"],[data-page="butler"]) .sp-pool-title,
+body:is([data-page="admin"],[data-page="butler"]) .sp-col-title,
 body:is([data-page="admin"],[data-page="butler"]) .sp-card-code,
 body:is([data-page="admin"],[data-page="butler"]) .sp-peek-code,
-body:is([data-page="admin"],[data-page="butler"]) .sp-drawer-title,
+body:is([data-page="admin"],[data-page="butler"]) .sp-prompt-title,
 body:is([data-page="admin"],[data-page="butler"]) .ad-drawer-title,
-body:is([data-page="admin"],[data-page="butler"]) .sp-start-title,
 body:is([data-page="admin"],[data-page="butler"]) .ad-msg-body{
   font-family:var(--font-display);
 }
@@ -3760,8 +3969,6 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
 /* <900px：頂列的帳號鈕留著（登出仍然按得到），但「查看網站」讓位給漢堡鈕 */
 @media(max-width:899px){
   .ad-bar-actions{display:flex;}
-  /* 收掉的是「頂列的那一顆」——這個 class 現在也被排桌的
-     「＋ 新增賓客」用著（.sp-pool-add），選擇器要限定在頂列裡 */
   .ad-bar-actions > .ad-bar-link{display:none;}
   .ad-acct-nm{display:none;}
   .ad-acct-btn{padding:5px 8px 5px 6px;}
@@ -4247,10 +4454,8 @@ body:is([data-page="admin"],[data-page="butler"]){
 body:is([data-page="admin"],[data-page="butler"]) .ad-donut-center span,
 body:is([data-page="admin"],[data-page="butler"]) .ad-donut-val small,
 body:is([data-page="admin"],[data-page="butler"]) .sp-card-code,
-body:is([data-page="admin"],[data-page="butler"]) .sp-chip,
-body:is([data-page="admin"],[data-page="butler"]) .sp-flag,
+body:is([data-page="admin"],[data-page="butler"]) .sp-card-cat,
 body:is([data-page="admin"],[data-page="butler"]) .sp-filter-lab,
-body:is([data-page="admin"],[data-page="butler"]) .sp-table-type,
 body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:var(--fs-label);}
 
 /* ============================================================
@@ -4344,9 +4549,12 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:var(--f
 /* ---------- Badge ----------
    和 .ad-tag 的差別：.ad-tag 講的是「這一筆資料是什麼」（出席、標籤），
    Badge 講的是「這個設定現在的狀態」。所以它更小、更輕，
-   而且永遠跟在一個控制項旁邊，不會單獨出現在一列裡。 */
+   而且永遠跟在一個控制項旁邊，不會單獨出現在一列裡。
+
+   形狀跟著 .ad-tag 走（--radius 方形）：後台只有一條形狀規則 ——
+   **膠囊＝可以點、方形＝唯讀**，零例外。Badge 點不動，所以是方的。 */
 .ad-badge{display:inline-flex;align-items:center;white-space:nowrap;
-  border:1px solid var(--line);border-radius:999px;padding:2px 9px;
+  border:1px solid var(--line);border-radius:var(--radius);padding:2px 9px;
   font-size:var(--fs-pill);letter-spacing:.08em;line-height:1.7;
   color:var(--ink-soft);background:var(--bg2);}
 /* 「主要活動」這種「正在生效」的狀態：和品牌色同一支，但用面不用字
