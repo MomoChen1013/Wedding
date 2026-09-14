@@ -484,7 +484,6 @@
              target="_blank" rel="noopener noreferrer">查看表單 ↗</a>
         </div>
       </div>
-      <p class="ad-ask">網站已經幫你們做好了，接下來一起把內容放進去。</p>
     </section>
 
     <!-- 製作筆記：下面那幾步是「做什麼」，這一段是「什麼時候做」。
@@ -496,7 +495,7 @@
       <details class="ad-note">
         <summary>
           <span class="ad-note-main">
-            <span class="ad-note-title">給你的製作筆記</span>
+            <span class="ad-note-title">點擊開啟你的製作筆記</span>
             <span class="ad-note-sub">不用一次做完，這是我們建議的節奏</span>
           </span>
           <i class="ad-note-go" aria-hidden="true">→</i>
@@ -643,7 +642,7 @@
   <div class="ad-panel" data-panel="help">
     <section class="ad-sec">
       <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-help"/></svg>常見問題</h2>
-      <p class="ad-sec-note">這裡沒寫到的，<b>用 LINE 私訊我們</b>就好（最下面那顆按鈕）。</p>
+      <p class="ad-sec-note">這裡沒寫到的，可以<b>用 LINE 詢問我們</b>。</p>
 
       <div class="ad-faq-group">
         <h3 class="ad-faq-cat">開始使用</h3>
@@ -701,7 +700,7 @@
           <details class="ad-faq-item">
             <summary>可以排一個時間，讓某一頁自己打開嗎？</summary>
             <p>
-              可以。「頁面設定」每一列都有「<b>排程開啟</b>」——
+              可以。「頁面設定」每一列都有「<b>設定自動打開</b>」——
               例如把抽卡排在喜宴當天中午，時間到了它自己出現，你不用回來按任何東西。
               時間以你設定當下那台裝置的時間為準。
             </p>
@@ -805,6 +804,13 @@
     <section class="ad-sec">
       <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-rsvp"/></svg>出席回覆總覽</h2>
       <p class="ad-page-sub" id="adRsvpOverviewSub"></p>
+      <details class="ad-fine">
+        <summary>這些數字怎麼算的</summary>
+        <div class="ad-fine-body">
+          <p>只有<b>飲食</b>是以「人」為單位（把每一筆的葷素分配加起來），其餘四張都是算<b>回覆筆數</b>。</p>
+          <p>回覆是賓客自己送出的，這裡只能看與匯出，改不動。</p>
+        </div>
+      </details>
 
       <!-- 最大的那個數字：一眼看到收到幾份回覆 -->
       <!-- 左邊一個大數字，右邊一列一項。
@@ -825,13 +831,6 @@
 
       <div class="ad-donuts" id="adRsvpCharts"></div>
 
-      <details class="ad-fine">
-        <summary>這些數字怎麼算的</summary>
-        <div class="ad-fine-body">
-          <p>只有<b>飲食</b>是以「人」為單位（把每一筆的葷素分配加起來），其餘四張都是算<b>回覆筆數</b>。</p>
-          <p>回覆是賓客自己送出的，這裡只能看與匯出，改不動。</p>
-        </div>
-      </details>
     </section>
     </div>
 
@@ -917,12 +916,6 @@
         </div>
       </div>
       <p class="ad-sec-note">一位賓客可以有好幾個標籤，排桌、篩名單的時候都用得上。</p>
-
-      <!-- 兩組 chip：上面那組賓客自己勾得到，下面那組只有後台看得到。
-           「放在哪一組」取代了原本每一列的「當表單選項」勾選框 ——
-           資料上仍然是同一個 guestTags[].onForm，見 js/admin.js 的 renderTags()。 -->
-      <div id="adTagGroups"></div>
-
       <details class="ad-fine">
         <summary>標籤還能怎麼用</summary>
         <div class="ad-fine-body">
@@ -931,6 +924,12 @@
           <p>改名字不會影響已經掛好的分類；刪掉的話，掛在賓客身上的那一份也會一起拿掉（賓客當初送出的回覆本身不會被改動）。</p>
         </div>
       </details>
+
+      <!-- 兩組 chip：上面那組賓客自己勾得到，下面那組只有後台看得到。
+           「放在哪一組」取代了原本每一列的「當表單選項」勾選框 ——
+           資料上仍然是同一個 guestTags[].onForm，見 js/admin.js 的 renderTags()。 -->
+      <div id="adTagGroups"></div>
+
     </section>
   </div>
 
@@ -1138,11 +1137,14 @@
   ============================================================ -->
   <div class="ad-panel" data-panel="inbox">
     <section class="ad-sec">
-      <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-message"/></svg>悄悄話信箱</h2>
-      <p class="ad-page-sub" id="adInboxPageSub"></p>
-
-      <div class="ad-row">
-        <button class="btn small ghost" id="adInboxExport" type="button">匯出 CSV</button>
+      <div class="ad-sec-head">
+        <div class="ad-sec-head-main">
+          <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-message"/></svg>悄悄話信箱</h2>
+          <p class="ad-page-sub" id="adInboxPageSub"></p>
+        </div>
+        <div class="ad-sec-head-actions">
+          <button class="btn small ghost" id="adInboxExport" type="button">匯出 CSV</button>
+        </div>
       </div>
 
       <div class="ad-list-head">
@@ -1629,10 +1631,6 @@
     <!-- ---------- 3b-1 排桌工作區 ---------- -->
     <div class="ad-subpanel is-on" data-subpanel="board">
 
-      <!-- 這一頁一打開就是一整片工具，第一次進來的人不知道自己該做什麼。
-           一句話擋在最前面，工作區的高度只讓出一行。 -->
-      <p class="ad-ask ad-ask-tight">把「未安排」的賓客放到桌上，排完再送出。</p>
-
       <!-- 儲存與同步：整頁最上面，永遠看得到現在是什麼狀態 -->
       <!-- 同步狀態、即時統計、儲存／同步收在同一列，
            工作區才拿得回螢幕的高度（窄螢幕會自己拆行） -->
@@ -1746,8 +1744,8 @@
           <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-export"/></svg>匯出</h2>
           <div class="ad-sec-head-actions">
             <button class="btn small" id="spExportXlsx" type="button">匯出 Excel</button>
-            <button class="btn small ghost" id="spExportCsv" type="button">匯出 CSV（賓客明細）</button>
-            <button class="btn small ghost" id="spExportCsvTable" type="button">匯出 CSV（桌位排桌表）</button>
+            <button class="btn small ghost" id="spExportCsv" type="button">匯出賓客明細.csv</button>
+            <button class="btn small ghost" id="spExportCsvTable" type="button">匯出桌位排桌表.csv</button>
           </div>
         </div>
         <p class="ad-sec-note">Excel 檔裡是下面這兩張表，印給宴會廳、傳給家人都可以。</p>
@@ -1963,8 +1961,7 @@
       </div>
       <p class="ad-sec-note">點一列就看得到完整內容。</p>
 
-      <!-- 婚宴當天最常做的事就是「找某個人有沒有收到」，所以這一列黏著 -->
-      <div class="ad-list-head is-sticky">
+      <div class="ad-list-head">
         <span id="adBtCount">目前 0 筆</span>
         <input class="ad-filter" id="adBtFilter" type="search"
                inputmode="search" enterkeyhint="search" autocomplete="off"
@@ -2077,7 +2074,6 @@
 
     <section class="ad-sec">
       <h2 class="ad-sec-title">已經放上去的小卡</h2>
-      <p class="ad-sec-note">改完就存起來了，不用另外按儲存。</p>
       <details class="ad-fine">
         <summary>SSR／SR 是什麼</summary>
         <div class="ad-fine-body">
