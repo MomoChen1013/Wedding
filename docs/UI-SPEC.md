@@ -41,7 +41,7 @@
 |---|---|
 | 靠線條與留白撐層次 | 1px `--line`／`--line-soft`，不用色塊分區。輸入框也是一條線，不是一個盒子（3.6） |
 | 陰影只給「浮起來」的東西 | 抽屜、彈窗、行內選單、toast、拖曳中的列。其餘一律無陰影 |
-| 圓角克制 | 後台 `--radius: 4px`（賓客頁 `2px`）。只有膠囊（chip／badge／pill 按鈕）是 `999px`；`.ad-tag` 是方的 |
+| 圓角克制 | 後台 `--radius: 4px`（賓客頁 `2px`）。形狀只有一條規則：**膠囊 `999px` ＝ 可以點、方角 `--radius` ＝ 唯讀**，零例外 |
 | 不用 emoji 當 UI 圖示 | 現有的 `✕ ＋ － ⋮ ↗` 是字元，不是圖示字型 |
 | 動效克制 | 只有 ease-out，時長 150–260ms，不用 bounce／overshoot |
 | 顏色只標示狀態 | `--primary` 不准當文字（2.1）。數字是 `--ink`，不是品牌色 |
@@ -254,7 +254,7 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-xxx { … }
 |---|---|---|
 | `--radius` / `--radius-sm` | `4px` | 後台層。賓客頁仍是 `2px` |
 
-膠囊（chip／badge／pill 按鈕）維持 `999px`，不吃 `--radius`。
+膠囊（chip／pill 按鈕，＝可以點的東西）維持 `999px`，不吃 `--radius`。
 **`.ad-tag` 不再是膠囊**（見 3.5）—— 形狀是它和 Badge 唯一的區別。
 
 #### 字級：十四支變數，零處硬寫
@@ -549,8 +549,23 @@ hover 時線與字一起變深（刪除變 `--alert`），觸控沒有 hover 所
 </div>
 ```
 
-- 未選：透明底 ＋ `--line` 框 ＋ `--ink-soft`
-- 已選：`.is-on` → 實心 `--ink` ＋ 白字
+#### 五個狀態
+
+| 狀態 | 面 | 框 | 字 |
+|---|---|---|---|
+| Default | 透明 | 1px `--line` | `--ink-soft` |
+| Hover | `rgba(--ink-rgb,.04)` | 1px `--ink` | `--ink` |
+| Selected `.is-on` | `--ink` | 1px `--ink` | `--on-ink` |
+| Disabled `:disabled` | 透明 | 1px `--line-soft` | `--ink-3` ＋ `opacity:.55` ＋ `cursor:not-allowed` |
+| Read-only | — | — | — |
+
+> **Disabled ≠ Read-only。** Disabled 是「現在選不到」（篩選裡一個人都沒有的
+> 標籤）—— 條件變了它就會回來，所以它仍然是一顆 chip。
+> Read-only 是「這筆資料就是這樣」—— 它**不做成 chip**，改用方形的
+> `.ad-tag`（3.5）。
+>
+> 兩種都**不掛圖示**。一把鎖頭是在替形狀沒講清楚的事再解釋一次；
+> 形狀講清楚了就不需要它。
 - 容器變體：`.ad-chips-oneline`（固定顆數，放不下就左右滑）、
   `.ad-chips-clamp` ＋ `.ad-chips-more`（數量無上限，先露兩排）、
   `.ad-chips-sub`（次級一排，字小一號）、
@@ -577,17 +592,21 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 **`border-radius: var(--radius)` —— 方的，不是膠囊。**
 **永遠 `white-space:nowrap`** —— 折行的標記完全不成形，欄位擠不下時該讓欄位變寬。
 
-> **形狀就是「這個不能點」。** 改版前 tag 和 chip、Badge、pill 按鈕全都是
+`.ad-tag-need`（素食、行動不便、VIP…）：`--primary-deep` 字 ＋ `--primary` 框。
+語意比一般標籤重一階，形狀一樣。
+
+> **形狀就是「這個能不能點」。** 改版前 tag 和 chip、Badge、pill 按鈕全都是
 > 999px 膠囊，唯一的區別是「可點的有 hover 反應」—— 那是一個要伸手去試
-> 才知道的區別。現在 `.ad-tag` 收成 4px 方角：
+> 才知道的區別。現在只有一條規則，零例外：
 >
 > | 形狀 | 是什麼 | 例子 |
 > |---|---|---|
-> | 方角 `--radius` | 唯讀的**資料狀態** | `.ad-tag`（會出席、素食、VIP） |
-> | 膠囊 `999px` | 可點的**篩選器**或**設定狀態** | `.ad-chip`、`.ad-badge`、pill 按鈕 |
+> | 方角 `--radius` | **唯讀**（資料是什麼、設定現在是什麼狀態） | `.ad-tag`、`.ad-badge` |
+> | 膠囊 `999px` | **可以點**（篩選器、segmented control、pill 按鈕） | `.ad-chip`、`.sp-pill`、`.ad-filtersum-clear` |
 >
-> `.ad-badge` 刻意**維持膠囊**：它講的是「這個設定開了沒」，
-> 和 tag 的「這一筆資料是什麼」不同用途，形狀撞在一起反而混淆。
+> 所以「點不動的 chip」不存在：要嘛它是 Disabled（暫時選不到，見 3.4），
+> 要嘛它根本是唯讀的資料 —— 那就是一顆 `.ad-tag`，不是灰掉的 chip。
+> 唯讀的東西也**不掛鎖頭之類的圖示**：形狀已經講完了，圖示只是再解釋一次。
 
 ---
 
@@ -603,7 +622,7 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 
 | 變體 | 樣子 | 用在哪 |
 |---|---|---|
-| `.ad-badge` | `--bg2` 底 ＋ `--line` 框 ＋ `--ink-soft` | 活動種類 |
+| `.ad-badge` | `--bg2` 底 ＋ `--line` 框 ＋ `--ink-soft`，`--radius` 方角 | 活動種類 |
 | `.ad-badge.is-on` | `--primary-soft` 底 ＋ `--primary` 框 ＋ `--ink` | 正在生效（主要活動） |
 
 和 `.ad-tag`（3.5）的分工：**`.ad-tag` 講「這一筆資料是什麼」（題型、

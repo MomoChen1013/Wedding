@@ -613,8 +613,24 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
   font-family:var(--font-body);font-size:var(--fs-meta);letter-spacing:.08em;
   color:var(--ink-soft);transition:color var(--dur-hover) ease-out,background var(--dur-hover) ease-out,border-color var(--dur-hover) ease-out;
 }
-.ad-chip:hover{border-color:var(--ink);color:var(--ink);}
+/* ---------- Chip 的五個狀態 ----------
+   膠囊 ＝ 可以點。唯讀的東西一律用方形的 .ad-tag，不做成「點不動的 chip」——
+   一個看起來能點、按下去沒反應的東西，比長得不一樣更難理解。
+
+     Default   透明底 ＋ --line ＋ --ink-soft
+     Hover     極淡的面 ＋ --ink 框（跟 .btn.ghost、.sp-pill 同一套）
+     Selected  實心 --ink ＋ 白字
+     Disabled  框與字各退一階 ＋ .55 —— 不掛任何圖示
+     Read-only 不是 chip，見 3.5 的 .ad-tag
+
+   Disabled 講的是「現在選不到」（例如篩選裡一個人都沒有的標籤），
+   不是「這筆資料改不動」—— 後者是 Read-only。 */
+.ad-chip:hover:not(:disabled):not([aria-disabled="true"]){
+  background:rgba(var(--ink-rgb),.04);border-color:var(--ink);color:var(--ink);}
 .ad-chip.is-on{background:var(--ink);border-color:var(--ink);color:var(--on-ink);}
+.ad-chip:disabled,.ad-chip[aria-disabled="true"]{
+  background:transparent;border-color:var(--line-soft);color:var(--ink-3);
+  opacity:.55;cursor:not-allowed;}
 
 /* 回覆狀態的標籤 */
 /* 名單上的篩選鈕分兩排時，第二排（標籤）縮一點、和第一排拉開距離 */
@@ -749,6 +765,8 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 
 .ad-tag{border:1px solid var(--line);border-radius:var(--radius);padding:2px 10px;
   font-size:var(--fs-pill);letter-spacing:.08em;color:var(--ink-soft);flex:0 0 auto;}
+/* 特殊需求（素食、行動不便、VIP…）：語意比一般標籤重一階，形狀一樣 */
+.ad-tag-need{color:var(--primary-deep);border-color:var(--primary);}
 
 /* 賓客身上的標籤（VIP、長輩…）：和出席狀態的 pill 同一種形狀，換個顏色 */
 .ad-tag-guest{background:var(--bg2);border-color:var(--line);color:var(--ink);
@@ -2038,13 +2056,15 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
   overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
   scroll-snap-type:x proximity;overscroll-behavior-x:contain;}
 .sp-card-tags::-webkit-scrollbar{display:none;}
-.sp-chip{flex:0 0 auto;scroll-snap-align:start;white-space:nowrap;
-  border:1px solid var(--line);border-radius:999px;padding:1px 7px;
-  font-size:var(--fs-label);letter-spacing:.03em;color:var(--ink);background:var(--bg2);}
-.sp-chip.is-special{color:var(--primary-deep);border-color:var(--primary);
-  background:transparent;}
-.sp-chip.is-plain{background:transparent;border-color:transparent;
-  color:var(--ink-soft);padding-left:0;}
+/* 卡片上的標籤是「這個人是誰」，看的、不是點的 —— 所以是方形的 .ad-tag，
+   和名單、抽屜、桌位管理清單裡的同一顆長得一樣。
+   這一排住在一個一百多 px 寬的捲動容器裡，所以密度收一階。 */
+.sp-card-tags .ad-tag{scroll-snap-align:start;padding:1px 7px;letter-spacing:.03em;
+  color:var(--ink);background:var(--bg2);}
+.sp-card-tags .ad-tag-need{background:transparent;}
+/* 一個標籤都沒有的人退回顯示類別。那是一句話不是一顆標籤，所以不給它框 */
+.sp-card-cat{flex:0 0 auto;white-space:nowrap;
+  font-size:var(--fs-label);letter-spacing:.03em;color:var(--ink-soft);}
 
 /* ---------- 完整樣貌（peek） ---------- */
 .sp-peek{position:fixed;z-index:1200;background:var(--surface);border:1px solid var(--ink);
@@ -2096,8 +2116,9 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .sp-table-name{flex:1 1 auto;min-width:0;font-size:var(--fs-ctl-sm);letter-spacing:.06em;
   color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .sp-table-name:empty{flex:1 1 auto;}
-.sp-table-type{flex:0 0 auto;border:1px solid var(--line);border-radius:999px;
-  padding:1px 8px;font-size:var(--fs-label);letter-spacing:.06em;color:var(--ink-soft);}
+/* 桌位類型（主桌、親友桌…）在「桌位管理」清單裡本來就是 .ad-tag，
+   桌卡上卻另外做了一顆膠囊 —— 同一筆資料在兩個畫面兩種形狀。收回同一顆。 */
+.sp-table-meta .ad-tag{flex:0 0 auto;padding:1px 8px;letter-spacing:.06em;}
 /* 編輯與刪除收進「⋮」：它們一年按不到三次，
    卻一直站在桌名旁邊，把「這桌還剩幾位」擠到第二眼才看到 */
 .sp-table-head-row .ad-rowmenu-btn{flex:0 0 auto;margin:-6px -6px -6px 0;}
@@ -2152,8 +2173,8 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .sp-table.is-over .sp-table-left{color:var(--seat-over-ink);font-weight:500;}
 
 .sp-table-flags{display:flex;flex-wrap:wrap;gap:5px;padding:8px 12px;}
-.sp-flag{border:1px solid var(--line-soft);border-radius:999px;padding:1px 8px;
-  font-size:var(--fs-label);letter-spacing:.04em;color:var(--ink);background:var(--bg2);}
+.sp-table-flags .ad-tag{padding:1px 8px;letter-spacing:.04em;
+  color:var(--ink);background:var(--bg2);border-color:var(--line-soft);}
 
 .sp-table-body{flex:1 1 auto;display:flex;flex-direction:column;gap:5px;
   padding:9px 10px 11px;min-height:66px;}
@@ -2300,12 +2321,17 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .sp-guest-taggrp{display:flex;flex-direction:column;gap:6px;}
 .sp-guest-taglab{font-size:var(--fs-label);letter-spacing:.14em;color:var(--ink-soft);}
 .sp-guest-tags .ad-chip{font-size:var(--fs-meta);padding:5px 12px;}
-/* 兩種標籤後台改不動：賓客自己在表單上選的、從回覆推出來的。
-   不是「壞掉」而是「已經確定了」，所以不要畫成灰掉的按鈕 —— 掛一把鎖就好。 */
-.sp-guest-tags .ad-chip.is-locked{opacity:1;cursor:default;
-  border-style:dashed;color:var(--ink-soft);}
-.sp-guest-tags .ad-chip.is-locked.is-on{background:var(--primary-soft);
-  border-color:var(--primary);color:var(--primary-deep);}
+
+/* 改不動的那幾顆（賓客自己在表單上選的、出席回覆帶進來的、以及整組
+   「賓客自己選得到」的標籤）搬到名字旁邊，用方形的 .ad-tag。
+   本來它們是排在可勾的 chip 中間、掛一把 🔒 的 disabled chip ——
+   點不動的東西不該長得跟點得動的一樣，掛圖示只是再解釋一次形狀沒講清楚的事。 */
+/* 名字與那幾顆標籤同一條基線，放不下才換行 */
+.sp-guest-head{display:flex;align-items:baseline;flex-wrap:wrap;gap:5px 10px;
+  margin-bottom:10px;}
+.sp-guest-head .ad-modal-title{margin-bottom:0;}
+.sp-guest-head-tags{display:flex;flex-wrap:wrap;gap:5px;}
+.sp-guest-head-tags:empty{display:none;}
 
 /* ---------- 移動到桌位 ---------- */
 .sp-move-list{display:flex;flex-direction:column;gap:6px;max-height:52dvh;
@@ -4428,10 +4454,8 @@ body:is([data-page="admin"],[data-page="butler"]){
 body:is([data-page="admin"],[data-page="butler"]) .ad-donut-center span,
 body:is([data-page="admin"],[data-page="butler"]) .ad-donut-val small,
 body:is([data-page="admin"],[data-page="butler"]) .sp-card-code,
-body:is([data-page="admin"],[data-page="butler"]) .sp-chip,
-body:is([data-page="admin"],[data-page="butler"]) .sp-flag,
+body:is([data-page="admin"],[data-page="butler"]) .sp-card-cat,
 body:is([data-page="admin"],[data-page="butler"]) .sp-filter-lab,
-body:is([data-page="admin"],[data-page="butler"]) .sp-table-type,
 body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:var(--fs-label);}
 
 /* ============================================================
@@ -4525,9 +4549,12 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:var(--f
 /* ---------- Badge ----------
    和 .ad-tag 的差別：.ad-tag 講的是「這一筆資料是什麼」（出席、標籤），
    Badge 講的是「這個設定現在的狀態」。所以它更小、更輕，
-   而且永遠跟在一個控制項旁邊，不會單獨出現在一列裡。 */
+   而且永遠跟在一個控制項旁邊，不會單獨出現在一列裡。
+
+   形狀跟著 .ad-tag 走（--radius 方形）：後台只有一條形狀規則 ——
+   **膠囊＝可以點、方形＝唯讀**，零例外。Badge 點不動，所以是方的。 */
 .ad-badge{display:inline-flex;align-items:center;white-space:nowrap;
-  border:1px solid var(--line);border-radius:999px;padding:2px 9px;
+  border:1px solid var(--line);border-radius:var(--radius);padding:2px 9px;
   font-size:var(--fs-pill);letter-spacing:.08em;line-height:1.7;
   color:var(--ink-soft);background:var(--bg2);}
 /* 「主要活動」這種「正在生效」的狀態：和品牌色同一支，但用面不用字

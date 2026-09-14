@@ -1008,24 +1008,28 @@
   ============================================================ */
   function guestCard(g) {
     const primary = primaryTag(g);
-    const chips = [];
-    if (primary) chips.push(`<span class="sp-chip">${esc(primary.name)}</span>`);
+    /* 卡片上的標籤是「這個人是誰」，看的不是點的 —— 所以是方形的 .ad-tag，
+       和名單、抽屜、桌位管理清單裡的同一顆長得一樣。
+       賓客詳細裡可以勾的那一組才是膠囊 chip，兩者一眼分得出來。 */
+    const tags = [];
+    if (primary) tags.push(`<span class="ad-tag">${esc(primary.name)}</span>`);
     g.specials.forEach((sp) => {
       /* 主要標籤本身就是特殊需求時不要重複出現 */
       if (primary && primary.name === sp.label) return;
-      chips.push(`<span class="sp-chip is-special">${sp.icon} ${esc(sp.label)}</span>`);
+      tags.push(`<span class="ad-tag ad-tag-need">${sp.icon} ${esc(sp.label)}</span>`);
     });
     /* 其餘標籤照樣掛上去，放不下就左右滑 */
     g.tagNames.forEach((n) => {
       if (primary && n === primary.name) return;
       if (g.specials.some((sp) => sp.label === n
         || sp.match.some((m) => n.toLowerCase().includes(m.toLowerCase())))) return;
-      chips.push(`<span class="sp-chip">${esc(n)}</span>`);
+      tags.push(`<span class="ad-tag">${esc(n)}</span>`);
     });
-    /* 一個標籤都沒有的人也不要空一行，退回顯示類別 */
-    const line2 = chips.length
-      ? chips.join('')
-      : (g.cat ? `<span class="sp-chip is-plain">${esc(g.cat)}</span>` : '');
+    /* 一個標籤都沒有的人也不要空一行，退回顯示類別。
+       那是一句話不是一顆標籤，所以不給它框（見 .sp-card-cat） */
+    const line2 = tags.length
+      ? tags.join('')
+      : (g.cat ? `<span class="sp-card-cat">${esc(g.cat)}</span>` : '');
 
     /* 搜尋有打字時，命中的卡片標起來（含已經坐在桌上的） */
     const hit = view.q && hitsSearch(g) ? ' is-hit' : '';
@@ -1103,7 +1107,7 @@
       </div>
       ${g.tagNames.length
         ? `<div class="sp-peek-tags">${g.tagNames
-            .map((n) => `<span class="sp-chip">${esc(n)}</span>`).join('')}</div>`
+            .map((n) => `<span class="ad-tag">${esc(n)}</span>`).join('')}</div>`
         : ''}
       <div class="sp-peek-actions">
         <button class="btn small ghost" type="button" data-peek="move">移動到桌位</button>
@@ -1344,7 +1348,7 @@
               ${rowMenuBtn('spTable', t.id)}
             </div>
             <div class="sp-table-meta">
-              ${type ? `<span class="sp-table-type">${esc(type)}</span>` : '<span></span>'}
+              ${type ? `<span class="ad-tag">${esc(type)}</span>` : '<span></span>'}
               <span class="sp-table-cap">${t.cap} 人
                 <b class="sp-table-left">・${esc(leftText)}</b></span>
             </div>
@@ -1459,7 +1463,7 @@
       if (n) out.push(`${sp.icon} ${n} 位${sp.label}`);
     });
 
-    return out.map((t) => `<span class="sp-flag">${esc(t)}</span>`).join('');
+    return out.map((t) => `<span class="ad-tag">${esc(t)}</span>`).join('');
   }
 
   /* ============================================================
@@ -2100,53 +2104,98 @@
     return [['', '未分類'], ...fixed];
   }
 
-  /* 標籤畫成兩組 chip，和「設定賓客標籤」那一頁一樣的分法
-     （賓客自己選得到／只有你們看得到）—— 同一個東西在兩頁長得一樣，
-     新人才不用學第二次。點一下就切換，不用先找到勾選框。
+  /* 標籤分成兩批，而且長得不一樣：
 
-     兩種標籤後台改不動，畫成鎖住的 chip：
+       改不動的 → 方形 .ad-tag，住在名字旁邊（見 spGuestHeadTags）
+       改得動的 → 膠囊 .ad-chip，住在「標籤」那一欄
+
+     哪些改不動？
        ・賓客自己在表單上選的那一個（那是他送出的紀錄）
-       ・從回覆推出來的（葷素分配填了素食、要了兒童座椅） */
-  function fillGuestTags(g) {
-    const lib = tagLib();
-    const box = $('spGuestTags');
-    $('spGuestTagsOff').hidden = !!lib.length;
-    if (!lib.length) { box.innerHTML = ''; return; }
+       ・從回覆推出來的（葷素分配填了素食、要了兒童座椅）
+       ・整組「賓客自己選得到」的標籤 —— 那一組本來就是表單上的題目，
+         要動應該去改表單或回覆，不是在排桌這一頁偷偷改掉賓客填過的東西
 
+     所以留在這裡可以勾的，剛好就是「只有你們看得到」那一組。
+     本來這些改不動的是排在可勾的 chip 中間、掛一把 🔒 的 disabled chip ——
+     點不動的東西不該長得跟點得動的一樣，掛圖示只是再解釋一次形狀沒講清楚的事。 */
+
+  /* 這一位身上「改不動」的標籤，連帶它為什麼改不動 */
+  function lockedTagsOf(g) {
     const r = g.src === 'rsvp' ? DataStore.getRSVPs().find((x) => x.id === g.id) : null;
     const own = r ? String(r.tag || '') : '';
     const veg = r && Number(r.mealVeg) > 0 ? vegTagId() : '';
     const kid = r && Number(r.childSeat) > 0 ? kidTagId() : '';
-    const why = (id) => (id === own ? '賓客自己選的'
-      : (id === veg ? '出席回覆填了素食'
-        : (id === kid ? '出席回覆要了兒童座椅' : '')));
-
-    box.innerHTML = TAG_GROUPS.map((grp) => {
-      const mine = lib.filter((t) => t.onForm === grp.onForm);
-      if (!mine.length) return '';
-      return `
-        <div class="sp-guest-taggrp">
-          <div class="sp-guest-taglab">${esc(grp.title)}</div>
-          <div class="ad-chips">
-            ${mine.map((t) => {
-              const locked = why(t.id);
-              const on = g.tagIds.includes(t.id);
-              return `
-                <button class="ad-chip${on ? ' is-on' : ''}${locked ? ' is-locked' : ''}"
-                        type="button" data-guest-tag="${esc(t.id)}"
-                        aria-pressed="${on}"${locked ? ` disabled title="${esc(locked)}"` : ''}
-                        >${esc(t.name)}${locked ? ' 🔒' : ''}</button>`;
-            }).join('')}
-          </div>
-        </div>`;
-    }).join('');
+    return tagLib()
+      .filter((t) => g.tagIds.includes(t.id))
+      .map((t) => ({
+        id: t.id,
+        name: t.name,
+        why: t.id === own ? '賓客自己選的'
+          : (t.id === veg ? '出席回覆填了素食'
+            : (t.id === kid ? '出席回覆要了兒童座椅'
+              : (t.onForm ? '賓客在表單上選得到的分類' : ''))),
+      }))
+      .filter((t) => t.why);
   }
 
-  /* 現在勾了哪些標籤：鎖住的那幾顆也要算進去（它們本來就掛在這個人身上），
-     但不會被送回 rsvpTags —— 見 submitGuest。 */
-  function pickedTags() {
-    return [...guestMask.querySelectorAll('[data-guest-tag].is-on:not([disabled])')]
+  /* 這一頁勾得動的標籤：「只有你們看得到」那一組，扣掉上面那幾顆 */
+  function pickableTags(g) {
+    const locked = new Set(lockedTagsOf(g).map((t) => t.id));
+    return tagLib().filter((t) => !t.onForm && !locked.has(t.id));
+  }
+
+  function fillGuestTags(g) {
+    const lib = tagLib();
+    const box = $('spGuestTags');
+    const head = $('spGuestHeadTags');
+
+    const locked = lib.length ? lockedTagsOf(g) : [];
+    head.innerHTML = locked.map((t) => {
+      /* 特殊需求（素食、行動不便…）在卡片上就是 .ad-tag-need，這裡同一顆 */
+      const need = specialsOf([t.name]).length ? ' ad-tag-need' : '';
+      return `<span class="ad-tag${need}" title="${esc(t.why)}">${esc(t.name)}</span>`;
+    }).join('');
+
+    const pick = lib.length ? pickableTags(g) : [];
+    $('spGuestTagsOff').hidden = !!lib.length;
+    $('spGuestTagsHint').hidden = !lib.length || !locked.length;
+
+    if (!pick.length) {
+      box.innerHTML = lib.length
+        ? `<p class="ad-taggroup-empty">${esc(lib.some((t) => !t.onForm)
+            ? '你們自己掛的標籤都已經在這位賓客身上了。'
+            : '還沒有「只有你們看得到」的標籤（像 VIP、行動不便這種）。')}</p>`
+        : '';
+      return;
+    }
+
+    box.innerHTML = `
+      <div class="sp-guest-taggrp">
+        <div class="sp-guest-taglab">只有你們看得到</div>
+        <div class="ad-chips">
+          ${pick.map((t) => {
+            const on = g.tagIds.includes(t.id);
+            return `
+              <button class="ad-chip${on ? ' is-on' : ''}" type="button"
+                      data-guest-tag="${esc(t.id)}" aria-pressed="${on}"
+                      >${esc(t.name)}</button>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }
+
+  /* 送回去的標籤 ＝ 畫面上勾起來的 ＋ 這一頁碰不到、但本來就存著的那些。
+     少了第二段的話，按一次儲存就會把「賓客自己選得到」那一組整批洗掉 ——
+     那一頁根本沒有畫出來，使用者不會知道自己刪了什麼。 */
+  function pickedTags(g) {
+    const on = [...guestMask.querySelectorAll('[data-guest-tag].is-on')]
       .map((el) => el.dataset.guestTag);
+    const shown = new Set(pickableTags(g).map((t) => t.id));
+    const stored = g.src === 'manual'
+      ? ((plan.meta[g.id] || {}).tags || [])
+      : (DataStore.getRsvpTagMap()[g.id] || []);
+    const keep = stored.filter((id) => !shown.has(id));
+    return [...new Set([...keep, ...on])];
   }
 
   function fillGuest(guestId) {
@@ -2204,7 +2253,7 @@
     const g = guestById(id);
     if (!g) return;
 
-    const tagIds = pickedTags();
+    const tagIds = pickedTags(g);
     const patch = {
       code: $('spGuestCode').value.trim().slice(0, 12),
       cat:  pickedRadio('spGuestCat').slice(0, 20),

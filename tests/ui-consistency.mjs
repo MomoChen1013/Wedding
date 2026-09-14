@@ -555,7 +555,9 @@ const bits = await page.evaluate(() => {
 });
 ok('找得到 Badge 與 Radio', !!bits.badge && !!bits.radio);
 if(bits.badge){
-  ok('.ad-badge 是膠囊', parseFloat(bits.badge.radius) >= 999, bits.badge.radius);
+  /* 形狀規則只有一條：膠囊＝可以點、方形＝唯讀。Badge 點不動，所以是方的 */
+  ok('.ad-badge 是 --radius 方形（不是膠囊）',
+     parseFloat(bits.badge.radius) < 999, bits.badge.radius);
   ok('.ad-badge 字級 = --fs-pill(11px)', bits.badge.size === '11px', bits.badge.size);
   ok('.ad-badge 走 UI 軌', /^["']?Noto Sans TC/.test(bits.badge.font.trim()));
 }

@@ -2753,7 +2753,12 @@
      人數／兒童椅／喜餅＝ −  N  ＋ 的加減鈕。 -->
 <div class="ad-modal-mask" id="spGuestMask" hidden>
   <div class="ad-modal-card ad-modal-card-form sp-guest-card">
-    <div class="ad-modal-title" id="spGuestTitle">賓客資料</div>
+    <!-- 改不動的標籤跟在名字後面（方形的 .ad-tag）：它們是這個人「已經是什麼」，
+         不是這張表單要問的問題。底下那一組 chip 才是可以動的。 -->
+    <div class="sp-guest-head">
+      <div class="ad-modal-title" id="spGuestTitle">賓客資料</div>
+      <div class="sp-guest-head-tags" id="spGuestHeadTags"></div>
+    </div>
     <p class="ad-modal-note sp-guest-where" id="spGuestWhere"></p>
 
     <form class="ad-form sp-guest-form" id="spGuestForm">
@@ -2781,6 +2786,10 @@
 
       <label class="ad-label">標籤</label>
       <div class="sp-guest-tags" id="spGuestTags"></div>
+      <div class="ad-hint" id="spGuestTagsHint" hidden>
+        只有「你們自己掛的」那一組改得動。賓客在表單上選的那些列在最上面，
+        以回覆為準，這裡改不動。
+      </div>
       <div class="ad-hint" id="spGuestTagsOff" hidden>
         這場婚禮還沒開賓客標籤，排桌時就只能用類別分群。
       </div>
