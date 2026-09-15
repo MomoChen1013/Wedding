@@ -3883,10 +3883,12 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
    比原稿略細一點，才配得上旁邊 14px 的細明體。
 
    顏色刻意不吃 currentColor：圖示是輔助，跟標題文字一樣濃會變成噪音。
-   統一走 --primary（Ivory 的 accent 軌），再用 opacity 分層次。
+   預設走 --primary（Ivory 的 accent 軌），再用 opacity 分層次。
    用 --primary 而不是 --primary-deep：圖示是「面與線」不是文字，
    正好是 Ivory 說 accent 唯一該出現的那種地方。對比不受影響 ——
    圖示旁邊永遠有一個讀得到的文字標籤，它本身不承載資訊。
+
+   側欄是唯一的例外，見下面 .ad-side .ad-ic。
 ============================================================ */
 .ad-ic{
   flex:0 0 auto;width:24px;height:24px;
@@ -3921,6 +3923,15 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
 .ad-tab{
   display:flex;align-items:center;gap:10px;
 }
+/* 側欄的圖示退成次要墨色：二十顆橘色圖示排成一直行，等於沒有一顆被強調，
+   「你現在在哪一頁」那個訊號會被自己人洗掉。
+   只有選中的那一顆回到 --primary，跟左邊那條會滑的定位線是同一個訊號
+   （標題那顆 26px 的維持 --primary —— 一頁只有一個，它是內容區的起點）。 */
+.ad-side .ad-ic{color:var(--ink-soft);}
+/* stroke:currentColor 是為了說清楚這裡的 color 是「描邊色」不是文字色 ——
+   tests/ui-consistency.mjs 第 13 條就是照這個判斷放行圖示的。 */
+.ad-tab.is-on .ad-ic{color:var(--primary);stroke:currentColor;}
+
 .ad-ic-tab{opacity:.5;transition:opacity var(--dur-hover) ease-out;}
 .ad-tab.is-on .ad-ic-tab{opacity:1;}
 @media (hover:hover) and (pointer:fine){
