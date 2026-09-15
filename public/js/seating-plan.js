@@ -1197,15 +1197,22 @@
      只是把缺掉的那一塊換成一張提示卡，長在它本來就該在的那一欄裡。
      缺名單 → 提示卡長在左邊；缺桌位 → 長在右邊。
   ============================================================ */
-  function promptCard(o) {
+  /* quiet：同一張提示卡的「小聲版」。
+     什麼都還沒有的時候，「怎麼把賓客放進來」左右兩欄都會問一次 ——
+     一個畫面上兩組一樣的按鈕，看起來像兩件不同的事。
+     左邊那一份改成底線文字按鈕（.ad-linkbtn）：話照樣講完，
+     但主要的那兩顆留給右邊，眼睛只會落在一個地方。 */
+  function promptCard(o, quiet) {
     return `
-      <div class="sp-prompt${o.soft ? ' is-soft' : ''}">
+      <div class="sp-prompt${o.soft ? ' is-soft' : ''}${quiet ? ' is-quiet' : ''}">
         <div class="sp-prompt-title">${esc(o.title)}</div>
         ${o.body ? `<p class="sp-prompt-body">${esc(o.body)}</p>` : ''}
         <div class="sp-prompt-acts">
-          ${o.acts.map((a, i) => `
-            <button class="btn small${i || o.soft ? ' ghost' : ''}" type="button"
-                    data-act="${esc(a.act)}">${esc(a.label)}</button>`).join('')}
+          ${o.acts.map((a, i) => (quiet
+            ? `<button class="ad-linkbtn" type="button"
+                       data-act="${esc(a.act)}">${esc(a.label)}</button>`
+            : `<button class="btn small${i || o.soft ? ' ghost' : ''}" type="button"
+                       data-act="${esc(a.act)}">${esc(a.label)}</button>`)).join('')}
         </div>
       </div>`;
   }
@@ -1263,8 +1270,9 @@
     if (!loaded) {
       body.innerHTML = skeletonHtml(3, ['60%', '40%']);
     } else if (!guests.length) {
-      /* 一位賓客都沒有：這一欄的工作就是「把人放進來」 */
-      body.innerHTML = promptCard(PROMPT_GUESTS);
+      /* 一位賓客都沒有：這一欄的工作就是「把人放進來」。
+         右邊那一欄會問同一句，所以這一份用小聲的版本（見 promptCard 的 quiet） */
+      body.innerHTML = promptCard(PROMPT_GUESTS, true);
     } else if (!pool.length) {
       body.innerHTML = anyUnseated
         ? emptyState({ title:'沒有符合條件的賓客',

@@ -618,15 +618,20 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
    一個看起來能點、按下去沒反應的東西，比長得不一樣更難理解。
 
      Default   透明底 ＋ --line ＋ --ink-soft
-     Hover     極淡的面 ＋ --ink 框（跟 .btn.ghost、.sp-pill 同一套）
+     Hover     極淡的面 ＋ --ink 框（跟 .btn.ghost 同一套）
      Selected  實心 --ink ＋ 白字
      Disabled  框與字各退一階 ＋ .55 —— 不掛任何圖示
      Read-only 不是 chip，見 3.5 的 .ad-tag
 
    Disabled 講的是「現在選不到」（例如篩選裡一個人都沒有的標籤），
    不是「這筆資料改不動」—— 後者是 Read-only。 */
-.ad-chip:hover:not(:disabled):not([aria-disabled="true"]){
-  background:rgba(var(--ink-rgb),.04);border-color:var(--ink);color:var(--ink);}
+/* hover 只給真的有滑鼠的機器。手機沒有 hover 這回事，但瀏覽器會在點下去的
+   那一刻先套一次 :hover 再套 :is-on —— 使用者看到的是「先變灰、才變黑」，
+   像按錯了一下。所以這一條一定要關在 (hover:hover) 裡面。 */
+@media (hover:hover) and (pointer:fine){
+  .ad-chip:hover:not(:disabled):not([aria-disabled="true"]){
+    background:rgba(var(--ink-rgb),.04);border-color:var(--ink);color:var(--ink);}
+}
 .ad-chip.is-on{background:var(--ink);border-color:var(--ink);color:var(--on-ink);}
 .ad-chip:disabled,.ad-chip[aria-disabled="true"]{
   background:transparent;border-color:var(--line-soft);color:var(--ink-3);
@@ -711,8 +716,10 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 #adRsvpTagChips .ad-chip{font-size:var(--fs-pill);padding:5px 12px;}
 /* 「設定標籤 ↗」：不是篩選條件，是一個出口，所以畫成虛線框 */
 .ad-chip-link{border-style:dashed;color:var(--primary-deep);}
-.ad-chip-link:hover{border-style:solid;border-color:var(--primary-deep);
-  color:var(--primary-deep);}
+@media (hover:hover) and (pointer:fine){
+  .ad-chip-link:hover{border-style:solid;border-color:var(--primary-deep);
+    color:var(--primary-deep);}
+}
 .ad-chip-link.is-on{background:transparent;border-color:var(--line);}
 
 /* ============================================================
@@ -1953,20 +1960,12 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .sp-col-count{border:1px solid var(--line);border-radius:999px;padding:2px 9px;
   background:var(--surface);font-size:var(--fs-pill);letter-spacing:.04em;color:var(--ink);
   font-variant-numeric:tabular-nums;white-space:nowrap;}
-/* 每一欄自己的入口。用 pill 而不是 .btn.small（UI-SPEC 3.3c 的「獨立」那一階，
-   和「清除篩選」同一種東西）：這一頁真正的動作只有「儲存」與「發布給賓客」，
-   欄頭上的四顆如果也長成按鈕，一個畫面上就會有六顆一樣重的東西。
-   收成 pill 之後兩顆並排放得進 280px 的欄寬，不會各佔一整行。 */
+/* 每一欄自己的入口。它們是**動作**（開一張表單、開一個彈窗），所以是方形的
+   .btn.small.ghost，不是膠囊 —— 膠囊在這個後台是篩選器（.ad-chip）的形狀，
+   長成膠囊的話讀起來像「兩個可以勾的選項」而不是兩顆按鈕。
+   尺寸收一階（見下面「後台按鈕尺寸」那一段的 .sp-col-acts 覆寫），
+   兩顆才並排得進 280px 的欄寬。 */
 .sp-col-acts{display:flex;gap:6px;flex-wrap:wrap;}
-/* 字級走 --fs-ctl-sm（chip 的那一階）而不是 --fs-meta：
-   這兩顆住在 280px 寬的欄頭裡，14px 的話兩顆並排就差那十幾 px 放不下，
-   各佔一整行看起來反而比 .btn.small 還重。 */
-.sp-pill{flex:0 0 auto;background:none;border:1px solid var(--line);border-radius:999px;
-  cursor:pointer;font-family:var(--font-ui);font-size:var(--fs-ctl-sm);letter-spacing:.04em;
-  color:var(--ink);padding:5px 10px;min-height:32px;white-space:nowrap;
-  transition:border-color var(--dur-btn) ease-out,background var(--dur-btn) ease-out;}
-.sp-pill:hover{border-color:var(--ink);background:rgba(var(--ink-rgb),.035);}
-.sp-pill:active{background:rgba(var(--ink-rgb),.07);}
 
 /* 「待安排」不是一張桌子，所以刻意長得不一樣：
    淡色底、標題也比桌卡重一些。桌卡是白底細框，
@@ -2008,6 +2007,18 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .sp-prompt-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px;}
 /* 「排桌小技巧」是可以不做的事，所以連框都淡一階 */
 .sp-prompt.is-soft{border-style:dashed;background:transparent;}
+/* 小聲版：同一句話在左右兩欄都會問，左邊那一份不搶主要動作。
+   底線文字按鈕自己站一排時不用那個接在句子後面的左邊距 */
+.sp-prompt.is-quiet{border:none;background:transparent;padding:16px 4px 4px;}
+.sp-prompt.is-quiet .sp-prompt-acts{gap:6px 18px;margin-top:12px;}
+/* .ad-linkbtn 平常不畫底線（它通常接在一句話後面，看得出是出口）。
+   這裡它自己站一排，沒有那句話幫忙，所以底線要一直在 —— 不然讀起來像內文。
+   左邊距也一併拿掉：那是給「接在句子後面」用的。 */
+.sp-prompt.is-quiet .ad-linkbtn{margin-left:0;border-bottom-color:var(--line);
+  min-height:32px;}
+@media (pointer:coarse){
+  .sp-prompt.is-quiet .ad-linkbtn{min-height:40px;}
+}
 .sp-prompt.is-soft .sp-prompt-title{font-family:var(--font-ui);font-size:var(--fs-meta);
   letter-spacing:.12em;color:var(--ink-soft);}
 
@@ -2429,6 +2440,22 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
   .sp-side-head{align-items:stretch;}
   .sp-col-acts{flex:1 1 100%;}
   .sp-col-acts .btn{flex:1 1 0;}
+
+  /* ---------- 手機的賓客卡：名字自己一行 ----------
+     兩欄的格子在 390px 的螢幕上只有一百五十幾 px 寬，而第一行原本要塞
+     編號 ＋ 姓名 ＋（N 人），右邊還要讓出 38px 給「⇄」——
+     算下來留給名字的只剩二十幾 px，中文名字只看得到一個字加刪節號。
+     排桌從頭到尾都是在對名字，那是這張卡上唯一不能被犧牲的東西。
+
+     所以窄螢幕把它拆成兩行：名字整行、編號與人數退到第二行。
+     用 order ＋ flex-wrap 做，HTML 不動 —— 桌機那一行維持原樣。 */
+  .sp-card-line{flex-wrap:wrap;}
+  .sp-card-name{order:1;flex:1 1 100%;}
+  .sp-card-code{order:2;}
+  .sp-card-count{order:3;margin-left:0;}
+  /* 「⇄」跟名字對齊，不再垂直置中 —— 置中會落到標籤那一排上面。
+     2px 是讓 36px 的方框中心剛好落在名字那一行的中線。 */
+  .sp-card-move{top:2px;transform:none;}
 }
 /* 小螢幕（iPhone SE 這一級）：格子再降一階，仍然是兩欄，
    但不會有任何一格比螢幕寬 */
@@ -3133,11 +3160,14 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(174px + env(safe-area-inse
    極端字級下還是允許換行 */
 .ad-card-actions{flex-wrap:wrap;row-gap:4px;}
 
-/* 排桌工作區在 ≤960px 有固定底列了，頂列那四顆就是重複的
+/* 排桌工作區在 ≤960px 有固定底列了，頂列那四顆按鈕就是重複的
    （而且四顆同樣大小的按鈕擺在一起，看不出「儲存」才是主要動作）。
-   頂列在這個尺寸只留狀態與統計，動作全部交給底列。 */
+   發布狀態那一句也一樣 —— 它現在寫在底列、就貼在「儲存」上面，
+   而底列是釘住的，頂列這一份只會在捲到最上面時多講一次同樣的話。
+   頂列在這個尺寸只留三個統計，其餘全部交給底列。 */
 @media(max-width:960px){
-  .sp-bar-actions{display:none;}
+  .sp-bar-actions,
+  .sp-bar-status{display:none;}
 }
 
 /* ============================================================
@@ -3393,6 +3423,12 @@ body:is([data-page="admin"],[data-page="butler"]) .btn{
 }
 body:is([data-page="admin"],[data-page="butler"]) .btn.small{
   font-size:var(--fs-meta);padding:8px 20px;
+}
+/* 排桌兩欄欄頭的入口再收一階：它們住在 280px 寬的欄頭裡，
+   14px ＋ 20px 內距的話兩顆並排就差那十幾 px 放不下，
+   各佔一整行看起來反而比原本還重。 */
+body:is([data-page="admin"],[data-page="butler"]) .sp-col-acts .btn.small{
+  font-size:var(--fs-ctl-sm);padding:6px 12px;letter-spacing:.04em;min-height:32px;
 }
 /* 密度高的地方 sans 可以再收一點字距（明朝體需要的呼吸空間比較大） */
 body:is([data-page="admin"],[data-page="butler"]) .ad-table{letter-spacing:0;}
