@@ -649,11 +649,28 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 ### 3.6 表單
 
 ```html
-<label class="ad-label" for="xxx">欄位名</label>
-<input class="ad-input" id="xxx" type="text" maxlength="40" placeholder="例：王小明">
+<label class="ad-label" for="xxx">欄位名<small>0 / 40</small></label>
 <div class="ad-hint">解釋這個欄位會影響什麼</div>
+<input class="ad-input" id="xxx" type="text" maxlength="40" placeholder="例：王小明">
 <div class="ad-field-err"></div>
 ```
+
+#### 一格的順序是固定的：欄位名（＋上限）→ 說明 → 輸入框 → 那條底線
+
+**說明站在輸入框上面，不是底線下面。** 底線下面還有字的話，那條線就從
+「這一格的收尾」變成「上面一格」與「下面一句」之間的分隔線 —— 一格一格
+讀起來像好幾張小卡片硬接在一起，而不是「同一份表單，一次填完」。
+說明搬到欄位名的下一行之後，兩者是同一個區塊（`.ad-label + .ad-hint`
+只留 4px，區塊之間是 `.ad-label` 自己的 36px），底線各自收尾。
+
+**上限進欄位名**（`.ad-label small`）：字數「7 / 20」、張數「最多 5 張」、
+個數「最多 3 個」、「（選填）」。原本字數是輸入框底下一個靠右的
+`.ad-count` —— 隔著一條線又靠到另一邊，它看起來不屬於任何一格。
+`.ad-count` 留給「目前 0 張」這種**整組**的計數，不再給單一欄位用。
+
+**placeholder 只放範例。** 規則（分隔符號、幾個、幾字以內）寫進欄位名或
+說明裡 —— placeholder 不是標籤（同 3.7）。塞滿規則的 placeholder 在
+畫面上的重量會逼近真的填進去的值，掃過去分不出這一格填了沒有。
 
 #### 輸入框是一條線，不是一個盒子
 
@@ -695,7 +712,8 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 > 左右內距跟著補回來 —— 字貼著面的邊緣會像沒對齊。
 | `.ad-input-sm` | `max-width:130px`（數字欄位） |
 | `.ad-input-time` | `<input type="time">` 專用寬度（瀏覽器會多畫 AM/PM 與時鐘） |
-| `.ad-hint` | `--fs-pill` `--ink-soft`，說明**後果**不是重複欄位名 |
+| `.ad-hint` | `--fs-pill` `--ink-soft`，說明**後果**不是重複欄位名。位置見上面那一段（在輸入框**上面**） |
+| `.ad-label small` | 欄位名旁邊的上限／（選填）：`--fs-label`、`.06em`、不大寫、`opacity:.8`、`tabular-nums`（數字邊打邊跳的話欄位名會跟著抖） |
 | `.ad-field-err` | `--alert`，`:empty` 時不佔高度 |
 | `.ad-check` | checkbox ＋ 文字，`accent-color: --primary-deep` |
 | `.ad-toggle` | 開關：一顆真的 checkbox（鍵盤、讀螢幕都照舊）藏在上面，畫面上是 44×24 的軌道 ＋ 16px 的把手（`.ad-toggle-track`，**Switch 用的也是這一條**，見 3.6b）。**打開＝ `--ink` 實心**，和 `.ad-chip.is-on` 同一套「選中」語彙 —— accent 的職責是「記號」不是「開啟」，一排 accent 的開關讀起來像一排警示。**只用在「按下去就生效」的地方**（「頁面設定」分頁），要按儲存才算數的維持 `.ad-check`。沒開通那幾列的 toggle 是 `disabled` 的：CSS 給它 `pointer-events:none`，點擊才落到外層的 `<label>` 上，按下去才有話回他 |
@@ -1166,7 +1184,8 @@ RSVP／桌次名單／悄悄話／感謝信／收禮明細共用。
 | `.ad-wz-subhd` | 階段裡的小標。比 `.ad-wz-title` 小一階、比 `.ad-label` 大一階 |
 | `.ad-wz-picks` / `.ad-wz-pick` | 勾選清單（02 的活動、05 的提醒項目）。整行都是點擊區（≥44px），勾起來換 `--primary-deep` 的框 |
 | `.ad-wz-reveal` | 勾了才出現的那一段。收起來是整塊不見，**不加高度動畫** —— 內容高度差很多，慢一點的手機上只會看到一段抖動 |
-| `.ad-wz-place` / `.ad-wz-place-loc` | 03 的一組地點欄位（多活動時一個活動一組） |
+| `.ad-wz-place` / `.ad-wz-place-loc` | 03 的一組地點欄位（多活動時一個活動一組）。**同一時間只有一張不是 `hidden`**，所以它們之間不畫分隔線 |
+| 03 的活動切換 | 多活動時一次只填一個，用清單那一支 `.ad-pager`（`#adWzPlaceSwitch`）站在卡片**上面**：左邊「共 N 個活動・第 i / N 個」，右邊「上一個／下一個」。沒顯示的卡片留在 DOM 裡只是 `hidden` —— `wzReadPlaces()` 照樣讀得到，切來切去不會弄丟打到一半的地址。改版前是整疊往下攤，第二個活動要捲下去才看得到 |
 | `.ad-wz-inline` | 04 的 inline 表單。新增與編輯**共用同一組**，所以同一時間畫面上最多一組輸入框 |
 | `.ad-wz-done` | 完成畫面（`.ad-modal-card` 的一種）。列出「你已經準備好」的項目，還沒填的用「還有 N 個項目可以補充」，不用「尚未填寫」 |
 

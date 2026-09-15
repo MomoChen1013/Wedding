@@ -1245,16 +1245,21 @@
           <h2 class="ad-wz-title">先告訴我，你們的婚禮名稱是什麼？</h2>
         </div>
 
+        <!-- 一格的順序固定是：欄位名（＋上限）→ 一句說明 → 輸入框 → 那條底線。
+             改版前說明站在底線**下面**，那條線一隔，兩格就讀成兩張接在一起的
+             小卡片；而且字數「7 / 20」被留在線的另一邊靠右，看起來不屬於任何一格。
+             placeholder 只留範例 —— 規則寫在欄位名與說明裡（UI-SPEC 3.7：
+             placeholder 不是標籤）。 -->
         <div class="ad-wz-body">
-          <label class="ad-label" for="adCoupleTitle">婚禮名稱</label>
-          <input class="ad-input" id="adCoupleTitle" type="text" maxlength="20">
-          <div class="ad-count"><span id="adCoupleTitleLen">0</span> / 20</div>
+          <label class="ad-label" for="adCoupleTitle">婚禮名稱<small><span id="adCoupleTitleLen">0</span> / 20</small></label>
           <div class="ad-hint">賓客打開邀請函，最上面看到的就是這一行。</div>
+          <input class="ad-input" id="adCoupleTitle" type="text" maxlength="20"
+                 placeholder="陳家與林家午宴">
 
-          <label class="ad-label" for="adHashtags">婚禮 Hashtag</label>
+          <label class="ad-label" for="adHashtags">婚禮 Hashtag<small>最多 3 個</small></label>
+          <div class="ad-hint">用空格或逗號分開。留白也可以，會用 #我們結婚了、#Married。</div>
           <input class="ad-input" id="adHashtags" type="text" maxlength="120"
-                 placeholder="#我們結婚了 #Married（用空格或逗號分開，最多 3 個）">
-          <div class="ad-hint">留白也可以，會用 #我們結婚了、#Married。</div>
+                 placeholder="#我們結婚了 #Married">
         </div>
 
         <div class="ad-savebar ad-wz-bar">
@@ -1334,8 +1339,8 @@
               <div class="ad-wz-place-hd" id="adWzMainName">婚宴</div>
 
               <label class="ad-label" for="adEventTime">時間</label>
+              <div class="ad-hint" id="adEventTimeOff" hidden>婚禮日期還沒設定，請先找我們排定日期</div>
               <input class="ad-input ad-input-time" id="adEventTime" type="time">
-              <div class="ad-count" id="adEventTimeOff" hidden>婚禮日期還沒設定，請先找我們排定日期</div>
 
               <label class="ad-label" for="adVenueName">地點名稱</label>
               <input class="ad-input" id="adVenueName" type="text" maxlength="80"
@@ -1469,14 +1474,15 @@
           <div class="ad-wz-reveal" data-guide="dress" hidden>
             <div class="ad-wz-subhd"><svg class="ad-ic ad-ic-sub" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-dresscode"/></svg>想讓賓客穿什麼顏色？</div>
 
-            <div class="ad-swatches" id="adDressColors"></div>
             <div class="ad-hint">選好就存起來了。賓客那一頁會畫成色塊，比文字好懂得多。</div>
+            <div class="ad-swatches" id="adDressColors"></div>
 
             <label class="ad-label" for="adDressCode">想補一句話嗎（選填）</label>
             <textarea class="ad-textarea" id="adDressCode" rows="2" maxlength="500"
                       placeholder="溫柔大地色系，穿得舒服最重要"></textarea>
 
-            <label class="ad-label">參考圖片</label>
+            <label class="ad-label">參考圖片<small>最多 5 張</small></label>
+            <div class="ad-hint">賓客那一頁預設只看得到第一張。選好就存起來了。</div>
             <div class="ad-dressimgs" id="adDressImgs"></div>
             <div class="ad-img-field" id="adDressImgField">
               <label class="btn small ghost" id="adDressImgAdd">
@@ -1486,7 +1492,6 @@
               </label>
               <span class="ad-dressimgs-count" id="adDressImgCount"></span>
             </div>
-            <div class="ad-hint">最多 5 張，賓客那一頁預設只看得到第一張。選好就存起來了。</div>
           </div>
 
           <!-- ---- 禮金 ---- -->

@@ -394,6 +394,23 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .ad-count{text-align:right;font-size:var(--fs-pill);color:var(--ink-soft);margin-top:5px;}
 .ad-hint{font-size:var(--fs-ctl-sm);color:var(--ink-soft);margin-top:5px;line-height:1.7;}
 
+/* 欄位名旁邊的小字：字數上限、張數上限、（選填）。
+   規格本來就有（原本只掛在 .ad-inline-field 上），這裡放出來給所有欄位名用 ——
+   「7 / 20」站在輸入框底下、又在那條底線的另一邊靠右時，它看起來
+   不屬於任何一格；搬到欄位名旁邊，它和它在說的那一格就在同一行上。
+   tabular-nums：數字邊打邊跳的話，旁邊的欄位名會跟著抖。 */
+.ad-label small{
+  margin-left:8px;font-size:var(--fs-label);letter-spacing:.06em;
+  text-transform:none;opacity:.8;font-variant-numeric:tabular-nums;
+}
+
+/* 說明站在輸入框**上面**（欄位名的下一行），不是底線的下面。
+   底線下面還有字的話，那條線就變成「上面一格」與「下面一句」之間的分隔線，
+   一格一格讀起來像好幾張接在一起的小卡片；說明搬上來之後，
+   底線是這一格的收尾，一頁才讀得出「同一份表單」的節奏。
+   4px：它和欄位名是同一個區塊，要比區塊之間的 36px 近得多。 */
+.ad-label + .ad-hint{margin-top:4px;}
+
 /* 表單裡再分一個小節（例如「交通資訊」把兩個欄位圈在一起） */
 .ad-sub-sec{margin-top:26px;padding:20px 18px;border:1px solid var(--line-soft);
   border-radius:var(--radius);background:rgba(var(--surface-rgb),.5);}
@@ -4480,9 +4497,6 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
 ============================================================ */
 .ad-inline-field{position:relative;margin-top:14px;}
 .ad-inline-field .ad-label{margin-top:0;}
-.ad-inline-field .ad-label small{
-  margin-left:6px;font-size:var(--fs-label);letter-spacing:.06em;text-transform:none;opacity:.8;
-}
 .ad-inline-input{font-size:var(--fs-ctl);padding:10px 2px;}
 .ad-inline-input:disabled{
   background:transparent;color:var(--ink-3);cursor:not-allowed;border-bottom-style:dashed;
