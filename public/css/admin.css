@@ -2204,15 +2204,37 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
   text-align:center;padding-top:2px;}
 
 /* ---------- 拖曳回饋 ----------
-   目標區塊變色，並直接在上面寫「放入第 05 桌」／「⚠️ 此桌將超過容量」 */
-.sp-table.is-drop,.sp-pool.is-drop{border-color:var(--primary-deep);
-  background:var(--primary-soft);}
-.sp-card.is-drop{border-color:var(--primary-deep);background:var(--primary-soft);}
+   ------------------------------------------------------------
+   改版前目標區塊是 --primary-deep 的框 ＋ --primary-soft 的底。後台的
+   記號色是 #82412B／#FDEEE7，錯誤色是 #B34A38／#FBEDEA —— 兩組差不到
+   一階，所以「這裡放得下」看起來跟「這裡出事了」一模一樣。而且真正該
+   示警的「放進去會超過容量」，當時也只有提示藥丸裡那行小字不同，底色
+   和正常的放置目標完全相同：該紅的沒紅，不該紅的紅了。
+
+   現在分兩件事講：
+     ・「哪一個是目標」用明暗 —— 拖曳期間整塊板子降對比（.sp-board.is-dnd），
+       目標維持原樣，自己就跳出來了，不必借顏色
+     ・「這一放會超過容量」才用紅色（.is-drop-over）
+   這一頁上的紅色從此只有一個意思。
+   ⚠ 那個狀態不能叫 .is-over —— 2119 那一行已經用掉了，它是「這一桌本來
+   就超過容量」（3px 的 --seat-over 框）。共用名字的話，拖曳經過時會把
+   那一桌真正的紅框 toggle 掉。 */
+.sp-board.is-dnd .sp-table:not(.is-drop):not(.is-drop-host),
+.sp-board.is-dnd .sp-pool:not(.is-drop):not(.is-drop-host){
+  opacity:.42;transition:opacity .12s ease;}
+/* ⚠ .is-drop-host ＝「目標是這一欄裡的某張卡片」。opacity 會連同子元素一起
+   吃掉，少了這一條，拖到卡片上時那張卡會跟著它的桌子一起暗掉。 */
+
+.sp-table.is-drop,.sp-pool.is-drop,.sp-card.is-drop{
+  border-color:var(--ink);background:var(--bg2);}
+/* 超過容量：框、底、提示藥丸一起轉紅 */
+.sp-table.is-drop.is-drop-over{border-color:var(--alert);background:var(--alert-wash);}
 .sp-table.is-drop::after,.sp-pool.is-drop::after,.sp-card.is-drop::after{
   content:attr(data-hint);position:absolute;left:50%;top:8px;transform:translateX(-50%);
   z-index:5;white-space:nowrap;pointer-events:none;
   background:var(--ink);color:var(--on-ink);border-radius:var(--radius);
   padding:5px 12px;font-size:var(--fs-pill);letter-spacing:.06em;}
+.sp-table.is-drop.is-drop-over::after{background:var(--alert);}
 .sp-pool{position:sticky;}      /* 提示要定位，pool 本身已經是 sticky */
 .sp-card{position:relative;}
 
@@ -2310,31 +2332,112 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 }
 
 /* ---------- 賓客詳細資料（彈窗） ----------
-   欄位全部改成「選的」而不是「打字的」：類別與會不會來是 radio group、
-   標籤是 chip、人數／兒童椅／喜餅是 −  N  ＋。
-   打字打出來的「女方朋友」「女方的朋友」永遠分不到同一組，
-   而排桌這件事從頭到尾都在分組。 */
+   ------------------------------------------------------------
+   欄位全部是「選的」而不是「打字的」：會不會來是分段控制、類別與標籤是
+   chip、人數／素食／兒童椅／喜餅是 −  N  ＋。打字打出來的「女方朋友」
+   「女方的朋友」永遠分不到同一組，而排桌這件事從頭到尾都在分組。
+
+   ⚠ 版面：一列一欄位，標籤在左邊的固定欄。
+   改版前每個欄位都是「.ad-label 獨佔一行 ＋ 控制項一行」，九個欄位光標籤
+   就吃掉三百多 px，整張表單約 1100px —— .ad-modal-card-form 的
+   max-height 是 88dvh，筆電上一定要捲兩屏。現在左欄 5.5em 收掉那一行，
+   一個 74–124px 的區塊變成一列 44px。
+   這個形狀不是新發明：peek 的 .sp-peek-row 本來就是「左邊名稱、右邊值」，
+   同一頁上的兩個「看一位賓客」從此同一種讀法。 */
 .sp-guest-card{width:min(94vw,600px);}
-.sp-guest-where{margin-bottom:16px;}
-/* 兩個短欄位並排（編號＋顯示名稱、人數＋兒童椅）：
-   這一張表單本來要捲兩個螢幕才看得完 */
-.sp-field-row{display:flex;gap:14px;flex-wrap:wrap;}
-.sp-field{flex:1 1 180px;min-width:0;display:flex;flex-direction:column;}
-.sp-field .ad-label{margin-top:16px;}
-.sp-radios{margin-top:6px;}
-.sp-guest-form .ad-stepper{align-self:flex-start;}
+
+/* 一段欄位（四個一組，中間一條線分段）。段與段之間留白，不再畫第二條線 */
+.sp-frows{display:flex;flex-direction:column;}
+.sp-frows + .sp-frows{margin-top:12px;padding-top:12px;border-top:1px solid var(--line-soft);}
+.sp-frow{display:grid;grid-template-columns:5.5em minmax(0,1fr);align-items:start;
+  gap:8px 14px;padding:6px 0;}
+.sp-frow + .sp-frow{border-top:1px solid var(--line-soft);}
+.sp-frow[hidden]{display:none;}
+/* 素食那一列藏起來時（這場婚禮沒問餐點），它就不是分隔線的來源了 ——
+   少了這一條，第二段的第一列會在自己的段線底下再多一條 */
+.sp-frow[hidden] + .sp-frow{border-top:0;}
+/* 一列裡的單行輸入框（編號、姓名）壓扁一階：--fs-input 的 16px 是 iOS 的
+   硬下限不能動，但 1.85 的行高 ＋ 上下各 10px 是「整張表單只有這一個欄位」
+   時的呼吸量，排在一列一格的清單裡就變成兩個空行。 */
+.sp-frow .ad-input{padding:6px 2px;line-height:1.5;}
+
+/* 左欄的標籤和右邊第一行控制項對齊（控制項最矮的是 32px 的 chip）。
+   ⚠ 字距刻意不用 --track-lab：那 .16em 是配 .ad-label 的大寫拉丁字的，
+   「會不會來」四個中文字拉開來會散成四個字，5.5em 也放不下。 */
+.sp-frow-lab{display:block;padding-top:7px;font-size:var(--fs-body);
+  letter-spacing:.02em;color:var(--ink-soft);}
+.sp-frow-ctl{min-width:0;display:flex;flex-direction:column;gap:6px;}
+/* 控制項旁邊還要站一個東西（素食的「葷 2・素 1」、喜餅的「已確認收到」） */
+.sp-frow-ctl-row{flex-direction:row;align-items:center;flex-wrap:wrap;gap:6px 12px;}
+.sp-frow-side{font-size:var(--fs-ctl-sm);color:var(--ink-soft);
+  font-variant-numeric:tabular-nums;}
+.sp-frow-check{margin:0;}
+/* 只在該講的時候才出現的一行小字（保留席是什麼、改的是哪一份） */
+.sp-frow-note{font-size:var(--fs-ctl-sm);color:var(--ink-soft);line-height:1.6;}
+.sp-guest-form .ad-stepper{margin-top:0;align-self:flex-start;}
+.sp-guest-form .ad-input{margin-top:0;}
 /* 姓名跟著出席回覆走、改不動：畫成唯讀的樣子，不要看起來像可以打字 */
 .sp-guest-form .ad-input:disabled{background:transparent;color:var(--ink-3);
   cursor:not-allowed;border-bottom-style:dashed;}
 #spGuestDelete{color:var(--alert);border-color:rgba(var(--alert-rgb),.4);margin-right:auto;}
 
-/* 標籤分兩組，和「設定賓客標籤」那一頁同一種分法
-   （賓客自己選得到／只有你們看得到）—— 同一個東西在兩頁長得一樣，
-   新人才不用學第二次。 */
-.sp-guest-tags{display:flex;flex-direction:column;gap:12px;margin-top:8px;
-  max-height:220px;overflow-y:auto;padding:2px;}
-.sp-guest-taggrp{display:flex;flex-direction:column;gap:6px;}
-.sp-guest-taglab{font-size:var(--fs-label);letter-spacing:.14em;color:var(--ink-soft);}
+/* ---- 分段控制（會不會來）----
+   三個互斥又短的選項連成一條、填滿整列。改版前是三顆 .ad-radio 膠囊，
+   「保留席（還不確定）」太長一定換行，光這一欄就要 126px。
+   底下仍然是 radio input，只是把圓點藏起來（見 segHtml）。 */
+.sp-seg{display:flex;width:100%;border:1px solid var(--line);border-radius:var(--radius);
+  overflow:hidden;background:var(--bg1);}
+.sp-seg-item{flex:1 1 0;min-width:0;display:inline-flex;align-items:center;
+  justify-content:center;min-height:36px;padding:0 6px;cursor:pointer;
+  font-size:var(--fs-ctl-sm);color:var(--ink-soft);white-space:nowrap;
+  text-align:center;}
+.sp-seg-item + .sp-seg-item{border-left:1px solid var(--line-soft);}
+.sp-seg-item input{position:absolute;opacity:0;width:0;height:0;pointer-events:none;}
+.sp-seg-item:has(input:checked){background:var(--ink);color:var(--on-ink);}
+.sp-seg-item:has(input:focus-visible){outline:2px solid var(--primary-deep);
+  outline-offset:-2px;}
+@media(hover:hover){
+  .sp-seg-item:not(:has(input:checked)):hover{background:var(--bg2);color:var(--ink);}
+}
+@media(pointer:coarse){ .sp-seg-item{min-height:44px;} }
+
+/* ---- 單選 chip（類別）----
+   選項多到分段控制放不下時用它。形狀和正下方的「標籤」一樣，
+   兩列自然讀成同一個「分群」區塊。 */
+.sp-pick{gap:6px;}
+.sp-pick-item{display:inline-flex;align-items:center;min-height:32px;
+  padding:4px 12px;cursor:pointer;border:1px solid var(--line);
+  border-radius:999px;font-size:var(--fs-meta);color:var(--ink-soft);
+  white-space:nowrap;}
+.sp-pick-item input{position:absolute;opacity:0;width:0;height:0;pointer-events:none;}
+.sp-pick-item:has(input:checked){background:var(--ink);color:var(--on-ink);
+  border-color:var(--ink);}
+.sp-pick-item:has(input:focus-visible){outline:2px solid var(--primary-deep);
+  outline-offset:2px;}
+@media(hover:hover){
+  .sp-pick-item:not(:has(input:checked)):hover{border-color:var(--ink);color:var(--ink);}
+}
+@media(pointer:coarse){ .sp-pick-item{min-height:36px;} }
+
+/* ---- 備註（Todoist 那種）----
+   平常只有一行「＋ 備註」，有內容就把內容直接顯示出來，點下去才長出輸入框。
+   改版前是一塊常駐 96px 高的 textarea：一個九成時候不填的欄位，
+   不該常態佔掉彈窗五分之一的高度。 */
+.sp-note{margin-bottom:16px;}
+.sp-note-open{display:flex;align-items:flex-start;gap:7px;width:100%;
+  padding:6px 0;background:none;border:0;cursor:pointer;text-align:left;
+  font:inherit;font-size:var(--fs-ctl-sm);line-height:1.6;color:var(--ink-soft);}
+.sp-note-open:hover .sp-note-text{color:var(--ink);}
+.sp-note-plus{flex:0 0 auto;}
+.sp-note-text{min-width:0;}
+/* 有內容時它就不是一顆按鈕的樣子了，是這個人的備註 */
+.sp-note.has-note .sp-note-text{color:var(--ink);white-space:pre-wrap;}
+.sp-note-input{margin:0;min-height:76px;}
+
+/* 可勾的標籤：一排 chip。改版前外面還包一層「只有你們看得到」的副標，
+   但列出來的本來就只有勾得動的那一組（pickableTags 已經濾過），
+   左邊那格又已經寫著「標籤」—— 同一件事講了三次。 */
+.sp-guest-tags{min-width:0;}
 .sp-guest-tags .ad-chip{font-size:var(--fs-meta);padding:5px 12px;}
 
 /* 改不動的那幾顆（賓客自己在表單上選的、出席回覆帶進來的、以及整組
@@ -2358,10 +2461,13 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .sp-move-item:hover{border-color:var(--ink);}
 .sp-move-item.is-on{border-color:var(--primary-deep);background:var(--primary-soft);}
 .sp-move-item.is-clear{color:var(--ink-soft);}
-.sp-move-name{flex:1 1 auto;min-width:0;}
-.sp-move-cap{flex:0 0 auto;font-size:var(--fs-pill);color:var(--ink-soft);
+/* 一行放三樣東西：桌號｜桌名（會縮）、類別（不縮）、人數（靠右不縮） */
+.sp-move-name{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;}
+.sp-move-type{flex:0 0 auto;}
+.sp-move-cap{flex:0 0 auto;margin-left:auto;font-size:var(--fs-pill);color:var(--ink-soft);
   font-variant-numeric:tabular-nums;}
-.sp-move-warn{flex:0 0 auto;font-size:var(--fs-pill);color:var(--alert);}
+.sp-move-cap.is-over{color:var(--alert);}
 
 /* ---------- 標籤權重 ---------- */
 .sp-tagorder{display:flex;flex-direction:column;
@@ -2452,7 +2558,15 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
   .sp-pool-body,
   .sp-pool-body .sp-group{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));}
   .sp-tables{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}
-  .sp-guest-card .sp-field{flex:1 1 100%;}
+}
+/* 真正窄的那一級（iPhone SE 直向、360px 以下）：賓客詳細的左欄標籤
+   自己站一行，不然扣掉 5.5em 之後放不下一組 −  N  ＋ 再加一段
+   「葷 2・素 1（出席回覆填 素 1）」。
+   ⚠ 這一條刻意不放在上面的 400px 裡：390px（iPhone 12–16）放得下兩欄，
+   在那裡就拆的話，九列各白白長 25px，等於多捲一屏。 */
+@media(max-width:360px){
+  .sp-frow{grid-template-columns:minmax(0,1fr);gap:4px;}
+  .sp-frow-lab{padding-top:0;}
 }
 
 /* ============================================================

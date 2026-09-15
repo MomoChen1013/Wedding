@@ -2759,89 +2759,120 @@
       <div class="ad-modal-title" id="spGuestTitle">賓客資料</div>
       <div class="sp-guest-head-tags" id="spGuestHeadTags"></div>
     </div>
-    <p class="ad-modal-note sp-guest-where" id="spGuestWhere"></p>
+
+    <!-- 備註貼在名字底下，而不是排在欄位裡：它講的是「這個人是誰」，
+         和標籤同一類，不是一個要填的格子。空的時候只有一行「＋ 備註」，
+         有內容就直接把內容顯示出來，點下去才長出輸入框。 -->
+    <div class="sp-note" id="spGuestNoteBox">
+      <button class="sp-note-open" type="button" id="spGuestNoteOpen">
+        <span class="sp-note-plus" id="spGuestNotePlus" aria-hidden="true">＋</span>
+        <span class="sp-note-text" id="spGuestNoteText">備註</span>
+      </button>
+      <textarea class="ad-textarea sp-note-input" id="spGuestNote" rows="3" maxlength="200"
+                placeholder="備註（只有你們看得到，桌卡不會印）" hidden></textarea>
+    </div>
 
     <form class="ad-form sp-guest-form" id="spGuestForm">
       <input type="hidden" id="spGuestId">
-      <!-- 葷素的初始值：沒被動過就不要寫進草稿，
-           不然「3 位裡面 1 位吃素」會被整筆蓋成 3 位素食（見 submitGuest） -->
-      <input type="hidden" id="spGuestMealInit">
 
-      <div class="sp-field-row">
-        <div class="sp-field">
-          <label class="ad-label" for="spGuestCode">編號</label>
-          <input class="ad-input" id="spGuestCode" type="text" maxlength="12" placeholder="B01">
-        </div>
-        <div class="sp-field">
-          <label class="ad-label" for="spGuestNameInput">顯示名稱</label>
-          <input class="ad-input" id="spGuestNameInput" type="text" maxlength="40">
-        </div>
-      </div>
-      <div class="ad-hint" id="spGuestNameLock" hidden>
-        這是賓客自己送出的回覆，姓名以回覆為準，改不動。
-      </div>
-
-      <label class="ad-label">類別</label>
-      <div class="ad-radios sp-radios" id="spGuestCat" role="radiogroup" aria-label="類別"></div>
-
-      <label class="ad-label">標籤</label>
-      <div class="sp-guest-tags" id="spGuestTags"></div>
-      <div class="ad-hint" id="spGuestTagsHint" hidden>
-        只有「你們自己掛的」那一組改得動。賓客在表單上選的那些列在最上面，
-        以回覆為準，這裡改不動。
-      </div>
-      <div class="ad-hint" id="spGuestTagsOff" hidden>
-        這場婚禮還沒開賓客標籤，排桌時就只能用類別分群。
-      </div>
-
-      <label class="ad-label">會不會來</label>
-      <div class="ad-radios sp-radios" id="spGuestRsvp" role="radiogroup" aria-label="會不會來"></div>
-      <div class="ad-hint" id="spGuestOverride" hidden>
-        這裡改的只是<b>排桌用</b>的那一份，賓客送出的回覆不會被改動。
-      </div>
-
-      <div class="sp-field-row">
-        <div class="sp-field">
-          <label class="ad-label" for="spGuestCount">人數</label>
-          <div class="ad-stepper" data-stepper="spGuestCount">
-            <button class="ad-stepper-btn" type="button" data-delta="-1" aria-label="人數減 1">−</button>
-            <input class="ad-input ad-stepper-input" id="spGuestCount" type="number"
-                   min="0" max="30" step="1" inputmode="numeric">
-            <button class="ad-stepper-btn" type="button" data-delta="1" aria-label="人數加 1">＋</button>
+      <!-- 排桌真正在決定的四件事：來不來、幾位、哪一群、有沒有特別的身分 -->
+      <div class="sp-frows">
+        <div class="sp-frow">
+          <span class="sp-frow-lab" id="spGuestRsvpLab">會不會來</span>
+          <div class="sp-frow-ctl">
+            <div class="sp-seg" id="spGuestRsvp" role="radiogroup" aria-labelledby="spGuestRsvpLab"></div>
+            <div class="sp-frow-note" id="spGuestRsvpNote" hidden></div>
           </div>
         </div>
-        <div class="sp-field">
-          <label class="ad-label" for="spGuestSeats">兒童椅</label>
-          <div class="ad-stepper" data-stepper="spGuestSeats">
-            <button class="ad-stepper-btn" type="button" data-delta="-1" aria-label="兒童椅減 1">−</button>
-            <input class="ad-input ad-stepper-input" id="spGuestSeats" type="number"
-                   min="0" max="10" step="1" inputmode="numeric">
-            <button class="ad-stepper-btn" type="button" data-delta="1" aria-label="兒童椅加 1">＋</button>
+
+        <div class="sp-frow">
+          <label class="sp-frow-lab" for="spGuestCount">人數</label>
+          <div class="sp-frow-ctl">
+            <div class="ad-stepper" data-stepper="spGuestCount">
+              <button class="ad-stepper-btn" type="button" data-delta="-1" aria-label="人數減 1">−</button>
+              <input class="ad-input ad-stepper-input" id="spGuestCount" type="number"
+                     min="0" max="30" step="1" inputmode="numeric">
+              <button class="ad-stepper-btn" type="button" data-delta="1" aria-label="人數加 1">＋</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sp-frow">
+          <span class="sp-frow-lab" id="spGuestCatLab">類別</span>
+          <div class="sp-frow-ctl">
+            <div class="ad-chips sp-pick" id="spGuestCat" role="radiogroup" aria-labelledby="spGuestCatLab"></div>
+          </div>
+        </div>
+
+        <div class="sp-frow">
+          <span class="sp-frow-lab">標籤</span>
+          <div class="sp-frow-ctl">
+            <div class="sp-guest-tags" id="spGuestTags"></div>
+            <div class="sp-frow-note" id="spGuestTagsOff" hidden>
+              這場婚禮還沒開賓客標籤，排桌時就只能用類別分群。
+            </div>
           </div>
         </div>
       </div>
-      <div class="ad-hint">兒童椅出席回覆填過就自動帶進來；桌卡會加總成「🪑 N 個兒童椅」。</div>
 
-      <label class="ad-label">餐點</label>
-      <div class="ad-radios sp-radios" id="spGuestMeal" role="radiogroup" aria-label="餐點"></div>
-      <div class="ad-hint" id="spGuestMealNote" hidden></div>
+      <!-- 要跟飯店講的數字。排桌時不一定每次都碰，但碰的時候要在同一個地方 -->
+      <div class="sp-frows">
+        <div class="sp-frow" id="spGuestVegRow">
+          <label class="sp-frow-lab" for="spGuestVeg">素食</label>
+          <div class="sp-frow-ctl sp-frow-ctl-row">
+            <div class="ad-stepper" data-stepper="spGuestVeg">
+              <button class="ad-stepper-btn" type="button" data-delta="-1" aria-label="素食人數減 1">−</button>
+              <input class="ad-input ad-stepper-input" id="spGuestVeg" type="number"
+                     min="0" max="30" step="1" inputmode="numeric">
+              <button class="ad-stepper-btn" type="button" data-delta="1" aria-label="素食人數加 1">＋</button>
+            </div>
+            <span class="sp-frow-side" id="spGuestVegSide"></span>
+          </div>
+        </div>
 
-      <label class="ad-label" for="spGuestGift">喜餅</label>
-      <div class="ad-stepper" data-stepper="spGuestGift">
-        <button class="ad-stepper-btn" type="button" data-delta="-1" aria-label="喜餅減 1">−</button>
-        <input class="ad-input ad-stepper-input" id="spGuestGift" type="number"
-               min="0" max="99" step="1" inputmode="numeric">
-        <button class="ad-stepper-btn" type="button" data-delta="1" aria-label="喜餅加 1">＋</button>
+        <div class="sp-frow">
+          <label class="sp-frow-lab" for="spGuestSeats">兒童椅</label>
+          <div class="sp-frow-ctl">
+            <div class="ad-stepper" data-stepper="spGuestSeats">
+              <button class="ad-stepper-btn" type="button" data-delta="-1" aria-label="兒童椅減 1">−</button>
+              <input class="ad-input ad-stepper-input" id="spGuestSeats" type="number"
+                     min="0" max="10" step="1" inputmode="numeric">
+              <button class="ad-stepper-btn" type="button" data-delta="1" aria-label="兒童椅加 1">＋</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sp-frow">
+          <label class="sp-frow-lab" for="spGuestGift">喜餅</label>
+          <div class="sp-frow-ctl sp-frow-ctl-row">
+            <div class="ad-stepper" data-stepper="spGuestGift">
+              <button class="ad-stepper-btn" type="button" data-delta="-1" aria-label="喜餅減 1">−</button>
+              <input class="ad-input ad-stepper-input" id="spGuestGift" type="number"
+                     min="0" max="99" step="1" inputmode="numeric">
+              <button class="ad-stepper-btn" type="button" data-delta="1" aria-label="喜餅加 1">＋</button>
+            </div>
+            <label class="ad-check sp-frow-check">
+              <input type="checkbox" id="spGuestGot"><span>已確認收到</span>
+            </label>
+          </div>
+        </div>
       </div>
-      <label class="ad-check">
-        <input type="checkbox" id="spGuestGot"><span>喜餅已確認收到</span>
-      </label>
 
-      <label class="ad-label" for="spGuestNote">備註</label>
-      <textarea class="ad-textarea" id="spGuestNote" rows="3" maxlength="200"></textarea>
-
-      <label class="ad-label" for="spGuestTable">目前桌位</label>
-      <select class="ad-input" id="spGuestTable"></select>
+      <!-- 身分欄位。最少動的東西排最後；姓名是回覆來的就是灰的、點不動 -->
+      <div class="sp-frows">
+        <div class="sp-frow">
+          <label class="sp-frow-lab" for="spGuestCode">編號</label>
+          <div class="sp-frow-ctl">
+            <input class="ad-input ad-input-sm" id="spGuestCode" type="text" maxlength="12" placeholder="B01">
+          </div>
+        </div>
+        <div class="sp-frow">
+          <label class="sp-frow-lab" for="spGuestNameInput">姓名</label>
+          <div class="sp-frow-ctl">
+            <input class="ad-input" id="spGuestNameInput" type="text" maxlength="40">
+          </div>
+        </div>
+      </div>
     </form>
 
     <div class="ad-modal-actions">

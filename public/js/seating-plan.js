@@ -86,10 +86,11 @@
      所以整頁一律叫它「保留席」—— 桌卡上也會加總成「🔖 N 個保留席」，
      和素食、兒童椅並排，對飯店講得出口的那種數字。 */
   const RSVP_TEXT = { yes:'已確認', maybe:'保留席', no:'無法出席' };
-  /* 「會不會來」那一組 radio 的說法（比徽章上的兩個字多講一句） */
+  /* 「會不會來」那一條分段控制的說法。三個都是兩三個字，才連得成一條 ——
+     「保留席」是什麼意思改成選中時才在底下講一句（見 syncRsvpNote）。 */
   const RSVP_PICK = [
     ['yes',   '會來'],
-    ['maybe', '保留席（還不確定）'],
+    ['maybe', '保留席'],
     ['no',    '無法出席'],
   ];
 
@@ -317,8 +318,9 @@
         /* 這兩個是回覆裡問到的實際數字，比「整筆算一個人」準得多 */
         veg: Number(r.mealVeg) || 0,
         seats: m.seats != null ? Number(m.seats) : (Number(r.childSeat) || 0),
-        /* 新人在賓客資料裡自己選的葷／素。空字串＝沒選過，
-           那就照回覆與標籤推（見 vegOf）—— 「3 位裡面 1 位吃素」不會被蓋掉 */
+        /* 新人自己設定的素食人數。null ＝沒設過，那就照回覆與標籤推（見 vegOf）。
+           舊資料存的是 meal:'veg'|'meat'（整筆葷或整筆素），一併帶著讓 vegOf 換算 */
+        vegN: m.vegN != null ? Number(m.vegN) : null,
         meal: m.meal || '',
         since: rsvpMs(r),
       };
@@ -343,6 +345,7 @@
         got: m.got === true,
         veg: 0,
         seats: Number(m.seats) || 0,
+        vegN: m.vegN != null ? Number(m.vegN) : null,
         meal: m.meal || '',
         since: 0,
       });
@@ -583,6 +586,10 @@
     if (Array.isArray(g.tags)) m.tags = g.tags.map(String).slice(0, 20);
     if (g.note != null) m.note = String(g.note).slice(0, 200);
     if (g.seats != null && g.seats !== '') m.seats = clampInt(g.seats, 0, 10, 0);
+    /* 素食人數。改版前存的是 meal:'veg'|'meat'（整筆葷或整筆素）——
+       那個形狀表達不了「3 位裡面 1 位吃素」，而出席回覆本來就是這樣問的。
+       舊值繼續讀得進來（見 vegOf），但不再寫出去。 */
+    if (g.vegN != null && g.vegN !== '') m.vegN = clampInt(g.vegN, 0, 30, 0);
     if (g.meal === 'veg' || g.meal === 'meat') m.meal = g.meal;
     if (g.gift != null) m.gift = clampInt(g.gift, 0, 99, 0);
     if (g.got === true) m.got = true;
@@ -595,7 +602,7 @@
     if (m.src === 'manual') return false;
     return !m.code && !m.cat && !m.name && m.count == null && !m.rsvp
       && !(m.tags && m.tags.length) && !m.note && !m.gift && m.got !== true
-      && m.seats == null && !m.meal;
+      && m.seats == null && m.vegN == null && !m.meal;
   }
 
   function planPayload() {
@@ -1112,7 +1119,7 @@
         : ''}
       <div class="sp-peek-actions">
         <button class="btn small ghost" type="button" data-peek="move">移動到桌位</button>
-        <button class="btn small ghost" type="button" data-peek="detail">賓客資料</button>
+        <button class="btn small ghost" type="button" data-peek="detail">修改賓客資料</button>
       </div>`;
 
     peekEl.hidden = false;
@@ -1421,15 +1428,20 @@
   }
 
   /* 一位賓客的素食人數，由準到粗依序採用：
-       ① 新人在賓客資料裡自己選的葷／素 —— 那是最後一次有人真的確認過
-       ② 回覆裡的葷素分配（實際數字，三位裡只有一位吃素時不會多算）
-       ③ 只有標籤、沒有數字的，整筆算成素食 */
+       ① 新人在賓客資料裡自己設的人數 —— 那是最後一次有人真的確認過
+       ② 舊資料的 meal:'veg'|'meat'（整筆素／整筆葷），只讀不寫
+       ③ 回覆裡的葷素分配（實際數字，三位裡只有一位吃素時不會多算）
+       ④ 只有標籤、沒有數字的，整筆算成素食
+     ①②都會被 clamp 在 0..人數：人數後來被改小的話，素食不能比總人數還多。 */
   function vegOf(g) {
-    if (g.meal === 'veg') return g.count;
+    const cap = Math.max(0, Number(g.count) || 0);
+    if (g.vegN != null) return Math.min(cap, Math.max(0, g.vegN));
+    if (g.meal === 'veg') return cap;
     if (g.meal === 'meat') return 0;
     const vegSp = SPECIAL_TAGS.find((sp) => sp.key === 'veg');
-    return g.veg > 0 ? g.veg : (hasSpecial(g, vegSp) ? g.count : 0);
+    return Math.min(cap, g.veg > 0 ? g.veg : (hasSpecial(g, vegSp) ? cap : 0));
   }
+
   /* 兒童椅：這是「要跟飯店要幾張椅子」的數字，單位是張不是人 */
   function seatsOf(g) { return Number(g.seats) || 0; }
 
@@ -1717,9 +1729,20 @@
   function clearDropMarks() {
     document.querySelectorAll('.sp-table.is-drop, .sp-pool.is-drop, .sp-card.is-drop')
       .forEach((el) => {
-        el.classList.remove('is-drop');
+        el.classList.remove('is-drop', 'is-drop-over');
         el.removeAttribute('data-hint');
       });
+    /* 目標是「桌上的某一張卡」時，那張桌子不能跟著暗下去 ——
+       opacity 會連同裡面的卡片一起吃掉（見 .sp-board.is-dnd 的規則） */
+    document.querySelectorAll('.is-drop-host')
+      .forEach((el) => el.classList.remove('is-drop-host'));
+  }
+
+  /* 拖曳期間整塊板子降對比，只有目標維持原樣 ——
+     「哪裡放得下」用明暗講，顏色就空出來只講「這一放會不會超過容量」 */
+  function setDndDim(on) {
+    const b = document.querySelector('.sp-board');
+    if (b) b.classList.toggle('is-dnd', !!on);
   }
 
   function bindDnd() {
@@ -1737,6 +1760,7 @@
         card.classList.add('is-dragging');
       } else return;
       closePeek();
+      setDndDim(true);
       e.dataTransfer.effectAllowed = 'move';
       /* Firefox 需要真的設一份資料，拖曳才會開始 */
       try { e.dataTransfer.setData('text/plain', dragGuest || dragTable); } catch {}
@@ -1745,6 +1769,7 @@
     board.addEventListener('dragend', () => {
       document.querySelectorAll('.sp-card.is-dragging')
         .forEach((el) => el.classList.remove('is-dragging'));
+      setDndDim(false);
       clearDropMarks();
       dragGuest = '';
       dragTable = '';
@@ -1761,16 +1786,14 @@
 
     board.addEventListener('dragleave', (e) => {
       const zone = dropZone(e.target);
-      if (zone && !zone.el.contains(e.relatedTarget)) {
-        zone.el.classList.remove('is-drop');
-        zone.el.removeAttribute('data-hint');
-      }
+      if (zone && !zone.el.contains(e.relatedTarget)) clearDropMarks();
     });
 
     board.addEventListener('drop', (e) => {
       const zone = dropZone(e.target);
       if (!zone) return;
       e.preventDefault();
+      setDndDim(false);
       clearDropMarks();
 
       if (dragTable) {
@@ -1807,10 +1830,19 @@
     return null;
   }
 
-  /* 放置提示：要放進第幾桌、放進去會不會超過容量 */
+  /* 放置提示：要放進第幾桌、放進去會不會超過容量。
+     目標本身是中性的（深墨框 ＋ 灰底）；紅色留給 .is-drop-over ——
+     這一頁上紅色只有一個意思，就是「這一放會超過容量」。
+     ⚠ 不能叫 .is-over：那個名字已經是「這一桌本來就超過容量」了（見
+     renderBoard 的 state），toggle 它會在拖曳時把那桌真正的紅框弄不見。 */
   function markZone(zone) {
     clearDropMarks();
     zone.el.classList.add('is-drop');
+    /* 目標是卡片時，連它所在的那一欄一起標成「不要暗下去」 */
+    if (zone.kind === 'card') {
+      const host = zone.el.closest('.sp-table, .sp-pool');
+      if (host) host.classList.add('is-drop-host');
+    }
 
     if (zone.kind === 'pool') {
       zone.el.dataset.hint = '移回待安排';
@@ -1832,7 +1864,9 @@
     const heads = seatedOf(t.id, guests).heads;
     const already = plan.assign[dragGuest] === t.id;
     const after = already ? heads : heads + (g ? g.count : 0);
-    zone.el.dataset.hint = after > t.cap
+    const over = after > t.cap;
+    zone.el.classList.toggle('is-drop-over', over);
+    zone.el.dataset.hint = over
       ? `⚠️ 此桌將超過容量（${after} / ${t.cap}）`
       : `放入第 ${no2(t.no)} 桌`;
   }
@@ -1864,15 +1898,21 @@
     moveGuestId = guestId;
     $('spMoveWho').textContent = `${g.name}・${g.count} 人`;
     const guests = allGuests();
+    /* 一列一行：桌號｜桌名 ＋ 類別靠左，現況人數靠右。
+       類別是必要的 —— 只有「01｜主桌」看不出這是什麼桌，而桌名本來就可以不填。
+       放不進去就超過容量，那一格轉紅並掛上 ⚠️（不另外加一段文字，一行放不下兩件事）。 */
     $('spMoveList').innerHTML = sortedTables().map((t) => {
       const heads = seatedOf(t.id, guests).heads;
       const after = plan.assign[guestId] === t.id ? heads : heads + g.count;
-      const warn = after > t.cap ? `<span class="sp-move-warn">⚠️ 將超過容量</span>` : '';
+      const over = after > t.cap;
+      const cap = `${heads} / ${t.cap} 人`;
       return `
         <button class="sp-move-item${plan.assign[guestId] === t.id ? ' is-on' : ''}"
-                type="button" data-to="${esc(t.id)}">
+                type="button" data-to="${esc(t.id)}"
+                aria-label="${esc(tableLabel(t))}，${esc(typeName(t))}，目前 ${cap}${over ? '，放進去會超過容量' : ''}">
           <span class="sp-move-name">${esc(tableLabel(t))}</span>
-          <span class="sp-move-cap">${heads} / ${t.cap} 人</span>${warn}
+          <span class="ad-tag sp-move-type">${esc(typeName(t))}</span>
+          <span class="sp-move-cap${over ? ' is-over' : ''}">${over ? '⚠️ ' : ''}${cap}</span>
         </button>`;
     }).join('')
       + `<button class="sp-move-item is-clear" type="button" data-to="">移出桌位（放回待安排）</button>`;
@@ -2101,20 +2141,40 @@
      只有這一個是抽屜 —— 同一件事有兩種開法，使用者就得學兩次。
 
      裡面的欄位也一起改成「選的」而不是「打字的」：
+       會不會來　分段控制（會來／保留席／無法出席）
        類別　　　出席表單上問的就是那四個，這裡給同一份
-       會不會來　radio group（待確認 ＝ 保留席）
-       餐點　　　radio group（葷／素）
        標籤　　　和「設定賓客標籤」那一頁同一組 chip，點一下就切換
-       人數／兒童椅／喜餅　−  N  ＋
+       人數／素食／兒童椅／喜餅　−  N  ＋
      打字打出來的「女方朋友」「女方的朋友」永遠分不到同一組，
      而排桌這件事從頭到尾都在分組。
+
+     ---- 版面：一列一欄位，標籤在左邊（.sp-frow）----
+     改版前每個欄位都是「標籤獨佔一行 ＋ 控制項一行」，九個欄位光標籤就
+     吃掉三百多 px，600px 寬的彈窗要捲兩屏才看得完。現在標籤收到左邊
+     5.5em 的固定欄，一個 74–124px 的區塊變成一列 44px。
+     這不是新發明 —— peek 的 .sp-peek-row 本來就長這樣，兩邊從此同一種讀法。
+
+     ---- 順序 ----
+     備註貼在名字底下（它講的是「這個人是誰」）。接著是排桌真正在決定的
+     四件事：會不會來 → 人數 → 類別 → 標籤。要跟飯店講的數字（素食、
+     兒童椅、喜餅）排第二段，最少動的身分欄位（編號、姓名）排最後。
+
+     ---- 桌位不在這裡 ----
+     桌位在外面就改得動（桌機拖曳、每張卡片的「⇄」、peek 的「移動到桌位」），
+     所以這個彈窗不再放一份。改版前這裡有兩份：標題底下的「目前在 02」
+     和表單最底下的「目前桌位」下拉 —— 同一件事講兩次，還有一次是可改的。
   ============================================================ */
   const guestMask = $('spGuestMask');
 
   function openGuest(guestId) {
     if (!fillGuest(guestId)) return;
     guestMask.hidden = false;
-    $('spGuestCode').focus();
+    /* 焦點放在第一列「會不會來」目前的答案上。
+       改版前是 $('spGuestCode').focus() —— 編號現在排在最後一列，
+       那樣一打開就捲到底，看不到最重要的那幾格。 */
+    const first = guestMask.querySelector('#spGuestRsvp input:checked')
+      || guestMask.querySelector('#spGuestRsvp input');
+    if (first) first.focus();
   }
 
   function closeGuest() { guestMask.hidden = true; }
@@ -2122,6 +2182,28 @@
   function radiosHtml(name, list, cur) {
     return list.map(([v, label]) => `
       <label class="ad-radio">
+        <input type="radio" name="${esc(name)}" value="${esc(v)}"${v === cur ? ' checked' : ''}>
+        <span>${esc(label)}</span>
+      </label>`).join('');
+  }
+
+  /* 分段控制：選項連成一條、填滿整列。三個互斥又短的選項用這個形狀，
+     比三顆會換行的膠囊省一半高度，也看得出它們是同一個問題的答案。
+     底下仍然是 radio input（鍵盤、螢幕報讀器、pickedRadio 都照舊），
+     只是把圓點藏起來 —— 選中的狀態靠 :has(input:checked) 畫。 */
+  function segHtml(name, list, cur) {
+    return list.map(([v, label]) => `
+      <label class="sp-seg-item">
+        <input type="radio" name="${esc(name)}" value="${esc(v)}"${v === cur ? ' checked' : ''}>
+        <span>${esc(label)}</span>
+      </label>`).join('');
+  }
+
+  /* 單選的 chip。選項多到分段控制放不下時用它（類別有五、六個），
+     形狀和正下方的「標籤」一樣，兩列自然讀成同一個「分群」區塊。 */
+  function chipPickHtml(name, list, cur) {
+    return list.map(([v, label]) => `
+      <label class="sp-pick-item">
         <input type="radio" name="${esc(name)}" value="${esc(v)}"${v === cur ? ' checked' : ''}>
         <span>${esc(label)}</span>
       </label>`).join('');
@@ -2196,7 +2278,6 @@
 
     const pick = lib.length ? pickableTags(g) : [];
     $('spGuestTagsOff').hidden = !!lib.length;
-    $('spGuestTagsHint').hidden = !lib.length || !locked.length;
 
     if (!pick.length) {
       box.innerHTML = lib.length
@@ -2207,18 +2288,18 @@
       return;
     }
 
+    /* 這裡列出來的一定是勾得動的那一組（pickableTags 已經濾過），
+       所以不再多一層「只有你們看得到」的副標 —— 左邊那格就叫「標籤」，
+       改不動的那幾顆長得不一樣、而且住在名字旁邊，形狀已經把話講完了。 */
     box.innerHTML = `
-      <div class="sp-guest-taggrp">
-        <div class="sp-guest-taglab">只有你們看得到</div>
-        <div class="ad-chips">
-          ${pick.map((t) => {
-            const on = g.tagIds.includes(t.id);
-            return `
-              <button class="ad-chip${on ? ' is-on' : ''}" type="button"
-                      data-guest-tag="${esc(t.id)}" aria-pressed="${on}"
-                      >${esc(t.name)}</button>`;
-          }).join('')}
-        </div>
+      <div class="ad-chips">
+        ${pick.map((t) => {
+          const on = g.tagIds.includes(t.id);
+          return `
+            <button class="ad-chip${on ? ' is-on' : ''}" type="button"
+                    data-guest-tag="${esc(t.id)}" aria-pressed="${on}"
+                    >${esc(t.name)}</button>`;
+        }).join('')}
       </div>`;
   }
 
@@ -2236,52 +2317,109 @@
     return [...new Set([...keep, ...on])];
   }
 
+  /* 這場婚禮有沒有在出席表單上問餐點。沒問的話「素食」整列不出現 ——
+     一個永遠是 0、又沒有出處可以對照的欄位只是噪音。 */
+  function mealAsked() {
+    const cfg = typeof rsvpConfig === 'function' ? rsvpConfig() : null;
+    return !cfg || cfg.askMeal !== false;
+  }
+
+  /* 開著的這一位。分段控制與加減鈕的即時同步要用到 src 與回覆裡的數字。 */
+  let curGuest = null;
+  /* 打開時素食那一格的值。沒被動過就不寫進草稿 —— 六百位賓客的上限
+     不能被一堆「其實沒改過」的空殼吃掉（同 metaIsEmpty 的用意）。 */
+  let vegInit = 0;
+
+  /* 人數一改，素食的上限跟著改：素食不能比總人數多。
+     出席表單問的就是這個形狀（rsvp-form.js 的 syncCounts），兩邊同一套。 */
+  function syncGuestNums() {
+    const head = clampInt($('spGuestCount').value, 0, 30, 0);
+    const vegEl = $('spGuestVeg');
+    vegEl.max = String(head);
+    const veg = Math.min(head, clampInt(vegEl.value, 0, 30, 0));
+    if (vegEl.value !== String(veg)) vegEl.value = String(veg);
+
+    /* 右邊那行：算出來的葷素，以及「出席回覆當初填的是幾位」。
+       括號裡永遠寫回覆的原始數字，所以改沒改、改成什麼，一眼就對得出來。 */
+    const from = curGuest && curGuest.src === 'rsvp' && mealAsked()
+      ? (Number(curGuest.veg) || 0) : null;
+    $('spGuestVegSide').textContent = `葷 ${head - veg}・素 ${veg}`
+      + (from == null ? '' : `（出席回覆填 素 ${from}）`);
+  }
+
+  /* 「會不會來」底下那一行。兩句都只在該講的時候出現，不常駐佔一行。 */
+  function syncRsvpNote() {
+    const el = $('spGuestRsvpNote');
+    const bits = [];
+    if (pickedRadio('spGuestRsvp') === 'maybe') bits.push('保留席＝還不確定，先佔著位子');
+    if (curGuest && curGuest.src === 'rsvp') bits.push('這裡只改排桌用的那一份，賓客送出的回覆不會被動到');
+    el.textContent = bits.join('・');
+    el.hidden = !bits.length;
+  }
+
+  /* ---- 備註（Todoist 那種）----
+     平常只有一行「＋ 備註」，有內容就直接把內容顯示出來，點下去才長出輸入框。
+     改版前它是一塊常駐 96px 高的 textarea：一個九成時候不填的欄位，
+     不該常態佔掉彈窗五分之一的高度。 */
+  function paintNote() {
+    const v = $('spGuestNote').value.trim();
+    $('spGuestNoteText').textContent = v || '備註';
+    $('spGuestNoteBox').classList.toggle('has-note', !!v);
+    $('spGuestNotePlus').hidden = !!v;
+  }
+
+  function fillNote(text) {
+    $('spGuestNote').value = text || '';
+    $('spGuestNote').hidden = true;
+    $('spGuestNoteOpen').hidden = false;
+    paintNote();
+  }
+
+  /* 展開之後就讓它開著，直到彈窗關掉 —— 失焦收合的話，
+     按「儲存」的當下輸入框會先收起來，底下的按鈕跟著往上跳，點不到。 */
+  function openNote() {
+    $('spGuestNoteOpen').hidden = true;
+    $('spGuestNote').hidden = false;
+    $('spGuestNote').focus();
+  }
+
   function fillGuest(guestId) {
     const g = guestById(guestId);
     if (!g) { closeGuest(); return false; }
-    const t = tableById(g.tableId);
+    curGuest = g;
 
     $('spGuestId').value = g.id;
     $('spGuestTitle').textContent = g.name;
-    $('spGuestWhere').textContent = t ? `目前在 ${tableLabel(t)}` : '還沒安排桌位';
 
     $('spGuestCode').value = g.code;
     const nameInput = $('spGuestNameInput');
     nameInput.value = g.name;
+    /* 回覆來的姓名以回覆為準：輸入框直接是灰的、點不動。
+       改版前底下還掛一句「這是賓客自己送出的回覆…改不動」——
+       形狀已經講完的事，不必再用一行字講一次。 */
     nameInput.disabled = g.src === 'rsvp';
-    $('spGuestNameLock').hidden = g.src !== 'rsvp';
 
-    $('spGuestCat').innerHTML = radiosHtml('spGuestCat', catOptions(g.cat), g.cat || '');
-    $('spGuestRsvp').innerHTML = radiosHtml('spGuestRsvp', RSVP_PICK, g.rsvp);
-    $('spGuestOverride').hidden = g.src !== 'rsvp';
+    $('spGuestRsvp').innerHTML = segHtml('spGuestRsvp', RSVP_PICK, g.rsvp);
+    $('spGuestCat').innerHTML = chipPickHtml('spGuestCat', catOptions(g.cat), g.cat || '');
 
     $('spGuestCount').value = g.count;
     $('spGuestSeats').value = g.seats;
     $('spGuestGift').value = g.gift;
     $('spGuestGot').checked = g.got;
-    $('spGuestNote').value = g.note;
+    fillNote(g.note);
 
-    /* 葷素：新人沒選過的話，先照回覆與標籤推一個出來當預設值。
-       但「預設值」不等於「他選過了」—— 初始值記在 spGuestMealInit，
-       沒被動過就不寫進草稿，「3 位裡面 1 位吃素」才不會被蓋成 3 位素食。 */
-    const derivedVeg = vegOf(g);
-    const meal = g.meal || (derivedVeg > 0 ? 'veg' : 'meat');
-    $('spGuestMeal').innerHTML = radiosHtml('spGuestMeal',
-      [['meat', '葷食'], ['veg', '素食']], meal);
-    $('spGuestMealInit').value = g.meal ? '' : meal;   /* 空字串＝新人選過了，照他的走 */
-    const partial = !g.meal && derivedVeg > 0 && derivedVeg < g.count;
-    $('spGuestMealNote').hidden = !partial;
-    if (partial) {
-      $('spGuestMealNote').textContent =
-        `出席回覆填的是 ${g.count} 位裡有 ${derivedVeg} 位素食。這裡一選，整組就照你選的算。`;
-    }
+    /* 素食問的是人數，不是葷／素二選一。
+       出席回覆本來就是這樣問的（mealMeat ＋ mealVeg，加起來等於出席人數），
+       改版前這裡壓成一顆 radio —— 「3 位裡面 1 位吃素」表達不了，
+       而且按一下「葷食」會把回覆裡那一位直接算成 0。 */
+    $('spGuestVegRow').hidden = !mealAsked();
+    $('spGuestVeg').value = vegOf(g);
+    vegInit = vegOf(g);
+    syncGuestNums();
+    syncRsvpNote();
 
     fillGuestTags(g);
     $('spGuestDelete').hidden = g.src !== 'manual';
-
-    $('spGuestTable').innerHTML = `<option value="">（還沒安排）</option>`
-      + sortedTables().map((x) =>
-        `<option value="${esc(x.id)}"${x.id === g.tableId ? ' selected' : ''}>${esc(tableLabel(x))}</option>`).join('');
     return true;
   }
 
@@ -2302,10 +2440,11 @@
       gift: clampInt($('spGuestGift').value, 0, 99, 0),
       got: $('spGuestGot').checked,
     };
-    /* 葷素只有「真的被動過」才寫進去（見 fillGuest 的 spGuestMealInit） */
-    const meal = pickedRadio('spGuestMeal');
-    const init = $('spGuestMealInit').value;
-    if (!init || meal !== init) patch.meal = meal;
+    /* 素食只有「真的被動過」才寫進去（見 fillGuest 的 vegInit）。
+       人數被改小而連帶 clamp 下來的，也算被動過 —— 那個結果要留住。 */
+    const vegNow = Math.min(clampInt($('spGuestCount').value, 0, 30, 0),
+                            clampInt($('spGuestVeg').value, 0, 30, 0));
+    if (mealAsked() && vegNow !== vegInit) patch.vegN = vegNow;
 
     if (g.src === 'manual') {
       patch.name = $('spGuestNameInput').value.trim().slice(0, 40);
@@ -2313,13 +2452,12 @@
       if (!patch.name) { toast('姓名不能是空的', true); return; }
     }
 
-    const table = $('spGuestTable').value;
-
+    /* 桌位不在這個彈窗裡改 —— 外面就改得動（拖曳、卡片上的「⇄」、
+       peek 的「移動到桌位」），這裡不再放第二個入口。 */
     mutate(() => {
       const m = plan.meta[id] || { id, src: g.src };
       Object.assign(m, patch);
       plan.meta[id] = m;
-      if (table) plan.assign[id] = table; else delete plan.assign[id];
     });
 
     /* 回覆來的賓客，標籤仍然寫回既有的 rsvpTags —— 排桌不另外做一套分類。
@@ -3192,6 +3330,17 @@
       chip.classList.toggle('is-on', on);
       chip.setAttribute('aria-pressed', String(on));
     });
+    /* 人數一動，素食的上限與右邊那行「葷 N・素 M」跟著重算。
+       加減鈕按完會自己 dispatch 一次 input（見底下的 .ad-stepper-btn），
+       所以手打和按鈕走同一條路。 */
+    guestMask.addEventListener('input', (e) => {
+      if (e.target.id === 'spGuestCount' || e.target.id === 'spGuestVeg') syncGuestNums();
+      if (e.target.id === 'spGuestNote') paintNote();
+    });
+    guestMask.addEventListener('change', (e) => {
+      if (e.target.name === 'spGuestRsvp') syncRsvpNote();
+    });
+    $('spGuestNoteOpen').addEventListener('click', openNote);
     registerFormModal(guestMask, closeGuest);
 
     /* ---- −  N  ＋ ----
