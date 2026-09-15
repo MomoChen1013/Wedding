@@ -2441,21 +2441,6 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
   .sp-col-acts{flex:1 1 100%;}
   .sp-col-acts .btn{flex:1 1 0;}
 
-  /* ---------- 手機的賓客卡：名字自己一行 ----------
-     兩欄的格子在 390px 的螢幕上只有一百五十幾 px 寬，而第一行原本要塞
-     編號 ＋ 姓名 ＋（N 人），右邊還要讓出 38px 給「⇄」——
-     算下來留給名字的只剩二十幾 px，中文名字只看得到一個字加刪節號。
-     排桌從頭到尾都是在對名字，那是這張卡上唯一不能被犧牲的東西。
-
-     所以窄螢幕把它拆成兩行：名字整行、編號與人數退到第二行。
-     用 order ＋ flex-wrap 做，HTML 不動 —— 桌機那一行維持原樣。 */
-  .sp-card-line{flex-wrap:wrap;}
-  .sp-card-name{order:1;flex:1 1 100%;}
-  .sp-card-code{order:2;}
-  .sp-card-count{order:3;margin-left:0;}
-  /* 「⇄」跟名字對齊，不再垂直置中 —— 置中會落到標籤那一排上面。
-     2px 是讓 36px 的方框中心剛好落在名字那一行的中線。 */
-  .sp-card-move{top:2px;transform:none;}
 }
 /* 小螢幕（iPhone SE 這一級）：格子再降一階，仍然是兩欄，
    但不會有任何一格比螢幕寬 */
@@ -3021,6 +3006,46 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(174px + env(safe-area-inse
   /* 讓出按鈕的位置，名字不要被蓋住；卡片本身也拉高一點，摸起來才不擠 */
   .sp-card-line{padding-right:38px;}
   .sp-card{padding:9px 11px;}
+}
+
+/* ---------- 手機的賓客卡：重新分行 ----------
+   ★ 這一段一定要排在上面 .sp-card-move 的宣告之後：
+     兩邊權重一樣，靠順序決勝（放在前面的話 top:50% 會贏，
+     「⇄」就會停在兩行中間、壓到標籤上）。
+
+   兩欄的格子在 390px 的螢幕上只有一百五十幾 px 寬，而原本一整行要塞
+   編號 ＋ 姓名 ＋（N 人），右邊還要讓出位置給「⇄」——
+   算下來留給名字的只剩二十幾 px，中文名字只看得到一個字加刪節號。
+   排桌從頭到尾都是在對名字，那是這張卡上唯一不能被犧牲的東西。
+
+   所以窄螢幕重新分行：
+
+     姓名　（N 人）              ⇄
+     編號　[標籤][標籤]
+
+   第一行是「誰、幾位」（排桌時要盯的），第二行是「對紙本名單用的編號」
+   與標籤。編號和標籤本來分屬兩個 div，這裡讓 .sp-card-line 變成
+   display:contents，四個子元素就一起變成 .sp-card 的 flex 項目，
+   再用 order 重排 —— HTML 不動，桌機那一行也維持原樣。
+
+   換行點用 .sp-card-line::after 撐出來：display:contents 的元素
+   自己不生成盒子，但它的偽元素照樣生成，剛好拿來當一條 100% 寬的斷行。 */
+@media(max-width:560px){
+  .sp-card{display:flex;flex-wrap:wrap;align-items:baseline;
+    column-gap:7px;row-gap:4px;}
+  .sp-card-line{display:contents;}
+  /* flex-basis 一定要是 0：flex 換不換行看的是「原始寬度」而不是縮過之後的
+     寬度，名字一長就會把（N 人）擠到下一行，兩行變三行。基準給 0 之後
+     名字只會長進剩下的空間、超過就用刪節號，人數永遠留在第一行。 */
+  .sp-card-name{order:1;flex:1 1 0;min-width:0;}
+  /* 右邊那 32px 是讓給「⇄」的（36px 的鈕、right:7px，扣掉卡片自己的內距） */
+  .sp-card-count{order:2;flex:0 0 auto;margin-left:0;margin-right:32px;}
+  .sp-card-line::after{content:'';order:3;flex:0 0 100%;height:0;}
+  .sp-card-code{order:4;flex:0 0 auto;}
+  .sp-card-tags{order:5;flex:1 1 0;min-width:0;margin-top:0;}
+  /* 「⇄」跟名字對齊：2px 讓 36px 的方框中心剛好落在名字那一行的中線，
+     框的下緣就停在標籤那一排上面，不會壓到最後一顆標籤。 */
+  .sp-card-move{top:2px;transform:none;}
 }
 
 /* 「拖曳」在觸控裝置是無效資訊：同一句話兩種寫法，由 CSS 決定給誰看 */
