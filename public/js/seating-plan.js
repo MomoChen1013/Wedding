@@ -4,7 +4,7 @@
    目標不是「把 Excel 搬到網頁」，而是讓新人比 Excel 更快排完桌。
    所以整頁圍著四件事打轉：
 
-     1. 未安排的人永遠看得見（左邊那一欄不會被捲走）
+     1. 待安排的人永遠看得見（左邊那一欄不會被捲走）
      2. 拖曳就能安排，拖到哪就進哪一桌
      3. 容量與特殊需求即時算給你看，超過不擋、但一定講
      4. 每一步都可以復原
@@ -27,14 +27,16 @@
      assign  賓客 id → 桌位 id
 
    為什麼是一份文件：排桌是「改一堆、看整體、覺得可以了才存」的工作。
-   一次寫一份文件才存得起完整的一版，也才做得到「儲存」與「同步」分開：
+   一次寫一份文件才存得起完整的一版，也才做得到「儲存」與「發布」分開：
 
      改動 →（在瀏覽器裡，可以無限復原）
-       → 按「儲存排桌」→ 寫進草稿
-       → 問一句「要同步到桌次查詢嗎？」
-       → 新人說要，才寫進 seating（賓客查得到的那一份）
+       → 按「儲存」→ 寫進草稿（只有新人看得到）
+       → 按「發布給賓客」→ 才寫進 seating（賓客查得到的那一份）
 
-   前台不會因為後台還在整理座位就跟著變 —— 這是刻意的，不要改成自動同步。
+   「儲存」與「發布」是兩件事，而且刻意分開：
+   新人排桌會反覆調整，賓客那一頁不該跟著跳。
+   所以畫面上永遠回答得了兩個問題 ——
+   「我改的存了嗎」「賓客現在看到的是哪一版」。
 ============================================================ */
 (function () {
   'use strict';
@@ -51,13 +53,24 @@
      custom 讓新人自己打字，之後要再加固定類型直接補在這裡。 */
   const TABLE_TYPES = [
     ['main',      '主桌'],
-    ['family',    '家人桌'],
     ['relative',  '親友桌'],
     ['classmate', '同學桌'],
     ['colleague', '同事桌'],
+    ['spare',     '預備桌'],
+    /* 下面兩個沒有出現在「新增多個桌位」裡，但既有站台存過，
+       所以留著 —— 刪掉的話那幾桌的類型會變成空白 */
+    ['family',    '家人桌'],
     ['vip',       'VIP'],
     ['custom',    '自訂'],
   ];
+
+  /* 「新增多個桌位」一次問的就是這幾列。
+     新人心裡想的從來不是一個總數，而是「主桌一桌、同學三桌、同事兩桌…」，
+     所以照類別問，比問「要加幾桌」接近他腦子裡的那份名單。
+     主桌固定 1（婚宴只會有一桌主桌），其餘把建議桌數平均分掉。
+     預備桌預設 0 —— 那是「怕人多」才加的，不該替新人決定。 */
+  const BATCH_TYPES = ['main', 'relative', 'classmate', 'colleague', 'spare'];
+  const BATCH_SPREAD = ['relative', 'classmate', 'colleague'];
 
   /* 需要在桌上被看見的特殊需求。比對的是標籤「名字」——
      標籤是新人自己取的，所以用關鍵字包含判斷，取名叫「全素」「素食者」都認得。 */
@@ -68,7 +81,18 @@
     { key:'vip',   icon:'✦',  label:'VIP',      match:['vip'] },
   ];
 
-  const RSVP_TEXT = { yes:'已確認', maybe:'待確認', no:'無法出席' };
+  /* 「待確認」在排桌這一頁其實是一個位子的狀態，不是一筆回覆的狀態：
+     還不確定會不會來的人，桌上仍然要留著位子給他。
+     所以整頁一律叫它「保留席」—— 桌卡上也會加總成「🔖 N 個保留席」，
+     和素食、兒童椅並排，對飯店講得出口的那種數字。 */
+  const RSVP_TEXT = { yes:'已確認', maybe:'保留席', no:'無法出席' };
+  /* 「會不會來」那一條分段控制的說法。三個都是兩三個字，才連得成一條 ——
+     「保留席」是什麼意思改成選中時才在底下講一句（見 syncRsvpNote）。 */
+  const RSVP_PICK = [
+    ['yes',   '會來'],
+    ['maybe', '保留席'],
+    ['no',    '無法出席'],
+  ];
 
   /* 沒有標籤時，類別的預設值就用「與新人的關係」 */
   const RELATION_TEXT = { groom:'男方親友', bride:'女方親友', both:'雙方親友', other:'其他' };
@@ -87,7 +111,7 @@
   };
 
   let loadPromise = null;   /* load() 的 promise，外面要等草稿讀完才問得到排桌資料 */
-  let savedAt = 0;      /* 上次按「儲存排桌」的時間 */
+  let savedAt = 0;      /* 上次按「儲存」的時間 */
   let syncedAt = 0;     /* 上次同步到桌次查詢的時間 */
   let dirty = false;    /* 有還沒存的修改 */
   let started = false;  /* init() 只跑一次 */
@@ -99,9 +123,7 @@
   /* 提醒收起來時只佔一行，其餘展開才看（見 renderWarns） */
   let warnsOpen = false;
 
-  /* 篩選預設收起來：這一頁最重要的是那兩欄工作區，
-     一進來就先看到人和桌子，需要篩再展開。 */
-  let filtersOpen = false;
+
 
   /* 手機／平板上被收起來的桌子（放桌 id）。
      排完的桌先關上，螢幕才留得給還沒排完的那幾桌。
@@ -110,15 +132,29 @@
      收合鈕只給拖不動的裝置（觸控或 ≤960px，見 admin.css）。 */
   const foldedTables = new Set();
 
-  /* 畫面上的篩選與排序 */
+  /* 畫面上的篩選與排序。
+     篩選住在工具列的漏斗鈕後面（一場婚禮大概用三次），
+     搜尋才是每天都在用的那一個，所以只有它是一直看得到的輸入框。 */
   const view = {
     q: '',
     rsvp: 'all',          /* all / yes / maybe */
     tags: new Set(),      /* 多選；空的代表不篩 */
+    veg: false,           /* 只看素食 */
+    seat: false,          /* 只看要兒童座椅的 */
     showDeclined: false,  /* 「無法出席」預設不列 —— 他們不需要位子 */
     sort: 'default',
     tagOrder: [],         /* 標籤權重（標籤 id），沒設定就照標籤庫的順序 */
   };
+
+  /* 排序收在工具列的那顆圖示鈕裡（見 bindEvents 的 registerRowMenu('spSort')）。
+     「依編號」是預設值，所以標註寫在它自己身上，不用另外做一個 placeholder。 */
+  const SORTS = [
+    ['default',   '依編號（預設）'],
+    ['tag',       '優先按照標籤分組'],
+    ['name',      '依姓名'],
+    ['countDesc', '人數多 → 少'],
+    ['countAsc',  '人數少 → 多'],
+  ];
 
   /* ============================================================
      小工具
@@ -282,6 +318,10 @@
         /* 這兩個是回覆裡問到的實際數字，比「整筆算一個人」準得多 */
         veg: Number(r.mealVeg) || 0,
         seats: m.seats != null ? Number(m.seats) : (Number(r.childSeat) || 0),
+        /* 新人自己設定的素食人數。null ＝沒設過，那就照回覆與標籤推（見 vegOf）。
+           舊資料存的是 meal:'veg'|'meat'（整筆葷或整筆素），一併帶著讓 vegOf 換算 */
+        vegN: m.vegN != null ? Number(m.vegN) : null,
+        meal: m.meal || '',
         since: rsvpMs(r),
       };
     });
@@ -305,6 +345,8 @@
         got: m.got === true,
         veg: 0,
         seats: Number(m.seats) || 0,
+        vegN: m.vegN != null ? Number(m.vegN) : null,
+        meal: m.meal || '',
         since: 0,
       });
     });
@@ -334,8 +376,7 @@
 
   function typeName(t) {
     if (t.type === 'custom') return t.typeName || '自訂';
-    const hit = TABLE_TYPES.find(([k]) => k === t.type);
-    return hit ? hit[1] : '';
+    return typeLabel(t.type);
   }
 
   /* 一桌現在坐了幾位（單位是人，不是筆數） */
@@ -486,7 +527,7 @@
     dirty = true;
     invalidateGuests();
     renderAll();
-    toast('已接回上次沒存完的排桌，記得按「儲存排桌」');
+    toast('已接回上次沒存完的排桌，記得按「儲存」');
   }
 
   async function load() {
@@ -545,6 +586,11 @@
     if (Array.isArray(g.tags)) m.tags = g.tags.map(String).slice(0, 20);
     if (g.note != null) m.note = String(g.note).slice(0, 200);
     if (g.seats != null && g.seats !== '') m.seats = clampInt(g.seats, 0, 10, 0);
+    /* 素食人數。改版前存的是 meal:'veg'|'meat'（整筆葷或整筆素）——
+       那個形狀表達不了「3 位裡面 1 位吃素」，而出席回覆本來就是這樣問的。
+       舊值繼續讀得進來（見 vegOf），但不再寫出去。 */
+    if (g.vegN != null && g.vegN !== '') m.vegN = clampInt(g.vegN, 0, 30, 0);
+    if (g.meal === 'veg' || g.meal === 'meat') m.meal = g.meal;
     if (g.gift != null) m.gift = clampInt(g.gift, 0, 99, 0);
     if (g.got === true) m.got = true;
     return m;
@@ -556,7 +602,7 @@
     if (m.src === 'manual') return false;
     return !m.code && !m.cat && !m.name && m.count == null && !m.rsvp
       && !(m.tags && m.tags.length) && !m.note && !m.gift && m.got !== true
-      && m.seats == null;
+      && m.seats == null && m.vegN == null && !m.meal;
   }
 
   function planPayload() {
@@ -621,7 +667,7 @@
       dirty = false;
       clearLocalDraft();
       renderAll();
-      if (!silent) toast('排桌已儲存');
+      if (!silent) toast('已儲存');
       return true;
     } catch (err) {
       /* 沒送出去的話，本機草稿是最後一道防線 —— 先寫下來再說 */
@@ -634,26 +680,31 @@
   }
 
   /* ============================================================
-     同步到桌次查詢
+     發布給賓客
      ------------------------------------------------------------
-     桌次查詢（賓客那一頁）讀的是 seating 子集合。
-     同步 ＝ 把目前排好的結果整份換過去，所以要先問一次。
-     刻意不做自動同步：新人排桌會反覆調整，前台不該跟著跳。
+     賓客那一頁（「我的桌次」）讀的是 seating 子集合。
+     發布 ＝ 把目前排好的結果整份換過去，所以要先問一次。
+     刻意不做自動發布：新人排桌會反覆調整，賓客那邊不該跟著跳。
+
+     發布也順手把草稿存起來 —— 「發布出去的那一版」與「存下來的那一版」
+     不一致的話，下次打開會看到一份對不上賓客手機的排桌。
   ============================================================ */
-  async function syncToSeating(skipConfirm) {
+  async function publish(skipConfirm) {
     const guests = allGuests().filter((g) => g.tableId);
     if (!guests.length) {
-      toast('目前還沒有任何賓客被排進桌位', true);
+      toast('還沒有安排任何賓客，無法發布', true);
       return;
     }
 
-    /* 剛剛才在「排桌已儲存」那一步問過的話，不要連問兩次 */
     if (!skipConfirm) {
+      const left = pending();
       const ok = await confirmModal({
-        title: '送到賓客的查座位頁',
-        message: `會把目前排好的 ${guests.length} 位賓客整份送到賓客的「我的桌次」，`
-               + '原本那一份桌次名單會被換掉。要繼續嗎？',
-        confirmText: '送出去',
+        title: '發布給賓客',
+        message: `目前有 ${guests.length} 組賓客已安排座位，發布後，他們就能在「我的桌次」查到。`
+               + (left.groups
+                 ? `\n還有 ${left.groups} 組（${left.heads} 位）賓客尚未安排座位，他們目前查不到座位。`
+                 : ''),
+        confirmText: '發布',
         cancelText: '稍後再說',
       });
       if (!ok) return;
@@ -671,31 +722,31 @@
       };
     }).filter((r) => r.name && r.table);
 
-    setBusy(SYNC_BTNS, true, '送出中…');
+    setBusy(SYNC_BTNS, true, '發布中…');
     try {
       await DataStore.wipeCollection('seating');
       await DataStore.importSeating(rows);
       await save(true, /* markSynced */ true);
-      afterSyncToast(rows.length);
+      afterPublishToast(rows.length);
     } catch (err) {
-      writeFailed(err, () => syncToSeating(true));
+      writeFailed(err, () => publish(true));
     } finally {
       setBusy(SYNC_BTNS, false);
     }
   }
 
-  /* 同步完不代表賓客看得到 —— 桌次那一頁還有一個總開關
+  /* 發布完不代表賓客看得到 —— 桌次那一頁還有一個總開關
      （「頁面設定」裡的「桌次」那一列），關著的話前台什麼都沒有。
-     這是婚禮當天最容易卡住的地方，所以同步成功就直接問。 */
-  function afterSyncToast(n) {
+     這是婚禮當天最容易卡住的地方，所以發布成功就直接問。 */
+  function afterPublishToast(n) {
     const off = siteData().seatingFeatureEnabled === false;
     if (!off) {
-      toast(`已同步 ${n} 位賓客到桌次查詢`);
+      toast(`已發布 ${n} 組賓客的座位`);
       return;
     }
-    showToast(`已同步 ${n} 位，但「桌次」還沒開放，賓客目前還看不到`, {
+    showToast(`已發布 ${n} 組賓客的座位，但「我的桌次」尚未開放`, {
       duration: 9000,
-      actionLabel: '現在打開',
+      actionLabel: '現在開放',
       onAction() {
         location.hash = 'pages';
         /* 換分頁要一點時間，等畫面切過去再把那一列捲進視野並閃一下 */
@@ -710,18 +761,16 @@
     });
   }
 
-  /* 儲存 →（存成功才問）要不要同步 */
-  async function saveThenAsk() {
-    const okSave = await save();
-    if (!okSave) return;
-    const go = await confirmModal({
-      title: '排桌已儲存',
-      message: '要順便送到賓客的查座位頁嗎？送出之後賓客馬上查得到自己的桌次；'
-             + '還在調整的話可以稍後再說，賓客那邊不會跟著變動。',
-      confirmText: '送出去',
-      cancelText: '稍後再說',
-    });
-    if (go) await syncToSeating(true);
+  /* 「儲存」就只做儲存。
+     本來按完會跳出來問「要順便送到賓客的查座位頁嗎？」—— 那就是把兩件事
+     又黏回一起：想存個檔的人被迫回答一個關於賓客的問題。
+     現在改成存完在狀態列說一句「有未發布的變更」，
+     要發布的時候，主要動作那一顆自己會變成「發布給賓客」。 */
+  async function saveOnly() {
+    const ok = await save();
+    if (ok && (!syncedAt || syncedAt < savedAt)) {
+      toast('已儲存，尚未發布給賓客');
+    }
   }
 
   /* ============================================================
@@ -754,7 +803,7 @@
     return !view.q || haystack(g).includes(view.q);
   }
 
-  /* 篩選只作用在「未安排」那一區 —— 它就住在那一區裡。
+  /* 篩選只作用在「待安排」那一區 —— 它就住在那一區裡。
      已經排好的人不會因為篩選而從桌上消失（那樣會嚇到人），
      搜尋到的人改成在桌上標起來（見 renderBoard）。 */
   function inPool(g) {
@@ -762,7 +811,28 @@
     if (!view.showDeclined && g.rsvp === 'no') return false;
     if (view.rsvp !== 'all' && g.rsvp !== view.rsvp) return false;
     if (view.tags.size && !g.tagIds.some((id) => view.tags.has(id))) return false;
+    /* 素食與兒童座椅問的是「這個人有沒有這個需求」，
+       用的是桌卡上那一份算法，畫面上與桌上的數字才對得起來 */
+    if (view.veg && vegOf(g) <= 0) return false;
+    if (view.seat && seatsOf(g) <= 0) return false;
     return hitsSearch(g);
+  }
+
+  /* 現在套了幾個條件（給漏斗鈕上的那個數字，以及「清除篩選」要不要出現） */
+  function filterCount() {
+    return (view.rsvp !== 'all' ? 1 : 0)
+      + view.tags.size
+      + (view.veg ? 1 : 0)
+      + (view.seat ? 1 : 0)
+      + (view.showDeclined ? 1 : 0);
+  }
+
+  function clearFilters() {
+    view.rsvp = 'all';
+    view.tags.clear();
+    view.veg = false;
+    view.seat = false;
+    view.showDeclined = false;
   }
 
   function sortGuests(list) {
@@ -788,29 +858,42 @@
   /* ============================================================
      畫面：統計
   ============================================================ */
+  /* 還沒安排的人：幾「組」（一張卡＝一組，可能是一家四口）、共幾「位」。
+     排桌時手上動的單位是一張卡，所以組數排在前面；
+     位數決定的是「還塞不塞得下」，所以兩個都要。
+
+     這個數字要和左邊那一欄裡的卡片數對得起來 —— 標題寫「9 組」、
+     底下卻排著 10 張卡的話，使用者只會開始懷疑哪一個是真的。
+     唯一不算的是「無法出席」：他們不需要位子，
+     算進去只會讓這個數字永遠歸不了零。 */
+  function pending(guests) {
+    const rows = (guests || allGuests())
+      .filter((g) => !g.tableId && g.rsvp !== 'no');
+    return { rows, groups: rows.length, heads: rows.reduce((n, g) => n + g.count, 0) };
+  }
+
   function renderStats() {
     const guests = allGuests();
-    const heads = guests.reduce((n, g) => n + g.count, 0);
-    const seated = guests.filter((g) => g.tableId);
-    const seatedHeads = seated.reduce((n, g) => n + g.count, 0);
-    const avg = plan.tables.length ? (seatedHeads / plan.tables.length) : 0;
+    const heads = guests.filter((g) => g.rsvp !== 'no').reduce((n, g) => n + g.count, 0);
+    const left = pending(guests);
 
-    /* 只留四個一直要盯著的數字。超過容量、特殊需求、待確認 RSVP
-       都在下面的提醒列講得更清楚（而且會指名是第幾桌），
-       擺在這裡只會讓真正要看的四個數字變小。 */
+    /* 三個數字就夠了。
+       拿掉了「平均一桌人數」—— 沒有人是看著那個數字決定誰坐哪一桌的，
+       它只會把真正要盯的「待安排」擠小。
+       「待安排」排第一，而且還有人沒排時整格轉成 alert 色：
+       這一頁只有這一件事會讓新人在婚宴前一晚睡不著。 */
     const cells = [
-      [heads, '總人數'],
-      [plan.tables.length, '總桌數'],
-      [heads - seatedHeads, '未安排人數'],
-      [plan.tables.length ? avg.toFixed(1) : '—', '平均一桌人數'],
+      [left.groups, '組待安排', left.groups > 0 ? ' is-alert' : ' is-done'],
+      [heads, '總人數', ''],
+      [plan.tables.length, '總桌數', ''],
     ];
-    const html = cells.map(([n, lab]) => `
-      <div class="ad-stat">
+    const html = cells.map(([n, lab, cls]) => `
+      <div class="ad-stat${cls}">
         <div class="ad-stat-num">${esc(n)}</div>
         <div class="ad-stat-lab">${esc(lab)}</div>
       </div>`).join('');
     $('spStats').innerHTML = html;
-    /* 手機把統計收進「⋮ 更多」，底列只留「未安排」與「儲存排桌」 */
+    /* 手機把統計收進「⋮ 更多」，底列只留「待安排」與「儲存」 */
     $('spMoreStats').innerHTML = html;
   }
 
@@ -827,11 +910,13 @@
     const guests = allGuests();
     const list = [];
 
-    /* 1. 沒排到的人 —— 這一頁最不想發生的事，永遠排第一 */
-    const unassigned = guests.filter((g) => !g.tableId && g.count > 0);
-    if (unassigned.length) {
-      const heads = unassigned.reduce((n, g) => n + g.count, 0);
-      list.push({ level:'warn', text:`尚有 ${unassigned.length} 位賓客（${heads} 人）未安排` });
+    /* 1. 沒排到的人 —— 這一頁最不想發生的事，永遠排第一。
+          「1 位賓客（1 人）」講的其實是「1 組、共 1 位」，
+          兩個數字都叫「位」的時候沒有人讀得懂差在哪。 */
+    const left = pending(guests);
+    if (left.groups) {
+      list.push({ level:'warn',
+        text:`還有 ${left.groups} 組，共 ${left.heads} 位賓客待安排` });
     }
 
     /* 2. 上次儲存之後才進來的回覆 —— RSVP 常常一路收到婚禮前一週，
@@ -858,12 +943,13 @@
       list.push({ level:'warn', text:`有 ${noCount.length} 位已排桌的賓客缺少人數` });
     }
 
-    /* 5. 還沒確認出席的人 */
-    const pending = guests.filter((g) => g.rsvp === 'maybe');
-    if (pending.length) {
-      const who = pending.slice(0, 3).map((g) => g.code || g.name).join('、');
+    /* 5. 還沒確認會不會來的人（＝保留席）。
+          他們在桌上是佔位子的，所以這裡只是「記得回頭問一下」，不是警告。 */
+    const maybe = guests.filter((g) => g.rsvp === 'maybe');
+    if (maybe.length) {
+      const who = maybe.slice(0, 3).map((g) => g.code || g.name).join('、');
       list.push({ level:'info',
-        text:`${who}${pending.length > 3 ? ` 等 ${pending.length} 位` : ''} 還沒確認會不會來` });
+        text:`${who}${maybe.length > 3 ? ` 等 ${maybe.length} 組` : ''} 還沒確認會不會來（保留席）` });
     }
 
     /* 每一桌的特殊需求（素食、行動不便、兒童、VIP）刻意不做成提醒：
@@ -875,18 +961,24 @@
 
   /* 收起來的時候只佔一行：最該處理的那一條 ＋「還有 N 項」。
      二十幾桌的婚禮一次會有十幾條提醒，全部攤開會把工作區推出螢幕，
-     那就違反了「未安排的人要一直看得見」。 */
+     那就違反了「待安排的人要一直看得見」。 */
   function renderWarns() {
     const list = buildWarns();
     const box = $('spWarns');
 
-    if (!list.length) {
-      box.innerHTML = `<div class="sp-warn is-ok">目前沒有需要注意的地方</div>`;
-      return;
+    /* 排完了就不要再擺一條紅色的東西。
+       「沒有 warn 等級的提醒」＝ 沒有需要處理的事，這時候第一行換成
+       一句輕輕的「✓ 所有賓客都已安排」；剩下的 info（誰還沒確認會不會來）
+       照樣收在「還有 N 項」後面 —— 它們是「知道就好」，不是待辦。 */
+    const warnCount = list.filter((w) => w.level === 'warn').length;
+    const done = !warnCount && allGuests().length && plan.tables.length;
+
+    if (!list.length || done) {
+      if (!done) { box.innerHTML = ''; return; }
+      list.unshift({ level:'ok', icon:'✓', text:'所有賓客都已安排' });
     }
 
     const [first, ...rest] = list;
-    const warnCount = list.filter((w) => w.level === 'warn').length;
 
     const row = (w) => `
       <div class="sp-warn is-${w.level}">
@@ -896,7 +988,8 @@
 
     box.innerHTML = `
       <div class="sp-warn is-${first.level} sp-warn-head">
-        <span class="sp-warn-ic">${first.icon ? esc(first.icon) : (first.level === 'warn' ? '⚠️' : '·')}</span>
+        <span class="sp-warn-ic" aria-hidden="true">${
+          first.icon ? esc(first.icon) : (first.level === 'warn' ? '⚠️' : '·')}</span>
         <span class="sp-warn-text">${esc(first.text)}</span>
         ${rest.length ? `
           <button class="sp-warn-more${warnCount > 1 ? ' has-warn' : ''}" type="button"
@@ -923,24 +1016,28 @@
   ============================================================ */
   function guestCard(g) {
     const primary = primaryTag(g);
-    const chips = [];
-    if (primary) chips.push(`<span class="sp-chip">${esc(primary.name)}</span>`);
+    /* 卡片上的標籤是「這個人是誰」，看的不是點的 —— 所以是方形的 .ad-tag，
+       和名單、抽屜、桌位管理清單裡的同一顆長得一樣。
+       賓客詳細裡可以勾的那一組才是膠囊 chip，兩者一眼分得出來。 */
+    const tags = [];
+    if (primary) tags.push(`<span class="ad-tag">${esc(primary.name)}</span>`);
     g.specials.forEach((sp) => {
       /* 主要標籤本身就是特殊需求時不要重複出現 */
       if (primary && primary.name === sp.label) return;
-      chips.push(`<span class="sp-chip is-special">${sp.icon} ${esc(sp.label)}</span>`);
+      tags.push(`<span class="ad-tag ad-tag-need">${sp.icon} ${esc(sp.label)}</span>`);
     });
     /* 其餘標籤照樣掛上去，放不下就左右滑 */
     g.tagNames.forEach((n) => {
       if (primary && n === primary.name) return;
       if (g.specials.some((sp) => sp.label === n
         || sp.match.some((m) => n.toLowerCase().includes(m.toLowerCase())))) return;
-      chips.push(`<span class="sp-chip">${esc(n)}</span>`);
+      tags.push(`<span class="ad-tag">${esc(n)}</span>`);
     });
-    /* 一個標籤都沒有的人也不要空一行，退回顯示類別 */
-    const line2 = chips.length
-      ? chips.join('')
-      : (g.cat ? `<span class="sp-chip is-plain">${esc(g.cat)}</span>` : '');
+    /* 一個標籤都沒有的人也不要空一行，退回顯示類別。
+       那是一句話不是一顆標籤，所以不給它框（見 .sp-card-cat） */
+    const line2 = tags.length
+      ? tags.join('')
+      : (g.cat ? `<span class="sp-card-cat">${esc(g.cat)}</span>` : '');
 
     /* 搜尋有打字時，命中的卡片標起來（含已經坐在桌上的） */
     const hit = view.q && hitsSearch(g) ? ' is-hit' : '';
@@ -955,7 +1052,7 @@
                會讓人以為那是另一個人的數字，名字短的時候特別明顯。
                人數不能被名字的刪節號吃掉，所以是它自己一個元素 -->
           <span class="sp-card-name">${esc(g.name)}</span>
-          <span class="sp-card-count">（${g.count} 人）</span>
+          <span class="sp-card-count">${g.count} 人</span>
         </div>
         ${line2 ? `<div class="sp-card-tags">${line2}</div>` : ''}
         <!-- 觸控裝置拖不動，而且原本要「點卡片 → peek → 移動到桌位」兩下才碰得到。
@@ -971,7 +1068,7 @@
      卡片只留兩行，其餘資訊在這一片浮層裡。
      ・桌機（有滑鼠）：滑過去就出現
      ・手機／平板：點一下才出現，再點別的地方收起來
-     浮層用 position:fixed 貼著卡片畫，才不會被「未安排」那一欄的
+     浮層用 position:fixed 貼著卡片畫，才不會被「待安排」那一欄的
      捲動容器裁掉，也不會把下面的卡片擠開。
   ============================================================ */
   const peekEl = $('spPeek');
@@ -1011,18 +1108,18 @@
       <div class="sp-peek-rows">
         ${peekRow('類別', g.cat)}
         ${peekRow('RSVP', RSVP_TEXT[g.rsvp])}
-        ${peekRow('目前桌號', t ? tableLabel(t) : '未安排')}
+        ${peekRow('目前桌位', t ? tableLabel(t) : '待安排')}
         ${peekRow('備註', g.note)}
         ${g.seats ? peekRow('兒童椅', `${g.seats} 個`) : ''}
         ${g.gift ? peekRow('喜餅', `${g.gift} 份${g.got ? '・已確認收到' : ''}`) : ''}
       </div>
       ${g.tagNames.length
         ? `<div class="sp-peek-tags">${g.tagNames
-            .map((n) => `<span class="sp-chip">${esc(n)}</span>`).join('')}</div>`
+            .map((n) => `<span class="ad-tag">${esc(n)}</span>`).join('')}</div>`
         : ''}
       <div class="sp-peek-actions">
         <button class="btn small ghost" type="button" data-peek="move">移動到桌位</button>
-        <button class="btn small ghost" type="button" data-peek="detail">詳細資料</button>
+        <button class="btn small ghost" type="button" data-peek="detail">修改賓客資料</button>
       </div>`;
 
     peekEl.hidden = false;
@@ -1085,7 +1182,7 @@
       const id = peekId;
       closePeek();
       if (btn.dataset.peek === 'move') openMove(id);
-      else openDrawer(id);
+      else openGuest(id);
     });
 
     /* 捲動、拖曳、換分頁時先收起來，浮層才不會留在半空中 */
@@ -1095,115 +1192,122 @@
   }
 
   /* ============================================================
-     第一次進來的引導
+     提示卡：現在缺什麼，就提示補什麼
      ------------------------------------------------------------
-     還沒有任何桌位＝這組新人第一次用。與其只寫「還沒有任何桌位」，
-     不如把整條路講完：分群 → 放人 → 開桌 → 排完存檔。
-     已經做完的那一步會打勾，看得出自己走到哪裡。
+     這裡本來是一頁「開始排桌：四個步驟，做完就可以交給賓客查了」。
+     它有兩個問題：
 
-     每一步都是一句問句，說明只給一行 —— 這一頁要的是「現在做什麼」，
-     不是把每顆按鈕先解釋一遍（讀完四段說明才動手，比直接試還慢）。
+       ・那是說明書，不是工作區。第一次進來的人要先讀完四段字才動得了手。
+       ・那四件事其實沒有先後 —— 有人先開桌子、有人先匯名單、
+         很多人根本不用標籤。編號寫成 1234 就是在替他們決定順序。
+
+     所以改成「狀態導向」：版面骨架一律不變（左待安排、右我的桌位），
+     只是把缺掉的那一塊換成一張提示卡，長在它本來就該在的那一欄裡。
+     缺名單 → 提示卡長在左邊；缺桌位 → 長在右邊。
   ============================================================ */
-  function startGuideHtml(guests) {
-    const lib = tagLib();
-    const hasGuests = guests.length > 0;
-
-    const steps = [
-      {
-        done: lib.length > 0,
-        title: '想怎麼分群？',
-        body: tagsOn()
-          ? '女方好友、VIP、素食…先分好，排起來快很多。'
-          : '你們這邊還沒有標籤，跳過也排得完。',
-        act: tagsOn() ? { label:'去建立標籤', act:'goto-tags' } : null,
-      },
-      {
-        done: hasGuests,
-        title: '有誰要來？',
-        body: '填過回覆的人會自己出現在左邊，其他人手動加或整份匯入。',
-        act: { label:'匯入名單', act:'goto-import' },
-      },
-      {
-        done: false,
-        title: '當天有幾桌？',
-        body: '先把桌子開出來，才有地方放人。',
-        act: { label:'一次加好幾桌', act:'batch-table' },
-        alt: { label:'只加一桌', act:'add-table' },
-      },
-      {
-        done: false,
-        title: '把人放到桌上',
-        body: '排完按「儲存排桌」，再送到賓客的查座位頁。',
-        act: null,
-      },
-    ];
-
+  /* quiet：同一張提示卡的「小聲版」。
+     什麼都還沒有的時候，「怎麼把賓客放進來」左右兩欄都會問一次 ——
+     一個畫面上兩組一樣的按鈕，看起來像兩件不同的事。
+     左邊那一份改成底線文字按鈕（.ad-linkbtn）：話照樣講完，
+     但主要的那兩顆留給右邊，眼睛只會落在一個地方。 */
+  function promptCard(o, quiet) {
     return `
-      <div class="sp-start">
-        <div class="sp-start-head">
-          <span class="sp-start-title">誰坐哪一桌？</span>
-          <span class="sp-start-sub">四步，排完賓客就查得到自己的位子</span>
+      <div class="sp-prompt${o.soft ? ' is-soft' : ''}${quiet ? ' is-quiet' : ''}">
+        <div class="sp-prompt-title">${esc(o.title)}</div>
+        ${o.body ? `<p class="sp-prompt-body">${esc(o.body)}</p>` : ''}
+        <div class="sp-prompt-acts">
+          ${o.acts.map((a, i) => (quiet
+            ? `<button class="ad-linkbtn" type="button"
+                       data-act="${esc(a.act)}">${esc(a.label)}</button>`
+            : `<button class="btn small${i || o.soft ? ' ghost' : ''}" type="button"
+                       data-act="${esc(a.act)}">${esc(a.label)}</button>`)).join('')}
         </div>
-        <ol class="sp-start-steps">
-          ${steps.map((st, i) => `
-            <li class="sp-start-step${st.done ? ' is-done' : ''}">
-              <span class="sp-start-no">${st.done ? '✓' : i + 1}</span>
-              <div class="sp-start-body">
-                <div class="sp-start-name">${esc(st.title)}</div>
-                <p class="sp-start-text">${esc(st.body)}</p>
-                ${st.act || st.alt ? `<div class="ad-row">
-                  ${st.act ? `<button class="btn small" type="button" data-act="${st.act.act}">${esc(st.act.label)}</button>` : ''}
-                  ${st.alt ? `<button class="btn small ghost" type="button" data-act="${st.alt.act}">${esc(st.alt.label)}</button>` : ''}
-                </div>` : ''}
-              </div>
-            </li>`).join('')}
-        </ol>
       </div>`;
   }
 
+  const PROMPT_GUESTS = {
+    title: '你想如何匯入賓客名單？',
+    body:  '填過出席回覆的人可以直接帶過來；沒填的長輩、公司桌用檔案補。',
+    acts: [
+      { label:'從出席回覆匯入', act:'import-rsvp' },
+      { label:'匯入 Excel／CSV', act:'import-file' },
+    ],
+  };
+
+  const PROMPT_TABLES = {
+    title: '當天預計有幾桌呢？',
+    body:  '先把桌子開出來，才有地方放人。桌號、桌名、容量之後都改得動。',
+    acts: [
+      { label:'新增多個桌位', act:'batch-table' },
+      { label:'只加一桌',     act:'add-table' },
+    ],
+  };
+
+  /* 標籤不是必要的，所以講法也輕 —— 是「小技巧」，不是「第三步」 */
+  const PROMPT_TAGS = {
+    soft: true,
+    title: '💡 排桌小技巧',
+    body:  '有「大學同學」「公司同事」「長輩」這類分類嗎？'
+         + '建立賓客標籤，之後找人、分桌會更方便。',
+    acts: [{ label:'新增標籤', act:'goto-tags' }],
+  };
+
   /* ============================================================
-     畫面：未安排區 ＋ 桌位
+     畫面：待安排 ＋ 我的桌位
   ============================================================ */
   function renderBoard() {
     const guests = allGuests();
+    const tables = sortedTables();
+    const left = pending(guests);
 
-    /* ---- 未安排 ---- */
+    /* ---- 待安排 ----
+       標題上的數字是「真正還沒排的人」，不是「篩選之後看得到幾張卡」——
+       它回答的是「我還有多少事沒做」，不該因為打了搜尋關鍵字就變小。
+       篩掉了誰，由下面那一行條件自己講。 */
+    $('spPoolCount').textContent = `${left.groups} 組・${left.heads} 人`;
+    $('spMbPoolCount').textContent = String(left.groups);
+    $('spTableCount').textContent = `${tables.length} 桌`;
+
     const pool = sortGuests(guests.filter(inPool));
-    const poolHeads = pool.reduce((n, g) => n + g.count, 0);
-    $('spPoolCount').textContent = `${pool.length} 筆・${poolHeads} 人`;
-    $('spMbPoolCount').textContent = String(poolHeads);
-
     const body = $('spPoolBody');
     const anyUnseated = guests.some((g) => !g.tableId
       && (view.showDeclined || g.rsvp !== 'no'));
 
+    renderActiveFilters(pool.length);
+
     if (!loaded) {
       body.innerHTML = skeletonHtml(3, ['60%', '40%']);
+    } else if (!guests.length) {
+      /* 一位賓客都沒有：這一欄的工作就是「把人放進來」。
+         右邊那一欄會問同一句，所以這一份用小聲的版本（見 promptCard 的 quiet） */
+      body.innerHTML = promptCard(PROMPT_GUESTS, true);
     } else if (!pool.length) {
       body.innerHTML = anyUnseated
-        ? emptyState({ title:'沒有符合條件的賓客', body:'把篩選放寬一點，或清掉搜尋關鍵字。' })
-        : (guests.length
-            ? emptyState({ title:'都排好位子了', body:'每一位賓客都有桌次了。要調整的話，直接把人從桌上拖回來。' })
-            : emptyState({
-                title: '還沒有賓客',
-                body: '賓客填了出席回覆就會自動出現在這裡；沒填的長輩或臨時加的親友，'
-                    + '用「＋ 新增賓客」或「匯入」放進來。',
-              }));
+        ? emptyState({ title:'沒有符合條件的賓客',
+                       body:'把篩選放寬一點，或清掉搜尋關鍵字。',
+                       action: { label:'清除篩選與搜尋', id:'spPoolClear' } })
+        /* 上面的提醒列已經說過「✓ 所有賓客都已安排」了，
+           這一格講的是這一欄自己的事：沒有人在等位子。 */
+        : `<div class="sp-alldone">
+             <span class="sp-alldone-ic" aria-hidden="true">✓</span>
+             <span>沒有人在等位子了</span>
+             <small>要調整的話，直接把人從桌上拖回來。</small>
+           </div>`;
     } else if (view.sort === 'tag') {
       /* 依標籤分組：同一位賓客只會出現在一組（主要排序 Tag） */
       const order = groupOrder();
       const groups = new Map(order.map((t) => [t.id, { name: t.name, list: [] }]));
       groups.set('__other', { name: '其他', list: [] });
       pool.forEach((g) => {
-        const p = primaryTag(g);
-        groups.get(p ? p.id : '__other').list.push(g);
+        const t = primaryTag(g);
+        groups.get(t ? t.id : '__other').list.push(g);
       });
       body.innerHTML = [...groups.values()]
         .filter((grp) => grp.list.length)
         .map((grp) => `
           <div class="sp-group">
             <div class="sp-group-head">${esc(grp.name)}
-              <small>${grp.list.length} 筆・${grp.list.reduce((n, g) => n + g.count, 0)} 人</small>
+              <small>${grp.list.length} 組・${grp.list.reduce((n, g) => n + g.count, 0)} 人</small>
             </div>
             ${grp.list.map(guestCard).join('')}
           </div>`).join('');
@@ -1211,27 +1315,29 @@
       body.innerHTML = pool.map(guestCard).join('');
     }
 
-    /* ---- 桌位 ---- */
+    /* ---- 我的桌位 ---- */
     const board = $('spTablesBoard');
-    const tables = sortedTables();
     if (!tables.length) {
-      board.innerHTML = startGuideHtml(guests);
+      /* 骨架不變，只是這一欄現在裝的是提示卡。
+         一張桌子都沒有、也一位賓客都沒有的時候，兩件事都提 ——
+         但不編號：先建標籤、先匯名單、先開桌子都可以。 */
+      board.innerHTML = (guests.length ? '' : promptCard(PROMPT_GUESTS))
+        + promptCard(PROMPT_TABLES)
+        + (tagsOn() && !tagLib().length ? promptCard(PROMPT_TAGS) : '');
       return;
     }
 
     board.innerHTML = tables.map((t) => {
       const { rows, heads } = seatedOf(t.id, guests);
-      const left = t.cap - heads;
-      const state = heads > t.cap ? 'over' : (left === 0 ? 'full' : 'ok');
+      const room = t.cap - heads;
+      const state = heads > t.cap ? 'over' : (room === 0 ? 'full' : 'ok');
+      /* 這一句回答的是「這一桌還放不放得下」，所以講的是容量與空位，
+         不是「現在坐了幾個」——「3 / 10 人」要新人自己減一次才知道答案。 */
       const leftText = heads > t.cap
-        ? `超過容量 ${heads - t.cap} 位`
-        : (left === 0 ? '已滿' : `剩餘 ${left} 位`);
+        ? `超過 ${heads - t.cap} 位`
+        : (room === 0 ? '已滿' : `剩 ${room} 位`);
 
       const flags = tableFlags(rows);
-
-      /* 已經排好的人不會因為篩選而消失 —— 那樣會讓人以為位子不見了。
-         搜尋到的那幾位改成在桌上標起來（「王小明在第 06 桌」一眼看到）。 */
-      const cards = rows;
       const type = typeName(t);
 
       /* 搜尋有命中這一桌的話就自己打開 —— 收起來的桌子裡標了一位「王小明」
@@ -1243,33 +1349,54 @@
 
       return `
         <article class="sp-table is-${state}${folded ? ' is-folded' : ''}" data-table="${esc(t.id)}">
-          <!-- 桌號、桌名、人數、剩餘位子都在分隔線「上面」：
-               這四件事講的是同一張桌子的狀態，線的下面才是坐在上面的人 -->
+          <!-- 第一行是「這是哪一桌」（桌號、桌名），第二行是「現在坐得怎麼樣」
+               （用途、幾人、還剩幾位）。編輯與刪除收進「⋮」——
+               它們一年按不到三次，卻一直站在桌名旁邊 -->
           <header class="sp-table-head" draggable="true" data-table-head="${esc(t.id)}">
             <div class="sp-table-head-row">
               <span class="sp-table-no">${no2(t.no)}</span>
               <!-- 沒設定桌名就只留桌號，不要生出「（桌名）」這種空殼 -->
               <span class="sp-table-name">${esc(t.name)}</span>
-              ${type ? `<span class="sp-table-type">${esc(type)}</span>` : ''}
-              <button class="ad-edit sp-table-edit" type="button" data-edit-table="${esc(t.id)}">編輯</button>
               <!-- 收合：手機／平板才看得到（桌機要靠桌卡是打開的才拖得進人） -->
               <button class="sp-table-fold" type="button" data-fold-table="${esc(t.id)}"
                       aria-expanded="${folded ? 'false' : 'true'}" aria-controls="${esc(bodyId)}"
                       aria-label="${folded ? '展開' : '收合'}第 ${no2(t.no)} 桌">▼</button>
+              ${rowMenuBtn('spTable', t.id)}
             </div>
             <div class="sp-table-meta">
-              <span class="sp-table-count">${heads} / ${t.cap} 人</span>
-              <span class="sp-table-left">${esc(leftText)}</span>
+              ${type ? `<span class="ad-tag">${esc(type)}</span>` : '<span></span>'}
+              <span class="sp-table-cap">${t.cap} 人
+                <b class="sp-table-left">・${esc(leftText)}</b></span>
             </div>
           </header>
           ${flags ? `<div class="sp-table-flags">${flags}</div>` : ''}
           <div class="sp-table-body" id="${esc(bodyId)}" data-drop="${esc(t.id)}">
-            ${cards.length
-              ? cards.map(guestCard).join('')
+            ${rows.length
+              ? rows.map(guestCard).join('')
               : `<div class="sp-table-empty"><span class="only-fine">把賓客拖進來</span><span class="only-coarse">點賓客卡右邊的 ⇄，選這一桌</span></div>`}
           </div>
         </article>`;
     }).join('');
+  }
+
+  /* 套了哪些條件寫在搜尋框底下。名單少了人卻看不出原因，
+     是這一頁最容易讓人以為「資料不見了」的地方。 */
+  function renderActiveFilters(shown) {
+    const box = $('spActiveFilters');
+    const bits = [];
+    if (view.q) bits.push('搜尋中');
+    if (view.rsvp !== 'all') bits.push(RSVP_TEXT[view.rsvp]);
+    view.tags.forEach((id) => { const n = guestTagName(id); if (n) bits.push(n); });
+    if (view.veg) bits.push('素食');
+    if (view.seat) bits.push('兒童座椅');
+    if (view.showDeclined) bits.push('含無法出席');
+
+    if (!bits.length) { box.hidden = true; box.innerHTML = ''; return; }
+    box.hidden = false;
+    box.innerHTML = `
+      <span class="sp-activefilters-text">${bits.map(esc).join('・')}
+        <b>顯示 ${shown} 組</b></span>
+      <button class="sp-activefilters-clear" id="spFilterReset" type="button">清除</button>`;
   }
 
   /* 收合／展開一桌（只有手機、平板按得到這顆鈕）。
@@ -1300,12 +1427,21 @@
       sp.match.some((m) => x.toLowerCase().includes(m.toLowerCase())));
   }
 
-  /* 一位賓客的素食人數：回覆填過葷素分配的用實際數字，
-     只有標籤、沒有數字的才把整筆算成素食（三位裡只有一位吃素時不會多算） */
+  /* 一位賓客的素食人數，由準到粗依序採用：
+       ① 新人在賓客資料裡自己設的人數 —— 那是最後一次有人真的確認過
+       ② 舊資料的 meal:'veg'|'meat'（整筆素／整筆葷），只讀不寫
+       ③ 回覆裡的葷素分配（實際數字，三位裡只有一位吃素時不會多算）
+       ④ 只有標籤、沒有數字的，整筆算成素食
+     ①②都會被 clamp 在 0..人數：人數後來被改小的話，素食不能比總人數還多。 */
   function vegOf(g) {
+    const cap = Math.max(0, Number(g.count) || 0);
+    if (g.vegN != null) return Math.min(cap, Math.max(0, g.vegN));
+    if (g.meal === 'veg') return cap;
+    if (g.meal === 'meat') return 0;
     const vegSp = SPECIAL_TAGS.find((sp) => sp.key === 'veg');
-    return g.veg > 0 ? g.veg : (hasSpecial(g, vegSp) ? g.count : 0);
+    return Math.min(cap, g.veg > 0 ? g.veg : (hasSpecial(g, vegSp) ? cap : 0));
   }
+
   /* 兒童椅：這是「要跟飯店要幾張椅子」的數字，單位是張不是人 */
   function seatsOf(g) { return Number(g.seats) || 0; }
 
@@ -1315,6 +1451,7 @@
     return {
       veg:   rows.reduce((n, g) => n + vegOf(g), 0),
       seats: rows.reduce((n, g) => n + seatsOf(g), 0),
+      hold:  rows.reduce((n, g) => n + (g.rsvp === 'maybe' ? (Number(g.count) || 0) : 0), 0),
     };
   }
 
@@ -1326,9 +1463,13 @@
     const out = [];
 
     const vegSp = SPECIAL_TAGS.find((sp) => sp.key === 'veg');
-    const { veg, seats } = tableNeeds(rows);
+    const { veg, seats, hold } = tableNeeds(rows);
     if (veg) out.push(`${vegSp.icon} ${veg} 位素食`);
     if (seats) out.push(`🪑 ${seats} 個兒童椅`);
+    /* 保留席：還沒確認會不會來的人也佔著位子。
+       和素食、兒童椅並排，因為它們是同一種東西 ——
+       「這一桌要跟飯店講的話」。 */
+    if (hold) out.push(`🔖 ${hold} 個保留席`);
 
     /* 有小孩但沒要兒童椅的，另外算一筆，才不會和上面那個重複數 */
     const kidSp = SPECIAL_TAGS.find((sp) => sp.key === 'kid');
@@ -1343,7 +1484,7 @@
       if (n) out.push(`${sp.icon} ${n} 位${sp.label}`);
     });
 
-    return out.map((t) => `<span class="sp-flag">${esc(t)}</span>`).join('');
+    return out.map((t) => `<span class="ad-tag">${esc(t)}</span>`).join('');
   }
 
   /* ============================================================
@@ -1386,7 +1527,7 @@
   }
 
   /* ============================================================
-     畫面：工具列（標籤篩選、桌號下拉、同步狀態）
+     畫面：工具列與篩選彈窗
   ============================================================ */
   function renderTools() {
     const lib = tagLib();
@@ -1394,70 +1535,129 @@
     $('spTagChips').innerHTML = lib.map((t) => `
       <button class="ad-chip${view.tags.has(t.id) ? ' is-on' : ''}" type="button"
               data-tag="${esc(t.id)}">${esc(t.name)}</button>`).join('');
-    /* 標籤權重只有在「優先按照標籤分組」時才有作用，
-       其他排序方式下擺著只會讓人不知道那顆按鈕是幹嘛的 */
-    $('spTagOrderBtn').hidden = !lib.length || view.sort !== 'tag';
+    $('spRsvpChips').querySelectorAll('.ad-chip').forEach((c) => {
+      c.classList.toggle('is-on', c.dataset.rsvp === view.rsvp);
+    });
+    $('spVegChip').classList.toggle('is-on', view.veg);
+    $('spSeatChip').classList.toggle('is-on', view.seat);
     $('spShowDeclined').checked = view.showDeclined;
   }
 
+  /* 漏斗鈕上那個數字：篩選收起來了，但「現在有在篩」不能跟著收起來 */
   function renderFilterToggle() {
-    const n = (view.rsvp !== 'all' ? 1 : 0)
-            + view.tags.size
-            + (view.showDeclined ? 1 : 0);
+    const n = filterCount();
     const btn = $('spFilterToggle');
-    btn.textContent = n ? `篩選（${n}）` : '篩選';
+    const dot = $('spFilterCount');
     btn.classList.toggle('is-on', n > 0);
-    /* 有套條件時不讓它被收起來藏著，不然會找不到為什麼名單少了人 */
-    const open = filtersOpen || n > 0;
-    $('spFilters').hidden = !open;
-    btn.setAttribute('aria-expanded', String(open));
+    dot.hidden = !n;
+    dot.textContent = String(n);
+    btn.setAttribute('aria-label', n ? `篩選（已套用 ${n} 項）` : '篩選待安排賓客');
+  }
+
+  /* ============================================================
+     畫面：儲存與發布
+     ------------------------------------------------------------
+     兩個概念，兩顆按鈕，一句狀態：
+
+       儲存目前結果 ＝ 把排桌存起來（只有新人看得到）
+       發布給賓客   ＝ 讓賓客查得到最新這一版
+
+     本來的「儲存排桌／再送一次／送到賓客的座位位置」三種說法講的是這兩件事，
+     而且最長的那一句沒有人會這樣講話。現在畫面上永遠回答得了兩個問題：
+     「我改的存了嗎」「賓客現在看到的是哪一版」。
+
+     主要動作只有一顆：還沒存就是「儲存」，存好了還沒發布就換成「發布給賓客」。
+  ============================================================ */
+  /* 發布時間的寫法：「8/25 16:10 發布」。
+     這是一句話裡的一個時間點，不是一筆紀錄的時間戳 ——
+     年份與秒數在這裡沒有人要讀（婚禮的排桌不會跨年），寫出來只會變長。 */
+  function fmtPublishedAt(ms) {
+    const d = new Date(ms);
+    const p = (n) => String(n).padStart(2, '0');
+    return `${d.getMonth() + 1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+
+  /* 現在是哪一種狀態。回傳徽章、說明（一到兩句）、以及誰是主要動作。
+
+     八種狀態，由三件事決定：
+       dirty     有沒存的改動
+       savedAt   存過沒
+       syncedAt  發布過沒（以及是不是比 savedAt 新）
+
+     順序是刻意的：「沒存」永遠最先講。存檔是唯一一件「關掉分頁就消失」
+     的事，其餘狀態都還有下一次機會。 */
+  function syncState() {
+    const seated = allGuests().some((g) => g.tableId);
+    const published = syncedAt ? `賓客目前看到 ${fmtPublishedAt(syncedAt)} 發布的版本。` : '';
+
+    /* 1. 全新，還沒排過任何人 —— 這時候沒有任何動作該被強調，
+          畫面上該走的下一步寫在左右兩欄的提示卡裡，不在這裡。 */
+    if (!dirty && !syncedAt && !seated) {
+      return { state:'none', badge:'尚未排桌', lines:['還沒有安排賓客。'], cta:'' };
+    }
+    /* 2 / 4 / 7 / 8. 有沒存的改動 */
+    if (dirty) {
+      return { state:'dirty', badge:'尚未儲存',
+               lines:['排桌有變更。', published].filter(Boolean), cta:'save' };
+    }
+    /* 5. 已發布，而且之後沒再存過 */
+    if (syncedAt && syncedAt >= savedAt) {
+      return { state:'ok', badge:'已發布',
+               lines:['賓客可查詢桌次。', `${fmtPublishedAt(syncedAt)} 發布`], cta:'' };
+    }
+    /* 6. 發布過、之後改了也存了，還沒重新發布 */
+    if (syncedAt) {
+      return { state:'stale', badge:'有未發布的變更', lines:[published], cta:'publish' };
+    }
+    /* 3. 存過，但從來沒發布過 */
+    return { state:'none', badge:'尚未發布',
+             lines:['賓客目前無法查詢桌次。'], cta:'publish' };
   }
 
   function renderSyncState() {
-    const el = $('spSyncState');
-    const note = $('spSyncNote');
-    const btn = $('spSyncBtn');
+    const st = syncState();
+    const badge = $('spSyncState');
+    const note  = $('spSyncNote');
+    const pub   = $('spSyncBtn');
+    const save  = $('spSaveBtn');
 
-    /* hint 只補徽章沒講的事（時間、還有沒存檔的異動）——
-       徽章已經是「有修改還沒送出」了，hint 不用把同一件事再講一次句子版。 */
-    let state = 'none';
-    let text = '還沒送出';
-    let hint = '還沒送到賓客的查座位頁';
+    badge.dataset.state = st.state;
+    badge.textContent = st.badge;
+    /* 兩句話各自一行：第二句講的是「賓客那邊現在是什麼樣子」，
+       跟第一句不是同一件事，串成一長行會讀成一句。 */
+    note.innerHTML = st.lines.map((t) => `<span>${esc(t)}</span>`).join('');
 
-    if (syncedAt && syncedAt >= savedAt) {
-      state = 'ok';
-      text = '已送出';
-      hint = `最後送出：${fmtTime(syncedAt)}`;
-    } else if (syncedAt) {
-      state = 'stale';
-      text = '有修改還沒送出';
-      hint = `最後送出：${fmtTime(syncedAt)}`;
-    }
-    if (dirty) {
-      hint += `（還有修改沒存檔）`;
-    }
+    save.textContent = '儲存';
+    pub.textContent = '發布給賓客';
 
-    el.dataset.state = state;
-    el.textContent = text;
-    note.textContent = hint;
-    btn.textContent = syncedAt ? '再送一次' : '送到賓客的查座位頁';
+    /* 主要動作最多只有一顆，而且可能一顆都沒有（狀態 1 與 5：
+       沒有東西要存、也沒有新版本要發布，這時候不該有人被叫去按什麼）。
+       兩顆按鈕都留著能按 —— 只是都不搶眼。 */
+    save.classList.toggle('ghost', st.cta !== 'save');
+    pub.classList.toggle('ghost', st.cta !== 'publish');
+    save.classList.toggle('is-dirty', dirty);
 
-    $('spSaveBtn').classList.toggle('is-dirty', dirty);
     $('spUndo').disabled = !undoStack.length;
     $('spRedo').disabled = !redoStack.length;
 
-    /* 手機底列與「⋮ 更多」裡的那一組是同一件事，狀態要一起同步 */
-    $('spMbSave').classList.toggle('is-dirty', dirty);
+    /* 手機底列與「⋮ 更多」裡的那一組是同一件事，狀態要一起同步。
+       底列那一句是手機上唯一看得到這件事的地方 —— 頂列早就被捲走了。 */
+    const mbSave = $('spMbSave');
+    mbSave.textContent = save.textContent;
+    mbSave.classList.toggle('is-dirty', dirty);
+    mbSave.classList.toggle('ghost', st.cta !== 'save');
+    $('spMbNote').textContent = `${st.badge}　${st.lines.join('　')}`;
+    $('spMbNote').dataset.state = st.state;
     $('spMbUndo').disabled = !undoStack.length;
     $('spMbRedo').disabled = !redoStack.length;
-    $('spMbSync').textContent = btn.textContent;
-    $('spMoreSync').textContent = hint;
+    $('spMbSync').textContent = pub.textContent;
+    $('spMoreSync').textContent = st.lines.join('　');
   }
 
   /* ============================================================
      手機的固定底列
      ------------------------------------------------------------
-     .sp-bar 不是 sticky，所以手機上的流程是：捲到最上面看未安排 →
+     .sp-bar 不是 sticky，所以手機上的流程是：捲到最上面看待安排 →
      往下捲找桌位 → 點卡片 → 移動 → 再捲回最上面按儲存。
      一場 30 桌的婚禮，這條路要走幾十遍。
      所以只把兩件事釘在畫面上：還剩幾位沒排、儲存。
@@ -1490,7 +1690,7 @@
     renderTableList();
     renderSyncState();
     if (!peekEl.hidden) closePeek();
-    if (!$('spDrawer').hidden) fillDrawer($('spDrawerId').value);
+    if (!$('spGuestMask').hidden) fillGuest($('spGuestId').value);
   }
 
   /* ============================================================
@@ -1503,7 +1703,7 @@
     });
   }
 
-  /* 兩位賓客交換位子；其中一位在未安排區時，就是「換過去、把他換下來」 */
+  /* 兩位賓客交換位子；其中一位還在待安排時，就是「換過去、把他換下來」 */
   function swapGuests(aId, bId) {
     if (aId === bId) return;
     mutate(() => {
@@ -1518,7 +1718,7 @@
   /* ============================================================
      拖曳
      ------------------------------------------------------------
-     ・賓客卡 → 桌位／未安排區：安排、換桌、退回未安排
+     ・賓客卡 → 桌位／待安排區：安排、換桌、退回待安排
      ・賓客卡 → 賓客卡：兩位交換
      ・桌位標題 → 桌位標題：調整桌位順序
      手機沒有 HTML5 拖曳，所以每張卡片都留一顆「移動到桌位」（見 openMove）。
@@ -1529,9 +1729,20 @@
   function clearDropMarks() {
     document.querySelectorAll('.sp-table.is-drop, .sp-pool.is-drop, .sp-card.is-drop')
       .forEach((el) => {
-        el.classList.remove('is-drop');
+        el.classList.remove('is-drop', 'is-drop-over');
         el.removeAttribute('data-hint');
       });
+    /* 目標是「桌上的某一張卡」時，那張桌子不能跟著暗下去 ——
+       opacity 會連同裡面的卡片一起吃掉（見 .sp-board.is-dnd 的規則） */
+    document.querySelectorAll('.is-drop-host')
+      .forEach((el) => el.classList.remove('is-drop-host'));
+  }
+
+  /* 拖曳期間整塊板子降對比，只有目標維持原樣 ——
+     「哪裡放得下」用明暗講，顏色就空出來只講「這一放會不會超過容量」 */
+  function setDndDim(on) {
+    const b = document.querySelector('.sp-board');
+    if (b) b.classList.toggle('is-dnd', !!on);
   }
 
   function bindDnd() {
@@ -1549,6 +1760,7 @@
         card.classList.add('is-dragging');
       } else return;
       closePeek();
+      setDndDim(true);
       e.dataTransfer.effectAllowed = 'move';
       /* Firefox 需要真的設一份資料，拖曳才會開始 */
       try { e.dataTransfer.setData('text/plain', dragGuest || dragTable); } catch {}
@@ -1557,6 +1769,7 @@
     board.addEventListener('dragend', () => {
       document.querySelectorAll('.sp-card.is-dragging')
         .forEach((el) => el.classList.remove('is-dragging'));
+      setDndDim(false);
       clearDropMarks();
       dragGuest = '';
       dragTable = '';
@@ -1573,16 +1786,14 @@
 
     board.addEventListener('dragleave', (e) => {
       const zone = dropZone(e.target);
-      if (zone && !zone.el.contains(e.relatedTarget)) {
-        zone.el.classList.remove('is-drop');
-        zone.el.removeAttribute('data-hint');
-      }
+      if (zone && !zone.el.contains(e.relatedTarget)) clearDropMarks();
     });
 
     board.addEventListener('drop', (e) => {
       const zone = dropZone(e.target);
       if (!zone) return;
       e.preventDefault();
+      setDndDim(false);
       clearDropMarks();
 
       if (dragTable) {
@@ -1619,13 +1830,22 @@
     return null;
   }
 
-  /* 放置提示：要放進第幾桌、放進去會不會超過容量 */
+  /* 放置提示：要放進第幾桌、放進去會不會超過容量。
+     目標本身是中性的（深墨框 ＋ 灰底）；紅色留給 .is-drop-over ——
+     這一頁上紅色只有一個意思，就是「這一放會超過容量」。
+     ⚠ 不能叫 .is-over：那個名字已經是「這一桌本來就超過容量」了（見
+     renderBoard 的 state），toggle 它會在拖曳時把那桌真正的紅框弄不見。 */
   function markZone(zone) {
     clearDropMarks();
     zone.el.classList.add('is-drop');
+    /* 目標是卡片時，連它所在的那一欄一起標成「不要暗下去」 */
+    if (zone.kind === 'card') {
+      const host = zone.el.closest('.sp-table, .sp-pool');
+      if (host) host.classList.add('is-drop-host');
+    }
 
     if (zone.kind === 'pool') {
-      zone.el.dataset.hint = '移回未安排';
+      zone.el.dataset.hint = '移回待安排';
       return;
     }
     if (zone.kind === 'card') {
@@ -1644,7 +1864,9 @@
     const heads = seatedOf(t.id, guests).heads;
     const already = plan.assign[dragGuest] === t.id;
     const after = already ? heads : heads + (g ? g.count : 0);
-    zone.el.dataset.hint = after > t.cap
+    const over = after > t.cap;
+    zone.el.classList.toggle('is-drop-over', over);
+    zone.el.dataset.hint = over
       ? `⚠️ 此桌將超過容量（${after} / ${t.cap}）`
       : `放入第 ${no2(t.no)} 桌`;
   }
@@ -1676,18 +1898,24 @@
     moveGuestId = guestId;
     $('spMoveWho').textContent = `${g.name}・${g.count} 人`;
     const guests = allGuests();
+    /* 一列一行：桌號｜桌名 ＋ 類別靠左，現況人數靠右。
+       類別是必要的 —— 只有「01｜主桌」看不出這是什麼桌，而桌名本來就可以不填。
+       放不進去就超過容量，那一格轉紅並掛上 ⚠️（不另外加一段文字，一行放不下兩件事）。 */
     $('spMoveList').innerHTML = sortedTables().map((t) => {
       const heads = seatedOf(t.id, guests).heads;
       const after = plan.assign[guestId] === t.id ? heads : heads + g.count;
-      const warn = after > t.cap ? `<span class="sp-move-warn">⚠️ 將超過容量</span>` : '';
+      const over = after > t.cap;
+      const cap = `${heads} / ${t.cap} 人`;
       return `
         <button class="sp-move-item${plan.assign[guestId] === t.id ? ' is-on' : ''}"
-                type="button" data-to="${esc(t.id)}">
+                type="button" data-to="${esc(t.id)}"
+                aria-label="${esc(tableLabel(t))}，${esc(typeName(t))}，目前 ${cap}${over ? '，放進去會超過容量' : ''}">
           <span class="sp-move-name">${esc(tableLabel(t))}</span>
-          <span class="sp-move-cap">${heads} / ${t.cap} 人</span>${warn}
+          <span class="ad-tag sp-move-type">${esc(typeName(t))}</span>
+          <span class="sp-move-cap${over ? ' is-over' : ''}">${over ? '⚠️ ' : ''}${cap}</span>
         </button>`;
     }).join('')
-      + `<button class="sp-move-item is-clear" type="button" data-to="">移出桌位（放回未安排）</button>`;
+      + `<button class="sp-move-item is-clear" type="button" data-to="">移出桌位（放回待安排）</button>`;
     moveMask.hidden = false;
   }
 
@@ -1759,7 +1987,7 @@
     const ok = await confirmModal({
       title: `刪除第 ${no2(t.no)} 桌`,
       message: n
-        ? `這一桌目前有 ${n} 位賓客，刪掉之後他們會回到「未安排」。`
+        ? `這一桌目前有 ${n} 位賓客，刪掉之後他們會回到「待安排」。`
         : '這一桌目前是空的。刪掉之後可以按「復原」救回來。',
       danger: true,
       confirmText: '刪除',
@@ -1775,6 +2003,18 @@
     toast('桌位已刪除，可以按「復原」救回來');
   }
 
+  /* ============================================================
+     一次加好幾桌
+     ------------------------------------------------------------
+     本來是一個「要加幾桌？」的輸入框。可是新人心裡想的從來不是一個總數，
+     而是「主桌一桌、同學大概三桌、同事兩桌、再留兩桌預備」——
+     問一個總數，等於要他先在腦子裡把那筆帳算完再告訴我們答案。
+
+     所以這裡照類別問，每一列一個 −  N  ＋（也可以直接打字）。
+     主桌預設 1（婚宴只會有一桌），其餘把建議桌數平均分掉，
+     預備桌留 0 —— 那是「怕人多」才加的，不該替新人決定。
+  ============================================================ */
+
   /* 要開幾桌？系統已經知道總人數了，就別讓新人自己算。
      用「需要安排的人數 ÷ 每桌容量」無條件進位，扣掉已經開好的桌數。 */
   function suggestTables() {
@@ -1785,37 +2025,105 @@
     return { heads, need, more: Math.max(1, need - plan.tables.length) };
   }
 
-  async function batchAddTables() {
-    const { heads, need, more } = suggestTables();
-    const hint = heads
-      ? `目前 ${heads} 人，${DEFAULT_CAP} 人桌大約需要 ${need} 桌${
-          plan.tables.length ? `（已經開了 ${plan.tables.length} 桌）` : ''}。`
-      : '';
+  const batchMask = $('spBatchMask');
+  /* 用陣列不是物件：自訂類別可以有好幾列（招待桌、廠商桌…） */
+  let batchRows = [];
 
-    const raw = await promptModal({
-      title: '一次加好幾桌',
-      message: `${hint}會從第 ${no2(nextTableNo())} 桌接著編號，容量預設 ${DEFAULT_CAP} 人，之後都可以改。`,
-      placeholder: '例如 12',
-      maxLength: 3,
-      value: String(more),
-      confirmText: '新增',
+  function typeLabel(key) {
+    const hit = TABLE_TYPES.find(([k]) => k === key);
+    return hit ? hit[1] : '';
+  }
+
+  function openBatch() {
+    const { heads, need, more } = suggestTables();
+    /* 已經有主桌了就不要再預設一桌 —— 一場婚宴只有一桌主桌 */
+    const hasMain = plan.tables.some((t) => t.type === 'main');
+    const spread = Math.max(0, more - (hasMain ? 0 : 1));
+    const per = Math.floor(spread / BATCH_SPREAD.length);
+    const extra = spread - per * BATCH_SPREAD.length;
+
+    batchRows = BATCH_TYPES.map((key) => {
+      if (key === 'main') return { type:'main', name:'', n: hasMain ? 0 : 1 };
+      const i = BATCH_SPREAD.indexOf(key);
+      return { type: key, name:'', n: i < 0 ? 0 : per + (i < extra ? 1 : 0) };
     });
-    if (!raw) return;
-    const n = clampInt(raw, 1, MAX_TABLES, 0);
-    if (!n) { toast('請輸入 1 到 60 之間的數字', true); return; }
+
+    $('spBatchHint').textContent =
+      (heads ? `目前 ${heads} 人，${DEFAULT_CAP} 人桌大約需要 ${need} 桌${
+        plan.tables.length ? `（已經開了 ${plan.tables.length} 桌）` : ''}。` : '')
+      + `會從第 ${no2(nextTableNo())} 桌接著編號，容量預設 ${DEFAULT_CAP} 人，之後都可以改。`;
+
+    renderBatch();
+    batchMask.hidden = false;
+  }
+
+  function batchTotal() {
+    return batchRows.reduce((n, r) => n + (Number(r.n) || 0), 0);
+  }
+
+  function renderBatch() {
+    $('spBatchList').innerHTML = batchRows.map((row, i) => {
+      const label = row.type === 'custom' ? (row.name || '自訂') : typeLabel(row.type);
+      return `
+        <div class="sp-batch-row">
+          ${row.type === 'custom'
+            ? `<input class="ad-input sp-batch-name" type="text" maxlength="10"
+                      placeholder="自訂類別" value="${esc(row.name)}"
+                      data-batch-name="${i}" aria-label="自訂類別名稱">`
+            : `<span class="sp-batch-lab">${esc(label)}</span>`}
+          <div class="ad-stepper">
+            <button class="ad-stepper-btn" type="button" data-batch-delta="-1" data-i="${i}"
+                    aria-label="${esc(label)}減一桌">−</button>
+            <input class="ad-input ad-stepper-input" type="number" min="0" max="${MAX_TABLES}"
+                   step="1" inputmode="numeric" value="${row.n}" data-batch-n="${i}"
+                   aria-label="${esc(label)}要幾桌">
+            <button class="ad-stepper-btn" type="button" data-batch-delta="1" data-i="${i}"
+                    aria-label="${esc(label)}加一桌">＋</button>
+          </div>
+          <span class="sp-batch-unit">桌</span>
+          ${row.type === 'custom'
+            ? `<button class="ad-del ad-del-inline" type="button" data-batch-del="${i}">移除</button>`
+            : ''}
+        </div>`;
+    }).join('');
+
+    const total = batchTotal();
+    const room = MAX_TABLES - plan.tables.length;
+    $('spBatchTotal').textContent = total
+      ? `共 ${Math.min(total, room)} 桌${total > room ? `（已達上限 ${MAX_TABLES} 桌）` : ''}`
+      : '還沒選任何桌位';
+    $('spBatchGo').disabled = total <= 0 || room <= 0;
+  }
+
+  function setBatch(i, n) {
+    if (!batchRows[i]) return;
+    batchRows[i].n = clampInt(n, 0, MAX_TABLES, 0);
+    renderBatch();
+  }
+
+  function applyBatch() {
     const room = MAX_TABLES - plan.tables.length;
     if (room <= 0) { toast(`最多 ${MAX_TABLES} 桌`, true); return; }
-    const add = Math.min(n, room);
+    const want = batchTotal();
+    if (!want) { toast('每一列都是 0，還沒有桌位要新增', true); return; }
+    const add = Math.min(want, room);
 
     mutate(() => {
-      for (let i = 0; i < add; i++) {
-        plan.tables.push({
-          id: newId('tb'), no: nextTableNo(), name: '', cap: DEFAULT_CAP,
-          type: 'relative', typeName: '', order: plan.tables.length + 1,
-        });
-      }
+      let left = add;
+      batchRows.forEach((row) => {
+        for (let i = 0; i < (Number(row.n) || 0) && left > 0; i++, left--) {
+          plan.tables.push({
+            id: newId('tb'), no: nextTableNo(), name:'', cap: DEFAULT_CAP,
+            type: row.type,
+            typeName: row.type === 'custom' ? String(row.name || '').slice(0, 10) : '',
+            order: plan.tables.length + 1,
+          });
+        }
+      });
     });
-    toast(add < n ? `已新增 ${add} 桌（達到上限 ${MAX_TABLES} 桌）` : `已新增 ${add} 桌`);
+
+    batchMask.hidden = true;
+    toast(add < want ? `已新增 ${add} 桌（達到上限 ${MAX_TABLES} 桌）` : `已新增 ${add} 桌`);
   }
 
   function moveTable(id, dir) {
@@ -1827,107 +2135,329 @@
   }
 
   /* ============================================================
-     賓客詳細資料抽屜
+     賓客詳細資料（彈窗）
+     ------------------------------------------------------------
+     本來是從右邊滑出來的抽屜。後台其他「點一列看細節」的地方都是彈窗，
+     只有這一個是抽屜 —— 同一件事有兩種開法，使用者就得學兩次。
+
+     裡面的欄位也一起改成「選的」而不是「打字的」：
+       會不會來　分段控制（會來／保留席／無法出席）
+       類別　　　出席表單上問的就是那四個，這裡給同一份
+       標籤　　　和「設定賓客標籤」那一頁同一組 chip，點一下就切換
+       人數／素食／兒童椅／喜餅　−  N  ＋
+     打字打出來的「女方朋友」「女方的朋友」永遠分不到同一組，
+     而排桌這件事從頭到尾都在分組。
+
+     ---- 版面：一列一欄位，標籤在左邊（.sp-frow）----
+     改版前每個欄位都是「標籤獨佔一行 ＋ 控制項一行」，九個欄位光標籤就
+     吃掉三百多 px，600px 寬的彈窗要捲兩屏才看得完。現在標籤收到左邊
+     5.5em 的固定欄，一個 74–124px 的區塊變成一列 44px。
+     這不是新發明 —— peek 的 .sp-peek-row 本來就長這樣，兩邊從此同一種讀法。
+
+     ---- 順序 ----
+     備註貼在名字底下（它講的是「這個人是誰」）。接著是排桌真正在決定的
+     四件事：會不會來 → 人數 → 類別 → 標籤。要跟飯店講的數字（素食、
+     兒童椅、喜餅）排第二段，最少動的身分欄位（編號、姓名）排最後。
+
+     ---- 桌位不在這裡 ----
+     桌位在外面就改得動（桌機拖曳、每張卡片的「⇄」、peek 的「移動到桌位」），
+     所以這個彈窗不再放一份。改版前這裡有兩份：標題底下的「目前在 02」
+     和表單最底下的「目前桌位」下拉 —— 同一件事講兩次，還有一次是可改的。
   ============================================================ */
-  const drawer = $('spDrawer');
-  const drawerMask = $('spDrawerMask');
+  const guestMask = $('spGuestMask');
 
-  function openDrawer(guestId) {
-    if (!fillDrawer(guestId)) return;
-    drawer.hidden = false;
-    drawerMask.hidden = false;
-    $('spDrawerCode').focus();
+  function openGuest(guestId) {
+    if (!fillGuest(guestId)) return;
+    guestMask.hidden = false;
+    /* 焦點放在第一列「會不會來」目前的答案上。
+       改版前是 $('spGuestCode').focus() —— 編號現在排在最後一列，
+       那樣一打開就捲到底，看不到最重要的那幾格。 */
+    const first = guestMask.querySelector('#spGuestRsvp input:checked')
+      || guestMask.querySelector('#spGuestRsvp input');
+    if (first) first.focus();
   }
 
-  function closeDrawer() {
-    drawer.hidden = true;
-    drawerMask.hidden = true;
+  function closeGuest() { guestMask.hidden = true; }
+
+  function radiosHtml(name, list, cur) {
+    return list.map(([v, label]) => `
+      <label class="ad-radio">
+        <input type="radio" name="${esc(name)}" value="${esc(v)}"${v === cur ? ' checked' : ''}>
+        <span>${esc(label)}</span>
+      </label>`).join('');
   }
 
-  function fillDrawer(guestId) {
-    const g = guestById(guestId);
-    if (!g) { closeDrawer(); return false; }
-    const t = tableById(g.tableId);
+  /* 分段控制：選項連成一條、填滿整列。三個互斥又短的選項用這個形狀，
+     比三顆會換行的膠囊省一半高度，也看得出它們是同一個問題的答案。
+     底下仍然是 radio input（鍵盤、螢幕報讀器、pickedRadio 都照舊），
+     只是把圓點藏起來 —— 選中的狀態靠 :has(input:checked) 畫。 */
+  function segHtml(name, list, cur) {
+    return list.map(([v, label]) => `
+      <label class="sp-seg-item">
+        <input type="radio" name="${esc(name)}" value="${esc(v)}"${v === cur ? ' checked' : ''}>
+        <span>${esc(label)}</span>
+      </label>`).join('');
+  }
 
-    $('spDrawerId').value = g.id;
-    $('spDrawerName').textContent = g.name;
-    $('spDrawerWhere').textContent = t
-      ? `目前在 ${tableLabel(t)}`
-      : '目前未安排桌位';
+  /* 單選的 chip。選項多到分段控制放不下時用它（類別有五、六個），
+     形狀和正下方的「標籤」一樣，兩列自然讀成同一個「分群」區塊。 */
+  function chipPickHtml(name, list, cur) {
+    return list.map(([v, label]) => `
+      <label class="sp-pick-item">
+        <input type="radio" name="${esc(name)}" value="${esc(v)}"${v === cur ? ' checked' : ''}>
+        <span>${esc(label)}</span>
+      </label>`).join('');
+  }
 
-    $('spDrawerCode').value = g.code;
-    const nameInput = $('spDrawerNameInput');
-    nameInput.value = g.name;
-    nameInput.disabled = g.src === 'rsvp';
-    $('spDrawerNameLock').hidden = g.src !== 'rsvp';
-    $('spDrawerCat').value = g.cat;
-    $('spDrawerRsvp').value = g.rsvp;
-    $('spDrawerOverride').hidden = g.src !== 'rsvp';
-    $('spDrawerCount').value = g.count;
-    $('spDrawerNote').value = g.note;
-    $('spDrawerSeats').value = g.seats;
-    $('spDrawerGift').value = g.gift;
-    $('spDrawerGot').checked = g.got;
-    $('spDrawerDelete').hidden = g.src !== 'manual';
+  function pickedRadio(name) {
+    const el = guestMask.querySelector(`input[name="${name}"]:checked`);
+    return el ? el.value : '';
+  }
 
-    const lib = tagLib();
-    $('spDrawerTagsOff').hidden = !!lib.length;
-    /* 兩種標籤後台改不動，畫成關不掉的勾勾：
+  /* 類別的選項＝出席表單的那四個（男方親友／女方親友／雙方親友／其他）。
+     匯入進來的自由字串不丟掉 —— 多掛一顆屬於它自己的選項，
+     不然一按儲存，新人辛苦整理的分類就被四個固定值蓋掉了。 */
+  function catOptions(cur) {
+    const fixed = ((window.RSVP_OPTIONS && window.RSVP_OPTIONS.relation) || [])
+      .map(([, label]) => [label, label]);
+    if (cur && !fixed.some(([v]) => v === cur)) fixed.unshift([cur, cur]);
+    return [['', '未分類'], ...fixed];
+  }
+
+  /* 標籤分成兩批，而且長得不一樣：
+
+       改不動的 → 方形 .ad-tag，住在名字旁邊（見 spGuestHeadTags）
+       改得動的 → 膠囊 .ad-chip，住在「標籤」那一欄
+
+     哪些改不動？
        ・賓客自己在表單上選的那一個（那是他送出的紀錄）
-       ・從回覆推出來的（葷素分配填了素食） */
+       ・從回覆推出來的（葷素分配填了素食、要了兒童座椅）
+       ・整組「賓客自己選得到」的標籤 —— 那一組本來就是表單上的題目，
+         要動應該去改表單或回覆，不是在排桌這一頁偷偷改掉賓客填過的東西
+
+     所以留在這裡可以勾的，剛好就是「只有你們看得到」那一組。
+     本來這些改不動的是排在可勾的 chip 中間、掛一把 🔒 的 disabled chip ——
+     點不動的東西不該長得跟點得動的一樣，掛圖示只是再解釋一次形狀沒講清楚的事。 */
+
+  /* 這一位身上「改不動」的標籤，連帶它為什麼改不動 */
+  function lockedTagsOf(g) {
     const r = g.src === 'rsvp' ? DataStore.getRSVPs().find((x) => x.id === g.id) : null;
     const own = r ? String(r.tag || '') : '';
     const veg = r && Number(r.mealVeg) > 0 ? vegTagId() : '';
     const kid = r && Number(r.childSeat) > 0 ? kidTagId() : '';
-    $('spDrawerTags').innerHTML = lib.map((tg) => {
-      const why = tg.id === own ? '賓客自己選的'
-        : (tg.id === veg ? '出席回覆填了素食'
-          : (tg.id === kid ? '出席回覆要了兒童座椅' : ''));
-      return `
-      <label class="ad-check sp-drawer-tag${why ? ' is-fixed' : ''}">
-        <input type="checkbox" value="${esc(tg.id)}"${g.tagIds.includes(tg.id) ? ' checked' : ''}${
-          why ? ' disabled' : ''}>
-        <span>${esc(tg.name)}${why ? `<small>${why}</small>` : ''}</span>
-      </label>`;
+    return tagLib()
+      .filter((t) => g.tagIds.includes(t.id))
+      .map((t) => ({
+        id: t.id,
+        name: t.name,
+        why: t.id === own ? '賓客自己選的'
+          : (t.id === veg ? '出席回覆填了素食'
+            : (t.id === kid ? '出席回覆要了兒童座椅'
+              : (t.onForm ? '賓客在表單上選得到的分類' : ''))),
+      }))
+      .filter((t) => t.why);
+  }
+
+  /* 這一頁勾得動的標籤：「只有你們看得到」那一組，扣掉上面那幾顆 */
+  function pickableTags(g) {
+    const locked = new Set(lockedTagsOf(g).map((t) => t.id));
+    return tagLib().filter((t) => !t.onForm && !locked.has(t.id));
+  }
+
+  function fillGuestTags(g) {
+    const lib = tagLib();
+    const box = $('spGuestTags');
+    const head = $('spGuestHeadTags');
+
+    const locked = lib.length ? lockedTagsOf(g) : [];
+    head.innerHTML = locked.map((t) => {
+      /* 特殊需求（素食、行動不便…）在卡片上就是 .ad-tag-need，這裡同一顆 */
+      const need = specialsOf([t.name]).length ? ' ad-tag-need' : '';
+      return `<span class="ad-tag${need}" title="${esc(t.why)}">${esc(t.name)}</span>`;
     }).join('');
 
-    $('spDrawerTable').innerHTML = `<option value="">（未安排）</option>`
-      + sortedTables().map((x) =>
-        `<option value="${esc(x.id)}"${x.id === g.tableId ? ' selected' : ''}>${esc(tableLabel(x))}</option>`).join('');
+    const pick = lib.length ? pickableTags(g) : [];
+    $('spGuestTagsOff').hidden = !!lib.length;
+
+    if (!pick.length) {
+      box.innerHTML = lib.length
+        ? `<p class="ad-taggroup-empty">${esc(lib.some((t) => !t.onForm)
+            ? '你們自己掛的標籤都已經在這位賓客身上了。'
+            : '還沒有「只有你們看得到」的標籤（像 VIP、行動不便這種）。')}</p>`
+        : '';
+      return;
+    }
+
+    /* 這裡列出來的一定是勾得動的那一組（pickableTags 已經濾過），
+       所以不再多一層「只有你們看得到」的副標 —— 左邊那格就叫「標籤」，
+       改不動的那幾顆長得不一樣、而且住在名字旁邊，形狀已經把話講完了。 */
+    box.innerHTML = `
+      <div class="ad-chips">
+        ${pick.map((t) => {
+          const on = g.tagIds.includes(t.id);
+          return `
+            <button class="ad-chip${on ? ' is-on' : ''}" type="button"
+                    data-guest-tag="${esc(t.id)}" aria-pressed="${on}"
+                    >${esc(t.name)}</button>`;
+        }).join('')}
+      </div>`;
+  }
+
+  /* 送回去的標籤 ＝ 畫面上勾起來的 ＋ 這一頁碰不到、但本來就存著的那些。
+     少了第二段的話，按一次儲存就會把「賓客自己選得到」那一組整批洗掉 ——
+     那一頁根本沒有畫出來，使用者不會知道自己刪了什麼。 */
+  function pickedTags(g) {
+    const on = [...guestMask.querySelectorAll('[data-guest-tag].is-on')]
+      .map((el) => el.dataset.guestTag);
+    const shown = new Set(pickableTags(g).map((t) => t.id));
+    const stored = g.src === 'manual'
+      ? ((plan.meta[g.id] || {}).tags || [])
+      : (DataStore.getRsvpTagMap()[g.id] || []);
+    const keep = stored.filter((id) => !shown.has(id));
+    return [...new Set([...keep, ...on])];
+  }
+
+  /* 這場婚禮有沒有在出席表單上問餐點。沒問的話「素食」整列不出現 ——
+     一個永遠是 0、又沒有出處可以對照的欄位只是噪音。 */
+  function mealAsked() {
+    const cfg = typeof rsvpConfig === 'function' ? rsvpConfig() : null;
+    return !cfg || cfg.askMeal !== false;
+  }
+
+  /* 開著的這一位。分段控制與加減鈕的即時同步要用到 src 與回覆裡的數字。 */
+  let curGuest = null;
+  /* 打開時素食那一格的值。沒被動過就不寫進草稿 —— 六百位賓客的上限
+     不能被一堆「其實沒改過」的空殼吃掉（同 metaIsEmpty 的用意）。 */
+  let vegInit = 0;
+
+  /* 人數一改，素食的上限跟著改：素食不能比總人數多。
+     出席表單問的就是這個形狀（rsvp-form.js 的 syncCounts），兩邊同一套。 */
+  function syncGuestNums() {
+    const head = clampInt($('spGuestCount').value, 0, 30, 0);
+    const vegEl = $('spGuestVeg');
+    vegEl.max = String(head);
+    const veg = Math.min(head, clampInt(vegEl.value, 0, 30, 0));
+    if (vegEl.value !== String(veg)) vegEl.value = String(veg);
+
+    /* 右邊那行：算出來的葷素，以及「出席回覆當初填的是幾位」。
+       括號裡永遠寫回覆的原始數字，所以改沒改、改成什麼，一眼就對得出來。 */
+    const from = curGuest && curGuest.src === 'rsvp' && mealAsked()
+      ? (Number(curGuest.veg) || 0) : null;
+    $('spGuestVegSide').textContent = `葷 ${head - veg}・素 ${veg}`
+      + (from == null ? '' : `（出席回覆填 素 ${from}）`);
+  }
+
+  /* 「會不會來」底下那一行。兩句都只在該講的時候出現，不常駐佔一行。 */
+  function syncRsvpNote() {
+    const el = $('spGuestRsvpNote');
+    const bits = [];
+    if (pickedRadio('spGuestRsvp') === 'maybe') bits.push('保留席＝還不確定，先佔著位子');
+    if (curGuest && curGuest.src === 'rsvp') bits.push('這裡只改排桌用的那一份，賓客送出的回覆不會被動到');
+    el.textContent = bits.join('・');
+    el.hidden = !bits.length;
+  }
+
+  /* ---- 備註（Todoist 那種）----
+     平常只有一行「＋ 備註」，有內容就直接把內容顯示出來，點下去才長出輸入框。
+     改版前它是一塊常駐 96px 高的 textarea：一個九成時候不填的欄位，
+     不該常態佔掉彈窗五分之一的高度。 */
+  function paintNote() {
+    const v = $('spGuestNote').value.trim();
+    $('spGuestNoteText').textContent = v || '備註';
+    $('spGuestNoteBox').classList.toggle('has-note', !!v);
+    $('spGuestNotePlus').hidden = !!v;
+  }
+
+  function fillNote(text) {
+    $('spGuestNote').value = text || '';
+    $('spGuestNote').hidden = true;
+    $('spGuestNoteOpen').hidden = false;
+    paintNote();
+  }
+
+  /* 展開之後就讓它開著，直到彈窗關掉 —— 失焦收合的話，
+     按「儲存」的當下輸入框會先收起來，底下的按鈕跟著往上跳，點不到。 */
+  function openNote() {
+    $('spGuestNoteOpen').hidden = true;
+    $('spGuestNote').hidden = false;
+    $('spGuestNote').focus();
+  }
+
+  function fillGuest(guestId) {
+    const g = guestById(guestId);
+    if (!g) { closeGuest(); return false; }
+    curGuest = g;
+
+    $('spGuestId').value = g.id;
+    $('spGuestTitle').textContent = g.name;
+
+    $('spGuestCode').value = g.code;
+    const nameInput = $('spGuestNameInput');
+    nameInput.value = g.name;
+    /* 回覆來的姓名以回覆為準：輸入框直接是灰的、點不動。
+       改版前底下還掛一句「這是賓客自己送出的回覆…改不動」——
+       形狀已經講完的事，不必再用一行字講一次。 */
+    nameInput.disabled = g.src === 'rsvp';
+
+    $('spGuestRsvp').innerHTML = segHtml('spGuestRsvp', RSVP_PICK, g.rsvp);
+    $('spGuestCat').innerHTML = chipPickHtml('spGuestCat', catOptions(g.cat), g.cat || '');
+
+    $('spGuestCount').value = g.count;
+    $('spGuestSeats').value = g.seats;
+    $('spGuestGift').value = g.gift;
+    $('spGuestGot').checked = g.got;
+    fillNote(g.note);
+
+    /* 素食問的是人數，不是葷／素二選一。
+       出席回覆本來就是這樣問的（mealMeat ＋ mealVeg，加起來等於出席人數），
+       改版前這裡壓成一顆 radio —— 「3 位裡面 1 位吃素」表達不了，
+       而且按一下「葷食」會把回覆裡那一位直接算成 0。 */
+    $('spGuestVegRow').hidden = !mealAsked();
+    $('spGuestVeg').value = vegOf(g);
+    vegInit = vegOf(g);
+    syncGuestNums();
+    syncRsvpNote();
+
+    fillGuestTags(g);
+    $('spGuestDelete').hidden = g.src !== 'manual';
     return true;
   }
 
-  async function submitDrawer(e) {
+  async function submitGuest(e) {
     e.preventDefault();
-    const id = $('spDrawerId').value;
+    const id = $('spGuestId').value;
     const g = guestById(id);
     if (!g) return;
 
-    const tagIds = [...$('spDrawerTags').querySelectorAll('input:checked:not(:disabled)')]
-      .map((el) => el.value);
+    const tagIds = pickedTags(g);
     const patch = {
-      code: $('spDrawerCode').value.trim().slice(0, 12),
-      cat:  $('spDrawerCat').value.trim().slice(0, 20),
-      rsvp: $('spDrawerRsvp').value,
-      count: clampInt($('spDrawerCount').value, 0, 30, 0),
-      note: $('spDrawerNote').value.trim().slice(0, 200),
-      seats: clampInt($('spDrawerSeats').value, 0, 10, 0),
-      gift: clampInt($('spDrawerGift').value, 0, 99, 0),
-      got: $('spDrawerGot').checked,
+      code: $('spGuestCode').value.trim().slice(0, 12),
+      cat:  pickedRadio('spGuestCat').slice(0, 20),
+      rsvp: pickedRadio('spGuestRsvp') || g.rsvp,
+      count: clampInt($('spGuestCount').value, 0, 30, 0),
+      note: $('spGuestNote').value.trim().slice(0, 200),
+      seats: clampInt($('spGuestSeats').value, 0, 10, 0),
+      gift: clampInt($('spGuestGift').value, 0, 99, 0),
+      got: $('spGuestGot').checked,
     };
+    /* 素食只有「真的被動過」才寫進去（見 fillGuest 的 vegInit）。
+       人數被改小而連帶 clamp 下來的，也算被動過 —— 那個結果要留住。 */
+    const vegNow = Math.min(clampInt($('spGuestCount').value, 0, 30, 0),
+                            clampInt($('spGuestVeg').value, 0, 30, 0));
+    if (mealAsked() && vegNow !== vegInit) patch.vegN = vegNow;
+
     if (g.src === 'manual') {
-      patch.name = $('spDrawerNameInput').value.trim().slice(0, 40);
+      patch.name = $('spGuestNameInput').value.trim().slice(0, 40);
       patch.tags = tagIds;
       if (!patch.name) { toast('姓名不能是空的', true); return; }
     }
 
-    const table = $('spDrawerTable').value;
-
+    /* 桌位不在這個彈窗裡改 —— 外面就改得動（拖曳、卡片上的「⇄」、
+       peek 的「移動到桌位」），這裡不再放第二個入口。 */
     mutate(() => {
       const m = plan.meta[id] || { id, src: g.src };
       Object.assign(m, patch);
       plan.meta[id] = m;
-      if (table) plan.assign[id] = table; else delete plan.assign[id];
     });
 
     /* 回覆來的賓客，標籤仍然寫回既有的 rsvpTags —— 排桌不另外做一套分類。
@@ -1935,17 +2465,18 @@
     if (g.src === 'rsvp' && tagsOn()) {
       /* 這一步是真的會寫進資料庫的（標籤存在 rsvpTags），
          弱網時可能等好幾秒，所以按鈕要有狀態 */
-      setBusy(['spDrawerSave'], true, '儲存中…');
+      setBusy(['spGuestSave'], true, '儲存中…');
       try {
         await DataStore.saveRsvpTags(id, tagIds);
       } catch (err) {
         writeFailed(err, () => DataStore.saveRsvpTags(id, tagIds).catch(writeFailed));
       } finally {
-        setBusy(['spDrawerSave'], false);
+        setBusy(['spGuestSave'], false);
       }
     }
 
-    toast('賓客資料已更新（記得按「儲存排桌」）');
+    closeGuest();
+    toast(`已更新「${g.name}」（記得按「儲存」）`);
     renderAll();
   }
 
@@ -1956,9 +2487,9 @@
     if (used >= MAX_GUESTS) { toast(`排桌名單最多 ${MAX_GUESTS} 位`, true); return; }
 
     const name = await promptModal({
-      title: '新增賓客',
+      title: '新增 1 位賓客',
       message: '用在沒有填出席回覆的賓客（長輩、臨時加的親友）。'
-             + '加完可以在右邊的詳細資料裡補人數與標籤。',
+             + '加完可以在詳細資料裡補人數與標籤。',
       placeholder: '賓客姓名',
       maxLength: 40,
       confirmText: '新增',
@@ -1972,7 +2503,7 @@
         count: 1, tags: [], rsvp:'yes', note:'',
       };
     });
-    openDrawer(id);
+    openGuest(id);
   }
 
   async function deleteManualGuest(id) {
@@ -1989,7 +2520,7 @@
       delete plan.meta[id];
       delete plan.assign[id];
     });
-    closeDrawer();
+    closeGuest();
     toast('已刪除這位賓客');
   }
 
@@ -2058,8 +2589,13 @@
     const { veg, seats } = tableNeeds(seated);
     rows.push([title, '', '', '', '']);
     rows.push(TABLE_SHEET_HEAD.slice());
+    /* 保留席跟在姓名後面（「王大明（保留席）」）。
+       這張表沒有 RSVP 欄，而印出來交給宴會廳的人必須看得出
+       「這個位子是留的、人不一定會到」—— 那是現場最常被問的一件事。
+       賓客明細那一張本來就有 RSVP 欄，不用再標一次。 */
     seated.forEach((g) => rows.push([
-      g.name, g.count, vegOf(g) || '', seatsOf(g) || '', g.note || '',
+      g.rsvp === 'maybe' ? `${g.name}（${RSVP_TEXT.maybe}）` : g.name,
+      g.count, vegOf(g) || '', seatsOf(g) || '', g.note || '',
     ]));
     /* 0 也要寫出來 —— 空白讀起來像「還沒算」，0 才是「這桌不用」 */
     rows.push(['小計', heads, veg, seats, tailNote || '']);
@@ -2075,7 +2611,7 @@
     });
 
     const rest = guests.filter((g) => !g.tableId);
-    if (rest.length) exportTableBlock(rows, '未安排', rest, '');
+    if (rest.length) exportTableBlock(rows, '待安排', rest, '');
 
     /* 最後一列是整場的合計：跟飯店確認總份數時看這一列就好 */
     const all = sortGuests(guests);
@@ -2167,7 +2703,7 @@
       </p>
       <div class="ad-hint">
         出席回覆是<b>即時接進來</b>的，不需要每次重按 ——
-        賓客一送出，左邊的「未安排」就會多一位。
+        賓客一送出，左邊的「待安排」就會多一位。
         人數、葷素、兒童座椅、賓客自己選的標籤都跟著回覆走；
         要改成別的數字，點開那位賓客的抽屜覆寫就好，<b>回覆本身不會被動到</b>。
       </div>
@@ -2184,7 +2720,7 @@
             <td>${esc(g.code)}</td><td>${esc(g.name)}</td><td>${g.count}</td>
             <td>${esc(RSVP_TEXT[g.rsvp] || '')}</td>
             <td>${esc(g.tagNames.join('／'))}</td>
-            <td>${esc(t ? tableLabel(t) : '未安排')}</td></tr>`;
+            <td>${esc(t ? tableLabel(t) : '待安排')}</td></tr>`;
         }).join('')}</tbody>
       </table></div>
       ${st.rsvps.length > preview.length
@@ -2213,7 +2749,7 @@
       });
     });
     renderRsvpImport();
-    toast(`已清掉 ${dupes.length} 位重複的手動賓客，記得按「儲存排桌」`);
+    toast(`已清掉 ${dupes.length} 位重複的手動賓客，記得按「儲存」`);
   }
 
   /* ============================================================
@@ -2498,7 +3034,7 @@
     importMask.hidden = true;
     toast(add.length < rows.length
       ? `已匯入 ${add.length} 位（達到 ${MAX_GUESTS} 位上限）`
-      : `已匯入 ${add.length} 位，記得按「儲存排桌」`);
+      : `已匯入 ${add.length} 位，記得按「儲存」`);
   }
 
   async function takeImportFile(file) {
@@ -2541,13 +3077,13 @@
     const panel = document.querySelector('[data-panel="seatingPlan"]');
 
     /* ---- 上方按鈕 ---- */
-    $('spSaveBtn').addEventListener('click', saveThenAsk);
-    $('spSyncBtn').addEventListener('click', () => syncToSeating());
+    $('spSaveBtn').addEventListener('click', saveOnly);
+    $('spSyncBtn').addEventListener('click', () => publish());
     $('spUndo').addEventListener('click', undo);
     $('spRedo').addEventListener('click', redo);
 
     /* ---- 手機底列 ＋「⋮ 更多」---- */
-    $('spMbSave').addEventListener('click', saveThenAsk);
+    $('spMbSave').addEventListener('click', saveOnly);
     $('spMbPool').addEventListener('click', () => {
       const pool = $('spPool');
       if (pool) pool.scrollIntoView({ behavior:'smooth', block:'start' });
@@ -2560,7 +3096,7 @@
     $('spMbRedo').addEventListener('click', redo);
     $('spMbSync').addEventListener('click', () => {
       $('spMoreMask').hidden = true;
-      syncToSeating();
+      publish();
     });
 
     /* 轉向、切分頁都會改變「底列該不該出現」 */
@@ -2576,26 +3112,48 @@
         renderBoard();
       });
     });
-    $('spSort').addEventListener('change', (e) => {
-      view.sort = e.target.value;
+    /* 排序收在工具列那顆圖示鈕裡（和「⋮」用同一套選單元件）。
+       「標籤優先順序」也放進去 —— 它只有在依標籤分組時才有意義，
+       平常擺在外面只會讓人不知道那顆按鈕是幹嘛的。 */
+    registerRowMenu('spSort', () => {
+      const items = SORTS.map(([v, label]) => ({
+        label: (view.sort === v ? '✓ ' : '　') + label,
+        run() { view.sort = v; renderBoard(); },
+      }));
+      if (tagLib().length && view.sort === 'tag') {
+        items.push('-', { label:'標籤優先順序…', run() {
+          renderTagOrder();
+          $('spTagOrderMask').hidden = false;
+        } });
+      }
+      return items;
+    });
+
+    /* 篩選收進漏斗鈕後面的彈窗 */
+    $('spFilterToggle').addEventListener('click', () => {
       renderTools();
+      $('spFilterMask').hidden = false;
+    });
+    $('spFilterDone').addEventListener('click', () => { $('spFilterMask').hidden = true; });
+    $('spFilterClear').addEventListener('click', () => {
+      clearFilters();
+      renderTools();
+      renderFilterToggle();
       renderBoard();
     });
+    registerFormModal($('spFilterMask'));
+
     $('spShowDeclined').addEventListener('change', (e) => {
       view.showDeclined = e.target.checked;
       renderFilterToggle();
       renderBoard();
-    });
-    $('spFilterToggle').addEventListener('click', () => {
-      filtersOpen = $('spFilters').hidden;
-      renderFilterToggle();
     });
 
     $('spRsvpChips').addEventListener('click', (e) => {
       const chip = e.target.closest('.ad-chip');
       if (!chip) return;
       view.rsvp = chip.dataset.rsvp;
-      $('spRsvpChips').querySelectorAll('.ad-chip').forEach((c) => c.classList.toggle('is-on', c === chip));
+      renderTools();
       renderFilterToggle();
       renderBoard();
     });
@@ -2606,6 +3164,27 @@
       const id = chip.dataset.tag;
       if (view.tags.has(id)) view.tags.delete(id); else view.tags.add(id);
       chip.classList.toggle('is-on');
+      renderFilterToggle();
+      renderBoard();
+    });
+    /* 素食與兒童座椅：桌卡上就是這兩個數字，篩名單時也用同一組說法 */
+    $('spFilters').addEventListener('click', (e) => {
+      const chip = e.target.closest('[data-need]');
+      if (!chip) return;
+      const key = chip.dataset.need;
+      view[key] = !view[key];
+      chip.classList.toggle('is-on', view[key]);
+      renderFilterToggle();
+      renderBoard();
+    });
+
+    /* 「現在正在篩」那一行上的清除，以及空狀態上的那一顆，做的是同一件事 */
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#spFilterReset') && !e.target.closest('#spPoolClear')) return;
+      clearFilters();
+      view.q = '';
+      $('spSearch').value = '';
+      renderTools();
       renderFilterToggle();
       renderBoard();
     });
@@ -2624,12 +3203,16 @@
       const moveTableBtn = e.target.closest('[data-move-table]');
       if (moveTableBtn) { moveTable(moveTableBtn.dataset.id, moveTableBtn.dataset.moveTable); return; }
 
+      /* 提示卡上的每一顆按鈕都走這裡 —— 提示卡自己不綁事件，
+         所以它可以長在左邊、也可以長在右邊 */
       const act = e.target.closest('[data-act]');
       if (act) {
         const what = act.dataset.act;
         if (what === 'add-table') openTableModal('');
-        if (what === 'batch-table') batchAddTables();
-        /* 標籤庫住在「出席回覆」那一頁，直接帶過去，不用自己找 */
+        if (what === 'batch-table') openBatch();
+        if (what === 'import-rsvp') openRsvpImport();
+        if (what === 'import-file') openImport();
+        /* 標籤庫住在側欄自己的一頁，直接帶過去，不用自己找 */
         if (what === 'goto-tags') location.hash = 'guestTags';
         if (what === 'goto-import') location.hash = 'seatingPlan/io';
         return;
@@ -2647,7 +3230,7 @@
       if (!card) return;
       /* 有滑鼠的機器滑過去就看得到完整樣貌，點下去直接開詳細資料；
          觸控裝置沒有 hover，點一下先展開 peek（裡面才有「詳細資料」） */
-      if (usingMouse()) openDrawer(card.dataset.guest);
+      if (usingMouse()) openGuest(card.dataset.guest);
       else if (card.dataset.guest === peekId) closePeek();
       else openPeek(card);
     });
@@ -2658,17 +3241,22 @@
       const card = e.target.closest('.sp-card');
       if (!card) return;
       e.preventDefault();
-      openDrawer(card.dataset.guest);
+      openGuest(card.dataset.guest);
     });
 
-    /* ---- 桌位管理 ---- */
+    /* ---- 待安排那一欄的兩顆入口 ---- */
     $('spGuestAddBtn').addEventListener('click', addManualGuest);
+    $('spPoolImportRsvp').addEventListener('click', openRsvpImport);
+
+    /* ---- 桌位 ----
+       工作區與「桌位管理」那一頁的按鈕指的是同一件事，走同一條路徑 */
+    $('spBoardAddTable').addEventListener('click', () => openTableModal(''));
+    $('spBoardBatchTable').addEventListener('click', openBatch);
     $('spTableAddBtn').addEventListener('click', () => openTableModal(''));
-    /* 空狀態上的「新增桌位」指的是同一件事，走同一條路徑 */
     $('spTableList').addEventListener('click', (e) => {
       if (e.target.closest('#spTableEmptyAdd')) openTableModal('');
     });
-    $('spTableBatchBtn').addEventListener('click', batchAddTables);
+    $('spTableBatchBtn').addEventListener('click', openBatch);
     $('spTableForm').addEventListener('submit', submitTable);
     $('spTableType').addEventListener('change', syncTypeCustom);
     $('spTableCancelBtn').addEventListener('click', () => { tableMask.hidden = true; });
@@ -2689,20 +3277,88 @@
     $('spMoveCancel').addEventListener('click', () => { moveMask.hidden = true; });
     registerFormModal(moveMask);
 
-    /* ---- 抽屜 ---- */
-    $('spDrawerClose').addEventListener('click', closeDrawer);
-    drawerMask.addEventListener('click', closeDrawer);
-    $('spDrawerForm').addEventListener('submit', submitDrawer);
-    $('spDrawerDelete').addEventListener('click', () => deleteManualGuest($('spDrawerId').value));
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !drawer.hidden) closeDrawer();
+    /* ---- 一次加好幾桌 ---- */
+    $('spBatchCancel').addEventListener('click', () => { batchMask.hidden = true; });
+    $('spBatchGo').addEventListener('click', applyBatch);
+    $('spBatchAddCustom').addEventListener('click', () => {
+      batchRows.push({ type:'custom', name:'', n:1 });
+      renderBatch();
+      const last = $('spBatchList').querySelector('.sp-batch-row:last-child .sp-batch-name');
+      if (last) last.focus();
+    });
+    $('spBatchList').addEventListener('click', (e) => {
+      const step = e.target.closest('[data-batch-delta]');
+      if (step) {
+        const i = Number(step.dataset.i);
+        setBatch(i, (Number(batchRows[i] && batchRows[i].n) || 0) + Number(step.dataset.batchDelta));
+        return;
+      }
+      const del = e.target.closest('[data-batch-del]');
+      if (del) { batchRows.splice(Number(del.dataset.batchDel), 1); renderBatch(); }
+    });
+    /* 打字時不重畫（游標會被抽走），只把值收起來、更新合計 */
+    $('spBatchList').addEventListener('input', (e) => {
+      const n = e.target.closest('[data-batch-n]');
+      if (n) {
+        const row = batchRows[Number(n.dataset.batchN)];
+        if (row) row.n = clampInt(n.value, 0, MAX_TABLES, 0);
+        const total = batchTotal();
+        const room = MAX_TABLES - plan.tables.length;
+        $('spBatchTotal').textContent = total
+          ? `共 ${Math.min(total, room)} 桌${total > room ? `（已達上限 ${MAX_TABLES} 桌）` : ''}`
+          : '還沒選任何桌位';
+        $('spBatchGo').disabled = total <= 0 || room <= 0;
+        return;
+      }
+      const name = e.target.closest('[data-batch-name]');
+      if (name) {
+        const row = batchRows[Number(name.dataset.batchName)];
+        if (row) row.name = name.value.slice(0, 10);
+      }
+    });
+    registerFormModal(batchMask);
+
+    /* ---- 賓客詳細資料 ---- */
+    $('spGuestCancel').addEventListener('click', closeGuest);
+    $('spGuestForm').addEventListener('submit', submitGuest);
+    $('spGuestDelete').addEventListener('click', () => deleteManualGuest($('spGuestId').value));
+    /* 標籤是點一下就切換的 chip —— 不用先找到勾選框，也看得出現在勾了哪幾個 */
+    $('spGuestTags').addEventListener('click', (e) => {
+      const chip = e.target.closest('[data-guest-tag]');
+      if (!chip || chip.disabled) return;
+      const on = !chip.classList.contains('is-on');
+      chip.classList.toggle('is-on', on);
+      chip.setAttribute('aria-pressed', String(on));
+    });
+    /* 人數一動，素食的上限與右邊那行「葷 N・素 M」跟著重算。
+       加減鈕按完會自己 dispatch 一次 input（見底下的 .ad-stepper-btn），
+       所以手打和按鈕走同一條路。 */
+    guestMask.addEventListener('input', (e) => {
+      if (e.target.id === 'spGuestCount' || e.target.id === 'spGuestVeg') syncGuestNums();
+      if (e.target.id === 'spGuestNote') paintNote();
+    });
+    guestMask.addEventListener('change', (e) => {
+      if (e.target.name === 'spGuestRsvp') syncRsvpNote();
+    });
+    $('spGuestNoteOpen').addEventListener('click', openNote);
+    registerFormModal(guestMask, closeGuest);
+
+    /* ---- −  N  ＋ ----
+       數字欄位在手機上要叫出鍵盤才改得動，而排桌時改的都是 0→1、2→3
+       這種一格的量。加減鈕做的就是那一格。 */
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.ad-stepper-btn[data-delta]');
+      if (!btn) return;
+      const input = btn.parentElement.querySelector('.ad-stepper-input');
+      if (!input) return;
+      const min = Number(input.min) || 0;
+      const max = input.max === '' ? Infinity : Number(input.max);
+      input.value = String(Math.max(min, Math.min(max,
+        (Number(input.value) || 0) + Number(btn.dataset.delta))));
+      input.dispatchEvent(new Event('input', { bubbles:true }));
     });
 
     /* ---- 標籤權重 ---- */
-    $('spTagOrderBtn').addEventListener('click', () => {
-      renderTagOrder();
-      $('spTagOrderMask').hidden = false;
-    });
     $('spTagOrderCancel').addEventListener('click', () => { $('spTagOrderMask').hidden = true; });
     $('spTagOrderList').addEventListener('click', (e) => {
       const btn = e.target.closest('[data-order]');
@@ -2844,8 +3500,8 @@
         { label:'移到最前面', disabled: i <= 0,                  run: () => moveTo(0) },
         { label:'移到最後面', disabled: i >= list.length - 1,    run: () => moveTo(list.length - 1) },
         '-',
-        { label:'編輯這一桌', run: () => openTableModal(id) },
-        { label:'刪除這一桌', danger:true, run: () => deleteTable(id) },
+        { label:'編輯桌位', run: () => openTableModal(id) },
+        { label:'刪除桌位', danger:true, run: () => deleteTable(id) },
       ];
     });
     view.tagOrder = LS.get('seatPlan.tagOrder', []) || [];
@@ -2882,21 +3538,21 @@
 
     invalidateGuests();
     /* 有沒存的修改時不要偷偷幫他存整份草稿（儲存在這一頁是刻意的動作）——
-       釘在記憶體裡，等新人自己按「儲存排桌」一起帶走。 */
+       釘在記憶體裡，等新人自己按「儲存」一起帶走。 */
     if (dirty) { renderAll(); return false; }
     return save(true);
   }
 
-  /* 「桌次名單」那一頁的「同步現在的排桌」按鈕走這裡。
+  /* 「桌次名單」那一頁的「同步現在的排桌」按鈕走這裡（那一頁的說法沒有動）。
      草稿是非同步讀進來的，太早按會誤判成沒資料，所以先等它讀完。 */
   async function syncNow() {
     if (!started) init();
     if (loadPromise) await loadPromise;
     if (!allGuests().some((g) => g.tableId)) {
-      toast('還沒有人被排到桌上，先排幾位再同步', true);
+      toast('還沒有人被排到桌上，先排幾位再發布', true);
       return false;
     }
-    await syncToSeating();
+    await publish();
     return true;
   }
 

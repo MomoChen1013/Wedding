@@ -275,6 +275,24 @@
       <circle cx="40.5" cy="24" r="3.6"/>
     </symbol>
 
+    <!-- 排桌工作區的三顆工具鈕。都走同一套細線語彙（Feather 等比放大到 48 格），
+         和側欄的分頁圖示放在一起才不會像貼上去的。 -->
+    <!-- Feather 的 search（24 格）等比放大到 48 格 -->
+    <symbol id="shin9-search" viewBox="0 0 48 48">
+      <circle cx="22" cy="22" r="16"/>
+      <path d="M42 42 33.3 33.3"/>
+    </symbol>
+
+    <symbol id="shin9-filter" viewBox="0 0 48 48">
+      <path d="M5 8h38L28.5 25.5V40l-9 5V25.5z"/>
+    </symbol>
+
+    <symbol id="shin9-sort" viewBox="0 0 48 48">
+      <path d="M15 7v34M15 41l-7-7M15 41l7-7"/>
+      <path d="M33 41V7M33 7l-7 7M33 7l7 7"/>
+    </symbol>
+
+    <!-- 常見問題：Feather 的 help-circle（24 格）等比放大到 48 格 -->
     <symbol id="shin9-help" viewBox="0 0 48 48">
       <circle cx="24" cy="24" r="17"/>
       <path d="M18.5 18a6 6 0 0 1 11.5 2c0 4-6 6-6 6"/>
@@ -542,7 +560,7 @@
             <ul class="ad-note-list">
               <li>「出席回覆 → 總覽」看素食幾份、兒童椅幾張，回報飯店</li>
               <li>「排桌管理」排桌（或「桌次」直接匯入名單）</li>
-              <li>排好後按「儲存排桌」→「同步至桌次查詢」</li>
+              <li>排好後按「儲存」→「發布給賓客」</li>
               <li>上傳「桌次圖」</li>
               <li>「收禮小幫手 → 連結與名單」產生連結、匯入名單</li>
             </ul>
@@ -1629,10 +1647,10 @@
        分頁 3b：排桌管理
        ------------------------------------------------------------
        把 Excel 排桌搬上線的工作台。三個子分頁：
-         排桌工作區 — 未安排賓客 ←→ 桌位，拖曳安排
+         排桌工作區 — 待安排賓客 ←→ 我的桌位，拖曳安排
          桌位管理   — 新增／編輯／排序桌位
          匯入匯出   — Excel／CSV 雙向進出
-       排完之後要自己按「儲存排桌」，再決定要不要同步到賓客的桌次查詢。
+       排完之後要自己按「儲存」，再決定要不要發布給賓客。
   ============================================================ -->
   <div class="ad-panel" data-panel="seatingPlan">
 
@@ -1642,23 +1660,32 @@
       <button class="ad-subtab" type="button" data-subtab="io">匯入匯出</button>
     </nav>
 
-    <!-- ---------- 3b-1 排桌工作區 ---------- -->
+    <!-- ---------- 3b-1 排桌工作區 ----------
+         整頁只講一句話：「還沒坐下的人在左邊，可以坐的桌子在右邊。」
+
+         所以骨架永遠是同一副 —— 頂列（進度與發布）＋ 左「待安排」＋ 右「我的桌位」。
+         沒有賓客、沒有桌位的時候不會換成另一頁教學：骨架不動，
+         只是把「現在缺什麼」寫進左右兩欄各自的位置
+         （見 seating-plan.js 的 poolPrompt()／boardPrompt()）。
+         使用者第一次進來看到的版面，和排到一半、排完之後看到的是同一個。 -->
     <div class="ad-subpanel is-on" data-subpanel="board">
 
-      <!-- 儲存與同步：整頁最上面，永遠看得到現在是什麼狀態 -->
-      <!-- 同步狀態、即時統計、儲存／同步收在同一列，
-           工作區才拿得回螢幕的高度（窄螢幕會自己拆行） -->
+      <!-- 頂列：三個數字（「待安排」最重要）＋ 發布狀態 ＋ 儲存／發布。
+           刻意不放「平均一桌人數」—— 排桌時沒有人靠那個數字做決定。 -->
       <div class="sp-bar">
         <div class="ad-stats sp-stats" id="spStats"></div>
         <div class="sp-bar-status">
-          <span class="sp-sync" id="spSyncState" data-state="none">還沒送出</span>
-          <span class="sp-sync-note" id="spSyncNote">還沒送到賓客的查座位頁</span>
+          <span class="sp-sync" id="spSyncState" data-state="none">尚未排桌</span>
+          <span class="sp-sync-note" id="spSyncNote"></span>
         </div>
+        <!-- 「儲存目前結果」與「發布給賓客」是兩件事，所以是兩顆按鈕。
+             哪一顆是主要動作由狀態決定（見 renderSyncState）：
+             有改動時是「儲存」，存好了還沒發布時換成「發布給賓客」。 -->
         <div class="sp-bar-actions">
           <button class="btn small ghost" id="spUndo" type="button" disabled>復原</button>
           <button class="btn small ghost" id="spRedo" type="button" disabled>重做</button>
-          <button class="btn small ghost" id="spSyncBtn" type="button">送到賓客的查座位頁</button>
-          <button class="btn small" id="spSaveBtn" type="button">儲存排桌</button>
+          <button class="btn small ghost" id="spSyncBtn" type="button">發布給賓客</button>
+          <button class="btn small" id="spSaveBtn" type="button">儲存</button>
         </div>
       </div>
 
@@ -1674,62 +1701,59 @@
       <!-- 提醒（不擋操作，只提醒） -->
       <div class="sp-warns" id="spWarns"></div>
 
-      <!-- 左：未安排　右：桌位 -->
+      <!-- 左：待安排　右：我的桌位 -->
       <div class="sp-board">
         <aside class="sp-pool" id="spPool">
           <div class="sp-pool-head">
-            <span class="sp-pool-title">未安排</span>
-            <span class="sp-pool-count" id="spPoolCount">0 位</span>
-            <button class="ad-bar-link sp-pool-add" id="spGuestAddBtn" type="button">＋ 新增賓客</button>
+            <div class="sp-col-head">
+              <span class="sp-col-title">待安排</span>
+              <span class="sp-col-count" id="spPoolCount">0 組・0 人</span>
+            </div>
+            <div class="sp-col-acts">
+              <button class="btn small ghost" id="spGuestAddBtn" type="button">＋ 新增 1 位賓客</button>
+              <button class="btn small ghost" id="spPoolImportRsvp" type="button">匯入出席回覆</button>
+            </div>
           </div>
 
-          <!-- 搜尋／篩選／排序都是在整理這一區，所以就住在這一區裡 -->
+          <!-- 搜尋是主要動作（一直看得到的輸入框），篩選與排序收成兩顆圖示鈕：
+               三個並排的控制項會讓人以為三件事一樣重要，但九成的時候只是要找一個人。 -->
           <div class="sp-tools">
             <div class="sp-tools-row">
-              <input class="ad-filter ad-filter-sm sp-search" id="spSearch" type="search"
-                     inputmode="search" enterkeyhint="search" autocomplete="off"
-                     placeholder="搜尋姓名、編號、標籤…" aria-label="搜尋未安排賓客">
-              <button class="btn small ghost" id="spFilterToggle" type="button"
-                      aria-expanded="false" aria-controls="spFilters">篩選</button>
+              <span class="sp-search-box">
+                <svg class="ad-ic sp-search-ic" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-search"/></svg>
+                <input class="ad-filter ad-filter-sm sp-search" id="spSearch" type="search"
+                       inputmode="search" enterkeyhint="search" autocomplete="off"
+                       placeholder="搜尋姓名、標籤" aria-label="搜尋待安排賓客">
+              </span>
+              <button class="sp-iconbtn" id="spFilterToggle" type="button"
+                      aria-haspopup="dialog" aria-label="篩選待安排賓客">
+                <svg class="ad-ic" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-filter"/></svg>
+                <span class="sp-iconbtn-n" id="spFilterCount" hidden></span>
+              </button>
+              <button class="sp-iconbtn" id="spSortBtn" type="button"
+                      data-rowmenu="spSort:sort" aria-haspopup="true" aria-label="排序方式">
+                <svg class="ad-ic" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-sort"/></svg>
+              </button>
             </div>
-
-            <div class="sp-tools-row sp-tools-sort">
-              <label class="sp-select">排序
-                <select class="ad-input" id="spSort">
-                  <option value="default">預設（依編號）</option>
-                  <option value="tag">優先按照標籤分組</option>
-                  <option value="name">依姓名</option>
-                  <option value="countDesc">人數多 → 少</option>
-                  <option value="countAsc">人數少 → 多</option>
-
-                </select>
-              </label>
-              <button class="btn small ghost" id="spTagOrderBtn" type="button">標籤優先順序</button>
-            </div>
-
-            <div class="sp-filters" id="spFilters" hidden>
-              <div class="sp-filter-line">
-                <span class="sp-filter-lab">出席</span>
-                <div class="ad-chips" id="spRsvpChips">
-                  <button class="ad-chip is-on" type="button" data-rsvp="all">全部</button>
-                  <button class="ad-chip" type="button" data-rsvp="yes">已確認</button>
-                  <button class="ad-chip" type="button" data-rsvp="maybe">待確認</button>
-                </div>
-              </div>
-              <div class="sp-filter-line" id="spTagFilterLine">
-                <span class="sp-filter-lab">標籤</span>
-                <div class="ad-chips" id="spTagChips"></div>
-              </div>
-              <label class="ad-check sp-filter-declined">
-                <input type="checkbox" id="spShowDeclined">
-                <span>顯示「無法出席」的賓客<small>預設不列，他們不需要位子</small></span>
-              </label>
-            </div>
+            <!-- 套了哪些條件寫在這裡，不然名單少了人卻看不出原因 -->
+            <div class="sp-activefilters" id="spActiveFilters" hidden></div>
           </div>
           <div class="sp-pool-body" id="spPoolBody" data-drop="pool"></div>
         </aside>
 
-        <div class="sp-tables" id="spTablesBoard"></div>
+        <section class="sp-side">
+          <div class="sp-side-head">
+            <div class="sp-col-head">
+              <span class="sp-col-title">我的桌位</span>
+              <span class="sp-col-count" id="spTableCount">0 桌</span>
+            </div>
+            <div class="sp-col-acts">
+              <button class="btn small ghost" id="spBoardAddTable" type="button">＋ 新增桌位</button>
+              <button class="btn small ghost" id="spBoardBatchTable" type="button">新增多個桌位</button>
+            </div>
+          </div>
+          <div class="sp-tables" id="spTablesBoard"></div>
+        </section>
       </div>
     </div>
 
@@ -1841,7 +1865,7 @@
                 <div class="ad-demo-arrow" aria-hidden="true">→</div>
                 <div class="ad-demo-node is-end">
                   <b>排桌名單</b>
-                  <span>直接出現在<br>「未安排」那一欄</span>
+                  <span>直接出現在<br>「待安排」那一欄</span>
                 </div>
               </div>
             </div>
@@ -2729,79 +2753,150 @@
 ============================================================ -->
 
 <!-- 賓客卡的「完整樣貌」：桌機滑過去、手機／平板點一下才出現。
-     用 fixed 貼著卡片畫，才不會被「未安排」那一欄的捲動容器裁掉 -->
+     用 fixed 貼著卡片畫，才不會被「待安排」那一欄的捲動容器裁掉 -->
 <div class="sp-peek" id="spPeek" hidden></div>
 
-<!-- 賓客詳細資料：從右邊滑出來，可以直接改 -->
-<div class="sp-drawer-mask" id="spDrawerMask" hidden></div>
-<aside class="sp-drawer" id="spDrawer" hidden
-       role="dialog" aria-modal="true" aria-label="賓客詳細資料">
-  <div class="sp-drawer-head">
-    <div>
-      <div class="sp-drawer-title" id="spDrawerName">賓客</div>
-      <div class="sp-drawer-sub" id="spDrawerWhere"></div>
+<!-- 賓客詳細資料
+     ------------------------------------------------------------
+     本來是從右邊滑出來的抽屜。後台其他「點一列看細節」的地方都是彈窗，
+     只有這一個是抽屜 —— 同一件事有兩種開法，使用者就得學兩次。
+     改成彈窗之後和桌位、匯入、篩選全部同一套（.ad-modal-card-form）。
+
+     裡面的欄位也跟著改成「選的」而不是「打字的」：
+     類別＝出席表單上的那四個固定選項、會不會來與葷素＝ radio group、
+     標籤＝和「設定賓客標籤」那一頁同一組 chip、
+     人數／兒童椅／喜餅＝ −  N  ＋ 的加減鈕。 -->
+<div class="ad-modal-mask" id="spGuestMask" hidden>
+  <div class="ad-modal-card ad-modal-card-form sp-guest-card">
+    <!-- 改不動的標籤跟在名字後面（方形的 .ad-tag）：它們是這個人「已經是什麼」，
+         不是這張表單要問的問題。底下那一組 chip 才是可以動的。 -->
+    <div class="sp-guest-head">
+      <div class="ad-modal-title" id="spGuestTitle">賓客資料</div>
+      <div class="sp-guest-head-tags" id="spGuestHeadTags"></div>
     </div>
-    <button class="sp-drawer-close" id="spDrawerClose" type="button" aria-label="關閉">✕</button>
+
+    <!-- 備註貼在名字底下，而不是排在欄位裡：它講的是「這個人是誰」，
+         和標籤同一類，不是一個要填的格子。空的時候只有一行「＋ 備註」，
+         有內容就直接把內容顯示出來，點下去才長出輸入框。 -->
+    <div class="sp-note" id="spGuestNoteBox">
+      <button class="sp-note-open" type="button" id="spGuestNoteOpen">
+        <span class="sp-note-plus" id="spGuestNotePlus" aria-hidden="true">＋</span>
+        <span class="sp-note-text" id="spGuestNoteText">備註</span>
+      </button>
+      <textarea class="ad-textarea sp-note-input" id="spGuestNote" rows="3" maxlength="200"
+                placeholder="備註（只有你們看得到，桌卡不會印）" hidden></textarea>
+    </div>
+
+    <form class="ad-form sp-guest-form" id="spGuestForm">
+      <input type="hidden" id="spGuestId">
+
+      <!-- 排桌真正在決定的四件事：來不來、幾位、哪一群、有沒有特別的身分 -->
+      <div class="sp-frows">
+        <div class="sp-frow">
+          <span class="sp-frow-lab" id="spGuestRsvpLab">會不會來</span>
+          <div class="sp-frow-ctl">
+            <div class="sp-seg" id="spGuestRsvp" role="radiogroup" aria-labelledby="spGuestRsvpLab"></div>
+            <div class="sp-frow-note" id="spGuestRsvpNote" hidden></div>
+          </div>
+        </div>
+
+        <div class="sp-frow">
+          <label class="sp-frow-lab" for="spGuestCount">人數</label>
+          <div class="sp-frow-ctl">
+            <div class="ad-stepper" data-stepper="spGuestCount">
+              <button class="ad-stepper-btn" type="button" data-delta="-1" aria-label="人數減 1">−</button>
+              <input class="ad-input ad-stepper-input" id="spGuestCount" type="number"
+                     min="0" max="30" step="1" inputmode="numeric">
+              <button class="ad-stepper-btn" type="button" data-delta="1" aria-label="人數加 1">＋</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sp-frow">
+          <span class="sp-frow-lab" id="spGuestCatLab">類別</span>
+          <div class="sp-frow-ctl">
+            <div class="ad-chips sp-pick" id="spGuestCat" role="radiogroup" aria-labelledby="spGuestCatLab"></div>
+          </div>
+        </div>
+
+        <div class="sp-frow">
+          <span class="sp-frow-lab">標籤</span>
+          <div class="sp-frow-ctl">
+            <div class="sp-guest-tags" id="spGuestTags"></div>
+            <div class="sp-frow-note" id="spGuestTagsOff" hidden>
+              這場婚禮還沒開賓客標籤，排桌時就只能用類別分群。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 要跟飯店講的數字。排桌時不一定每次都碰，但碰的時候要在同一個地方 -->
+      <div class="sp-frows">
+        <div class="sp-frow" id="spGuestVegRow">
+          <label class="sp-frow-lab" for="spGuestVeg">素食</label>
+          <div class="sp-frow-ctl sp-frow-ctl-row">
+            <div class="ad-stepper" data-stepper="spGuestVeg">
+              <button class="ad-stepper-btn" type="button" data-delta="-1" aria-label="素食人數減 1">−</button>
+              <input class="ad-input ad-stepper-input" id="spGuestVeg" type="number"
+                     min="0" max="30" step="1" inputmode="numeric">
+              <button class="ad-stepper-btn" type="button" data-delta="1" aria-label="素食人數加 1">＋</button>
+            </div>
+            <span class="sp-frow-side" id="spGuestVegSide"></span>
+          </div>
+        </div>
+
+        <div class="sp-frow">
+          <label class="sp-frow-lab" for="spGuestSeats">兒童椅</label>
+          <div class="sp-frow-ctl">
+            <div class="ad-stepper" data-stepper="spGuestSeats">
+              <button class="ad-stepper-btn" type="button" data-delta="-1" aria-label="兒童椅減 1">−</button>
+              <input class="ad-input ad-stepper-input" id="spGuestSeats" type="number"
+                     min="0" max="10" step="1" inputmode="numeric">
+              <button class="ad-stepper-btn" type="button" data-delta="1" aria-label="兒童椅加 1">＋</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sp-frow">
+          <label class="sp-frow-lab" for="spGuestGift">喜餅</label>
+          <div class="sp-frow-ctl sp-frow-ctl-row">
+            <div class="ad-stepper" data-stepper="spGuestGift">
+              <button class="ad-stepper-btn" type="button" data-delta="-1" aria-label="喜餅減 1">−</button>
+              <input class="ad-input ad-stepper-input" id="spGuestGift" type="number"
+                     min="0" max="99" step="1" inputmode="numeric">
+              <button class="ad-stepper-btn" type="button" data-delta="1" aria-label="喜餅加 1">＋</button>
+            </div>
+            <label class="ad-check sp-frow-check">
+              <input type="checkbox" id="spGuestGot"><span>已確認收到</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 身分欄位。最少動的東西排最後；姓名是回覆來的就是灰的、點不動 -->
+      <div class="sp-frows">
+        <div class="sp-frow">
+          <label class="sp-frow-lab" for="spGuestCode">編號</label>
+          <div class="sp-frow-ctl">
+            <input class="ad-input ad-input-sm" id="spGuestCode" type="text" maxlength="12" placeholder="B01">
+          </div>
+        </div>
+        <div class="sp-frow">
+          <label class="sp-frow-lab" for="spGuestNameInput">姓名</label>
+          <div class="sp-frow-ctl">
+            <input class="ad-input" id="spGuestNameInput" type="text" maxlength="40">
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <div class="ad-modal-actions">
+      <button class="btn small ghost" id="spGuestDelete" type="button" hidden>刪除賓客</button>
+      <button class="btn small ghost" id="spGuestCancel" type="button">取消</button>
+      <button class="btn small" id="spGuestSave" type="submit" form="spGuestForm">儲存</button>
+    </div>
   </div>
-
-  <form class="ad-form sp-drawer-body" id="spDrawerForm">
-    <input type="hidden" id="spDrawerId">
-
-    <label class="ad-label" for="spDrawerCode">編號</label>
-    <input class="ad-input" id="spDrawerCode" type="text" maxlength="12" placeholder="B01">
-
-    <label class="ad-label" for="spDrawerNameInput">姓名</label>
-    <input class="ad-input" id="spDrawerNameInput" type="text" maxlength="40">
-    <div class="ad-hint" id="spDrawerNameLock" hidden>
-      這是賓客自己送出的回覆，姓名以回覆為準，改不動。
-    </div>
-
-    <label class="ad-label" for="spDrawerCat">類別</label>
-    <input class="ad-input" id="spDrawerCat" type="text" maxlength="20" placeholder="女方父母朋友">
-
-    <label class="ad-label" for="spDrawerRsvp">會不會來</label>
-    <select class="ad-input" id="spDrawerRsvp">
-      <option value="yes">已確認</option>
-      <option value="maybe">待確認</option>
-      <option value="no">無法出席</option>
-    </select>
-    <div class="ad-hint" id="spDrawerOverride" hidden>
-      這裡改的只是<b>排桌用</b>的那一份，賓客送出的回覆不會被改動。
-    </div>
-
-    <label class="ad-label" for="spDrawerCount">人數</label>
-    <input class="ad-input ad-input-sm" id="spDrawerCount" type="number" min="0" max="30" step="1">
-
-    <label class="ad-label">標籤</label>
-    <div class="sp-drawer-tags" id="spDrawerTags"></div>
-    <div class="ad-hint" id="spDrawerTagsOff" hidden>
-      這場婚禮還沒開賓客標籤，排桌時就只能用類別分群。
-    </div>
-
-    <label class="ad-label" for="spDrawerNote">備註</label>
-    <textarea class="ad-textarea" id="spDrawerNote" rows="3" maxlength="200"></textarea>
-
-    <label class="ad-label" for="spDrawerSeats">兒童椅</label>
-    <input class="ad-input ad-input-sm" id="spDrawerSeats" type="number" min="0" max="10" step="1">
-    <div class="ad-hint">出席回覆填過就自動帶進來，這裡可以改；桌卡會加總成「🪑 N 個兒童椅」。</div>
-
-    <label class="ad-label" for="spDrawerGift">喜餅數量</label>
-    <input class="ad-input ad-input-sm" id="spDrawerGift" type="number" min="0" max="99" step="1">
-
-    <label class="ad-check">
-      <input type="checkbox" id="spDrawerGot"><span>喜餅已確認收到</span>
-    </label>
-
-    <label class="ad-label" for="spDrawerTable">目前桌號</label>
-    <select class="ad-input" id="spDrawerTable"></select>
-  </form>
-
-  <!-- 儲存貼在抽屜底部：不用捲到最後才按得到，鍵盤升起也還在 -->
-  <div class="sp-drawer-foot">
-    <button class="btn small ghost" id="spDrawerDelete" type="button" hidden>刪除賓客</button>
-    <button class="btn small" id="spDrawerSave" type="submit" form="spDrawerForm">儲存</button>
-  </div>
-</aside>
+</div>
 
 <!-- 桌位：新增／編輯共用 -->
 <div class="ad-modal-mask" id="spTableModalMask" hidden>
@@ -2837,18 +2932,85 @@
   </div>
 </div>
 
-<!-- 排桌工作區在手機上的固定底列：只留「還剩幾位沒排」與「儲存排桌」，
-     其餘（送出、復原、重做、四個統計）收進「⋮」。
-     一場 30 桌的婚禮，「捲回最上面按儲存」這條路要走幾十遍 -->
+<!-- 一次加好幾桌
+     ------------------------------------------------------------
+     本來是一個「要加幾桌？」的輸入框。但新人心裡想的從來不是一個總數，
+     而是「主桌一桌、同學大概三桌、同事兩桌…」——
+     所以這裡直接照類別問，每一列一個 −  N  ＋。
+     主桌預設 1，其餘把建議桌數平均分掉，數字都還可以自己改。 -->
+<div class="ad-modal-mask" id="spBatchMask" hidden>
+  <div class="ad-modal-card ad-modal-card-form">
+    <div class="ad-modal-title">新增多個桌位</div>
+    <p class="ad-modal-note" id="spBatchHint"></p>
+    <div class="sp-batch" id="spBatchList"></div>
+    <button class="ad-chip ad-chip-link sp-batch-add" id="spBatchAddCustom" type="button">＋ 自訂類別</button>
+    <div class="ad-modal-actions">
+      <span class="sp-batch-total" id="spBatchTotal"></span>
+      <button class="btn small ghost" id="spBatchCancel" type="button">取消</button>
+      <button class="btn small" id="spBatchGo" type="button">新增</button>
+    </div>
+  </div>
+</div>
+
+<!-- 篩選待安排賓客
+     ------------------------------------------------------------
+     搜尋才是這一區每天都會用到的動作，篩選一場婚禮大概用三次 ——
+     所以它收進工具列的漏斗鈕裡，點開才是這一頁。 -->
+<div class="ad-modal-mask" id="spFilterMask" hidden>
+  <div class="ad-modal-card ad-modal-card-form">
+    <div class="ad-modal-title">篩選</div>
+    <div class="sp-filters" id="spFilters">
+      <div class="sp-filter-line">
+        <span class="sp-filter-lab">出席</span>
+        <div class="ad-chips" id="spRsvpChips">
+          <button class="ad-chip is-on" type="button" data-rsvp="all">全部</button>
+          <button class="ad-chip" type="button" data-rsvp="yes">已確認</button>
+          <button class="ad-chip" type="button" data-rsvp="maybe">保留席</button>
+        </div>
+      </div>
+      <div class="sp-filter-line" id="spTagFilterLine">
+        <span class="sp-filter-lab">賓客標籤</span>
+        <div class="ad-chips" id="spTagChips"></div>
+      </div>
+      <div class="sp-filter-line">
+        <span class="sp-filter-lab">特殊需求</span>
+        <div class="ad-chips">
+          <button class="ad-chip" type="button" id="spVegChip" data-need="veg">🥬 素食</button>
+          <button class="ad-chip" type="button" id="spSeatChip" data-need="seat">🪑 兒童座椅</button>
+        </div>
+      </div>
+      <label class="ad-check sp-filter-declined">
+        <input type="checkbox" id="spShowDeclined">
+        <span>顯示「無法出席」的賓客<small>預設不列，他們不需要位子</small></span>
+      </label>
+    </div>
+    <div class="ad-modal-actions">
+      <button class="btn small ghost" id="spFilterClear" type="button">清除篩選</button>
+      <button class="btn small" id="spFilterDone" type="button">看結果</button>
+    </div>
+  </div>
+</div>
+
+<!-- 排桌工作區在手機上的固定底列
+     ------------------------------------------------------------
+     .sp-bar 不是 sticky，手機上的流程是：捲到最上面看待安排 → 往下捲找桌位
+     → 點卡片 → 移動 → 再捲回最上面按儲存。30 桌的婚禮這條路要走幾十遍。
+
+     所以「還剩幾組沒排」「儲存」「現在存了沒、發布了沒」三件事都釘在這裡 ——
+     狀態那一句本來在頁面最上面，手機上等於看不到，
+     於是「已經改好了但沒存」就這樣被帶去婚宴現場。 -->
 <div class="sp-mobilebar" id="spMobileBar" hidden>
-  <!-- 「⋮」是固定寬高的方形，擺最左邊當錨點；
-       剩下兩顆依畫面寬度平分，字多字少都不會把版面推歪 -->
-  <button class="btn small ghost sp-mobilebar-more" id="spMbMore" type="button"
-          aria-label="更多排桌工具">⋮</button>
-  <button class="sp-mobilebar-pool" id="spMbPool" type="button">
-    <b id="spMbPoolCount">0</b><span>未安排</span>
-  </button>
-  <button class="btn small" id="spMbSave" type="button">儲存排桌</button>
+  <p class="sp-mobilebar-note" id="spMbNote"></p>
+  <div class="sp-mobilebar-row">
+    <!-- 「⋮」是固定寬高的方形，擺最左邊當錨點；
+         剩下兩顆依畫面寬度平分，字多字少都不會把版面推歪 -->
+    <button class="btn small ghost sp-mobilebar-more" id="spMbMore" type="button"
+            aria-label="更多排桌工具">⋮</button>
+    <button class="sp-mobilebar-pool" id="spMbPool" type="button">
+      <b id="spMbPoolCount">0</b><span>待安排</span>
+    </button>
+    <button class="btn small" id="spMbSave" type="button">儲存</button>
+  </div>
 </div>
 
 <!-- 「⋮ 更多」：統計與其餘三顆按鈕 -->
@@ -2857,9 +3019,9 @@
     <div class="ad-modal-title">排桌工具</div>
     <div class="ad-stats sp-stats" id="spMoreStats"></div>
     <div class="ad-row sp-more-acts">
-      <button class="btn small ghost" id="spMbUndo" type="button" disabled>上一步</button>
+      <button class="btn small ghost" id="spMbUndo" type="button" disabled>復原</button>
       <button class="btn small ghost" id="spMbRedo" type="button" disabled>重做</button>
-      <button class="btn small ghost" id="spMbSync" type="button">送到賓客的查座位頁</button>
+      <button class="btn small ghost" id="spMbSync" type="button">發布給賓客</button>
     </div>
     <p class="ad-modal-note" id="spMoreSync" style="margin:16px 0 0"></p>
     <div class="ad-modal-actions">
