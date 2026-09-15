@@ -870,7 +870,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
    再加分隔線只是把同一件事講第二次，還會把清單切得比實際更碎。
 ============================================================ */
 .ad-steps{list-style:none;margin:0;padding:4px 18px;
-  background:var(--bg2);border-radius:var(--radius);}
+  background:var(--surface);border-radius:var(--radius);}
 .ad-step{display:flex;align-items:flex-start;gap:14px;padding:16px 0;}
 .ad-step-no{
   flex:0 0 auto;width:26px;height:26px;border-radius:50%;
@@ -902,7 +902,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
    不是要先讀完的說明，視覺重量不能壓過上面那一行標題。 */
 .ad-step-guide{margin:12px 0 2px;padding:14px 16px;
   border:1px solid var(--line-soft);border-radius:var(--radius);
-  background:var(--surface);}
+  background:rgba(var(--ink-rgb),.02);}
 .ad-step-guide-grp + .ad-step-guide-grp{margin-top:14px;}
 .ad-step-guide-hd{font-family:var(--font-ui);font-size:var(--fs-pill);letter-spacing:.12em;
   color:var(--ink);text-transform:uppercase;}
