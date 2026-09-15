@@ -1440,6 +1440,17 @@
         <div class="ad-wz-body">
           <div class="ad-wz-picks" id="adWzGuidePicks"></div>
 
+          <!-- 勾起來的提醒一次填一項，用的是 03 那一支切換列。
+               四段全攤開是一頁捲不完的 textarea，而每一段的小標長得一樣 ——
+               捲到中間就分不出自己在填第幾段，也看不出後面還有幾段。 -->
+          <div class="ad-pager" id="adWzGuideSwitch" hidden>
+            <span id="adWzGuideCount"></span>
+            <div class="ad-pager-nav">
+              <button class="ad-pager-btn" type="button" data-wzg-nav="prev">上一項</button>
+              <button class="ad-pager-btn" type="button" data-wzg-nav="next">下一項</button>
+            </div>
+          </div>
+
           <!-- ---- 大眾運輸 ---- -->
           <div class="ad-wz-reveal" data-guide="transit" hidden>
             <div class="ad-wz-subhd"><svg class="ad-ic ad-ic-sub" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-location"/></svg>大眾運輸怎麼到？</div>

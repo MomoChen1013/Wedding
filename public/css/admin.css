@@ -365,13 +365,23 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
    同一頁上兩種灰的提示字。八個搜尋框一起收進 --ink-3。 */
 .ad-input::placeholder,.ad-textarea::placeholder,
 .ad-filter::placeholder{color:var(--ink-3);opacity:1;}
+/* textarea 的面是 --bg2，而 --ink-3 站在 --bg2 上只有 4.07:1（不過 AA）——
+   規範明講那種地方的次要文字要用 --ink-soft（§2.1）。單行欄位是透明底、
+   站在 --bg1 上，維持 --ink-3 那一階（5.00:1）。 */
+.ad-textarea::placeholder{color:var(--ink-soft);}
 /* 多行欄位多一層極淡的面。
    底線化之後，單行的 input 和 96px 高的 textarea 長得一模一樣 ——
    唯一的線索是右下角那顆極小的 resize 把手，空的時候更看不出來。
    加一層底色之後，「一條線 ＝ 一行、一塊面 ＝ 一段」自己就說得通，
    而且沒有把四邊框加回來：線仍然是唯一的邊界，面只是襯底。
-   左右內距跟著補回來 —— 字貼著面的邊緣會像沒對齊。 */
-.ad-textarea{background:var(--bg1);padding:10px 12px;margin:12px 0 0;}
+   左右內距跟著補回來 —— 字貼著面的邊緣會像沒對齊。
+
+   ★ 這一支本來寫 --bg1 —— 而 --bg1 就是 body 的底色，所以上面那一段
+     講的「一層極淡的面」在畫面上從來沒有出現過：六行高的故事欄位只剩
+     最底下一條線，長文和下一個小節之間沒有任何邊界，兩段內容就疊在一起讀。
+     改成規格上一直寫著的 --bg2（UI-SPEC 3.6，§7「已知落差」也把這個
+     當成收到回饋後的最小改法）。單行欄位一個都沒動。 */
+.ad-textarea{background:var(--bg2);padding:10px 12px;margin:12px 0 0;}
 .ad-textarea{resize:vertical;min-height:96px;}
 .ad-input-sm{max-width:130px;}
 /* <input type="time"> 的內容是瀏覽器畫的：12 小時制還多了 AM／PM 與時鐘圖示，
@@ -1429,11 +1439,14 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .ad-wz-place .ad-label:first-of-type{margin-top:20px;}
 .ad-wz-place-loc[hidden]{display:none;}
 
-/* 03 的活動切換列。就是清單那一支 .ad-pager，只是站在卡片**上面**
-   而不是清單下面，所以把它原本朝上的 margin／padding 翻過來。
+/* 03 的活動切換列、05 的提醒切換列。就是清單那一支 .ad-pager，
+   只是站在卡片**上面**而不是清單下面，所以把它原本朝上的
+   margin／padding 翻過來。
    display:flex 蓋過 hidden 的預設值，所以要自己寫一條（同 .ad-more-item） */
-#adWzPlaceSwitch{margin:0 0 24px;padding-top:0;}
-#adWzPlaceSwitch[hidden]{display:none;}
+#adWzPlaceSwitch,#adWzGuideSwitch{margin:0 0 24px;padding-top:0;}
+#adWzPlaceSwitch[hidden],#adWzGuideSwitch[hidden]{display:none;}
+/* 05 的上面是那一疊勾選框，要斷一下句；03 的站在整段的最前面 */
+#adWzGuideSwitch{margin-top:22px;}
 
 /* ---------- 04 的 inline form ----------
    新增與編輯共用同一組，所以同一時間畫面上最多一組輸入框 */

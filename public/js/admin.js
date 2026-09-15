@@ -6878,13 +6878,59 @@ function wzGuideText(key){
   }[key] || [];
 }
 
+/* 勾起來的那幾項一次只顯示一項，用的是 03 那一支 .ad-pager。
+   四段全攤開是一頁捲不完的 textarea，而每一段的小標長得一樣 ——
+   捲到中間就分不出自己在填第幾段，也看不出後面還有幾段。
+   只勾一項時不需要切換列，那一項直接顯示。
+
+   停在哪一項用 key 記（不是 index）：勾選一變，回得到同一項。 */
+let wzGuideAt = '';
+
+function wzGuideKeys(){
+  if(!wzGuideOn) return [];
+  return WZ_GUIDES.filter(g => wzGuideOn.has(g.key)).map(g => g.key);
+}
+
 /* 哪幾段要展開。勾一下只走這一支，不重畫整組勾選框 ——
    重畫會把使用者剛按下去的那一顆換掉（同 02 的理由）。 */
 function wzSyncGuideReveals(){
+  const keys = wzGuideKeys();
+  const bar = document.getElementById('adWzGuideSwitch');
+  if(bar) bar.hidden = keys.length <= 1;
+
+  let at = keys.indexOf(wzGuideAt);
+  if(at < 0) at = 0;
+  wzGuideAt = keys[at] || '';
+
   wzStepEl(5)?.querySelectorAll('[data-guide]').forEach(el => {
-    el.hidden = !wzGuideOn.has(el.dataset.guide);
+    const k = el.dataset.guide;
+    el.hidden = keys.length <= 1
+      ? !wzGuideOn.has(k)      /* 0 或 1 項：照勾選顯示，沒有「現在這一項」 */
+      : k !== wzGuideAt;
   });
+
+  const count = document.getElementById('adWzGuideCount');
+  if(count) count.textContent = `共 ${keys.length} 項提醒・第 ${at + 1} / ${keys.length} 項`;
+  const prev = bar?.querySelector('[data-wzg-nav="prev"]');
+  const next = bar?.querySelector('[data-wzg-nav="next"]');
+  if(prev) prev.disabled = at <= 0;
+  if(next) next.disabled = at >= keys.length - 1;
 }
+
+function wzShowGuide(i){
+  const keys = wzGuideKeys();
+  if(!keys.length) return;
+  wzGuideAt = keys[Math.min(Math.max(i, 0), keys.length - 1)];
+  wzSyncGuideReveals();
+}
+
+document.getElementById('adWzGuideSwitch')?.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-wzg-nav]');
+  if(!btn || btn.disabled) return;
+  wzShowGuide(wzGuideKeys().indexOf(wzGuideAt) + (btn.dataset.wzgNav === 'next' ? 1 : -1));
+  document.getElementById('adWzGuideSwitch')
+    ?.scrollIntoView({ block:'nearest', behavior:'smooth' });
+});
 
 function wzRenderGuides(){
   const box = document.getElementById('adWzGuidePicks');
@@ -6907,7 +6953,8 @@ document.getElementById('adWzGuidePicks')?.addEventListener('change', async (e)=
   if(!box) return;
   const key = box.dataset.wzGuide;
 
-  if(box.checked){ wzGuideOn.add(key); wzSyncGuideReveals(); return; }
+  /* 剛勾起來的那一項直接跳過去 —— 他勾它就是為了填它 */
+  if(box.checked){ wzGuideOn.add(key); wzGuideAt = key; wzSyncGuideReveals(); return; }
 
   /* 收起一塊已經寫了東西的內容 ＝ 賓客那一頁會少一段，所以問一句。
      色票與參考圖是「選好就存」的獨立資料，這裡不動它們。 */
@@ -6926,7 +6973,11 @@ document.getElementById('adWzGuidePicks')?.addEventListener('change', async (e)=
       toast('說明文字清掉了。顏色與參考圖要另外刪除');
     }
   }
+  /* 收起來的是正在看的那一項時，停在同一個位置（夾回最後一項），不要跳回第一項 */
+  const at = wzGuideKeys().indexOf(key);
   wzGuideOn.delete(key);
+  const left = wzGuideKeys();
+  wzGuideAt = left[Math.min(at, left.length - 1)] || '';
   wzSyncGuideReveals();
 });
 
@@ -6941,6 +6992,9 @@ function wzGoField(el){
      先切過去，不然底下的 focus() 會落在一個 hidden 的元素上，什麼都不會發生 */
   const card = el.closest('[data-wzp]');
   if(card) wzShowPlace(wzPlaceCards().indexOf(card));
+  /* 05 同理：欄位可能在沒顯示的那一項提醒裡 */
+  const guide = el.closest('[data-guide]');
+  if(guide) wzShowGuide(wzGuideKeys().indexOf(guide.dataset.guide));
   const owner = el.closest('.ad-wz-step');
   const n = owner ? Number(owner.dataset.step) : 0;
   if(n && n !== wzStep) wzGo(n);
