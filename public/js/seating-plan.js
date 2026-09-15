@@ -30,7 +30,7 @@
    一次寫一份文件才存得起完整的一版，也才做得到「儲存」與「發布」分開：
 
      改動 →（在瀏覽器裡，可以無限復原）
-       → 按「儲存排桌」→ 寫進草稿（只有新人看得到）
+       → 按「儲存」→ 寫進草稿（只有新人看得到）
        → 按「發布給賓客」→ 才寫進 seating（賓客查得到的那一份）
 
    「儲存」與「發布」是兩件事，而且刻意分開：
@@ -110,7 +110,7 @@
   };
 
   let loadPromise = null;   /* load() 的 promise，外面要等草稿讀完才問得到排桌資料 */
-  let savedAt = 0;      /* 上次按「儲存排桌」的時間 */
+  let savedAt = 0;      /* 上次按「儲存」的時間 */
   let syncedAt = 0;     /* 上次同步到桌次查詢的時間 */
   let dirty = false;    /* 有還沒存的修改 */
   let started = false;  /* init() 只跑一次 */
@@ -524,7 +524,7 @@
     dirty = true;
     invalidateGuests();
     renderAll();
-    toast('已接回上次沒存完的排桌，記得按「儲存排桌」');
+    toast('已接回上次沒存完的排桌，記得按「儲存」');
   }
 
   async function load() {
@@ -660,7 +660,7 @@
       dirty = false;
       clearLocalDraft();
       renderAll();
-      if (!silent) toast('已儲存目前的排桌');
+      if (!silent) toast('已儲存');
       return true;
     } catch (err) {
       /* 沒送出去的話，本機草稿是最後一道防線 —— 先寫下來再說 */
@@ -685,7 +685,7 @@
   async function publish(skipConfirm) {
     const guests = allGuests().filter((g) => g.tableId);
     if (!guests.length) {
-      toast('目前還沒有任何賓客被排進桌位', true);
+      toast('還沒有安排任何賓客，無法發布', true);
       return;
     }
 
@@ -693,9 +693,10 @@
       const left = pending();
       const ok = await confirmModal({
         title: '發布給賓客',
-        message: `會把目前排好的 ${guests.length} 組賓客送到賓客的「我的桌次」，`
-               + '他們馬上就查得到；原本那一份會被換掉。'
-               + (left.groups ? `\n還有 ${left.groups} 組（${left.heads} 位）沒有安排，他們查不到座位。` : ''),
+        message: `目前有 ${guests.length} 組賓客已安排座位，發布後，他們就能在「我的桌次」查到。`
+               + (left.groups
+                 ? `\n還有 ${left.groups} 組（${left.heads} 位）賓客尚未安排座位，他們目前查不到座位。`
+                 : ''),
         confirmText: '發布',
         cancelText: '稍後再說',
       });
@@ -736,9 +737,9 @@
       toast(`已發布 ${n} 組賓客的座位`);
       return;
     }
-    showToast(`已發布 ${n} 組，但「桌次」還沒開放，賓客目前還看不到`, {
+    showToast(`已發布 ${n} 組賓客的座位，但「我的桌次」尚未開放`, {
       duration: 9000,
-      actionLabel: '現在打開',
+      actionLabel: '現在開放',
       onAction() {
         location.hash = 'pages';
         /* 換分頁要一點時間，等畫面切過去再把那一列捲進視野並閃一下 */
@@ -761,7 +762,7 @@
   async function saveOnly() {
     const ok = await save();
     if (ok && (!syncedAt || syncedAt < savedAt)) {
-      toast('已儲存。要讓賓客看到的話，按「發布給賓客」');
+      toast('已儲存，尚未發布給賓客');
     }
   }
 
@@ -885,7 +886,7 @@
         <div class="ad-stat-lab">${esc(lab)}</div>
       </div>`).join('');
     $('spStats').innerHTML = html;
-    /* 手機把統計收進「⋮ 更多」，底列只留「待安排」與「儲存排桌」 */
+    /* 手機把統計收進「⋮ 更多」，底列只留「待安排」與「儲存」 */
     $('spMoreStats').innerHTML = html;
   }
 
@@ -1044,7 +1045,7 @@
                會讓人以為那是另一個人的數字，名字短的時候特別明顯。
                人數不能被名字的刪節號吃掉，所以是它自己一個元素 -->
           <span class="sp-card-name">${esc(g.name)}</span>
-          <span class="sp-card-count">（${g.count} 人）</span>
+          <span class="sp-card-count">${g.count} 人</span>
         </div>
         ${line2 ? `<div class="sp-card-tags">${line2}</div>` : ''}
         <!-- 觸控裝置拖不動，而且原本要「點卡片 → peek → 移動到桌位」兩下才碰得到。
@@ -1555,44 +1556,73 @@
 
      主要動作只有一顆：還沒存就是「儲存」，存好了還沒發布就換成「發布給賓客」。
   ============================================================ */
+  /* 發布時間的寫法：「8/25 16:10 發布」。
+     這是一句話裡的一個時間點，不是一筆紀錄的時間戳 ——
+     年份與秒數在這裡沒有人要讀（婚禮的排桌不會跨年），寫出來只會變長。 */
+  function fmtPublishedAt(ms) {
+    const d = new Date(ms);
+    const p = (n) => String(n).padStart(2, '0');
+    return `${d.getMonth() + 1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+
+  /* 現在是哪一種狀態。回傳徽章、說明（一到兩句）、以及誰是主要動作。
+
+     八種狀態，由三件事決定：
+       dirty     有沒存的改動
+       savedAt   存過沒
+       syncedAt  發布過沒（以及是不是比 savedAt 新）
+
+     順序是刻意的：「沒存」永遠最先講。存檔是唯一一件「關掉分頁就消失」
+     的事，其餘狀態都還有下一次機會。 */
+  function syncState() {
+    const seated = allGuests().some((g) => g.tableId);
+    const published = syncedAt ? `賓客目前看到 ${fmtPublishedAt(syncedAt)} 發布的版本。` : '';
+
+    /* 1. 全新，還沒排過任何人 —— 這時候沒有任何動作該被強調，
+          畫面上該走的下一步寫在左右兩欄的提示卡裡，不在這裡。 */
+    if (!dirty && !syncedAt && !seated) {
+      return { state:'none', badge:'尚未排桌', lines:['還沒有安排賓客。'], cta:'' };
+    }
+    /* 2 / 4 / 7 / 8. 有沒存的改動 */
+    if (dirty) {
+      return { state:'dirty', badge:'尚未儲存',
+               lines:['排桌有變更。', published].filter(Boolean), cta:'save' };
+    }
+    /* 5. 已發布，而且之後沒再存過 */
+    if (syncedAt && syncedAt >= savedAt) {
+      return { state:'ok', badge:'已發布',
+               lines:['賓客可查詢桌次。', `${fmtPublishedAt(syncedAt)} 發布`], cta:'' };
+    }
+    /* 6. 發布過、之後改了也存了，還沒重新發布 */
+    if (syncedAt) {
+      return { state:'stale', badge:'有未發布的變更', lines:[published], cta:'publish' };
+    }
+    /* 3. 存過，但從來沒發布過 */
+    return { state:'none', badge:'尚未發布',
+             lines:['賓客目前無法查詢桌次。'], cta:'publish' };
+  }
+
   function renderSyncState() {
+    const st = syncState();
     const badge = $('spSyncState');
     const note  = $('spSyncNote');
     const pub   = $('spSyncBtn');
     const save  = $('spSaveBtn');
 
-    let state = 'none';
-    let text = '尚未發布';
-    const lines = [];
+    badge.dataset.state = st.state;
+    badge.textContent = st.badge;
+    /* 兩句話各自一行：第二句講的是「賓客那邊現在是什麼樣子」，
+       跟第一句不是同一件事，串成一長行會讀成一句。 */
+    note.innerHTML = st.lines.map((t) => `<span>${esc(t)}</span>`).join('');
 
-    if (syncedAt && syncedAt >= savedAt) {
-      state = 'ok';
-      text = '已發布';
-      lines.push(`上次發布：${fmtTime(syncedAt)}`);
-    } else if (syncedAt) {
-      state = 'stale';
-      text = '有未發布的變更';
-      lines.push(`上次發布：${fmtTime(syncedAt)}`);
-      lines.push('賓客目前看到的仍是上一版排桌。');
-    } else {
-      lines.push('賓客還查不到自己的桌次。');
-    }
-    if (dirty) lines.unshift('有還沒儲存的變更。');
-
-    badge.dataset.state = dirty ? 'dirty' : state;
-    badge.textContent = dirty ? '尚未儲存' : text;
-    note.textContent = lines.join('　');
-
-    /* 存檔前後，「儲存」的字會換 —— 第一次是「儲存排桌」（在做一件新的事），
-       之後是「儲存變更」（在收尾剛剛改的那幾筆） */
-    save.textContent = savedAt ? '儲存變更' : '儲存排桌';
+    save.textContent = '儲存';
     pub.textContent = '發布給賓客';
 
-    /* 主要動作只有一顆：有沒存的改動時是「儲存」，
-       都存好了、還有沒發布的版本時換成「發布給賓客」。 */
-    const publishFirst = !dirty && savedAt > 0 && (!syncedAt || syncedAt < savedAt);
-    save.classList.toggle('ghost', publishFirst);
-    pub.classList.toggle('ghost', !publishFirst);
+    /* 主要動作最多只有一顆，而且可能一顆都沒有（狀態 1 與 5：
+       沒有東西要存、也沒有新版本要發布，這時候不該有人被叫去按什麼）。
+       兩顆按鈕都留著能按 —— 只是都不搶眼。 */
+    save.classList.toggle('ghost', st.cta !== 'save');
+    pub.classList.toggle('ghost', st.cta !== 'publish');
     save.classList.toggle('is-dirty', dirty);
 
     $('spUndo').disabled = !undoStack.length;
@@ -1603,13 +1633,13 @@
     const mbSave = $('spMbSave');
     mbSave.textContent = save.textContent;
     mbSave.classList.toggle('is-dirty', dirty);
-    mbSave.classList.toggle('ghost', publishFirst);
-    $('spMbNote').textContent = `${dirty ? '尚未儲存' : text}　${lines.join('　')}`;
-    $('spMbNote').dataset.state = badge.dataset.state;
+    mbSave.classList.toggle('ghost', st.cta !== 'save');
+    $('spMbNote').textContent = `${st.badge}　${st.lines.join('　')}`;
+    $('spMbNote').dataset.state = st.state;
     $('spMbUndo').disabled = !undoStack.length;
     $('spMbRedo').disabled = !redoStack.length;
     $('spMbSync').textContent = pub.textContent;
-    $('spMoreSync').textContent = note.textContent;
+    $('spMoreSync').textContent = st.lines.join('　');
   }
 
   /* ============================================================
@@ -2308,7 +2338,7 @@
     }
 
     closeGuest();
-    toast(`已更新「${g.name}」（記得按「${savedAt ? '儲存變更' : '儲存排桌'}」）`);
+    toast(`已更新「${g.name}」（記得按「儲存」）`);
     renderAll();
   }
 
@@ -2581,7 +2611,7 @@
       });
     });
     renderRsvpImport();
-    toast(`已清掉 ${dupes.length} 位重複的手動賓客，記得按「儲存排桌」`);
+    toast(`已清掉 ${dupes.length} 位重複的手動賓客，記得按「儲存」`);
   }
 
   /* ============================================================
@@ -2866,7 +2896,7 @@
     importMask.hidden = true;
     toast(add.length < rows.length
       ? `已匯入 ${add.length} 位（達到 ${MAX_GUESTS} 位上限）`
-      : `已匯入 ${add.length} 位，記得按「儲存排桌」`);
+      : `已匯入 ${add.length} 位，記得按「儲存」`);
   }
 
   async function takeImportFile(file) {
@@ -3359,7 +3389,7 @@
 
     invalidateGuests();
     /* 有沒存的修改時不要偷偷幫他存整份草稿（儲存在這一頁是刻意的動作）——
-       釘在記憶體裡，等新人自己按「儲存排桌」一起帶走。 */
+       釘在記憶體裡，等新人自己按「儲存」一起帶走。 */
     if (dirty) { renderAll(); return false; }
     return save(true);
   }

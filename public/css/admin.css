@@ -1794,7 +1794,10 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .sp-sync[data-state="ok"]{color:var(--primary-deep);border-color:var(--primary);}
 .sp-sync[data-state="stale"],
 .sp-sync[data-state="dirty"]{color:var(--alert);border-color:rgba(var(--alert-rgb),.45);}
-.sp-sync-note{font-size:var(--fs-pill);line-height:1.7;letter-spacing:.02em;color:var(--ink-soft);}
+/* 兩句話各自一行：第二句講的是「賓客那邊現在是什麼樣子」，
+   跟第一句不是同一件事，串成一長行會讀成一句 */
+.sp-sync-note{display:flex;flex-direction:column;
+  font-size:var(--fs-pill);line-height:1.7;letter-spacing:.02em;color:var(--ink-soft);}
 
 /* 有還沒存的修改時，「儲存」自己站出來 */
 .btn.is-dirty{position:relative;}
@@ -2058,8 +2061,9 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
   letter-spacing:.1em;color:var(--ink-soft);}
 .sp-card-name{flex:0 1 auto;min-width:0;font-size:var(--fs-ctl-sm);letter-spacing:.04em;
   color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-/* 人數緊接在名字後面（原本被推到最右邊，中間隔著一整條空白） */
-.sp-card-count{flex:0 0 auto;margin-left:-2px;font-size:var(--fs-pill);letter-spacing:.02em;
+/* 人數緊接在名字後面（原本被推到最右邊，中間隔著一整條空白）。
+   不寫括號：手機上那張卡只有一百多 px 寬，一組全形括號就吃掉名字的一個字。 */
+.sp-card-count{flex:0 0 auto;font-size:var(--fs-pill);letter-spacing:.02em;
   color:var(--primary-deep);font-variant-numeric:tabular-nums;white-space:nowrap;}
 
 /* 標籤一行排完，放不下就左右滑（不換行、不長高） */
@@ -3039,7 +3043,7 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(174px + env(safe-area-inse
      名字只會長進剩下的空間、超過就用刪節號，人數永遠留在第一行。 */
   .sp-card-name{order:1;flex:1 1 0;min-width:0;}
   /* 右邊那 32px 是讓給「⇄」的（36px 的鈕、right:7px，扣掉卡片自己的內距） */
-  .sp-card-count{order:2;flex:0 0 auto;margin-left:0;margin-right:32px;}
+  .sp-card-count{order:2;flex:0 0 auto;margin-right:32px;}
   .sp-card-line::after{content:'';order:3;flex:0 0 100%;height:0;}
   .sp-card-code{order:4;flex:0 0 auto;}
   .sp-card-tags{order:5;flex:1 1 0;min-width:0;margin-top:0;}

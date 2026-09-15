@@ -545,7 +545,7 @@
             <ul class="ad-note-list">
               <li>「出席回覆 → 總覽」看素食幾份、兒童椅幾張，回報飯店</li>
               <li>「排桌管理」排桌（或「桌次」直接匯入名單）</li>
-              <li>排好後按「儲存排桌」→「同步至桌次查詢」</li>
+              <li>排好後按「儲存」→「發布給賓客」</li>
               <li>上傳「桌次圖」</li>
               <li>「收禮小幫手 → 連結與名單」產生連結、匯入名單</li>
             </ul>
@@ -1635,7 +1635,7 @@
          排桌工作區 — 待安排賓客 ←→ 我的桌位，拖曳安排
          桌位管理   — 新增／編輯／排序桌位
          匯入匯出   — Excel／CSV 雙向進出
-       排完之後要自己按「儲存排桌」，再決定要不要同步到賓客的桌次查詢。
+       排完之後要自己按「儲存」，再決定要不要發布給賓客。
   ============================================================ -->
   <div class="ad-panel" data-panel="seatingPlan">
 
@@ -1660,7 +1660,7 @@
       <div class="sp-bar">
         <div class="ad-stats sp-stats" id="spStats"></div>
         <div class="sp-bar-status">
-          <span class="sp-sync" id="spSyncState" data-state="none">尚未發布</span>
+          <span class="sp-sync" id="spSyncState" data-state="none">尚未排桌</span>
           <span class="sp-sync-note" id="spSyncNote"></span>
         </div>
         <!-- 「儲存目前結果」與「發布給賓客」是兩件事，所以是兩顆按鈕。
@@ -1670,7 +1670,7 @@
           <button class="btn small ghost" id="spUndo" type="button" disabled>復原</button>
           <button class="btn small ghost" id="spRedo" type="button" disabled>重做</button>
           <button class="btn small ghost" id="spSyncBtn" type="button">發布給賓客</button>
-          <button class="btn small" id="spSaveBtn" type="button">儲存排桌</button>
+          <button class="btn small" id="spSaveBtn" type="button">儲存</button>
         </div>
       </div>
 
@@ -2963,7 +2963,7 @@
     <button class="sp-mobilebar-pool" id="spMbPool" type="button">
       <b id="spMbPoolCount">0</b><span>待安排</span>
     </button>
-    <button class="btn small" id="spMbSave" type="button">儲存排桌</button>
+    <button class="btn small" id="spMbSave" type="button">儲存</button>
   </div>
 </div>
 
