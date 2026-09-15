@@ -864,10 +864,14 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
    一步一列：左邊編號、中間說明、右邊一顆「去設定」。
    做完的那幾步不會消失，只是編號換成打勾、字轉淡 ——
    「我做到哪裡了」比「還剩幾步」更常被問。
+
+   整疊清單站在一塊淺色的底上，一列與一列之間不畫線 ——
+   那塊底色本身就說明了「這幾件事是一組的」，
+   再加分隔線只是把同一件事講第二次，還會把清單切得比實際更碎。
 ============================================================ */
-.ad-steps{list-style:none;margin:0;padding:0;border-top:1px solid var(--line-soft);}
-.ad-step{display:flex;align-items:flex-start;gap:14px;
-  padding:18px 2px;border-bottom:1px solid var(--line-soft);}
+.ad-steps{list-style:none;margin:0;padding:4px 18px;
+  background:var(--bg2);border-radius:var(--radius);}
+.ad-step{display:flex;align-items:flex-start;gap:14px;padding:16px 0;}
 .ad-step-no{
   flex:0 0 auto;width:26px;height:26px;border-radius:50%;
   border:0 solid var(--line);
@@ -898,7 +902,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
    不是要先讀完的說明，視覺重量不能壓過上面那一行標題。 */
 .ad-step-guide{margin:12px 0 2px;padding:14px 16px;
   border:1px solid var(--line-soft);border-radius:var(--radius);
-  background:rgba(var(--ink-rgb),.02);}
+  background:var(--surface);}
 .ad-step-guide-grp + .ad-step-guide-grp{margin-top:14px;}
 .ad-step-guide-hd{font-family:var(--font-ui);font-size:var(--fs-pill);letter-spacing:.12em;
   color:var(--ink);text-transform:uppercase;}
@@ -1200,6 +1204,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
    flex-wrap 做不到這件事（說明一長，整塊 .ad-step-main 就整個換行，
    編號會被自己留在上一行），所以直接換成兩欄的 grid。 */
 @media(max-width:599px){
+  .ad-steps{padding:4px 14px;}
   .ad-step{display:grid;grid-template-columns:26px 1fr;
     column-gap:12px;row-gap:10px;align-items:start;}
   .ad-step-main,.ad-step-act{grid-column:2;}
