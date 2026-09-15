@@ -1351,6 +1351,18 @@
             </div>
           </div>
 
+          <!-- 多活動：一次填一個，用同一支 .ad-pager 左右切換。
+               「共 N 個活動・第 i / N 個」就站在卡片上面 —— 改版前這裡是
+               整疊欄位往下攤，第二個活動要捲下去才看得到，
+               多數人按「儲存並繼續」的時候並不知道自己還有一個沒填。 -->
+          <div class="ad-pager" id="adWzPlaceSwitch" hidden>
+            <span id="adWzPlaceCount"></span>
+            <div class="ad-pager-nav">
+              <button class="ad-pager-btn" type="button" data-wzp-nav="prev">上一個</button>
+              <button class="ad-pager-btn" type="button" data-wzp-nav="next">下一個</button>
+            </div>
+          </div>
+
           <!-- 多活動：一個活動一組欄位（含「和其他活動使用相同地點」） -->
           <div id="adWzPlaces" hidden></div>
         </div>

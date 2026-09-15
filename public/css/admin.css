@@ -1401,16 +1401,22 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .ad-wz-reveal[hidden]{display:none;}
 .ad-wz-reveal{margin-top:6px;}
 
-/* ---------- 03 的一組地點欄位 ---------- */
-.ad-wz-place + .ad-wz-place{
-  margin-top:30px;padding-top:26px;border-top:1px solid var(--line-soft);
-}
+/* ---------- 03 的一組地點欄位 ----------
+   多活動時同一時間只有一張不是 hidden（由 wzShowPlace() 決定是哪一張），
+   所以這裡不再有「一張接一張」的分隔線 —— 上面那一行
+   「共 N 個活動・第 i / N 個」才是現在說「還有幾個」的地方。 */
 .ad-wz-place-hd{
   font-family:var(--font-display);font-size:var(--fs-sec);letter-spacing:.1em;
   color:var(--ink);margin-bottom:4px;
 }
 .ad-wz-place .ad-label:first-of-type{margin-top:20px;}
 .ad-wz-place-loc[hidden]{display:none;}
+
+/* 03 的活動切換列。就是清單那一支 .ad-pager，只是站在卡片**上面**
+   而不是清單下面，所以把它原本朝上的 margin／padding 翻過來。
+   display:flex 蓋過 hidden 的預設值，所以要自己寫一條（同 .ad-more-item） */
+#adWzPlaceSwitch{margin:0 0 24px;padding-top:0;}
+#adWzPlaceSwitch[hidden]{display:none;}
 
 /* ---------- 04 的 inline form ----------
    新增與編輯共用同一組，所以同一時間畫面上最多一組輸入框 */

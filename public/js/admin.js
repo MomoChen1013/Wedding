@@ -6677,6 +6677,58 @@ function wzPlaceHtml(ev, primary){
   </div>`;
 }
 
+/* ---------- 03 的活動切換 ----------
+   多活動時一次只顯示一張卡。整疊往下攤的時候，第二個活動要捲下去才看得到 ——
+   新人填完第一個就按「儲存並繼續」，根本不知道自己還有一個沒填。
+
+   ★ 沒顯示的卡片**留在 DOM 裡**，只是 hidden。wzReadPlaces() 是掃
+     [data-wzp] 讀 .value 的，所以切來切去不會弄丟打到一半的地址，
+     儲存那一段也不必知道有這件事。
+
+   停在哪一張用**活動 id** 記而不是 index：02 新增或刪掉一個活動之後
+   回到 03，同一個活動還在的話就還是停在它身上。 */
+let wzPlaceId = '';
+
+function wzPlaceCards(){
+  return wzPlacesEl ? Array.from(wzPlacesEl.querySelectorAll('[data-wzp]')) : [];
+}
+
+function wzPlaceIdx(){
+  const cards = wzPlaceCards();
+  const at = cards.findIndex(c => c.dataset.wzp === wzPlaceId);
+  return at < 0 ? 0 : at;
+}
+
+/* 切到第 i 張（超出範圍就夾回來）。i 省略 ＝ 重新套用現在停的那一張 */
+function wzShowPlace(i){
+  const cards = wzPlaceCards();
+  const bar = document.getElementById('adWzPlaceSwitch');
+  if(bar) bar.hidden = cards.length <= 1;
+  if(!cards.length) return;
+
+  const at = Math.min(Math.max(i == null ? wzPlaceIdx() : i, 0), cards.length - 1);
+  wzPlaceId = cards[at].dataset.wzp || '';
+  cards.forEach((card, n) => { card.hidden = n !== at; });
+
+  const count = document.getElementById('adWzPlaceCount');
+  if(count) count.textContent = `共 ${cards.length} 個活動・第 ${at + 1} / ${cards.length} 個`;
+  const prev = bar?.querySelector('[data-wzp-nav="prev"]');
+  const next = bar?.querySelector('[data-wzp-nav="next"]');
+  if(prev) prev.disabled = at <= 0;
+  if(next) next.disabled = at >= cards.length - 1;
+}
+
+/* 切換列是靜態的（admin.html 裡就有），所以這一條掛一次就好。
+   block:'nearest' —— 已經看得到切換列時不動，從長表單的底部按「下一個」
+   才把畫面帶回卡片的開頭，不然會落在下一張卡的中間。 */
+document.getElementById('adWzPlaceSwitch')?.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-wzp-nav]');
+  if(!btn || btn.disabled) return;
+  wzShowPlace(wzPlaceIdx() + (btn.dataset.wzpNav === 'next' ? 1 : -1));
+  document.getElementById('adWzPlaceSwitch')
+    ?.scrollIntoView({ block:'nearest', behavior:'smooth' });
+});
+
 /* 現在畫出來的是哪幾個活動。活動沒變就不重畫 ——
    重畫會把新人正在打、還沒存的地址洗掉（他可能只是切去 02 看一眼就回來）。
    存完之後由 renderEventViews() 帶 force 進來，畫面才會換成資料庫那一份。 */
@@ -6691,26 +6743,35 @@ function wzRenderPlaces(force){
   const sub = document.getElementById('adWzPlaceSub');
   const mainName = document.getElementById('adWzMainName');
 
+  const bar = document.getElementById('adWzPlaceSwitch');
+
   if(!multi){
     const p = wzPrimaryEvent();
     if(mainName) mainName.textContent = (p && p.name) || '婚宴';
     if(sub) sub.textContent = '';
+    if(bar) bar.hidden = true;
     wzPlacesSig = '';
     return;
   }
 
   const list = weddingEvents();
   const primary = wzPrimaryEvent();
+  /* 數量交給切換列那一行講，這裡只講怎麼操作 ——
+     同一頁兩個地方講「你們有幾個活動」就是把同一件事說兩次 */
   if(sub){
     sub.textContent = list.length > 1
-      ? `你們有 ${list.length} 個活動，一個一個來。`
+      ? '一個活動一組時間和地點，填完按「下一個」。'
       : '';
   }
   if(!wzPlacesEl) return;
   const sig = JSON.stringify(list.map(ev => [ev.id, ev.name]));
-  if(!force && wzPlacesEl.innerHTML && sig === wzPlacesSig) return;
+  if(!force && wzPlacesEl.innerHTML && sig === wzPlacesSig){
+    wzShowPlace();
+    return;
+  }
   wzPlacesSig = sig;
   wzPlacesEl.innerHTML = list.map(ev => wzPlaceHtml(ev, primary)).join('');
+  wzShowPlace();
 }
 
 /* ---------- 03 的畫面 → 一份新的 events[] ----------
@@ -6876,6 +6937,10 @@ document.getElementById('adWzGuidePicks')?.addEventListener('change', async (e)=
    所以要先切過去，不然新人只會看到一句錯誤卻找不到是哪一格。 */
 function wzGoField(el){
   if(!el) return;
+  /* 03 的欄位可能在沒顯示的那一張活動卡裡（例如第二個活動的地圖連結不合法）——
+     先切過去，不然底下的 focus() 會落在一個 hidden 的元素上，什麼都不會發生 */
+  const card = el.closest('[data-wzp]');
+  if(card) wzShowPlace(wzPlaceCards().indexOf(card));
   const owner = el.closest('.ad-wz-step');
   const n = owner ? Number(owner.dataset.step) : 0;
   if(n && n !== wzStep) wzGo(n);
