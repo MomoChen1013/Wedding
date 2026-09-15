@@ -6665,9 +6665,9 @@ function wzPlaceHtml(ev, primary){
              placeholder="台北市中山區中山北路二段 63 號">
 
       <label class="ad-label">地圖連結（選填）</label>
+      <div class="ad-hint">沒填的話自動用地址開啟 Google 地圖。</div>
       <input class="ad-input" type="url" maxlength="500" data-wzp-f="mapUrl"
-             value="${escapeHtml(ev.mapUrl || '')}"
-             placeholder="沒填的話自動用地址開啟 Google 地圖">
+             value="${escapeHtml(ev.mapUrl || '')}">
     </div>
 
     <label class="ad-label">活動說明（選填）</label>

@@ -1350,9 +1350,11 @@
               <input class="ad-input" id="adVenueAddress" type="text" maxlength="200"
                      placeholder="台北市中山區中山北路二段 63 號">
 
+              <!-- 「沒填會怎樣」是規則不是範例，所以它在 .ad-hint 裡而不是
+                   placeholder 裡 —— 婚禮資訊的 placeholder 淡到只能放範例（3.6） -->
               <label class="ad-label" for="adVenueMapUrl">地圖連結（選填）</label>
-              <input class="ad-input" id="adVenueMapUrl" type="url" maxlength="500"
-                     placeholder="沒填的話自動用地址開啟 Google 地圖">
+              <div class="ad-hint">沒填的話自動用地址開啟 Google 地圖。</div>
+              <input class="ad-input" id="adVenueMapUrl" type="url" maxlength="500">
             </div>
           </div>
 

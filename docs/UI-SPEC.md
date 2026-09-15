@@ -668,9 +668,22 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 `.ad-count` —— 隔著一條線又靠到另一邊，它看起來不屬於任何一格。
 `.ad-count` 留給「目前 0 張」這種**整組**的計數，不再給單一欄位用。
 
-**placeholder 只放範例。** 規則（分隔符號、幾個、幾字以內）寫進欄位名或
-說明裡 —— placeholder 不是標籤（同 3.7）。塞滿規則的 placeholder 在
-畫面上的重量會逼近真的填進去的值，掃過去分不出這一格填了沒有。
+**placeholder 只放範例。** 規則（分隔符號、幾個、幾字以內、沒填會怎樣）
+寫進欄位名或說明裡 —— placeholder 不是標籤（同 3.7）。塞滿規則的
+placeholder 在畫面上的重量會逼近真的填進去的值，掃過去分不出這一格填了沒有。
+
+**婚禮資訊的 placeholder 再淡一階。** `.ad-wz-steps .ad-input::placeholder`
+吃 `--line`（`#CFC7B9`）而不是 `--ink-3`：單行欄位是透明底，範例文字和
+真值位置一樣、字級一樣（`--fs-input` 是 iOS 的硬下限，收不得），唯一的
+差別就是那一階墨。
+
+> ⚠ `--line` 對紙底只有 **1.58:1**，遠低於 AA 的 4.5:1。這是刻意的取捨，
+> 換來「已填 / 未填」一眼看得出來（見 §7）。所以這一條
+> **只掛在 `.ad-wz-steps` 裡**，全站其餘的 placeholder 一支都沒動；
+> 而且這幾格的 placeholder **只能放範例** —— 看不到就填不出來的規則
+> （例如「沒填的話自動用地址開啟 Google 地圖」）一律搬進 `.ad-hint`。
+> 多行欄位不吃這一條：它已經有一層 `--bg2` 的面在說「這裡是個空欄位」，
+> 而 `--line` 站在 `--bg2` 上只有 1.35:1，整句範例會消失。
 
 #### 輸入框是一條線，不是一個盒子
 
@@ -714,6 +727,7 @@ Chip 也當 segmented control 用（收禮台的「禮餅：沒有發／已發�
 | `.ad-input-time` | `<input type="time">` 專用寬度（瀏覽器會多畫 AM/PM 與時鐘） |
 | `.ad-hint` | `--fs-pill` `--ink-soft`，說明**後果**不是重複欄位名。位置見上面那一段（在輸入框**上面**） |
 | `.ad-label small` | 欄位名旁邊的上限／（選填）：`--fs-label`、`.06em`、不大寫、`opacity:.8`、`tabular-nums`（數字邊打邊跳的話欄位名會跟著抖） |
+| `::placeholder` | 全站 `--ink-3`（於 `--bg1` 5.00:1）。`.ad-textarea` 的面是 `--bg2`，所以它吃 `--ink-soft`。**婚禮資訊的六個階段例外**：`.ad-wz-steps .ad-input` 吃 `--line`，見下 |
 | `.ad-field-err` | `--alert`，`:empty` 時不佔高度 |
 | `.ad-check` | checkbox ＋ 文字，`accent-color: --primary-deep` |
 | `.ad-toggle` | 開關：一顆真的 checkbox（鍵盤、讀螢幕都照舊）藏在上面，畫面上是 44×24 的軌道 ＋ 16px 的把手（`.ad-toggle-track`，**Switch 用的也是這一條**，見 3.6b）。**打開＝ `--ink` 實心**，和 `.ad-chip.is-on` 同一套「選中」語彙 —— accent 的職責是「記號」不是「開啟」，一排 accent 的開關讀起來像一排警示。**只用在「按下去就生效」的地方**（「頁面設定」分頁），要按儲存才算數的維持 `.ad-check`。沒開通那幾列的 toggle 是 `disabled` 的：CSS 給它 `pointer-events:none`，點擊才落到外層的 `<label>` 上，按下去才有話回他 |
@@ -1386,6 +1400,7 @@ npm run test:ui        # tests/ui-consistency.mjs（只需要 hosting emulator�
 
 | 項目 | 現況 |
 |---|---|
+| **婚禮資訊的 placeholder 低於 AA** | `.ad-wz-steps .ad-input::placeholder` 是 `--line`（對紙底 1.58:1，AA 要 4.5:1）。**這是知情下的取捨，不是漏改** —— 新人回饋「掃過去分不出這一格填了沒有」，而單行欄位的範例文字和真值位置一樣、字級一樣（`--fs-input` 是 iOS 的硬下限），能動的只有那一階墨；系統裡 `--ink-3`(5.00:1) 以下就只剩 `--line`，再要一階中間值得新增 token。代價寫在 3.6：這幾格的 placeholder 只能放**範例**，規則一律搬進 `.ad-hint`（已搬：地圖連結的「沒填會怎樣」）。要收回去只要刪 `admin.css` 那一行，不動任何選擇器 |
 | **`--primary-soft`／`--alert-wash` 的正式色值** | Ivory 這一版沒有拿到這兩支的正式色票，現在用的是試算值（`#FDEEE7`／`#FBEDEA`）。**待設計覆核。** 風險很低：`--primary-soft` 的 11 處全部是「這一格正被選中／命中」的暫時底色，`--alert-wash` 只有 2 處（錯誤 toast 的底、示範列的壞例子），沒有一處是永久的面 —— 改色值只要動 `admin.css` 那一行，不會動到任何選擇器 |
 | **Optima 有裝置差異** | `--font-display` 第一順位是 Optima，但它只有 macOS／iOS 內建。Windows／Android／Linux 會逐字 fallback 到 Noto Serif TC —— 標題與數字在非 Apple 裝置上看起來和改版前一樣。要讓所有平台一致，得採購 web font 授權並自行 host（`@font-face`），不在這一版的範圍 |
 | ~~**底線輸入框的 `<textarea>`**~~ | **已修掉。** 原本這一條說「如果實際使用回饋說不知道可以打字，最小的改法是只給 textarea 一個 `--bg2` 的極淡填色」。回饋來了（婚禮資訊 05／06「不同內容疊在一起讀」），而且發現 CSS 裡那一支寫的是 `--bg1` —— 那就是 `body` 的底色，所以「一層極淡的面」在畫面上從來沒有出現過：六行高的故事欄位只剩最底下一條線，長文和下一個小節之間沒有任何邊界。改成規格上一直寫著的 `--bg2`，單行欄位一個都沒動；`::placeholder` 跟著從 `--ink-3` 換成 `--ink-soft`（見 3.6） |

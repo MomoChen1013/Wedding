@@ -1428,6 +1428,25 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .ad-wz-reveal[hidden]{display:none;}
 .ad-wz-reveal{margin-top:6px;}
 
+/* ---------- 婚禮資訊的 placeholder：比別的地方再淡一階 ----------
+   單行欄位是透明底、站在 --bg1 上，所以「範例文字」和「真的填進去的值」
+   位置一樣、字級一樣（--fs-input 是 iOS 的硬下限，不能收）—— 唯一的差別
+   就是那一階墨。原本是 --ink-3（5.00:1），掃過一整頁欄位時分不出
+   這一格填了沒有。這裡改吃 --line。
+
+   ⚠ --line 對紙底只有 1.58:1，**遠低於 WCAG AA 的 4.5:1**。這是刻意的
+     取捨，不是漏改：換來的是「已填 / 未填」一眼看得出來。所以
+     ・**只掛在 .ad-wz-steps 裡面**（婚禮資訊的六個階段），全站其餘的
+       placeholder 一支都沒動，維持 --ink-3
+     ・規則寫進 UI-SPEC §7「已知落差」，不要讓它三個月後被當成 bug 改掉
+     ・因此這幾格的 placeholder 只能放**範例**，不能放看不到就填不出來的
+       規則 —— 規則一律在欄位名或 .ad-hint 裡（3.6）
+
+   多行欄位（.ad-textarea）不吃這一條：它已經有一層 --bg2 的面在說
+   「這裡是個空欄位」，而 --line 站在 --bg2 上只有 1.35:1，那幾段
+   交通、停車、Dress Code 的範例會整句消失。 */
+.ad-wz-steps .ad-input::placeholder{color:var(--line);}
+
 /* ---------- 03 的一組地點欄位 ----------
    多活動時同一時間只有一張不是 hidden（由 wzShowPlace() 決定是哪一張），
    所以這裡不再有「一張接一張」的分隔線 —— 上面那一行
