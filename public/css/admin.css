@@ -365,13 +365,23 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
    同一頁上兩種灰的提示字。八個搜尋框一起收進 --ink-3。 */
 .ad-input::placeholder,.ad-textarea::placeholder,
 .ad-filter::placeholder{color:var(--ink-3);opacity:1;}
+/* textarea 的面是 --bg2，而 --ink-3 站在 --bg2 上只有 4.07:1（不過 AA）——
+   規範明講那種地方的次要文字要用 --ink-soft（§2.1）。單行欄位是透明底、
+   站在 --bg1 上，維持 --ink-3 那一階（5.00:1）。 */
+.ad-textarea::placeholder{color:var(--ink-soft);}
 /* 多行欄位多一層極淡的面。
    底線化之後，單行的 input 和 96px 高的 textarea 長得一模一樣 ——
    唯一的線索是右下角那顆極小的 resize 把手，空的時候更看不出來。
    加一層底色之後，「一條線 ＝ 一行、一塊面 ＝ 一段」自己就說得通，
    而且沒有把四邊框加回來：線仍然是唯一的邊界，面只是襯底。
-   左右內距跟著補回來 —— 字貼著面的邊緣會像沒對齊。 */
-.ad-textarea{background:var(--bg1);padding:10px 12px;margin:12px 0 0;}
+   左右內距跟著補回來 —— 字貼著面的邊緣會像沒對齊。
+
+   ★ 這一支本來寫 --bg1 —— 而 --bg1 就是 body 的底色，所以上面那一段
+     講的「一層極淡的面」在畫面上從來沒有出現過：六行高的故事欄位只剩
+     最底下一條線，長文和下一個小節之間沒有任何邊界，兩段內容就疊在一起讀。
+     改成規格上一直寫著的 --bg2（UI-SPEC 3.6，§7「已知落差」也把這個
+     當成收到回饋後的最小改法）。單行欄位一個都沒動。 */
+.ad-textarea{background:var(--bg2);padding:10px 12px;margin:12px 0 0;}
 .ad-textarea{resize:vertical;min-height:96px;}
 .ad-input-sm{max-width:130px;}
 /* <input type="time"> 的內容是瀏覽器畫的：12 小時制還多了 AM／PM 與時鐘圖示，
@@ -393,6 +403,23 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 
 .ad-count{text-align:right;font-size:var(--fs-pill);color:var(--ink-soft);margin-top:5px;}
 .ad-hint{font-size:var(--fs-ctl-sm);color:var(--ink-soft);margin-top:5px;line-height:1.7;}
+
+/* 欄位名旁邊的小字：字數上限、張數上限、（選填）。
+   規格本來就有（原本只掛在 .ad-inline-field 上），這裡放出來給所有欄位名用 ——
+   「7 / 20」站在輸入框底下、又在那條底線的另一邊靠右時，它看起來
+   不屬於任何一格；搬到欄位名旁邊，它和它在說的那一格就在同一行上。
+   tabular-nums：數字邊打邊跳的話，旁邊的欄位名會跟著抖。 */
+.ad-label small{
+  margin-left:8px;font-size:var(--fs-label);letter-spacing:.06em;
+  text-transform:none;opacity:.8;font-variant-numeric:tabular-nums;
+}
+
+/* 說明站在輸入框**上面**（欄位名的下一行），不是底線的下面。
+   底線下面還有字的話，那條線就變成「上面一格」與「下面一句」之間的分隔線，
+   一格一格讀起來像好幾張接在一起的小卡片；說明搬上來之後，
+   底線是這一格的收尾，一頁才讀得出「同一份表單」的節奏。
+   4px：它和欄位名是同一個區塊，要比區塊之間的 36px 近得多。 */
+.ad-label + .ad-hint{margin-top:4px;}
 
 /* 表單裡再分一個小節（例如「交通資訊」把兩個欄位圈在一起） */
 .ad-sub-sec{margin-top:26px;padding:20px 18px;border:1px solid var(--line-soft);
@@ -864,10 +891,14 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
    一步一列：左邊編號、中間說明、右邊一顆「去設定」。
    做完的那幾步不會消失，只是編號換成打勾、字轉淡 ——
    「我做到哪裡了」比「還剩幾步」更常被問。
+
+   整疊清單站在一塊淺色的底上，一列與一列之間不畫線 ——
+   那塊底色本身就說明了「這幾件事是一組的」，
+   再加分隔線只是把同一件事講第二次，還會把清單切得比實際更碎。
 ============================================================ */
-.ad-steps{list-style:none;margin:0;padding:0;border-top:1px solid var(--line-soft);}
-.ad-step{display:flex;align-items:flex-start;gap:14px;
-  padding:18px 2px;border-bottom:1px solid var(--line-soft);}
+.ad-steps{list-style:none;margin:0;padding:4px 18px;
+  background:var(--surface);border-radius:var(--radius);}
+.ad-step{display:flex;align-items:flex-start;gap:14px;padding:16px 0;}
 .ad-step-no{
   flex:0 0 auto;width:26px;height:26px;border-radius:50%;
   border:0 solid var(--line);
@@ -1200,6 +1231,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
    flex-wrap 做不到這件事（說明一長，整塊 .ad-step-main 就整個換行，
    編號會被自己留在上一行），所以直接換成兩欄的 grid。 */
 @media(max-width:599px){
+  .ad-steps{padding:4px 14px;}
   .ad-step{display:grid;grid-template-columns:26px 1fr;
     column-gap:12px;row-gap:10px;align-items:start;}
   .ad-step-main,.ad-step-act{grid-column:2;}
@@ -1396,16 +1428,44 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .ad-wz-reveal[hidden]{display:none;}
 .ad-wz-reveal{margin-top:6px;}
 
-/* ---------- 03 的一組地點欄位 ---------- */
-.ad-wz-place + .ad-wz-place{
-  margin-top:30px;padding-top:26px;border-top:1px solid var(--line-soft);
-}
+/* ---------- 婚禮資訊的 placeholder：比別的地方再淡一階 ----------
+   單行欄位是透明底、站在 --bg1 上，所以「範例文字」和「真的填進去的值」
+   位置一樣、字級一樣（--fs-input 是 iOS 的硬下限，不能收）—— 唯一的差別
+   就是那一階墨。原本是 --ink-3（5.00:1），掃過一整頁欄位時分不出
+   這一格填了沒有。這裡改吃 --line。
+
+   ⚠ --line 對紙底只有 1.58:1，**遠低於 WCAG AA 的 4.5:1**。這是刻意的
+     取捨，不是漏改：換來的是「已填 / 未填」一眼看得出來。所以
+     ・**只掛在 .ad-wz-steps 裡面**（婚禮資訊的六個階段），全站其餘的
+       placeholder 一支都沒動，維持 --ink-3
+     ・規則寫進 UI-SPEC §7「已知落差」，不要讓它三個月後被當成 bug 改掉
+     ・因此這幾格的 placeholder 只能放**範例**，不能放看不到就填不出來的
+       規則 —— 規則一律在欄位名或 .ad-hint 裡（3.6）
+
+   多行欄位（.ad-textarea）不吃這一條：它已經有一層 --bg2 的面在說
+   「這裡是個空欄位」，而 --line 站在 --bg2 上只有 1.35:1，那幾段
+   交通、停車、Dress Code 的範例會整句消失。 */
+.ad-wz-steps .ad-input::placeholder{color:var(--line);}
+
+/* ---------- 03 的一組地點欄位 ----------
+   多活動時同一時間只有一張不是 hidden（由 wzShowPlace() 決定是哪一張），
+   所以這裡不再有「一張接一張」的分隔線 —— 上面那一行
+   「共 N 個活動・第 i / N 個」才是現在說「還有幾個」的地方。 */
 .ad-wz-place-hd{
   font-family:var(--font-display);font-size:var(--fs-sec);letter-spacing:.1em;
   color:var(--ink);margin-bottom:4px;
 }
 .ad-wz-place .ad-label:first-of-type{margin-top:20px;}
 .ad-wz-place-loc[hidden]{display:none;}
+
+/* 03 的活動切換列、05 的提醒切換列。就是清單那一支 .ad-pager，
+   只是站在卡片**上面**而不是清單下面，所以把它原本朝上的
+   margin／padding 翻過來。
+   display:flex 蓋過 hidden 的預設值，所以要自己寫一條（同 .ad-more-item） */
+#adWzPlaceSwitch,#adWzGuideSwitch{margin:0 0 24px;padding-top:0;}
+#adWzPlaceSwitch[hidden],#adWzGuideSwitch[hidden]{display:none;}
+/* 05 的上面是那一疊勾選框，要斷一下句；03 的站在整段的最前面 */
+#adWzGuideSwitch{margin-top:22px;}
 
 /* ---------- 04 的 inline form ----------
    新增與編輯共用同一組，所以同一時間畫面上最多一組輸入框 */
@@ -4469,9 +4529,6 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
 ============================================================ */
 .ad-inline-field{position:relative;margin-top:14px;}
 .ad-inline-field .ad-label{margin-top:0;}
-.ad-inline-field .ad-label small{
-  margin-left:6px;font-size:var(--fs-label);letter-spacing:.06em;text-transform:none;opacity:.8;
-}
 .ad-inline-input{font-size:var(--fs-ctl);padding:10px 2px;}
 .ad-inline-input:disabled{
   background:transparent;color:var(--ink-3);cursor:not-allowed;border-bottom-style:dashed;

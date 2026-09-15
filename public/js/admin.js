@@ -6665,9 +6665,9 @@ function wzPlaceHtml(ev, primary){
              placeholder="台北市中山區中山北路二段 63 號">
 
       <label class="ad-label">地圖連結（選填）</label>
+      <div class="ad-hint">沒填的話自動用地址開啟 Google 地圖。</div>
       <input class="ad-input" type="url" maxlength="500" data-wzp-f="mapUrl"
-             value="${escapeHtml(ev.mapUrl || '')}"
-             placeholder="沒填的話自動用地址開啟 Google 地圖">
+             value="${escapeHtml(ev.mapUrl || '')}">
     </div>
 
     <label class="ad-label">活動說明（選填）</label>
@@ -6676,6 +6676,58 @@ function wzPlaceHtml(ev, primary){
            placeholder="例如：僅限雙方家人">
   </div>`;
 }
+
+/* ---------- 03 的活動切換 ----------
+   多活動時一次只顯示一張卡。整疊往下攤的時候，第二個活動要捲下去才看得到 ——
+   新人填完第一個就按「儲存並繼續」，根本不知道自己還有一個沒填。
+
+   ★ 沒顯示的卡片**留在 DOM 裡**，只是 hidden。wzReadPlaces() 是掃
+     [data-wzp] 讀 .value 的，所以切來切去不會弄丟打到一半的地址，
+     儲存那一段也不必知道有這件事。
+
+   停在哪一張用**活動 id** 記而不是 index：02 新增或刪掉一個活動之後
+   回到 03，同一個活動還在的話就還是停在它身上。 */
+let wzPlaceId = '';
+
+function wzPlaceCards(){
+  return wzPlacesEl ? Array.from(wzPlacesEl.querySelectorAll('[data-wzp]')) : [];
+}
+
+function wzPlaceIdx(){
+  const cards = wzPlaceCards();
+  const at = cards.findIndex(c => c.dataset.wzp === wzPlaceId);
+  return at < 0 ? 0 : at;
+}
+
+/* 切到第 i 張（超出範圍就夾回來）。i 省略 ＝ 重新套用現在停的那一張 */
+function wzShowPlace(i){
+  const cards = wzPlaceCards();
+  const bar = document.getElementById('adWzPlaceSwitch');
+  if(bar) bar.hidden = cards.length <= 1;
+  if(!cards.length) return;
+
+  const at = Math.min(Math.max(i == null ? wzPlaceIdx() : i, 0), cards.length - 1);
+  wzPlaceId = cards[at].dataset.wzp || '';
+  cards.forEach((card, n) => { card.hidden = n !== at; });
+
+  const count = document.getElementById('adWzPlaceCount');
+  if(count) count.textContent = `共 ${cards.length} 個活動・第 ${at + 1} / ${cards.length} 個`;
+  const prev = bar?.querySelector('[data-wzp-nav="prev"]');
+  const next = bar?.querySelector('[data-wzp-nav="next"]');
+  if(prev) prev.disabled = at <= 0;
+  if(next) next.disabled = at >= cards.length - 1;
+}
+
+/* 切換列是靜態的（admin.html 裡就有），所以這一條掛一次就好。
+   block:'nearest' —— 已經看得到切換列時不動，從長表單的底部按「下一個」
+   才把畫面帶回卡片的開頭，不然會落在下一張卡的中間。 */
+document.getElementById('adWzPlaceSwitch')?.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-wzp-nav]');
+  if(!btn || btn.disabled) return;
+  wzShowPlace(wzPlaceIdx() + (btn.dataset.wzpNav === 'next' ? 1 : -1));
+  document.getElementById('adWzPlaceSwitch')
+    ?.scrollIntoView({ block:'nearest', behavior:'smooth' });
+});
 
 /* 現在畫出來的是哪幾個活動。活動沒變就不重畫 ——
    重畫會把新人正在打、還沒存的地址洗掉（他可能只是切去 02 看一眼就回來）。
@@ -6691,26 +6743,35 @@ function wzRenderPlaces(force){
   const sub = document.getElementById('adWzPlaceSub');
   const mainName = document.getElementById('adWzMainName');
 
+  const bar = document.getElementById('adWzPlaceSwitch');
+
   if(!multi){
     const p = wzPrimaryEvent();
     if(mainName) mainName.textContent = (p && p.name) || '婚宴';
     if(sub) sub.textContent = '';
+    if(bar) bar.hidden = true;
     wzPlacesSig = '';
     return;
   }
 
   const list = weddingEvents();
   const primary = wzPrimaryEvent();
+  /* 數量交給切換列那一行講，這裡只講怎麼操作 ——
+     同一頁兩個地方講「你們有幾個活動」就是把同一件事說兩次 */
   if(sub){
     sub.textContent = list.length > 1
-      ? `你們有 ${list.length} 個活動，一個一個來。`
+      ? '一個活動一組時間和地點，填完按「下一個」。'
       : '';
   }
   if(!wzPlacesEl) return;
   const sig = JSON.stringify(list.map(ev => [ev.id, ev.name]));
-  if(!force && wzPlacesEl.innerHTML && sig === wzPlacesSig) return;
+  if(!force && wzPlacesEl.innerHTML && sig === wzPlacesSig){
+    wzShowPlace();
+    return;
+  }
   wzPlacesSig = sig;
   wzPlacesEl.innerHTML = list.map(ev => wzPlaceHtml(ev, primary)).join('');
+  wzShowPlace();
 }
 
 /* ---------- 03 的畫面 → 一份新的 events[] ----------
@@ -6817,13 +6878,59 @@ function wzGuideText(key){
   }[key] || [];
 }
 
+/* 勾起來的那幾項一次只顯示一項，用的是 03 那一支 .ad-pager。
+   四段全攤開是一頁捲不完的 textarea，而每一段的小標長得一樣 ——
+   捲到中間就分不出自己在填第幾段，也看不出後面還有幾段。
+   只勾一項時不需要切換列，那一項直接顯示。
+
+   停在哪一項用 key 記（不是 index）：勾選一變，回得到同一項。 */
+let wzGuideAt = '';
+
+function wzGuideKeys(){
+  if(!wzGuideOn) return [];
+  return WZ_GUIDES.filter(g => wzGuideOn.has(g.key)).map(g => g.key);
+}
+
 /* 哪幾段要展開。勾一下只走這一支，不重畫整組勾選框 ——
    重畫會把使用者剛按下去的那一顆換掉（同 02 的理由）。 */
 function wzSyncGuideReveals(){
+  const keys = wzGuideKeys();
+  const bar = document.getElementById('adWzGuideSwitch');
+  if(bar) bar.hidden = keys.length <= 1;
+
+  let at = keys.indexOf(wzGuideAt);
+  if(at < 0) at = 0;
+  wzGuideAt = keys[at] || '';
+
   wzStepEl(5)?.querySelectorAll('[data-guide]').forEach(el => {
-    el.hidden = !wzGuideOn.has(el.dataset.guide);
+    const k = el.dataset.guide;
+    el.hidden = keys.length <= 1
+      ? !wzGuideOn.has(k)      /* 0 或 1 項：照勾選顯示，沒有「現在這一項」 */
+      : k !== wzGuideAt;
   });
+
+  const count = document.getElementById('adWzGuideCount');
+  if(count) count.textContent = `共 ${keys.length} 項提醒・第 ${at + 1} / ${keys.length} 項`;
+  const prev = bar?.querySelector('[data-wzg-nav="prev"]');
+  const next = bar?.querySelector('[data-wzg-nav="next"]');
+  if(prev) prev.disabled = at <= 0;
+  if(next) next.disabled = at >= keys.length - 1;
 }
+
+function wzShowGuide(i){
+  const keys = wzGuideKeys();
+  if(!keys.length) return;
+  wzGuideAt = keys[Math.min(Math.max(i, 0), keys.length - 1)];
+  wzSyncGuideReveals();
+}
+
+document.getElementById('adWzGuideSwitch')?.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-wzg-nav]');
+  if(!btn || btn.disabled) return;
+  wzShowGuide(wzGuideKeys().indexOf(wzGuideAt) + (btn.dataset.wzgNav === 'next' ? 1 : -1));
+  document.getElementById('adWzGuideSwitch')
+    ?.scrollIntoView({ block:'nearest', behavior:'smooth' });
+});
 
 function wzRenderGuides(){
   const box = document.getElementById('adWzGuidePicks');
@@ -6846,7 +6953,8 @@ document.getElementById('adWzGuidePicks')?.addEventListener('change', async (e)=
   if(!box) return;
   const key = box.dataset.wzGuide;
 
-  if(box.checked){ wzGuideOn.add(key); wzSyncGuideReveals(); return; }
+  /* 剛勾起來的那一項直接跳過去 —— 他勾它就是為了填它 */
+  if(box.checked){ wzGuideOn.add(key); wzGuideAt = key; wzSyncGuideReveals(); return; }
 
   /* 收起一塊已經寫了東西的內容 ＝ 賓客那一頁會少一段，所以問一句。
      色票與參考圖是「選好就存」的獨立資料，這裡不動它們。 */
@@ -6865,7 +6973,11 @@ document.getElementById('adWzGuidePicks')?.addEventListener('change', async (e)=
       toast('說明文字清掉了。顏色與參考圖要另外刪除');
     }
   }
+  /* 收起來的是正在看的那一項時，停在同一個位置（夾回最後一項），不要跳回第一項 */
+  const at = wzGuideKeys().indexOf(key);
   wzGuideOn.delete(key);
+  const left = wzGuideKeys();
+  wzGuideAt = left[Math.min(at, left.length - 1)] || '';
   wzSyncGuideReveals();
 });
 
@@ -6876,6 +6988,13 @@ document.getElementById('adWzGuidePicks')?.addEventListener('change', async (e)=
    所以要先切過去，不然新人只會看到一句錯誤卻找不到是哪一格。 */
 function wzGoField(el){
   if(!el) return;
+  /* 03 的欄位可能在沒顯示的那一張活動卡裡（例如第二個活動的地圖連結不合法）——
+     先切過去，不然底下的 focus() 會落在一個 hidden 的元素上，什麼都不會發生 */
+  const card = el.closest('[data-wzp]');
+  if(card) wzShowPlace(wzPlaceCards().indexOf(card));
+  /* 05 同理：欄位可能在沒顯示的那一項提醒裡 */
+  const guide = el.closest('[data-guide]');
+  if(guide) wzShowGuide(wzGuideKeys().indexOf(guide.dataset.guide));
   const owner = el.closest('.ad-wz-step');
   const n = owner ? Number(owner.dataset.step) : 0;
   if(n && n !== wzStep) wzGo(n);
