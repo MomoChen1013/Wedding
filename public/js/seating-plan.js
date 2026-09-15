@@ -1119,7 +1119,7 @@
         : ''}
       <div class="sp-peek-actions">
         <button class="btn small ghost" type="button" data-peek="move">移動到桌位</button>
-        <button class="btn small ghost" type="button" data-peek="detail">修改賓客資料</button>
+        <button class="btn small ghost" type="button" data-peek="detail">修改資料</button>
       </div>`;
 
     peekEl.hidden = false;

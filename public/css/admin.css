@@ -2347,15 +2347,14 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .sp-guest-card{width:min(94vw,600px);}
 
 /* 一段欄位（四個一組，中間一條線分段）。段與段之間留白，不再畫第二條線 */
+/* 分段不畫線，用留白：段內每列相距 12px，段與段之間 26px。
+   左欄那一排對齊的欄位名本身就已經把「這是一份清單」講清楚了，
+   再加九條橫線只是把一張表單切成九格。 */
 .sp-frows{display:flex;flex-direction:column;}
-.sp-frows + .sp-frows{margin-top:12px;padding-top:12px;border-top:1px solid var(--line-soft);}
+.sp-frows + .sp-frows{margin-top:26px;}
 .sp-frow{display:grid;grid-template-columns:5.5em minmax(0,1fr);align-items:start;
   gap:8px 14px;padding:6px 0;}
-.sp-frow + .sp-frow{border-top:1px solid var(--line-soft);}
 .sp-frow[hidden]{display:none;}
-/* 素食那一列藏起來時（這場婚禮沒問餐點），它就不是分隔線的來源了 ——
-   少了這一條，第二段的第一列會在自己的段線底下再多一條 */
-.sp-frow[hidden] + .sp-frow{border-top:0;}
 /* 一列裡的單行輸入框（編號、姓名）壓扁一階：--fs-input 的 16px 是 iOS 的
    硬下限不能動，但 1.85 的行高 ＋ 上下各 10px 是「整張表單只有這一個欄位」
    時的呼吸量，排在一列一格的清單裡就變成兩個空行。 */
@@ -2403,12 +2402,15 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 
 /* ---- 單選 chip（類別）----
    選項多到分段控制放不下時用它。形狀和正下方的「標籤」一樣，
-   兩列自然讀成同一個「分群」區塊。 */
-.sp-pick{gap:6px;}
+   兩列自然讀成同一個「分群」區塊。
+   ⚠ 尺寸、字距、內距都照抄 .sp-guest-tags .ad-chip（就是正下方那一排）——
+   兩顆並排的膠囊只要有一項對不上就看得出來，而它們本來就該是同一顆。
+   字族靠底下的「UI 軌」名單，不在這裡寫。 */
+.sp-pick{gap:7px;}
 .sp-pick-item{display:inline-flex;align-items:center;min-height:32px;
-  padding:4px 12px;cursor:pointer;border:1px solid var(--line);
-  border-radius:999px;font-size:var(--fs-meta);color:var(--ink-soft);
-  white-space:nowrap;}
+  padding:5px 12px;cursor:pointer;border:1px solid var(--line);
+  border-radius:999px;font-size:var(--fs-meta);letter-spacing:.08em;
+  color:var(--ink-soft);white-space:nowrap;}
 .sp-pick-item input{position:absolute;opacity:0;width:0;height:0;pointer-events:none;}
 .sp-pick-item:has(input:checked){background:var(--ink);color:var(--on-ink);
   border-color:var(--ink);}
@@ -3548,6 +3550,15 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-check,
 body:is([data-page="admin"],[data-page="butler"]) .ad-callout-head,
 body:is([data-page="admin"],[data-page="butler"]) .ad-callout-note,
 body:is([data-page="admin"],[data-page="butler"]) .sp-card,
+/* 賓客詳細那一版的欄位列。.ad-chip／.ad-tag／.ad-radio 都在這份名單裡，
+   漏掉它們的話，同一列上「類別」是明體的 chip、「標籤」是黑體的 chip ——
+   兩顆長得一樣的膠囊，字卻不是同一套。 */
+body:is([data-page="admin"],[data-page="butler"]) .sp-seg-item,
+body:is([data-page="admin"],[data-page="butler"]) .sp-pick-item,
+body:is([data-page="admin"],[data-page="butler"]) .sp-frow-lab,
+body:is([data-page="admin"],[data-page="butler"]) .sp-frow-note,
+body:is([data-page="admin"],[data-page="butler"]) .sp-frow-side,
+body:is([data-page="admin"],[data-page="butler"]) .sp-note-open,
 body:is([data-page="admin"],[data-page="butler"]) .sp-peek,
 body:is([data-page="admin"],[data-page="butler"]) .sp-warn,
 body:is([data-page="admin"],[data-page="butler"]) .sp-table,
