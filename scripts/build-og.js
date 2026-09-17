@@ -63,6 +63,7 @@ import { resolveBaseUrl } from './site-url.js';
    不然賓客會看到「名字換成另一個名字」——只是把閃爍換個地方發作。 */
 import {
   TEMPLATES, templateKey, buildWed, tplValue, BAKEABLE_TPL_KEYS,
+  STORY_LAYOUTS, storyLayoutKey,
 } from '../public/js/wed-model.js';
 
 const ROOT         = fileURLToPath(new URL('../', import.meta.url));
@@ -609,10 +610,12 @@ function escapeHtmlText(str) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function hydrateHtml(html, info, { isLobby = false, photo = '' } = {}) {
+function hydrateHtml(html, info, { isLobby = false, isStoryPage = false, photo = '' } = {}) {
   const wed = info.wed;
   const key = templateKey(info.template);
   const tpl = TEMPLATES[key];
+  const storyKey = storyLayoutKey(info.storyLayout);
+  const story = STORY_LAYOUTS[storyKey];
 
   /* ---- <html> 蓋戳記：告訴 common.css 這一頁不用開場遮罩 ---- */
   html = html.replace(/<html(\s[^>]*)?>/i, (m, attrs) =>
@@ -624,8 +627,11 @@ function hydrateHtml(html, info, { isLobby = false, photo = '' } = {}) {
      data-hero-name 原本由 site-context.js 在執行期寫，一起提前。 */
   html = html.replace(/<body([^>]*)>/i, (m, attrs) => {
     let a = attrs.replace(/\s*data-template="[^"]*"/i, '')
-                 .replace(/\s*data-hero-name="[^"]*"/i, '');
-    return `<body data-template="${key}" data-hero-name="${wed.heroNameLang}"${a}>`;
+                 .replace(/\s*data-hero-name="[^"]*"/i, '')
+                 .replace(/\s*data-story-layout="[^"]*"/i, '');
+    /* 敘事模組只有「我們的故事」那一頁在讀，其他頁面不留這個屬性 */
+    const sl = isStoryPage ? ` data-story-layout="${storyKey}"` : '';
+    return `<body data-template="${key}" data-hero-name="${wed.heroNameLang}"${sl}${a}>`;
   });
 
   /* ---- 版型專屬的字體與版面 CSS 直接寫進 <head> ----
@@ -636,7 +642,9 @@ function hydrateHtml(html, info, { isLobby = false, photo = '' } = {}) {
 
      執行期那支有「已經有這個 href 就跳過」的判斷，
      所以這裡印進去之後，那邊就不會再插一次。 */
-  const links = [...(tpl.fonts || []), ...(isLobby ? (tpl.lobbyCss || []) : [])]
+  const links = [...(tpl.fonts || []),
+                 ...(isLobby ? (tpl.lobbyCss || []) : []),
+                 ...(isStoryPage ? (story.css || []) : [])]
     .filter((href) => !html.includes(`href="${href}"`))
     .map((href) => `<link rel="stylesheet" href="${href}">`);
 
@@ -647,6 +655,17 @@ function hydrateHtml(html, info, { isLobby = false, photo = '' } = {}) {
 
   if (links.length) {
     html = html.replace(/<\/head>/i, `${links.join('\n')}\n</head>`);
+  }
+
+  /* ---- 「我們的故事」預載的頁面 JS 要跟著敘事模組換 ----
+     來源檔寫死 /js/exhibition.js（timeline 那一版）。換成別的模組時，
+     不改這一行等於預載一支不會執行的腳本，真正要跑的那支反而沒被提前下載。
+     執行順序仍然由 site-context.js 決定（見那支的 pageScript）。 */
+  if (isStoryPage && story.js !== 'exhibition') {
+    html = html.replace(
+      /<link rel="preload" as="script" href="\/js\/exhibition\.js">/,
+      `<link rel="preload" as="script" href="/js/${story.js}.js">`,
+    );
   }
 
   /* ---- <span data-tpl="couple"></span> → 先填好 ---- */
@@ -666,7 +685,9 @@ function buildHtml(srcHtml, srcName, meta, info) {
      注水會動到 <html>／<body>／<head>，og 只動 <title> 那一段，兩邊不衝突。
      讀不到 Firestore 就整段跳過，產出跟以前一模一樣的檔案。 */
   let html = info && info.hydrate
-    ? hydrateHtml(srcHtml, info, { isLobby: meta.isLobby, photo: meta.photo })
+    ? hydrateHtml(srcHtml, info, {
+        isLobby: meta.isLobby, isStoryPage: meta.isStoryPage, photo: meta.photo,
+      })
     : srcHtml;
 
   html = html.replace(
@@ -774,7 +795,7 @@ function siteInfo(site) {
   if (!site) {
     return {
       couple: '', dateText: '', dateNumeric: '', venueName: '',
-      pages: null, template: '', wed: buildWed({}), hydrate: false,
+      pages: null, template: '', storyLayout: '', wed: buildWed({}), hydrate: false,
     };
   }
   const groom = (site.groomName || '').trim();
@@ -791,6 +812,9 @@ function siteInfo(site) {
     pages: site.pages && typeof site.pages === 'object' ? site.pages : null,
     /* 版型：決定大廳用哪一份來源 HTML（lobbySrc），也決定烤進 <body> 的色票 */
     template: typeof site.template === 'string' ? site.template : '',
+    /* 敘事模組：決定「我們的故事」那一頁烤進 <body> 的 data-story-layout，
+       以及要先印進 <head> 的版面 CSS 與該預載哪一支頁面 JS */
+    storyLayout: typeof site.storyLayout === 'string' ? site.storyLayout : '',
     /* 預渲染要填的值。和瀏覽器端 site-context.js 用的是同一個 buildWed() */
     wed: buildWed(site),
     /* 原始文件：目前只有 lobbyPhoto() 要看 coverImageUrl */
@@ -902,6 +926,7 @@ async function buildSlug(slug, ctx) {
       url: `${ctx.base}/w/${slug}/${page.path}`,
       image: imageUrl,
       isLobby: page.pageKey === 'lobby',
+      isStoryPage: page.pageKey === 'exhibition',
       photo: lobbyPhoto(slug, info.hydrate ? info.site : null),
     }, info);
     writeOrCheck(join(outDir, page.out), html, ctx.state);

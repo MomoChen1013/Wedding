@@ -1227,7 +1227,10 @@ console.log('\n[9] 素材資料夾自動載入');
 }
 {
   const { page } = await visit(`/w/${ASSET_SLUG}/exhibition`);
-  const items = await page.evaluate(() => ITEMS.map((i) => `${i.year}:${i.title}`));
+  /* 來源的優先序與排序都在共用資料層 js/exhibit-story.js，
+     各敘事模組讀的是同一份，所以這裡也讀它而不是某一支模組的內部變數 */
+  const items = await page.evaluate(() => EXHIBIT_STORY.items()
+    .filter((i) => i.type === 'photo').map((i) => `${i.year}:${i.title}`));
   ok('戀愛時光用客戶的展品',
     items.join('、') === '2019:第一次見面、2023:求婚那天', items.join('、'));
   await page.close();

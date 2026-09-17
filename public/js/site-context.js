@@ -34,6 +34,7 @@ import {
    否則賓客會看到「名字換成另一個名字」——那只是把閃爍換個地方。 */
 import {
   TEMPLATES, templateKey, buildWed,
+  STORY_LAYOUTS, storyLayoutKey,
   tplValue, swapTokens, hashtagList,
   pagePublishEntry, pageVisible,
 } from './wed-model.js';
@@ -145,6 +146,36 @@ function applyTemplate(name, isLobby) {
      以前這裡是每一頁都插，子頁等於多擋一次首次繪製在一份用不到的樣式上。 */
   const sheets = [...(t.fonts || []), ...(isLobby ? (t.lobbyCss || []) : [])];
   for (const href of sheets) {
+    if (document.querySelector(`link[href="${href}"]`)) continue;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
+  }
+  return key;
+}
+
+/* 套上敘事模組：寫 <body data-story-layout>，需要的話再補這個模組的版面 CSS。
+
+   和 applyTemplate() 是**兩軸**（見 js/wed-model.js 的 STORY_LAYOUTS）：
+   版型決定整個站台長什麼樣子，敘事模組只決定「我們的故事」那一頁
+   怎麼說。所以這裡不碰字體、不碰色票，只掛一個屬性和一份版面 CSS。
+
+   ▸ 只有「我們的故事」那一頁要掛：模組的 CSS 每一條都收在自己的前綴底下
+     （.sc-* …），其他頁面載它只是白白多擋一次首次繪製；那些頁面也不寫
+     data-story-layout，因為沒有任何一條規則在讀它。
+     但**回傳值每一頁都算**，window.SITE.storyLayout 要講的是這組新人的
+     設定，不是「這一頁有沒有用到」。
+
+   ▸ 預產過的頁面不會走到這裡做事：build-og 已經把正確的
+     data-story-layout 與版面 CSS 印進 HTML 了（dataset 寫回同一個值、
+     link 被 querySelector 擋掉），賓客不會看到版面換一次。 */
+function applyStoryLayout(name, isStoryPage) {
+  const key = storyLayoutKey(name);
+  if (!isStoryPage) return key;
+
+  document.body.dataset.storyLayout = key;
+  for (const href of STORY_LAYOUTS[key].css || []) {
     if (document.querySelector(`link[href="${href}"]`)) continue;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
@@ -395,6 +426,10 @@ async function boot() {
   /* 版型：越早套上，換色閃一下的時間越短，所以排在讀素材之前 */
   const template = applyTemplate(site.template, pageKey === 'lobby');
 
+  /* 敘事模組：同理，而且版面 CSS 要趕在頁面 JS 之前掛上去 ——
+     story-chapters.css 有一條在擋時間軸的骨架，晚一步就會閃出來 */
+  const storyLayout = applyStoryLayout(site.storyLayout, pageKey === 'exhibition');
+
   /* 大廳再換一次骨架（korean／forest 的版面結構跟 Classic 不同）。
      一定要排在載入 common.js／index.js 之前 —— 那兩支一載入就開始
      抓 DOM，骨架換晚了它們會綁到舊節點上。 */
@@ -415,6 +450,7 @@ async function boot() {
     assets,
     page: pageKey,
     template,
+    storyLayout,
     data: site,
     pages: PAGES,
     templates: TEMPLATES,
@@ -457,8 +493,12 @@ async function boot() {
      順序仍然要維持：頁面 JS 一載入就會讀 common.js 的全域函式。 */
   try {
     await loadScript('/js/common.js');
-    /* 開關代號 → 頁面 JS 檔名（檔名跟著 HTML 走，不是跟著代號） */
-    const pageScript = { lobby:'index', rsvp:'invitation' }[pageKey] || pageKey;
+    /* 開關代號 → 頁面 JS 檔名（檔名跟著 HTML 走，不是跟著代號）。
+       「我們的故事」是唯一由敘事模組決定的一頁：不同的編排是不同的 DOM
+       與不同的捲動行為，不是同一支腳本加一堆 if，所以各載各的。 */
+    const pageScript = pageKey === 'exhibition'
+      ? STORY_LAYOUTS[storyLayout].js
+      : ({ lobby:'index', rsvp:'invitation' }[pageKey] || pageKey);
     await loadScript(`/js/${pageScript}.js`);
   } catch (err) {
     showFatal('頁面載入失敗', '請重新整理一次，如果一直發生請告訴我們');

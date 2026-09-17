@@ -79,6 +79,50 @@ export function templateKey(name) {
 }
 
 /* ============================================================
+   敘事模組（sites.storyLayout）
+   ------------------------------------------------------------
+   和版型（sites.template）**是兩軸**，不是同一件事的兩半：
+
+     template     這組新人的站台長什麼樣子 —— 顏色、字體、線與留白
+     storyLayout  「我們的故事」那一頁怎麼說 —— 照片與文字的編排節奏
+
+   所以 korean ＋ chapters、forest ＋ chapters 都成立，不必為了換一種
+   說故事的方式再寫一整套版型；反過來也一樣，換了敘事模組不會動到
+   站台其他任何一頁的樣子。
+
+   ・**吃的是同一份 exhibits**：後台「新人故事牆」那一份資料不動，
+     每個模組只是把同樣的 kind／title／sub／desc／year／act／img
+     畫成不同的樣子。換模組不會要新人重填任何東西。
+   ・**新開的站台一律是 timeline**（現在的橫向時間軸）：沒有欄位、
+     值不認得、拼錯了都落回它，既有站台不會因為多了這個欄位就改變。
+   ・和 template 同一個權限層級：不在 firestore.rules 的可更新白名單裡，
+     新人自己改不動，只有我們用 Admin SDK 改得動。
+
+   ▸ css：這個模組自己的版面。**只有「我們的故事」那一頁要**，
+     和 TEMPLATES.lobbyCss 是同一個道理 —— 每一條規則都收在模組自己的
+     前綴底下（.sc-* …），其他頁面載它只是白白多擋一次首次繪製。
+   ▸ js ：頁面腳本的檔名。site-context.js 載入頁面 JS 時用它取代預設的
+     exhibition.js —— 不同的編排是不同的 DOM 與不同的捲動行為，
+     不是同一支腳本加一堆 if。
+============================================================ */
+export const STORY_LAYOUTS = {
+  /* 橫向時間軸：現在就在線上的那一版，所以它是預設值 */
+  'timeline': { label:'橫向時間軸', js:'exhibition' },
+  /* 章節式故事：依 kind:'act' 分章，一章一種版面節奏（見 css/story-chapters.css） */
+  'chapters': { label:'章節式故事', js:'story-chapters',
+                css:['/css/story-chapters.css'] },
+};
+export const DEFAULT_STORY_LAYOUT = 'timeline';
+
+/* 認不得的模組一律落回 timeline。
+   用 hasOwn 的理由和 templateKey() 一樣：'toString'、'__proto__'
+   這些原型上的屬性是 truthy，直接判斷會讓它們通過，
+   然後去載一支不存在的 /js/toString.js，整頁停在載入失敗。 */
+export function storyLayoutKey(name) {
+  return Object.hasOwn(STORY_LAYOUTS, name) ? name : DEFAULT_STORY_LAYOUT;
+}
+
+/* ============================================================
    頁面公開狀態（sites.pagePublish）
    ------------------------------------------------------------
    `pages` 是**我們**幫這組新人開了哪幾頁（規則的判斷依據，新人改不動）。

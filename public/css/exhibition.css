@@ -182,3 +182,17 @@
   .tl-act-div .ac-label{font-size:24px;letter-spacing:.36em;}
   .tl-act-div .ac-sub{font-size:11.5px;letter-spacing:.42em;}
 }
+
+/* ============================================================
+   hero 的副標：一種敘事模組一句
+   ------------------------------------------------------------
+   「沿著時間線」是橫向時間軸那一版的說法，章節式故事不是那樣走的。
+   兩句都寫在 exhibition.html 裡，由 <body data-story-layout> 決定顯示哪一句
+   —— 這一份每一種模組都會載入，所以切換規則放在這裡而不是模組自己的 CSS，
+   不然沒載到那一份的時候兩句會同時出現。
+   認不得的值（理論上不會發生，storyLayoutKey() 會擋掉）一句都不顯示，
+   總比兩句疊在一起好。
+============================================================ */
+.sh-sub[data-story-sub]{display:none;}
+body[data-story-layout="timeline"] .sh-sub[data-story-sub="timeline"],
+body[data-story-layout="chapters"] .sh-sub[data-story-sub="chapters"]{display:block;}

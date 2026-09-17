@@ -403,6 +403,65 @@ console.log('\n【⑦ 首屏只載真的用得到的東西】');
      !!lobby && !lobby.includes('as="image"'));
 }
 
+/* ============================================================
+   8. 敘事模組：只動得到「我們的故事」那一頁
+   ------------------------------------------------------------
+   sites.storyLayout 和 sites.template 是**兩軸**（見 js/wed-model.js 的
+   STORY_LAYOUTS）。這一段守的就是那條界線：
+
+     ・換了敘事模組，只有 exhibition.html 會變 —— 屬性、版面 CSS、
+       預載的頁面 JS 三樣都要跟著換
+     ・其他頁面一條都不該受影響。story-chapters.css 的每一條規則都收在
+       .sc-* 底下，對「給你的信」一條都不生效，印進它的 <head>
+       只是多擋一次首次繪製（和 lobby-*.css 同一個道理）
+     ・預載的頁面 JS 沒跟著換的話，預載的是一支不會執行的檔案，
+       真正要跑的那支反而要等到執行期才開始下載
+
+   flicker-korean 設了 chapters，ginny-one-… 刻意沒設（驗落回 timeline）。
+============================================================ */
+console.log('\n【⑧ 敘事模組：只有「我們的故事」那一頁換】');
+{
+  const read = (slug, file) => {
+    const u = new URL(`../public/w/${slug}/${file}`, import.meta.url);
+    return existsSync(u) ? readFileSync(u, 'utf8') : null;
+  };
+
+  const story = read(KOREAN, 'exhibition.html');
+  ok('chapters 站台有產出「我們的故事」', !!story);
+
+  ok('它的 <body> 第一格就是 chapters',
+     !!story && /<body[^>]*data-story-layout="chapters"/.test(story),
+     story ? (story.match(/<body[^>]*>/)?.[0] || '').slice(0, 110) : '—');
+
+  ok('版面 CSS 直接印進 <head>（不必等執行期注入）',
+     !!story && story.includes('/css/story-chapters.css'));
+
+  ok('預載的頁面 JS 換成了這個模組自己的那一支',
+     !!story && story.includes('<link rel="preload" as="script" href="/js/story-chapters.js">')
+             && !story.includes('<link rel="preload" as="script" href="/js/exhibition.js">'));
+
+  /* 其他頁面：一個字都不該被這一軸碰到 */
+  const leaked = ['index', 'letter', 'wall', 'quiz', 'seating'].filter((f) => {
+    const html = read(KOREAN, `${f}.html`);
+    return html === null ? false
+      : html.includes('story-chapters.css') || html.includes('data-story-layout');
+  });
+  ok('其他頁面沒有沾到 story-chapters.css，也沒有 data-story-layout',
+     leaked.length === 0, leaked.join('、') || '5 頁都乾淨');
+
+  /* 沒設定的站台要落回 timeline，而且不能白白多載一份用不到的 CSS */
+  const fallback = read('ginny-one-20260919', 'exhibition.html');
+  ok('沒設 storyLayout 的站台落回 timeline',
+     !!fallback && /<body[^>]*data-story-layout="timeline"/.test(fallback),
+     fallback ? (fallback.match(/data-story-layout="[^"]*"/)?.[0] || '沒有這個屬性') : '—');
+
+  ok('落回 timeline 的站台不會載到 chapters 的版面 CSS',
+     !!fallback && !fallback.includes('story-chapters.css'));
+
+  ok('落回 timeline 的站台預載的仍然是 exhibition.js',
+     !!fallback && fallback.includes('<link rel="preload" as="script" href="/js/exhibition.js">'));
+}
+
 await browser.close();
 
 console.log(`\n${failures ? `❌ ${failures} 項未通過` : '✅ 全部通過'}`);

@@ -7,57 +7,14 @@
    ・沒填年份的卡片不顯示時間列（內建範例就是這種）
    ・卡片下方提供美術館式的描述文字
 
-   內容從哪裡來？（由上而下，先找到就用）
-     1. 新人在後台 /w/{slug}/admin「新人故事牆」分頁設定的故事（Firestore `exhibits`）
-     2. 素材資料夾 public/assets/{slug}/exhibition/
-     3. js/exhibit-defaults.js 的內建範例（EXHIBIT_DEFAULTS）
+   內容從哪裡來、怎麼排序：js/exhibit-story.js 的 EXHIBIT_STORY.items()。
+   那一份是所有敘事模組（sites.storyLayout）共用的資料層，這裡只負責畫面。
 
    改內建範例：去 js/exhibit-defaults.js —— 那一份後台也在用，
    新人第一次打開「新人故事牆」分頁時會整份寫進他自己的站台當起點。
 ============================================================ */
 if(!requireUser()) { /* requireUser 已導向首頁 */ }
 
-/* exhibits 的欄位（kind/title/sub/desc/year/act/img）→ 這支檔案的時間軸格式。
-   後台設定的內容與 EXHIBIT_DEFAULTS 都是同一種欄位，所以共用同一個轉換。
-   （kind='act' 是章節分隔卡，sub 在故事是時間補充、在章節是副標） */
-function toTimelineItem(it, i){
-  const n = (typeof it.order === 'number') ? it.order : (i + 1);
-  return it.kind === 'act'
-    ? { n, type:'act', label: it.title || '', subtitle: it.sub || '' }
-    : { n, type:'photo', src: it.img || '',
-        year: it.year || '', when: it.sub || '',
-        title: it.title || '', desc: it.desc || '', act: it.act || '',
-        finale: it.finale === true };
-}
-
-/* 內建範例：一則不綁定任何人的新人故事，任何一組新人都能直接用。
-   ・不寫年份：範例不曉得這對新人是哪一年相遇的，與其填錯不如不填，
-     卡片會自動套用 no-year 版型。
-   ・照片一律留空：真正的照片請放 public/assets/{slug}/exhibition/，
-     由下面的 applyExhibitionAssets() 整批取代，沒放素材時也不會去要不存在的圖。 */
-const ITEMS = EXHIBIT_DEFAULTS.map(toTimelineItem);
-
-/* 素材資料夾有 exhibition/ 就用客戶自己的展品，否則沿用上面的預設 */
-(function applyExhibitionAssets(){
-  const list = (window.SITE && window.SITE.assets && window.SITE.assets.exhibition) || [];
-  if(!list.length) return;
-  ITEMS.length = 0;
-  list.forEach((item, i) => {
-    ITEMS.push({
-      n:     i + 1,
-      type:  'photo',
-      src:   item.src,
-      year:  item.year  || '',
-      when:  item.when  || '',
-      title: item.title || '',
-      desc:  item.desc  || '',
-      act:   item.act   || '',
-    });
-  });
-})();
-
-/* 依編號排序 */
-ITEMS.sort((a,b)=> a.n - b.n);
 
 const track     = document.getElementById('tlTrack');
 const yearBack  = document.getElementById('tlYearBack');
@@ -70,11 +27,6 @@ const nextBtn   = document.getElementById('tlNext');
 let photoNodes = [];
 let photoData  = [];
 let dots       = [];
-
-/* 後台設定的故事牆內容 → 這支檔案的時間軸格式 */
-function ownerItems(){
-  return DataStore.getExhibits().map(toTimelineItem);
-}
 
 function renderTimeline(items){
   /* 只清掉上一輪的節點，軌道那條線是版型的一部分要留著 */
@@ -147,10 +99,9 @@ function renderTimeline(items){
   syncTimeline();
 }
 
-/* 後台有設定就整批換掉，沒有就沿用素材資料夾／內建範例 */
+/* 來源的優先序與排序都在共用資料層，這裡只管重畫 */
 function applyExhibits(){
-  const owner = ownerItems();
-  renderTimeline(owner.length ? owner.slice().sort((a,b)=> a.n - b.n) : ITEMS);
+  renderTimeline(EXHIBIT_STORY.items());
 }
 document.addEventListener('data:exhibits', applyExhibits);
 
@@ -295,6 +246,7 @@ document.getElementById('lbClose').onclick = ()=> lb.classList.remove('open');
 lb.addEventListener('click', e=>{ if(e.target === lb) lb.classList.remove('open'); });
 addEventListener('keydown', e=>{ if(e.key === 'Escape') lb.classList.remove('open'); });
 
-/* 先用素材資料夾／內建範例畫一次，後台設定的展品到了再整批換掉 */
-renderTimeline(ITEMS);
+/* 先用素材資料夾／內建範例畫一次，後台設定的展品到了再整批換掉
+   （那一輪由 data:exhibits 觸發 applyExhibits()） */
+renderTimeline(EXHIBIT_STORY.items());
 DataStore.subscribeExhibits();

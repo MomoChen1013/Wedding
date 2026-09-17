@@ -44,7 +44,7 @@
 <link rel="stylesheet" href="/css/common.css">
 <link rel="stylesheet" href="/css/exhibition.css">
 </head>
-<body data-template="classic" data-page="exhibition">
+<body data-template="classic" data-story-layout="timeline" data-page="exhibition">
 <!-- 開場遮罩：只有**沒預產到**的頁面會顯示（見 css/common.css 的 .boot-veil）。
      那種頁面的版型要等 Firestore 回來才換得掉，換色就發生在這一層底下。
      build-og 產出的頁面會在 <html> 上蓋 data-prerendered，這層直接不顯示。 -->
@@ -64,7 +64,8 @@
   <!-- 入口封面 -->
   <div class="scene-hero">
     <div class="sh-title">我們的故事</div>
-    <div class="sh-sub">沿著時間線・走過我們的戀愛旅程</div>
+    <div class="sh-sub" data-story-sub="timeline">沿著時間線・走過我們的戀愛旅程</div>
+    <div class="sh-sub" data-story-sub="chapters">一章一章・走過我們的戀愛旅程</div>
     <div class="scroll-cue"><span>Scroll</span><span class="arrow"></span></div>
   </div>
 
@@ -113,6 +114,8 @@
 
 <!-- 故事牆的預設故事與章節（與後台共用同一份） -->
 <script defer src="/js/exhibit-defaults.js"></script>
+<!-- 各敘事模組共用的資料層（來源優先序、排序、分章） -->
+<script defer src="/js/exhibit-story.js"></script>
 
 <!-- 站台載入器：解析 slug、載設定，之後才注入 common.js 與本頁 JS -->
 <script type="module" src="/js/site-context.js"></script>
