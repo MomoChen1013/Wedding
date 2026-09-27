@@ -114,6 +114,8 @@
 ├─ firestore.indexes.json
 ├─ public/
 │   ├─ index.html             # 大廳
+│   ├─ lobby-korean.html  lobby-forest.html  lobby-tapestry.html
+│   │                         # 版型自己的大廳骨架（見 js/wed-model.js 的 TEMPLATES）
 │   ├─ wall.html  cake.html
 │   ├─ draw.html  exhibition.html  quiz.html
 │   ├─ seating.html           # 我的桌次（婚禮當天查桌次 + 桌次圖）
@@ -133,6 +135,7 @@
 │   └─ js/
 │       ├─ site-context.js    # ★ 每頁唯一進入點：解析 slug、載設定、注入其他 JS
 │       ├─ common.js          # 資料層 DataStore、導覽、特效、樣板文字
+│       ├─ lobby-motion.js    # 大廳的開場信封與捲動編排（tapestry 版型宣告了才載）
 │       ├─ cropper.js         # 後台專用的照片裁切器（只有 admin.html 載入）
 │       ├─ seating-plan.js    # 後台專用的排桌工作台（只有 admin.html 載入）
 │       ├─ xlsx-lite.js       # 極小的 Excel 讀寫器（排桌的匯入匯出用，無外部函式庫）
@@ -187,8 +190,8 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 `venue`、`address`、`dressCode`、`giftNote`、`story`、`hashtag`。
 
 `groomEn`／`brideEn`／`coupleEn` 讀站台的 `groomNameEn`／`brideNameEn`，
-沒填就退回中文名。目前只有 korean 版型的大廳 hero 用它
-（`public/lobby-korean.html`），頁面其他地方仍然是中文名 —— 想讓某一塊
+沒填就退回中文名。目前只有 korean 與 tapestry 版型的大廳 hero 用它
+（`public/lobby-korean.html`、`public/lobby-tapestry.html`），頁面其他地方仍然是中文名 —— 想讓某一塊
 走英文，就把那一行的 token 換成 `En` 那組，不必再改資料。
 
 `{{hashtag}}` 取新人填的第一個 hashtag；一個都沒填時用預設的 `#我們結婚了`
@@ -397,7 +400,7 @@ node scripts/create-site.js \
 | `--slug` | ✅ | 網址代稱，小寫英數與連字號，3–40 字，全域唯一 |
 | `--groom` | ✅ | 新郎姓名 |
 | `--bride` | ✅ | 新娘姓名 |
-| `--groom-en` | | 新郎英文名；korean 版型的 hero 會改用它 |
+| `--groom-en` | | 新郎英文名；korean／tapestry 版型的 hero 會改用它 |
 | `--bride-en` | | 新娘英文名；**兩個都填才生效**，只填一邊 hero 整行維持中文 |
 | `--date` | ✅ | 婚禮日期 `YYYY-MM-DD` |
 | `--time` | | 婚禮時間 `HH:mm`，預設 `12:00` |

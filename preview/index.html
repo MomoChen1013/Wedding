@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Noto+Sans+TC:wght@300;400;500&family=Noto+Serif+TC:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
-   模板選擇頁 — 三張縮圖，一眼看出三種婚禮氣質
+   模板選擇頁 — 四張縮圖，一眼看出四種婚禮氣質
    ------------------------------------------------------------
    縮圖刻意只畫 Hero：因為三份模板真正的差別就在
    「照片怎麼進到畫面裡」，而那件事在 Hero 就決定完了。
@@ -33,7 +33,8 @@ body{background:var(--ground);color:var(--ink);font-family:var(--f-ui);font-weig
 .head p{margin-top:12px;max-width:46em;color:var(--muted);font-size:14px;}
 
 .grid{display:grid;gap:clamp(18px,2.6vw,28px);grid-template-columns:1fr;}
-@media(min-width:760px){.grid{grid-template-columns:repeat(3,1fr);}}
+@media(min-width:760px){.grid{grid-template-columns:repeat(2,1fr);}}
+@media(min-width:1100px){.grid{grid-template-columns:repeat(4,1fr);}}
 
 .card{background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;}
 .thumb{position:relative;aspect-ratio:4/5;overflow:hidden;border-bottom:1px solid var(--line);}
@@ -119,6 +120,25 @@ body{background:var(--ground);color:var(--ink);font-family:var(--f-ui);font-weig
 .t-forest .fern{position:absolute;right:9%;bottom:14%;width:16%;color:rgba(255,255,255,.5);}
 .t-forest .fern svg{width:100%;height:auto;display:block;}
 
+/* ============ 縮圖 ④　Tapestry：打開一封信 ============ */
+.t-tapestry{background:#e6d9bd;}
+.t-tapestry .side{position:absolute;inset:0;background:linear-gradient(90deg,#f1e8d4,#e4d6b8);
+  clip-path:polygon(0 0,52% 52%,0 100%);}
+.t-tapestry .side.r{background:linear-gradient(270deg,#e6d9bd,#dccdac);clip-path:polygon(100% 0,48% 52%,100% 100%);}
+.t-tapestry .bot{position:absolute;inset:0;background:linear-gradient(0deg,#e5d8bc,#ede3cc);
+  clip-path:polygon(0 100%,50% 44%,100% 100%);filter:drop-shadow(0 -2px 3px rgba(70,46,22,.2));}
+.t-tapestry .top{position:absolute;inset:0;filter:drop-shadow(0 4px 5px rgba(58,36,16,.28));}
+.t-tapestry .top i{position:absolute;inset:0;background:linear-gradient(180deg,#f4ecda,#e9dec5);
+  clip-path:polygon(0 0,100% 0,50% 52%);}
+.t-tapestry .to{position:absolute;left:0;right:0;top:17%;text-align:center;font-family:var(--f-en);
+  font-style:italic;font-size:15px;color:#5b2a2a;}
+.t-tapestry .seal{position:absolute;left:50%;top:52%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:47% 53% 50% 50%;
+  background:radial-gradient(circle at 38% 32%,#b2323c,#8a1c26 55%,#560b13);
+  box-shadow:0 3px 5px rgba(40,6,8,.35),inset 0 0 0 9px rgba(0,0,0,.08);}
+.t-tapestry .seal::after{content:'';position:absolute;inset:15px;border-radius:50%;border:2.5px solid #6f111b;
+  box-shadow:-1px -1px 0 rgba(199,80,90,.55);}
+.t-tapestry .hint{position:absolute;left:0;right:0;bottom:17%;text-align:center;font-size:7px;letter-spacing:.4em;color:#8a6a2a;}
+
 .note{margin-top:clamp(28px,4vw,44px);padding-top:22px;border-top:1px solid var(--line);
   font-size:12.5px;color:var(--muted);max-width:60em;}
 .note b{color:var(--ink);font-weight:500;}
@@ -130,7 +150,7 @@ body{background:var(--ground);color:var(--ink);font-family:var(--f-ui);font-weig
   <header class="head">
     <div class="kicker">Minato Studio — Wedding</div>
     <h1>挑一種婚禮的氣質</h1>
-    <p>同一份婚禮資料，三種版型。內容、連結、後台設定完全不用重做——換的只有「照片怎麼進到畫面裡」，
+    <p>同一份婚禮資料，四種版型。內容、連結、後台設定完全不用重做——換的只有「照片怎麼進到畫面裡」，
        而那件事決定了整張邀請函的個性。</p>
   </header>
 
@@ -205,13 +225,37 @@ body{background:var(--ground);color:var(--ink);font-family:var(--f-ui);font-weig
       </div>
     </article>
 
+
+    <!-- ④ Tapestry -->
+    <article class="card">
+      <div class="thumb t-tapestry">
+        <div class="side"></div><div class="side r"></div><div class="bot"></div>
+        <div class="top"><i></i></div>
+        <div class="to">To our dearest guest</div>
+        <div class="seal"></div>
+        <div class="hint">BREAK THE SEAL</div>
+      </div>
+      <div class="card-body">
+        <div class="card-title"><span class="en">Tapestry</span><span class="cn">中古刺繡</span></div>
+        <p class="thesis"><b>整頁就是信封裡的那張信紙。</b>開場是一封蓋了鑽戒封蠟的歐式信封，點一下封蠟裂開、封口往上掀、
+           信封往四面退開，信紙溶進邀請函。往下捲，刺繡插圖一排一排繡出來，一條金線沿著左緣跟著縫下去。</p>
+        <div class="mood">Medieval · Embroidered · Ceremonial</div>
+        <div class="swatches">
+          <i style="background:#F1E8D5"></i><i style="background:#B08A3E"></i>
+          <i style="background:#6E1B26"></i><i style="background:#1F2946"></i><i style="background:#2C242E"></i>
+        </div>
+        <div class="meta">Cinzel ＋ Cormorant ＋ Noto Serif TC　·　完整示範 <code>preview/tapestry.html</code></div>
+      </div>
+    </article>
   </div>
 
   <p class="note">
-    三份模板讀的是<b>同一支 <code style="font-family:ui-monospace,monospace">demo-data.js</code></b>，
-    由<b>同一支 <code style="font-family:ui-monospace,monospace">lobby-mount.js</code></b> 填空——
+    四份模板讀的是<b>同一支 <code style="font-family:ui-monospace,monospace">demo-data.js</code></b>。
+    前三份由<b>同一支 <code style="font-family:ui-monospace,monospace">lobby-mount.js</code></b> 填空——
     模板只提供 <code style="font-family:ui-monospace,monospace">&lt;template&gt;</code> 骨架與 CSS，
     一行資料邏輯都沒有。這正是「One Wedding Data → Multiple Visual Templates」要證明的事。
+    Tapestry 的示範頁直接用正式版的骨架（<code style="font-family:ui-monospace,monospace">public/lobby-tapestry.html</code>）
+    與正式版的信封／捲動腳本，只有填資料那一小段換成示範用的。
   </p>
 
 </div>

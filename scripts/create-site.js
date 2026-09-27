@@ -10,7 +10,7 @@
      --slug           必填，網址代稱（小寫英數與連字號，3–40 字）
      --groom          必填，新郎姓名
      --bride          必填，新娘姓名
-     --groom-en       選填，新郎英文名；korean 版型的 hero 會改用它
+     --groom-en       選填，新郎英文名；korean／tapestry 版型的 hero 會改用它
      --bride-en       選填，新娘英文名；兩個都填才會生效（只填一邊會是
                        「Ginny & 宜庭」這種中英混排，所以整行維持中文）
      --date           必填，婚禮日期 YYYY-MM-DD
@@ -22,7 +22,7 @@
      --map-url        選填，Google Maps 連結
      --template       選填，版型；預設 classic
                       classic / classic-blush / classic-sage / classic-dusk
-                      / korean / forest（見 js/site-context.js 的 TEMPLATES）
+                      / korean / forest / tapestry（見 js/wed-model.js 的 TEMPLATES）
      --cover          選填，封面圖片網址
      --story          選填，兩人的故事
      --photo          選填，照片牆的圖片網址；可重複給多次，順序即顯示順序
@@ -68,7 +68,7 @@ import { OPTIONAL_PAGES, ADMIN_PAGES, DEFAULT_PAGES, PAGE_LABELS, resolvePages }
 
 /* ---------- 保留字黑名單 ---------- */
 /* 認得的版型，對得上 js/site-context.js 的 TEMPLATES 與 css/common.css 的色票 */
-const TEMPLATES = ['classic','classic-blush','classic-sage','classic-dusk','korean','forest'];
+const TEMPLATES = ['classic','classic-blush','classic-sage','classic-dusk','korean','forest','tapestry'];
 
 const RESERVED_SLUGS = new Set(['admin', 'api', 'www', 'app', 'w', 's', 'assets', 'static']);
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;

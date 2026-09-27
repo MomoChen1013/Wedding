@@ -331,7 +331,8 @@ console.log('\n【⑥ 載入順序：預載的網址要跟實際 import 的一�
   const PAGE_JS = { lobby:'index', rsvp:'invitation' };
 
   const pages = ['index','invitation','letter','wall','cake','draw',
-                 'exhibition','quiz','seating','lobby-korean','lobby-forest'];
+                 'exhibition','quiz','seating','lobby-korean','lobby-forest',
+                 'lobby-tapestry'];
   const missing = [];
   const wrongJs = [];
   for(const name of pages){

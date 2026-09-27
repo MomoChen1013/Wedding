@@ -47,7 +47,13 @@
      —— 「給你的信」載它等於白白多擋一次首次繪製（korean 那份 10KB）。
      所以名字寫成 lobbyCss，作用域直接寫在名字上，兩端才不會各自解讀。
 
-   兩者都由 build-og 直接寫進產出頁面的 <head>（讓瀏覽器的 preload
+   ▸ lobbyJs：**只有大廳要**的動作腳本（例如 tapestry 的信封開場與捲動編排）。
+     版型的 HTML 不能帶 <script>（site-context.js 用 innerHTML 換骨架時不會執行），
+     所以動作寫成一支獨立的腳本，由 site-context.js 排在 index.js 之前載入；
+     index.js 看得到它提供的 window.LobbyMotion 才走那一套，看不到就照舊。
+     這一支 build-og 不必處理：lobbyFile 自己的 <head> 已經 preload 了。
+
+   fonts／lobbyCss 由 build-og 直接寫進產出頁面的 <head>（讓瀏覽器的 preload
    scanner 掃得到），沒預產到的頁面才由 site-context.js 在執行期補上。
 ============================================================ */
 export const TEMPLATES = {
@@ -66,6 +72,12 @@ export const TEMPLATES = {
   'forest':        { label:'Forest Botanical', lobbyFile:'lobby-forest.html',
                      lobbyCss:['/css/lobby-forest.css'],
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
+  /* 中古刺繡：開場是一封蓋了封蠟的信（取代兩句字幕＋簾幕），
+     內容是刺繡插圖 ＋ 捲動編排（見 css/lobby-tapestry.css 開頭的說明） */
+  'tapestry':      { label:'Tapestry 中古刺繡', lobbyFile:'lobby-tapestry.html',
+                     lobbyCss:['/css/lobby-tapestry.css'],
+                     lobbyJs:['/js/lobby-motion.js'],
+                     fonts:['https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
 };
 export const DEFAULT_TEMPLATE = 'classic';
 

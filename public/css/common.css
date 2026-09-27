@@ -153,6 +153,28 @@ body[data-template="forest"]{
   --card:#fbf9f2;
 }
 
+/* 中古刺繡 —— 亞麻布底、深李子色的墨、金線與酒紅作重音
+   ・大廳是 lobby-tapestry.html（信封開場 ＋ 刺繡插圖），這一組色票與字體
+     讓其他子頁穿上同一身衣服：標題走 Cinzel（羅馬碑文體），
+     內文維持明朝體 —— 無襯線放在刺繡旁邊太現代了
+   ・--primary 是金線、--primary-deep 是酒紅（按鈕以外的重點字都吃它） */
+body[data-template="tapestry"]{
+  --ink-rgb:44,36,46;
+  --surface-rgb:248,242,228;
+  --ink:#2c242e; --ink-soft:#75685a;
+  --line:#d6c7a6; --line-soft:#e4d8bd;
+  --surface:#f8f2e4;
+  --ink-hover:#43363f; --ink-active:#1c161d;
+  --primary:#b08a3e; --primary-deep:#7a1f2b; --primary-soft:#efe4cb;
+  --secondary:#5d6b3a; --accent:#7a1f2b; --sun:#e2c98a;
+  --bg1:#f1e8d5; --bg2:#e8dcc3;
+  --card:#f8f2e4;
+  --font-display:'Cinzel','Noto Serif TC',serif;
+  --font-body:'Noto Serif TC',serif;
+  --font-hand:'Cormorant Garamond','Noto Serif TC',serif;
+  --font-ui:'Noto Serif TC',serif;
+}
+
 /* ============================================================
    版型的專屬層（Classic 完全不吃這一段）
 ============================================================ */
@@ -182,7 +204,7 @@ body[data-template="forest"] .scene-bg::after{
    手機上也要讀得動：資訊性的字最小 12px，主要內文至少 14px。
    純裝飾（SCROLL 提示、英文 ribbon、卡片編號、To／From）不在此列。
    只掛在這兩個版型上，Classic 一個像素都不動。 */
-body:is([data-template="korean"],[data-template="forest"]) :is(
+body:is([data-template="korean"],[data-template="forest"],[data-template="tapestry"]) :is(
   .lobby-hero .tag, .ir-label, .cd-lab, .lc-go, .icon-hint, .gate-sep,
   .rf-req, .st-card-label, .st-mates-label, .st-letter-go, .st-lb-tip,
   .draw-info-hint, .cv-hint, .tl-eyebrow, .tl-meta .when, .lb-body .lb-date,
@@ -190,7 +212,7 @@ body:is([data-template="korean"],[data-template="forest"]) :is(
   .wish-note .by, .wl-save-hint){
   font-size:12px;
 }
-body:is([data-template="korean"],[data-template="forest"]) :is(
+body:is([data-template="korean"],[data-template="forest"],[data-template="tapestry"]) :is(
   .inv-lead, .tl-meta .desc, .st-letter-text, .st-miss-body,
   .q-intro, .q-bar-label, .card-desc, .rsvp-cta p,
   .step-pane .step-hint, .gate-card .sub){
@@ -200,6 +222,7 @@ body:is([data-template="korean"],[data-template="forest"]) :is(
    換的是 .timeline 上的 --tl-line（線本體畫在 .tl-dot::after，見 index.css）。 */
 body[data-template="korean"] .timeline{--tl-line:#c6c2ba;}
 body[data-template="forest"] .timeline{--tl-line:#c8c4b4;}
+body[data-template="tapestry"] .timeline{--tl-line:#cdb98f;}
 
 /* ---- 植物線稿（由 common.js 注入，只有這兩個版型有） ----
    korean 是一小枝、forest 是一支蕨葉；素材資料夾放 deco.png/svg
