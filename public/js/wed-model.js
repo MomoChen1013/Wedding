@@ -96,9 +96,9 @@ export const TEMPLATES = {
                      lobbyCss:['/css/lobby-orangerie.css'], lobbyJs:['/js/lobby-motion.js'], opening:'bloom',
                      fonts:['https://fonts.googleapis.com/css2?family=Marcellus&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Sans+TC:wght@300;400;500&family=Noto+Serif+TC:wght@400;500&display=swap'] },
   /* 現代星空：星塵、月亮、流星；開場的星圖最後縮成首頁的裝飾 */
-  'night-sky':   { label:'Night Sky 現代星空', lobbyFile:'lobby-scene.html', lobbyKey:'scene',
-                     lobbyCss:['/css/lobby-scene.css'], lobbyJs:['/js/lobby-motion.js'], opening:'stars',
-                     fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Josefin+Sans:wght@300;400&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
+  'night-sky':   { label:'Night Sky 現代星空', lobbyFile:'lobby-night.html',
+                     lobbyCss:['/css/lobby-night.css'], lobbyJs:['/js/lobby-motion.js'], opening:'stars',
+                     fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Josefin+Sans:wght@300;400&family=Noto+Sans+TC:wght@300;400;500&family=Noto+Serif+TC:wght@400;500&display=swap'] },
   /* 法式莊園：石牆、拱門、鍛鐵與花園；推開一扇木門進去 */
   'french-manor': { label:'French Manor 法式莊園', lobbyFile:'lobby-scene.html', lobbyKey:'scene',
                      lobbyCss:['/css/lobby-scene.css'], lobbyJs:['/js/lobby-motion.js'], opening:'door',

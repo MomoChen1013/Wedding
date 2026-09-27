@@ -178,59 +178,7 @@ body[data-hero-name="cn"] .sc-hero .sc-names{font-family:'Noto Serif TC',serif;f
 
 /* Spring Orangerie 已經有自己的大廳（lobby-orangerie.html／css），不在這裡了 */
 
-/* ------------------------------------------------------------
-   Night Sky 現代星空（大廳是深色的）
-   星塵、月亮、流星、光點；玻璃感的卡片
------------------------------------------------------------- */
-body[data-template="night-sky"][data-lobby="scene"]{
-  --ink:#ece9f6; --ink-soft:#a9a8c4; --ink-rgb:236,233,246; --surface-rgb:20,26,51;
-  --line:rgba(236,233,246,.18); --line-soft:rgba(236,233,246,.1); --surface:#141a33;
-  --on-ink:#0b1024; --ink-hover:#ffffff; --ink-active:#d8d6ea;
-  --primary:#d8c690; --primary-deep:#d8c690; --bg1:#0b1024; --bg2:#070b1a; --card:#141a33;
-  --sc-page:
-    radial-gradient(1px 1px at 20px 30px,rgba(255,255,255,.7),transparent) 0 0/120px 110px,
-    radial-gradient(1px 1px at 80px 70px,rgba(255,255,255,.45),transparent) 0 0/150px 140px,
-    radial-gradient(1.5px 1.5px at 50px 100px,rgba(255,244,210,.55),transparent) 0 0/210px 190px,
-    radial-gradient(90% 60% at 70% 0%,#1c2450,transparent 70%),
-    linear-gradient(180deg,#0b1024,#070b1a);
-  --sc-kicker:"Written in the stars";
-  --sc-accent:#d8c690; --sc-gold:#d8c690;
-  --sc-card:rgba(30,38,76,.5); --sc-card-line:rgba(236,233,246,.16); --sc-card-radius:16px;
-  --sc-card-blur:blur(12px); --sc-card-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 24px 40px -24px rgba(0,0,0,.7);
-  --sc-band:radial-gradient(60% 80% at 30% 40%,rgba(120,110,200,.25),transparent 70%),linear-gradient(180deg,#141c3a,#0b1024);
-  --sc-band-ink:#ece9f6;
-  --sc-frame-radius:50%; --sc-frame-edge:rgba(216,198,144,.6);
-}
-body[data-template="night-sky"][data-lobby="scene"] .lc-modal-card,
-body[data-template="night-sky"][data-lobby="scene"] .gate-card{background:#141a33;}
-body[data-template="night-sky"] .sc-frame{aspect-ratio:1;}
-/* hero：月亮、一顆流星、慢慢閃的星 */
-body[data-template="night-sky"] .sc-hero-art > i:nth-child(1){right:12%;top:12%;width:clamp(60px,9vw,110px);aspect-ratio:1;border-radius:50%;
-  background:radial-gradient(circle at 36% 36%,#fffbe8,#e9e2c4 60%,#cfc6a2);
-  box-shadow:0 0 60px rgba(255,244,210,.35),0 0 140px rgba(255,244,210,.15);
-  -webkit-mask:radial-gradient(circle at 72% 30%,transparent 42%,#000 44%);mask:radial-gradient(circle at 72% 30%,transparent 42%,#000 44%);}
-body[data-template="night-sky"] .sc-hero-art > i:nth-child(2){left:10%;top:18%;width:160px;height:1.5px;
-  background:linear-gradient(90deg,transparent,#fff);transform:rotate(-24deg);opacity:0;
-  animation:sc-meteor 7s ease-in 2s infinite;}
-@keyframes sc-meteor{0%{opacity:0;transform:rotate(-24deg) translateX(0);}4%{opacity:1;}14%{opacity:0;transform:rotate(-24deg) translateX(260px);}100%{opacity:0;}}
-body[data-template="night-sky"] .sc-hero-art > i:nth-child(3){inset:0;
-  background:
-    radial-gradient(2px 2px at 15% 60%,#fff,transparent),radial-gradient(2px 2px at 82% 70%,#fff,transparent),
-    radial-gradient(1.5px 1.5px at 30% 25%,#fff,transparent),radial-gradient(1.5px 1.5px at 66% 20%,#fff,transparent);
-  animation:sc-twinkle 3.6s ease-in-out infinite;}
-@keyframes sc-twinkle{50%{opacity:.35;}}
-/* 主視覺：開場那一張星圖（外環 ＋ 心形星座），縮成首頁的裝飾 */
-body[data-template="night-sky"] .sc-emblem > i:nth-child(1){inset:0;border-radius:50%;border:1px solid rgba(216,198,144,.5);
-  box-shadow:inset 0 0 0 7px transparent,inset 0 0 0 8px rgba(216,198,144,.25);}
-body[data-template="night-sky"] .sc-emblem > i:nth-child(2){inset:0;border-radius:50%;
-  background:repeating-conic-gradient(rgba(216,198,144,.55) 0 .4deg,transparent .4deg 5deg);
-  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));
-  mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));}
-body[data-template="night-sky"] .sc-emblem > i:nth-child(3){inset:24%;
-  background:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='190 186 220 216'><path d='M300 392L246 342L202 286L200 232L236 196L276 204L300 240L324 204L364 196L400 232L398 286L354 342Z' fill='none' stroke='%23d8c690' stroke-width='2.4'/><g fill='%23fff'><circle cx='300' cy='392' r='5'/><circle cx='246' cy='342' r='4'/><circle cx='202' cy='286' r='4'/><circle cx='200' cy='232' r='4'/><circle cx='236' cy='196' r='4'/><circle cx='276' cy='204' r='4'/><circle cx='324' cy='204' r='4'/><circle cx='364' cy='196' r='4'/><circle cx='400' cy='232' r='4'/><circle cx='398' cy='286' r='4'/><circle cx='354' cy='342' r='4'/></g><circle cx='300' cy='240' r='7' fill='%23fff6d8'/></svg>") center/contain no-repeat;
-  filter:drop-shadow(0 0 6px rgba(255,236,170,.6));}
-body[data-template="night-sky"] .sc-hero .sc-names{font-weight:300;text-shadow:0 0 30px rgba(160,150,255,.35);}
-body[data-template="night-sky"] .sc-kicker .cn,body[data-template="night-sky"] .sc-date{letter-spacing:.5em;}
+/* Night Sky 已經有自己的大廳（lobby-night.html／css），不在這裡了 */
 
 /* ------------------------------------------------------------
    French Manor 法式莊園

@@ -241,12 +241,13 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | botanical-letter | ✅ 整套插圖（墨線＋水彩的標本、蒲公英、郵票）＋ 捲動編排 | `lobby-botanical.html` |
 | secret-garden | ✅ 整套插圖（紙雕立體書：分層的花園、野花、藤蔓、蝴蝶、黃昏螢火蟲）＋ 捲動編排 | `lobby-garden.html` |
 | spring-orangerie | ✅ 整套插圖（春日玻璃溫室：白鐵框拱窗、柑橘樹、玻璃罩裡的花、鬱金香、檸檬枝、蕨、澆水壺、種子包）＋ 捲動編排（葉影隨捲動移動、斜射的光、玻璃反光、倒數區的幼苗隨捲動長高結出花苞） | `lobby-orangerie.html` |
-| 其餘四個 | 世界觀、hero 場景、開場 | 共用 `lobby-scene.html` |
+| night-sky | ✅ 整套插圖（現代星空：開場那張心形星圖停在 hero、寫實的月亮、三層山稜、亮燈的帳篷、坐著看星星的兩個人、細金線星座）＋ 捲動編排（三層星星視差、星圖外環跟著轉、星座一條一條連起來、望遠鏡視野的軌道、倒數的月亮越捲越圓、頁尾天快亮了） | `lobby-night.html` |
+| 其餘三個 | 世界觀、hero 場景、開場 | 共用 `lobby-scene.html` |
 
 Night Sky 與 Midnight Chapel 的大廳是深色的，但子頁暫時還是淺色版（見 common.css）。
-還沒整套做完的版型並排看：`preview/scene.html`；做完的各有一頁（`preview/botanical-letter.html`、`preview/secret-garden.html`、`preview/spring-orangerie.html`）。右下角都可以切換開場。
+還沒整套做完的版型並排看：`preview/scene.html`；做完的各有一頁（`preview/botanical-letter.html`、`preview/secret-garden.html`、`preview/spring-orangerie.html`、`preview/night-sky.html`）。右下角都可以切換開場。
 
-`preview/` 底下 tapestry、botanical-letter、secret-garden、spring-orangerie、scene 這幾頁是 `npm run build-previews` 從
+`preview/` 底下 tapestry、botanical-letter、secret-garden、spring-orangerie、night-sky、scene 這幾頁是 `npm run build-previews` 從
 `public/lobby-*.html` 產出來的，改了大廳骨架記得重跑。
 
 ---

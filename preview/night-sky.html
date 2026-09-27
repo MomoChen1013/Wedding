@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" data-prerendered="1">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- ⚙️ 由 scripts/build-previews.js 從 public/lobby-night.html 產出，不要手改。
+     骨架一模一樣，差別只在資料由 demo-data.js ＋ lobby-demo.js 填（正式版是 js/index.js）。 -->
+<title>Night｜大廳模板示範</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- 字體依版型不同，由 build-og（預產）或 site-context.js（執行期）依 TEMPLATES[x].fonts 補上 -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../public/css/common.css">
+<link rel="stylesheet" href="../public/css/index.css">
+<link rel="stylesheet" href="../public/css/lobby-night.css">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Josefin+Sans:wght@300;400&amp;family=Noto+Sans+TC:wght@300;400;500&amp;family=Noto+Serif+TC:wght@400;500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../public/css/openers/envelope.css">
+<link rel="stylesheet" href="../public/css/openers/book.css">
+<link rel="stylesheet" href="../public/css/openers/bloom.css">
+<link rel="stylesheet" href="../public/css/openers/curtain.css">
+<link rel="stylesheet" href="../public/css/openers/candle.css">
+<link rel="stylesheet" href="../public/css/openers/stars.css">
+<link rel="stylesheet" href="../public/css/openers/door.css">
+<link rel="stylesheet" href="../public/css/openers/ribbon.css">
+<link rel="stylesheet" href="demo-panel.css">
+</head>
+<body data-template="night-sky" data-hero-name="en" class="nav-off" data-page="lobby" data-lobby="night-sky">
+<!-- 開場遮罩：只有**沒預產到**的頁面會顯示（見 css/common.css 的 .boot-veil） -->
+<div class="boot-veil" aria-hidden="true"><span class="boot-veil-mark">✦</span></div>
+
+<!-- 月亮、山稜的漸層與星光的暈：整頁的插圖都參照這一份，所以它不能 display:none -->
+<svg class="ns-defs" width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <radialGradient id="ns-moon" cx=".4" cy=".36" r=".7"><stop offset="0" stop-color="#fffdf2"/><stop offset=".5" stop-color="#f1ecd6"/><stop offset="1" stop-color="#c9c1a3"/></radialGradient>
+  <radialGradient id="ns-limb" cx=".5" cy=".5" r=".5"><stop offset=".62" stop-color="#3a3424" stop-opacity="0"/><stop offset="1" stop-color="#3a3424" stop-opacity=".38"/></radialGradient>
+  <linearGradient id="ns-r1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#27306a"/><stop offset="1" stop-color="#161d45"/></linearGradient>
+  <linearGradient id="ns-r2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#18204c"/><stop offset="1" stop-color="#0e1433"/></linearGradient>
+  <linearGradient id="ns-r3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c1130"/><stop offset="1" stop-color="#060918"/></linearGradient>
+  <linearGradient id="ns-mist" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8f96d8" stop-opacity="0"/><stop offset=".6" stop-color="#8f96d8" stop-opacity=".16"/><stop offset="1" stop-color="#8f96d8" stop-opacity="0"/></linearGradient>
+  <radialGradient id="ns-warm" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffd79a" stop-opacity=".9"/><stop offset=".4" stop-color="#ffb866" stop-opacity=".35"/><stop offset="1" stop-color="#ff9a3c" stop-opacity="0"/></radialGradient>
+  <linearGradient id="ns-tent-in" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe2a8"/><stop offset="1" stop-color="#f3a24c"/></linearGradient>
+  <filter id="ns-blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter>
+  <filter id="ns-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs></svg>
+
+<div class="bg-decor"></div>
+<canvas id="fx"></canvas>
+
+<!-- ============ 入場：填名字 + 抽 icon（與 index.html 同一套，js/index.js 操作） ============ -->
+<div class="overlay" id="gate">
+  <div class="gate-card">
+    <div class="ribbon">We're getting married</div>
+    <h1 data-tpl="couple"></h1>
+    <div class="sub"><span data-tpl="date"></span>・在進場前，先報上名來</div>
+    <div class="icon-pick" id="iconPick">✦</div>
+    <div class="icon-hint">這是你的專屬記號・<b id="rerollIcon">換一個</b></div>
+    <div class="field"><input id="nameInput" type="text" maxlength="12" placeholder="輸入你的名字"></div>
+    <button class="btn" id="enterBtn">進場觀禮</button>
+    <div class="gate-sep"><span>或</span></div>
+    <button class="btn btn-google" id="googleBtn" type="button">
+      <svg viewBox="0 0 18 18" aria-hidden="true">
+        <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.17-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.61z"/>
+        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.33A9 9 0 0 0 9 18z"/>
+        <path fill="#FBBC05" d="M3.96 10.71A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.17.28-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.04l3-2.33z"/>
+        <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 9 0 9 9 0 0 0 .96 4.96l3 2.33C4.67 5.16 6.66 3.58 9 3.58z"/>
+      </svg>
+      <span>用 Google 帳號登入</span>
+    </button>
+  </div>
+</div>
+
+<!-- ============ 開場 ============
+     空的容器：用哪一種開場由 sites.opening 決定（沒設就是這個版型的預設開場），
+     畫面由 js/openers/{key}.js 蓋進來。看過開場的賓客由 js/index.js 直接移除。 -->
+<div class="overlay" id="opener" hidden></div>
+
+<!-- 預設開場（字幕 ＋ 開幕簾 ＋ 跳過）：這個版型用信封取代，但 js/index.js 仍會找這幾顆，缺一顆整頁會掛 -->
+<div class="overlay" id="intro"><div class="intro-line" id="introLine"></div></div>
+<div class="overlay" id="curtain">
+  <div class="curtain-panel left"></div>
+  <div class="curtain-panel right"></div>
+</div>
+<button class="intro-skip" id="introSkip" type="button" hidden>跳過</button>
+
+<!-- ============ 主畫面：一片現代的星空 ============
+     開場那一張星圖縮小之後，就停在 hero 的正中間（名字上面）。
+     三層星星用不同的速度跟著捲動（視差），右上一顆月亮，偶爾一顆流星；
+     地平線是三層山稜，左邊一頂亮著燈的帳篷，右邊山頭上坐著兩個人在看星星。
+     往下捲到最後，地平線那頭會慢慢亮起來（天快亮了）。 -->
+<div id="app">
+  <section class="panel lobby ns-lobby" data-panel="lobby" data-scroll>
+
+    <!-- 整頁的星空：三層星星固定在視窗上，各自用不同的速度跟著捲動 -->
+    <div class="ns-sky" aria-hidden="true"><i></i><i></i><i></i><b class="ns-milky"></b></div>
+    <div class="ns-meteors" aria-hidden="true"><i></i><i></i><i></i></div>
+
+    <!-- ===== Hero ===== -->
+    <header class="lobby-hero ns-hero" data-scroll>
+      <div class="ns-scene" aria-hidden="true">
+        <div class="ns-moon"><svg class="ns-art ns-moon-art" viewBox="0 0 200 200" aria-hidden="true">
+  <circle cx="100" cy="100" r="96" fill="url(#ns-moon)"/>
+  <g fill="#9a9274" opacity=".22" filter="url(#ns-blur)"><ellipse cx="78" cy="70" rx="30" ry="22" transform="rotate(-20 78 70)"/><ellipse cx="118" cy="64" rx="20" ry="16" transform="rotate(10 118 64)"/><ellipse cx="104" cy="98" rx="26" ry="18" transform="rotate(30 104 98)"/><ellipse cx="70" cy="118" rx="18" ry="14" transform="rotate(0 70 118)"/><ellipse cx="128" cy="118" rx="14" ry="20" transform="rotate(-30 128 118)"/><ellipse cx="92" cy="140" rx="20" ry="10" transform="rotate(10 92 140)"/></g>
+  <g fill="#7d765a" fill-opacity=".1" stroke="#fffbea" stroke-opacity=".22" stroke-width=".5"><circle cx="167.8" cy="105.4" r="4"/><circle cx="29.7" cy="103" r="2.9"/><circle cx="105.3" cy="148.9" r="1.8"/><circle cx="113.4" cy="147.8" r="4.1"/><circle cx="119.3" cy="141.9" r="1.6"/><circle cx="114" cy="66.1" r="3.6"/><circle cx="72.1" cy="89.1" r="2.8"/><circle cx="59.8" cy="118.6" r="1.6"/><circle cx="85.1" cy="104.9" r="2.7"/><circle cx="30.1" cy="105.7" r="2.7"/><circle cx="100.7" cy="82.9" r="5.8"/><circle cx="94.2" cy="47.1" r="3.4"/><circle cx="121.3" cy="80.4" r="3.6"/><circle cx="143.5" cy="74.1" r="4.3"/><circle cx="86.2" cy="109.9" r="1.6"/><circle cx="98.9" cy="139.6" r="1.6"/><circle cx="61.8" cy="72" r="2.4"/><circle cx="87.3" cy="127.8" r="1.9"/><circle cx="158.1" cy="48.8" r="1.7"/><circle cx="63.2" cy="112" r="7.2"/><circle cx="137.9" cy="162.5" r="4.2"/><circle cx="152.9" cy="75.9" r="1.8"/><circle cx="138" cy="141.3" r="4.4"/><circle cx="81" cy="136.5" r="3.3"/><circle cx="114.4" cy="120.8" r="2.9"/><circle cx="104.3" cy="38" r="2"/></g>
+  <circle cx="171" cy="62" r="5" fill="none" stroke="#fffbea" stroke-opacity=".6"/>
+  <circle cx="100" cy="100" r="96" fill="url(#ns-limb)"/>
+</svg></div>
+        <div class="ns-horizon"><svg class="ns-horizon-art" viewBox="0 0 1600 420" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+  <g class="ns-r ns-r1"><path d="M-40 420L-40 190.2Q-40 190.2 -32 186.6Q-24 183 -16 182.3Q-8 181.6 0 181.9Q8 182.2 16 183.1Q24 184.1 32 181.6Q40 179 48 176.6Q56 174.2 64 170.6Q72 167 80 163.4Q88 159.9 96 157.9Q104 156 112 153.9Q120 151.8 128 150.4Q136 149 144 144.9Q152 140.9 160 137.2Q168 133.6 176 135.5Q184 137.5 192 135.7Q200 133.9 208 135.3Q216 136.7 224 142.1Q232 147.4 240 154.7Q248 161.9 256 162.6Q264 163.3 272 160.3Q280 157.3 288 156.8Q296 156.2 304 152.8Q312 149.4 320 145.5Q328 141.7 336 137.9Q344 134.2 352 133.6Q360 133 368 132.6Q376 132.3 384 134.7Q392 137.2 400 139Q408 140.7 416 145.9Q424 151 432 159.2Q440 167.4 448 174Q456 180.7 464 185.2Q472 189.7 480 195.2Q488 200.7 496 198.4Q504 196.2 512 192.2Q520 188.2 528 182.5Q536 176.9 544 177Q552 177 560 175Q568 173 576 174.7Q584 176.3 592 177.3Q600 178.3 608 183Q616 187.8 624 192Q632 196.2 640 202.2Q648 208.1 656 212.1Q664 216.2 672 218.9Q680 221.5 688 226.4Q696 231.3 704 231.4Q712 231.6 720 225.9Q728 220.2 736 216.8Q744 213.3 752 212.1Q760 211 768 209.9Q776 208.9 784 207.5Q792 206.2 800 207.4Q808 208.6 816 209.9Q824 211.3 832 211.2Q840 211.1 848 212Q856 212.9 864 212.4Q872 211.8 880 211.2Q888 210.6 896 210.1Q904 209.6 912 211.1Q920 212.6 928 212.4Q936 212.1 944 209.1Q952 206.1 960 203.4Q968 200.7 976 199.3Q984 198 992 194.5Q1000 191 1008 189.1Q1016 187.3 1024 185.9Q1032 184.5 1040 179Q1048 173.5 1056 170.5Q1064 167.4 1072 164.5Q1080 161.5 1088 158Q1096 154.6 1104 155.5Q1112 156.3 1120 155.9Q1128 155.5 1136 160.6Q1144 165.7 1152 170Q1160 174.3 1168 172.8Q1176 171.4 1184 170.4Q1192 169.4 1200 163.9Q1208 158.3 1216 155.4Q1224 152.5 1232 147.4Q1240 142.4 1248 137.1Q1256 131.9 1264 130.3Q1272 128.7 1280 126.5Q1288 124.4 1296 126Q1304 127.5 1312 127.8Q1320 128.1 1328 131.3Q1336 134.4 1344 141.1Q1352 147.9 1360 154.4Q1368 160.9 1376 165.5Q1384 170 1392 174.4Q1400 178.8 1408 172.4Q1416 165.9 1424 161.1Q1432 156.2 1440 152.8Q1448 149.4 1456 147.1Q1464 144.7 1472 142.6Q1480 140.5 1488 143.7Q1496 146.9 1504 148.5Q1512 150.1 1520 154.9Q1528 159.7 1536 166.6Q1544 173.5 1552 178.2Q1560 183 1568 188Q1576 193.1 1584 193.8Q1592 194.5 1600 198.3Q1608 202 1616 206.7Q1624 211.4 1632 207.4Q1640 203.3 1648 201.4L1656 199.4L1656 420Z" fill="url(#ns-r1)"/></g>
+  <rect class="ns-r ns-mist" x="0" y="190" width="1600" height="120" fill="url(#ns-mist)"/>
+  <g class="ns-r ns-r2"><path d="M-40 420L-40 261.8Q-40 261.8 -32 258.9Q-24 256.1 -16 252.3Q-8 248.5 0 246.2Q8 243.8 16 243.3Q24 242.8 32 244.1Q40 245.4 48 247.1Q56 248.8 64 251.4Q72 254.1 80 255.9Q88 257.8 96 257.1Q104 256.5 112 253.8Q120 251.2 128 248.4Q136 245.6 144 240.8Q152 235.9 160 233Q168 230.1 176 228.8Q184 227.4 192 226.9Q200 226.3 208 227.1Q216 228 224 228.5Q232 229.1 240 232Q248 234.9 256 238.1Q264 241.4 272 245Q280 248.6 288 251.6Q296 254.6 304 253.2Q312 251.9 320 249.6Q328 247.2 336 244.5Q344 241.9 352 239.2Q360 236.5 368 235.5Q376 234.5 384 236.3Q392 238.1 400 238.8Q408 239.5 416 242.4Q424 245.3 432 249.1Q440 253 448 257.2Q456 261.5 464 264.3Q472 267.2 480 270.3Q488 273.4 496 275.1Q504 276.9 512 273.3Q520 269.7 528 267.3Q536 265 544 264.6Q552 264.3 560 262.9Q568 261.5 576 262.5Q584 263.5 592 265Q600 266.6 608 268.3Q616 270 624 272.4Q632 274.9 640 277.7Q648 280.6 656 281.5Q664 282.4 672 284.7Q680 287.1 688 288.1Q696 289 704 286.3Q712 283.6 720 279.9Q728 276.3 736 274.2Q744 272.2 752 269.9Q760 267.7 768 267.4Q776 267 784 266.7Q792 266.4 800 266.2Q808 266 816 266.7Q824 267.3 832 268.4Q840 269.4 848 268.6Q856 267.8 864 268.3Q872 268.8 880 268.7Q888 268.6 896 268.9Q904 269.2 912 265.7Q920 262.3 928 258.2Q936 254.1 944 251.7Q952 249.3 960 248.8Q968 248.2 976 246.9Q984 245.5 992 245.4Q1000 245.3 1008 244.6Q1016 243.9 1024 243.4Q1032 242.8 1040 242.3Q1048 241.9 1056 240.9Q1064 239.9 1072 240.9Q1080 242 1088 241.3Q1096 240.7 1104 241.8Q1112 242.8 1120 240.7Q1128 238.6 1136 238.2Q1144 237.9 1152 237.6Q1160 237.3 1168 236.3Q1176 235.3 1184 234.8Q1192 234.2 1200 234.4Q1208 234.6 1216 234.7Q1224 234.9 1232 236.3Q1240 237.8 1248 238Q1256 238.2 1264 239.4Q1272 240.5 1280 242.4Q1288 244.3 1296 248.3Q1304 252.3 1312 253.7Q1320 255.2 1328 253.5Q1336 251.8 1344 253.6Q1352 255.3 1360 254.6Q1368 253.9 1376 255.2Q1384 256.5 1392 256.1Q1400 255.6 1408 256.3Q1416 256.9 1424 257.3Q1432 257.7 1440 258.1Q1448 258.6 1456 259.8Q1464 261 1472 264.1Q1480 267.2 1488 270.7Q1496 274.3 1504 277Q1512 279.7 1520 280.8Q1528 281.8 1536 281.6Q1544 281.4 1552 280.3Q1560 279.2 1568 277.7Q1576 276.2 1584 274.9Q1592 273.7 1600 272.3Q1608 271 1616 270.9Q1624 270.7 1632 269.5Q1640 268.3 1648 268.9L1656 269.6L1656 420Z" fill="url(#ns-r2)"/><g fill="#0e1433"><path d="M9.4 246.7V243.4H10.6V246.7ZM3.9 244.5L10 237.7L16.1 244.5ZM5.1 240.7L10 233.9L14.9 240.7ZM6.3 236.9L10 230.1L13.7 236.9ZM7.5 233.2L10 226.3L12.5 233.2Z"/><path d="M28.8 246.7V243.7H30V246.7ZM23.9 244.7L29.4 238.5L35 244.7ZM25 241.3L29.4 235L33.9 241.3ZM26.1 237.8L29.4 231.6L32.8 237.8ZM27.2 234.4L29.4 228.2L31.7 234.4Z"/><path d="M90.8 260.5V254.8H92V260.5ZM80.7 256.7L91.4 244.7L102.1 256.7ZM82.8 250.1L91.4 238.1L100 250.1ZM85 243.5L91.4 231.5L97.9 243.5ZM87.1 236.9L91.4 224.9L95.7 236.9Z"/><path d="M245.8 237.3V234H247V237.3ZM240.1 235.1L246.4 228.1L252.6 235.1ZM241.4 231.2L246.4 224.3L251.4 231.2ZM242.6 227.4L246.4 220.4L250.1 227.4ZM243.9 223.5L246.4 216.6L248.9 223.5Z"/><path d="M286.2 254.1V249.4H287.4V254.1ZM277.9 251L286.8 241L295.8 251ZM279.7 245.5L286.8 235.5L294 245.5ZM281.5 239.9L286.8 230L292.2 239.9ZM283.3 234.4L286.8 224.4L290.4 234.4Z"/><path d="M321.3 252V249H322.5V252ZM316.3 250L321.9 243.7L327.5 250ZM317.4 246.6L321.9 240.3L326.4 246.6ZM318.5 243.1L321.9 236.8L325.3 243.1ZM319.7 239.6L321.9 233.3L324.2 239.6Z"/><path d="M365.1 238.8V233.9H366.3V238.8ZM356.5 235.6L365.7 225.3L374.9 235.6ZM358.3 229.9L365.7 219.6L373 229.9ZM360.1 224.2L365.7 213.9L371.2 224.2ZM362 218.5L365.7 208.3L369.3 218.5Z"/><path d="M419.7 247V242.1H420.9V247ZM411 243.7L420.3 233.3L429.6 243.7ZM412.8 237.9L420.3 227.5L427.7 237.9ZM414.7 232.2L420.3 221.8L425.9 232.2ZM416.6 226.4L420.3 216L424 226.4Z"/><path d="M441 256.8V253.5H442.2V256.8ZM435.4 254.6L441.6 247.7L447.7 254.6ZM436.7 250.8L441.6 243.9L446.5 250.8ZM437.9 247L441.6 240.1L445.3 247ZM439.1 243.2L441.6 236.3L444 243.2Z"/><path d="M489 276.7V273.4H490.2V276.7ZM483.2 274.5L489.6 267.4L495.9 274.5ZM484.5 270.6L489.6 263.5L494.7 270.6ZM485.8 266.7L489.6 259.6L493.4 266.7ZM487.1 262.7L489.6 255.7L492.1 262.7Z"/><path d="M570.7 264.9V259.8H571.9V264.9ZM561.6 261.5L571.3 250.6L581 261.5ZM563.5 255.5L571.3 244.6L579 255.5ZM565.5 249.5L571.3 238.6L577.1 249.5ZM567.4 243.5L571.3 232.6L575.2 243.5Z"/><path d="M593.9 268.5V263.7H595.1V268.5ZM585.5 265.3L594.5 255.2L603.6 265.3ZM587.3 259.8L594.5 249.6L601.8 259.8ZM589.1 254.2L594.5 244L600 254.2ZM590.9 248.6L594.5 238.5L598.2 248.6Z"/><path d="M650.2 283.9V279.1H651.4V283.9ZM641.7 280.7L650.8 270.6L659.8 280.7ZM643.5 275.1L650.8 265L658 275.1ZM645.3 269.5L650.8 259.4L656.2 269.5ZM647.1 263.9L650.8 253.8L654.4 263.9Z"/><path d="M763.7 270.5V266.2H764.9V270.5ZM756.2 267.6L764.3 258.6L772.4 267.6ZM757.8 262.6L764.3 253.5L770.8 262.6ZM759.4 257.6L764.3 248.5L769.2 257.6ZM761 252.6L764.3 243.5L767.5 252.6Z"/><path d="M873 271.8V267.9H874.2V271.8ZM866.2 269.2L873.6 260.9L881 269.2ZM867.7 264.6L873.6 256.3L879.5 264.6ZM869.2 260L873.6 251.7L878.1 260ZM870.6 255.4L873.6 247.1L876.6 255.4Z"/><path d="M971.5 250.5V245.5H972.7V250.5ZM962.6 247.2L972.1 236.6L981.6 247.2ZM964.5 241.3L972.1 230.8L979.7 241.3ZM966.4 235.5L972.1 224.9L977.8 235.5ZM968.3 229.6L972.1 219L975.9 229.6Z"/><path d="M1005.1 247.8V244.9H1006.3V247.8ZM1000.2 245.8L1005.7 239.7L1011.2 245.8ZM1001.3 242.4L1005.7 236.3L1010.1 242.4ZM1002.4 239.1L1005.7 232.9L1009 239.1ZM1003.5 235.7L1005.7 229.5L1007.9 235.7Z"/><path d="M1122.2 243V237.3H1123.4V243ZM1112.1 239.2L1122.8 227.3L1133.4 239.2ZM1114.2 232.6L1122.8 220.8L1131.3 232.6ZM1116.4 226.1L1122.8 214.2L1129.1 226.1ZM1118.5 219.5L1122.8 207.6L1127 219.5Z"/><path d="M1153.8 240.5V236.1H1155V240.5ZM1146.1 237.6L1154.4 228.3L1162.6 237.6ZM1147.7 232.4L1154.4 223.2L1161 232.4ZM1149.4 227.3L1154.4 218.1L1159.3 227.3ZM1151 222.2L1154.4 213L1157.7 222.2Z"/><path d="M1183.2 237.8V232.8H1184.4V237.8ZM1174.4 234.4L1183.8 223.9L1193.2 234.4ZM1176.3 228.6L1183.8 218.1L1191.4 228.6ZM1178.2 222.8L1183.8 212.3L1189.5 222.8ZM1180.1 217L1183.8 206.5L1187.6 217Z"/><path d="M1264.7 242.5V239.6H1265.9V242.5ZM1259.7 240.6L1265.3 234.3L1270.9 240.6ZM1260.8 237.1L1265.3 230.8L1269.8 237.1ZM1261.9 233.6L1265.3 227.4L1268.6 233.6ZM1263 230.2L1265.3 223.9L1267.5 230.2Z"/><path d="M1321.2 257.8V252.7H1322.4V257.8ZM1312.1 254.4L1321.8 243.5L1331.5 254.4ZM1314.1 248.4L1321.8 237.5L1329.6 248.4ZM1316 242.4L1321.8 231.5L1327.7 242.4ZM1317.9 236.4L1321.8 225.5L1325.7 236.4Z"/><path d="M1351.6 258.3V254.4H1352.8V258.3ZM1344.7 255.7L1352.2 247.3L1359.7 255.7ZM1346.2 251L1352.2 242.6L1358.2 251ZM1347.7 246.4L1352.2 238L1356.7 246.4ZM1349.2 241.7L1352.2 233.3L1355.2 241.7Z"/><path d="M1458 263.2V260.2H1459.2V263.2ZM1453 261.2L1458.6 254.9L1464.2 261.2ZM1454.1 257.7L1458.6 251.4L1463.1 257.7ZM1455.3 254.2L1458.6 248L1462 254.2ZM1456.4 250.8L1458.6 244.5L1460.9 250.8Z"/><path d="M1473.3 267.8V264.5H1474.5V267.8ZM1467.7 265.6L1473.9 258.7L1480.1 265.6ZM1468.9 261.8L1473.9 254.8L1478.9 261.8ZM1470.2 257.9L1473.9 251L1477.6 257.9ZM1471.4 254.1L1473.9 247.2L1476.4 254.1Z"/><path d="M1595.7 276V271.4H1596.9V276ZM1587.7 272.9L1596.3 263.4L1604.9 272.9ZM1589.4 267.6L1596.3 258.1L1603.1 267.6ZM1591.1 262.4L1596.3 252.8L1601.4 262.4ZM1592.9 257.1L1596.3 247.5L1599.7 257.1Z"/></g></g>
+  <g class="ns-r ns-r3"><path d="M-40 420L-40 334.6Q-40 334.6 -30 334.2Q-20 333.9 -10 332.9Q0 332 10 331.2Q20 330.4 30 329.9Q40 329.4 50 328.7Q60 328 70 328.4Q80 328.8 90 328.3Q100 327.8 110 327.2Q120 326.6 130 325.6Q140 324.5 150 323.8Q160 323.1 170 322.7Q180 322.3 190 322Q200 321.8 210 321.7Q220 321.6 230 323Q240 324.4 250 325.1Q260 325.9 270 326.2Q280 326.6 290 327.3Q300 328.1 310 327.9Q320 327.8 330 326.9Q340 326 350 326Q360 326 370 326Q380 326 390 326Q400 326 410 326Q420 326 430 326Q440 326 450 326Q460 326 470 326Q480 326 490 326Q500 326 510 323.8Q520 321.6 530 321.7Q540 321.7 550 322Q560 322.3 570 322.9Q580 323.5 590 324.6Q600 325.8 610 327.6Q620 329.3 630 330.6Q640 331.8 650 332.2Q660 332.7 670 331.7Q680 330.6 690 330.2Q700 329.8 710 328.8Q720 327.8 730 327.8Q740 327.7 750 327.5Q760 327.4 770 328.2Q780 329.1 790 329.2Q800 329.4 810 330.2Q820 331.1 830 331.5Q840 331.9 850 332.1Q860 332.3 870 332.5Q880 332.7 890 332.2Q900 331.8 910 332.1Q920 332.4 930 333.6Q940 334.8 950 336.1Q960 337.3 970 328.5Q980 319.6 990 319.4Q1000 319.1 1010 318.9Q1020 318.7 1030 318.6Q1040 318.4 1050 318.3Q1060 318.2 1070 318.1Q1080 318 1090 318Q1100 318 1110 318Q1120 318 1130 318.1Q1140 318.2 1150 318.3Q1160 318.4 1170 318.6Q1180 318.7 1190 318.9Q1200 319.1 1210 319.4Q1220 319.6 1230 327.9Q1240 336.3 1250 336.5Q1260 336.8 1270 336.5Q1280 336.2 1290 336.9Q1300 337.7 1310 338.2Q1320 338.7 1330 338.7Q1340 338.8 1350 338.5Q1360 338.2 1370 337Q1380 335.8 1390 335Q1400 334.3 1410 333.4Q1420 332.6 1430 331.6Q1440 330.7 1450 329.2Q1460 327.7 1470 327.8Q1480 328 1490 328Q1500 327.9 1510 328Q1520 328.1 1530 329Q1540 330 1550 329.8Q1560 329.6 1570 329.4Q1580 329.3 1590 329.3Q1600 329.3 1610 328.9Q1620 328.5 1630 328.8Q1640 329.1 1650 328.7L1660 328.3L1660 420Z" fill="url(#ns-r3)"/><g fill="#060918"><path d="M51.6 332.5V324.8H52.8V332.5ZM37.6 327.4L52.2 311.1L66.8 327.4ZM40.5 318.4L52.2 302L63.9 318.4ZM43.4 309.3L52.2 293L61 309.3ZM46.4 300.3L52.2 284L58 300.3Z"/><path d="M78.1 332.8V324.5H79.3V332.8ZM63.2 327.3L78.7 309.9L94.3 327.3ZM66.3 317.7L78.7 300.3L91.2 317.7ZM69.4 308.1L78.7 290.7L88.1 308.1ZM72.5 298.4L78.7 281L85 298.4Z"/><path d="M228 326.8V317.4H229.2V326.8ZM210.8 320.5L228.6 300.7L246.3 320.5ZM214.4 309.6L228.6 289.8L242.8 309.6ZM217.9 298.6L228.6 278.8L239.2 298.6ZM221.5 287.7L228.6 267.8L235.7 287.7Z"/><path d="M275.2 330.4V320.5H276.4V330.4ZM257 323.8L275.8 302.8L294.6 323.8ZM260.7 312.2L275.8 291.1L290.9 312.2ZM264.5 300.5L275.8 279.5L287.1 300.5ZM268.3 288.9L275.8 267.9L283.3 288.9Z"/><path d="M562.1 326.5V316.6H563.3V326.5ZM544.1 319.9L562.7 299.1L581.3 319.9ZM547.9 308.4L562.7 287.6L577.6 308.4ZM551.6 296.9L562.7 276.2L573.9 296.9ZM555.3 285.5L562.7 264.7L570.2 285.5Z"/><path d="M619.2 333.3V326.7H620.4V333.3ZM607.3 328.9L619.8 315L632.3 328.9ZM609.8 321.2L619.8 307.3L629.8 321.2ZM612.3 313.5L619.8 299.6L627.3 313.5ZM614.8 305.8L619.8 291.9L624.8 305.8Z"/><path d="M751.6 331.5V324.8H752.8V331.5ZM739.6 327.1L752.2 313L764.7 327.1ZM742.1 319.3L752.2 305.2L762.2 319.3ZM744.6 311.5L752.2 297.4L759.7 311.5ZM747.1 303.7L752.2 289.7L757.2 303.7Z"/><path d="M773.4 332.6V324.1H774.6V332.6ZM758.1 326.9L774 309.1L790 326.9ZM761.3 317.1L774 299.2L786.8 317.1ZM764.5 307.2L774 289.3L783.6 307.2ZM767.7 297.3L774 279.5L780.4 297.3Z"/><path d="M796.7 333.3V325.3H797.9V333.3ZM782.2 328L797.3 311.1L812.4 328ZM785.2 318.6L797.3 301.7L809.4 318.6ZM788.2 309.3L797.3 292.4L806.4 309.3ZM791.2 299.9L797.3 283L803.3 299.9Z"/><path d="M826.8 335.4V324.1H828V335.4ZM806 327.8L827.4 303.9L848.8 327.8ZM810.3 314.6L827.4 290.7L844.5 314.6ZM814.6 301.4L827.4 277.5L840.2 301.4ZM818.9 288.2L827.4 264.3L836 288.2Z"/><path d="M877.9 336.7V326.5H879.1V336.7ZM859.2 329.9L878.5 308.4L897.7 329.9ZM863.1 318L878.5 296.5L893.9 318ZM866.9 306.1L878.5 284.6L890 306.1ZM870.8 294.2L878.5 272.7L886.2 294.2Z"/><path d="M1285.5 340.6V333.6H1286.7V340.6ZM1272.8 335.9L1286.1 321L1299.4 335.9ZM1275.5 327.7L1286.1 312.8L1296.8 327.7ZM1278.1 319.5L1286.1 304.6L1294.1 319.5ZM1280.8 311.2L1286.1 296.4L1291.4 311.2Z"/><path d="M1370.4 340.9V335H1371.6V340.9ZM1360 337L1371 324.6L1382.1 337ZM1362.2 330.2L1371 317.8L1379.9 330.2ZM1364.4 323.3L1371 311L1377.6 323.3ZM1366.6 316.5L1371 304.1L1375.4 316.5Z"/><path d="M1388.8 339.1V330.1H1390V339.1ZM1372.5 333.1L1389.4 314.2L1406.3 333.1ZM1375.9 322.7L1389.4 303.8L1402.9 322.7ZM1379.3 312.2L1389.4 293.4L1399.6 312.2ZM1382.7 301.8L1389.4 282.9L1396.2 301.8Z"/><path d="M1417.9 336.7V327.4H1419.1V336.7ZM1400.8 330.5L1418.5 310.7L1436.2 330.5ZM1404.4 319.6L1418.5 299.8L1432.7 319.6ZM1407.9 308.6L1418.5 288.9L1429.1 308.6ZM1411.4 297.7L1418.5 277.9L1425.6 297.7Z"/><path d="M1508.8 332V320.9H1510V332ZM1488.4 324.6L1509.4 301.1L1530.4 324.6ZM1492.6 311.6L1509.4 288.1L1526.2 311.6ZM1496.8 298.6L1509.4 275.2L1522 298.6ZM1501 285.7L1509.4 262.2L1517.8 285.7Z"/><path d="M1556.6 333.6V325.6H1557.8V333.6ZM1542 328.3L1557.2 311.4L1572.3 328.3ZM1545.1 318.9L1557.2 302L1569.3 318.9ZM1548.1 309.6L1557.2 292.7L1566.3 309.6ZM1551.1 300.2L1557.2 283.3L1563.2 300.2Z"/><path d="M1579.1 333.3V326.5H1580.3V333.3ZM1566.7 328.8L1579.7 314.3L1592.6 328.8ZM1569.3 320.8L1579.7 306.3L1590 320.8ZM1571.9 312.8L1579.7 298.3L1587.4 312.8ZM1574.5 304.8L1579.7 290.3L1584.8 304.8Z"/></g><g class="ns-tent">
+    <circle cx="430" cy="310" r="60" fill="url(#ns-warm)" class="ns-tent-glow"/>
+    <path d="M386 326L430 280L474 326Z" fill="#070a1c"/>
+    <path d="M417 326L430 292L443 326Z" fill="url(#ns-tent-in)" class="ns-tent-door"/>
+    <path d="M430 280L434 270M430 280L426 270" stroke="#070a1c" stroke-width="2"/>
+    <path d="M474 326L500 326" stroke="#070a1c" stroke-width="1"/>
+    <g fill="#070a1c"><rect x="500" y="308" width="1.6" height="18"/></g>
+    <path d="M501 308Q520 314 538 310" stroke="#ffd79a" stroke-opacity=".7" stroke-width="1" fill="none" stroke-dasharray="0 6" stroke-linecap="round"/>
+  </g><g class="ns-couple" fill="#060918">
+    <path d="M1048 320Q1070 300 1122 302Q1148 306 1156 320Z"/>
+    <!-- 他 -->
+    <circle cx="1084" cy="260" r="7.2"/>
+    <path d="M1073 302Q1070 278 1080 269Q1090 266 1094 276Q1098 290 1097 302Z"/>
+    <path d="M1092 298Q1106 296 1110 310L1105 311Q1102 303 1092 305Z"/>
+    <!-- 她：頭靠在他肩上 -->
+    <circle cx="1098" cy="265" r="6.6"/>
+    <path d="M1104 262Q1110 268 1107 278L1102 274Z"/>
+    <path d="M1092 302Q1090 282 1098 273Q1108 272 1110 284Q1114 296 1118 302Z"/>
+    <!-- 望遠鏡 -->
+    <g transform="translate(1140 302)">
+      <path d="M0 0L-9 16M0 0L9 16M0 0V17" stroke="#060918" stroke-width="1.8"/>
+      <rect x="-4" y="-7" width="34" height="7" rx="2" transform="rotate(-38)"/>
+      <rect x="-6" y="-8.5" width="8" height="10" rx="1.5" transform="rotate(-38)"/>
+    </g>
+  </g></g>
+</svg></div>
+      </div>
+      <div class="ns-hero-body">
+        <div class="ns-chart"><svg class="ns-chart-art" viewBox="0 0 600 600" aria-hidden="true">
+  <g class="ns-chart-dust"><circle cx="228.4" cy="211.8" r="1.2"/><circle cx="155.5" cy="440.1" r="0.7"/><circle cx="384.3" cy="141.6" r="1.7"/><circle cx="134.7" cy="384.1" r="0.7"/><circle cx="492.5" cy="247.6" r="1.3"/><circle cx="153" cy="468.6" r="0.8"/><circle cx="252.9" cy="76.2" r="0.8"/><circle cx="84.9" cy="237.2" r="1.4"/><circle cx="458" cy="326" r="0.6"/><circle cx="320.8" cy="410.5" r="1.4"/><circle cx="396.7" cy="127.4" r="1.4"/><circle cx="332.8" cy="398.2" r="1.6"/><circle cx="371.7" cy="408.6" r="1.5"/><circle cx="321.2" cy="522.5" r="0.9"/><circle cx="356" cy="379.6" r="0.7"/><circle cx="296.8" cy="317.6" r="0.7"/><circle cx="184.6" cy="116.4" r="0.7"/><circle cx="261.5" cy="437.2" r="1.3"/><circle cx="342.2" cy="183.3" r="1.5"/><circle cx="486.7" cy="369.3" r="1.7"/><circle cx="434.5" cy="428.6" r="1.8"/><circle cx="290.8" cy="241.4" r="1.4"/><circle cx="429.3" cy="328.2" r="0.9"/><circle cx="217.2" cy="511.2" r="1.7"/><circle cx="318.6" cy="477.3" r="0.7"/><circle cx="296.6" cy="83" r="0.8"/><circle cx="145.4" cy="372.6" r="1.4"/><circle cx="274.9" cy="212" r="1.6"/><circle cx="369.6" cy="336.8" r="1"/><circle cx="243.5" cy="371.6" r="1.6"/><circle cx="304.5" cy="353.3" r="1.6"/><circle cx="75.1" cy="322.4" r="1"/><circle cx="425.3" cy="316.2" r="1"/><circle cx="520.7" cy="361.9" r="1"/><circle cx="401.5" cy="361.6" r="1.5"/><circle cx="254.3" cy="386.2" r="1.1"/><circle cx="264" cy="516.6" r="1.1"/><circle cx="419.3" cy="100.8" r="0.7"/><circle cx="160.4" cy="172.1" r="0.9"/><circle cx="475.7" cy="145.2" r="1.5"/><circle cx="219.1" cy="131.3" r="0.9"/><circle cx="125" cy="294.4" r="1.2"/><circle cx="507.4" cy="374.2" r="0.7"/><circle cx="311.4" cy="487.5" r="0.8"/><circle cx="475.3" cy="421.4" r="1.6"/><circle cx="113.3" cy="226.6" r="0.7"/><circle cx="496.6" cy="256.5" r="1.8"/><circle cx="286.4" cy="93.6" r="1"/><circle cx="204" cy="388.7" r="0.9"/><circle cx="338.2" cy="133.4" r="1.3"/><circle cx="151.8" cy="112.7" r="0.7"/><circle cx="116" cy="161.1" r="1.6"/><circle cx="422.9" cy="489.6" r="1.6"/><circle cx="321.5" cy="197.5" r="1.7"/><circle cx="137.2" cy="452" r="0.9"/><circle cx="260.2" cy="322.3" r="1.6"/><circle cx="503.4" cy="220.9" r="1.5"/><circle cx="319.8" cy="397.3" r="1.2"/><circle cx="256.5" cy="137.1" r="0.7"/><circle cx="134.3" cy="224.2" r="1.2"/></g>
+  <g class="ns-chart-ring">
+    <circle cx="300" cy="300" r="270"/><circle cx="300" cy="300" r="250" class="dot"/><path d="M570 300L556 300M569 323.5L562 322.9M565.9 346.9L559 345.7M560.8 369.9L554 368.1M553.7 392.3L547.1 390M544.7 414.1L538.4 411.1M533.8 435L521.7 428M521.2 454.9L515.4 450.9M506.8 473.6L501.5 469.1M490.9 490.9L486 486M473.6 506.8L469.1 501.5M454.9 521.2L450.9 515.4M435 533.8L428 521.7M414.1 544.7L411.1 538.4M392.3 553.7L390 547.1M369.9 560.8L368.1 554M346.9 565.9L345.7 559M323.5 569L322.9 562M300 570L300 556M276.5 569L277.1 562M253.1 565.9L254.3 559M230.1 560.8L231.9 554M207.7 553.7L210 547.1M185.9 544.7L188.9 538.4M165 533.8L172 521.7M145.1 521.2L149.1 515.4M126.4 506.8L130.9 501.5M109.1 490.9L114 486M93.2 473.6L98.5 469.1M78.8 454.9L84.6 450.9M66.2 435L78.3 428M55.3 414.1L61.6 411.1M46.3 392.3L52.9 390M39.2 369.9L46 368.1M34.1 346.9L41 345.7M31 323.5L38 322.9M30 300L44 300M31 276.5L38 277.1M34.1 253.1L41 254.3M39.2 230.1L46 231.9M46.3 207.7L52.9 210M55.3 185.9L61.6 188.9M66.2 165L78.3 172M78.8 145.1L84.6 149.1M93.2 126.4L98.5 130.9M109.1 109.1L114 114M126.4 93.2L130.9 98.5M145.1 78.8L149.1 84.6M165 66.2L172 78.3M185.9 55.3L188.9 61.6M207.7 46.3L210 52.9M230.1 39.2L231.9 46M253.1 34.1L254.3 41M276.5 31L277.1 38M300 30L300 44M323.5 31L322.9 38M346.9 34.1L345.7 41M369.9 39.2L368.1 46M392.3 46.3L390 52.9M414.1 55.3L411.1 61.6M435 66.2L428 78.3M454.9 78.8L450.9 84.6M473.6 93.2L469.1 98.5M490.9 109.1L486 114M506.8 126.4L501.5 130.9M521.2 145.1L515.4 149.1M533.8 165L521.7 172M544.7 185.9L538.4 188.9M553.7 207.7L547.1 210M560.8 230.1L554 231.9M565.9 253.1L559 254.3M569 276.5L562 277.1"/>
+  </g>
+  <circle class="ns-chart-inner" cx="300" cy="300" r="130"/>
+  <path class="ns-chart-line" d="M300 392L246 342L202 286L200 232L236 196L276 204L300 240 M300 392L354 342L398 286L400 232L364 196L324 204L300 240"/>
+  <g class="ns-chart-nodes" filter="url(#ns-glow)"><circle cx="300" cy="392" r="5.5"/><circle cx="246" cy="342" r="4"/><circle cx="202" cy="286" r="4"/><circle cx="200" cy="232" r="4"/><circle cx="236" cy="196" r="4"/><circle cx="276" cy="204" r="4"/><circle cx="300" cy="240" r="7" class="ns-heart"/><circle cx="300" cy="392" r="4"/><circle cx="354" cy="342" r="4"/><circle cx="398" cy="286" r="4"/><circle cx="400" cy="232" r="4"/><circle cx="364" cy="196" r="4"/><circle cx="324" cy="204" r="4"/></g>
+</svg></div>
+        <div class="ns-kicker"><span class="en">Written in the stars</span><span class="cn">誠摯邀請您</span></div>
+        <h1 class="ns-names"><span data-tpl="groomEn"></span><span class="amp">&amp;</span><span data-tpl="brideEn"></span></h1>
+        <div class="ns-date"><span data-tpl="date"></span><i aria-hidden="true"></i><span data-tpl="weekday"></span></div>
+        <div class="hashtags" id="lobbyTags" data-sk="tags"></div>
+        <div class="scroll-cue ns-cue"><span>Scroll</span><span class="arrow"></span></div>
+      </div>
+    </header>
+
+    <div class="scene-body ns-body">
+
+      <!-- ===== 婚禮資訊：婚戒座 ===== -->
+      <section class="info-block ns-sec">
+        <div class="ns-head">
+          <figure class="ns-icon" data-reveal="draw"><svg class="ns-art ns-con" viewBox="0 0 200 160" aria-hidden="true" style="--n:16">
+  <g class="ns-con-dust"><circle cx="6.2" cy="41.2" r="1.1"/><circle cx="102" cy="55.7" r="0.5"/><circle cx="28.7" cy="83.8" r="0.7"/><circle cx="41.7" cy="91.4" r="0.7"/><circle cx="116" cy="84.5" r="1"/><circle cx="29.5" cy="133.2" r="1"/><circle cx="45.5" cy="143.7" r="1.1"/><circle cx="196.4" cy="151.9" r="0.7"/><circle cx="10.4" cy="19.6" r="1.2"/><circle cx="57.9" cy="135.3" r="0.8"/><circle cx="51.3" cy="3.8" r="0.5"/><circle cx="162.8" cy="21.4" r="1.1"/><circle cx="127.2" cy="0.1" r="0.8"/><circle cx="63.4" cy="115.3" r="1"/><circle cx="148.6" cy="135.9" r="1.1"/><circle cx="28.9" cy="102.9" r="0.8"/></g><g class="ns-con-lines"><path class="ns-ln" pathLength="1" style="--i:0" d="M100 60L123.5 67.6"/><path class="ns-ln" pathLength="1" style="--i:1" d="M123.5 67.6L138 87.6"/><path class="ns-ln" pathLength="1" style="--i:2" d="M138 87.6L138 112.4"/><path class="ns-ln" pathLength="1" style="--i:3" d="M138 112.4L123.5 132.4"/><path class="ns-ln" pathLength="1" style="--i:4" d="M123.5 132.4L100 140"/><path class="ns-ln" pathLength="1" style="--i:5" d="M100 140L76.5 132.4"/><path class="ns-ln" pathLength="1" style="--i:6" d="M76.5 132.4L62 112.4"/><path class="ns-ln" pathLength="1" style="--i:7" d="M62 112.4L62 87.6"/><path class="ns-ln" pathLength="1" style="--i:8" d="M62 87.6L76.5 67.6"/><path class="ns-ln" pathLength="1" style="--i:9" d="M76.5 67.6L100 60"/><path class="ns-ln" pathLength="1" style="--i:10" d="M86 46L100 30"/><path class="ns-ln" pathLength="1" style="--i:11" d="M100 30L114 46"/><path class="ns-ln" pathLength="1" style="--i:12" d="M114 46L100 60"/><path class="ns-ln" pathLength="1" style="--i:13" d="M100 60L86 46"/><path class="ns-ln" pathLength="1" style="--i:14" d="M86 46L114 46"/><path class="ns-ln" pathLength="1" style="--i:15" d="M100 60L100 60"/></g><g class="ns-con-stars" filter="url(#ns-glow)"><g transform="translate(100 60)"><g class="ns-st" style="--i:0"><circle r="2.4"/></g></g><g transform="translate(123.5 67.6)"><g class="ns-st" style="--i:1"><circle r="2.4"/></g></g><g transform="translate(138 87.6)"><g class="ns-st" style="--i:2"><circle r="2.4"/></g></g><g transform="translate(138 112.4)"><g class="ns-st" style="--i:3"><circle r="2.4"/></g></g><g transform="translate(123.5 132.4)"><g class="ns-st" style="--i:4"><circle r="2.4"/></g></g><g transform="translate(100 140)"><g class="ns-st is-big" style="--i:5"><circle r="3.6"/><path d="M-9 0H9M0 -9V9"/></g></g><g transform="translate(76.5 132.4)"><g class="ns-st" style="--i:6"><circle r="2.4"/></g></g><g transform="translate(62 112.4)"><g class="ns-st" style="--i:7"><circle r="2.4"/></g></g><g transform="translate(62 87.6)"><g class="ns-st" style="--i:8"><circle r="2.4"/></g></g><g transform="translate(76.5 67.6)"><g class="ns-st" style="--i:9"><circle r="2.4"/></g></g><g transform="translate(86 46)"><g class="ns-st" style="--i:10"><circle r="2.4"/></g></g><g transform="translate(100 30)"><g class="ns-st is-big" style="--i:11"><circle r="3.6"/><path d="M-9 0H9M0 -9V9"/></g></g><g transform="translate(114 46)"><g class="ns-st" style="--i:12"><circle r="2.4"/></g></g><g transform="translate(100 60)"><g class="ns-st" style="--i:13"><circle r="2.4"/></g></g></g>
+</svg></figure>
+          <span class="en block-title">Information</span>
+          <span class="cn block-sub">婚禮資訊</span>
+        </div>
+        <div class="ns-glass" data-reveal="rise" data-scroll>
+          <div class="info-card">
+            <div class="info-couple" id="infoCouple" data-tpl="couple"></div>
+            <div class="info-couple-cn" id="infoCoupleCn"></div>
+            <div class="info-rows">
+              <div class="info-row"><div class="ir-label">日期</div><div class="ir-body"><div class="ir-val" id="infoDate" data-sk="text">—</div></div></div>
+              <div class="info-row" id="infoTimeRow"><div class="ir-label">時間</div><div class="ir-body"><div class="ir-val" id="infoTime" data-sk="text">—</div>
+                <a class="ir-jump" id="infoTimeJump" href="#scheduleBlock" hidden>看當日流程 →</a></div></div>
+              <div class="info-row" id="infoVenueRow"><div class="ir-label">地點</div><div class="ir-body"><div class="ir-val" id="infoVenue" data-sk="text">—</div><div class="ir-sub" id="infoAddr"></div>
+                <a class="ir-jump" id="infoVenueJump" href="#transportBlock" hidden>看交通資訊 →</a></div></div>
+            </div>
+            <div class="info-actions">
+              <a class="btn small ghost" id="mapBtn" href="#" target="_blank" rel="noopener">開啟地圖</a>
+              <a class="btn small ghost" id="calBtn" href="#" target="_blank" rel="noopener">加入行事曆</a>
+            </div>
+          </div>
+          <div class="info-seat" id="infoSeatCta">
+            <a class="btn" href="seating.html">尋找我的座位</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 當日流程：沙漏座 ===== -->
+      <section class="info-block ns-sec" id="scheduleBlock">
+        <div class="ns-head">
+          <figure class="ns-icon" data-reveal="draw"><svg class="ns-art ns-con" viewBox="0 0 200 160" aria-hidden="true" style="--n:8">
+  <g class="ns-con-dust"><circle cx="14" cy="156" r="1.1"/><circle cx="90.5" cy="151.6" r="0.7"/><circle cx="174.6" cy="138.8" r="1.1"/><circle cx="26.8" cy="121" r="1.1"/><circle cx="73.1" cy="89" r="0.6"/><circle cx="114.8" cy="1.3" r="1.1"/><circle cx="196.9" cy="90.7" r="0.5"/><circle cx="89.3" cy="98.6" r="0.6"/><circle cx="7.9" cy="134.3" r="1.1"/><circle cx="45.3" cy="127.1" r="0.6"/><circle cx="122.7" cy="98.8" r="0.8"/><circle cx="124.2" cy="84.9" r="0.9"/><circle cx="59.8" cy="154.2" r="0.5"/><circle cx="129.5" cy="131.5" r="0.7"/><circle cx="148.8" cy="112.1" r="1.1"/><circle cx="144.3" cy="54.4" r="0.5"/></g><g class="ns-con-lines"><path class="ns-ln" pathLength="1" style="--i:0" d="M62 20L138 20"/><path class="ns-ln" pathLength="1" style="--i:1" d="M62 20L100 80"/><path class="ns-ln" pathLength="1" style="--i:2" d="M138 20L100 80"/><path class="ns-ln" pathLength="1" style="--i:3" d="M100 80L62 140"/><path class="ns-ln" pathLength="1" style="--i:4" d="M100 80L138 140"/><path class="ns-ln" pathLength="1" style="--i:5" d="M62 140L138 140"/><path class="ns-ln" pathLength="1" style="--i:6" d="M100 124L62 140"/><path class="ns-ln" pathLength="1" style="--i:7" d="M100 124L138 140"/></g><g class="ns-con-stars" filter="url(#ns-glow)"><g transform="translate(62 20)"><g class="ns-st" style="--i:0"><circle r="2.4"/></g></g><g transform="translate(138 20)"><g class="ns-st" style="--i:1"><circle r="2.4"/></g></g><g transform="translate(100 80)"><g class="ns-st is-big" style="--i:2"><circle r="3.6"/><path d="M-9 0H9M0 -9V9"/></g></g><g transform="translate(62 140)"><g class="ns-st" style="--i:3"><circle r="2.4"/></g></g><g transform="translate(138 140)"><g class="ns-st" style="--i:4"><circle r="2.4"/></g></g><g transform="translate(100 124)"><g class="ns-st is-big" style="--i:5"><circle r="3.6"/><path d="M-9 0H9M0 -9V9"/></g></g></g>
+</svg></figure>
+          <span class="en block-title">Schedule</span>
+          <span class="cn block-sub">當日流程</span>
+        </div>
+        <div class="ns-glass ns-glass-tl" data-reveal="rise" data-scroll>
+          <div class="timeline" id="schedule" data-sk="rows" data-reveal="list"></div>
+        </div>
+      </section>
+
+      <!-- ===== 出席前的小提醒：領結座（沒填就整塊收起） ===== -->
+      <section class="info-block ns-sec" id="noteBlock" hidden>
+        <div class="ns-head">
+          <figure class="ns-icon" data-reveal="draw"><svg class="ns-art ns-con" viewBox="0 0 200 160" aria-hidden="true" style="--n:10">
+  <g class="ns-con-dust"><circle cx="4.7" cy="39.3" r="0.7"/><circle cx="138.9" cy="113.9" r="1.2"/><circle cx="57.4" cy="59.9" r="1"/><circle cx="50.8" cy="96.5" r="1.2"/><circle cx="187.7" cy="15" r="0.8"/><circle cx="113.2" cy="58.8" r="1.3"/><circle cx="69.1" cy="51.8" r="1.3"/><circle cx="191.2" cy="52.5" r="0.9"/><circle cx="53.9" cy="48.3" r="0.7"/><circle cx="197.3" cy="81.6" r="1.3"/><circle cx="115.3" cy="139.9" r="1"/><circle cx="107.8" cy="159.4" r="1.1"/><circle cx="105.6" cy="98.6" r="0.7"/><circle cx="88" cy="107.2" r="1.3"/><circle cx="194.7" cy="81.1" r="1.2"/><circle cx="149.9" cy="85.6" r="0.7"/></g><g class="ns-con-lines"><path class="ns-ln" pathLength="1" style="--i:0" d="M42 50L42 112"/><path class="ns-ln" pathLength="1" style="--i:1" d="M42 50L86 74"/><path class="ns-ln" pathLength="1" style="--i:2" d="M42 112L86 88"/><path class="ns-ln" pathLength="1" style="--i:3" d="M86 74L100 81"/><path class="ns-ln" pathLength="1" style="--i:4" d="M86 88L100 81"/><path class="ns-ln" pathLength="1" style="--i:5" d="M100 81L114 74"/><path class="ns-ln" pathLength="1" style="--i:6" d="M100 81L114 88"/><path class="ns-ln" pathLength="1" style="--i:7" d="M114 74L158 50"/><path class="ns-ln" pathLength="1" style="--i:8" d="M114 88L158 112"/><path class="ns-ln" pathLength="1" style="--i:9" d="M158 50L158 112"/></g><g class="ns-con-stars" filter="url(#ns-glow)"><g transform="translate(42 50)"><g class="ns-st is-big" style="--i:0"><circle r="3.6"/><path d="M-9 0H9M0 -9V9"/></g></g><g transform="translate(42 112)"><g class="ns-st" style="--i:1"><circle r="2.4"/></g></g><g transform="translate(86 74)"><g class="ns-st" style="--i:2"><circle r="2.4"/></g></g><g transform="translate(86 88)"><g class="ns-st" style="--i:3"><circle r="2.4"/></g></g><g transform="translate(114 74)"><g class="ns-st" style="--i:4"><circle r="2.4"/></g></g><g transform="translate(114 88)"><g class="ns-st" style="--i:5"><circle r="2.4"/></g></g><g transform="translate(158 50)"><g class="ns-st" style="--i:6"><circle r="2.4"/></g></g><g transform="translate(158 112)"><g class="ns-st is-big" style="--i:7"><circle r="3.6"/><path d="M-9 0H9M0 -9V9"/></g></g><g transform="translate(100 81)"><g class="ns-st is-big" style="--i:8"><circle r="3.6"/><path d="M-9 0H9M0 -9V9"/></g></g></g>
+</svg></figure>
+          <span class="en block-title">Notes</span>
+          <span class="cn block-sub">出席前的小提醒</span>
+        </div>
+        <div class="note-grid ns-glass" data-reveal="rise" data-scroll>
+          <div class="note-item" id="dressCodeItem" hidden>
+            <div class="note-label">Dress Code</div>
+            <div class="dress-swatches" id="dressSwatches" hidden aria-hidden="true"></div>
+            <p class="info-note" id="dressCode"></p>
+            <div class="dress-refs" id="dressRefs" hidden>
+              <img class="dress-ref-img" id="dressRefFirst" alt="Dress Code 參考圖">
+              <button class="ir-jump" id="dressRefMore" type="button" hidden>查看更多 →</button>
+            </div>
+          </div>
+          <div class="note-item" id="giftNoteItem" hidden>
+            <div class="note-label">關於禮金</div>
+            <p class="info-note" id="giftNote"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 交通資訊：北極星（沒填就整塊收起） ===== -->
+      <section class="info-block ns-sec" id="transportBlock" hidden>
+        <div class="ns-head">
+          <figure class="ns-icon" data-reveal="draw"><svg class="ns-art ns-con" viewBox="0 0 200 160" aria-hidden="true" style="--n:10">
+  <g class="ns-con-dust"><circle cx="7.8" cy="152.6" r="1.2"/><circle cx="147.9" cy="105.1" r="1.2"/><circle cx="105.9" cy="141.5" r="0.5"/><circle cx="163.1" cy="112.7" r="0.8"/><circle cx="182.4" cy="98.6" r="0.8"/><circle cx="86.4" cy="93.7" r="0.7"/><circle cx="55.1" cy="128.8" r="0.8"/><circle cx="27.9" cy="108.8" r="1"/><circle cx="74.5" cy="107.9" r="0.9"/><circle cx="10.7" cy="3.3" r="1.1"/><circle cx="166.5" cy="88.2" r="1.2"/><circle cx="122.8" cy="145.7" r="0.8"/><circle cx="83.6" cy="131.5" r="0.9"/><circle cx="108.2" cy="48.2" r="0.8"/><circle cx="57.2" cy="105.3" r="0.6"/><circle cx="162.5" cy="69.6" r="1"/></g><g class="ns-con-lines"><path class="ns-ln" pathLength="1" style="--i:0" d="M100 8L118 62"/><path class="ns-ln" pathLength="1" style="--i:1" d="M118 62L172 80"/><path class="ns-ln" pathLength="1" style="--i:2" d="M172 80L118 98"/><path class="ns-ln" pathLength="1" style="--i:3" d="M118 98L100 152"/><path class="ns-ln" pathLength="1" style="--i:4" d="M100 152L82 98"/><path class="ns-ln" pathLength="1" style="--i:5" d="M82 98L28 80"/><path class="ns-ln" pathLength="1" style="--i:6" d="M28 80L82 62"/><path class="ns-ln" pathLength="1" style="--i:7" d="M82 62L100 8"/><path class="ns-ln" pathLength="1" style="--i:8" d="M100 8L100 80"/><path class="ns-ln" pathLength="1" style="--i:9" d="M100 80L100 152"/></g><g class="ns-con-stars" filter="url(#ns-glow)"><g transform="translate(100 80)"><g class="ns-st is-big" style="--i:0"><circle r="3.6"/><path d="M-9 0H9M0 -9V9"/></g></g><g transform="translate(100 8)"><g class="ns-st is-big" style="--i:1"><circle r="3.6"/><path d="M-9 0H9M0 -9V9"/></g></g><g transform="translate(172 80)"><g class="ns-st" style="--i:2"><circle r="2.4"/></g></g><g transform="translate(100 152)"><g class="ns-st" style="--i:3"><circle r="2.4"/></g></g><g transform="translate(28 80)"><g class="ns-st" style="--i:4"><circle r="2.4"/></g></g><g transform="translate(118 62)"><g class="ns-st" style="--i:5"><circle r="2.4"/></g></g><g transform="translate(118 98)"><g class="ns-st" style="--i:6"><circle r="2.4"/></g></g><g transform="translate(82 98)"><g class="ns-st" style="--i:7"><circle r="2.4"/></g></g><g transform="translate(82 62)"><g class="ns-st" style="--i:8"><circle r="2.4"/></g></g></g>
+</svg></figure>
+          <span class="en block-title">Access</span>
+          <span class="cn block-sub">交通資訊</span>
+        </div>
+        <div class="note-grid ns-glass" data-reveal="rise" data-scroll>
+          <div class="note-item" id="transportPublicItem" hidden>
+            <div class="note-label">大眾運輸</div>
+            <p class="info-note" id="transportPublic"></p>
+            <button class="ir-jump" id="transportPublicMore" type="button" hidden>展開更多 →</button>
+          </div>
+          <div class="note-item" id="transportParkingItem" hidden>
+            <div class="note-label">停車資訊</div>
+            <p class="info-note" id="transportParking"></p>
+            <button class="ir-jump" id="transportParkingMore" type="button" hidden>展開更多 →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 兩人的故事：從望遠鏡裡看出去；一顆小行星沿著軌道繞，跟著捲動走 ===== -->
+      <section class="info-block ns-band ns-story" id="storyBlock" hidden data-scroll>
+        <div class="ns-band-bg" aria-hidden="true"></div>
+        <div class="ns-band-inner">
+          <div class="ns-scope" data-reveal="rise">
+            <i class="ns-orbit" aria-hidden="true"><b></b></i>
+            <div class="ns-scope-ph" data-photo="story" aria-hidden="true"></div>
+            <svg class="ns-reticle" viewBox="0 0 300 300" aria-hidden="true">
+  <path class="t" d="M296 150L286 150M295.8 157.6L292.8 157.5M295.2 165.3L292.2 164.9M294.2 172.8L291.2 172.4M292.8 180.4L289.9 179.7M291 187.8L285.2 186.2M288.9 195.1L286 194.2M286.3 202.3L283.5 201.2M283.4 209.4L280.6 208.2M280.1 216.3L277.4 214.9M276.4 223L267.8 218M272.4 229.5L269.9 227.9M268.1 235.8L265.7 234.1M263.5 241.9L261.1 240M258.5 247.7L256.3 245.7M253.2 253.2L249 249M247.7 258.5L245.7 256.3M241.9 263.5L240 261.1M235.8 268.1L234.1 265.7M229.5 272.4L227.9 269.9M223 276.4L218 267.8M216.3 280.1L214.9 277.4M209.4 283.4L208.2 280.6M202.3 286.3L201.2 283.5M195.1 288.9L194.2 286M187.8 291L186.2 285.2M180.4 292.8L179.7 289.9M172.8 294.2L172.4 291.2M165.3 295.2L164.9 292.2M157.6 295.8L157.5 292.8M150 296L150 286M142.4 295.8L142.5 292.8M134.7 295.2L135.1 292.2M127.2 294.2L127.6 291.2M119.6 292.8L120.3 289.9M112.2 291L113.8 285.2M104.9 288.9L105.8 286M97.7 286.3L98.8 283.5M90.6 283.4L91.8 280.6M83.7 280.1L85.1 277.4M77 276.4L82 267.8M70.5 272.4L72.1 269.9M64.2 268.1L65.9 265.7M58.1 263.5L60 261.1M52.3 258.5L54.3 256.3M46.8 253.2L51 249M41.5 247.7L43.7 245.7M36.5 241.9L38.9 240M31.9 235.8L34.3 234.1M27.6 229.5L30.1 227.9M23.6 223L32.2 218M19.9 216.3L22.6 214.9M16.6 209.4L19.4 208.2M13.7 202.3L16.5 201.2M11.1 195.1L14 194.2M9 187.8L14.8 186.2M7.2 180.4L10.1 179.7M5.8 172.8L8.8 172.4M4.8 165.3L7.8 164.9M4.2 157.6L7.2 157.5M4 150L14 150M4.2 142.4L7.2 142.5M4.8 134.7L7.8 135.1M5.8 127.2L8.8 127.6M7.2 119.6L10.1 120.3M9 112.2L14.8 113.8M11.1 104.9L14 105.8M13.7 97.7L16.5 98.8M16.6 90.6L19.4 91.8M19.9 83.7L22.6 85.1M23.6 77L32.2 82M27.6 70.5L30.1 72.1M31.9 64.2L34.3 65.9M36.5 58.1L38.9 60M41.5 52.3L43.7 54.3M46.8 46.8L51 51M52.3 41.5L54.3 43.7M58.1 36.5L60 38.9M64.2 31.9L65.9 34.3M70.5 27.6L72.1 30.1M77 23.6L82 32.2M83.7 19.9L85.1 22.6M90.6 16.6L91.8 19.4M97.7 13.7L98.8 16.5M104.9 11.1L105.8 14M112.2 9L113.8 14.8M119.6 7.2L120.3 10.1M127.2 5.8L127.6 8.8M134.7 4.8L135.1 7.8M142.4 4.2L142.5 7.2M150 4L150 14M157.6 4.2L157.5 7.2M165.3 4.8L164.9 7.8M172.8 5.8L172.4 8.8M180.4 7.2L179.7 10.1M187.8 9L186.2 14.8M195.1 11.1L194.2 14M202.3 13.7L201.2 16.5M209.4 16.6L208.2 19.4M216.3 19.9L214.9 22.6M223 23.6L218 32.2M229.5 27.6L227.9 30.1M235.8 31.9L234.1 34.3M241.9 36.5L240 38.9M247.7 41.5L245.7 43.7M253.2 46.8L249 51M258.5 52.3L256.3 54.3M263.5 58.1L261.1 60M268.1 64.2L265.7 65.9M272.4 70.5L269.9 72.1M276.4 77L267.8 82M280.1 83.7L277.4 85.1M283.4 90.6L280.6 91.8M286.3 97.7L283.5 98.8M288.9 104.9L286 105.8M291 112.2L285.2 113.8M292.8 119.6L289.9 120.3M294.2 127.2L291.2 127.6M295.2 134.7L292.2 135.1M295.8 142.4L292.8 142.5"/>
+  <path class="x" d="M150 22V120M150 180V278M22 150H120M180 150H278"/>
+  <circle class="c" cx="150" cy="150" r="30"/>
+  <text x="150" y="44" text-anchor="middle">N</text>
+  <text x="44" y="154" text-anchor="middle">E</text>
+</svg>
+          </div>
+          <div class="ns-story-body" data-reveal="rise">
+            <div class="ns-band-title">Our Story</div>
+            <div class="ns-band-sub">關於我們這一路</div>
+            <p class="story-text" id="storyText"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Moments 相遇之間 ===== -->
+      <section class="info-block ns-sec gallery-block" id="photoGallery" hidden>
+        <div class="ns-head">
+          <span class="en block-title">Moments</span>
+          <span class="cn block-sub">相遇之間</span>
+        </div>
+        <div class="photo-rail" id="photoRail"></div>
+      </section>
+
+      <!-- ===== 日期倒數：月亮跟著捲動一點一點圓起來 ===== -->
+      <section class="info-block ns-band ns-count" data-scroll>
+        <div class="ns-band-bg" aria-hidden="true"></div>
+        <div class="ns-band-inner">
+          <figure class="ns-phase" aria-hidden="true"><svg class="ns-art ns-moon-art" viewBox="0 0 200 200" aria-hidden="true">
+  <circle cx="100" cy="100" r="96" fill="url(#ns-moon)"/>
+  <g fill="#9a9274" opacity=".22" filter="url(#ns-blur)"><ellipse cx="78" cy="70" rx="30" ry="22" transform="rotate(-20 78 70)"/><ellipse cx="118" cy="64" rx="20" ry="16" transform="rotate(10 118 64)"/><ellipse cx="104" cy="98" rx="26" ry="18" transform="rotate(30 104 98)"/><ellipse cx="70" cy="118" rx="18" ry="14" transform="rotate(0 70 118)"/><ellipse cx="128" cy="118" rx="14" ry="20" transform="rotate(-30 128 118)"/><ellipse cx="92" cy="140" rx="20" ry="10" transform="rotate(10 92 140)"/></g>
+  <g fill="#7d765a" fill-opacity=".1" stroke="#fffbea" stroke-opacity=".22" stroke-width=".5"><circle cx="167.8" cy="105.4" r="4"/><circle cx="29.7" cy="103" r="2.9"/><circle cx="105.3" cy="148.9" r="1.8"/><circle cx="113.4" cy="147.8" r="4.1"/><circle cx="119.3" cy="141.9" r="1.6"/><circle cx="114" cy="66.1" r="3.6"/><circle cx="72.1" cy="89.1" r="2.8"/><circle cx="59.8" cy="118.6" r="1.6"/><circle cx="85.1" cy="104.9" r="2.7"/><circle cx="30.1" cy="105.7" r="2.7"/><circle cx="100.7" cy="82.9" r="5.8"/><circle cx="94.2" cy="47.1" r="3.4"/><circle cx="121.3" cy="80.4" r="3.6"/><circle cx="143.5" cy="74.1" r="4.3"/><circle cx="86.2" cy="109.9" r="1.6"/><circle cx="98.9" cy="139.6" r="1.6"/><circle cx="61.8" cy="72" r="2.4"/><circle cx="87.3" cy="127.8" r="1.9"/><circle cx="158.1" cy="48.8" r="1.7"/><circle cx="63.2" cy="112" r="7.2"/><circle cx="137.9" cy="162.5" r="4.2"/><circle cx="152.9" cy="75.9" r="1.8"/><circle cx="138" cy="141.3" r="4.4"/><circle cx="81" cy="136.5" r="3.3"/><circle cx="114.4" cy="120.8" r="2.9"/><circle cx="104.3" cy="38" r="2"/></g>
+  <circle cx="171" cy="62" r="5" fill="none" stroke="#fffbea" stroke-opacity=".6"/>
+  <circle cx="100" cy="100" r="96" fill="url(#ns-limb)"/>
+</svg><i class="ns-phase-shade"></i></figure>
+          <div class="ns-count-body">
+            <div class="ns-band-title">Until the moon is full</div>
+            <div class="ns-band-sub">距離我們的大日子還有</div>
+            <div class="cd-card">
+              <div class="cd-grid" id="cdGrid" data-sk="grid"></div>
+              <div class="cd-target" id="cdTarget"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== R.S.V.P.：信封座 ===== -->
+      <section class="info-block ns-sec">
+        <div class="ns-head">
+          <span class="en block-title">R.S.V.P.</span>
+          <span class="cn block-sub">出席回覆</span>
+        </div>
+        <div class="ns-glass ns-rsvp" data-reveal="rise" data-scroll>
+          <figure class="ns-icon ns-rsvp-icon" data-reveal="draw" aria-hidden="true"><svg class="ns-art ns-con" viewBox="0 0 200 160" aria-hidden="true" style="--n:8">
+  <g class="ns-con-dust"><circle cx="12.4" cy="99.3" r="1.3"/><circle cx="186" cy="156" r="0.7"/><circle cx="50.4" cy="18" r="0.9"/><circle cx="170.7" cy="112.9" r="0.5"/><circle cx="175.8" cy="47.2" r="0.6"/><circle cx="128.3" cy="143.9" r="0.6"/><circle cx="4" cy="52.2" r="0.8"/><circle cx="170.9" cy="150.5" r="0.6"/><circle cx="97.6" cy="104.5" r="1"/><circle cx="38.6" cy="86.2" r="0.7"/><circle cx="97.1" cy="44.7" r="0.7"/><circle cx="116.7" cy="11.8" r="0.7"/><circle cx="70.9" cy="57.7" r="1.2"/><circle cx="119.4" cy="1" r="0.9"/><circle cx="117.5" cy="20" r="0.6"/><circle cx="138" cy="62.4" r="0.7"/></g><g class="ns-con-lines"><path class="ns-ln" pathLength="1" style="--i:0" d="M40 42L160 42"/><path class="ns-ln" pathLength="1" style="--i:1" d="M160 42L160 122"/><path class="ns-ln" pathLength="1" style="--i:2" d="M160 122L40 122"/><path class="ns-ln" pathLength="1" style="--i:3" d="M40 122L40 42"/><path class="ns-ln" pathLength="1" style="--i:4" d="M40 42L100 88"/><path class="ns-ln" pathLength="1" style="--i:5" d="M100 88L160 42"/><path class="ns-ln" pathLength="1" style="--i:6" d="M40 122L100 88"/><path class="ns-ln" pathLength="1" style="--i:7" d="M100 88L160 122"/></g><g class="ns-con-stars" filter="url(#ns-glow)"><g transform="translate(40 42)"><g class="ns-st is-big" style="--i:0"><circle r="3.6"/><path d="M-9 0H9M0 -9V9"/></g></g><g transform="translate(160 42)"><g class="ns-st" style="--i:1"><circle r="2.4"/></g></g><g transform="translate(160 122)"><g class="ns-st is-big" style="--i:2"><circle r="3.6"/><path d="M-9 0H9M0 -9V9"/></g></g><g transform="translate(40 122)"><g class="ns-st" style="--i:3"><circle r="2.4"/></g></g><g transform="translate(100 88)"><g class="ns-st is-big" style="--i:4"><circle r="3.6"/><path d="M-9 0H9M0 -9V9"/></g></g><g transform="translate(100 72)"><g class="ns-st" style="--i:5"><circle r="2.4"/></g></g></g>
+</svg></figure>
+          <div class="rsvp-cta">
+            <h3>能來參加我們的婚禮嗎？</h3>
+            <p>花 30 秒回覆出席，讓我們把最好的位置留給你</p>
+            <a class="btn" href="invitation.html">前往出席回覆</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Explore：夜空色的玻璃格 ===== -->
+      <section class="link-section ns-sec">
+        <div class="ns-head">
+          <span class="en block-title">Explore</span>
+          <span class="cn block-sub">其他活動</span>
+        </div>
+        <div class="link-grid" id="linkGrid" data-reveal="list">
+          <a class="link-card" href="wall.html">
+            <span class="lc-index">02</span>
+            <span class="lc-title">新人祝福牆</span>
+            <span class="lc-sub">寫下想對我們說的話，也讀讀大家的祝福</span>
+            <span class="lc-go">前往</span>
+          </a>
+          <a class="link-card" href="letter.html">
+            <span class="lc-index">03</span>
+            <span class="lc-title">給你的一封信</span>
+            <span class="lc-sub">我們寫了信給你，輸入名字就能拆開來看</span>
+            <span class="lc-go">前往</span>
+          </a>
+          <a class="link-card" href="exhibition.html">
+            <span class="lc-index">04</span>
+            <span class="lc-title">我們的故事</span>
+            <span class="lc-sub">沿著時間線，走過我們一路走來的日子</span>
+            <span class="lc-go">前往</span>
+          </a>
+          <a class="link-card" href="quiz.html">
+            <span class="lc-index">05</span>
+            <span class="lc-title">看你多了解我們</span>
+            <span class="lc-sub">一份小測驗，看看你有多了解我們</span>
+            <span class="lc-go">前往</span>
+          </a>
+          <a class="link-card" href="draw.html">
+            <span class="lc-index">06</span>
+            <span class="lc-title">看你會抽到什麼照片</span>
+            <span class="lc-sub">抽一張婚禮限定小卡，收進你的收藏</span>
+            <span class="lc-go">前往</span>
+          </a>
+          <a class="link-card" href="cake.html">
+            <span class="lc-index">07</span>
+            <span class="lc-title">集氣送祝褔</span>
+            <span class="lc-sub">挑一份甜點放上桌，替我們集氣</span>
+            <span class="lc-go">前往</span>
+          </a>
+        </div>
+      </section>
+
+      <footer class="ns-foot" data-scroll>
+        <div class="ns-dawn" aria-hidden="true"></div>
+        <div class="ns-fin">written in the stars, forever</div>
+        <span>made for <span data-tpl="couple"></span>・小港製作所 設計製作</span>
+      </footer>
+    </div>
+  </section>
+</div>
+
+<!-- 自訂卡片／交通「展開更多」共用的彈窗 -->
+<div class="lc-modal" id="lcModal">
+  <div class="lc-modal-card" role="dialog" aria-modal="true" aria-labelledby="lcModalTitle">
+    <button class="lc-modal-close" id="lcModalClose" type="button" aria-label="關閉">✕</button>
+    <h3 class="lc-modal-title" id="lcModalTitle"></h3>
+    <div class="lc-modal-sub" id="lcModalSub"></div>
+    <div class="lc-modal-body" id="lcModalBody"></div>
+  </div>
+</div>
+
+<script src="demo-data.js"></script>
+<script>window.DEMO_CFG = {"templates":{"night-sky":{"label":"Night Sky 現代星空","opening":"stars"}},"openings":{"envelope":"拆信・封蠟","book":"翻頁・古書","bloom":"花朵盛開","curtain":"窗簾拉開","candle":"燭光點亮","stars":"星圖展開","door":"門／拱門","ribbon":"拉開絲帶"}};</script>
+<script src="../public/js/lobby-motion.js"></script>
+<script src="../public/js/openers/envelope.js"></script>
+<script src="../public/js/openers/book.js"></script>
+<script src="../public/js/openers/bloom.js"></script>
+<script src="../public/js/openers/curtain.js"></script>
+<script src="../public/js/openers/candle.js"></script>
+<script src="../public/js/openers/stars.js"></script>
+<script src="../public/js/openers/door.js"></script>
+<script src="../public/js/openers/ribbon.js"></script>
+<script src="lobby-demo.js"></script>
+</body>
+</html>
