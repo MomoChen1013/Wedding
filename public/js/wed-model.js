@@ -86,9 +86,10 @@ export const TEMPLATES = {
   'botanical-letter': { label:'Botanical Letter 植物信箋', lobbyFile:'lobby-botanical.html',
                      lobbyCss:['/css/lobby-botanical.css'], lobbyJs:['/js/lobby-motion.js'], opening:'ribbon',
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Courier+Prime&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
-  /* 秘密花園：紙雕感的野花、藤蔓、蝴蝶；從花園入口推門進去 */
-  'secret-garden': { label:'Secret Garden 秘密花園', lobbyFile:'lobby-scene.html', lobbyKey:'scene',
-                     lobbyCss:['/css/lobby-scene.css'], lobbyJs:['/js/lobby-motion.js'], opening:'door',
+  /* 秘密花園：一本紙雕的立體書 —— 一層一層的色紙疊出花園、野花、藤蔓、蝴蝶；
+     推開花園門（開場）走進拱門。整套做完，有自己的骨架 */
+  'secret-garden':  { label:'Secret Garden 秘密花園', lobbyFile:'lobby-garden.html',
+                     lobbyCss:['/css/lobby-garden.css'], lobbyJs:['/js/lobby-motion.js'], opening:'door',
                      fonts:['https://fonts.googleapis.com/css2?family=Italiana&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
   /* 春日溫室：玻璃、花影、斜射的陽光；開場是一朵花慢慢開 */
   'spring-orangerie': { label:'Spring Orangerie 春日溫室', lobbyFile:'lobby-scene.html', lobbyKey:'scene',

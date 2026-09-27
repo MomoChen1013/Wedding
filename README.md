@@ -116,7 +116,8 @@
 │   ├─ index.html             # 大廳
 │   ├─ lobby-korean.html  lobby-forest.html  lobby-tapestry.html
 │   │                         # 版型自己的大廳骨架（見 js/wed-model.js 的 TEMPLATES）
-│   ├─ lobby-botanical.html   # Botanical Letter 的大廳（整套插圖做完的場景版型各有一份）
+│   ├─ lobby-botanical.html  lobby-garden.html
+│   │                         # 整套插圖做完的場景版型，各有自己的大廳
 │   ├─ lobby-scene.html       # 其餘「場景版型」共用的大廳骨架（長相見 css/lobby-scene.css）
 │   ├─ wall.html  cake.html
 │   ├─ draw.html  exhibition.html  quiz.html
@@ -238,12 +239,13 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | 版型 | 進度 | 大廳 |
 |---|---|---|
 | botanical-letter | ✅ 整套插圖（墨線＋水彩的標本、蒲公英、郵票）＋ 捲動編排 | `lobby-botanical.html` |
-| 其餘六個 | 世界觀、hero 場景、開場 | 共用 `lobby-scene.html` |
+| secret-garden | ✅ 整套插圖（紙雕立體書：分層的花園、野花、藤蔓、蝴蝶、黃昏螢火蟲）＋ 捲動編排 | `lobby-garden.html` |
+| 其餘五個 | 世界觀、hero 場景、開場 | 共用 `lobby-scene.html` |
 
 Night Sky 與 Midnight Chapel 的大廳是深色的，但子頁暫時還是淺色版（見 common.css）。
-還沒整套做完的版型並排看：`preview/scene.html`；做完的各有一頁（`preview/botanical-letter.html`）。右下角都可以切換開場。
+還沒整套做完的版型並排看：`preview/scene.html`；做完的各有一頁（`preview/botanical-letter.html`、`preview/secret-garden.html`）。右下角都可以切換開場。
 
-`preview/` 底下 tapestry、botanical-letter、scene 三頁是 `npm run build-previews` 從
+`preview/` 底下 tapestry、botanical-letter、secret-garden、scene 這幾頁是 `npm run build-previews` 從
 `public/lobby-*.html` 產出來的，改了大廳骨架記得重跑。
 
 ---

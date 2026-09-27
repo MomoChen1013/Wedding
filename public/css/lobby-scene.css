@@ -174,54 +174,7 @@ body[data-hero-name="cn"] .sc-hero .sc-names{font-family:'Noto Serif TC',serif;f
 
 /* Botanical Letter 已經有自己的大廳（lobby-botanical.html／css），不在這裡了 */
 
-/* ------------------------------------------------------------
-   Secret Garden 秘密花園
-   紙雕感的綠籬、藤蔓、野花、蝴蝶
------------------------------------------------------------- */
-body[data-template="secret-garden"][data-lobby="scene"]{
-  --sc-page:radial-gradient(120% 70% at 50% 0%,#f8f6ec,#f3f1e8 55%,#e8ecdc);
-  --sc-kicker:"Come find us in the garden";
-  --sc-orn:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 40'><path d='M24 20C18 6 4 2 2 10C0 18 12 22 24 20ZM24 20C30 6 44 2 46 10C48 18 36 22 24 20ZM24 20C16 24 8 34 14 37C20 40 24 30 24 20ZM24 20C32 24 40 34 34 37C28 40 24 30 24 20Z'/><rect x='23' y='10' width='2' height='22' rx='1'/></svg>");
-  --sc-card:rgba(252,252,246,.9); --sc-card-line:#d3d8c6; --sc-card-radius:14px;
-  --sc-card-shadow:0 2px 0 rgba(255,255,255,.8) inset,0 20px 34px -26px rgba(40,60,30,.5);
-  --sc-band:
-    radial-gradient(10px 7px at 30% 40%,rgba(143,176,110,.5) 55%,transparent 60%) 0 0/23px 19px,
-    radial-gradient(8px 11px at 70% 20%,rgba(95,127,72,.55) 55%,transparent 60%) 5px 3px/29px 31px,
-    radial-gradient(12px 8px at 50% 70%,rgba(120,156,92,.4) 55%,transparent 60%) 11px 7px/37px 27px,
-    linear-gradient(180deg,#48653a,#34492b);
-  --sc-frame-radius:50% 50% 8px 8px / 36% 36% 8px 8px; --sc-frame-edge:#f3efe0;
-}
-/* hero：上緣垂下來的一排綠籬（紙雕的層次：深、淺兩層，各自錯開、往下垂一點） */
-body[data-template="secret-garden"] .sc-hero-art > i:nth-child(1),
-body[data-template="secret-garden"] .sc-hero-art > i:nth-child(2){left:-2%;right:-2%;top:0;height:clamp(80px,14vh,130px);
-  background:
-    radial-gradient(34px 28px at 50% 45%,#5f7f48 96%,transparent 100%) 0 100%/72px 70% repeat-x,
-    radial-gradient(26px 22px at 12% 70%,#6f8f55 96%,transparent 100%) 0 100%/72px 70% repeat-x,
-    radial-gradient(24px 20px at 86% 72%,#4e6b3c 96%,transparent 100%) 0 100%/72px 70% repeat-x,
-    linear-gradient(180deg,#48653a,#4e6b3c 45%,transparent 46%);
-  filter:drop-shadow(0 8px 8px rgba(40,60,30,.28));}
-body[data-template="secret-garden"] .sc-hero-art > i:nth-child(2){top:14px;background-position:36px 100%,36px 100%,36px 100%,0 0;
-  filter:brightness(1.22) drop-shadow(0 6px 6px rgba(40,60,30,.22));z-index:-1;}
-/* 兩隻蝴蝶，慢慢飄 */
-body[data-template="secret-garden"] .sc-hero-art > i:nth-child(3){left:18%;top:34%;width:30px;height:24px;background:#9b8ab8;
-  -webkit-mask:var(--sc-orn) center/contain no-repeat;mask:var(--sc-orn) center/contain no-repeat;
-  animation:sc-flutter 7s ease-in-out infinite;}
-body[data-template="secret-garden"] .sc-hero-art > i:nth-child(3)::after{content:'';position:absolute;left:220%;top:120%;width:80%;height:80%;}
-@keyframes sc-flutter{0%,100%{transform:translate(0,0) scaleX(1);}25%{transform:translate(30px,-18px) scaleX(.7);}
-  50%{transform:translate(60px,4px) scaleX(1);}75%{transform:translate(24px,16px) scaleX(.75);}}
-/* 主視覺：一道爬滿花的拱，裡面是光 */
-body[data-template="secret-garden"] .sc-emblem{aspect-ratio:3/4;width:clamp(140px,18vw,190px);}
-body[data-template="secret-garden"] .sc-emblem > i:nth-child(1){inset:0;border-radius:50% 50% 6px 6px / 38% 38% 6px 6px;
-  background:radial-gradient(60% 50% at 50% 55%,#fffbe8,#e4ecd0 70%,#b9cc9c);
-  box-shadow:0 0 0 8px #5f7f48,0 0 0 9px rgba(255,255,255,.4),0 20px 30px -18px rgba(40,60,30,.6);}
-body[data-template="secret-garden"] .sc-emblem > i:nth-child(2){inset:-14px;border-radius:50% 50% 0 0 / 38% 38% 0 0;
-  background:
-    radial-gradient(circle,#e9c7d6 0 4px,transparent 5px) 0 0/34px 30px,
-    radial-gradient(circle,#f6e9b8 0 3px,transparent 4px) 17px 15px/34px 30px;
-  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 16px),#000 calc(100% - 15px));
-  mask:radial-gradient(farthest-side,transparent calc(100% - 16px),#000 calc(100% - 15px));}
-body[data-template="secret-garden"] .sc-emblem > i:nth-child(3){left:50%;bottom:10%;width:30px;height:24px;margin-left:-15px;background:#9b8ab8;
-  -webkit-mask:var(--sc-orn) center/contain no-repeat;mask:var(--sc-orn) center/contain no-repeat;opacity:.9;}
+/* Secret Garden 已經有自己的大廳（lobby-garden.html／css），不在這裡了 */
 
 /* ------------------------------------------------------------
    Spring Orangerie 春日溫室
