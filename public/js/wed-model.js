@@ -92,9 +92,9 @@ export const TEMPLATES = {
                      lobbyCss:['/css/lobby-garden.css'], lobbyJs:['/js/lobby-motion.js'], opening:'door',
                      fonts:['https://fonts.googleapis.com/css2?family=Italiana&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
   /* 春日溫室：玻璃、花影、斜射的陽光；開場是一朵花慢慢開 */
-  'spring-orangerie': { label:'Spring Orangerie 春日溫室', lobbyFile:'lobby-scene.html', lobbyKey:'scene',
-                     lobbyCss:['/css/lobby-scene.css'], lobbyJs:['/js/lobby-motion.js'], opening:'bloom',
-                     fonts:['https://fonts.googleapis.com/css2?family=Marcellus&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
+  'spring-orangerie': { label:'Spring Orangerie 春日溫室', lobbyFile:'lobby-orangerie.html',
+                     lobbyCss:['/css/lobby-orangerie.css'], lobbyJs:['/js/lobby-motion.js'], opening:'bloom',
+                     fonts:['https://fonts.googleapis.com/css2?family=Marcellus&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Sans+TC:wght@300;400;500&family=Noto+Serif+TC:wght@400;500&display=swap'] },
   /* 現代星空：星塵、月亮、流星；開場的星圖最後縮成首頁的裝飾 */
   'night-sky':   { label:'Night Sky 現代星空', lobbyFile:'lobby-scene.html', lobbyKey:'scene',
                      lobbyCss:['/css/lobby-scene.css'], lobbyJs:['/js/lobby-motion.js'], opening:'stars',
