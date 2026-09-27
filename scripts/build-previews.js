@@ -4,8 +4,10 @@
      node scripts/build-previews.js
 
    產出（⚙️ 不要手改，改來源再重跑）：
-     preview/tapestry.html   ← public/lobby-tapestry.html
-     preview/scene.html      ← public/lobby-scene.html（七個場景版型共用）
+     preview/tapestry.html          ← public/lobby-tapestry.html
+     preview/botanical-letter.html  ← public/lobby-botanical.html
+     preview/scene.html             ← public/lobby-scene.html（還沒整套做完的場景版型共用）
+     —— 清單從 TEMPLATES 的 lobbyFile 算出來，新增版型不必改這支
 
    為什麼用產的而不是手寫一份：示範頁要跟賓客看到的一模一樣，
    手抄一份骨架，改了正式版就會忘記改示範頁。這裡只做「讓它不起
@@ -23,10 +25,17 @@ import { TEMPLATES, OPENINGS } from '../public/js/wed-model.js';
 const root = new URL('../', import.meta.url);
 const read = (p) => readFileSync(new URL(p, root), 'utf8');
 
-const PAGES = [
-  { src: 'public/lobby-tapestry.html', out: 'preview/tapestry.html', lobby: 'tapestry', title: 'Tapestry' },
-  { src: 'public/lobby-scene.html', out: 'preview/scene.html', lobby: 'scene', title: '場景版型' },
-];
+/* 每一副大廳骨架產一頁（TEMPLATES 裡有 lobbyFile 的都算；共用骨架的只產一次） */
+const PAGES = [...new Map(Object.entries(TEMPLATES)
+  .filter(([, t]) => t.lobbyFile)
+  .map(([key, t]) => {
+    const lobby = t.lobbyKey || key;
+    const name = lobby === 'scene' ? 'scene' : key;
+    return [lobby, { src: `public/${t.lobbyFile}`, out: `preview/${name}.html`, lobby,
+      title: lobby === 'scene' ? '場景版型' : t.label.split(' ')[0] }];
+  })).values()]
+  /* korean／forest 的示範頁是手寫的（preview/korean-modern.html…），不動它們 */
+  .filter((p) => !['korean', 'forest'].includes(p.lobby));
 
 const esc = (s) => String(s).replace(/&/g, '&amp;');
 

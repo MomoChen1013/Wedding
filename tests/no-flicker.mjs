@@ -332,7 +332,7 @@ console.log('\n【⑥ 載入順序：預載的網址要跟實際 import 的一�
 
   const pages = ['index','invitation','letter','wall','cake','draw',
                  'exhibition','quiz','seating','lobby-korean','lobby-forest',
-                 'lobby-tapestry','lobby-scene'];
+                 'lobby-tapestry','lobby-scene','lobby-botanical'];
   const missing = [];
   const wrongJs = [];
   for(const name of pages){

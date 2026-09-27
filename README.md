@@ -116,7 +116,8 @@
 │   ├─ index.html             # 大廳
 │   ├─ lobby-korean.html  lobby-forest.html  lobby-tapestry.html
 │   │                         # 版型自己的大廳骨架（見 js/wed-model.js 的 TEMPLATES）
-│   ├─ lobby-scene.html       # 七個「場景版型」共用的大廳骨架（長相見 css/lobby-scene.css）
+│   ├─ lobby-botanical.html   # Botanical Letter 的大廳（整套插圖做完的場景版型各有一份）
+│   ├─ lobby-scene.html       # 其餘「場景版型」共用的大廳骨架（長相見 css/lobby-scene.css）
 │   ├─ wall.html  cake.html
 │   ├─ draw.html  exhibition.html  quiz.html
 │   ├─ seating.html           # 我的桌次（婚禮當天查桌次 + 桌次圖）
@@ -231,13 +232,18 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 每一種開場單獨看：`preview/openings.html`。
 
 **場景版型**：`botanical-letter`、`secret-garden`、`spring-orangerie`、`night-sky`、
-`french-manor`、`morning-window`、`midnight-chapel` 共用 `lobby-scene.html` 這一副骨架，
-長相由 `css/lobby-scene.css` 依版型換。目前每一個都有自己的色票、字體、hero 的場景與
-預設開場；專屬的整套插圖會一個一個補（像 tapestry 那樣）。
-Night Sky 與 Midnight Chapel 的大廳是深色的，但子頁暫時還是淺色版（見 common.css）。
-全部版型並排看：`preview/scene.html`（右下角可以切換版型與開場）。
+`french-manor`、`morning-window`、`midnight-chapel`。每一個都有自己的色票、字體與預設開場；
+專屬的整套插圖依序一個一個補，補完的就搬出去自己一副大廳骨架：
 
-`preview/tapestry.html`、`preview/scene.html` 是 `npm run build-previews` 從
+| 版型 | 進度 | 大廳 |
+|---|---|---|
+| botanical-letter | ✅ 整套插圖（墨線＋水彩的標本、蒲公英、郵票）＋ 捲動編排 | `lobby-botanical.html` |
+| 其餘六個 | 世界觀、hero 場景、開場 | 共用 `lobby-scene.html` |
+
+Night Sky 與 Midnight Chapel 的大廳是深色的，但子頁暫時還是淺色版（見 common.css）。
+還沒整套做完的版型並排看：`preview/scene.html`；做完的各有一頁（`preview/botanical-letter.html`）。右下角都可以切換開場。
+
+`preview/` 底下 tapestry、botanical-letter、scene 三頁是 `npm run build-previews` 從
 `public/lobby-*.html` 產出來的，改了大廳骨架記得重跑。
 
 ---

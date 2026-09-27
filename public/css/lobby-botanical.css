@@ -1,0 +1,294 @@
+/* ============================================================
+   lobby-botanical.css — Botanical Letter 植物信箋 的大廳（lobby-botanical.html 專用）
+   ------------------------------------------------------------
+   疊在 common.css ＋ index.css 之後。結構主張：**這一頁是一本植物標本冊**。
+
+     世界觀  一封夾著壓花的信：打開緞帶（開場），裡面是一本標本冊
+     材質    仿棉紙（纖維、毛邊）、仿描圖紙（半透明、壓在別的東西上面）、
+             仿乾燥花（退了色、壓扁、有一點透光）
+     素材    植物標本式的手繪：墨線 ＋ 水彩（水彩邊緣不規則、邊緣顏色較深）
+     圖像    植物學插畫、標本標籤（拉丁學名、編號、採集日期）、紙膠帶、郵票與郵戳
+
+   捲動：
+     ・插圖捲到才畫：墨線一筆一筆畫出來，水彩再暈上去（data-reveal="draw"）
+     ・hero 的描圖紙比台紙跑得快，往上滑開（--lp）
+     ・每一頁圖版的台紙跟著捲動微微擺一下（--sp）
+     ・幾片壓花在頁面上慢慢飄
+     ・倒數那一朵蒲公英：捲下去，種子一顆一顆被吹走
+
+   每一條規則都收在 .bt-* 或 body[data-lobby="botanical-letter"] 底下，子頁載到也不生效。
+============================================================ */
+
+body[data-lobby="botanical-letter"]{
+  --bt-ink:#3a4031; --bt-soft:#7a7c6a; --bt-sage:#9aab86; --bt-olive:#6b7a55;
+  --bt-rose:#d9a79a; --bt-label:#8a6a5a; --bt-paper:#fbf8f1; --bt-line:#ddd6c4;
+  --bt-mono:'Courier Prime','Courier New',monospace;
+  --bt-fibers:
+    radial-gradient(1px 9px at 20% 30%,rgba(120,110,80,.10),transparent) 0 0/140px 120px,
+    radial-gradient(7px 1px at 70% 60%,rgba(120,110,80,.09),transparent) 0 0/170px 150px,
+    radial-gradient(1px 6px at 40% 80%,rgba(120,110,80,.08),transparent) 0 0/110px 130px;
+}
+body[data-lobby="botanical-letter"] .bg-decor{
+  background:var(--bt-fibers),
+    repeating-linear-gradient(0deg,rgba(90,100,70,.03) 0 1px,transparent 1px 3px),
+    radial-gradient(120% 80% at 50% 0%,#faf7f0,#f4efe4 70%,#ede6d6);}
+.bt-lobby{position:relative;}
+
+/* ---- 插圖通用：墨線 ＋ 水彩 ---- */
+.bt-art{display:block;width:100%;height:auto;overflow:visible;}
+.bt-stamp-t{font:400 10px var(--bt-mono);letter-spacing:.24em;fill:var(--bt-label);}
+
+/* ============================================================
+   捲動進場
+============================================================ */
+.tp-motion [data-lobby="botanical-letter"] [data-reveal]{transition:opacity 1s ease,transform 1.1s cubic-bezier(.2,.7,.2,1);}
+.tp-motion [data-lobby="botanical-letter"] [data-reveal="rise"]:not(.is-in){opacity:0;transform:translateY(28px);}
+.tp-motion [data-lobby="botanical-letter"] [data-reveal="list"] > *{transition:opacity .8s ease,transform .9s cubic-bezier(.2,.7,.2,1);}
+.tp-motion [data-lobby="botanical-letter"] [data-reveal="list"]:not(.is-in) > *{opacity:0;transform:translateY(18px);}
+.tp-motion [data-lobby="botanical-letter"] [data-reveal="list"] > :nth-child(2){transition-delay:.12s;}
+.tp-motion [data-lobby="botanical-letter"] [data-reveal="list"] > :nth-child(3){transition-delay:.24s;}
+.tp-motion [data-lobby="botanical-letter"] [data-reveal="list"] > :nth-child(4){transition-delay:.36s;}
+.tp-motion [data-lobby="botanical-letter"] [data-reveal="list"] > :nth-child(n+5){transition-delay:.48s;}
+/* 畫出來：墨線依序畫（每一筆的順序在它的 --o 上），水彩最後暈開 */
+.tp-motion [data-reveal="draw"] .bt-ink path{stroke-dasharray:1;stroke-dashoffset:1;
+  transition:stroke-dashoffset 1.3s cubic-bezier(.45,0,.25,1);
+  transition-delay:min(calc(var(--o,0) * 9ms),1.6s);}
+.tp-motion [data-reveal="draw"].is-in .bt-ink path{stroke-dashoffset:0;}
+.tp-motion [data-reveal="draw"] .bt-wash{opacity:0;transform:scale(.97);transform-box:fill-box;transform-origin:center;
+  transition:opacity 1.6s ease 1.1s,transform 2s ease 1.1s;}
+.tp-motion [data-reveal="draw"].is-in .bt-wash{opacity:1;transform:none;}
+.tp-motion [data-reveal="draw"] .bt-plate-label{opacity:0;transition:opacity .8s ease 1.4s;}
+.tp-motion [data-reveal="draw"].is-in .bt-plate-label{opacity:1;}
+
+/* ============================================================
+   飄在頁面上的壓花
+============================================================ */
+.bt-drift{position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden;}
+.bt-petal{position:absolute;display:block;width:54px;opacity:.75;filter:saturate(.8);}
+.bt-drift .bt-petal{transform:translateY(calc((var(--sp,.5) - .5) * var(--dy))) rotate(calc(var(--sp,.5) * var(--r)));}
+.bt-petal.p1{left:4%;top:22%;--dy:-900px;--r:260deg;width:46px;}
+.bt-petal.p2{right:5%;top:38%;--dy:-1300px;--r:-300deg;width:40px;}
+.bt-petal.p3{left:7%;top:62%;--dy:-1100px;--r:200deg;width:36px;}
+.bt-petal.p4{right:8%;top:80%;--dy:-800px;--r:-220deg;width:50px;}
+@media (max-width:640px){.bt-petal{width:30px !important;opacity:.55;}}
+
+/* ============================================================
+   Hero：標本台紙
+============================================================ */
+.bt-hero{position:relative;min-height:calc(100svh - var(--nav-h));padding:clamp(50px,9vh,100px) clamp(20px,5vw,60px);
+  gap:0;color:var(--bt-ink);}
+.bt-hero-grid{position:relative;z-index:2;width:100%;max-width:1040px;display:grid;grid-template-columns:1fr;
+  gap:clamp(26px,5vw,64px);align-items:center;justify-items:center;}
+@media (min-width:860px){.bt-hero-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);justify-items:stretch;}}
+
+.bt-sheet{position:relative;width:min(100%,420px);aspect-ratio:3/4;justify-self:center;
+  background:var(--bt-fibers),linear-gradient(160deg,#fffdf7,#f7f2e6);
+  border-radius:2px;transform:rotate(-2.2deg) translateY(calc(var(--lp,0) * 40px));
+  box-shadow:0 1px 0 #fff inset,0 2px 3px rgba(80,70,40,.12),0 28px 50px -30px rgba(70,60,30,.5);}
+/* 棉紙的毛邊：四邊一圈不規則的淺色 */
+.bt-sheet::before{content:'';position:absolute;inset:-3px;border-radius:3px;z-index:-1;
+  background:#f3eee2;filter:url(#bt-wash);opacity:.9;}
+.bt-bouquet-wrap{position:absolute;left:6%;right:6%;top:3%;bottom:22%;margin:0;}
+.bt-bouquet-wrap .bt-art{height:100%;width:100%;}
+.bt-tape{position:absolute;width:24%;height:22px;background:rgba(226,214,180,.62);
+  box-shadow:0 1px 2px rgba(80,70,40,.12);}
+.bt-tape::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 3px,rgba(255,255,255,.2) 3px 4px);}
+.bt-tape.t1{left:38%;top:66%;transform:rotate(-8deg);}
+.bt-tape.t2{right:-4%;top:6%;transform:rotate(38deg);}
+.bt-label{position:absolute;right:6%;bottom:5%;width:62%;padding:10px 12px 9px;background:#fffdf8;
+  border:1px solid #cfc7b2;box-shadow:0 6px 14px -10px rgba(60,50,30,.5);transform:rotate(1.5deg);
+  display:flex;flex-direction:column;gap:4px;text-align:left;}
+.bt-label-no{display:flex;justify-content:space-between;font:400 10px/1 var(--bt-mono);letter-spacing:.18em;color:var(--bt-label);
+  padding-bottom:5px;border-bottom:1px solid #e0d9c6;}
+.bt-label-latin{font:italic 400 17px/1.2 'Cormorant Garamond',serif;color:var(--bt-ink);}
+.bt-label-names{font:400 13px/1.3 'Cormorant Garamond','Noto Serif TC',serif;color:var(--bt-ink);letter-spacing:.06em;}
+.bt-label-names i{color:var(--bt-label);}
+.bt-label-row{display:flex;justify-content:space-between;font:400 10px/1 var(--bt-mono);letter-spacing:.12em;color:var(--bt-soft);
+  padding-top:5px;border-top:1px dashed #e0d9c6;}
+
+/* 右邊的字：一張描圖紙斜斜壓在上面，捲下去它先滑走 */
+.bt-hero-text{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;
+  transform:translateY(calc(var(--lp,0) * -30px));opacity:calc(1 - var(--lp,0) * 1.1);}
+@media (min-width:860px){.bt-hero-text{align-items:flex-start;text-align:left;}}
+.bt-vellum{position:absolute;right:-6%;top:-18%;width:min(78%,300px);padding:18px 20px;transform:rotate(4deg) translateY(calc(var(--lp,0) * -140px));
+  background:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.8);
+  -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);box-shadow:0 10px 24px -18px rgba(60,60,30,.45);
+  font:italic 400 19px/1.35 'Cormorant Garamond',serif;color:rgba(58,64,49,.7);text-align:left;z-index:-1;}
+@media (max-width:859px){.bt-vellum{display:none;}}
+.bt-kicker{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+.bt-kicker .en{font:italic 400 clamp(18px,2.4vw,22px) 'Cormorant Garamond',serif;color:var(--bt-olive);}
+.bt-kicker .cn{font-size:13px;letter-spacing:.5em;color:var(--bt-soft);}
+.bt-hero .bt-names{font-family:'Cormorant Garamond','Noto Serif TC',serif;font-weight:400;
+  font-size:clamp(42px,7vw,86px);line-height:1.05;letter-spacing:.01em;color:var(--bt-ink);display:flex;flex-direction:column;}
+.bt-hero .bt-names .amp{font-style:italic;color:var(--bt-rose);font-size:.7em;line-height:1;padding-left:.4em;}
+@media (max-width:859px){.bt-hero .bt-names .amp{padding-left:0;}}
+body[data-hero-name="cn"] .bt-hero .bt-names{font-family:'Noto Serif TC',serif;font-weight:500;font-size:clamp(32px,5.6vw,56px);letter-spacing:.18em;}
+.bt-date{display:flex;align-items:center;gap:12px;margin-top:18px;font:400 13px/1 var(--bt-mono);letter-spacing:.2em;color:var(--bt-soft);}
+.bt-date i{width:18px;height:1px;background:var(--bt-sage);}
+.bt-hero .hashtags{margin-top:20px;justify-content:inherit;}
+@media (min-width:860px){.bt-hero .hashtags{justify-content:flex-start;}}
+.bt-hero .hashtags .tag{border-color:var(--bt-line);color:var(--bt-soft);font-size:12px;background:rgba(255,255,255,.4);}
+.bt-cue{margin-top:24px;color:var(--bt-soft);font:400 10px var(--bt-mono);letter-spacing:.4em;}
+.bt-cue .arrow{background:var(--bt-sage);}
+.app-show .bt-hero-text > *{animation:bt-rise 1.3s cubic-bezier(.2,.7,.2,1) both;}
+.app-show .bt-hero-text > .bt-kicker{animation-delay:.5s;}
+.app-show .bt-hero-text > .bt-names{animation-delay:.7s;}
+.app-show .bt-hero-text > .bt-date{animation-delay:.9s;}
+.app-show .bt-hero-text > .hashtags{animation-delay:1.05s;}
+.app-show .bt-hero-text > .bt-cue{animation-delay:1.2s;}
+.app-show .bt-sheet{animation:bt-sheet-in 1.4s cubic-bezier(.2,.7,.2,1) both;}
+@keyframes bt-rise{from{opacity:0;transform:translateY(16px);}}
+@keyframes bt-sheet-in{from{opacity:0;transform:rotate(-6deg) translateY(30px);}}
+
+/* ============================================================
+   內容：一頁一頁的圖版
+============================================================ */
+.bt-body{max-width:980px;padding:0 22px 40px;position:relative;z-index:2;}
+.bt-sec{background:transparent;border:none;border-radius:0;-webkit-backdrop-filter:none;backdrop-filter:none;
+  margin-top:0;padding:clamp(64px,9vw,110px) 0 0;text-align:left;}
+.bt-sec[hidden]{display:none;}
+.bt-plate{display:grid;grid-template-columns:1fr;gap:28px;align-items:start;}
+@media (min-width:780px){
+  .bt-plate{grid-template-columns:260px minmax(0,1fr);gap:clamp(36px,5vw,64px);align-items:center;}
+  .bt-plate.is-flip{grid-template-columns:minmax(0,1fr) 260px;}
+  .bt-plate.is-flip .bt-plate-art{order:2;}
+}
+.bt-plate[hidden]{display:none;}
+.bt-plate-art{display:flex;justify-content:center;}
+/* 台紙：跟著捲動微微擺一下 */
+.bt-mount{position:relative;width:min(100%,250px);padding:18px 18px 64px;
+  background:var(--bt-fibers),linear-gradient(160deg,#fffdf8,#f6f0e3);
+  box-shadow:0 1px 2px rgba(80,70,40,.12),0 22px 36px -26px rgba(70,60,30,.55);
+  transform:rotate(calc(-2deg + (var(--sp,.5) - .5) * 5deg));transition:transform .2s linear;}
+.bt-plate.is-flip .bt-mount{transform:rotate(calc(2deg - (var(--sp,.5) - .5) * 5deg));}
+.bt-mount .bt-art{max-height:300px;}
+.bt-mount::after{content:'';position:absolute;left:50%;top:-9px;width:56px;height:18px;margin-left:-28px;
+  background:rgba(226,214,180,.62);transform:rotate(-3deg);}
+.bt-plate-label{position:absolute;left:14px;right:14px;bottom:12px;display:flex;flex-direction:column;gap:2px;
+  padding-top:8px;border-top:1px solid #e0d9c6;}
+.bt-plate-label b{font:400 10px/1 var(--bt-mono);letter-spacing:.22em;color:var(--bt-label);}
+.bt-plate-label i{font:italic 400 15px/1.2 'Cormorant Garamond',serif;color:var(--bt-ink);}
+
+.bt-head{display:flex;flex-direction:column;gap:4px;margin-bottom:clamp(20px,3.4vw,30px);}
+.bt-head.is-center{align-items:center;text-align:center;}
+@media (max-width:779px){.bt-plate .bt-head{align-items:center;text-align:center;}}
+.bt-no{font:400 11px/1 var(--bt-mono);letter-spacing:.26em;text-transform:uppercase;color:var(--bt-label);}
+.bt-head .block-title{margin:6px 0 0;font:italic 400 clamp(32px,4.6vw,46px)/1.1 'Cormorant Garamond',serif;
+  letter-spacing:.01em;text-transform:none;color:var(--bt-ink);}
+.bt-head .block-sub{margin:0;font-size:13.5px;letter-spacing:.36em;color:var(--bt-soft);}
+
+/* 內容卡：一張棉紙，一角貼一截紙膠帶 */
+.bt-card{position:relative;padding:clamp(26px,4.4vw,40px) clamp(22px,4.4vw,40px);
+  background:var(--bt-fibers),rgba(253,251,245,.94);border:1px solid var(--bt-line);
+  box-shadow:0 1px 0 #fff inset,0 18px 32px -24px rgba(70,70,40,.45);}
+.bt-card::after{content:'';position:absolute;right:-10px;top:-10px;width:62px;height:18px;
+  background:rgba(226,214,180,.62);transform:rotate(14deg);}
+.bt-card .info-card{text-align:left;}
+.bt-card .info-couple{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(26px,4vw,34px);}
+.bt-card .info-rows{margin:0;}
+.bt-card .info-row{border-top:1px dashed var(--bt-line);}
+.bt-card .info-row:first-child{border-top:none;}
+.bt-card .info-actions{justify-content:flex-start;}
+.bt-card .info-seat{border-top:1px dashed var(--bt-line);justify-content:flex-start;}
+.bt-sec .ir-label,.bt-sec .note-label{font-family:var(--bt-mono);letter-spacing:.14em;color:var(--bt-label);}
+.bt-sec .note-item + .note-item{border-left:1px dashed var(--bt-line);}
+@media (max-width:640px){.bt-sec .note-item + .note-item{border-left:none;border-top:1px dashed var(--bt-line);}}
+.bt-sec .btn.ghost{border-color:var(--bt-ink);color:var(--bt-ink);}
+.bt-sec .timeline{margin:0;--tl-line:var(--bt-line);}
+.bt-sec .tl-time{font:400 13px/24px var(--bt-mono);color:var(--bt-label);letter-spacing:.06em;}
+.bt-sec .tl-dot::before{width:9px;height:9px;background:var(--bt-sage);border-radius:50% 50% 50% 0;transform:translate(-50%,-50%) rotate(-45deg);}
+
+/* ============================================================
+   場景帶
+============================================================ */
+.bt-band{position:relative;overflow:hidden;border:none;border-radius:0;background:transparent;
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+  margin:clamp(70px,10vw,120px) calc(50% - 50vw) 0;padding:clamp(64px,9vw,110px) 24px;}
+.bt-band[hidden]{display:none;}
+.bt-band-bg{position:absolute;left:0;right:0;top:-14%;bottom:-14%;z-index:0;
+  transform:translateY(calc((var(--sp,.5) - .5) * -10%));}
+.bt-band-inner{position:relative;z-index:1;max-width:920px;margin:0 auto;}
+.bt-band-title{font:italic 400 clamp(34px,5vw,50px)/1.1 'Cormorant Garamond',serif;margin-top:6px;}
+.bt-band-sub{margin-top:4px;font-size:13px;letter-spacing:.4em;}
+
+/* ---- 故事：鼠尾草綠的台紙 ---- */
+.bt-story{color:#f7f3ea;}
+.bt-story .bt-band-bg{background:var(--bt-fibers),
+  radial-gradient(70% 90% at 25% 30%,rgba(255,255,255,.1),transparent 70%),
+  repeating-linear-gradient(0deg,rgba(0,0,0,.035) 0 1px,transparent 1px 3px),#6b7a55;}
+.bt-story .bt-no{color:#e9dcc2;}
+.bt-story .bt-band-sub{color:rgba(247,243,234,.72);}
+.bt-story .bt-band-inner{display:grid;grid-template-columns:1fr;gap:40px;justify-items:center;}
+@media (min-width:780px){.bt-story .bt-band-inner{grid-template-columns:minmax(0,330px) minmax(0,1fr);gap:clamp(40px,6vw,76px);align-items:center;justify-items:stretch;}}
+.bt-photo{position:relative;width:min(100%,330px);padding:14px 14px 46px;background:#fbf8f1;transform:rotate(-2.5deg);
+  box-shadow:0 26px 40px -24px rgba(0,0,0,.55);}
+.bt-photo-ph{aspect-ratio:3/4;background:#8a9a78 center/cover;
+  background-position:50% calc(50% + (var(--sp,.5) - .5) * 30%);}
+.bt-photo-cap{position:absolute;left:0;right:0;bottom:14px;text-align:center;font:italic 400 16px 'Cormorant Garamond',serif;color:var(--bt-ink);}
+/* 相角：四個小三角形把照片壓住 */
+.bt-corner{position:absolute;width:30px;height:30px;background:#e9dfc8;box-shadow:0 1px 2px rgba(0,0,0,.2);}
+.bt-corner.c1{left:6px;top:6px;clip-path:polygon(0 0,100% 0,0 100%);}
+.bt-corner.c2{right:6px;top:6px;clip-path:polygon(0 0,100% 0,100% 100%);}
+.bt-corner.c3{left:6px;bottom:38px;clip-path:polygon(0 0,0 100%,100% 100%);}
+.bt-corner.c4{right:6px;bottom:38px;clip-path:polygon(100% 0,0 100%,100% 100%);}
+.bt-story .story-text{margin:22px 0 0;max-width:32em;color:#f7f3ea;font-size:15px;text-align:left;}
+.bt-petal.in-band{width:64px;opacity:.85;transform:translateY(calc((var(--sp,.5) - .5) * var(--dy))) rotate(calc(var(--sp,.5) * var(--r)));}
+.bt-petal.b1{right:2%;top:-4%;--dy:-220px;--r:160deg;}
+.bt-petal.b2{left:36%;bottom:-6%;--dy:-160px;--r:-140deg;width:48px;}
+
+/* ---- 倒數：淡淡的台紙、一朵蒲公英 ---- */
+.bt-count{color:var(--bt-ink);}
+.bt-count .bt-band-bg{background:var(--bt-fibers),linear-gradient(180deg,#efe9da,#e7e0cc);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),inset 0 -1px 0 rgba(0,0,0,.05);}
+.bt-count .bt-band-inner{display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center;}
+@media (min-width:780px){.bt-count .bt-band-inner{flex-direction:row;justify-content:center;gap:clamp(40px,7vw,90px);text-align:left;}}
+.bt-dandelion-wrap{width:clamp(170px,22vw,240px);margin:0;}
+.bt-count .bt-band-sub{color:var(--bt-soft);}
+.bt-count .cd-grid{margin:22px 0 0;}
+@media (max-width:779px){.bt-count .cd-grid{margin:22px auto 0;}}
+.bt-count .cd-unit{border-left:1px dashed var(--bt-line);}
+.bt-count .cd-num{font-family:'Cormorant Garamond',serif;font-weight:400;color:var(--bt-ink);}
+.bt-count .cd-lab,.bt-count .cd-target{color:var(--bt-soft);font-family:var(--bt-mono);}
+/* 種子：--sp 過了四成之後，一顆一顆被吹走（--k 讓每一顆起飛的時間不一樣） */
+.bt-seed{--fly:clamp(0,calc((var(--sp,0) - .38 - var(--k) * .14) * 2.8),1);
+  transform:translate(calc(var(--fly) * var(--dx) * 1px),calc(var(--fly) * var(--dy) * 1px)) rotate(calc(var(--fly) * var(--rot)));
+  opacity:calc(1 - var(--fly) * 1.15);transform-box:fill-box;transform-origin:center;}
+.bt-seeds{stroke-linecap:round;}
+
+/* ============================================================
+   R.S.V.P.：一封回信
+============================================================ */
+.bt-letter{position:relative;max-width:640px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:18px;justify-items:center;
+  padding:clamp(30px,5vw,48px) clamp(24px,5vw,48px);background:var(--bt-fibers),#fdfbf5;border:1px solid var(--bt-line);
+  box-shadow:0 22px 36px -26px rgba(70,70,40,.5);text-align:center;}
+@media (min-width:640px){.bt-letter{grid-template-columns:150px minmax(0,1fr);text-align:left;gap:30px;align-items:center;}
+  .bt-letter .rsvp-cta{text-align:left;}}
+.bt-stamp-wrap{position:relative;width:120px;transform:rotate(-5deg);filter:drop-shadow(0 4px 6px rgba(60,50,30,.25));}
+.bt-postmark{position:absolute;right:-34px;top:-14px;width:78px;height:78px;border-radius:50%;
+  border:1.5px solid rgba(138,106,90,.55);display:flex;align-items:center;justify-content:center;transform:rotate(-14deg);
+  font:400 9px/1 var(--bt-mono);letter-spacing:.08em;color:rgba(138,106,90,.8);font-style:normal;
+  background:repeating-linear-gradient(0deg,transparent 0 7px,rgba(138,106,90,.35) 7px 8.5px) 100% 50%/60px 30px no-repeat;}
+.bt-letter .rsvp-cta h3{font:italic 400 26px/1.3 'Cormorant Garamond','Noto Serif TC',serif;}
+.bt-letter .btn{background:var(--bt-olive);border-color:var(--bt-olive);}
+.bt-letter .btn:hover{background:#5a6746;border-color:#5a6746;}
+
+/* ============================================================
+   Explore：標本標籤
+============================================================ */
+.bt-sec .link-grid{border:none;gap:14px;}
+.bt-sec .link-card{background:#fffdf8;border:1px solid #cfc7b2;text-align:left;
+  box-shadow:0 8px 16px -14px rgba(60,50,30,.5);transition:transform .3s ease,box-shadow .3s ease;}
+.bt-sec .link-card:hover{background:#fffdf8;color:var(--bt-ink);transform:translateY(-3px) rotate(-.4deg);
+  box-shadow:0 16px 26px -18px rgba(60,50,30,.55);}
+.bt-sec .link-card:hover .lc-sub{color:var(--bt-soft);}
+.bt-sec .link-card:hover .lc-index{color:var(--bt-label);}
+.bt-sec .link-card:hover .lc-go{color:var(--bt-olive);}
+.bt-sec .lc-index{font-family:var(--bt-mono);color:var(--bt-label);padding-bottom:8px;border-bottom:1px solid #e0d9c6;}
+.bt-sec .lc-index::before{content:'No. ';}
+.bt-sec .lc-title{font-family:var(--font-body);font-weight:500;font-size:17px;}
+.bt-sec .lc-go{font-family:var(--bt-mono);color:var(--bt-olive);}
+
+/* ---- 頁尾 ---- */
+.bt-foot{margin-top:clamp(70px,10vw,110px);display:flex;flex-direction:column;align-items:center;gap:8px;border-top:none;}
+.bt-foot-sprig{width:52px;}
+.bt-fin{font:italic 400 22px 'Cormorant Garamond',serif;color:var(--bt-olive);letter-spacing:.02em;text-transform:none;}

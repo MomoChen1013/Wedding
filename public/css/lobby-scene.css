@@ -1,7 +1,8 @@
 /* ============================================================
    lobby-scene.css — 場景版型的大廳（lobby-scene.html 專用）
    ------------------------------------------------------------
-   七個版型共用同一副骨架，這一份分成兩半：
+   場景版型共用同一副骨架（整套做完的版型會搬出去自己一份，例如 botanical-letter），
+   這一份分成兩半：
 
    ① 共用的結構（前半）
       hero：場景（.sc-hero-art）＋ 主視覺（.sc-emblem）＋ 名字
@@ -171,50 +172,7 @@ body[data-hero-name="cn"] .sc-hero .sc-names{font-family:'Noto Serif TC',serif;f
    ② 各版型
 ============================================================ */
 
-/* ------------------------------------------------------------
-   Botanical Letter 植物信箋
-   棉紙、描圖紙、乾燥花；植物標本的手繪與標籤
------------------------------------------------------------- */
-body[data-template="botanical-letter"][data-lobby="scene"]{
-  --sc-page:
-    repeating-linear-gradient(0deg,rgba(90,100,70,.035) 0 1px,transparent 1px 3px),
-    repeating-linear-gradient(90deg,rgba(90,100,70,.03) 0 1px,transparent 1px 4px),
-    #f6f2e9;
-  --sc-kicker:"A letter, pressed with flowers";
-  --sc-orn:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 60'><path d='M20 60C19 44 21 26 20 4' stroke='black' stroke-width='1.6' fill='none'/><path d='M20 46C12 42 6 44 2 38C9 34 16 38 20 46ZM20 34C28 30 34 32 38 26C31 22 24 26 20 34ZM20 22C13 18 8 19 5 13C12 10 17 14 20 22Z'/><circle cx='20' cy='4' r='3.4'/></svg>");
-  --sc-card:rgba(253,251,245,.92); --sc-card-line:#ddd6c4;
-  --sc-card-shadow:0 1px 0 #fff inset,0 16px 30px -22px rgba(70,70,40,.45);
-  --sc-band:
-    radial-gradient(60% 80% at 20% 30%,rgba(255,255,255,.08),transparent 70%),
-    repeating-linear-gradient(0deg,rgba(0,0,0,.04) 0 1px,transparent 1px 3px),
-    #6b7a55;
-  --sc-frame-edge:#fbf8f1;
-}
-/* hero：一張標本台紙 —— 描圖紙斜斜壓在兩角，四角各一枝壓花 */
-body[data-template="botanical-letter"] .sc-hero-art > i:nth-child(1){left:6%;top:9%;width:min(34vw,300px);aspect-ratio:3/4;
-  transform:rotate(-7deg);background:rgba(255,255,255,.4);border:1px solid rgba(120,120,90,.15);
-  box-shadow:0 10px 30px -20px rgba(60,60,30,.4);-webkit-backdrop-filter:blur(1px);backdrop-filter:blur(1px);}
-body[data-template="botanical-letter"] .sc-hero-art > i:nth-child(2){right:5%;bottom:8%;width:min(30vw,260px);aspect-ratio:4/3;
-  transform:rotate(5deg);background:rgba(255,255,255,.45);border:1px solid rgba(120,120,90,.15);
-  box-shadow:0 10px 30px -20px rgba(60,60,30,.4);}
-body[data-template="botanical-letter"] .sc-hero-art > i:nth-child(1)::after,
-body[data-template="botanical-letter"] .sc-hero-art > i:nth-child(2)::after{content:'';position:absolute;inset:14%;
-  background:#7f8f63;opacity:.55;-webkit-mask:var(--sc-orn) center/contain no-repeat;mask:var(--sc-orn) center/contain no-repeat;}
-/* 主視覺：標本標籤 */
-body[data-template="botanical-letter"] .sc-emblem{aspect-ratio:4/3;width:clamp(200px,26vw,270px);}
-body[data-template="botanical-letter"] .sc-emblem > i:nth-child(1){inset:0;background:#fdfbf5;border:1px solid #cfc7b2;
-  box-shadow:0 12px 24px -18px rgba(60,60,30,.5);}
-body[data-template="botanical-letter"] .sc-emblem > i:nth-child(1)::before{content:'SPECIMEN  No. 0116';position:absolute;left:10%;top:12%;
-  font:400 11px/1 'Courier New',monospace;letter-spacing:.2em;color:#8a6a5a;}
-body[data-template="botanical-letter"] .sc-emblem > i:nth-child(1)::after{content:'Botanica nuptialis';position:absolute;left:10%;bottom:14%;
-  font:italic 400 17px/1 'Cormorant Garamond',serif;color:#3a4031;border-top:1px solid #d6cfbb;padding-top:8px;right:10%;}
-body[data-template="botanical-letter"] .sc-emblem > i:nth-child(2){left:36%;top:22%;width:28%;height:52%;background:#6b7a55;
-  -webkit-mask:var(--sc-orn) center/contain no-repeat;mask:var(--sc-orn) center/contain no-repeat;}
-body[data-template="botanical-letter"] .sc-emblem > i:nth-child(3){right:-6%;top:-8%;width:24%;aspect-ratio:1;border-radius:50%;
-  background:radial-gradient(circle,#e7c9bf 0 30%,#d9a79a 31% 60%,transparent 61%);opacity:.85;}
-body[data-template="botanical-letter"] .sc-card::after{content:'';position:absolute;right:-8px;top:-10px;width:56px;height:18px;
-  background:rgba(220,206,170,.6);transform:rotate(12deg);}              /* 一截紙膠帶 */
-body[data-template="botanical-letter"] .sc-frame{transform:rotate(-2deg);box-shadow:0 16px 30px -18px rgba(0,0,0,.5);}
+/* Botanical Letter 已經有自己的大廳（lobby-botanical.html／css），不在這裡了 */
 
 /* ------------------------------------------------------------
    Secret Garden 秘密花園

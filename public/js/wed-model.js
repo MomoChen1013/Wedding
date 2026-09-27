@@ -78,13 +78,14 @@ export const TEMPLATES = {
                      lobbyCss:['/css/lobby-tapestry.css'],
                      lobbyJs:['/js/lobby-motion.js'], opening:'envelope',
                      fonts:['https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
-  /* ---- 場景版型：七個版型共用一副大廳骨架（lobby-scene.html），
+  /* ---- 場景版型：共用一副大廳骨架（lobby-scene.html），
      lobbyKey 是那副骨架的名字（寫在 <body data-lobby>），長相由
      css/lobby-scene.css 依 data-template 換。每一個都有自己的預設開場。 ---- */
-  /* 植物信箋：仿棉紙、描圖紙、乾燥花；植物標本式手繪與標本標籤 */
-  'botanical-letter': { label:'Botanical Letter 植物信箋', lobbyFile:'lobby-scene.html', lobbyKey:'scene',
-                     lobbyCss:['/css/lobby-scene.css'], lobbyJs:['/js/lobby-motion.js'], opening:'ribbon',
-                     fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
+  /* 植物信箋：一本植物標本冊 —— 仿棉紙、描圖紙、乾燥花；墨線 ＋ 水彩的標本手繪、
+     標本標籤。第一個「整套做完」的場景版型，所以有自己的骨架（不再共用 lobby-scene） */
+  'botanical-letter': { label:'Botanical Letter 植物信箋', lobbyFile:'lobby-botanical.html',
+                     lobbyCss:['/css/lobby-botanical.css'], lobbyJs:['/js/lobby-motion.js'], opening:'ribbon',
+                     fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Courier+Prime&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
   /* 秘密花園：紙雕感的野花、藤蔓、蝴蝶；從花園入口推門進去 */
   'secret-garden': { label:'Secret Garden 秘密花園', lobbyFile:'lobby-scene.html', lobbyKey:'scene',
                      lobbyCss:['/css/lobby-scene.css'], lobbyJs:['/js/lobby-motion.js'], opening:'door',
