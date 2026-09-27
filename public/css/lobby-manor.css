@@ -1,0 +1,241 @@
+/* ============================================================
+   lobby-manor.css — French Manor 法式莊園 的大廳（lobby-manor.html 專用）
+   ------------------------------------------------------------
+   疊在 common.css ＋ index.css 之後。結構主張：**推開木門，走進一座莊園**。
+
+     世界觀  開場推開一扇木門，門後是莊園的前庭；兩個人在城堡裡等你
+     材質    石灰岩、石板瓦、鍛鐵、黃楊綠、鍍金畫框、灰綠色的牆板
+     素材    銅版畫：墨線 ＋ 排線陰影（斜線、交叉線、點描）＋ 一層淡淡的水彩
+     圖像    城堡立面、碎石路、凡爾賽花箱、鍛鐵大門、日晷、壁燈、花園平面圖
+
+   捲動：
+     ・進站：城堡的百葉窗一扇一扇打開
+     ・hero：像沿著碎石路走過去 —— 城堡慢慢變大，兩排樹雕往兩邊退開
+     ・每一區的銅版小圖：墨線先一筆一筆畫出來，陰影的排線再由上往下印上去
+     ・故事：沙龍牆板上的金框畫；窗外的陽光跟著捲動滑過牆面
+     ・倒數：花園的平面圖跟著捲動一筆一筆畫出來，畫完噴泉就噴起來
+
+   每一條規則都收在 .fm-* 或 body[data-lobby="french-manor"] 底下。
+============================================================ */
+
+body[data-lobby="french-manor"]{
+  --fm-ink:#3b3530; --fm-soft:#7d746a; --fm-sepia:#6b5a45; --fm-box:#5f6e56; --fm-gold:#b08d4c;
+  --fm-paper:#fcfaf6; --fm-line:#ddd4c6;
+}
+body[data-lobby="french-manor"] .bg-decor{
+  background:
+    repeating-linear-gradient(0deg,transparent 0 58px,rgba(120,104,84,.08) 58px 59px),
+    repeating-linear-gradient(90deg,transparent 0 118px,rgba(120,104,84,.05) 118px 119px),
+    linear-gradient(180deg,#f4efe7,#ece5d9);}
+.fm-lobby{position:relative;}
+.fm-art{display:block;width:100%;height:auto;overflow:visible;}
+
+/* ============================================================
+   捲動進場
+============================================================ */
+.tp-motion [data-lobby="french-manor"] [data-reveal]{transition:opacity 1s ease,transform 1.1s cubic-bezier(.2,.7,.2,1);}
+.tp-motion [data-lobby="french-manor"] [data-reveal="rise"]:not(.is-in){opacity:0;transform:translateY(28px);}
+.tp-motion [data-lobby="french-manor"] [data-reveal="list"] > *{transition:opacity .8s ease,transform .9s cubic-bezier(.2,.7,.2,1);}
+.tp-motion [data-lobby="french-manor"] [data-reveal="list"]:not(.is-in) > *{opacity:0;transform:translateY(18px);}
+.tp-motion [data-lobby="french-manor"] [data-reveal="list"] > :nth-child(2){transition-delay:.12s;}
+.tp-motion [data-lobby="french-manor"] [data-reveal="list"] > :nth-child(3){transition-delay:.24s;}
+.tp-motion [data-lobby="french-manor"] [data-reveal="list"] > :nth-child(4){transition-delay:.36s;}
+.tp-motion [data-lobby="french-manor"] [data-reveal="list"] > :nth-child(n+5){transition-delay:.48s;}
+
+/* 銅版小圖：墨線一筆一筆畫出來 → 水彩與排線由上往下印上去（只裁子元素，觀察器看得到 figure 本身） */
+.fm-ln{fill:none;stroke:var(--fm-ink);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:0;}
+.tp-motion [data-reveal="draw"] .fm-ln{transition:stroke-dashoffset .9s cubic-bezier(.5,0,.3,1) calc(var(--i) * .14s);}
+.tp-motion [data-reveal="draw"]:not(.is-in) .fm-ln{stroke-dashoffset:1;}
+.tp-motion [data-reveal="draw"] :is(.fm-hatch,.fm-washes){transition:clip-path 1.2s cubic-bezier(.4,0,.2,1) .7s,opacity .6s ease .7s;clip-path:inset(0 0 0 0);}
+.tp-motion [data-reveal="draw"]:not(.is-in) :is(.fm-hatch,.fm-washes){clip-path:inset(0 0 100% 0);opacity:0;}
+.fm-lamp{animation:fm-lamp 3.2s ease-in-out infinite;}
+@keyframes fm-lamp{40%{opacity:.8;}55%{opacity:1;}70%{opacity:.88;}}
+
+/* ============================================================
+   Hero：前庭
+============================================================ */
+.fm-hero{position:relative;overflow:hidden;min-height:calc(100svh - var(--nav-h));padding:0;gap:0;justify-content:flex-start;background:transparent;}
+.fm-scene{position:absolute;inset:0;pointer-events:none;}
+/* 天空：銅版畫的天空是一條一條的橫線，越往上越密 */
+.fm-sky{position:absolute;inset:0;
+  background:
+    repeating-linear-gradient(0deg,transparent 0 5px,rgba(59,53,48,.07) 5px 6px) top/100% 40% no-repeat,
+    radial-gradient(70% 50% at 50% 0%,rgba(255,250,236,.9),transparent 70%),
+    linear-gradient(180deg,#e7eae6 0%,#eff0ea 55%,#f4efe7 100%);}
+.fm-stage{position:absolute;left:0;right:0;bottom:0;height:74%;}
+.fm-layer{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
+/* 往下捲：沿著碎石路走過去 */
+.fm-trees{transform:translateY(calc(var(--lp,0) * 30px));}
+.fm-chateau{transform-origin:50% 76%;transform:scale(calc(1 + var(--lp,0) * .16));}
+.fm-front{transform-origin:50% 100%;transform:translateY(calc(var(--lp,0) * 50px)) scale(calc(1 + var(--lp,0) * .3));}
+.fm-row{transform-box:view-box;}
+.fm-row.l{transform:translateX(calc(var(--lp,0) * -220px));}
+.fm-row.r{transform:translateX(calc(var(--lp,0) * 220px));}
+/* 百葉窗：預設是打開的；進站時從關著翻開（鉸鍊在窗的外側，scaleX 1 → -1） */
+.fm-shutter{transform-box:fill-box;transform:scaleX(-1);}
+.fm-shutter.l{transform-origin:0 50%;}
+.fm-shutter.r{transform-origin:100% 50%;}
+.app-show .fm-shutter{animation:fm-shutter 1.1s cubic-bezier(.5,0,.3,1) calc(.5s + var(--d)) both;}
+@keyframes fm-shutter{from{transform:scaleX(1);}to{transform:scaleX(-1);}}
+
+.fm-hero-body{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;text-align:center;
+  padding:clamp(22px,5vh,56px) 20px 0;transform:translateY(calc(var(--lp,0) * -40px));opacity:calc(1 - var(--lp,0) * 1.4);}
+/* 名字刻在一塊銅版的題牌上：雙線框、四角一顆小菱形 */
+.fm-cartouche{position:relative;padding:clamp(16px,2.4vh,24px) clamp(26px,5vw,56px) clamp(14px,2vh,20px);
+  background:rgba(252,250,246,.82);border:1px solid rgba(59,53,48,.55);
+  box-shadow:0 0 0 5px rgba(252,250,246,.82),0 0 0 6px rgba(59,53,48,.3),0 20px 40px -26px rgba(59,53,48,.4);}
+.fm-cartouche::before,.fm-cartouche::after{content:'';position:absolute;top:-5px;width:8px;height:8px;background:var(--fm-ink);transform:rotate(45deg);}
+.fm-cartouche::before{left:-5px;}
+.fm-cartouche::after{right:-5px;}
+.fm-kicker{display:flex;flex-direction:column;gap:3px;margin-bottom:4px;}
+.fm-kicker .en{font:italic 400 clamp(16px,2vw,19px) 'Cormorant Garamond',serif;color:var(--fm-sepia);}
+.fm-kicker .cn{font-size:11.5px;letter-spacing:.56em;color:var(--fm-soft);}
+.fm-hero .fm-names{font-family:'Bodoni Moda','Noto Serif TC',serif;font-weight:400;font-size:clamp(32px,5.2vw,60px);
+  line-height:1.12;letter-spacing:.02em;color:var(--fm-ink);}
+.fm-hero .fm-names .amp{font-style:italic;color:var(--fm-gold);padding:0 .2em;font-size:.84em;}
+body[data-hero-name="cn"] .fm-hero .fm-names{font-family:'Noto Serif TC',serif;font-weight:500;font-size:clamp(28px,4.4vw,48px);letter-spacing:.2em;}
+.fm-date{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px;font-size:12.5px;letter-spacing:.38em;color:var(--fm-soft);}
+.fm-date i{width:5px;height:5px;background:var(--fm-gold);transform:rotate(45deg);}
+.fm-hero .hashtags{margin-top:18px;}
+.fm-hero .hashtags .tag{border-color:rgba(59,53,48,.3);color:var(--fm-sepia);background:rgba(252,250,246,.75);font-size:12px;}
+.fm-cue{position:absolute;left:50%;bottom:14px;z-index:3;transform:translateX(-50%);margin:0;
+  color:var(--fm-ink);font-size:11px;letter-spacing:.4em;text-shadow:0 0 8px rgba(252,250,246,.9);}
+.fm-cue .arrow{background:var(--fm-ink);}
+.app-show .fm-cartouche,.app-show .fm-hero .hashtags{animation:fm-rise 1.2s cubic-bezier(.2,.7,.2,1) both;}
+.app-show .fm-cartouche{animation-delay:.2s;}
+.app-show .fm-hero .hashtags{animation-delay:.45s;}
+.app-show .fm-stage{animation:fm-settle 1.8s cubic-bezier(.2,.7,.2,1) both;}
+@keyframes fm-rise{from{opacity:0;transform:translateY(14px);}}
+/* 從門口的亮光裡走出來：一開始有點過曝，慢慢定下來 */
+@keyframes fm-settle{from{opacity:.2;filter:brightness(1.5) saturate(.4);}}
+@media (max-width:640px){
+  .fm-stage{height:66%;}
+  .fm-hero .hashtags{display:none;}
+}
+
+/* ============================================================
+   區塊：名片紙的卡
+============================================================ */
+.fm-body{max-width:900px;padding:0 22px 0;position:relative;z-index:2;}
+.fm-sec{background:transparent;border:none;border-radius:0;-webkit-backdrop-filter:none;backdrop-filter:none;
+  margin-top:0;padding:clamp(64px,9vw,110px) 0 0;text-align:center;}
+.fm-sec[hidden]{display:none;}
+.fm-head{display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:clamp(18px,3vw,28px);}
+.fm-icon{width:clamp(150px,19vw,200px);margin:0 0 4px;}
+.fm-head .block-title{margin:0;font:400 clamp(28px,4vw,40px)/1.15 'Bodoni Moda','Noto Serif TC',serif;letter-spacing:.04em;
+  text-transform:none;color:var(--fm-ink);}
+.fm-head .block-sub{margin:0;font-size:13px;letter-spacing:.4em;color:var(--fm-soft);}
+.fm-head .block-sub::before,.fm-head .block-sub::after{content:'';display:inline-block;width:26px;height:1px;background:rgba(59,53,48,.35);vertical-align:middle;margin:0 12px;}
+
+.fm-card{position:relative;max-width:600px;margin:0 auto;padding:clamp(30px,5vw,46px) clamp(24px,5vw,46px);
+  background:var(--fm-paper);border:1px solid var(--fm-line);
+  box-shadow:inset 0 0 0 6px var(--fm-paper),inset 0 0 0 7px #e6dece,0 24px 40px -30px rgba(60,50,40,.55);}
+.note-grid.fm-card{max-width:680px;}
+.fm-card-tl{max-width:560px;}
+.fm-card .info-row,.fm-card .info-seat{border-top:1px solid var(--fm-line);}
+.fm-card .info-row:first-child{border-top:none;}
+.fm-card .info-couple{font-family:'Bodoni Moda','Noto Serif TC',serif;}
+.fm-sec .ir-label,.fm-sec .note-label{color:var(--fm-sepia);}
+.fm-sec .note-item + .note-item{border-left:1px solid var(--fm-line);}
+@media (max-width:640px){.fm-sec .note-item + .note-item{border-left:none;border-top:1px solid var(--fm-line);}}
+.fm-sec .timeline{text-align:left;--tl-line:rgba(59,53,48,.2);}
+.fm-sec .tl-time{font-family:'Bodoni Moda',serif;font-size:15px;color:var(--fm-sepia);}
+.fm-sec .tl-dot::before{width:8px;height:8px;border-radius:0;background:var(--fm-gold);transform:rotate(45deg);}
+.fm-sec .btn{border-radius:0;letter-spacing:.2em;}
+.fm-sec .btn.ghost{border-color:rgba(59,53,48,.4);color:var(--fm-ink);background:transparent;}
+.fm-sec .btn:not(.ghost){background:var(--fm-ink);border-color:var(--fm-ink);color:var(--fm-paper);}
+.fm-sec .btn:not(.ghost):hover{background:var(--fm-sepia);border-color:var(--fm-sepia);}
+.fm-rsvp{display:grid;grid-template-columns:1fr;gap:10px;justify-items:center;}
+@media (min-width:640px){.fm-rsvp{grid-template-columns:170px minmax(0,1fr);text-align:left;gap:26px;align-items:center;}
+  .fm-rsvp .rsvp-cta{text-align:left;}}
+.fm-rsvp-icon{width:170px;margin:0;}
+.fm-rsvp .rsvp-cta h3{font-family:'Bodoni Moda','Noto Serif TC',serif;}
+
+/* ============================================================
+   場景帶
+============================================================ */
+.fm-band{position:relative;overflow:hidden;border:none;border-radius:0;background:transparent;
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+  margin:clamp(70px,10vw,120px) calc(50% - 50vw) 0;padding:clamp(64px,9vw,110px) 24px;}
+.fm-band[hidden]{display:none;}
+.fm-band-bg{position:absolute;left:0;right:0;top:-14%;bottom:-14%;z-index:0;transform:translateY(calc((var(--sp,.5) - .5) * -10%));}
+.fm-band-inner{position:relative;z-index:2;max-width:920px;margin:0 auto;}
+.fm-band-title{font:400 clamp(30px,4.4vw,46px)/1.15 'Bodoni Moda','Noto Serif TC',serif;letter-spacing:.03em;color:var(--fm-ink);}
+.fm-band-sub{margin-top:8px;font-size:13px;letter-spacing:.42em;color:var(--fm-soft);}
+
+/* ---- 故事：灰綠色的牆板 ＋ 金框 ＋ 滑過牆面的陽光 ---- */
+.fm-story .fm-band-bg{overflow:hidden;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='460'%3E%3Crect x='22' y='30' width='216' height='400' fill='none' stroke='%23a9ae9b' stroke-width='3'/%3E%3Crect x='25' y='33' width='210' height='394' fill='none' stroke='%23f4f4ec' stroke-opacity='.7' stroke-width='1.5'/%3E%3Crect x='38' y='46' width='184' height='368' fill='none' stroke='%23b3b8a6' stroke-width='1.2'/%3E%3Crect x='40' y='48' width='184' height='368' fill='none' stroke='%23f4f4ec' stroke-opacity='.6'/%3E%3C/svg%3E") center/260px 460px repeat-x,
+    linear-gradient(180deg,#e2e3d6,#d6d8c8);
+  border-top:10px solid #cfd1bf;border-bottom:14px solid #c4c6b3;}
+/* 窗外照進來的光：一格一格的窗框影子，跟著捲動從左滑到右 */
+.fm-sun{position:absolute;top:10%;bottom:10%;left:0;width:min(46vw,520px);mix-blend-mode:soft-light;pointer-events:none;
+  background:
+    linear-gradient(90deg,transparent calc(50% - 4px),rgba(90,80,60,.5) calc(50% - 4px) calc(50% + 4px),transparent calc(50% + 4px)),
+    linear-gradient(0deg,transparent calc(33% - 4px),rgba(90,80,60,.5) calc(33% - 4px) calc(33% + 4px),transparent calc(33% + 4px) calc(66% - 4px),rgba(90,80,60,.5) calc(66% - 4px) calc(66% + 4px),transparent calc(66% + 4px)),
+    linear-gradient(180deg,rgba(255,244,210,.95),rgba(255,236,190,.75));
+  filter:blur(6px);transform:translateX(calc(-60% + var(--sp,.5) * 220%)) skewX(-18deg);}
+.fm-story .fm-band-inner{display:grid;grid-template-columns:1fr;gap:40px;justify-items:center;text-align:center;}
+@media (min-width:780px){.fm-story .fm-band-inner{grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:clamp(40px,6vw,80px);align-items:center;text-align:left;justify-items:stretch;}}
+.fm-frame{position:relative;width:min(76vw,300px);aspect-ratio:300/380;justify-self:center;
+  filter:drop-shadow(0 22px 22px rgba(60,50,40,.35));}
+.fm-frame::before{content:'';position:absolute;left:50%;top:-44px;width:44%;height:50px;margin-left:-22%;pointer-events:none;
+  background:linear-gradient(to top right,transparent calc(50% - 1px),#8e6d31 calc(50% - 1px) calc(50% + .5px),transparent calc(50% + .5px)) left/50% 100% no-repeat,
+    linear-gradient(to top left,transparent calc(50% - 1px),#8e6d31 calc(50% - 1px) calc(50% + .5px),transparent calc(50% + .5px)) right/50% 100% no-repeat;}
+.fm-frame-ph{position:absolute;inset:8.9% 11.3%;background:#c9c0ac center/cover no-repeat;}
+.fm-frame-art{position:absolute;inset:0;width:100%;height:100%;}
+.fm-story .story-text{margin:22px 0 0;max-width:32em;color:var(--fm-ink);font-size:15px;text-align:left;}
+
+/* ---- 倒數：花園平面圖，跟著捲動一筆一筆畫出來 ---- */
+.fm-count{--grow:clamp(0,calc((var(--sp,0) - .1) * 2.6),1);}
+.fm-count .fm-band-bg{background:
+  repeating-linear-gradient(0deg,transparent 0 23px,rgba(107,90,69,.06) 23px 24px),
+  linear-gradient(180deg,#f1ebdf,#e9e1d2);
+  border-top:1px solid var(--fm-line);border-bottom:1px solid var(--fm-line);}
+.fm-count .fm-band-inner{display:flex;flex-direction:column;align-items:center;gap:30px;text-align:center;}
+@media (min-width:780px){.fm-count .fm-band-inner{flex-direction:row;justify-content:center;gap:clamp(40px,7vw,90px);text-align:left;}}
+.fm-plan-wrap{width:min(84vw,380px);margin:0;padding:12px;background:#f8f4ea;transform:rotate(-1.5deg);
+  box-shadow:0 1px 0 #fff inset,0 20px 30px -20px rgba(60,50,40,.45);}
+.fm-plan-ln{stroke-width:1.2;stroke-dasharray:1;stroke-linecap:round;
+  stroke-dashoffset:calc(1 - clamp(0,calc((var(--grow) - var(--at)) * 5),1));}
+.fm-plan-ln.is-box{stroke:var(--fm-box);stroke-width:3;}
+.fm-plan-lawn{opacity:clamp(0,calc((var(--grow) - .4) * 2.4),1);}
+.fm-plan-water{opacity:clamp(0,calc((var(--grow) - .3) * 4),1);}
+.fm-jet{transform-box:fill-box;transform-origin:50% 100%;
+  opacity:clamp(0,calc((var(--grow) - .9) * 10),1);transform:scaleY(clamp(0,calc((var(--grow) - .88) * 8.4),1));}
+.fm-jet path{animation:fm-jet 1.6s ease-in-out infinite alternate;}
+@keyframes fm-jet{to{opacity:.6;}}
+.fm-count .cd-grid{margin:22px 0 0;}
+@media (max-width:779px){.fm-count .cd-grid{margin:22px auto 0;}}
+.fm-count .cd-unit{border-left:1px solid var(--fm-line);}
+.fm-count .cd-num{font-family:'Bodoni Moda',serif;font-weight:400;color:var(--fm-ink);}
+.fm-count .cd-lab,.fm-count .cd-target{color:var(--fm-soft);}
+
+/* ============================================================
+   Explore：名片
+============================================================ */
+.fm-sec .link-grid{border:none;gap:14px;}
+.fm-sec .link-card{text-align:left;border-radius:0;background:var(--fm-paper);border:1px solid var(--fm-line);
+  box-shadow:inset 0 0 0 5px var(--fm-paper),inset 0 0 0 6px #ebe4d6;transition:transform .3s ease,box-shadow .3s ease;}
+.fm-sec .link-card:hover{background:var(--fm-paper);color:var(--fm-ink);transform:translateY(-3px);
+  box-shadow:inset 0 0 0 5px var(--fm-paper),inset 0 0 0 6px var(--fm-gold),0 18px 30px -22px rgba(60,50,40,.5);}
+.fm-sec .link-card:hover .lc-sub{color:var(--fm-soft);}
+.fm-sec .link-card:hover .lc-index,.fm-sec .link-card:hover .lc-go{color:var(--fm-gold);}
+.fm-sec .lc-index{font-family:'Bodoni Moda',serif;font-style:italic;color:var(--fm-gold);}
+.fm-sec .lc-title{font-weight:500;font-size:17px;}
+.fm-sec .lc-go{color:var(--fm-sepia);}
+
+/* ============================================================
+   頁尾：一排鍛鐵欄杆
+============================================================ */
+.fm-foot{position:relative;margin:clamp(80px,12vw,130px) calc(50% - 50vw) 0;padding:110px 24px 40px;
+  display:flex;flex-direction:column;align-items:center;gap:8px;border-top:none;}
+.fm-foot::before{content:'';position:absolute;left:0;right:0;top:0;height:84px;opacity:.8;
+  background:
+    radial-gradient(circle at 50% 50%,transparent 0 7px,#2f3336 7.5px 9px,transparent 9.5px) 0 10px/28px 30px repeat-x,
+    linear-gradient(0deg,transparent 12px,#2f3336 12px 15px,transparent 15px 70px,#2f3336 70px 73px,transparent 73px),
+    repeating-linear-gradient(90deg,transparent 0 12px,#2f3336 12px 14px,transparent 14px 28px);
+  -webkit-mask:linear-gradient(0deg,#000 76px,transparent 76px),radial-gradient(circle at 13px 6px,#000 3px,transparent 3.5px) 0 0/28px 12px repeat-x;
+  mask:linear-gradient(0deg,#000 76px,transparent 76px),radial-gradient(circle at 13px 6px,#000 3px,transparent 3.5px) 0 0/28px 12px repeat-x;}
+.fm-fin{font:italic 400 24px 'Cormorant Garamond',serif;color:var(--fm-sepia);text-transform:none;letter-spacing:.02em;}

@@ -100,8 +100,8 @@ export const TEMPLATES = {
                      lobbyCss:['/css/lobby-night.css'], lobbyJs:['/js/lobby-motion.js'], opening:'stars',
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Josefin+Sans:wght@300;400&family=Noto+Sans+TC:wght@300;400;500&family=Noto+Serif+TC:wght@400;500&display=swap'] },
   /* 法式莊園：石牆、拱門、鍛鐵與花園；推開一扇木門進去 */
-  'french-manor': { label:'French Manor 法式莊園', lobbyFile:'lobby-scene.html', lobbyKey:'scene',
-                     lobbyCss:['/css/lobby-scene.css'], lobbyJs:['/js/lobby-motion.js'], opening:'door',
+  'french-manor': { label:'French Manor 法式莊園', lobbyFile:'lobby-manor.html',
+                     lobbyCss:['/css/lobby-manor.css'], lobbyJs:['/js/lobby-motion.js'], opening:'door',
                      fonts:['https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
   /* 晨光房間：亞麻、木頭、窗光；拉開紗簾，早晨照進來 */
   'morning-window': { label:'Morning Window 晨光房間', lobbyFile:'lobby-scene.html', lobbyKey:'scene',
