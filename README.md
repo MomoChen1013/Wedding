@@ -116,6 +116,7 @@
 │   ├─ index.html             # 大廳
 │   ├─ lobby-korean.html  lobby-forest.html  lobby-tapestry.html
 │   │                         # 版型自己的大廳骨架（見 js/wed-model.js 的 TEMPLATES）
+│   ├─ lobby-scene.html       # 七個「場景版型」共用的大廳骨架（長相見 css/lobby-scene.css）
 │   ├─ wall.html  cake.html
 │   ├─ draw.html  exhibition.html  quiz.html
 │   ├─ seating.html           # 我的桌次（婚禮當天查桌次 + 桌次圖）
@@ -135,7 +136,8 @@
 │   └─ js/
 │       ├─ site-context.js    # ★ 每頁唯一進入點：解析 slug、載設定、注入其他 JS
 │       ├─ common.js          # 資料層 DataStore、導覽、特效、樣板文字
-│       ├─ lobby-motion.js    # 大廳的開場信封與捲動編排（tapestry 版型宣告了才載）
+│       ├─ lobby-motion.js    # 大廳的開場（登記＋播放）與捲動編排
+│       ├─ openers/{key}.js   # 八種開場，各一支（css/openers/{key}.css 是它的樣子）
 │       ├─ cropper.js         # 後台專用的照片裁切器（只有 admin.html 載入）
 │       ├─ seating-plan.js    # 後台專用的排桌工作台（只有 admin.html 載入）
 │       ├─ xlsx-lite.js       # 極小的 Excel 讀寫器（排桌的匯入匯出用，無外部函式庫）
@@ -151,6 +153,7 @@
 │   ├─ set-pages.js           # 改已建站台的開關
 │   ├─ sync-assets.js         # 掃描素材資料夾產生 manifest.json
 │   ├─ build-og.js            # 產生社群分享縮圖與各站專屬的 og 標籤
+│   ├─ build-previews.js      # 從正式的大廳骨架產出 preview/tapestry.html、scene.html
 │   ├─ check-site.js          # 檢查某站台為什麼打不開
 │   ├─ export-rsvps.js        # 匯出某站台的 RSVP 成 CSV
 │   └─ create-short-link.js
@@ -196,6 +199,46 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 
 `{{hashtag}}` 取新人填的第一個 hashtag；一個都沒填時用預設的 `#我們結婚了`
 （大廳開場那一排則是 `#我們結婚了`、`#Married` 兩個）。
+
+### 版型、開場、敘事模組：三軸
+
+一組新人的站台長什麼樣子，拆成三個互相獨立的設定（都在 `sites/{siteId}`，
+都只有我們用 Admin SDK 改得動，新人改不動）：
+
+| 欄位 | 決定什麼 | 沒設定時 |
+|---|---|---|
+| `template` | 整站的色票、字體、大廳的版面 | `classic` |
+| `opening` | 賓客打開大廳那幾秒怎麼演 | 版型的預設開場；版型也沒有就是兩句字幕＋簾幕 |
+| `storyLayout` | 「我們的故事」那一頁怎麼說 | `timeline` |
+
+清單都在 `public/js/wed-model.js`（`TEMPLATES`／`OPENINGS`／`STORY_LAYOUTS`）。
+
+**開場**（`opening`）有八種，任何版型都能用任何一種：
+
+| 代號 | 開場 | 怎麼動 | 誰的預設 |
+|---|---|---|---|
+| `envelope` | 拆信・封蠟 | 點封蠟 → 封口掀起 → 信封四散 | tapestry |
+| `book` | 翻頁・古書 | 點封面 → 翻開 → 扉頁 → 翻過扉頁 | （可選） |
+| `bloom` | 花朵盛開 | 自己演：芽 → 葉 → 花開 → 名字 | spring-orangerie |
+| `curtain` | 窗簾拉開 | 點一下 → 布幕收到兩側 → 光進來 | morning-window |
+| `candle` | 燭光點亮 | 點一下 → 三根蠟燭一根根亮 | midnight-chapel |
+| `stars` | 星圖展開 | 自己演：星星 → 連線成一顆心 → 名字 | night-sky |
+| `door` | 門／拱門 | 點一下 → 門往內開 → 穿過門口 | secret-garden、french-manor |
+| `ribbon` | 拉開絲帶 | 拖緞帶尾（或點）→ 蝴蝶結鬆開 → 卡片打開 | botanical-letter |
+
+同一種開場在不同版型可以長得不一樣（門：法式莊園是木門、秘密花園是鍛鐵花園門、
+午夜教堂是尖拱橡木門）。要賓客親手做的開場，那一下也會開始播背景音樂。
+每一種開場單獨看：`preview/openings.html`。
+
+**場景版型**：`botanical-letter`、`secret-garden`、`spring-orangerie`、`night-sky`、
+`french-manor`、`morning-window`、`midnight-chapel` 共用 `lobby-scene.html` 這一副骨架，
+長相由 `css/lobby-scene.css` 依版型換。目前每一個都有自己的色票、字體、hero 的場景與
+預設開場；專屬的整套插圖會一個一個補（像 tapestry 那樣）。
+Night Sky 與 Midnight Chapel 的大廳是深色的，但子頁暫時還是淺色版（見 common.css）。
+全部版型並排看：`preview/scene.html`（右下角可以切換版型與開場）。
+
+`preview/tapestry.html`、`preview/scene.html` 是 `npm run build-previews` 從
+`public/lobby-*.html` 產出來的，改了大廳骨架記得重跑。
 
 ---
 
@@ -400,7 +443,7 @@ node scripts/create-site.js \
 | `--slug` | ✅ | 網址代稱，小寫英數與連字號，3–40 字，全域唯一 |
 | `--groom` | ✅ | 新郎姓名 |
 | `--bride` | ✅ | 新娘姓名 |
-| `--groom-en` | | 新郎英文名；korean／tapestry 版型的 hero 會改用它 |
+| `--groom-en` | | 新郎英文名；korean／tapestry／場景版型的 hero 會改用它 |
 | `--bride-en` | | 新娘英文名；**兩個都填才生效**，只填一邊 hero 整行維持中文 |
 | `--date` | ✅ | 婚禮日期 `YYYY-MM-DD` |
 | `--time` | | 婚禮時間 `HH:mm`，預設 `12:00` |

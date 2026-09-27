@@ -1,0 +1,176 @@
+/* ============================================================
+   openers/door.css — 開場：門／拱門（js/openers/door.js）
+   ------------------------------------------------------------
+   結構每一版都一樣：牆 → 門框 → 門洞（門後的光、門縫、左右兩扇門）。
+   三種材質：
+     .dr-manor   石灰岩牆、圓拱、木門（法式莊園；預設）
+     .dr-garden  綠籬、藤蔓拱、鍛鐵花園門（秘密花園）
+     .dr-gothic  石砌、尖拱、深色橡木門與鐵條（午夜教堂、中古刺繡）
+   門洞的形狀：圓拱用 border-radius，尖拱用 clip-path（--dr-shape）。
+============================================================ */
+.dr-host{
+  --dr-w:min(52vw,40vh,380px);
+  --dr-light:#fff6e0; --dr-ink:#3b3530; --dr-accent:#8a6a3a;
+  --dr-shape:none;
+  background:#2b2622;perspective:1400px;
+}
+
+/* ---- 世界：牆、門、台階。推開之後整個往前推（穿過門口） ---- */
+.dr-world{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transform-origin:50% 56%;transition:transform 1.3s cubic-bezier(.55,0,.35,1),opacity .9s ease .35s;}
+.dr-wall{position:absolute;inset:0;}
+.dr-portal{position:relative;width:var(--dr-w);aspect-ratio:200/310;margin-top:4vh;}
+.dr-frame{position:absolute;inset:calc(var(--dr-w) * -.07) calc(var(--dr-w) * -.07) 0;}
+.dr-opening{position:absolute;inset:0;overflow:hidden;perspective:1100px;
+  border-radius:50% 50% 0 0 / 32.3% 32.3% 0 0;clip-path:var(--dr-shape);background:#111;}
+.dr-step{width:calc(var(--dr-w) * 1.5);height:calc(var(--dr-w) * .08);position:relative;z-index:1;
+  background:linear-gradient(180deg,#cfc6b6,#a89c88);box-shadow:0 10px 24px rgba(0,0,0,.35);}
+
+/* 門後：光、天空、花園 */
+.dr-beyond{position:absolute;inset:0;
+  background:
+    radial-gradient(70% 50% at 50% 60%,#fffdf6,transparent 70%),
+    linear-gradient(180deg,#f8efd8,#f3e3bd 60%,#e3cf9e);}
+.dr-sun{position:absolute;inset:0;background:radial-gradient(40% 30% at 50% 55%,#fff,transparent 70%);
+  opacity:0;transition:opacity 1.2s ease .3s;}
+.dr-host.is-open .dr-sun{opacity:1;}
+/* 門縫：一線光，呼吸 */
+.dr-gap{position:absolute;left:50%;top:6%;bottom:0;width:3px;margin-left:-1.5px;z-index:2;
+  background:linear-gradient(180deg,transparent,var(--dr-light) 20%,var(--dr-light));
+  box-shadow:0 0 12px 3px rgba(255,236,190,.75);animation:dr-leak 2.8s ease-in-out infinite;}
+@keyframes dr-leak{50%{box-shadow:0 0 22px 6px rgba(255,236,190,.95);}}
+.dr-host.is-open .dr-gap{opacity:0;transition:opacity .4s;}
+
+/* ---- 門扇 ---- */
+.dr-leaf{position:absolute;top:0;bottom:0;width:50%;z-index:3;
+  transition:transform 1.5s cubic-bezier(.45,.05,.25,1);}
+.dr-l{left:0;transform-origin:left center;}
+.dr-r{right:0;transform-origin:right center;}
+.dr-host.is-open .dr-l{transform:rotateY(-104deg);}
+.dr-host.is-open .dr-r{transform:rotateY(104deg);}
+.dr-leaf::after{content:'';position:absolute;inset:0;pointer-events:none;opacity:0;
+  background:linear-gradient(90deg,rgba(0,0,0,.45),transparent);transition:opacity 1.5s ease;}
+.dr-r::after{background:linear-gradient(270deg,rgba(0,0,0,.45),transparent);}
+.dr-host.is-open .dr-leaf::after{opacity:1;}
+.dr-ring{position:absolute;top:52%;width:calc(var(--dr-w) * .07);aspect-ratio:1;border-radius:50%;
+  border:2.5px solid #2a2622;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),0 2px 3px rgba(0,0,0,.5);}
+.dr-l .dr-ring{right:9%;}
+.dr-r .dr-ring{left:9%;}
+
+/* ---- 光湧出來 ---- */
+.dr-flood{position:absolute;inset:0;pointer-events:none;opacity:0;
+  background:radial-gradient(circle at 50% 50%,#fffdf6 0,rgba(255,248,230,.9) 25%,rgba(255,244,220,0) 60%);
+  transition:opacity 1.2s ease .5s,transform 1.3s ease;}
+.dr-host.is-open .dr-flood{opacity:.7;}
+.dr-host.is-walking .dr-flood{opacity:1;transform:scale(2.4);}
+.dr-host.is-walking .dr-world{transform:scale(2.7);opacity:0;}
+.dr-host.is-walking{background:#fffaf0;transition:background .8s ease;}
+
+/* ---- 字：推開門的時候浮在光裡 ---- */
+.dr-text{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;
+  align-items:center;gap:6px;text-align:center;color:var(--dr-ink);pointer-events:none;opacity:0;
+  transition:opacity 1s ease 1s;}
+.dr-host.is-open .dr-text{opacity:1;}
+.dr-host.is-walking .dr-text{opacity:0;transition-delay:0s;}
+.dr-kicker{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(16px,2.2vw,21px);color:var(--dr-accent);}
+.dr-names{font-family:var(--font-display,'Cormorant Garamond'),'Noto Serif TC',serif;font-size:clamp(26px,4.4vw,44px);letter-spacing:.06em;}
+.dr-names .op-amp{font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--dr-accent);padding:0 .2em;}
+.dr-date{font-size:12.5px;letter-spacing:.42em;color:rgba(59,53,48,.75);}
+
+.dr-hint{position:absolute;left:0;right:0;bottom:clamp(20px,5vh,56px);display:flex;flex-direction:column;align-items:center;
+  gap:6px;pointer-events:none;color:rgba(255,246,224,.85);animation:dr-hint 2.6s ease-in-out infinite;transition:opacity .3s;}
+.dr-hint .en{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:19px;}
+.dr-hint .cn{font-size:13px;letter-spacing:.3em;}
+@keyframes dr-hint{50%{opacity:.5;}}
+.dr-host.is-open .dr-hint{opacity:0;animation:none;}
+
+/* ============================================================
+   法式莊園：石灰岩牆、圓拱、木門（預設）
+============================================================ */
+.dr-manor .dr-wall{
+  background:
+    radial-gradient(60% 55% at 50% 50%,transparent 40%,rgba(30,24,18,.55)),
+    repeating-linear-gradient(0deg,transparent 0 46px,rgba(90,76,60,.35) 46px 48px),
+    repeating-linear-gradient(90deg,transparent 0 94px,rgba(90,76,60,.28) 94px 96px),
+    linear-gradient(180deg,#d8cfbf,#c5b9a4);}
+.dr-manor .dr-frame{border-radius:50% 50% 0 0 / 33% 33% 0 0;
+  background:
+    repeating-conic-gradient(from -90deg at 50% 33%,#e6dccb 0 6deg,#d3c7b1 6deg 6.5deg),
+    #e2d8c6;
+  box-shadow:inset 0 0 0 calc(var(--dr-w) * .02) rgba(255,255,255,.35),0 12px 30px rgba(0,0,0,.35);}
+.dr-manor .dr-leaf{
+  background:
+    linear-gradient(0deg,transparent 10%,rgba(0,0,0,.18) 10.5%,transparent 11%,transparent 52%,rgba(0,0,0,.18) 52.5%,transparent 53%),
+    repeating-linear-gradient(90deg,#6b4a30 0 11px,#5c3f28 11px 12px,#74523a 12px 24px),
+    #6b4a30;
+  box-shadow:inset 0 0 0 calc(var(--dr-w) * .025) #5a3d27,inset 0 0 0 calc(var(--dr-w) * .03) rgba(255,220,170,.15);}
+.dr-manor .dr-leaf::before{content:'';position:absolute;left:14%;right:14%;top:16%;bottom:52%;
+  border:2px solid rgba(40,26,14,.45);box-shadow:inset 0 0 0 1px rgba(255,220,170,.12);}
+.dr-manor .dr-ring{border-color:#2c2a28;}
+
+/* ============================================================
+   秘密花園：綠籬、藤蔓、鍛鐵花園門
+============================================================ */
+.dr-garden{background:#1f2a1b;--dr-accent:#6b5a7a;}
+.dr-garden .dr-wall{
+  background:
+    radial-gradient(60% 55% at 50% 50%,transparent 38%,rgba(10,18,8,.62)),
+    radial-gradient(9px 6px at 30% 40%,rgba(143,176,110,.55) 55%,transparent 60%) 0 0/23px 19px,
+    radial-gradient(7px 10px at 70% 20%,rgba(95,127,72,.6) 55%,transparent 60%) 5px 3px/29px 31px,
+    radial-gradient(11px 7px at 50% 70%,rgba(120,156,92,.45) 55%,transparent 60%) 11px 7px/37px 27px,
+    radial-gradient(6px 8px at 20% 80%,rgba(60,88,46,.7) 55%,transparent 60%) 3px 13px/17px 23px,
+    radial-gradient(10px 12px at 80% 50%,rgba(70,100,54,.55) 55%,transparent 60%) 17px 5px/41px 43px,
+    linear-gradient(180deg,#4a6739,#34492b);}
+.dr-garden .dr-frame{border-radius:50% 50% 0 0 / 33% 33% 0 0;
+  background:linear-gradient(180deg,#3f5833,#314528);box-shadow:inset 0 0 30px rgba(0,0,0,.4);}
+.dr-garden .dr-beyond{
+  background:
+    radial-gradient(40% 30% at 50% 45%,#fffbe8,transparent 70%),
+    radial-gradient(70% 40% at 50% 100%,#8fae6e,transparent 70%),
+    linear-gradient(180deg,#f4efd9,#dfe8c8 55%,#a7c08a);}
+/* 鍛鐵門：鏤空的直條、兩道橫檔、上緣的捲飾 */
+.dr-garden .dr-leaf{
+  background:
+    linear-gradient(0deg,transparent 30%,#23261f 30% 31.5%,transparent 31.5% 70%,#23261f 70% 71.5%,transparent 71.5%),
+    repeating-linear-gradient(90deg,transparent 0 calc(var(--dr-w) * .05),#23261f calc(var(--dr-w) * .05) calc(var(--dr-w) * .058));
+  border-left:3px solid #23261f;border-right:3px solid #23261f;}
+.dr-garden .dr-leaf::before{content:'';position:absolute;left:0;right:0;top:32%;height:12%;
+  background:radial-gradient(circle at 50% 50%,transparent 0 28%,#23261f 29% 34%,transparent 35%) 0 0/50% 100% repeat-x;}
+.dr-garden .dr-gap{display:none;}
+.dr-garden .dr-ring{border-color:#23261f;}
+.dr-vines{position:absolute;inset:calc(var(--dr-w) * -.06) calc(var(--dr-w) * -.06) 0;z-index:4;pointer-events:none;}
+.dr-vines svg{width:100%;height:100%;display:block;overflow:visible;}
+
+/* ============================================================
+   尖拱：石砌、深色橡木門、鐵條（午夜教堂、中古刺繡）
+============================================================ */
+.dr-gothic{
+  --dr-shape:polygon(0 100%,0 42%,1.2% 35%,4% 27%,8.5% 20%,14.5% 13.5%,22% 8%,30.5% 4%,40% 1.2%,50% 0,60% 1.2%,69.5% 4%,78% 8%,85.5% 13.5%,91.5% 20%,96% 27%,98.8% 35%,100% 42%,100% 100%);
+  background:#0e0c12;--dr-light:#ffe9b8;
+}
+.dr-gothic .dr-opening{border-radius:0;}
+.dr-gothic .dr-wall{
+  background:
+    radial-gradient(55% 55% at 50% 50%,rgba(255,200,120,.12),transparent 60%),
+    radial-gradient(70% 60% at 50% 50%,transparent 35%,rgba(0,0,0,.7)),
+    repeating-linear-gradient(0deg,transparent 0 40px,rgba(0,0,0,.4) 40px 42px),
+    repeating-linear-gradient(90deg,transparent 0 78px,rgba(0,0,0,.3) 78px 80px),
+    linear-gradient(180deg,#3a3440,#26212c);}
+.dr-gothic .dr-frame{clip-path:var(--dr-shape);
+  background:repeating-conic-gradient(from -90deg at 50% 42%,#57505e 0 7deg,#403a47 7deg 7.6deg),#4c4553;}
+.dr-gothic .dr-beyond{
+  background:
+    radial-gradient(40% 35% at 50% 60%,#fff2cc,transparent 70%),
+    linear-gradient(180deg,#e9c98a,#b8894a 70%,#6b4a2a);}
+.dr-gothic .dr-leaf{
+  background:
+    linear-gradient(0deg,transparent 22%,#1b1a1d 22% 25%,transparent 25% 62%,#1b1a1d 62% 65%,transparent 65%),
+    repeating-linear-gradient(90deg,#3a271c 0 13px,#2d1e15 13px 14px,#45301f 14px 27px);
+  box-shadow:inset 0 0 0 4px #241812;}
+.dr-gothic .dr-leaf::before{content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(circle,#6a6470 0 2px,transparent 2.5px) 50% 23.5%/18px 100% repeat-x,
+    radial-gradient(circle,#6a6470 0 2px,transparent 2.5px) 50% 63.5%/18px 100% repeat-x;}
+.dr-gothic .dr-ring{border-color:#8a8490;}
+.dr-gothic .dr-step{background:linear-gradient(180deg,#5a5360,#3a3440);}
+.dr-gothic .dr-text{--dr-ink:#2a1c14;}

@@ -22,7 +22,12 @@
      --map-url        選填，Google Maps 連結
      --template       選填，版型；預設 classic
                       classic / classic-blush / classic-sage / classic-dusk
-                      / korean / forest / tapestry（見 js/wed-model.js 的 TEMPLATES）
+                      / korean / forest / tapestry / botanical-letter / secret-garden
+                      / spring-orangerie / night-sky / french-manor / morning-window
+                      / midnight-chapel（見 js/wed-model.js 的 TEMPLATES）
+     --opening        選填，開場；不填就用版型的預設開場
+                      envelope / book / bloom / curtain / candle / stars / door / ribbon
+                      （見 js/wed-model.js 的 OPENINGS）
      --cover          選填，封面圖片網址
      --story          選填，兩人的故事
      --photo          選填，照片牆的圖片網址；可重複給多次，順序即顯示順序
@@ -65,10 +70,12 @@ import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { resolveBaseUrl } from './site-url.js';
 import { OPTIONAL_PAGES, ADMIN_PAGES, DEFAULT_PAGES, PAGE_LABELS, resolvePages } from './site-pages.js';
+import { TEMPLATES as TEMPLATE_DEFS, OPENINGS } from '../public/js/wed-model.js';
 
 /* ---------- 保留字黑名單 ---------- */
-/* 認得的版型，對得上 js/site-context.js 的 TEMPLATES 與 css/common.css 的色票 */
-const TEMPLATES = ['classic','classic-blush','classic-sage','classic-dusk','korean','forest','tapestry'];
+/* 認得的版型與開場：直接讀 wed-model.js，不再手抄一份（build-og 也是讀它） */
+const TEMPLATES = Object.keys(TEMPLATE_DEFS);
+const OPENING_KEYS = Object.keys(OPENINGS);
 
 const RESERVED_SLUGS = new Set(['admin', 'api', 'www', 'app', 'w', 's', 'assets', 'static']);
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -90,6 +97,7 @@ function parseCliArgs(argv) {
       address:       { type: 'string', default: '' },
       'map-url':     { type: 'string', default: '' },
       'template':    { type: 'string', default: 'classic' },
+      'opening':     { type: 'string', default: '' },
       cover:         { type: 'string', default: '' },
       story:         { type: 'string', default: '' },
       'owner-email': { type: 'string', multiple: true },
@@ -223,6 +231,8 @@ async function createSite(values) {
     venueMapUrl: values['map-url'] || '',
     /* 版型。開站一律先給 classic，要換再到 Firestore 改這一欄 */
     template: TEMPLATES.includes(values.template) ? values.template : 'classic',
+    /* 開場。沒指定就不寫這一欄 —— 讀的時候落回版型的預設開場 */
+    ...(OPENING_KEYS.includes(values.opening) ? { opening: values.opening } : {}),
     coverImageUrl: values.cover || '',
     story: values.story || '',
     photos: values.photo || [],

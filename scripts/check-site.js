@@ -101,6 +101,7 @@ async function checkOne(db, slug, base) {
   console.log(`   婚禮日期 : ${fmtDate(s.eventDate)}（時區 ${s.timezone || 'Asia/Taipei'}）`);
   console.log(`   場地     : ${s.venueName || '（未設定）'}`);
   console.log(`   版型     : ${s.template || 'classic（沒有這個欄位＝預設）'}`);
+  console.log(`   開場     : ${s.opening || '（沒有這個欄位＝版型的預設開場）'}`);
   console.log(`   入場登入 : ${s.entryLoginEnabled === true
     ? '開（先報上名來才進得去）'
     : '關（預設：一進來就是大廳，要署名時才當場問名字）'}`);

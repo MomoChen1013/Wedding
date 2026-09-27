@@ -19,7 +19,8 @@
     "sync-assets": "node scripts/sync-assets.js",
     "build-og": "node scripts/build-og.js",
     "check-site": "node scripts/check-site.js",
-    "set-pages": "node scripts/set-pages.js"
+    "set-pages": "node scripts/set-pages.js",
+    "build-previews": "node scripts/build-previews.js"
   },
   "repository": {
     "type": "git",

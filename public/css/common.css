@@ -176,6 +176,93 @@ body[data-template="tapestry"]{
 }
 
 /* ============================================================
+   場景版型（大廳共用 lobby-scene.html，長相見 css/lobby-scene.css）
+   ------------------------------------------------------------
+   七個版型各自一組色票與字體；這裡這一份是**子頁**穿的衣服
+   （祝福牆、給你的信、出席回覆……），所以一律是淺色底 ——
+   Night Sky 與 Midnight Chapel 的大廳是深色的，但深色只在大廳
+   （lobby-scene.css 在 body[data-lobby="scene"] 底下覆寫），
+   子頁的元件有不少地方預設是淺色底，逐頁改成深色之前先維持淺色。
+============================================================ */
+/* 植物信箋 —— 棉紙、橄欖墨、鼠尾草、乾燥玫瑰 */
+body[data-template="botanical-letter"]{
+  --ink-rgb:58,64,49; --surface-rgb:251,248,241;
+  --ink:#3a4031; --ink-soft:#7a7c6a; --line:#d9d4c3; --line-soft:#e7e2d3;
+  --surface:#fbf8f1; --ink-hover:#4d5541; --ink-active:#2a2f23;
+  --primary:#8a9a6b; --primary-deep:#5d6b45; --primary-soft:#eef0e3;
+  --secondary:#b88a7a; --accent:#b88a7a; --sun:#e4d6b8;
+  --bg1:#f6f2e9; --bg2:#ece6d8; --card:#fbf8f1;
+  --font-display:'Cormorant Garamond','Noto Serif TC',serif;
+  --font-body:'Noto Serif TC',serif; --font-hand:'Cormorant Garamond','Noto Serif TC',serif; --font-ui:'Noto Serif TC',serif;
+}
+/* 秘密花園 —— 奶油色、深綠、野花的紫 */
+body[data-template="secret-garden"]{
+  --ink-rgb:47,59,43; --surface-rgb:250,250,244;
+  --ink:#2f3b2b; --ink-soft:#6f7a66; --line:#d3d8c6; --line-soft:#e3e7d9;
+  --surface:#fafaf4; --ink-hover:#3f4f3a; --ink-active:#1f281c;
+  --primary:#7a9a6a; --primary-deep:#4e6b45; --primary-soft:#e9efe1;
+  --secondary:#9b8ab8; --accent:#9b8ab8; --sun:#e9dcb0;
+  --bg1:#f3f1e8; --bg2:#e7eadb; --card:#fafaf4;
+  --font-display:'Italiana','Cormorant Garamond','Noto Serif TC',serif;
+  --font-body:'Noto Serif TC',serif; --font-hand:'Cormorant Garamond','Noto Serif TC',serif; --font-ui:'Noto Serif TC',serif;
+}
+/* 春日溫室 —— 明亮、玻璃綠、杏桃色的光 */
+body[data-template="spring-orangerie"]{
+  --ink-rgb:46,58,54; --surface-rgb:255,255,255;
+  --ink:#2e3a36; --ink-soft:#6c7a74; --line:#d6e0da; --line-soft:#e6ede8;
+  --surface:#ffffff; --ink-hover:#3e4e49; --ink-active:#1e2825;
+  --primary:#9fbfa8; --primary-deep:#4f7a66; --primary-soft:#eaf2ec;
+  --secondary:#e7b18a; --accent:#e7b18a; --sun:#f3dcb4;
+  --bg1:#f7f7f1; --bg2:#edf1ea; --card:#ffffff;
+  --font-display:'Marcellus','Noto Serif TC',serif;
+  --font-body:'Noto Sans TC','Noto Sans',sans-serif; --font-hand:'Cormorant Garamond','Noto Serif TC',serif; --font-ui:'Noto Sans TC','Noto Sans',sans-serif;
+}
+/* 現代星空 —— 子頁是「天快亮」的淺色版：藏青的墨、淡金 */
+body[data-template="night-sky"]{
+  --ink-rgb:31,36,64; --surface-rgb:251,251,254;
+  --ink:#1f2440; --ink-soft:#6b6f86; --line:#d8d8e4; --line-soft:#e8e8f0;
+  --surface:#fbfbfe; --ink-hover:#2e3560; --ink-active:#131730;
+  --primary:#b9a46a; --primary-deep:#3b4580; --primary-soft:#ecedf6;
+  --secondary:#8a93c7; --accent:#b9a46a; --sun:#e6dcb8;
+  --bg1:#f5f5fa; --bg2:#e9eaf3; --card:#fbfbfe;
+  --font-display:'Cormorant Garamond','Noto Serif TC',serif;
+  --font-body:'Noto Sans TC','Noto Sans',sans-serif; --font-hand:'Cormorant Garamond','Noto Serif TC',serif; --font-ui:'Noto Sans TC','Noto Sans',sans-serif;
+}
+/* 法式莊園 —— 石灰岩、胡桃木、鍛鐵黑、黃楊綠 */
+body[data-template="french-manor"]{
+  --ink-rgb:59,53,48; --surface-rgb:252,250,246;
+  --ink:#3b3530; --ink-soft:#7d746a; --line:#ddd4c6; --line-soft:#ebe5da;
+  --surface:#fcfaf6; --ink-hover:#4d4640; --ink-active:#2a2521;
+  --primary:#a89679; --primary-deep:#6b5a45; --primary-soft:#f0ebe2;
+  --secondary:#8c9a7c; --accent:#2f3336; --sun:#e2d4b6;
+  --bg1:#f4efe7; --bg2:#e9e2d6; --card:#fcfaf6;
+  --font-display:'Bodoni Moda','Noto Serif TC',serif;
+  --font-body:'Noto Serif TC',serif; --font-hand:'Cormorant Garamond','Noto Serif TC',serif; --font-ui:'Noto Serif TC',serif;
+}
+/* 晨光房間 —— 暖白、亞麻、木頭、早晨的淡藍 */
+body[data-template="morning-window"]{
+  --ink-rgb:74,64,56; --surface-rgb:255,253,249;
+  --ink:#4a4038; --ink-soft:#8a7f74; --line:#e3dace; --line-soft:#eee7dc;
+  --surface:#fffdf9; --ink-hover:#5c5047; --ink-active:#362e28;
+  --primary:#d9c3a5; --primary-deep:#9a7b5b; --primary-soft:#f5efe6;
+  --secondary:#c9d6db; --accent:#9a7b5b; --sun:#f0e2c4;
+  --bg1:#faf6ef; --bg2:#f0e9de; --card:#fffdf9;
+  --font-display:'EB Garamond','Noto Serif TC',serif;
+  --font-body:'Noto Serif TC',serif; --font-hand:'EB Garamond','Noto Serif TC',serif; --font-ui:'Noto Serif TC',serif;
+}
+/* 午夜教堂 —— 子頁是燭光下的羊皮紙：深李子墨、酒紅、古金 */
+body[data-template="midnight-chapel"]{
+  --ink-rgb:37,29,36; --surface-rgb:251,248,244;
+  --ink:#251d24; --ink-soft:#74686e; --line:#dcd2cc; --line-soft:#ebe4de;
+  --surface:#fbf8f4; --ink-hover:#3a2e38; --ink-active:#150f14;
+  --primary:#c8a45a; --primary-deep:#6d1a2a; --primary-soft:#f1e9e0;
+  --secondary:#2f4f8a; --accent:#6d1a2a; --sun:#e8d3a2;
+  --bg1:#f5f0ea; --bg2:#ebe3da; --card:#fbf8f4;
+  --font-display:'Cinzel','Noto Serif TC',serif;
+  --font-body:'Noto Serif TC',serif; --font-hand:'Cormorant Garamond','Noto Serif TC',serif; --font-ui:'Noto Serif TC',serif;
+}
+
+/* ============================================================
    版型的專屬層（Classic 完全不吃這一段）
 ============================================================ */
 
@@ -204,7 +291,10 @@ body[data-template="forest"] .scene-bg::after{
    手機上也要讀得動：資訊性的字最小 12px，主要內文至少 14px。
    純裝飾（SCROLL 提示、英文 ribbon、卡片編號、To／From）不在此列。
    只掛在這兩個版型上，Classic 一個像素都不動。 */
-body:is([data-template="korean"],[data-template="forest"],[data-template="tapestry"]) :is(
+body:is([data-template="korean"],[data-template="forest"],[data-template="tapestry"],
+  [data-template="botanical-letter"],[data-template="secret-garden"],[data-template="spring-orangerie"],
+  [data-template="night-sky"],[data-template="french-manor"],[data-template="morning-window"],
+  [data-template="midnight-chapel"]) :is(
   .lobby-hero .tag, .ir-label, .cd-lab, .lc-go, .icon-hint, .gate-sep,
   .rf-req, .st-card-label, .st-mates-label, .st-letter-go, .st-lb-tip,
   .draw-info-hint, .cv-hint, .tl-eyebrow, .tl-meta .when, .lb-body .lb-date,
@@ -212,7 +302,10 @@ body:is([data-template="korean"],[data-template="forest"],[data-template="tapest
   .wish-note .by, .wl-save-hint){
   font-size:12px;
 }
-body:is([data-template="korean"],[data-template="forest"],[data-template="tapestry"]) :is(
+body:is([data-template="korean"],[data-template="forest"],[data-template="tapestry"],
+  [data-template="botanical-letter"],[data-template="secret-garden"],[data-template="spring-orangerie"],
+  [data-template="night-sky"],[data-template="french-manor"],[data-template="morning-window"],
+  [data-template="midnight-chapel"]) :is(
   .inv-lead, .tl-meta .desc, .st-letter-text, .st-miss-body,
   .q-intro, .q-bar-label, .card-desc, .rsvp-cta p,
   .step-pane .step-hint, .gate-card .sub){

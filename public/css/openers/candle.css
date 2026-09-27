@@ -1,0 +1,106 @@
+/* ============================================================
+   openers/candle.css — 開場：燭光點亮（js/openers/candle.js）
+   ------------------------------------------------------------
+   整個房間的亮度 = --lit / 3（JS 每點一根就 +1）。
+   --lit 用 @property 註冊成數字，才能「慢慢」變亮，而不是一格一格跳。
+   火焰是一顆倒水滴形的漸層，自己會晃；光暈用 screen 疊在房間上。
+============================================================ */
+@property --lit{syntax:'<number>';inherits:true;initial-value:0;}
+
+.cd-host{
+  --cd-bg:#07060a; --cd-wall:#2a2230; --cd-gold:#c8a45a; --cd-ink:#f1e4c8; --cd-wine:#6d1a2a;
+  --cd-l:calc(var(--lit) / 3);
+  background:var(--cd-bg);transition:--lit 1.4s ease;
+}
+.cd-host[data-variant="tapestry"]{--cd-wall:#3a2222;}
+
+/* ---- 房間：照得多亮跟著 --lit ---- */
+.cd-room{position:absolute;inset:0;opacity:calc(.08 + var(--cd-l) * .92);
+  background:
+    radial-gradient(55% 60% at 50% 72%,rgba(255,196,120,.32),transparent 70%),
+    repeating-linear-gradient(0deg,transparent 0 58px,rgba(0,0,0,.25) 58px 60px),
+    repeating-linear-gradient(90deg,transparent 0 118px,rgba(0,0,0,.18) 118px 120px),
+    radial-gradient(90% 80% at 50% 60%,var(--cd-wall),#0c0a10 80%);}
+/* 午夜教堂：牆上一扇彩繪玻璃的尖拱窗，燭光亮起來它也跟著透出顏色 */
+.cd-arch{display:none;}
+.cd-host[data-variant="midnight-chapel"] .cd-arch{display:block;position:absolute;left:50%;top:7%;
+  height:min(36vh,340px);max-width:60vw;aspect-ratio:1/1.7;transform:translateX(-50%);
+  clip-path:polygon(0 100%,0 38%,4% 24%,13% 12%,27% 4%,50% 0,73% 4%,87% 12%,96% 24%,100% 38%,100% 100%);
+  background:
+    radial-gradient(circle at 50% 30%,transparent 0 16%,#1a1420 16.5% 18%,transparent 18.5%),
+    conic-gradient(from 0deg at 50% 30%,#2f4f8a,#7a1f2b,#c8a45a,#2e6b5a,#2f4f8a,#6a3a8a,#c8a45a,#7a1f2b,#2f4f8a),
+    #1a1420;
+  opacity:calc(.1 + var(--cd-l) * .55);filter:saturate(.9) brightness(calc(.5 + var(--cd-l) * .6));}
+.cd-host[data-variant="midnight-chapel"] .cd-arch::after{content:'';position:absolute;inset:0;
+  background:
+    linear-gradient(90deg,transparent calc(50% - 2px),#1a1420 calc(50% - 2px) calc(50% + 2px),transparent calc(50% + 2px)),
+    linear-gradient(0deg,transparent 58%,#1a1420 58% 59.5%,transparent 59.5%);}
+
+/* ---- 名字：從暗處被照出來 ---- */
+.cd-text{position:absolute;left:0;right:0;top:clamp(80px,22vh,220px);display:flex;flex-direction:column;
+  align-items:center;gap:8px;text-align:center;color:var(--cd-ink);padding:0 24px;
+  opacity:calc(var(--cd-l) * var(--cd-l));}
+.cd-host[data-variant="midnight-chapel"] .cd-text{top:auto;bottom:calc(clamp(160px,34vh,300px) + 40px);}
+.cd-kicker{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(16px,2.2vw,21px);color:var(--cd-gold);}
+.cd-names{font-family:'Cinzel','Noto Serif TC',serif;font-size:clamp(28px,5.6vw,56px);letter-spacing:.08em;line-height:1.2;
+  text-shadow:0 0 24px rgba(255,190,110,.35);}
+.cd-names .op-amp{font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--cd-gold);padding:0 .2em;}
+.cd-date{font-size:12.5px;letter-spacing:.44em;color:rgba(241,228,200,.75);}
+
+/* ---- 燭台與蠟燭 ---- */
+.cd-stand{position:absolute;left:50%;bottom:clamp(40px,10vh,110px);transform:translateX(-50%);
+  display:flex;align-items:flex-end;gap:clamp(26px,6vw,60px);padding:0 20px;}
+.cd-base{position:absolute;left:-6px;right:-6px;bottom:-14px;height:14px;border-radius:50%;
+  background:linear-gradient(180deg,#e0c27a,#8a6a2a);
+  box-shadow:0 0 calc(40px * var(--cd-l)) rgba(255,190,110,calc(.5 * var(--cd-l)));
+  filter:brightness(calc(.25 + var(--cd-l) * .75));}
+.cd-candle{position:relative;width:clamp(22px,3.2vw,30px);display:flex;flex-direction:column;align-items:center;}
+.cd-wax{width:100%;border-radius:40% 40% 3px 3px / 10% 10% 3px 3px;
+  background:linear-gradient(90deg,#b9ab91,#f6efdf 38%,#e7dbc3 70%,#a89a80);
+  filter:brightness(calc(.18 + var(--cd-l) * .82));position:relative;}
+.cd-wax::after{content:'';position:absolute;left:18%;top:4px;width:5px;height:22%;border-radius:0 0 4px 4px;
+  background:linear-gradient(90deg,#efe5d0,#fbf6ea);}
+.cd-c0 .cd-wax{height:clamp(96px,17vh,140px);}
+.cd-c1 .cd-wax{height:clamp(140px,25vh,210px);}
+.cd-c2 .cd-wax{height:clamp(116px,21vh,170px);}
+.cd-wick{width:2px;height:10px;background:#2a1a10;margin-bottom:-1px;}
+
+/* 火焰：還沒點是看不見的 */
+.cd-flame{position:absolute;bottom:100%;left:50%;width:16px;height:34px;margin-left:-8px;
+  transform:translateY(12px) scale(0);transform-origin:50% 100%;opacity:0;
+  transition:transform .5s cubic-bezier(.3,1.6,.5,1),opacity .3s ease;}
+.cd-candle .cd-flame{bottom:calc(100% - 4px);}
+.cd-flame i{position:absolute;inset:0;border-radius:50% 50% 50% 50% / 62% 62% 38% 38%;
+  background:radial-gradient(ellipse at 50% 78%,#fff 0 16%,#ffe7a8 28%,#ffb44a 52%,rgba(255,110,20,.4) 70%,transparent 76%);
+  filter:blur(.4px);animation:cd-flicker 1.6s ease-in-out infinite;}
+.cd-c0 .cd-flame i{animation-duration:1.9s;}
+.cd-c2 .cd-flame i{animation-duration:1.4s;animation-delay:-.6s;}
+@keyframes cd-flicker{
+  0%,100%{transform:scale(1,1) rotate(-1deg);}
+  25%{transform:scale(.94,1.06) rotate(1.5deg) translateX(.5px);}
+  50%{transform:scale(1.04,.96) rotate(-.5deg);}
+  75%{transform:scale(.97,1.08) rotate(1deg) translateX(-.5px);}
+}
+.cd-glow{position:absolute;bottom:100%;left:50%;width:420px;height:420px;margin:0 0 -190px -210px;
+  border-radius:50%;pointer-events:none;opacity:0;mix-blend-mode:screen;
+  background:radial-gradient(circle,rgba(255,200,120,.42),rgba(255,160,70,.14) 35%,transparent 65%);
+  transition:opacity 1.2s ease;animation:cd-glow 2.4s ease-in-out infinite;}
+@keyframes cd-glow{50%{transform:scale(1.05);}}
+.cd-candle.is-lit .cd-flame{transform:translateY(0) scale(1);opacity:1;}
+.cd-candle.is-lit .cd-glow{opacity:1;}
+/* 點燃的那一下：一小圈亮光爆開 */
+.cd-candle.is-lit .cd-wick::after{content:'';position:absolute;left:50%;top:-18px;width:40px;height:40px;margin-left:-20px;
+  border-radius:50%;background:radial-gradient(circle,#fff,rgba(255,220,150,.6) 30%,transparent 70%);
+  animation:cd-spark .6s ease-out forwards;}
+@keyframes cd-spark{from{transform:scale(.2);opacity:1;}to{transform:scale(2.2);opacity:0;}}
+
+/* ---- 提示：只在還沒點之前 ---- */
+.cd-hint{position:absolute;left:0;right:0;top:clamp(90px,26vh,260px);display:flex;flex-direction:column;align-items:center;
+  gap:6px;pointer-events:none;color:rgba(241,228,200,.75);animation:cd-hint 2.6s ease-in-out infinite;transition:opacity .4s;}
+.cd-hint .en{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:19px;color:var(--cd-gold);}
+.cd-hint .cn{font-size:13px;letter-spacing:.3em;}
+@keyframes cd-hint{50%{opacity:.45;}}
+.cd-host.is-going .cd-hint{opacity:0;animation:none;}
+
+/* ---- 溶進網站 ---- */
+.cd-host.is-leaving{opacity:0;transition:opacity 1.2s ease;}

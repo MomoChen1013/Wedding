@@ -1,0 +1,12 @@
+/* ============================================================
+   demo-panel.css — 示範頁右下角的切換面板（只有 preview/ 用）
+============================================================ */
+.demo-panel{position:fixed;right:14px;bottom:14px;z-index:2000;display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  max-width:calc(100vw - 28px);padding:10px 12px;border-radius:10px;
+  background:rgba(20,20,24,.78);color:#fff;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  font:13px/1.2 'Noto Sans TC',system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25);}
+.demo-panel label{display:flex;align-items:center;gap:6px;}
+.demo-panel select,.demo-panel button{font:inherit;padding:6px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.25);
+  background:rgba(255,255,255,.1);color:#fff;cursor:pointer;}
+.demo-panel select option{color:#222;}
+.demo-panel button{background:#fff;color:#222;border-color:#fff;}

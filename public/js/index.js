@@ -7,7 +7,7 @@
      入場登入關掉（站台文件 entryLoginEnabled: false）
               → 沒有 gate，一進來就播開場字幕（同一個分頁只播一次）
      開場期間右下角有「跳過」，任何時候都能直接進首頁
-     版型自己帶開場的（tapestry 的信封）→ 用那一套取代字幕＋簾幕，見 runOpening()
+     這組新人有設定開場（sites.opening）→ 用那一套取代字幕＋簾幕，見 runOpening()
 
    內容（原本的 info 頁已併進本頁）：
      置中開場 → 婚禮資訊卡（含尋找我的座位）→ 當日流程 → 出席前的小提醒
@@ -165,35 +165,49 @@ function endIntro(){
 }
 
 /* ============================================================
-   版型自己的開場（目前只有 tapestry 的信封）
+   版型自己的開場（sites.opening：信封、古書、推門、點燭……）
    ------------------------------------------------------------
-   版型在骨架裡放了 #envelope、而且 lobby-motion.js 有載到，
-   就用那封信取代上面的兩句字幕＋簾幕；兩個條件缺一個就照舊。
-   ・信封要賓客自己點開 —— 那一下是使用者手勢，所以背景音樂在這時候開
-     （skipGate 的流程原本沒有手勢，音樂只能等賓客自己按）
-   ・看過開場的賓客不會再看到這封信（removeOpener），和字幕同一個判斷；
-     但「看過」要等賓客真的拆開才算 —— 信封出現了還沒點就重新整理，
-     回來應該還是那封信，而不是直接跳進內容
+   這組新人有設定開場（或版型有預設的開場），而且那一種已經由
+   site-context.js 載好、向 LobbyMotion 登記了，就用它取代上面的
+   兩句字幕＋簾幕；任何一個條件不成立就照舊。
+   ・骨架裡沒有 #opener 的大廳（classic／korean／forest）自己補一個，
+     所以任何版型都能用任何開場
+   ・要賓客親手做的開場（拆信、推門、解絲帶…），那一下是使用者手勢，
+     背景音樂在那時候開；自己演完的開場（花開、星圖）就不開
+   ・看過開場的賓客不會再看到它（removeOpener），和字幕同一個判斷；
+     但「看過」要等賓客真的動手（或看完）才算 —— 開場出現了還沒點
+     就重新整理，回來應該還是同一個開場，而不是直接跳進內容
 ============================================================ */
+function openingKeyForSite(){
+  const key = window.SITE && window.SITE.opening;
+  return key && window.LobbyMotion && window.LobbyMotion.has(key) ? key : null;
+}
 function runOpening(){
-  const env = document.getElementById('envelope');
-  if(env && window.LobbyMotion){
-    window.LobbyMotion.envelope(env, {
-      onOpen(){
-        markIntroSeen();
-        try { startBGM(); } catch(e){ console.warn('BGM 啟動失敗', e); }
-      },
-      onReveal: enterSite,
-      onDone: goldFall,
-    });
-    return;
+  const key = openingKeyForSite();
+  if(!key){ removeOpener(); runIntro(); return; }
+
+  let host = document.getElementById('opener');
+  if(!host){
+    host = document.createElement('div');
+    host.id = 'opener';
+    host.className = 'overlay';
+    document.body.appendChild(host);
   }
-  removeOpener();
-  runIntro();
+  window.LobbyMotion.opening(host, key, {
+    names: { a: W.groomEn || W.groom || '', b: W.brideEn || W.bride || '' },
+    date: W.date || '',
+    variant: document.body.dataset.template || '',
+    onOpen(){
+      markIntroSeen();
+      try { startBGM(); } catch(e){ console.warn('BGM 啟動失敗', e); }
+    },
+    onReveal: enterSite,
+    onDone(){ markIntroSeen(); goldFall(); },
+  });
 }
 function removeOpener(){
-  const env = document.getElementById('envelope');
-  if(env) env.remove();
+  const host = document.getElementById('opener');
+  if(host) host.remove();
 }
 
 /* 捲動編排（插圖繡出來、金線縫下去…）：版型有宣告才有東西可做，

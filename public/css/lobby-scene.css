@@ -1,0 +1,514 @@
+/* ============================================================
+   lobby-scene.css — 場景版型的大廳（lobby-scene.html 專用）
+   ------------------------------------------------------------
+   七個版型共用同一副骨架，這一份分成兩半：
+
+   ① 共用的結構（前半）
+      hero：場景（.sc-hero-art）＋ 主視覺（.sc-emblem）＋ 名字
+      區塊：小花紋（.sc-orn）＋ 標題 ＋ 一張卡（.sc-card）
+      兩條滿版的場景帶（故事、倒數），故事的照片放在 .sc-frame 裡
+      —— 全部只吃 --sc-* 變數，不寫死任何一個版型的顏色。
+
+   ② 每個版型自己的那一段（後半，body[data-template="…"]）
+      填 --sc-* 變數，再畫它自己的場景、主視覺、花紋、照片框。
+
+   這一版先把每個版型的「世界」立起來：色票、字體、材質、hero 的場景與
+   開場接得上。每個版型專屬的整套插圖之後一個一個補（像 tapestry 那樣）。
+
+   動作沿用 js/lobby-motion.js：[data-reveal] 進場、[data-scroll] 的 --lp
+   讓 hero 往上離開時淡出、場景帶的底紋慢半拍。
+   每一條規則都收在 body[data-lobby="scene"] 或 .sc-* 底下，子頁載到也不生效。
+============================================================ */
+
+body[data-lobby="scene"]{
+  --sc-page:var(--bg1);
+  --sc-ink:var(--ink); --sc-soft:var(--ink-soft);
+  --sc-accent:var(--primary-deep); --sc-gold:var(--primary);
+  --sc-card:var(--surface); --sc-card-line:var(--line);
+  --sc-card-shadow:0 18px 36px -26px rgba(var(--ink-rgb),.35);
+  --sc-card-radius:2px; --sc-card-blur:none;
+  --sc-band:var(--primary-deep); --sc-band-ink:#fff; --sc-band-soft:rgba(255,255,255,.72);
+  --sc-kicker:"You are cordially invited";
+  --sc-orn:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 0L14 10L24 12L14 14L12 24L10 14L0 12L10 10Z'/></svg>");
+  --sc-frame:none;
+  --sc-names-size:clamp(38px,7.6vw,82px);
+}
+body[data-lobby="scene"] .bg-decor{background:var(--sc-page);}
+
+/* 捲動進場（js/lobby-motion.js 加 .is-in；html.tp-motion 表示動畫真的會跑） */
+.tp-motion [data-lobby="scene"] [data-reveal]{transition:opacity 1s ease,transform 1.1s cubic-bezier(.2,.7,.2,1);}
+.tp-motion [data-lobby="scene"] [data-reveal="rise"]:not(.is-in){opacity:0;transform:translateY(30px);}
+.tp-motion [data-lobby="scene"] [data-reveal="list"] > *{transition:opacity .8s ease,transform .9s cubic-bezier(.2,.7,.2,1);}
+.tp-motion [data-lobby="scene"] [data-reveal="list"]:not(.is-in) > *{opacity:0;transform:translateY(20px);}
+.tp-motion [data-lobby="scene"] [data-reveal="list"] > :nth-child(2){transition-delay:.12s;}
+.tp-motion [data-lobby="scene"] [data-reveal="list"] > :nth-child(3){transition-delay:.24s;}
+.tp-motion [data-lobby="scene"] [data-reveal="list"] > :nth-child(4){transition-delay:.36s;}
+.tp-motion [data-lobby="scene"] [data-reveal="list"] > :nth-child(5){transition-delay:.48s;}
+.tp-motion [data-lobby="scene"] [data-reveal="list"] > :nth-child(n+6){transition-delay:.6s;}
+
+/* ============================================================
+   ① 共用結構
+============================================================ */
+.sc-lobby{position:relative;}
+
+/* ---- Hero ---- */
+.sc-hero{position:relative;overflow:hidden;gap:0;min-height:calc(100svh - var(--nav-h));
+  padding:clamp(60px,10vh,110px) 24px clamp(50px,8vh,90px);color:var(--sc-ink);}
+.sc-hero-art{position:absolute;inset:0;z-index:0;pointer-events:none;
+  transform:translateY(calc(var(--lp,0) * 18%));}
+.sc-hero-art > i{position:absolute;display:block;}
+.sc-hero-body{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;
+  transform:translateY(calc(var(--lp,0) * -30px));opacity:calc(1 - var(--lp,0) * 1.15);}
+.sc-emblem{position:relative;width:clamp(150px,22vw,230px);aspect-ratio:1;margin-bottom:clamp(10px,2.4vh,24px);
+  transform:scale(calc(1 - var(--lp,0) * .15));}
+.sc-emblem > i{position:absolute;display:block;}
+.app-show .sc-emblem{animation:sc-emblem-in 1.6s cubic-bezier(.2,.7,.2,1) .15s both;}
+@keyframes sc-emblem-in{from{opacity:0;transform:scale(.92);}to{opacity:1;transform:none;}}
+.app-show .sc-hero-body > :not(.sc-emblem){animation:sc-rise 1.3s cubic-bezier(.2,.7,.2,1) both;}
+.app-show .sc-hero-body > .sc-kicker{animation-delay:.4s;}
+.app-show .sc-hero-body > .sc-names{animation-delay:.6s;}
+.app-show .sc-hero-body > .sc-date{animation-delay:.8s;}
+.app-show .sc-hero-body > .hashtags{animation-delay:.95s;}
+.app-show .sc-hero-body > .sc-cue{animation-delay:1.1s;}
+@keyframes sc-rise{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+
+.sc-kicker{display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:10px;}
+.sc-kicker .en::before{content:var(--sc-kicker);}
+.sc-kicker .en{font-family:var(--font-hand);font-style:italic;font-size:clamp(17px,2.4vw,22px);color:var(--sc-accent);}
+.sc-kicker .cn{font-size:13px;letter-spacing:.5em;color:var(--sc-soft);}
+/* 選擇器帶著 .sc-hero 才贏得過 index.css 的 `.lobby-hero h1` */
+.sc-hero .sc-names{font-family:var(--font-display);font-weight:400;font-size:var(--sc-names-size);
+  line-height:1.15;letter-spacing:.04em;color:var(--sc-ink);}
+.sc-hero .sc-names .amp{display:inline-block;font-family:var(--font-hand);font-style:italic;color:var(--sc-gold);padding:0 .22em;}
+body[data-hero-name="cn"] .sc-hero .sc-names{font-family:'Noto Serif TC',serif;font-weight:500;
+  font-size:clamp(30px,6vw,58px);letter-spacing:.2em;}
+.sc-date{display:flex;align-items:center;gap:14px;margin-top:14px;font-size:clamp(12px,1.9vw,14.5px);
+  letter-spacing:.32em;color:var(--sc-soft);}
+.sc-date i{width:5px;height:5px;background:var(--sc-gold);transform:rotate(45deg);}
+.sc-hero .hashtags{margin-top:20px;}
+.sc-hero .hashtags .tag{border-color:var(--sc-card-line);color:var(--sc-soft);font-size:12px;
+  background:color-mix(in srgb,var(--sc-card) 60%,transparent);}
+.sc-cue{margin-top:24px;color:var(--sc-soft);font-size:11px;letter-spacing:.4em;}
+.sc-cue .arrow{background:var(--sc-gold);animation:sc-cue 2.2s ease-in-out infinite;transform-origin:top;}
+@keyframes sc-cue{0%{transform:scaleY(0);}60%{transform:scaleY(1);}100%{transform:scaleY(1);opacity:0;}}
+
+/* ---- 區塊 ---- */
+.sc-body{max-width:900px;padding:0 22px 40px;position:relative;z-index:2;}
+.sc-sec{background:transparent;border:none;border-radius:0;-webkit-backdrop-filter:none;backdrop-filter:none;
+  margin-top:0;padding:clamp(60px,9vw,100px) 0 0;text-align:center;}
+.sc-sec[hidden]{display:none;}
+.sc-head{display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:clamp(22px,4vw,36px);}
+.sc-orn{display:block;width:26px;height:26px;background:var(--sc-gold);
+  -webkit-mask:var(--sc-orn) center/contain no-repeat;mask:var(--sc-orn) center/contain no-repeat;}
+.sc-head .sc-orn{margin-bottom:6px;}
+.sc-head .block-title{margin:0;font-family:var(--font-display);font-weight:400;text-transform:none;
+  font-size:clamp(26px,4vw,36px);letter-spacing:.08em;color:var(--sc-ink);}
+.sc-head .block-sub{margin:0;font-size:13.5px;letter-spacing:.36em;color:var(--sc-soft);}
+
+.sc-card{position:relative;max-width:600px;margin:0 auto;padding:clamp(28px,5vw,44px) clamp(22px,5vw,44px);
+  background:var(--sc-card);border:1px solid var(--sc-card-line);border-radius:var(--sc-card-radius);
+  box-shadow:var(--sc-card-shadow);-webkit-backdrop-filter:var(--sc-card-blur);backdrop-filter:var(--sc-card-blur);}
+.note-grid.sc-card{max-width:680px;}
+.sc-card .info-row,.sc-card .info-seat{border-top-color:var(--sc-card-line);}
+.sc-card .info-row:first-child{border-top:none;}
+.sc-card .info-couple{font-family:var(--font-display);}
+.sc-sec .ir-label,.sc-sec .note-label{color:var(--sc-accent);}
+.sc-sec .note-item + .note-item{border-left-color:var(--sc-card-line);}
+.sc-sec .timeline{text-align:left;--tl-line:var(--sc-card-line);}
+.sc-sec .tl-time{font-family:var(--font-display);font-size:15px;color:var(--sc-accent);}
+.sc-sec .tl-dot::before{background:var(--sc-gold);width:8px;height:8px;}
+.sc-rsvp .rsvp-cta h3{font-family:var(--font-display);}
+.sc-sec .btn.ghost{border-color:var(--sc-ink);color:var(--sc-ink);}
+
+/* 照片長廊與 Explore 卡片：跟著卡片的材質 */
+.sc-sec .pr-frame{border-color:var(--sc-card-line);border-radius:var(--sc-card-radius);}
+.sc-sec .link-grid{border:none;gap:14px;}
+.sc-sec .link-card{text-align:left;background:var(--sc-card);border:1px solid var(--sc-card-line);
+  border-radius:var(--sc-card-radius);-webkit-backdrop-filter:var(--sc-card-blur);backdrop-filter:var(--sc-card-blur);
+  transition:transform .3s ease,box-shadow .3s ease,border-color .3s;}
+.sc-sec .link-card:hover{background:var(--sc-card);color:var(--sc-ink);border-color:var(--sc-gold);
+  transform:translateY(-3px);box-shadow:var(--sc-card-shadow);}
+.sc-sec .link-card:hover .lc-index{color:var(--sc-gold);}
+.sc-sec .link-card:hover .lc-sub{color:var(--sc-soft);}
+.sc-sec .link-card:hover .lc-go{color:var(--sc-accent);}
+.sc-sec .lc-index{color:var(--sc-gold);}
+.sc-sec .lc-title{font-family:var(--font-body);font-weight:500;font-size:17px;}
+.sc-sec .lc-go{color:var(--sc-accent);}
+
+/* ---- 場景帶（故事、倒數）：滿版，底紋比前景慢半拍 ---- */
+.sc-band{position:relative;overflow:hidden;border:none;border-radius:0;background:transparent;
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+  margin:clamp(70px,10vw,120px) calc(50% - 50vw) 0;padding:clamp(64px,9vw,110px) 24px;color:var(--sc-band-ink);}
+.sc-band[hidden]{display:none;}
+.sc-band-bg{position:absolute;left:0;right:0;top:-16%;bottom:-16%;z-index:0;background:var(--sc-band);
+  transform:translateY(calc((var(--sp,.5) - .5) * -12%));}
+.sc-band-inner{position:relative;z-index:1;max-width:900px;margin:0 auto;text-align:center;}
+.sc-band-title{font-family:var(--font-display);font-size:clamp(28px,4.4vw,40px);letter-spacing:.06em;}
+.sc-band-sub{margin-top:4px;font-size:13px;letter-spacing:.4em;color:var(--sc-band-soft);}
+.sc-story .sc-band-inner{display:grid;grid-template-columns:minmax(0,1fr);gap:36px;justify-items:center;}
+@media (min-width:760px){
+  .sc-story .sc-band-inner{grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:clamp(40px,6vw,76px);
+    align-items:center;text-align:left;justify-items:stretch;}
+  .sc-story .sc-orn{margin:0 0 10px;}
+  .sc-story .story-text{margin:22px 0 0;}
+}
+.sc-story .sc-orn{margin:0 auto 10px;background:var(--sc-band-ink);opacity:.8;}
+.sc-story .story-text{color:var(--sc-band-ink);max-width:32em;margin:22px auto 0;font-size:15px;text-align:left;}
+.sc-frame{position:relative;width:min(100%,320px);aspect-ratio:3/4;padding:8px;
+  background:var(--sc-frame-edge,rgba(255,255,255,.85));clip-path:var(--sc-frame);border-radius:var(--sc-frame-radius,0);}
+.sc-frame-ph{position:absolute;inset:8px;clip-path:var(--sc-frame);border-radius:var(--sc-frame-radius,0);
+  background:linear-gradient(160deg,rgba(255,255,255,.25),rgba(0,0,0,.2)),var(--sc-band);
+  background-size:cover;background-position:50% calc(50% + (var(--sp,.5) - .5) * 40%);}
+.sc-count .cd-grid{margin:26px auto 0;}
+.sc-count .cd-unit{border-left-color:color-mix(in srgb,var(--sc-band-ink) 25%,transparent);}
+.sc-count .cd-num{color:var(--sc-band-ink);font-family:var(--font-display);}
+.sc-count .cd-lab,.sc-count .cd-target{color:var(--sc-band-soft);}
+.sc-count .cd-msg{color:var(--sc-band-ink);}
+
+.sc-foot{margin-top:clamp(70px,10vw,110px);display:flex;flex-direction:column;align-items:center;gap:14px;border-top:none;}
+
+/* ============================================================
+   ② 各版型
+============================================================ */
+
+/* ------------------------------------------------------------
+   Botanical Letter 植物信箋
+   棉紙、描圖紙、乾燥花；植物標本的手繪與標籤
+------------------------------------------------------------ */
+body[data-template="botanical-letter"][data-lobby="scene"]{
+  --sc-page:
+    repeating-linear-gradient(0deg,rgba(90,100,70,.035) 0 1px,transparent 1px 3px),
+    repeating-linear-gradient(90deg,rgba(90,100,70,.03) 0 1px,transparent 1px 4px),
+    #f6f2e9;
+  --sc-kicker:"A letter, pressed with flowers";
+  --sc-orn:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 60'><path d='M20 60C19 44 21 26 20 4' stroke='black' stroke-width='1.6' fill='none'/><path d='M20 46C12 42 6 44 2 38C9 34 16 38 20 46ZM20 34C28 30 34 32 38 26C31 22 24 26 20 34ZM20 22C13 18 8 19 5 13C12 10 17 14 20 22Z'/><circle cx='20' cy='4' r='3.4'/></svg>");
+  --sc-card:rgba(253,251,245,.92); --sc-card-line:#ddd6c4;
+  --sc-card-shadow:0 1px 0 #fff inset,0 16px 30px -22px rgba(70,70,40,.45);
+  --sc-band:
+    radial-gradient(60% 80% at 20% 30%,rgba(255,255,255,.08),transparent 70%),
+    repeating-linear-gradient(0deg,rgba(0,0,0,.04) 0 1px,transparent 1px 3px),
+    #6b7a55;
+  --sc-frame-edge:#fbf8f1;
+}
+/* hero：一張標本台紙 —— 描圖紙斜斜壓在兩角，四角各一枝壓花 */
+body[data-template="botanical-letter"] .sc-hero-art > i:nth-child(1){left:6%;top:9%;width:min(34vw,300px);aspect-ratio:3/4;
+  transform:rotate(-7deg);background:rgba(255,255,255,.4);border:1px solid rgba(120,120,90,.15);
+  box-shadow:0 10px 30px -20px rgba(60,60,30,.4);-webkit-backdrop-filter:blur(1px);backdrop-filter:blur(1px);}
+body[data-template="botanical-letter"] .sc-hero-art > i:nth-child(2){right:5%;bottom:8%;width:min(30vw,260px);aspect-ratio:4/3;
+  transform:rotate(5deg);background:rgba(255,255,255,.45);border:1px solid rgba(120,120,90,.15);
+  box-shadow:0 10px 30px -20px rgba(60,60,30,.4);}
+body[data-template="botanical-letter"] .sc-hero-art > i:nth-child(1)::after,
+body[data-template="botanical-letter"] .sc-hero-art > i:nth-child(2)::after{content:'';position:absolute;inset:14%;
+  background:#7f8f63;opacity:.55;-webkit-mask:var(--sc-orn) center/contain no-repeat;mask:var(--sc-orn) center/contain no-repeat;}
+/* 主視覺：標本標籤 */
+body[data-template="botanical-letter"] .sc-emblem{aspect-ratio:4/3;width:clamp(200px,26vw,270px);}
+body[data-template="botanical-letter"] .sc-emblem > i:nth-child(1){inset:0;background:#fdfbf5;border:1px solid #cfc7b2;
+  box-shadow:0 12px 24px -18px rgba(60,60,30,.5);}
+body[data-template="botanical-letter"] .sc-emblem > i:nth-child(1)::before{content:'SPECIMEN  No. 0116';position:absolute;left:10%;top:12%;
+  font:400 11px/1 'Courier New',monospace;letter-spacing:.2em;color:#8a6a5a;}
+body[data-template="botanical-letter"] .sc-emblem > i:nth-child(1)::after{content:'Botanica nuptialis';position:absolute;left:10%;bottom:14%;
+  font:italic 400 17px/1 'Cormorant Garamond',serif;color:#3a4031;border-top:1px solid #d6cfbb;padding-top:8px;right:10%;}
+body[data-template="botanical-letter"] .sc-emblem > i:nth-child(2){left:36%;top:22%;width:28%;height:52%;background:#6b7a55;
+  -webkit-mask:var(--sc-orn) center/contain no-repeat;mask:var(--sc-orn) center/contain no-repeat;}
+body[data-template="botanical-letter"] .sc-emblem > i:nth-child(3){right:-6%;top:-8%;width:24%;aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle,#e7c9bf 0 30%,#d9a79a 31% 60%,transparent 61%);opacity:.85;}
+body[data-template="botanical-letter"] .sc-card::after{content:'';position:absolute;right:-8px;top:-10px;width:56px;height:18px;
+  background:rgba(220,206,170,.6);transform:rotate(12deg);}              /* 一截紙膠帶 */
+body[data-template="botanical-letter"] .sc-frame{transform:rotate(-2deg);box-shadow:0 16px 30px -18px rgba(0,0,0,.5);}
+
+/* ------------------------------------------------------------
+   Secret Garden 秘密花園
+   紙雕感的綠籬、藤蔓、野花、蝴蝶
+------------------------------------------------------------ */
+body[data-template="secret-garden"][data-lobby="scene"]{
+  --sc-page:radial-gradient(120% 70% at 50% 0%,#f8f6ec,#f3f1e8 55%,#e8ecdc);
+  --sc-kicker:"Come find us in the garden";
+  --sc-orn:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 40'><path d='M24 20C18 6 4 2 2 10C0 18 12 22 24 20ZM24 20C30 6 44 2 46 10C48 18 36 22 24 20ZM24 20C16 24 8 34 14 37C20 40 24 30 24 20ZM24 20C32 24 40 34 34 37C28 40 24 30 24 20Z'/><rect x='23' y='10' width='2' height='22' rx='1'/></svg>");
+  --sc-card:rgba(252,252,246,.9); --sc-card-line:#d3d8c6; --sc-card-radius:14px;
+  --sc-card-shadow:0 2px 0 rgba(255,255,255,.8) inset,0 20px 34px -26px rgba(40,60,30,.5);
+  --sc-band:
+    radial-gradient(10px 7px at 30% 40%,rgba(143,176,110,.5) 55%,transparent 60%) 0 0/23px 19px,
+    radial-gradient(8px 11px at 70% 20%,rgba(95,127,72,.55) 55%,transparent 60%) 5px 3px/29px 31px,
+    radial-gradient(12px 8px at 50% 70%,rgba(120,156,92,.4) 55%,transparent 60%) 11px 7px/37px 27px,
+    linear-gradient(180deg,#48653a,#34492b);
+  --sc-frame-radius:50% 50% 8px 8px / 36% 36% 8px 8px; --sc-frame-edge:#f3efe0;
+}
+/* hero：上緣垂下來的一排綠籬（紙雕的層次：深、淺兩層，各自錯開、往下垂一點） */
+body[data-template="secret-garden"] .sc-hero-art > i:nth-child(1),
+body[data-template="secret-garden"] .sc-hero-art > i:nth-child(2){left:-2%;right:-2%;top:0;height:clamp(80px,14vh,130px);
+  background:
+    radial-gradient(34px 28px at 50% 45%,#5f7f48 96%,transparent 100%) 0 100%/72px 70% repeat-x,
+    radial-gradient(26px 22px at 12% 70%,#6f8f55 96%,transparent 100%) 0 100%/72px 70% repeat-x,
+    radial-gradient(24px 20px at 86% 72%,#4e6b3c 96%,transparent 100%) 0 100%/72px 70% repeat-x,
+    linear-gradient(180deg,#48653a,#4e6b3c 45%,transparent 46%);
+  filter:drop-shadow(0 8px 8px rgba(40,60,30,.28));}
+body[data-template="secret-garden"] .sc-hero-art > i:nth-child(2){top:14px;background-position:36px 100%,36px 100%,36px 100%,0 0;
+  filter:brightness(1.22) drop-shadow(0 6px 6px rgba(40,60,30,.22));z-index:-1;}
+/* 兩隻蝴蝶，慢慢飄 */
+body[data-template="secret-garden"] .sc-hero-art > i:nth-child(3){left:18%;top:34%;width:30px;height:24px;background:#9b8ab8;
+  -webkit-mask:var(--sc-orn) center/contain no-repeat;mask:var(--sc-orn) center/contain no-repeat;
+  animation:sc-flutter 7s ease-in-out infinite;}
+body[data-template="secret-garden"] .sc-hero-art > i:nth-child(3)::after{content:'';position:absolute;left:220%;top:120%;width:80%;height:80%;}
+@keyframes sc-flutter{0%,100%{transform:translate(0,0) scaleX(1);}25%{transform:translate(30px,-18px) scaleX(.7);}
+  50%{transform:translate(60px,4px) scaleX(1);}75%{transform:translate(24px,16px) scaleX(.75);}}
+/* 主視覺：一道爬滿花的拱，裡面是光 */
+body[data-template="secret-garden"] .sc-emblem{aspect-ratio:3/4;width:clamp(140px,18vw,190px);}
+body[data-template="secret-garden"] .sc-emblem > i:nth-child(1){inset:0;border-radius:50% 50% 6px 6px / 38% 38% 6px 6px;
+  background:radial-gradient(60% 50% at 50% 55%,#fffbe8,#e4ecd0 70%,#b9cc9c);
+  box-shadow:0 0 0 8px #5f7f48,0 0 0 9px rgba(255,255,255,.4),0 20px 30px -18px rgba(40,60,30,.6);}
+body[data-template="secret-garden"] .sc-emblem > i:nth-child(2){inset:-14px;border-radius:50% 50% 0 0 / 38% 38% 0 0;
+  background:
+    radial-gradient(circle,#e9c7d6 0 4px,transparent 5px) 0 0/34px 30px,
+    radial-gradient(circle,#f6e9b8 0 3px,transparent 4px) 17px 15px/34px 30px;
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 16px),#000 calc(100% - 15px));
+  mask:radial-gradient(farthest-side,transparent calc(100% - 16px),#000 calc(100% - 15px));}
+body[data-template="secret-garden"] .sc-emblem > i:nth-child(3){left:50%;bottom:10%;width:30px;height:24px;margin-left:-15px;background:#9b8ab8;
+  -webkit-mask:var(--sc-orn) center/contain no-repeat;mask:var(--sc-orn) center/contain no-repeat;opacity:.9;}
+
+/* ------------------------------------------------------------
+   Spring Orangerie 春日溫室
+   玻璃、花影、斜射的陽光、半透明材質
+------------------------------------------------------------ */
+body[data-template="spring-orangerie"][data-lobby="scene"]{
+  --sc-page:linear-gradient(180deg,#fbfbf6,#f0f4ec);
+  --sc-kicker:"Our story begins here";
+  --sc-orn:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><path d='M20 2C28 10 28 22 20 38C12 22 12 10 20 2Z'/><path d='M20 38C22 28 30 22 38 22C34 30 28 36 20 38ZM20 38C18 28 10 22 2 22C6 30 12 36 20 38Z' opacity='.7'/></svg>");
+  --sc-card:rgba(255,255,255,.58); --sc-card-line:rgba(255,255,255,.9); --sc-card-radius:18px;
+  --sc-card-blur:blur(14px) saturate(1.2);
+  --sc-card-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 24px 40px -28px rgba(46,90,70,.45);
+  --sc-band:
+    linear-gradient(115deg,transparent 30%,rgba(255,244,214,.35) 45%,transparent 60%),
+    repeating-linear-gradient(90deg,transparent 0 calc(20% - 2px),rgba(255,255,255,.35) calc(20% - 2px) 20%),
+    linear-gradient(180deg,#6f9a86,#4f7a66);
+  --sc-frame-radius:50% 50% 16px 16px / 30% 30% 16px 16px; --sc-frame-edge:rgba(255,255,255,.75);
+}
+/* hero：溫室的玻璃窗格 ＋ 斜射的光 ＋ 慢慢晃的葉影 */
+body[data-template="spring-orangerie"] .sc-hero-art > i:nth-child(1){inset:0;opacity:.6;
+  background:
+    repeating-linear-gradient(90deg,transparent 0 calc(16.66% - 3px),rgba(79,122,102,.22) calc(16.66% - 3px) 16.66%),
+    repeating-linear-gradient(0deg,transparent 0 calc(25% - 3px),rgba(79,122,102,.18) calc(25% - 3px) 25%);
+  -webkit-mask:radial-gradient(80% 70% at 50% 45%,transparent 30%,#000 75%);mask:radial-gradient(80% 70% at 50% 45%,transparent 30%,#000 75%);}
+body[data-template="spring-orangerie"] .sc-hero-art > i:nth-child(2){inset:-20%;
+  background:linear-gradient(118deg,transparent 32%,rgba(255,238,200,.55) 42%,rgba(255,244,220,.3) 50%,transparent 60%);
+  animation:sc-sunbeam 9s ease-in-out infinite alternate;}
+@keyframes sc-sunbeam{to{transform:translateX(4%);opacity:.75;}}
+body[data-template="spring-orangerie"] .sc-hero-art > i:nth-child(3){right:-6%;top:-4%;width:min(48vw,460px);aspect-ratio:1;opacity:.14;filter:blur(2.5px);
+  background:#2e4a3e;
+  -webkit-mask:var(--sc-orn) 0 0/92px 92px,var(--sc-orn) 46px 46px/70px 70px;mask:var(--sc-orn) 0 0/92px 92px,var(--sc-orn) 46px 46px/70px 70px;
+  transform:rotate(-18deg);transform-origin:top right;animation:sc-sway 8s ease-in-out infinite;}
+@keyframes sc-sway{50%{transform:rotate(-13deg);}}
+/* 主視覺：玻璃罩裡的一朵花 */
+body[data-template="spring-orangerie"] .sc-emblem > i:nth-child(1){inset:4%;border-radius:50% 50% 12% 12% / 60% 60% 12% 12%;
+  background:
+    radial-gradient(30% 20% at 32% 22%,rgba(255,255,255,.95),transparent 70%),
+    linear-gradient(180deg,rgba(255,255,255,.55),rgba(220,236,226,.35));
+  border:1px solid rgba(255,255,255,.95);box-shadow:inset 0 0 30px rgba(159,191,168,.35),0 26px 40px -26px rgba(46,90,70,.6);}
+body[data-template="spring-orangerie"] .sc-emblem > i:nth-child(2){left:38%;top:26%;width:24%;height:50%;background:#4f7a66;
+  -webkit-mask:var(--sc-orn) center/contain no-repeat;mask:var(--sc-orn) center/contain no-repeat;}
+body[data-template="spring-orangerie"] .sc-emblem > i:nth-child(3){left:10%;right:10%;bottom:0;height:9%;border-radius:40%;
+  background:linear-gradient(180deg,#e7cfae,#caa981);}
+
+/* ------------------------------------------------------------
+   Night Sky 現代星空（大廳是深色的）
+   星塵、月亮、流星、光點；玻璃感的卡片
+------------------------------------------------------------ */
+body[data-template="night-sky"][data-lobby="scene"]{
+  --ink:#ece9f6; --ink-soft:#a9a8c4; --ink-rgb:236,233,246; --surface-rgb:20,26,51;
+  --line:rgba(236,233,246,.18); --line-soft:rgba(236,233,246,.1); --surface:#141a33;
+  --on-ink:#0b1024; --ink-hover:#ffffff; --ink-active:#d8d6ea;
+  --primary:#d8c690; --primary-deep:#d8c690; --bg1:#0b1024; --bg2:#070b1a; --card:#141a33;
+  --sc-page:
+    radial-gradient(1px 1px at 20px 30px,rgba(255,255,255,.7),transparent) 0 0/120px 110px,
+    radial-gradient(1px 1px at 80px 70px,rgba(255,255,255,.45),transparent) 0 0/150px 140px,
+    radial-gradient(1.5px 1.5px at 50px 100px,rgba(255,244,210,.55),transparent) 0 0/210px 190px,
+    radial-gradient(90% 60% at 70% 0%,#1c2450,transparent 70%),
+    linear-gradient(180deg,#0b1024,#070b1a);
+  --sc-kicker:"Written in the stars";
+  --sc-accent:#d8c690; --sc-gold:#d8c690;
+  --sc-card:rgba(30,38,76,.5); --sc-card-line:rgba(236,233,246,.16); --sc-card-radius:16px;
+  --sc-card-blur:blur(12px); --sc-card-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 24px 40px -24px rgba(0,0,0,.7);
+  --sc-band:radial-gradient(60% 80% at 30% 40%,rgba(120,110,200,.25),transparent 70%),linear-gradient(180deg,#141c3a,#0b1024);
+  --sc-band-ink:#ece9f6;
+  --sc-frame-radius:50%; --sc-frame-edge:rgba(216,198,144,.6);
+}
+body[data-template="night-sky"][data-lobby="scene"] .lc-modal-card,
+body[data-template="night-sky"][data-lobby="scene"] .gate-card{background:#141a33;}
+body[data-template="night-sky"] .sc-frame{aspect-ratio:1;}
+/* hero：月亮、一顆流星、慢慢閃的星 */
+body[data-template="night-sky"] .sc-hero-art > i:nth-child(1){right:12%;top:12%;width:clamp(60px,9vw,110px);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 36% 36%,#fffbe8,#e9e2c4 60%,#cfc6a2);
+  box-shadow:0 0 60px rgba(255,244,210,.35),0 0 140px rgba(255,244,210,.15);
+  -webkit-mask:radial-gradient(circle at 72% 30%,transparent 42%,#000 44%);mask:radial-gradient(circle at 72% 30%,transparent 42%,#000 44%);}
+body[data-template="night-sky"] .sc-hero-art > i:nth-child(2){left:10%;top:18%;width:160px;height:1.5px;
+  background:linear-gradient(90deg,transparent,#fff);transform:rotate(-24deg);opacity:0;
+  animation:sc-meteor 7s ease-in 2s infinite;}
+@keyframes sc-meteor{0%{opacity:0;transform:rotate(-24deg) translateX(0);}4%{opacity:1;}14%{opacity:0;transform:rotate(-24deg) translateX(260px);}100%{opacity:0;}}
+body[data-template="night-sky"] .sc-hero-art > i:nth-child(3){inset:0;
+  background:
+    radial-gradient(2px 2px at 15% 60%,#fff,transparent),radial-gradient(2px 2px at 82% 70%,#fff,transparent),
+    radial-gradient(1.5px 1.5px at 30% 25%,#fff,transparent),radial-gradient(1.5px 1.5px at 66% 20%,#fff,transparent);
+  animation:sc-twinkle 3.6s ease-in-out infinite;}
+@keyframes sc-twinkle{50%{opacity:.35;}}
+/* 主視覺：開場那一張星圖（外環 ＋ 心形星座），縮成首頁的裝飾 */
+body[data-template="night-sky"] .sc-emblem > i:nth-child(1){inset:0;border-radius:50%;border:1px solid rgba(216,198,144,.5);
+  box-shadow:inset 0 0 0 7px transparent,inset 0 0 0 8px rgba(216,198,144,.25);}
+body[data-template="night-sky"] .sc-emblem > i:nth-child(2){inset:0;border-radius:50%;
+  background:repeating-conic-gradient(rgba(216,198,144,.55) 0 .4deg,transparent .4deg 5deg);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));
+  mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));}
+body[data-template="night-sky"] .sc-emblem > i:nth-child(3){inset:24%;
+  background:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='190 186 220 216'><path d='M300 392L246 342L202 286L200 232L236 196L276 204L300 240L324 204L364 196L400 232L398 286L354 342Z' fill='none' stroke='%23d8c690' stroke-width='2.4'/><g fill='%23fff'><circle cx='300' cy='392' r='5'/><circle cx='246' cy='342' r='4'/><circle cx='202' cy='286' r='4'/><circle cx='200' cy='232' r='4'/><circle cx='236' cy='196' r='4'/><circle cx='276' cy='204' r='4'/><circle cx='324' cy='204' r='4'/><circle cx='364' cy='196' r='4'/><circle cx='400' cy='232' r='4'/><circle cx='398' cy='286' r='4'/><circle cx='354' cy='342' r='4'/></g><circle cx='300' cy='240' r='7' fill='%23fff6d8'/></svg>") center/contain no-repeat;
+  filter:drop-shadow(0 0 6px rgba(255,236,170,.6));}
+body[data-template="night-sky"] .sc-hero .sc-names{font-weight:300;text-shadow:0 0 30px rgba(160,150,255,.35);}
+body[data-template="night-sky"] .sc-kicker .cn,body[data-template="night-sky"] .sc-date{letter-spacing:.5em;}
+
+/* ------------------------------------------------------------
+   French Manor 法式莊園
+   石灰岩、圓拱、鍛鐵欄杆、黃楊綠
+------------------------------------------------------------ */
+body[data-template="french-manor"][data-lobby="scene"]{
+  --sc-page:
+    repeating-linear-gradient(0deg,transparent 0 58px,rgba(120,104,84,.1) 58px 59px),
+    repeating-linear-gradient(90deg,transparent 0 118px,rgba(120,104,84,.07) 118px 119px),
+    linear-gradient(180deg,#f4efe7,#ece5d9);
+  --sc-kicker:"Please join us at the manor";
+  --sc-orn:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 48'><path d='M4 48V20A16 16 0 0 1 36 20V48H31V20A11 11 0 0 0 9 20V48Z'/><path d='M20 9L22.5 13H17.5Z'/><rect x='19' y='20' width='2' height='28'/><rect x='9' y='31' width='22' height='2'/></svg>");
+  --sc-accent:#6b5a45; --sc-gold:#2f3336;
+  --sc-card:#fcfaf6; --sc-card-line:#dcd3c4;
+  --sc-card-shadow:0 0 0 6px #fcfaf6,0 0 0 7px #dcd3c4,0 24px 40px -30px rgba(60,50,40,.55);
+  --sc-band:
+    repeating-linear-gradient(90deg,transparent 0 22px,rgba(0,0,0,.28) 22px 25px),
+    linear-gradient(180deg,#5f6e56,#46533f);
+  --sc-frame-radius:50% 50% 0 0 / 36% 36% 0 0; --sc-frame-edge:#efe8dc;
+}
+body[data-template="french-manor"] .sc-hero .sc-names{font-weight:400;letter-spacing:.02em;}
+/* hero：兩側石柱、底部一排鍛鐵欄杆與黃楊綠籬 */
+body[data-template="french-manor"] .sc-hero-art > i:nth-child(1),
+body[data-template="french-manor"] .sc-hero-art > i:nth-child(2){top:0;bottom:0;width:clamp(28px,5vw,64px);
+  background:
+    repeating-linear-gradient(0deg,transparent 0 48px,rgba(120,104,84,.25) 48px 49px),
+    linear-gradient(90deg,#e6ddcd,#f3ede3 45%,#d9cfbd);
+  box-shadow:0 0 30px rgba(60,50,40,.12);}
+body[data-template="french-manor"] .sc-hero-art > i:nth-child(1){left:clamp(12px,4vw,56px);}
+body[data-template="french-manor"] .sc-hero-art > i:nth-child(2){right:clamp(12px,4vw,56px);}
+body[data-template="french-manor"] .sc-hero-art > i:nth-child(3){left:0;right:0;bottom:0;height:clamp(70px,13vh,120px);
+  background:
+    radial-gradient(circle at 50% 30%,transparent 0 9px,#2f3336 9.5px 11px,transparent 11.5px) 0 0/34px 40px repeat-x,
+    linear-gradient(0deg,transparent 30%,#2f3336 30% 32%,transparent 32% 88%,#2f3336 88% 91%,transparent 91%),
+    repeating-linear-gradient(90deg,transparent 0 15px,#2f3336 15px 17px),
+    linear-gradient(0deg,#56663f 0 34%,transparent 34%);
+  opacity:.85;}
+/* 主視覺：一扇圓拱窗，鍛鐵窗花 */
+body[data-template="french-manor"] .sc-emblem{aspect-ratio:3/4;width:clamp(130px,16vw,180px);}
+body[data-template="french-manor"] .sc-emblem > i:nth-child(1){inset:-10px;border-radius:50% 50% 0 0 / 38% 38% 0 0;
+  background:repeating-conic-gradient(from -90deg at 50% 38%,#ebe3d5 0 8deg,#d8ccb8 8deg 8.6deg);}
+body[data-template="french-manor"] .sc-emblem > i:nth-child(2){inset:0;border-radius:50% 50% 0 0 / 38% 38% 0 0;
+  background:radial-gradient(60% 50% at 50% 40%,#fbf7ec,#dfe6dc 70%,#b9c7b0);}
+body[data-template="french-manor"] .sc-emblem > i:nth-child(3){inset:0;border-radius:50% 50% 0 0 / 38% 38% 0 0;
+  background:
+    radial-gradient(circle at 50% 38%,transparent 0 22%,#2f3336 22.5% 24%,transparent 24.5%),
+    linear-gradient(90deg,transparent calc(50% - 1.5px),#2f3336 calc(50% - 1.5px) calc(50% + 1.5px),transparent calc(50% + 1.5px)),
+    linear-gradient(0deg,transparent 30%,#2f3336 30% 31.5%,transparent 31.5% 62%,#2f3336 62% 63.5%,transparent 63.5%),
+    repeating-conic-gradient(from -90deg at 50% 38%,transparent 0 29deg,#2f3336 29deg 30deg);
+  -webkit-mask:linear-gradient(#000,#000);mask:linear-gradient(#000,#000);
+  box-shadow:inset 0 0 0 3px #2f3336;}
+
+/* ------------------------------------------------------------
+   Morning Window 晨光房間
+   亞麻、木頭、窗光、桌上的花瓶與信
+------------------------------------------------------------ */
+body[data-template="morning-window"][data-lobby="scene"]{
+  --sc-page:
+    repeating-linear-gradient(0deg,rgba(150,120,90,.03) 0 1px,transparent 1px 3px),
+    linear-gradient(180deg,#fbf8f2,#f4ede2);
+  --sc-kicker:"Good morning, and welcome";
+  --sc-orn:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><path d='M4 4H36V36H4ZM7 7V18.5H18.5V7ZM21.5 7V18.5H33V7ZM7 21.5V33H18.5V21.5ZM21.5 21.5V33H33V21.5Z' fill-rule='evenodd'/></svg>");
+  --sc-card:#fffdf9; --sc-card-line:#e7ddcf; --sc-card-radius:4px;
+  --sc-card-shadow:0 24px 40px -30px rgba(120,90,60,.45);
+  --sc-band:
+    linear-gradient(118deg,transparent 30%,rgba(255,250,236,.35) 42%,transparent 58%),
+    repeating-linear-gradient(90deg,rgba(0,0,0,.05) 0 2px,transparent 2px 9px),
+    linear-gradient(180deg,#b89c7c,#9a7b5b);
+  --sc-frame-edge:#f7f1e6;
+}
+/* hero：窗格的光斜斜落在牆上，兩側垂著紗簾 */
+body[data-template="morning-window"] .sc-hero-art > i:nth-child(1){left:18%;top:-6%;width:min(52vw,560px);aspect-ratio:3/4;
+  transform:skewX(-14deg);opacity:.7;filter:blur(6px);
+  background:
+    linear-gradient(90deg,transparent calc(50% - 6px),rgba(214,196,170,.5) calc(50% - 6px) calc(50% + 6px),transparent calc(50% + 6px)),
+    linear-gradient(0deg,transparent calc(50% - 6px),rgba(214,196,170,.5) calc(50% - 6px) calc(50% + 6px),transparent calc(50% + 6px)),
+    radial-gradient(90% 90% at 50% 50%,rgba(255,250,232,.95),rgba(255,246,222,.5));
+  animation:sc-sunbeam 12s ease-in-out infinite alternate;}
+body[data-template="morning-window"] .sc-hero-art > i:nth-child(2),
+body[data-template="morning-window"] .sc-hero-art > i:nth-child(3){top:0;bottom:0;width:clamp(40px,10vw,140px);
+  background:repeating-linear-gradient(90deg,rgba(236,228,212,.75) 0,rgba(250,246,238,.9) 12px,rgba(226,216,198,.75) 24px);}
+body[data-template="morning-window"] .sc-hero-art > i:nth-child(2){left:0;}
+body[data-template="morning-window"] .sc-hero-art > i:nth-child(3){right:0;}
+/* 主視覺：一只花瓶與一枝花 */
+body[data-template="morning-window"] .sc-emblem{aspect-ratio:3/4;width:clamp(120px,15vw,160px);}
+body[data-template="morning-window"] .sc-emblem > i:nth-child(1){left:28%;right:28%;bottom:0;height:42%;border-radius:40% 40% 18% 18% / 30% 30% 12% 12%;
+  background:linear-gradient(90deg,#c9d6db,#eef3f4 40%,#b7c7cd);box-shadow:0 14px 20px -14px rgba(80,60,40,.45);}
+body[data-template="morning-window"] .sc-emblem > i:nth-child(2){left:48%;width:2px;bottom:36%;height:46%;background:#8a9a6b;transform:rotate(-6deg);transform-origin:bottom;}
+body[data-template="morning-window"] .sc-emblem > i:nth-child(3){left:32%;top:4%;width:36%;aspect-ratio:1;border-radius:50%;
+  background:
+    radial-gradient(circle at 50% 50%,#e2b35a 0 14%,transparent 15%),
+    conic-gradient(#f3e3d3 0 10%,#ead2bd 10% 20%,#f3e3d3 20% 30%,#ead2bd 30% 40%,#f3e3d3 40% 50%,#ead2bd 50% 60%,#f3e3d3 60% 70%,#ead2bd 70% 80%,#f3e3d3 80% 90%,#ead2bd 90%);
+  -webkit-mask:radial-gradient(circle,#000 62%,transparent 64%);mask:radial-gradient(circle,#000 62%,transparent 64%);}
+body[data-template="morning-window"] .sc-frame::after{content:'';position:absolute;inset:8px;pointer-events:none;
+  background:
+    linear-gradient(90deg,transparent calc(50% - 3px),#f7f1e6 calc(50% - 3px) calc(50% + 3px),transparent calc(50% + 3px)),
+    linear-gradient(0deg,transparent calc(50% - 3px),#f7f1e6 calc(50% - 3px) calc(50% + 3px),transparent calc(50% + 3px));}
+
+/* ------------------------------------------------------------
+   Midnight Chapel 午夜教堂（大廳是深色的）
+   石材、彩繪玻璃、燭台、古金
+------------------------------------------------------------ */
+body[data-template="midnight-chapel"][data-lobby="scene"]{
+  --ink:#f1e4c8; --ink-soft:#b5a894; --ink-rgb:241,228,200; --surface-rgb:30,24,32;
+  --line:rgba(241,228,200,.18); --line-soft:rgba(241,228,200,.1); --surface:#1e1820;
+  --on-ink:#120f16; --ink-hover:#fff6e0; --ink-active:#d8c8a8;
+  --primary:#c8a45a; --primary-deep:#c8a45a; --bg1:#120f16; --bg2:#0b090e; --card:#1e1820;
+  --sc-page:
+    radial-gradient(60% 40% at 50% 0%,rgba(200,164,90,.1),transparent 70%),
+    repeating-linear-gradient(0deg,transparent 0 44px,rgba(0,0,0,.35) 44px 46px),
+    repeating-linear-gradient(90deg,transparent 0 88px,rgba(0,0,0,.25) 88px 90px),
+    linear-gradient(180deg,#1b1620,#0f0c13);
+  --sc-kicker:"By candlelight, we gather";
+  --sc-orn:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><circle cx='20' cy='11' r='8'/><circle cx='11' cy='22' r='8'/><circle cx='29' cy='22' r='8'/><rect x='18' y='18' width='4' height='22'/></svg>");
+  --sc-accent:#c8a45a; --sc-gold:#c8a45a;
+  --sc-card:rgba(34,27,38,.85); --sc-card-line:rgba(200,164,90,.28);
+  --sc-card-shadow:0 0 0 1px rgba(0,0,0,.5),0 24px 40px -24px rgba(0,0,0,.8);
+  --sc-band:
+    radial-gradient(40% 60% at 20% 80%,rgba(255,190,110,.18),transparent 70%),
+    radial-gradient(40% 60% at 80% 80%,rgba(255,190,110,.14),transparent 70%),
+    linear-gradient(180deg,#2a1a24,#140e14);
+  --sc-band-ink:#f1e4c8;
+  --sc-frame:polygon(0 100%,0 42%,1.2% 35%,4% 27%,8.5% 20%,14.5% 13.5%,22% 8%,30.5% 4%,40% 1.2%,50% 0,60% 1.2%,69.5% 4%,78% 8%,85.5% 13.5%,91.5% 20%,96% 27%,98.8% 35%,100% 42%,100% 100%);
+  --sc-frame-edge:#c8a45a;
+}
+body[data-template="midnight-chapel"][data-lobby="scene"] .lc-modal-card,
+body[data-template="midnight-chapel"][data-lobby="scene"] .gate-card{background:#1e1820;}
+body[data-template="midnight-chapel"] .sc-kicker .en{font-family:'UnifrakturMaguntia','Cormorant Garamond',serif;font-style:normal;}
+body[data-template="midnight-chapel"] .sc-hero .sc-names{letter-spacing:.1em;text-shadow:0 0 28px rgba(255,190,110,.3);}
+/* hero：兩側的燭光，一明一暗地晃 */
+body[data-template="midnight-chapel"] .sc-hero-art > i:nth-child(1),
+body[data-template="midnight-chapel"] .sc-hero-art > i:nth-child(2){bottom:-10%;width:min(50vw,520px);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,196,120,.3),rgba(255,160,70,.08) 40%,transparent 68%);
+  animation:sc-candle 3.2s ease-in-out infinite;}
+body[data-template="midnight-chapel"] .sc-hero-art > i:nth-child(1){left:-12%;}
+body[data-template="midnight-chapel"] .sc-hero-art > i:nth-child(2){right:-12%;animation-delay:-1.4s;animation-duration:2.7s;}
+@keyframes sc-candle{50%{opacity:.7;transform:scale(1.04);}}
+body[data-template="midnight-chapel"] .sc-hero-art > i:nth-child(3){left:0;right:0;top:0;height:40%;
+  background:radial-gradient(40% 70% at 50% 0%,rgba(80,90,160,.18),transparent 70%);}
+/* 主視覺：一扇發光的玫瑰窗 */
+body[data-template="midnight-chapel"] .sc-emblem > i:nth-child(1){inset:0;border-radius:50%;
+  background:
+    radial-gradient(circle,#1a1420 0 13%,transparent 13.5%),
+    radial-gradient(circle,transparent 0 30%,#1a1420 30.5% 33%,transparent 33.5% 64%,#1a1420 64.5% 68%,transparent 68.5%),
+    repeating-conic-gradient(from 11.25deg,#1a1420 0 1.6deg,transparent 1.6deg 22.5deg),
+    conic-gradient(#23407a,#5e1624,#1d3563,#2a5a4c,#23407a,#4a2a6a,#8a6a2a,#5e1624,#23407a);
+  box-shadow:0 0 0 6px #3a3440,0 0 0 8px #c8a45a,0 0 60px rgba(120,120,220,.35),0 0 120px rgba(200,164,90,.2);
+  animation:sc-rose 6s ease-in-out infinite;}
+@keyframes sc-rose{50%{filter:brightness(1.18) saturate(1.1);}}
+body[data-template="midnight-chapel"] .sc-emblem > i:nth-child(2){inset:36%;border-radius:50%;
+  background:radial-gradient(circle,#fff2cc,#c8a45a 60%,#7a5a2a);box-shadow:0 0 20px rgba(255,220,150,.6);}

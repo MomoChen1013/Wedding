@@ -76,10 +76,83 @@ export const TEMPLATES = {
      內容是刺繡插圖 ＋ 捲動編排（見 css/lobby-tapestry.css 開頭的說明） */
   'tapestry':      { label:'Tapestry 中古刺繡', lobbyFile:'lobby-tapestry.html',
                      lobbyCss:['/css/lobby-tapestry.css'],
-                     lobbyJs:['/js/lobby-motion.js'],
+                     lobbyJs:['/js/lobby-motion.js'], opening:'envelope',
                      fonts:['https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
+  /* ---- 場景版型：七個版型共用一副大廳骨架（lobby-scene.html），
+     lobbyKey 是那副骨架的名字（寫在 <body data-lobby>），長相由
+     css/lobby-scene.css 依 data-template 換。每一個都有自己的預設開場。 ---- */
+  /* 植物信箋：仿棉紙、描圖紙、乾燥花；植物標本式手繪與標本標籤 */
+  'botanical-letter': { label:'Botanical Letter 植物信箋', lobbyFile:'lobby-scene.html', lobbyKey:'scene',
+                     lobbyCss:['/css/lobby-scene.css'], lobbyJs:['/js/lobby-motion.js'], opening:'ribbon',
+                     fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
+  /* 秘密花園：紙雕感的野花、藤蔓、蝴蝶；從花園入口推門進去 */
+  'secret-garden': { label:'Secret Garden 秘密花園', lobbyFile:'lobby-scene.html', lobbyKey:'scene',
+                     lobbyCss:['/css/lobby-scene.css'], lobbyJs:['/js/lobby-motion.js'], opening:'door',
+                     fonts:['https://fonts.googleapis.com/css2?family=Italiana&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
+  /* 春日溫室：玻璃、花影、斜射的陽光；開場是一朵花慢慢開 */
+  'spring-orangerie': { label:'Spring Orangerie 春日溫室', lobbyFile:'lobby-scene.html', lobbyKey:'scene',
+                     lobbyCss:['/css/lobby-scene.css'], lobbyJs:['/js/lobby-motion.js'], opening:'bloom',
+                     fonts:['https://fonts.googleapis.com/css2?family=Marcellus&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
+  /* 現代星空：星塵、月亮、流星；開場的星圖最後縮成首頁的裝飾 */
+  'night-sky':   { label:'Night Sky 現代星空', lobbyFile:'lobby-scene.html', lobbyKey:'scene',
+                     lobbyCss:['/css/lobby-scene.css'], lobbyJs:['/js/lobby-motion.js'], opening:'stars',
+                     fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Josefin+Sans:wght@300;400&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
+  /* 法式莊園：石牆、拱門、鍛鐵與花園；推開一扇木門進去 */
+  'french-manor': { label:'French Manor 法式莊園', lobbyFile:'lobby-scene.html', lobbyKey:'scene',
+                     lobbyCss:['/css/lobby-scene.css'], lobbyJs:['/js/lobby-motion.js'], opening:'door',
+                     fonts:['https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
+  /* 晨光房間：亞麻、木頭、窗光；拉開紗簾，早晨照進來 */
+  'morning-window': { label:'Morning Window 晨光房間', lobbyFile:'lobby-scene.html', lobbyKey:'scene',
+                     lobbyCss:['/css/lobby-scene.css'], lobbyJs:['/js/lobby-motion.js'], opening:'curtain',
+                     fonts:['https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
+  /* 午夜教堂：石材、彩繪玻璃、燭台；一根一根把蠟燭點亮 */
+  'midnight-chapel': { label:'Midnight Chapel 午夜教堂', lobbyFile:'lobby-scene.html', lobbyKey:'scene',
+                     lobbyCss:['/css/lobby-scene.css'], lobbyJs:['/js/lobby-motion.js'], opening:'candle',
+                     fonts:['https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=UnifrakturMaguntia&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
 };
 export const DEFAULT_TEMPLATE = 'classic';
+
+/* ============================================================
+   開場（sites.opening）
+   ------------------------------------------------------------
+   賓客打開大廳的那幾秒 —— 和版型、敘事模組一樣是**獨立的一軸**：
+
+     template     站台長什麼樣子
+     opening      進站那一刻怎麼演（拆信、翻書、推門、點燭……）
+     storyLayout  「我們的故事」那一頁怎麼說
+
+   ・版型可以宣告自己的預設開場（TEMPLATES[x].opening）；
+     sites.opening 有填而且認得就用它，否則用版型的預設，
+     都沒有就是原本的兩句字幕＋簾幕（null）—— 既有站台一律不變。
+   ・任何版型都能用任何開場：骨架裡沒有開場容器的大廳
+     （classic／korean／forest），index.js 會自己補一個。
+   ・和 template 同一個權限層級：不在 firestore.rules 的可更新白名單裡，
+     新人自己改不動，只有我們用 Admin SDK 改得動。
+
+   每一種開場是一支 js/openers/{key}.js ＋ 一份 css/openers/{key}.css，
+   只有大廳載、只載用到的那一種（見 site-context.js）。
+   auto：自己演完就進站的開場（點畫面可以跳過）；
+         其他的都等賓客親手做那個動作，那一下也順便開背景音樂。
+============================================================ */
+export const OPENINGS = {
+  'envelope': { label:'拆信・封蠟' },
+  'book':     { label:'翻頁・古書' },
+  'bloom':    { label:'花朵盛開', auto:true },
+  'curtain':  { label:'窗簾拉開' },
+  'candle':   { label:'燭光點亮' },
+  'stars':    { label:'星圖展開', auto:true },
+  'door':     { label:'門／拱門' },
+  'ribbon':   { label:'拉開絲帶' },
+};
+
+/* 這組新人的開場：sites.opening → 版型預設 → null（原本的字幕＋簾幕）。
+   用 hasOwn 的理由和 templateKey() 一樣 —— 'toString' 不能被當成一種開場，
+   否則會去載一支不存在的 /js/openers/toString.js */
+export function openingKey(name, template) {
+  if (Object.hasOwn(OPENINGS, name)) return name;
+  const t = TEMPLATES[templateKey(template)];
+  return t.opening && Object.hasOwn(OPENINGS, t.opening) ? t.opening : null;
+}
 
 /* 認不得的版型一律落回 classic。
    用 hasOwn 而不是 TEMPLATES[name] —— 'toString'、'__proto__' 這些

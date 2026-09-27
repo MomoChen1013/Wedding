@@ -35,6 +35,7 @@ import {
 import {
   TEMPLATES, templateKey, buildWed,
   STORY_LAYOUTS, storyLayoutKey,
+  OPENINGS, openingKey,
   tplValue, swapTokens, hashtagList,
   pagePublishEntry, pageVisible,
 } from './wed-model.js';
@@ -201,9 +202,13 @@ function applyStoryLayout(name, isStoryPage) {
    ・模板裡的 <script> 用 innerHTML 塞進來不會執行，所以模板不放邏輯，
      照片一律由 common.js 的 applyLobbyPhotos() 依 data-photo 處理 */
 async function swapLobbyLayout(templateKey) {
-  const file = TEMPLATES[templateKey].lobbyFile;
+  const t = TEMPLATES[templateKey];
+  const file = t.lobbyFile;
   if (!file) return;                                   /* Classic 系列不用換 */
-  if (document.body.dataset.lobby === templateKey) return;  /* 已經是對的骨架 */
+  /* 骨架的名字：多數版型一個版型一副骨架（名字＝版型代號），
+     場景版型七個共用一副（lobbyKey:'scene'） */
+  const lobbyKey = t.lobbyKey || templateKey;
+  if (document.body.dataset.lobby === lobbyKey) return;  /* 已經是對的骨架 */
 
   try {
     const res = await fetch(`/${file}`);
@@ -211,7 +216,7 @@ async function swapLobbyLayout(templateKey) {
     const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
     if (!doc.body || !doc.body.children.length) return;
     document.body.innerHTML = doc.body.innerHTML;
-    document.body.dataset.lobby = templateKey;
+    document.body.dataset.lobby = lobbyKey;
   } catch {
     /* 維持 Classic 骨架 */
   }
@@ -335,6 +340,15 @@ async function loadAssets(slug) {
 }
 
 /* ---------- 依序載入 script ---------- */
+/* 掛一份樣式表（已經掛過就跳過：預產頁或前一步可能已經印好了） */
+function addStylesheet(href) {
+  if (document.querySelector(`link[href="${href}"]`)) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = href;
+  document.head.appendChild(link);
+}
+
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     const s = document.createElement('script');
@@ -430,6 +444,12 @@ async function boot() {
      story-chapters.css 有一條在擋時間軸的骨架，晚一步就會閃出來 */
   const storyLayout = applyStoryLayout(site.storyLayout, pageKey === 'exhibition');
 
+  /* 開場：第三軸（見 wed-model.js 的 OPENINGS）。只有大廳演得到，
+     但回傳值每一頁都算 —— window.SITE.opening 講的是這組新人的設定。
+     版面 CSS 越早掛越好：開場要等 index.js 才出現，那之前它得已經載好 */
+  const opening = openingKey(site.opening, template);
+  if (pageKey === 'lobby' && opening) addStylesheet(`/css/openers/${opening}.css`);
+
   /* 大廳再換一次骨架（korean／forest 的版面結構跟 Classic 不同）。
      一定要排在載入 common.js／index.js 之前 —— 那兩支一載入就開始
      抓 DOM，骨架換晚了它們會綁到舊節點上。 */
@@ -451,6 +471,8 @@ async function boot() {
     page: pageKey,
     template,
     storyLayout,
+    opening,
+    openings: OPENINGS,
     data: site,
     pages: PAGES,
     templates: TEMPLATES,
@@ -493,12 +515,14 @@ async function boot() {
      順序仍然要維持：頁面 JS 一載入就會讀 common.js 的全域函式。 */
   try {
     await loadScript('/js/common.js');
-    /* 大廳的動作腳本（版型宣告的 lobbyJs，例如 tapestry 的信封開場）：
+    /* 大廳的動作腳本：版型宣告的 lobbyJs（捲動編排），加上開場那一支。
        要排在 index.js 之前 —— index.js 一載入就決定開場怎麼演，
-       那時候 window.LobbyMotion 必須已經在了。
-       載不到不算致命：index.js 看不到它就退回預設的字幕＋簾幕，內容照樣看得到 */
+       那時候 window.LobbyMotion 與這一種開場都必須已經登記好了。
+       載不到不算致命：index.js 看不到它們就退回預設的字幕＋簾幕，內容照樣看得到 */
     if (pageKey === 'lobby') {
-      for (const src of TEMPLATES[template].lobbyJs || []) {
+      const lobbyJs = [...(TEMPLATES[template].lobbyJs || [])];
+      if (opening) lobbyJs.push('/js/lobby-motion.js', `/js/openers/${opening}.js`);
+      for (const src of new Set(lobbyJs)) {
         try { await loadScript(src); } catch (err) { console.warn('[site]', err.message); }
       }
     }

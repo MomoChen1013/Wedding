@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" data-prerendered="1">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>開場示範</title>
+<!-- ============================================================
+     開場示範：八種開場各自播一次
+     ------------------------------------------------------------
+     開場是獨立的一軸（sites.opening），這一頁把它單獨拿出來看：
+     挑一種開場、挑一個版型（同一種開場在不同版型可以長得不一樣，
+     例如法式莊園的門和秘密花園的門），按「播放」。
+     開場結束後底下露出的是一張示意的首頁，不是真的大廳 ——
+     要看開場接進真的版面，請開 tapestry.html／scene.html。
+
+     網址參數：?o=door&v=french-manor 直接播那一組
+============================================================ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../public/css/common.css">
+<link rel="stylesheet" href="../public/css/index.css">
+<link rel="stylesheet" href="../public/css/openers/envelope.css">
+<link rel="stylesheet" href="../public/css/openers/book.css">
+<link rel="stylesheet" href="../public/css/openers/bloom.css">
+<link rel="stylesheet" href="../public/css/openers/curtain.css">
+<link rel="stylesheet" href="../public/css/openers/candle.css">
+<link rel="stylesheet" href="../public/css/openers/stars.css">
+<link rel="stylesheet" href="../public/css/openers/door.css">
+<link rel="stylesheet" href="../public/css/openers/ribbon.css">
+<style>
+body{padding-top:0;}
+.pv{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
+  padding:40px 20px;text-align:center;background:var(--bg1);color:var(--ink);font-family:'Noto Serif TC',serif;}
+.pv h1{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:clamp(30px,6vw,52px);letter-spacing:.06em;}
+.pv .sub{font-size:13px;letter-spacing:.3em;color:var(--ink-soft);}
+.pv-ctl{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;margin-top:16px;
+  font-family:'Noto Sans TC',sans-serif;font-size:13px;}
+.pv-ctl select,.pv-ctl button{font:inherit;padding:9px 14px;border:1px solid var(--line);background:var(--surface);
+  color:var(--ink);border-radius:2px;cursor:pointer;}
+.pv-ctl button{background:var(--ink);color:var(--on-ink);border-color:var(--ink);letter-spacing:.2em;}
+.pv-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;max-width:720px;width:100%;
+  font-family:'Noto Sans TC',sans-serif;font-size:13px;}
+.pv-list button{padding:12px 10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;}
+.pv-list button b{display:block;font-weight:500;font-size:14px;margin-bottom:2px;}
+.pv-list button span{color:var(--ink-soft);font-size:12px;}
+</style>
+</head>
+<body data-template="tapestry">
+<div class="pv">
+  <div class="sub">OPENING PREVIEW</div>
+  <h1><span id="pvNames">Ginny &amp; One</span></h1>
+  <div class="sub">開場結束後會回到這裡（示意的首頁）</div>
+  <div class="pv-ctl">
+    <label>版型 <select id="pvVariant"></select></label>
+    <button id="pvPlay" type="button">再播一次</button>
+  </div>
+  <div class="pv-list" id="pvList"></div>
+</div>
+
+<script src="demo-data.js"></script>
+<script src="../public/js/lobby-motion.js"></script>
+<script src="../public/js/openers/envelope.js"></script>
+<script src="../public/js/openers/book.js"></script>
+<script src="../public/js/openers/bloom.js"></script>
+<script src="../public/js/openers/curtain.js"></script>
+<script src="../public/js/openers/candle.js"></script>
+<script src="../public/js/openers/stars.js"></script>
+<script src="../public/js/openers/door.js"></script>
+<script src="../public/js/openers/ribbon.js"></script>
+<script>
+/* 與 public/js/wed-model.js 的 OPENINGS／TEMPLATES 對應（示範頁不 import module，手抄一份標籤） */
+const OPENINGS = {
+  envelope:'拆信・封蠟', book:'翻頁・古書', bloom:'花朵盛開', curtain:'窗簾拉開',
+  candle:'燭光點亮', stars:'星圖展開', door:'門／拱門', ribbon:'拉開絲帶',
+};
+const VARIANTS = {
+  'tapestry':'Tapestry 中古刺繡', 'botanical-letter':'Botanical Letter 植物信箋',
+  'secret-garden':'Secret Garden 秘密花園', 'spring-orangerie':'Spring Orangerie 春日溫室',
+  'night-sky':'Night Sky 現代星空', 'french-manor':'French Manor 法式莊園',
+  'morning-window':'Morning Window 晨光房間', 'midnight-chapel':'Midnight Chapel 午夜教堂',
+};
+/* 每個版型的預設開場（對應 TEMPLATES[x].opening） */
+const DEFAULT_OPENING = {
+  'tapestry':'envelope', 'botanical-letter':'ribbon', 'secret-garden':'door', 'spring-orangerie':'bloom',
+  'night-sky':'stars', 'french-manor':'door', 'morning-window':'curtain', 'midnight-chapel':'candle',
+};
+const D = window.DEMO || {};
+const title = (s) => String(s || '').charAt(0) + String(s || '').slice(1).toLowerCase();
+const names = { a: title(D.nameA) || 'Ginny', b: title(D.nameB) || 'One' };
+const q = new URLSearchParams(location.search);
+const sel = document.getElementById('pvVariant');
+for (const [k, v] of Object.entries(VARIANTS)) sel.add(new Option(v, k));
+sel.value = VARIANTS[q.get('v')] ? q.get('v') : 'tapestry';
+let current = OPENINGS[q.get('o')] ? q.get('o') : null;
+
+function applyVariant(){ document.body.dataset.template = sel.value; }
+function play(key){
+  current = key;
+  applyVariant();
+  let host = document.getElementById('opener');
+  if (host) host.remove();
+  host = document.createElement('div');
+  host.id = 'opener';
+  host.className = 'overlay';
+  document.body.appendChild(host);
+  LobbyMotion.opening(host, key, {
+    names, date: D.date || '2026.09.19', variant: sel.value,
+    onOpen(){ console.log('[preview] gesture'); },
+    onReveal(){ console.log('[preview] reveal'); },
+    onDone(){ console.log('[preview] done'); },
+  });
+}
+const list = document.getElementById('pvList');
+for (const [k, v] of Object.entries(OPENINGS)) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  const used = Object.entries(DEFAULT_OPENING).filter(([, o]) => o === k).map(([t]) => VARIANTS[t].split(' ')[0]);
+  b.innerHTML = `<b>${v}</b><span>${used.length ? '預設：' + used.join('、') : '可選'}</span>`;
+  b.addEventListener('click', () => play(k));
+  list.appendChild(b);
+}
+document.getElementById('pvPlay').addEventListener('click', () => play(current || DEFAULT_OPENING[sel.value]));
+sel.addEventListener('change', () => { applyVariant(); play(DEFAULT_OPENING[sel.value]); });
+document.getElementById('pvNames').textContent = `${names.a} & ${names.b}`;
+applyVariant();
+if (current || q.get('v')) play(current || DEFAULT_OPENING[sel.value]);
+</script>
+</body>
+</html>

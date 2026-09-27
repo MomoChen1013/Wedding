@@ -66,6 +66,20 @@
 .intro-skip:hover{color:var(--ink);border-color:var(--ink);}
 .intro-skip[hidden]{display:none;}
 
+/* ---- 版型自己的開場（sites.opening，見 js/lobby-motion.js 與 css/openers/） ----
+   這裡只放每一種開場都一樣的外殼：滿版、蓋在所有東西上面、淡入淡出。
+   裡面長什麼樣子各自寫在 css/openers/{key}.css。 */
+.opener{position:fixed;inset:0;z-index:1001;display:block;overflow:hidden;
+  opacity:0;transition:opacity .7s ease;}
+.opener[hidden]{display:none;}
+.opener.is-ready{opacity:1;}
+.opener.is-fading{opacity:0;transition:opacity .45s ease;pointer-events:none;}
+/* 蓋滿整個開場的透明按鈕：點哪裡都算，鍵盤也按得到 */
+.op-hit{position:absolute;inset:0;z-index:20;width:100%;height:100%;border:none;padding:0;
+  background:transparent;cursor:pointer;-webkit-appearance:none;appearance:none;}
+.op-hit:focus-visible{outline:none;}
+.opener.is-busy .op-hit{pointer-events:none;cursor:default;}
+
 #curtain{display:none;background:transparent;pointer-events:none;}
 .curtain-top{display:none;}
 .curtain-panel{position:absolute;top:0;bottom:0;width:51%;background:var(--bg1);
