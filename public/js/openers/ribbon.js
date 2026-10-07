@@ -16,20 +16,59 @@
   const T = { untie: 900, open: 1300, hold: 1500, leave: 1100 };
   const PULL = 70;   /* 拉多遠（px）算拉開 */
 
+  /* 緞面的布紋：一張真的絲綢掃描（Khronos glTF Sample Assets 的 SpecularSilkPouf，
+     © 2023 Wayfair，CC BY 4.0）的 normal map，打光成灰階之後放在 css/openers/satin-silk.jpg。
+     緞帶的顏色與光澤是程式畫的漸層，布紋用 soft-light 疊上去 —— 所以有真的絲綢紋理，又能動。
+     路徑從這支 script 自己的位置推回去（預覽頁與正式站的根目錄不一樣） */
+  const SCRIPT = document.currentScript && document.currentScript.src;
+  const TEX = SCRIPT ? SCRIPT.replace(/js\/openers\/ribbon\.js.*$/, 'css/openers/satin-silk.jpg') : '/css/openers/satin-silk.jpg';
+
+  /* 蝴蝶結：兩個折起來的圈（看得到圈裡面那一面比較暗）、兩條魚尾剪口的尾巴、中間一個有皺褶的結。
+     每一塊畫兩次：一次是緞面的漸層，一次是布紋（soft-light） */
+  const SHAPES = {
+    tailL: 'M-7 6C-14 22-24 40-38 60L-29 56L-24 66C-12 46-4 26 5 9Z',
+    tailR: 'M7 6C13 24 20 42 30 62L36 55L44 58C30 38 18 22 5 4Z',
+    loopL: 'M-5-5C-22-40-66-46-74-16C-80 8-54 20-22 10C-14 8-8 6-4 6Z',
+    loopLin: 'M-8-2C-24-26-52-30-58-14C-44-22-26-16-9 5Z',
+    loopR: 'M5-5C22-40 66-46 74-16C80 8 54 20 22 10C14 8 8 6 4 6Z',
+    loopRin: 'M8-2C24-26 52-30 58-14C44-22 26-16 9 5Z',
+    knot: 'M-11-10C-4-14 4-14 11-10C14 0 14 6 11 14C4 18-4 18-11 14C-14 6-14 0-11-10Z',
+  };
+  const part = (cls, key, grad) =>
+    `<g class="${cls}"><use href="#rb-${key}" fill="url(#${grad})"/><use class="rb-tex" href="#rb-${key}" fill="url(#rbTex)"/></g>`;
   const BOW = `
-    <svg class="rb-bow" viewBox="-64 -44 128 104" aria-hidden="true">
+    <svg class="rb-bow" viewBox="-80 -52 160 124" aria-hidden="true">
       <defs>
-        <linearGradient id="rbSatin" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" style="stop-color:var(--rb-hi)"/><stop offset=".45" style="stop-color:var(--rb-ribbon)"/>
-          <stop offset="1" style="stop-color:var(--rb-lo)"/>
-        </linearGradient>
+        ${Object.entries(SHAPES).map(([k, d]) => `<path id="rb-${k}" d="${d}"/>`).join('')}
+        <pattern id="rbTex" patternUnits="userSpaceOnUse" width="64" height="22" patternTransform="rotate(-24)">
+          <image href="${TEX}" width="64" height="22" preserveAspectRatio="none"/></pattern>
+        <linearGradient id="rbLoopL" x1="0" y1="0" x2=".35" y2="1">
+          <stop offset="0" style="stop-color:var(--rb-lo)"/><stop offset=".3" style="stop-color:var(--rb-ribbon)"/>
+          <stop offset=".46" style="stop-color:var(--rb-hi)"/><stop offset=".6" style="stop-color:var(--rb-ribbon)"/>
+          <stop offset="1" style="stop-color:var(--rb-lo)"/></linearGradient>
+        <linearGradient id="rbLoopR" x1="1" y1="0" x2=".65" y2="1">
+          <stop offset="0" style="stop-color:var(--rb-lo)"/><stop offset=".3" style="stop-color:var(--rb-ribbon)"/>
+          <stop offset=".46" style="stop-color:var(--rb-hi)"/><stop offset=".6" style="stop-color:var(--rb-ribbon)"/>
+          <stop offset="1" style="stop-color:var(--rb-lo)"/></linearGradient>
+        <linearGradient id="rbIn" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" style="stop-color:var(--rb-deep)"/><stop offset="1" style="stop-color:var(--rb-lo)"/></linearGradient>
+        <linearGradient id="rbTail" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" style="stop-color:var(--rb-lo)"/><stop offset=".4" style="stop-color:var(--rb-hi)"/>
+          <stop offset=".62" style="stop-color:var(--rb-ribbon)"/><stop offset="1" style="stop-color:var(--rb-lo)"/></linearGradient>
+        <radialGradient id="rbKnot" cx=".42" cy=".38" r=".7">
+          <stop offset="0" style="stop-color:var(--rb-hi)"/><stop offset=".55" style="stop-color:var(--rb-ribbon)"/>
+          <stop offset="1" style="stop-color:var(--rb-lo)"/></radialGradient>
+        <filter id="rbSoft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.4"/></filter>
       </defs>
-      <g class="rb-tail rb-tail-l"><path d="M-4 6L-30 50L-19 47L-14 57L3 10Z" fill="url(#rbSatin)"/></g>
-      <g class="rb-loop rb-loop-l"><path d="M0 0C-18-32-60-34-56 0C-60 26-20 28 0 0Z" fill="url(#rbSatin)"/>
-        <path d="M-8-4C-22-20-44-22-46-4" fill="none" style="stroke:var(--rb-lo)" stroke-width="1.4" opacity=".5"/></g>
-      <g class="rb-loop rb-loop-r"><path d="M0 0C18-32 60-34 56 0C60 26 20 28 0 0Z" fill="url(#rbSatin)"/>
-        <path d="M8-4C22-20 44-22 46-4" fill="none" style="stroke:var(--rb-lo)" stroke-width="1.4" opacity=".5"/></g>
-      <ellipse class="rb-knot" cx="0" cy="1" rx="9" ry="11" fill="url(#rbSatin)"/>
+      ${part('rb-tail rb-tail-r', 'tailR', 'rbTail')}
+      ${part('rb-tail rb-tail-l', 'tailL', 'rbTail')}
+      <g class="rb-loop rb-loop-l">${part('', 'loopL', 'rbLoopL')}${part('', 'loopLin', 'rbIn')}
+        <path class="rb-glint" d="M-12-10C-30-34-58-36-64-18" filter="url(#rbSoft)"/></g>
+      <g class="rb-loop rb-loop-r">${part('', 'loopR', 'rbLoopR')}${part('', 'loopRin', 'rbIn')}
+        <path class="rb-glint" d="M12-10C30-34 58-36 64-18" filter="url(#rbSoft)"/></g>
+      <g class="rb-knot">${part('', 'knot', 'rbKnot')}
+        <path class="rb-crease" d="M-6-9C-3-2-3 6-6 13M5-9C3-2 3 6 6 13"/>
+        <path class="rb-glint" d="M-4-8C-1-3-1 4-3 9" filter="url(#rbSoft)"/></g>
     </svg>`;
 
   /* 左扇封面上的一枝壓花（植物圖鑑式的線稿） */
@@ -78,6 +117,14 @@
       ctx.later(ctx.done, tLeave + T.leave);
     }
     LM.hitButton(host, '拉開緞帶，打開邀請函', untie);
+
+    /* 光澤跟著游標走：手一動，緞面上的亮光就跟著滑（手機上沒有游標，就讓它自己慢慢飄） */
+    host.addEventListener('pointermove', (e) => {
+      const r = host.getBoundingClientRect();
+      host.style.setProperty('--rb-lx', (((e.clientX - r.left) / r.width) * 2 - 1).toFixed(3));
+      host.style.setProperty('--rb-ly', (((e.clientY - r.top) / r.height) * 2 - 1).toFixed(3));
+      host.classList.add('is-lit');
+    });
 
     /* 拖曳緞帶尾：跟著手指走一段，過門檻就鬆開，沒到就彈回 */
     const handle = host.querySelector('.rb-handle');

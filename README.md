@@ -226,10 +226,16 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | `candle` | 燭光點亮 | 點一下 → 三根蠟燭一根根亮 | midnight-chapel |
 | `stars` | 星圖展開 | 自己演：星星 → 連線成一顆心 → 名字 | night-sky |
 | `door` | 門／拱門 | 晴朗的早上站在門口，點一下 → 門往內開 → 陽光湧出來、穿過門口。莊園是黑色鍛鐵大門（門後看得到城堡；教堂／刺繡用尖拱版），秘密花園是爬滿植物的牆上一扇白框玻璃門 | secret-garden、french-manor |
-| `ribbon` | 拉開絲帶 | 拖緞帶尾（或點）→ 蝴蝶結鬆開 → 卡片打開 | botanical-letter |
+| `ribbon` | 拉開絲帶 | 拖緞帶尾（或點）→ 蝴蝶結鬆開 → 卡片打開。緞帶疊了一張真的絲綢布紋，光澤跟著游標滑（手機上自己慢慢飄） | botanical-letter |
 
-同一種開場在不同版型可以長得不一樣（門：法式莊園是木門、秘密花園是鍛鐵花園門、
-午夜教堂是尖拱橡木門）。要賓客親手做的開場，那一下也會開始播背景音樂。
+> **緞帶的布紋素材**：`public/css/openers/satin-silk.jpg` 是把一張真的絲綢 normal map
+> 打光成灰階的布紋。原圖是 Khronos [glTF Sample Assets](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/SpecularSilkPouf)
+> 的 SpecularSilkPouf（© 2023 Wayfair, LLC，Eric Chadwick 製作），授權是
+> [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)：可以商用、可以修改，**要標示出處**（就是這一段）。
+> 換成別張緞面材質圖也可以：檔名不變，放一張 128 中灰、可以無縫平鋪的灰階圖就好。
+
+同一種開場在不同版型可以長得不一樣（門：法式莊園是黑色鍛鐵大門、秘密花園是爬滿植物的玻璃門、
+午夜教堂與中古刺繡是尖拱的鍛鐵大門）。要賓客親手做的開場，那一下也會開始播背景音樂。
 每一種開場單獨看：`preview/openings.html`。
 
 **場景版型**：`botanical-letter`、`secret-garden`、`spring-orangerie`、`night-sky`、

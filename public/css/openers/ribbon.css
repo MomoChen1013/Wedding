@@ -2,18 +2,23 @@
    openers/ribbon.css — 開場：拉開絲帶（js/openers/ribbon.js）
    ------------------------------------------------------------
    一張對開的卡片（左右兩扇以外緣為軸），一條緞帶十字綁住、
-   中間一個蝴蝶結。緞帶的光澤是橫過帶寬的漸層 —— 緞面的亮邊在中間。
-   卡片是厚棉紙：暖白、細紋理、毛邊的陰影。
+   中間一個蝴蝶結。卡片是厚棉紙：暖白、細紋理、毛邊的陰影。
+
+   緞帶 = 三層：
+     1. 顏色與橫過帶寬的光澤（漸層；緞面的亮線在中間偏一點）
+     2. 一道沿著帶子長度的寬亮光，跟著游標滑（--rb-lx／--rb-ly；沒有游標就自己慢慢飄）
+     3. 真的絲綢布紋（satin-silk.jpg，用 soft-light 疊上去；順著帶子拉長，像經線）
 ============================================================ */
 .rb-host{
   --rb-w:min(64vw,44vh,360px);
-  --rb-ribbon:#c29a93; --rb-hi:#ecd2cc; --rb-lo:#946b66;   /* 霧玫瑰色的緞帶 */
+  --rb-ribbon:#c29a93; --rb-hi:#f3dfda; --rb-lo:#8f6560; --rb-deep:#6e4a46;   /* 霧玫瑰色的緞帶 */
+  --rb-lx:0; --rb-ly:0;
   --rb-paper:#f8f4ea; --rb-paper-2:#efe8d8; --rb-ink:#4a5040; --rb-accent:#8a6a5a; --rb-flower:#d9a7b0;
   --rb-sprig:#6b7a55;
   background:#e8e1d2;perspective:1600px;
 }
-.rb-host[data-variant="botanical-letter"]{--rb-ribbon:#a9b494;--rb-hi:#dfe6cf;--rb-lo:#7c8a66;--rb-flower:#e2b8a0;}
-.rb-host[data-variant="french-manor"]{--rb-ribbon:#9fb0c0;--rb-hi:#dbe4ec;--rb-lo:#72869a;}
+.rb-host[data-variant="botanical-letter"]{--rb-ribbon:#a9b494;--rb-hi:#e8eedb;--rb-lo:#76845f;--rb-deep:#59654a;--rb-flower:#e2b8a0;}
+.rb-host[data-variant="french-manor"]{--rb-ribbon:#9fb0c0;--rb-hi:#e6edf3;--rb-lo:#6e8296;--rb-deep:#55667a;}
 
 .rb-table{position:absolute;inset:0;
   background:
@@ -74,21 +79,42 @@
 .rb-label b{font-family:'Courier New',monospace;font-weight:400;font-size:calc(var(--rb-w) * .036);letter-spacing:.14em;color:var(--rb-accent);}
 .rb-label span{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:calc(var(--rb-w) * .05);color:var(--rb-ink);line-height:1.3;}
 
-/* 緞帶：一直一橫，光澤在帶子中間 */
+/* 緞帶：一直一橫 */
 .rb-band{position:absolute;z-index:2;transform:translateZ(2px);
-  transition:transform .9s cubic-bezier(.6,0,.4,1),opacity .6s ease .3s;}
-.rb-band-v{left:50%;top:-4%;bottom:-4%;width:calc(var(--rb-w) * .07);margin-left:calc(var(--rb-w) * -.035);
-  background:linear-gradient(90deg,var(--rb-lo),var(--rb-hi) 45%,var(--rb-ribbon) 60%,var(--rb-lo));
-  box-shadow:0 2px 4px rgba(80,50,40,.2);}
-.rb-band-h{top:50%;left:-3%;right:-3%;height:calc(var(--rb-w) * .07);margin-top:calc(var(--rb-w) * -.035);
-  background:linear-gradient(180deg,var(--rb-lo),var(--rb-hi) 45%,var(--rb-ribbon) 60%,var(--rb-lo));
-  box-shadow:0 2px 4px rgba(80,50,40,.2);}
-.rb-bow{position:absolute;left:50%;top:50%;width:calc(var(--rb-w) * .6);margin:calc(var(--rb-w) * -.21) 0 0 calc(var(--rb-w) * -.3);
+  transition:transform .9s cubic-bezier(.6,0,.4,1),opacity .6s ease .3s;
+  box-shadow:0 2px 4px rgba(80,50,40,.22),inset 0 0 0 1px rgba(255,255,255,.08);
+  background-blend-mode:soft-light,screen,multiply,normal;}
+.rb-band-v{left:50%;top:-4%;bottom:-4%;width:calc(var(--rb-w) * .085);margin-left:calc(var(--rb-w) * -.0425);
+  background:
+    url(satin-silk.jpg) 0 0/calc(var(--rb-w) * .07) calc(var(--rb-w) * .26),
+    linear-gradient(180deg,transparent calc(26% + var(--rb-ly) * 24%),rgba(255,251,247,.6) calc(40% + var(--rb-ly) * 24%),transparent calc(56% + var(--rb-ly) * 24%)),
+    linear-gradient(90deg,rgba(0,0,0,.2),transparent 7%,transparent 93%,rgba(0,0,0,.2)),
+    linear-gradient(180deg,var(--rb-lo),var(--rb-ribbon) 18%,var(--rb-ribbon) 70%,var(--rb-lo) 88%,var(--rb-ribbon));}
+.rb-band-h{top:50%;left:-3%;right:-3%;height:calc(var(--rb-w) * .085);margin-top:calc(var(--rb-w) * -.0425);
+  background:
+    url(satin-silk.jpg) 0 0/calc(var(--rb-w) * .26) calc(var(--rb-w) * .07),
+    linear-gradient(90deg,transparent calc(26% + var(--rb-lx) * 24%),rgba(255,251,247,.6) calc(40% + var(--rb-lx) * 24%),transparent calc(56% + var(--rb-lx) * 24%)),
+    linear-gradient(180deg,rgba(0,0,0,.2),transparent 7%,transparent 93%,rgba(0,0,0,.2)),
+    linear-gradient(90deg,var(--rb-ribbon),var(--rb-lo) 12%,var(--rb-ribbon) 30%,var(--rb-ribbon) 82%,var(--rb-lo));}
+/* 沒有游標的時候（手機、或還沒動滑鼠），亮光自己慢慢來回飄 */
+.rb-host:not(.is-lit){animation:rb-drift 7s ease-in-out infinite alternate;}
+@property --rb-lx{syntax:'<number>';inherits:true;initial-value:0;}
+@property --rb-ly{syntax:'<number>';inherits:true;initial-value:0;}
+@keyframes rb-drift{from{--rb-lx:-.8;--rb-ly:-.6;}to{--rb-lx:.8;--rb-ly:.6;}}
+
+.rb-bow{position:absolute;left:50%;top:50%;width:calc(var(--rb-w) * .84);margin:calc(var(--rb-w) * -.273) 0 0 calc(var(--rb-w) * -.42);
   z-index:3;overflow:visible;transform:translateZ(3px);filter:drop-shadow(0 3px 3px rgba(80,50,40,.28));}
+/* 蝴蝶結的每一塊：緞面漸層 ＋ 布紋（soft-light）＋ 一道沿著布走的亮光 */
+.rb-tex{mix-blend-mode:soft-light;opacity:.95;}
+.rb-glint{fill:none;stroke:#fffaf6;stroke-width:3.2;stroke-linecap:round;opacity:.5;
+  transform:translate(calc(var(--rb-lx) * 2px),calc(var(--rb-ly) * 2px));}
+.rb-crease{fill:none;stroke:var(--rb-deep);stroke-width:1.1;stroke-linecap:round;opacity:.55;}
 .rb-loop,.rb-tail,.rb-knot{transition:transform .8s cubic-bezier(.5,0,.3,1),opacity .6s ease;transform-box:fill-box;}
 .rb-loop-l{transform-origin:right center;}
 .rb-loop-r{transform-origin:left center;}
 .rb-tail{transform-origin:top center;transition:transform .35s ease;}
+.rb-tail-l{transform-origin:right top;}
+.rb-tail-r{transform-origin:left top;}
 /* 還沒動之前：蝴蝶結跟著呼吸 */
 .rb-host:not(.is-untied) .rb-bow{animation:rb-breathe 3s ease-in-out infinite;}
 @keyframes rb-breathe{50%{transform:translateZ(3px) scale(1.03);}}
@@ -97,7 +123,9 @@
 .rb-host.is-untied .rb-loop-l{transform:scale(.1) rotate(-40deg);opacity:0;}
 .rb-host.is-untied .rb-loop-r{transform:scale(.1) rotate(40deg);opacity:0;}
 .rb-host.is-untied .rb-knot{transform:scale(.2);opacity:0;}
-.rb-host.is-untied .rb-tail{transform:translate(-40px,60px) rotate(30deg);opacity:0;transition:transform .8s ease,opacity .6s ease;}
+/* 被拉的那一條尾巴整條滑出去；另一條跟著被拉進結裡 */
+.rb-host.is-untied .rb-tail-l{transform:translate(-70px,70px) rotate(24deg);opacity:0;transition:transform .8s ease,opacity .6s ease .1s;}
+.rb-host.is-untied .rb-tail-r{transform:translate(-14px,-10px) scale(.2,.4) rotate(-20deg);opacity:0;transition:transform .6s ease,opacity .5s ease;}
 .rb-host.is-untied .rb-band-v{transform:translateZ(2px) translateY(115%);opacity:0;}
 .rb-host.is-untied .rb-band-h{transform:translateZ(2px) translateX(-120%);opacity:0;}
 
