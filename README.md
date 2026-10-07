@@ -225,7 +225,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | `curtain` | 窗簾拉開 | 點一下 → 布幕收到兩側 → 光進來 | morning-window |
 | `candle` | 燭光點亮 | 點一下 → 三根蠟燭一根根亮 | midnight-chapel |
 | `stars` | 星圖展開 | 自己演：星星 → 連線成一顆心 → 名字 | night-sky |
-| `door` | 門／拱門 | 晴朗的早上站在門口，點一下 → 門往內開 → 陽光湧出來、穿過門口。莊園是黑色鍛鐵大門（門後看得到城堡；教堂／刺繡用尖拱版），秘密花園是爬滿植物的牆上一扇白框玻璃門 | secret-garden、french-manor |
+| `door` | 門／拱門 | 晴朗的早上站在門口，點一下 → 門往內開 → 陽光湧出來、穿過門口。莊園是黑色鍛鐵大門（門後看得到城堡；教堂／刺繡用尖拱版），秘密花園是常春藤牆上一扇白框玻璃門（牆、垂下來的藤、牆腳的花、門後的玫瑰拱門小徑都是真的照片） | secret-garden、french-manor |
 | `ribbon` | 拉開絲帶 | 拖緞帶尾（或點）→ 蝴蝶結鬆開 → 卡片打開。緞帶疊了一張真的絲綢布紋，光澤跟著游標滑（手機上自己慢慢飄） | botanical-letter |
 
 > **緞帶的布紋素材**：`public/css/openers/satin-silk.jpg` 是把一張真的絲綢 normal map
@@ -233,6 +233,27 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > 的 SpecularSilkPouf（© 2023 Wayfair, LLC，Eric Chadwick 製作），授權是
 > [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)：可以商用、可以修改，**要標示出處**（就是這一段）。
 > 換成別張緞面材質圖也可以：檔名不變，放一張 128 中灰、可以無縫平鋪的灰階圖就好。
+
+> **秘密花園的照片素材**（`public/img/secret-garden/`，開場的玻璃門與 `lobby-garden.html` 共用）：
+> 全部來自 [Unsplash](https://unsplash.com)，授權是 [Unsplash License](https://unsplash.com/license)：
+> 可以免費商用、可以修改、不必標示出處（這裡還是記下來，方便日後換圖或查來源）；
+> 不能把原圖原封不動拿去賣，也不能拿去做一個跟 Unsplash 一樣的圖庫服務 —— 當成婚禮網站的版面素材沒有問題。
+>
+> | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
+> |---|---|---|---|
+> | `garden-arch.webp` | 大廳 hero、開場門後的花園 | [玫瑰拱門的小徑](https://unsplash.com/photos/ZYNbJcl4mAo)・Annie Spratt | 縮圖 |
+> | `gravel.webp` | 開場門前的碎石地 | 同上 | 從小徑取一塊，接成可以無縫平鋪 |
+> | `ivy-wall.webp` | 開場的常春藤牆 | [常春藤牆](https://unsplash.com/photos/mKO1pBtEOhQ)・Declan Sun | 接成可以無縫平鋪 |
+> | `ivy-hang.webp` | hero 上緣、門楣、故事的拱窗 | [白牆上垂下來的藤](https://unsplash.com/photos/75SIR7nqvlc)・Dinah Liu | 去背（白牆依顏色扣掉） |
+> | `ivy-strand.webp` | 左右兩條跟著捲動長下去的藤 | 同上 | 取一條藤，接成可以上下一直接下去 |
+> | `ivy-dark.webp` | 「我們的故事」的底 | [常春藤葉](https://unsplash.com/photos/zBuw8hSSpMk)・Nadiia Shuran | 縮圖 |
+> | `dusk-meadow.webp` | 倒數的底 | [黃昏的野花草地](https://unsplash.com/photos/LN_jo4rABWE)・Liana S | 縮圖 |
+> | `flowers-row.webp` | hero 鏡頭前的花、開場牆腳的花 | [一排粉白的花](https://unsplash.com/photos/_SytRmqOjuQ)・Marianne Krohn | 去背 |
+> | `butterfly-queen.webp`、`butterfly-swallowtail.webp` | 飛來飛去的蝴蝶 | [橘色蝴蝶](https://unsplash.com/photos/E3R1aMOpLYc)、[鳳蝶](https://unsplash.com/photos/kUPqTVW5gLY)・James Lee | 去背；畫面上從身體中間切成兩半，各自往後翻 |
+> | `wc-poppy.webp`、`wc-daisy.webp`、`wc-calla.webp`、`wc-tulip.webp` | 區塊標題上的花 | 水彩插畫 [罌粟](https://unsplash.com/illustrations/KKCcFLpo4Gs)、[藍雛菊](https://unsplash.com/illustrations/8YZ4EO547xM)、[海芋](https://unsplash.com/illustrations/yiX-mVR9bOU)、[鬱金香](https://unsplash.com/illustrations/viOZo9iOEkY)・ibtihel ben salah | 原本就是透明底，縮圖 |
+> | `wc-peony.webp` | R.S.V.P. 標題上的花 | 水彩插畫 [牡丹](https://unsplash.com/illustrations/aJuiDXbIp2k)・Viktoriya Lissachenko | 白底轉透明 |
+>
+> 要換圖：檔名不變直接蓋過去就好（去背的那幾張要是透明底的 webp）。
 
 同一種開場在不同版型可以長得不一樣（門：法式莊園是黑色鍛鐵大門、秘密花園是爬滿植物的玻璃門、
 午夜教堂與中古刺繡是尖拱的鍛鐵大門）。要賓客親手做的開場，那一下也會開始播背景音樂。
@@ -245,7 +266,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | 版型 | 進度 | 大廳 |
 |---|---|---|
 | botanical-letter | ✅ 整套插圖（墨線＋水彩的標本、蒲公英、郵票）＋ 捲動編排 | `lobby-botanical.html` |
-| secret-garden | ✅ 整套插圖（紙雕立體書：分層的花園、野花、藤蔓、蝴蝶、黃昏螢火蟲）＋ 捲動編排 | `lobby-garden.html` |
+| secret-garden | ✅ 真的照片 ＋ 手繪水彩（玫瑰拱門的小徑、垂下來的常春藤、鏡頭前的花、水彩的罌粟／藍雛菊／海芋／鬱金香／牡丹、去背的蝴蝶、常春藤牆、黃昏草地的螢火蟲）＋ 捲動編排，素材見上面〈秘密花園的照片素材〉 | `lobby-garden.html` |
 | spring-orangerie | ✅ 整套插圖（春日玻璃溫室：白鐵框拱窗、柑橘樹、玻璃罩裡的花、鬱金香、檸檬枝、蕨、澆水壺、種子包）＋ 捲動編排（葉影隨捲動移動、斜射的光、玻璃反光、倒數區的幼苗隨捲動長高結出花苞） | `lobby-orangerie.html` |
 | night-sky | ✅ 整套插圖（現代星空：開場那張心形星圖停在 hero、寫實的月亮、三層山稜、亮燈的帳篷、坐著看星星的兩個人、細金線星座）＋ 捲動編排（三層星星視差、星圖外環跟著轉、星座一條一條連起來、望遠鏡視野的軌道、倒數的月亮越捲越圓、頁尾天快亮了） | `lobby-night.html` |
 | french-manor | ✅ 整套插圖（銅版畫風的莊園：石灰岩城堡立面、孟薩式屋頂、碎石路與凡爾賽花箱的樹雕、鍛鐵大門、日晷、壁燈、金框畫、花園平面圖）＋ 捲動編排（進站時百葉窗一扇扇打開、往下捲像沿著碎石路走向城堡、銅版小圖先畫線再印上排線、牆板上的陽光隨捲動滑過、倒數時花園平面圖一筆筆畫出來、最後噴泉噴起來） | `lobby-manor.html` |

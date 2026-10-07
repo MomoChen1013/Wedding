@@ -11,11 +11,11 @@
                            兩旁是矮石牆與鐵欄杆；門是鏤空的，看得到後面陽光下的城堡
      midnight-chapel／tapestry  同一種鍛鐵大門，但是中古的尖拱、石柱頂是小尖塔，
                            門後遠遠是一座有圓塔的城堡
-     secret-garden         一整面爬滿植物的牆上，一扇白框的玻璃門：
-                           上面一扇半圓的氣窗，紫藤從門楣垂下來，兩邊是盆栽，
-                           門上也爬著藤與小白玫瑰；隔著玻璃看得到後面的花園
+     secret-garden         一整面常春藤牆上，一扇白框的玻璃門：上面一扇半圓的氣窗，
+                           藤從門楣垂下來，牆腳兩叢花；隔著玻璃看得到後面開滿玫瑰的拱門小徑。
+                           門以外用的是真的照片（見下面〈秘密花園的玻璃門〉）
 
-   畫面全部是程式畫的 SVG（亂數有固定的種子，每一次都一樣）：
+   鐵門那幾種全部是程式畫的 SVG（亂數有固定的種子，每一次都一樣）：
      .dr-land   門後的風景（天空、太陽、遠山、城堡、草地、碎石路），滿版
      .dr-front  門以外的東西（石柱、牆、鐵欄杆、地面、植物），跟門同一個座標
      .dr-leaf   兩扇門，各自一個 SVG，用 CSS 3D 轉開
@@ -38,7 +38,7 @@
      門後的風景（viewBox 1600×1000，slice 滿版；地平線在 y=560）
      ========================================================== */
   function land(kind) {
-    const r = rng(kind === 'garden' ? 7 : 3);
+    const r = rng(3);
     let s = `<defs>
       <linearGradient id="dr-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fc3ea"/><stop offset=".45" stop-color="#cfe6f4"/><stop offset=".56" stop-color="#fff4dc"/></linearGradient>
       <radialGradient id="dr-sunG"><stop offset="0" stop-color="#fffef6"/><stop offset=".25" stop-color="#fff6d6" stop-opacity=".9"/><stop offset="1" stop-color="#fff2cc" stop-opacity="0"/></radialGradient>
@@ -77,7 +77,6 @@
         `<rect x="${f(x - 2 * sc)}" y="${f(y - 34 * sc)}" width="${f(4 * sc)}" height="${f(34 * sc)}" fill="#7a5a3a"/>` +
         `<circle cx="${f(x)}" cy="${f(y - 46 * sc)}" r="${f(20 * sc)}" fill="#6f9a52"/><circle cx="${f(x - 6 * sc)}" cy="${f(y - 52 * sc)}" r="${f(9 * sc)}" fill="#9cc27a" opacity=".7"/>`;
     }
-    if (kind === 'garden') s += gardenBeyond(r);
     /* 花境：路邊一點一點的花 */
     let flowers = '';
     for (let k = 0; k < 160; k++) {
@@ -124,24 +123,6 @@
     for (const dx of [-80, -50, 50, 80]) s += `<rect x="${x(dx - 5)}" y="${y(60)}" width="10" height="18" rx="5" fill="#8796a0"/>`;
     return s + `</g>`;
   }
-  /* 秘密花園的門後：一座噴泉、兩道玫瑰拱、滿滿的花 */
-  function gardenBeyond(r) {
-    let s = '';
-    s += `<ellipse cx="800" cy="640" rx="120" ry="26" fill="#cfd9d4"/><ellipse cx="800" cy="636" rx="104" ry="20" fill="#a9c6cf"/>`;
-    s += `<path d="M790 636V590H810V636Z" fill="#efe6d4"/><ellipse cx="800" cy="590" rx="40" ry="8" fill="#efe6d4"/>`;
-    s += `<path d="M800 586C792 560 780 556 768 572M800 586C808 560 820 556 832 572M800 586V548" stroke="#e4f1f4" stroke-width="3" fill="none" opacity=".9"/>`;
-    for (const cx of [560, 1040]) {
-      s += `<path d="M${cx - 60} 640V560A60 60 0 0 1 ${cx + 60} 560V640" fill="none" stroke="#5f8a4a" stroke-width="12"/>`;
-      for (let k = 0; k < 26; k++) {
-        const a = Math.PI + r() * Math.PI, rad = 60 + (r() - .5) * 12;
-        const px = k < 18 ? cx + Math.cos(a) * rad : cx + (r() < .5 ? -60 : 60) + (r() - .5) * 10;
-        const py = k < 18 ? 560 + Math.sin(a) * rad : 560 + r() * 80;
-        s += `<circle cx="${f(px)}" cy="${f(py)}" r="${f(4 + r() * 3)}" fill="${r() < .5 ? '#f6d3dc' : '#fff'}"/>`;
-      }
-    }
-    return s;
-  }
-
   /* ==========================================================
      鍛鐵大門（viewBox 0 0 600 640；門洞 x 110–490、y 160–600）
      ========================================================== */
@@ -307,115 +288,96 @@
   /* ==========================================================
      秘密花園的玻璃門（viewBox 0 0 600 640；
      半圓氣窗 x 150–450、y 100–250；兩扇門 x 150–450、y 260–600）
+     門是程式畫的（白漆木框、玻璃）；門以外都是真的照片：
+       常春藤牆   ivy-wall.webp     Declan Sun／Unsplash
+       垂下來的藤 ivy-hang.webp     去背，Dinah Liu／Unsplash
+       牆腳的花   flowers-row.webp  去背，Marianne Krohn／Unsplash
+       門後的花園 garden-arch.webp  Annie Spratt／Unsplash（.dr-land，見 door.css）
+       地上的碎石 gravel.webp       從 garden-arch 的小徑取一塊，接成可以無縫平鋪
+     出處與授權見 README〈秘密花園的照片素材〉。路徑從這支 script 自己的位置推回去
+     （預覽頁與正式站的根目錄不一樣）
      ========================================================== */
   const GLASS = { x0: 150, x1: 450, y0: 260, y1: 600 };
+  const SCRIPT = document.currentScript && document.currentScript.src;
+  const IMG = SCRIPT ? SCRIPT.replace(/js\/openers\/door\.js.*$/, 'img/secret-garden/') : '/img/secret-garden/';
 
   /* 一扇玻璃門（左扇；右扇用 CSS 鏡像）。viewBox 0 0 150 340 */
   function glassLeaf() {
-    const W = 150, H = 340, r = rng(5);
-    let panes = '', glints = '', holes = '';
+    const W = 150, H = 340;
+    let panes = '', glints = '', holes = '', bevel = '';
     const cols = 2, rows = 4, px0 = 16, py0 = 16, pw = (W - 32 - (cols - 1) * 8) / cols, ph = (236 - (rows - 1) * 8) / rows;
     for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) {
       const x = px0 + i * (pw + 8), y = py0 + j * (ph + 8);
       panes += `<rect x="${f(x)}" y="${f(y)}" width="${f(pw)}" height="${f(ph)}"/>`;
       holes += `M${f(x)} ${f(y)}h${f(pw)}v${f(ph)}h${f(-pw)}Z`;
-      glints += `<path d="M${f(x + pw * .15)} ${f(y + ph)}L${f(x + pw * .55)} ${f(y)}H${f(x + pw * .75)}L${f(x + pw * .35)} ${f(y + ph)}Z"/>`;
-    }
-    /* 門上的藤：沿著外框往上爬，帶幾朵小白玫瑰 */
-    let vine = `<path d="M10 ${H}C18 300 4 260 12 220S6 140 14 100S8 40 16 6" fill="none" stroke="#5a4a32" stroke-width="2.4"/>`;
-    for (let y = H - 10; y > 10; y -= 14 + r() * 10) {
-      const x = 12 + Math.sin(y / 30) * 4, side = r() < .5 ? -1 : 1;
-      vine += `<ellipse cx="${f(x + side * 9)}" cy="${f(y)}" rx="9" ry="4.4" transform="rotate(${f(side * 30 + (r() - .5) * 40)} ${f(x + side * 9)} ${f(y)})" fill="${r() < .5 ? '#6f9a52' : '#4f7a3c'}"/>`;
-      if (r() < .3) vine += rose(x + side * 4, y - 6, 5.5 + r() * 2, '#fff');
+      /* 窗格的木條：上緣與左緣一道暗線（光從右上來） */
+      bevel += `M${f(x)} ${f(y + ph)}V${f(y)}H${f(x + pw)}`;
+      glints += `<path d="M${f(x + pw * .15)} ${f(y + ph)}L${f(x + pw * .55)} ${f(y)}H${f(x + pw * .72)}L${f(x + pw * .32)} ${f(y + ph)}Z"/>`;
     }
     return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
-      <path d="M0 0H${W}V${H}H0Z${holes}" fill="#f4f1e8" fill-rule="evenodd"/>
-      <rect x="2" y="2" width="${W - 4}" height="${H - 4}" fill="none" stroke="#d9d3c3" stroke-width="2"/>
-      <g fill="rgba(226,240,232,.16)" stroke="#d6cfbd" stroke-width="2">${panes}</g>
-      <g fill="#fff" opacity=".3">${glints}</g>
-      <rect x="16" y="268" width="${W - 32}" height="56" fill="#ebe6d8" stroke="#d6cfbd" stroke-width="2"/>
-      <rect x="28" y="280" width="${W - 56}" height="32" fill="none" stroke="#d6cfbd" stroke-width="1.5"/>
-      <rect x="${W - 14}" y="190" width="6" height="34" rx="3" fill="#c9a24a" stroke="#8e6d31" stroke-width=".8"/>
-      ${vine}
+      <defs>
+        <linearGradient id="dr-paint" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e9e4d7"/><stop offset=".3" stop-color="#f7f4ec"/><stop offset="1" stop-color="#ece7da"/></linearGradient>
+        <linearGradient id="dr-pane" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="rgba(255,255,255,.22)"/><stop offset=".5" stop-color="rgba(220,236,228,.06)"/><stop offset="1" stop-color="rgba(255,255,255,.16)"/></linearGradient>
+      </defs>
+      <path d="M0 0H${W}V${H}H0Z${holes}" fill="url(#dr-paint)" fill-rule="evenodd"/>
+      <rect x="1.5" y="1.5" width="${W - 3}" height="${H - 3}" fill="none" stroke="#cfc8b6" stroke-width="2"/>
+      <g fill="url(#dr-pane)">${panes}</g>
+      <path d="${bevel}" fill="none" stroke="rgba(120,108,84,.35)" stroke-width="2"/>
+      <g fill="#fff" opacity=".22">${glints}</g>
+      <rect x="16" y="268" width="${W - 32}" height="56" fill="#efebe0" stroke="#d3ccba" stroke-width="2"/>
+      <path d="M28 312V280H${W - 28}" fill="none" stroke="rgba(120,108,84,.3)" stroke-width="1.6"/>
+      <path d="M28 312H${W - 28}V280" fill="none" stroke="#fff" stroke-width="1.6"/>
+      <rect x="${W - 14}" y="186" width="7" height="38" rx="3.5" fill="#c9a24a" stroke="#8e6d31" stroke-width=".8"/>
+      <rect x="${W - 12.5}" y="190" width="2" height="26" rx="1" fill="#f3dc9a" opacity=".8"/>
     </svg>`;
   }
 
   function glassFront() {
-    const r = rng(23);
     let s = `<defs>
-      <pattern id="dr-hedge" width="110" height="90" patternUnits="userSpaceOnUse">${hedgeTile(r)}</pattern>
-      <linearGradient id="dr-pave" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9d1c0"/><stop offset="1" stop-color="#bdb19a"/></linearGradient>
-      <radialGradient id="dr-pot" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#e3a07a"/><stop offset="1" stop-color="#a65a3a"/></radialGradient>
+      <pattern id="dr-ivy" x="-100" y="-360" width="780" height="520" patternUnits="userSpaceOnUse">
+        <image href="${IMG}ivy-wall.webp" width="780" height="520"/></pattern>
+      <pattern id="dr-gravel" x="0" y="600" width="170" height="100" patternUnits="userSpaceOnUse">
+        <image href="${IMG}gravel.webp" width="170" height="100"/></pattern>
+      <radialGradient id="dr-wallShade" gradientUnits="userSpaceOnUse" cx="300" cy="360" r="900">
+        <stop offset=".22" stop-color="#0d1a0a" stop-opacity="0"/><stop offset="1" stop-color="#0d1a0a" stop-opacity=".62"/></radialGradient>
+      <linearGradient id="dr-groundShade" gradientUnits="userSpaceOnUse" x1="0" y1="600" x2="0" y2="900">
+        <stop offset="0" stop-color="#1d2616" stop-opacity=".6"/><stop offset=".18" stop-color="#1d2616" stop-opacity=".12"/><stop offset="1" stop-color="#1d2616" stop-opacity=".35"/></linearGradient>
+      <linearGradient id="dr-frameG" gradientUnits="userSpaceOnUse" x1="126" y1="0" x2="474" y2="0">
+        <stop offset="0" stop-color="#e7e1d2"/><stop offset=".06" stop-color="#fbf8f0"/><stop offset=".94" stop-color="#f4f0e5"/><stop offset="1" stop-color="#d9d2c0"/></linearGradient>
+      <linearGradient id="dr-fadeV" gradientUnits="userSpaceOnUse" x1="0" y1="-20" x2="0" y2="310"><stop offset="0" stop-color="#000"/><stop offset=".2" stop-color="#fff"/><stop offset=".8" stop-color="#fff"/><stop offset="1" stop-color="#000"/></linearGradient>
+      <linearGradient id="dr-fadeH" gradientUnits="userSpaceOnUse" x1="50" y1="0" x2="550" y2="0"><stop offset="0" stop-color="#000"/><stop offset=".14" stop-color="#fff"/><stop offset=".86" stop-color="#fff"/><stop offset="1" stop-color="#000"/></linearGradient>
+      <mask id="dr-ivyV" maskUnits="userSpaceOnUse" x="50" y="-20" width="500" height="330"><rect x="50" y="-20" width="500" height="330" fill="url(#dr-fadeV)"/></mask>
+      <mask id="dr-ivyH" maskUnits="userSpaceOnUse" x="50" y="-20" width="500" height="330"><rect x="50" y="-20" width="500" height="330" fill="url(#dr-fadeH)"/></mask>
+      <filter id="dr-cast" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="5" dy="8" stdDeviation="7" flood-color="#0b1408" flood-opacity=".55"/></filter>
+      <filter id="dr-leafShadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="2" dy="5" stdDeviation="4" flood-color="#0b1408" flood-opacity=".45"/></filter>
     </defs>`;
-    /* 一整面綠牆，門的位置挖空（半圓氣窗 ＋ 門） */
-    const hole = `M150 600V250A150 150 0 0 1 450 250V600Z`;
-    s += `<path d="M-3000 -3000H3600V600H-3000Z${hole}" fill="#3f5f33" fill-rule="evenodd"/>`;
-    s += `<path d="M-3000 -3000H3600V600H-3000Z${hole}" fill="url(#dr-hedge)" fill-rule="evenodd"/>`;
-    /* 牆上點點的花：白玫瑰、薰衣草 */
-    let fl = '';
-    for (let k = 0; k < 140; k++) {
-      const x = -700 + r() * 2000, y = -200 + r() * 780;
-      if (x > 120 && x < 480 && y > 70) continue;
-      fl += r() < .7 ? rose(x, y, 5 + r() * 4, r() < .8 ? '#fff' : '#f7d7de')
-        : `<path d="M${f(x)} ${f(y)}v-16" stroke="#9a86c4" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 3"/>`;
-    }
-    s += fl;
-    /* 地面：石板 ＋ 一級台階 */
-    s += `<rect x="-3000" y="600" width="6600" height="2000" fill="url(#dr-pave)"/>`;
+    /* 一整面常春藤牆，門的位置挖空（半圓氣窗 ＋ 門）；四周暗一點，視線集中到門上 */
+    const wall = `M-3000 -3000H3600V600H-3000ZM150 600V250A150 150 0 0 1 450 250V600Z`;
+    s += `<path d="${wall}" fill="#24361d" fill-rule="evenodd"/>`;
+    s += `<path d="${wall}" fill="url(#dr-ivy)" fill-rule="evenodd"/>`;
+    s += `<path d="${wall}" fill="url(#dr-wallShade)" fill-rule="evenodd"/>`;
+    /* 地面：碎石（從門後那張花園照片的小徑取樣）＋ 牆腳的陰影 ＋ 一級台階 */
+    s += `<rect x="-3000" y="600" width="6600" height="2000" fill="#b9a68a"/>`;
+    s += `<rect x="-3000" y="600" width="6600" height="2000" fill="url(#dr-gravel)"/>`;
+    s += `<rect x="-3000" y="600" width="6600" height="2000" fill="url(#dr-groundShade)"/>`;
     s += `<rect x="120" y="600" width="360" height="16" fill="#e7e0d0" stroke="#c9bfa8"/>`;
-    let joints = '';
-    for (let y = 640; y < 1400; y += 44) joints += `M-3000 ${y}H3600`;
-    s += `<path d="${joints}" stroke="#b3a68d" stroke-width="1.5" opacity=".6"/>`;
-    /* 白色的門框、半圓氣窗（放射狀的窗格）、門楣 */
-    s += `<path d="M150 250A150 150 0 0 1 450 250Z" fill="rgba(214,234,222,.25)"/>`;
+    /* 牆腳兩叢花（真的花，去背） */
+    s += `<g filter="url(#dr-leafShadow)">` +
+      `<image href="${IMG}flowers-row.webp" x="-300" y="470" width="440" height="140" preserveAspectRatio="xMaxYMax meet"/>` +
+      `<image href="${IMG}flowers-row.webp" x="-300" y="470" width="440" height="140" preserveAspectRatio="xMaxYMax meet" transform="translate(600 0) scale(-1 1)"/></g>`;
+    /* 白色的門框、半圓氣窗（放射狀的窗格）、門楣；門框的影子落在常春藤上 */
+    s += `<path d="M150 250A150 150 0 0 1 450 250Z" fill="rgba(214,234,222,.14)"/>`;
     let rays = '';
     for (let k = 1; k < 6; k++) { const a = Math.PI + k * Math.PI / 6; rays += `M300 250L${f(300 + Math.cos(a) * 150)} ${f(250 + Math.sin(a) * 150)}`; }
     s += `<path d="${rays}M220 250A80 80 0 0 1 380 250" stroke="#f4f1e8" stroke-width="6" fill="none"/>`;
-    s += `<path d="M138 604V250A162 162 0 0 1 462 250V604" fill="none" stroke="#f4f1e8" stroke-width="24"/>`;
-    s += `<path d="M126 604V250A174 174 0 0 1 474 250V604" fill="none" stroke="#d9d3c3" stroke-width="2"/>`;
-    s += `<rect x="146" y="248" width="308" height="14" fill="#f4f1e8" stroke="#d9d3c3"/>`;
-    /* 門楣上垂下來的紫藤 ＋ 兩邊爬的玫瑰藤 */
-    let wis = '';
-    for (let k = 0; k < 16; k++) {
-      const a = Math.PI * (1.05 + k * .9 / 15), x = 300 + Math.cos(a) * 168, y = 250 + Math.sin(a) * 168;
-      const len = 40 + r() * 60;
-      for (let j = 0; j < 9; j++) {
-        const t = j / 9, w = (1 - t) * 7 + 2;
-        wis += `<ellipse cx="${f(x + Math.sin(j) * 2)}" cy="${f(y + t * len)}" rx="${f(w)}" ry="${f(w * .8)}" fill="${['#b9a3dc', '#cdb9ea', '#a48cc9'][(j + k) % 3]}"/>`;
-      }
-      wis += `<ellipse cx="${f(x - 10)}" cy="${f(y - 4)}" rx="12" ry="5" transform="rotate(${f(r() * 60 - 30)} ${f(x - 10)} ${f(y - 4)})" fill="#6f9a52"/>`;
-    }
-    s += wis;
-    for (const side of [-1, 1]) {
-      let v = '';
-      for (let y = 600; y > 120; y -= 12 + r() * 10) {
-        const x = 300 + side * (170 + Math.sin(y / 40) * 8);
-        v += `<ellipse cx="${f(x)}" cy="${f(y)}" rx="10" ry="5" transform="rotate(${f(r() * 180)} ${f(x)} ${f(y)})" fill="${r() < .5 ? '#5f8a45' : '#7fa65a'}"/>`;
-        if (r() < .28) v += rose(x + side * 6, y, 7 + r() * 3, r() < .75 ? '#fff' : '#f7d7de');
-      }
-      s += v;
-    }
-    /* 兩邊的盆栽：陶盆 ＋ 蕨與薰衣草 */
-    const pot = (cx) => {
-      let p = `<ellipse cx="${cx + 6}" cy="604" rx="56" ry="9" fill="#2d2a22" opacity=".25"/>`;
-      p += `<path d="M${cx - 44} 520H${cx + 44}L${cx + 34} 602H${cx - 34}Z" fill="url(#dr-pot)"/><rect x="${cx - 50}" y="510" width="100" height="14" rx="3" fill="#c7764e"/>`;
-      for (let k = 0; k < 14; k++) {
-        const a = -Math.PI * (.1 + k * .8 / 13), len = 60 + r() * 50;
-        p += `<path d="M${cx} 512Q${f(cx + Math.cos(a) * len * .5)} ${f(512 + Math.sin(a) * len * .9)} ${f(cx + Math.cos(a) * len)} ${f(512 + Math.sin(a) * len * .7)}" stroke="${k % 2 ? '#6f9a52' : '#4f7a3c'}" stroke-width="7" fill="none" stroke-linecap="round"/>`;
-      }
-      for (let k = 0; k < 6; k++) p += `<path d="M${cx - 30 + k * 12} 500v-${30 + r() * 30}" stroke="#9a86c4" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 3"/>`;
-      return p;
-    };
-    s += pot(64) + pot(536);
+    s += `<g filter="url(#dr-cast)"><path d="M138 604V250A162 162 0 0 1 462 250V604" fill="none" stroke="url(#dr-frameG)" stroke-width="24"/>`;
+    s += `<rect x="146" y="248" width="308" height="14" fill="#f4f1e8" stroke="#d9d3c3"/></g>`;
+    s += `<path d="M126 604V250A174 174 0 0 1 474 250V604" fill="none" stroke="#cdc5b1" stroke-width="2"/>`;
+    s += `<path d="M150 604V250A150 150 0 0 1 450 250V604" fill="none" stroke="rgba(120,108,84,.35)" stroke-width="2"/>`;
+    /* 門楣上垂下來的常春藤（真的藤，去背）：上緣與兩側淡進牆裡，藤往下垂到氣窗前面 */
+    s += `<g mask="url(#dr-ivyH)"><g mask="url(#dr-ivyV)" filter="url(#dr-leafShadow)">` +
+      `<image href="${IMG}ivy-hang.webp" x="50" y="-20" width="921" height="518"/></g></g>`;
     return `<svg viewBox="0 0 600 640" aria-hidden="true">${s}</svg>`;
-  }
-  function hedgeTile(r) {
-    let t = '';
-    for (let k = 0; k < 46; k++) {
-      const x = r() * 110, y = r() * 90;
-      t += `<ellipse cx="${f(x)}" cy="${f(y)}" rx="${f(8 + r() * 5)}" ry="${f(4 + r() * 2)}" transform="rotate(${f(r() * 360)} ${f(x)} ${f(y)})" fill="${['#5f8a45', '#7fa65a', '#4c7438', '#8fb36a'][k % 4]}"/>`;
-    }
-    return t;
   }
 
   function door(host, ctx) {
@@ -427,7 +389,7 @@
     /* 門洞在 600×640 裡的位置（百分比），兩扇門就照這個放 */
     const pos = `left:${f(box.x0 / 6)}%;width:${f((box.x1 - box.x0) / 6)}%;top:${f(box.y0 / 6.4)}%;height:${f((box.y1 - box.y0) / 6.4)}%`;
     host.innerHTML = `
-      <div class="dr-land" aria-hidden="true">${land(kind)}</div>
+      <div class="dr-land" aria-hidden="true">${garden ? '' : land(kind)}</div>
       <div class="dr-rays" aria-hidden="true"></div>
       <div class="dr-world" aria-hidden="true">
         <div class="dr-portal">

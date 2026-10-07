@@ -9,7 +9,7 @@
    三種門：
      .dr-manor   黑色鍛鐵大門、石柱頂的花甕、圓弧的鐵拱（法式莊園；預設）
      .dr-gothic  同樣的鐵門，尖拱、石柱頂是小尖塔（午夜教堂、中古刺繡）
-     .dr-garden  爬滿植物的牆上，一扇白框玻璃門（秘密花園）
+     .dr-garden  常春藤牆上，一扇白框玻璃門（秘密花園）；門後是一張真的花園照片
    門與 .dr-front 用同一個 600×640 的座標：.dr-portal 固定這個比例，
    .dr-front 的 SVG 允許畫到框外（兩旁的牆、地面一路延伸到畫面邊）。
 ============================================================ */
@@ -84,8 +84,16 @@
 .dr-host.is-open .dr-hint{opacity:0;animation:none;}
 
 /* ---- 各版的小差異 ---- */
-.dr-garden{--dr-accent:#6b5a7a;background:#3f5f33;}
-.dr-garden .dr-rays{opacity:.25;}
+.dr-garden{--dr-accent:#6b5a7a;background:#24361d;}
+/* 門後：開滿玫瑰的拱門小徑（Annie Spratt／Unsplash，見 README〈秘密花園的照片素材〉） */
+.dr-garden .dr-land{background:#e8ece4 url(../../img/secret-garden/garden-arch.webp) 50% 42%/cover no-repeat;}
+.dr-garden .dr-rays{opacity:.2;}
+.dr-garden.is-open .dr-rays{opacity:.5;}
 .dr-gothic{--dr-accent:#7a5a3a;}
 /* 手機直立：門只佔下半部，字放到上面的天空 */
 @media (max-aspect-ratio:3/4){.dr-text{top:28%;}}
+/* 秘密花園在手機上，字落在門上面那一片深色的常春藤：改成淺色的字、深色的光暈 */
+@media (max-aspect-ratio:3/4){
+  .dr-garden .dr-text{--dr-ink:#fbf8ef;--dr-accent:#f3d9e0;text-shadow:0 0 16px rgba(10,20,8,.95),0 1px 4px rgba(10,20,8,.85);}
+  .dr-garden .dr-date{color:rgba(251,248,239,.85);}
+}
