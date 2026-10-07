@@ -3,7 +3,6 @@
    ------------------------------------------------------------
    一個晴朗的早上站在門口。層次由後往前：
      .dr-land    門後的風景（滿版 SVG）
-     .dr-rays    太陽在門後，一道一道的光
      .dr-world   門這一層：.dr-front（石柱、牆、地面、植物）＋ .dr-opening（兩扇門）
      .dr-flood   推開之後湧出來的陽光
    三種門：
@@ -22,14 +21,6 @@
 /* ---- 門後的風景 ---- */
 .dr-land{position:absolute;inset:0;transition:transform 1.4s cubic-bezier(.55,0,.35,1);}
 .dr-land svg{display:block;width:100%;height:100%;}
-/* 太陽在門後，光一道一道慢慢轉 */
-.dr-rays{position:absolute;inset:-30%;pointer-events:none;mix-blend-mode:screen;opacity:.45;
-  background:repeating-conic-gradient(from 0deg at 50% 42%,rgba(255,248,224,.55) 0 4deg,transparent 4deg 13deg);
-  -webkit-mask:radial-gradient(circle at 50% 42%,#000 0,rgba(0,0,0,.6) 25%,transparent 55%);
-  mask:radial-gradient(circle at 50% 42%,#000 0,rgba(0,0,0,.6) 25%,transparent 55%);
-  animation:dr-rays 40s linear infinite;transition:opacity 1.2s ease;}
-@keyframes dr-rays{to{transform:rotate(360deg);}}
-.dr-host.is-open .dr-rays{opacity:.85;}
 
 /* ---- 門這一層 ---- */
 .dr-world{position:absolute;inset:0;transition:transform 1.4s cubic-bezier(.55,0,.35,1),opacity .9s ease .45s;}
@@ -87,8 +78,6 @@
 .dr-garden{--dr-accent:#6b5a7a;background:#24361d;}
 /* 門後：開滿玫瑰的拱門小徑（Annie Spratt／Unsplash，見 README〈秘密花園的照片素材〉） */
 .dr-garden .dr-land{background:#e8ece4 url(../../img/secret-garden/garden-arch.webp) 50% 42%/cover no-repeat;}
-.dr-garden .dr-rays{opacity:.2;}
-.dr-garden.is-open .dr-rays{opacity:.5;}
 .dr-gothic{--dr-accent:#7a5a3a;}
 /* 莊園：門後是一張真的城堡照片（Menfis Gálvez／Unsplash，跟大廳的 hero 同一座），走進門就到了大廳 */
 .dr-manor .dr-land{background:#cfe0ec url(../../img/manor/chateau.webp) 50% 30%/cover no-repeat;}

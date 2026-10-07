@@ -8,8 +8,10 @@
      → 溶進網站
 
    房間被照得多亮由 host 上的 --lit（0 → 3）決定，
-   每一根點起來就加一；牆、名字、背後的窗都照著這個值變亮。
-   [data-variant="midnight-chapel"] 牆上多一扇彩繪玻璃的尖拱窗。
+   每一根點起來就加一；牆、名字都照著這個值變亮。
+   蠟燭與火焰是真的照片（img/chapel/candle-*.webp、flame.webp，出處見 README）。
+   [data-variant="midnight-chapel"] 房間是大廳 hero 那張中殿的照片 ——
+   三根都點亮的那一刻，就是走進大廳時看到的教堂。
 ============================================================ */
 (function () {
   const LM = window.LobbyMotion;
@@ -29,9 +31,7 @@
         <div class="cd-wax"></div>
       </div>`).join('');
     host.innerHTML = `
-      <div class="cd-room" aria-hidden="true">
-        <div class="cd-arch"></div>
-      </div>
+      <div class="cd-room" aria-hidden="true"></div>
       <div class="cd-text" aria-hidden="true">
         <div class="cd-kicker">Together, in candlelight</div>
         <div class="cd-names">${LM.namesHtml(ctx)}</div>

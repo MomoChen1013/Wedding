@@ -5,8 +5,8 @@
    拉開的時候不是整片滑出畫面，而是以外側為軸收窄（scaleX）——
    褶子被擠在一起，就是「收到兩邊」的樣子。
 
-   預設是劇場的絲絨布幕；[data-variant="morning-window"] 換成
-   半透明的亞麻紗簾，後面是一扇有窗格的窗與晨光。
+   預設是劇場的絲絨布幕；[data-variant="morning-window"] 換成真的照片：
+   白紗簾（sander traa／Unsplash），後面是窗台上一瓶鬱金香的白框窗（Zoe Richardson／Unsplash）。
 ============================================================ */
 .ct-host{
   --ct-bg:#140b0d; --ct-scene:#2a1717;
@@ -34,28 +34,13 @@
   background:radial-gradient(60% 70% at 50% 40%,#3a2020,var(--ct-scene) 60%,#0f0708);}
 .ct-host[data-variant="morning-window"] .ct-scene{
   background:
-    linear-gradient(180deg,rgba(255,255,255,.35),transparent 40%),
-    radial-gradient(90% 70% at 50% 30%,#f7f1e6,var(--ct-scene) 70%,#d7c8b0);}
-/* 窗：只有晨光房間看得到（預設是舞台，沒有窗） */
-.ct-window{display:none;}
-.ct-host[data-variant="morning-window"] .ct-scene{flex-direction:column;gap:clamp(18px,4vh,34px);}
-.ct-host[data-variant="morning-window"] .ct-window{display:block;position:relative;
-  height:min(52vh,560px);aspect-ratio:3/4;max-width:70vw;
-  border:10px solid #efe7da;border-radius:2px;
-  box-shadow:0 0 0 1px rgba(120,100,80,.25),inset 0 0 0 1px rgba(120,100,80,.2),0 30px 60px -30px rgba(80,60,40,.4);
-  background:
-    radial-gradient(60% 40% at 70% 20%,#fffdf5,transparent 70%),
-    linear-gradient(180deg,#cfe0ea 0%,#e6eef0 55%,#f4efe4 100%);}
-.ct-window i{position:absolute;background:#efe7da;}
-.ct-window i:nth-child(1){left:50%;top:0;bottom:0;width:8px;transform:translateX(-50%);}
-.ct-window i:nth-child(2){top:33%;left:0;right:0;height:8px;}
-.ct-window i:nth-child(3){top:66%;left:0;right:0;height:8px;}
+    radial-gradient(42% 36% at 50% 50%,rgba(252,249,243,.88),rgba(252,249,243,.55) 60%,transparent),
+    #f1ece2 url(../../img/window/tulips.webp) 50% 45%/cover no-repeat;}
 
 /* 光：布幕拉開之後才亮 */
 .ct-light{position:absolute;inset:0;opacity:0;pointer-events:none;
   background:
-    radial-gradient(30% 60% at 50% 45%,var(--ct-light),transparent 70%),
-    conic-gradient(from 180deg at 50% -10%,transparent 44%,var(--ct-light) 48%,transparent 52%) ;
+    radial-gradient(30% 60% at 50% 45%,var(--ct-light),transparent 70%);
   transition:opacity 1.8s ease .8s;}
 .ct-host[data-variant="morning-window"] .ct-light{
   background:
@@ -94,10 +79,10 @@
 /* 布幕下擺微微的波浪 */
 .ct-panel::after{content:'';position:absolute;left:0;right:0;bottom:-6px;height:14px;
   background:radial-gradient(12px 8px at 50% 0,var(--ct-a),transparent 70%) 0 0/3.2% 100% repeat-x;}
-.ct-host[data-variant="morning-window"] .ct-panel{box-shadow:none;
-  background:
-    linear-gradient(180deg,rgba(255,255,255,.2),transparent 30%),
-    repeating-linear-gradient(90deg,var(--ct-c) 0,var(--ct-a) 1.4%,var(--ct-b) 3.2%,var(--ct-a) 5%,var(--ct-c) 6.4%);}
+.ct-host[data-variant="morning-window"] .ct-panel{box-shadow:none;opacity:.94;
+  background:#eef0ef url(../../img/window/sheer.webp) 0 0/auto 100% repeat-x;}
+.ct-host[data-variant="morning-window"] .ct-r{background-position:37% 0;}
+.ct-host[data-variant="morning-window"] .ct-panel::after{display:none;}
 
 /* 拉開：往外側收攏 */
 .ct-host.is-open .ct-l{transform:scaleX(.16) skewY(1.5deg);}

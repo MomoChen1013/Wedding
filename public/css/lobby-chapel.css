@@ -1,0 +1,237 @@
+/* ============================================================
+   lobby-chapel.css — Midnight Chapel 午夜教堂 的大廳（lobby-chapel.html 專用）
+   ------------------------------------------------------------
+   疊在 common.css ＋ index.css 之後。結構主張：**點亮蠟燭，走進夜裡的教堂**。
+
+     世界觀  開場一根一根點亮蠟燭，燭光照亮的就是這座教堂的中殿
+     材質    石材、彩繪玻璃、燭光、古金、深李子色的夜
+     素材    真的照片：中殿、彩繪玻璃、玫瑰窗、蠟燭、教堂的木門、一整片許願燭；
+             全部在 public/img/chapel/，出處見 README
+     圖像    區塊標題上是一扇一扇尖拱形的小照片（像牆上的一排尖拱窗）
+
+   捲動：
+     ・進站：照片從暗處慢慢亮起來（接開場最後那一刻 —— 三根蠟燭都點亮了）
+     ・hero：沿著中殿往前走，照片慢慢推近；底下的燭光一直輕輕地晃
+     ・每一區的尖拱小照片：捲到的時候從暗處被照亮
+     ・故事：彩繪玻璃透進來的彩光落在石牆上，照片放在一扇尖拱窗裡
+     ・倒數：一整片許願燭，跟著捲動一盞一盞亮起來
+
+   大廳是深色的，所以在 body 上把 --ink 那一組顏色整組換掉；
+   子頁面沿用 common.css 裡 midnight-chapel 的淺色調色盤。
+   每一條規則都收在 .mc-* 或 body[data-lobby="midnight-chapel"] 底下。
+============================================================ */
+
+body[data-lobby="midnight-chapel"]{
+  --ink:#f1e4c8; --ink-soft:#b5a894; --ink-rgb:241,228,200; --surface-rgb:30,24,32;
+  --line:rgba(241,228,200,.18); --line-soft:rgba(241,228,200,.1); --surface:#1e1820;
+  --on-ink:#120f16; --ink-hover:#fff6e0; --ink-active:#d8c8a8;
+  --primary:#c8a45a; --primary-deep:#c8a45a; --bg1:#120f16; --bg2:#0b090e; --card:#1e1820;
+  --mc-ink:#f1e4c8; --mc-soft:#b0a290; --mc-gold:#c8a45a; --mc-wine:#6d1a2a;
+  --mc-card:rgba(30,24,32,.86); --mc-line:rgba(200,164,90,.26);
+  /* 尖拱（等邊尖拱）：上半是兩道以對邊為圓心的圓弧，交在頂點；下半是直的 */
+  --mc-lancet:polygon(0 100%,0.0% 48.0%,0.5% 42.2%,2.2% 36.5%,4.9% 30.9%,8.6% 25.5%,13.4% 20.3%,19.1% 15.4%,25.7% 10.9%,33.1% 6.8%,41.2% 3.2%,50.0% -0.0%,58.8% 3.2%,66.9% 6.8%,74.3% 10.9%,80.9% 15.4%,86.6% 20.3%,91.4% 25.5%,95.1% 30.9%,97.8% 36.5%,99.5% 42.2%,100.0% 48.0%,100% 100%);
+  background:#0d0a10;color:var(--mc-ink);
+}
+body[data-lobby="midnight-chapel"] .bg-decor{
+  background:
+    radial-gradient(60% 40% at 50% 0%,rgba(200,164,90,.08),transparent 70%),
+    linear-gradient(180deg,#18131c,#0d0a10 40%,#120e14);}
+body[data-lobby="midnight-chapel"] .lc-modal-card,
+body[data-lobby="midnight-chapel"] .gate-card{background:#1e1820;color:var(--mc-ink);}
+.mc-lobby{position:relative;}
+
+/* ============================================================
+   捲動進場
+============================================================ */
+.tp-motion [data-lobby="midnight-chapel"] [data-reveal]{transition:opacity 1.1s ease,transform 1.2s cubic-bezier(.2,.7,.2,1);}
+.tp-motion [data-lobby="midnight-chapel"] [data-reveal="rise"]:not(.is-in){opacity:0;transform:translateY(28px);}
+.tp-motion [data-lobby="midnight-chapel"] [data-reveal="list"] > *{transition:opacity .8s ease,transform .9s cubic-bezier(.2,.7,.2,1);}
+.tp-motion [data-lobby="midnight-chapel"] [data-reveal="list"]:not(.is-in) > *{opacity:0;transform:translateY(18px);}
+.tp-motion [data-lobby="midnight-chapel"] [data-reveal="list"] > :nth-child(2){transition-delay:.12s;}
+.tp-motion [data-lobby="midnight-chapel"] [data-reveal="list"] > :nth-child(3){transition-delay:.24s;}
+.tp-motion [data-lobby="midnight-chapel"] [data-reveal="list"] > :nth-child(4){transition-delay:.36s;}
+.tp-motion [data-lobby="midnight-chapel"] [data-reveal="list"] > :nth-child(n+5){transition-delay:.48s;}
+
+/* 尖拱小照片：捲到的時候從暗處被照亮 */
+.tp-motion [data-reveal="draw"] .mc-vignette{transition:filter 1.6s ease,transform 1.4s cubic-bezier(.2,.7,.2,1),opacity 1s ease;}
+.tp-motion [data-reveal="draw"]:not(.is-in) .mc-vignette{opacity:.3;transform:scale(.95);filter:brightness(.15) saturate(.4);}
+
+/* ============================================================
+   Hero：中殿
+============================================================ */
+.mc-hero{position:relative;overflow:hidden;min-height:calc(100svh - var(--nav-h));padding:0;gap:0;
+  justify-content:flex-end;background:transparent;}
+.mc-scene{position:absolute;inset:0;pointer-events:none;}
+/* 一張真的照片（Joss Broward／Unsplash）：燭台一路排到盡頭的彩繪玻璃。
+   往下捲時照片慢慢推近，像沿著中殿往前走 */
+.mc-photo{position:absolute;inset:0;background:#120e14 url(../img/chapel/nave.webp) 50% 40%/cover no-repeat;
+  transform-origin:50% 45%;transform:scale(calc(1.02 + var(--lp,0) * .16));}
+.mc-photo::after{content:'';position:absolute;inset:0;
+  background:
+    linear-gradient(180deg,rgba(13,10,16,.35),rgba(13,10,16,0) 30%,rgba(13,10,16,.15) 55%,rgba(13,10,16,.88) 86%,#0d0a10),
+    radial-gradient(90% 70% at 50% 40%,transparent 50%,rgba(13,10,16,.55));}
+/* 燭光：照片底下一片暖光，跟著燭火一明一暗地晃 */
+.mc-flicker{position:absolute;left:-10%;right:-10%;bottom:-10%;height:70%;mix-blend-mode:screen;
+  background:radial-gradient(50% 60% at 50% 100%,rgba(255,170,80,.22),transparent 70%);
+  animation:mc-flicker 3.4s ease-in-out infinite;}
+@keyframes mc-flicker{0%,100%{opacity:.8;}22%{opacity:1;}38%{opacity:.72;}60%{opacity:.95;}78%{opacity:.78;}}
+
+.mc-hero-body{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;text-align:center;
+  padding:0 20px clamp(84px,15vh,150px);transform:translateY(calc(var(--lp,0) * -40px));opacity:calc(1 - var(--lp,0) * 1.4);}
+.mc-cartouche{position:relative;display:flex;flex-direction:column;align-items:center;}
+/* 名字後面一團很淡的暗，彩繪玻璃的花樣才不會跟字打架 */
+.mc-cartouche::before{content:'';position:absolute;inset:-30% -18%;z-index:-1;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(13,10,16,.62),rgba(13,10,16,.3) 60%,transparent);}
+.mc-kicker{display:flex;flex-direction:column;gap:4px;margin-bottom:8px;}
+.mc-kicker .en{font:400 clamp(20px,2.6vw,26px) 'UnifrakturMaguntia','Cormorant Garamond',serif;color:var(--mc-gold);}
+.mc-kicker .cn{font-size:11.5px;letter-spacing:.56em;color:var(--mc-soft);}
+.mc-hero .mc-names{font-family:'Cinzel','Noto Serif TC',serif;font-weight:400;font-size:clamp(34px,6vw,70px);
+  line-height:1.12;letter-spacing:.1em;color:var(--mc-ink);
+  text-shadow:0 0 30px rgba(255,180,100,.35),0 2px 20px rgba(0,0,0,.6);}
+.mc-hero .mc-names .amp{font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--mc-gold);padding:0 .2em;font-size:.84em;letter-spacing:0;}
+body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;font-weight:500;font-size:clamp(28px,4.4vw,48px);letter-spacing:.2em;}
+.mc-date{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;font-size:12.5px;letter-spacing:.38em;color:var(--mc-soft);}
+.mc-date i{width:5px;height:5px;background:var(--mc-gold);transform:rotate(45deg);}
+.mc-hero .hashtags{margin-top:18px;}
+.mc-hero .hashtags .tag{border-color:rgba(200,164,90,.35);color:var(--mc-ink);background:rgba(13,10,16,.5);font-size:12px;}
+.mc-cue{position:absolute;left:50%;bottom:14px;z-index:3;transform:translateX(-50%);margin:0;
+  color:var(--mc-soft);font-size:11px;letter-spacing:.4em;}
+.mc-cue .arrow{background:var(--mc-gold);}
+.app-show .mc-cartouche,.app-show .mc-hero .hashtags{animation:mc-rise 1.4s cubic-bezier(.2,.7,.2,1) both;}
+.app-show .mc-cartouche{animation-delay:.3s;}
+.app-show .mc-hero .hashtags{animation-delay:.6s;}
+.app-show .mc-photo{animation:mc-lightup 2.2s ease both;}
+@keyframes mc-rise{from{opacity:0;transform:translateY(14px);}}
+/* 接開場最後那一刻：三根蠟燭都點亮了，教堂從暗處慢慢亮起來 */
+@keyframes mc-lightup{from{filter:brightness(.3) saturate(.6);}}
+@media (max-width:640px){
+  .mc-photo{background-position:50% 50%;}
+  .mc-hero .hashtags{display:none;}
+}
+
+/* ============================================================
+   區塊：深色石頭上的一張卡
+============================================================ */
+.mc-body{max-width:900px;padding:0 22px 0;position:relative;z-index:2;}
+.mc-sec{background:transparent;border:none;border-radius:0;-webkit-backdrop-filter:none;backdrop-filter:none;
+  margin-top:0;padding:clamp(64px,9vw,110px) 0 0;text-align:center;}
+.mc-sec[hidden]{display:none;}
+.mc-head{display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:clamp(18px,3vw,28px);}
+.mc-icon{width:clamp(92px,11vw,116px);margin:0 0 12px;filter:drop-shadow(0 14px 18px rgba(0,0,0,.6));}
+/* 一扇尖拱形的小照片，外面一圈古金的窗框 */
+.mc-vignette{position:relative;display:block;aspect-ratio:3/5;clip-path:var(--mc-lancet);
+  background:linear-gradient(180deg,#e2c67e,#9a7836);padding:3px;}
+.mc-vignette::before{content:'';position:absolute;inset:3px;clip-path:var(--mc-lancet);background:#0d0a10;}
+.mc-vignette::after{content:'';position:absolute;inset:6px;clip-path:var(--mc-lancet);background:#2a2228 center/cover no-repeat;}
+.mc-vignette.v-candle::after{background-image:url(../img/chapel/v-candle.webp);}
+.mc-vignette.v-rose::after{background-image:url(../img/chapel/v-rose.webp);}
+.mc-vignette.v-tapers::after{background-image:url(../img/chapel/v-tapers.webp);}
+.mc-vignette.v-door::after{background-image:url(../img/chapel/v-door.webp);}
+.mc-vignette.v-window::after{background-image:url(../img/chapel/v-window.webp);}
+.mc-head .block-title{margin:0;font:400 clamp(26px,3.6vw,38px)/1.15 'Cinzel','Noto Serif TC',serif;letter-spacing:.12em;
+  text-transform:none;color:var(--mc-ink);}
+.mc-head .block-sub{margin:0;font-size:13px;letter-spacing:.4em;color:var(--mc-soft);}
+.mc-head .block-sub::before,.mc-head .block-sub::after{content:'';display:inline-block;width:26px;height:1px;background:rgba(200,164,90,.45);vertical-align:middle;margin:0 12px;}
+
+.mc-card{position:relative;max-width:600px;margin:0 auto;padding:clamp(30px,5vw,46px) clamp(24px,5vw,46px);
+  background:var(--mc-card);border:1px solid var(--mc-line);color:var(--mc-ink);
+  box-shadow:inset 0 0 0 6px rgba(30,24,32,.86),inset 0 0 0 7px rgba(200,164,90,.16),0 30px 50px -30px rgba(0,0,0,.9);}
+.note-grid.mc-card{max-width:680px;}
+.mc-card-tl{max-width:560px;}
+.mc-card .info-row,.mc-card .info-seat{border-top:1px solid var(--mc-line);}
+.mc-card .info-row:first-child{border-top:none;}
+.mc-card .info-couple{font-family:'Cinzel','Noto Serif TC',serif;letter-spacing:.08em;}
+.mc-sec .ir-label,.mc-sec .note-label{color:var(--mc-gold);}
+.mc-sec .note-item + .note-item{border-left:1px solid var(--mc-line);}
+@media (max-width:640px){.mc-sec .note-item + .note-item{border-left:none;border-top:1px solid var(--mc-line);}}
+.mc-sec .timeline{text-align:left;--tl-line:rgba(200,164,90,.3);}
+.mc-sec .tl-time{font-family:'Cinzel',serif;font-size:14px;color:var(--mc-gold);}
+.mc-sec .tl-dot::before{width:7px;height:7px;border-radius:0;background:var(--mc-gold);transform:rotate(45deg);box-shadow:0 0 10px rgba(255,190,110,.6);}
+.mc-sec .btn{border-radius:0;letter-spacing:.2em;}
+.mc-sec .btn.ghost{border-color:rgba(200,164,90,.5);color:var(--mc-ink);background:transparent;}
+.mc-sec .btn:not(.ghost){background:var(--mc-gold);border-color:var(--mc-gold);color:#140f14;}
+.mc-sec .btn:not(.ghost):hover{background:#e0c07a;border-color:#e0c07a;}
+.mc-rsvp{display:grid;grid-template-columns:1fr;gap:10px;justify-items:center;}
+@media (min-width:640px){.mc-rsvp{grid-template-columns:150px minmax(0,1fr);text-align:left;gap:26px;align-items:center;}
+  .mc-rsvp .rsvp-cta{text-align:left;}}
+.mc-rsvp-icon{width:100px;margin:10px;}
+.mc-rsvp .rsvp-cta h3{font-family:'Cinzel','Noto Serif TC',serif;color:var(--mc-ink);}
+
+/* ============================================================
+   場景帶
+============================================================ */
+.mc-band{position:relative;overflow:hidden;border:none;border-radius:0;background:transparent;
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+  margin:clamp(70px,10vw,120px) calc(50% - 50vw) 0;padding:clamp(64px,9vw,110px) 24px;}
+.mc-band[hidden]{display:none;}
+.mc-band-bg{position:absolute;left:0;right:0;top:-14%;bottom:-14%;z-index:0;transform:translateY(calc((var(--sp,.5) - .5) * -10%));}
+.mc-band-inner{position:relative;z-index:2;max-width:920px;margin:0 auto;}
+.mc-band-title{font:400 clamp(28px,4vw,42px)/1.15 'Cinzel','Noto Serif TC',serif;letter-spacing:.1em;color:var(--mc-ink);
+  text-shadow:0 0 24px rgba(255,180,100,.25);}
+.mc-band-sub{margin-top:8px;font-size:13px;letter-spacing:.42em;color:var(--mc-soft);}
+
+/* ---- 故事：彩繪玻璃的光落在石牆上 ＋ 尖拱窗裡的照片 ---- */
+/* 一張真的照片（Jakub Pierożyński／Unsplash）：彩繪玻璃透進來的光灑在牆上；壓暗，字才讀得清楚 */
+.mc-story .mc-band-bg{
+  background:linear-gradient(90deg,rgba(13,10,16,.2),rgba(13,10,16,.7) 55%,rgba(13,10,16,.85)),
+    #1a1418 url(../img/chapel/glass-light.webp) 20% 40%/cover no-repeat;
+  border-top:1px solid rgba(200,164,90,.2);border-bottom:1px solid rgba(200,164,90,.2);}
+/* 彩光慢慢地在牆上移（雲飄過太陽的那種明暗） */
+.mc-tint{position:absolute;inset:0;mix-blend-mode:screen;pointer-events:none;
+  background:radial-gradient(40% 50% at 20% 50%,rgba(120,150,255,.16),transparent 70%),
+    radial-gradient(30% 40% at 30% 30%,rgba(255,120,90,.14),transparent 70%);
+  transform:translateX(calc((var(--sp,.5) - .5) * 30%));animation:mc-tint 9s ease-in-out infinite alternate;}
+@keyframes mc-tint{to{opacity:.55;}}
+.mc-story .mc-band-inner{display:grid;grid-template-columns:1fr;gap:40px;justify-items:center;text-align:center;}
+@media (min-width:780px){.mc-story .mc-band-inner{grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:clamp(40px,6vw,80px);align-items:center;text-align:left;justify-items:stretch;}}
+/* 尖拱窗：古金的窗框裡放兩個人的照片 */
+.mc-frame{position:relative;width:min(64vw,260px);aspect-ratio:3/4.6;justify-self:center;
+  filter:drop-shadow(0 26px 26px rgba(0,0,0,.7));}
+.mc-frame::before{content:'';position:absolute;inset:0;clip-path:var(--mc-lancet);
+  background:linear-gradient(160deg,#ecd391,#a8843e 45%,#e0c27a 70%,#86662c);}
+.mc-frame::after{content:'';position:absolute;inset:5px;clip-path:var(--mc-lancet);background:#0d0a10;}
+.mc-frame-ph{position:absolute;inset:9px;z-index:1;clip-path:var(--mc-lancet);background:#2a2228 center/cover no-repeat;}
+.mc-story .story-text{margin:22px 0 0;max-width:32em;color:var(--mc-ink);font-size:15px;text-align:left;}
+
+/* ---- 倒數：一整片許願燭，跟著捲動一盞一盞亮起來 ---- */
+.mc-count{--glow:clamp(0,calc((var(--sp,0) - .1) * 2.2),1);}
+.mc-count .mc-band-bg{background:linear-gradient(180deg,#0d0a10,#140e12);
+  border-top:1px solid rgba(200,164,90,.16);border-bottom:1px solid rgba(200,164,90,.16);}
+.mc-count .mc-band-inner{display:flex;flex-direction:column;align-items:center;gap:30px;text-align:center;}
+@media (min-width:780px){.mc-count .mc-band-inner{flex-direction:row;justify-content:center;gap:clamp(40px,7vw,90px);text-align:left;}}
+.mc-votive-wrap{width:min(86vw,420px);margin:0;clip-path:var(--mc-lancet);aspect-ratio:3/3.6;position:relative;
+  background:linear-gradient(160deg,#ecd391,#a8843e 45%,#e0c27a 70%,#86662c);padding:5px;}
+/* 一張真的照片（Mike Labrum／Unsplash）：--glow 由這一條帶子穿過視窗的進度算出來，
+   燭光從左下往右上一盞一盞亮 */
+.mc-votives{display:block;width:100%;height:100%;clip-path:var(--mc-lancet);
+  background:
+    linear-gradient(35deg,transparent calc(var(--glow) * 120% - 20%),rgba(13,10,16,.82) calc(var(--glow) * 120% + 10%)),
+    #0d0a10 url(../img/chapel/votives.webp) 50% 60%/cover no-repeat;
+  filter:brightness(calc(.45 + var(--glow) * .65)) saturate(calc(.6 + var(--glow) * .5));}
+.mc-count .cd-grid{margin:22px 0 0;}
+@media (max-width:779px){.mc-count .cd-grid{margin:22px auto 0;}}
+.mc-count .cd-unit{border-left:1px solid var(--mc-line);}
+.mc-count .cd-num{font-family:'Cinzel',serif;font-weight:400;color:var(--mc-ink);text-shadow:0 0 18px rgba(255,180,100,.3);}
+.mc-count .cd-lab,.mc-count .cd-target{color:var(--mc-soft);}
+
+/* ============================================================
+   Explore：石牆上的小牌子
+============================================================ */
+.mc-sec .link-grid{border:none;gap:14px;}
+.mc-sec .link-card{text-align:left;border-radius:0;background:var(--mc-card);border:1px solid var(--mc-line);color:var(--mc-ink);
+  transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease;}
+.mc-sec .link-card:hover{background:var(--mc-card);color:var(--mc-ink);transform:translateY(-3px);border-color:var(--mc-gold);
+  box-shadow:0 0 30px -10px rgba(255,180,100,.35);}
+.mc-sec .link-card:hover .lc-sub{color:var(--mc-soft);}
+.mc-sec .link-card:hover .lc-index,.mc-sec .link-card:hover .lc-go{color:var(--mc-gold);}
+.mc-sec .lc-index{font-family:'Cinzel',serif;color:var(--mc-gold);}
+.mc-sec .lc-title{font-weight:500;font-size:17px;}
+.mc-sec .lc-sub{color:var(--mc-soft);}
+.mc-sec .lc-go{color:var(--mc-gold);}
+
+/* ============================================================
+   頁尾
+============================================================ */
+.mc-foot{position:relative;margin:clamp(80px,12vw,130px) 0 0;padding:40px 24px 40px;
+  display:flex;flex-direction:column;align-items:center;gap:8px;border-top:none;color:var(--mc-soft);}
+.mc-fin{font:italic 400 24px 'Cormorant Garamond',serif;color:var(--mc-gold);text-transform:none;letter-spacing:.02em;}

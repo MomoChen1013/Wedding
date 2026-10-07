@@ -412,7 +412,6 @@
     const pos = `left:${f(box.x0 / 6)}%;width:${f((box.x1 - box.x0) / 6)}%;top:${f(box.y0 / 6.4)}%;height:${f((box.y1 - box.y0) / 6.4)}%`;
     host.innerHTML = `
       <div class="dr-land" aria-hidden="true">${garden || kind === 'manor' ? '' : land(kind)}</div>
-      <div class="dr-rays" aria-hidden="true"></div>
       <div class="dr-world" aria-hidden="true">
         <div class="dr-portal">
           <div class="dr-front">${garden ? glassFront() : gateFront(kind)}</div>

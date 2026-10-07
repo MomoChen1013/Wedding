@@ -78,11 +78,9 @@ export const TEMPLATES = {
                      lobbyCss:['/css/lobby-tapestry.css'],
                      lobbyJs:['/js/lobby-motion.js'], opening:'envelope',
                      fonts:['https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
-  /* ---- 場景版型：共用一副大廳骨架（lobby-scene.html），
-     lobbyKey 是那副骨架的名字（寫在 <body data-lobby>），長相由
-     css/lobby-scene.css 依 data-template 換。每一個都有自己的預設開場。 ---- */
-  /* 植物信箋：一本植物標本冊 —— 真的棉紙、描圖紙、壓花標本的照片、
-     標本標籤。第一個「整套做完」的場景版型，所以有自己的骨架（不再共用 lobby-scene） */
+  /* ---- 場景版型：每一個都有自己的大廳骨架、自己的預設開場，畫面用真的照片。
+     （幾個版型要共用一副骨架時，寫 lobbyKey：那副骨架的名字，寫在 <body data-lobby>） ---- */
+  /* 植物信箋：一本植物標本冊 —— 真的棉紙、描圖紙、壓花標本的照片、標本標籤 */
   'botanical-letter': { label:'Botanical Letter 植物信箋', lobbyFile:'lobby-botanical.html',
                      lobbyCss:['/css/lobby-botanical.css'], lobbyJs:['/js/lobby-motion.js'], opening:'ribbon',
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Courier+Prime&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
@@ -103,13 +101,13 @@ export const TEMPLATES = {
   'french-manor': { label:'French Manor 法式莊園', lobbyFile:'lobby-manor.html',
                      lobbyCss:['/css/lobby-manor.css'], lobbyJs:['/js/lobby-motion.js'], opening:'door',
                      fonts:['https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
-  /* 晨光房間：亞麻、木頭、窗光；拉開紗簾，早晨照進來 */
-  'morning-window': { label:'Morning Window 晨光房間', lobbyFile:'lobby-scene.html', lobbyKey:'scene',
-                     lobbyCss:['/css/lobby-scene.css'], lobbyJs:['/js/lobby-motion.js'], opening:'curtain',
+  /* 晨光房間：真的紗簾、窗台上的花與咖啡、白牆上窗格形狀的陽光；拉開紗簾，早晨照進來 */
+  'morning-window': { label:'Morning Window 晨光房間', lobbyFile:'lobby-window.html',
+                     lobbyCss:['/css/lobby-window.css'], lobbyJs:['/js/lobby-motion.js'], opening:'curtain',
                      fonts:['https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
-  /* 午夜教堂：石材、彩繪玻璃、燭台；一根一根把蠟燭點亮 */
-  'midnight-chapel': { label:'Midnight Chapel 午夜教堂', lobbyFile:'lobby-scene.html', lobbyKey:'scene',
-                     lobbyCss:['/css/lobby-scene.css'], lobbyJs:['/js/lobby-motion.js'], opening:'candle',
+  /* 午夜教堂：真的中殿、彩繪玻璃、燭光的照片；一根一根把蠟燭點亮 */
+  'midnight-chapel': { label:'Midnight Chapel 午夜教堂', lobbyFile:'lobby-chapel.html',
+                     lobbyCss:['/css/lobby-chapel.css'], lobbyJs:['/js/lobby-motion.js'], opening:'candle',
                      fonts:['https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=UnifrakturMaguntia&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
 };
 export const DEFAULT_TEMPLATE = 'classic';

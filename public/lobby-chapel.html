@@ -4,11 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- 社群預覽文案：與 index.html 同一套備援，build-og 會針對站台換成專屬內容。
-     這一份是「場景」大廳：Botanical Letter／Secret Garden／Spring Orangerie／
-     Night Sky／French Manor／Morning Window／Midnight Chapel 七個版型共用同一副骨架，
-     長相全部由 css/lobby-scene.css 依 body[data-template] 換（色票、字體、hero 的場景、
-     裝飾花紋、照片框的形狀）。由 build-og 依 TEMPLATES.lobbyFile 選用；
-     沒跑過 build-og 的站台由 site-context.js 在執行期換成這一份骨架。 -->
+     這一份是 Midnight Chapel（午夜教堂）版型的大廳：點亮蠟燭之後，站在夜裡的教堂中殿。
+     由 build-og 依 TEMPLATES.lobbyFile 選用；沒跑過 build-og 的站台
+     由 site-context.js 在執行期換成這一份骨架。畫面用的是真的照片（public/img/chapel/，出處見 README）。 -->
 <title>我們結婚了｜婚禮邀請函</title>
 <meta name="description" content="誠摯邀請您一起見證我們的大喜之日・婚禮資訊、當日流程與互動小遊戲都在這裡">
 <meta property="og:title" content="我們結婚了｜婚禮邀請函">
@@ -29,6 +27,7 @@
 <link rel="preload" as="script" href="/js/common.js">
 <link rel="preload" as="script" href="/js/lobby-motion.js">
 <link rel="preload" as="script" href="/js/index.js">
+<link rel="preload" as="image" href="/img/chapel/nave.webp" type="image/webp">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- 字體依版型不同，由 build-og（預產）或 site-context.js（執行期）依 TEMPLATES[x].fonts 補上 -->
@@ -36,11 +35,12 @@
 
 <link rel="stylesheet" href="/css/common.css">
 <link rel="stylesheet" href="/css/index.css">
-<link rel="stylesheet" href="/css/lobby-scene.css">
+<link rel="stylesheet" href="/css/lobby-chapel.css">
 </head>
-<body data-template="night-sky" data-page="lobby" data-lobby="scene">
+<body data-template="midnight-chapel" data-page="lobby" data-lobby="midnight-chapel">
 <!-- 開場遮罩：只有**沒預產到**的頁面會顯示（見 css/common.css 的 .boot-veil） -->
 <div class="boot-veil" aria-hidden="true"><span class="boot-veil-mark">✦</span></div>
+
 
 <div class="bg-decor"></div>
 <canvas id="fx"></canvas>
@@ -81,39 +81,39 @@
 </div>
 <button class="intro-skip" id="introSkip" type="button" hidden>跳過</button>
 
-<!-- ============ 主畫面 ============
-     每一個 .sc-* 容器都是給版型填的格子：
-       .sc-hero-art   hero 背後的場景（星空、石牆、溫室的玻璃、窗光……）
-       .sc-emblem     名字上方的主視覺（星圖、玫瑰窗、標本標籤、拱窗……）
-       .sc-orn        標題上的小花紋（mask-image，顏色跟著版型）
-       .sc-frame      故事照片的框（clip-path，圓拱／尖拱／圓形／標本框）
-     內容的 id 與 lobby-forest／lobby-tapestry 完全一樣，js/index.js 一行都不用改。 -->
+<!-- ============ 主畫面：蠟燭點亮之後，站在夜裡的教堂中殿 ============
+     一張真的照片：一排一排的燭台、肋拱的穹頂，盡頭是一整面彩繪玻璃。
+     往下捲就像沿著中殿往前走 —— 照片慢慢推近，燭光一直輕輕地晃。 -->
 <div id="app">
-  <section class="panel lobby sc-lobby" data-panel="lobby">
+  <section class="panel lobby mc-lobby" data-panel="lobby" data-scroll>
 
     <!-- ===== Hero ===== -->
-    <header class="lobby-hero sc-hero" data-scroll>
-      <div class="sc-hero-art" aria-hidden="true"><i></i><i></i><i></i></div>
-      <div class="sc-hero-body">
-        <div class="sc-emblem" aria-hidden="true"><i></i><i></i><i></i></div>
-        <div class="sc-kicker"><span class="en"></span><span class="cn">誠摯邀請您</span></div>
-        <h1 class="sc-names"><span data-tpl="groomEn"></span><span class="amp">&amp;</span><span data-tpl="brideEn"></span></h1>
-        <div class="sc-date"><span data-tpl="date"></span><i aria-hidden="true"></i><span data-tpl="weekday"></span></div>
-        <div class="hashtags" id="lobbyTags" data-sk="tags"></div>
-        <div class="scroll-cue sc-cue"><span>Scroll</span><span class="arrow"></span></div>
+    <header class="lobby-hero mc-hero" data-scroll>
+      <div class="mc-scene" aria-hidden="true">
+        <div class="mc-photo"></div>
+        <i class="mc-flicker"></i>
       </div>
+      <div class="mc-hero-body">
+        <div class="mc-cartouche">
+          <div class="mc-kicker"><span class="en">By candlelight, we gather</span><span class="cn">誠摯邀請您</span></div>
+          <h1 class="mc-names"><span data-tpl="groomEn"></span><span class="amp">&amp;</span><span data-tpl="brideEn"></span></h1>
+          <div class="mc-date"><span data-tpl="date"></span><i aria-hidden="true"></i><span data-tpl="weekday"></span></div>
+        </div>
+        <div class="hashtags" id="lobbyTags" data-sk="tags"></div>
+      </div>
+      <div class="scroll-cue mc-cue"><span>Scroll</span><span class="arrow"></span></div>
     </header>
 
-    <div class="scene-body sc-body">
+    <div class="scene-body mc-body">
 
-      <!-- ===== 婚禮資訊 ===== -->
-      <section class="info-block sc-sec">
-        <div class="sc-head" data-reveal="rise">
-          <i class="sc-orn" aria-hidden="true"></i>
+      <!-- ===== 婚禮資訊：一根點著的蠟燭 ===== -->
+      <section class="info-block mc-sec">
+        <div class="mc-head">
+          <figure class="mc-icon" data-reveal="draw"><i class="mc-vignette v-candle"></i></figure>
           <span class="en block-title">Information</span>
           <span class="cn block-sub">婚禮資訊</span>
         </div>
-        <div class="sc-card" data-reveal="rise">
+        <div class="mc-card" data-reveal="rise" data-scroll>
           <div class="info-card">
             <div class="info-couple" id="infoCouple" data-tpl="couple"></div>
             <div class="info-couple-cn" id="infoCoupleCn"></div>
@@ -135,24 +135,26 @@
         </div>
       </section>
 
-      <!-- ===== 當日流程 ===== -->
-      <section class="info-block sc-sec" id="scheduleBlock">
-        <div class="sc-head" data-reveal="rise">
-          <i class="sc-orn" aria-hidden="true"></i>
+      <!-- ===== 當日流程：玫瑰窗 ===== -->
+      <section class="info-block mc-sec" id="scheduleBlock">
+        <div class="mc-head">
+          <figure class="mc-icon" data-reveal="draw"><i class="mc-vignette v-rose"></i></figure>
           <span class="en block-title">Schedule</span>
           <span class="cn block-sub">當日流程</span>
         </div>
-        <div class="timeline" id="schedule" data-sk="rows" data-reveal="list"></div>
+        <div class="mc-card mc-card-tl" data-reveal="rise" data-scroll>
+          <div class="timeline" id="schedule" data-sk="rows" data-reveal="list"></div>
+        </div>
       </section>
 
-      <!-- ===== 出席前的小提醒（沒填就整塊收起） ===== -->
-      <section class="info-block sc-sec" id="noteBlock" hidden>
-        <div class="sc-head" data-reveal="rise">
-          <i class="sc-orn" aria-hidden="true"></i>
+      <!-- ===== 出席前的小提醒：一把細蠟燭（沒填就整塊收起） ===== -->
+      <section class="info-block mc-sec" id="noteBlock" hidden>
+        <div class="mc-head">
+          <figure class="mc-icon" data-reveal="draw"><i class="mc-vignette v-tapers"></i></figure>
           <span class="en block-title">Notes</span>
           <span class="cn block-sub">出席前的小提醒</span>
         </div>
-        <div class="note-grid sc-card" data-reveal="rise">
+        <div class="note-grid mc-card" data-reveal="rise" data-scroll>
           <div class="note-item" id="dressCodeItem" hidden>
             <div class="note-label">Dress Code</div>
             <div class="dress-swatches" id="dressSwatches" hidden aria-hidden="true"></div>
@@ -169,14 +171,14 @@
         </div>
       </section>
 
-      <!-- ===== 交通資訊（沒填就整塊收起） ===== -->
-      <section class="info-block sc-sec" id="transportBlock" hidden>
-        <div class="sc-head" data-reveal="rise">
-          <i class="sc-orn" aria-hidden="true"></i>
+      <!-- ===== 交通資訊：教堂的木門（沒填就整塊收起） ===== -->
+      <section class="info-block mc-sec" id="transportBlock" hidden>
+        <div class="mc-head">
+          <figure class="mc-icon" data-reveal="draw"><i class="mc-vignette v-door"></i></figure>
           <span class="en block-title">Access</span>
           <span class="cn block-sub">交通資訊</span>
         </div>
-        <div class="note-grid sc-card" data-reveal="rise">
+        <div class="note-grid mc-card" data-reveal="rise" data-scroll>
           <div class="note-item" id="transportPublicItem" hidden>
             <div class="note-label">大眾運輸</div>
             <p class="info-note" id="transportPublic"></p>
@@ -190,51 +192,54 @@
         </div>
       </section>
 
-      <!-- ===== 兩人的故事：一整條場景帶，照片放在版型自己的框裡（沒填故事就整條收起） ===== -->
-      <section class="info-block sc-band sc-story" id="storyBlock" hidden data-scroll>
-        <div class="sc-band-bg" aria-hidden="true"></div>
-        <div class="sc-band-inner">
-          <div class="sc-frame" data-reveal="rise"><div class="sc-frame-ph" data-photo="story" aria-hidden="true"></div></div>
-          <div class="sc-story-body" data-reveal="rise">
-            <i class="sc-orn" aria-hidden="true"></i>
-            <div class="sc-band-title">Our Story</div>
-            <div class="sc-band-sub">關於我們這一路</div>
+      <!-- ===== 兩人的故事：彩繪玻璃透進來的光落在石牆上，照片放在一扇尖拱窗裡 ===== -->
+      <section class="info-block mc-band mc-story" id="storyBlock" hidden data-scroll>
+        <div class="mc-band-bg" aria-hidden="true"><i class="mc-tint"></i></div>
+        <div class="mc-band-inner">
+          <div class="mc-frame" data-reveal="rise">
+            <div class="mc-frame-ph" data-photo="story" aria-hidden="true"></div>
+          </div>
+          <div class="mc-story-body" data-reveal="rise">
+            <div class="mc-band-title">Our Story</div>
+            <div class="mc-band-sub">關於我們這一路</div>
             <p class="story-text" id="storyText"></p>
           </div>
         </div>
       </section>
 
-      <!-- ===== Moments 相遇之間（沒有照片、或新人關掉就不出現） ===== -->
-      <section class="info-block sc-sec gallery-block" id="photoGallery" hidden>
-        <div class="sc-head" data-reveal="rise">
-          <i class="sc-orn" aria-hidden="true"></i>
+      <!-- ===== Moments 相遇之間 ===== -->
+      <section class="info-block mc-sec gallery-block" id="photoGallery" hidden>
+        <div class="mc-head">
           <span class="en block-title">Moments</span>
           <span class="cn block-sub">相遇之間</span>
         </div>
         <div class="photo-rail" id="photoRail"></div>
       </section>
 
-      <!-- ===== 日期倒數 ===== -->
-      <section class="info-block sc-band sc-count" data-scroll>
-        <div class="sc-band-bg" aria-hidden="true"></div>
-        <div class="sc-band-inner">
-          <div class="sc-band-title">Countdown</div>
-          <div class="sc-band-sub">距離我們的大日子還有</div>
-          <div class="cd-card">
-            <div class="cd-grid" id="cdGrid" data-sk="grid"></div>
-            <div class="cd-target" id="cdTarget"></div>
+      <!-- ===== 日期倒數：一整片許願燭，跟著捲動一盞一盞亮起來 ===== -->
+      <section class="info-block mc-band mc-count" data-scroll>
+        <div class="mc-band-bg" aria-hidden="true"></div>
+        <div class="mc-band-inner">
+          <figure class="mc-votive-wrap" aria-hidden="true"><i class="mc-votives"></i></figure>
+          <div class="mc-count-body">
+            <div class="mc-band-title">Until the bells ring</div>
+            <div class="mc-band-sub">距離我們的大日子還有</div>
+            <div class="cd-card">
+              <div class="cd-grid" id="cdGrid" data-sk="grid"></div>
+              <div class="cd-target" id="cdTarget"></div>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- ===== R.S.V.P. ===== -->
-      <section class="info-block sc-sec">
-        <div class="sc-head" data-reveal="rise">
-          <i class="sc-orn" aria-hidden="true"></i>
+      <!-- ===== R.S.V.P.：彩繪玻璃的拱窗 ===== -->
+      <section class="info-block mc-sec">
+        <div class="mc-head">
           <span class="en block-title">R.S.V.P.</span>
           <span class="cn block-sub">出席回覆</span>
         </div>
-        <div class="sc-card sc-rsvp" data-reveal="rise">
+        <div class="mc-card mc-rsvp" data-reveal="rise" data-scroll>
+          <figure class="mc-icon mc-rsvp-icon" data-reveal="draw" aria-hidden="true"><i class="mc-vignette v-window"></i></figure>
           <div class="rsvp-cta">
             <h3>能來參加我們的婚禮嗎？</h3>
             <p>花 30 秒回覆出席，讓我們把最好的位置留給你</p>
@@ -243,10 +248,9 @@
         </div>
       </section>
 
-      <!-- ===== Explore ===== -->
-      <section class="link-section sc-sec">
-        <div class="sc-head" data-reveal="rise">
-          <i class="sc-orn" aria-hidden="true"></i>
+      <!-- ===== Explore：石牆上的小牌子 ===== -->
+      <section class="link-section mc-sec">
+        <div class="mc-head">
           <span class="en block-title">Explore</span>
           <span class="cn block-sub">其他活動</span>
         </div>
@@ -290,8 +294,8 @@
         </div>
       </section>
 
-      <footer class="sc-foot">
-        <i class="sc-orn" aria-hidden="true"></i>
+      <footer class="mc-foot">
+        <div class="mc-fin">in candlelight, together</div>
         <span>made for <span data-tpl="couple"></span>・小港製作所 設計製作</span>
       </footer>
     </div>

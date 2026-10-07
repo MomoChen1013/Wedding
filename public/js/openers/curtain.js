@@ -7,8 +7,9 @@
      → 光線從中間照進來 → 場景裡浮出兩個人的名字 → 溶進網站
 
    布幕後面是什麼由 [data-variant] 決定：
-     預設            舞台：一束頂光打在名字上（戲劇、古典莊園）
-     morning-window  一扇有窗格的窗、晨光，布幕是半透明的亞麻紗簾
+     預設            舞台：光打在名字上（戲劇、古典莊園）
+     morning-window  真的照片：窗台上一瓶鬱金香的白框窗；布幕是真的白紗簾照片
+                     （img/window/，出處見 README）
 ============================================================ */
 (function () {
   const LM = window.LobbyMotion;
@@ -18,7 +19,6 @@
     host.classList.add('ct-host');
     host.innerHTML = `
       <div class="ct-scene" aria-hidden="true">
-        <div class="ct-window"><i></i><i></i><i></i></div>
         <div class="ct-light"></div>
         <div class="ct-text">
           <div class="ct-kicker">Welcome to our wedding</div>

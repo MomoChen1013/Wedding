@@ -1,7 +1,7 @@
 /* ============================================================
    lobby-demo.js — 大廳示範頁的填空 ＋ 切換面板
    ------------------------------------------------------------
-   preview/tapestry.html、preview/scene.html 是 scripts/build-previews.js
+   preview/tapestry.html、preview/secret-garden.html… 是 scripts/build-previews.js
    從 public/lobby-*.html 產出來的：骨架一模一樣。正式版由 js/index.js
    填資料，這裡用 demo-data.js 做同一件事的最小版本 —— 不起 Firebase、
    直接用瀏覽器打開就能看。

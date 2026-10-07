@@ -116,9 +116,9 @@
 │   ├─ index.html             # 大廳
 │   ├─ lobby-korean.html  lobby-forest.html  lobby-tapestry.html
 │   │                         # 版型自己的大廳骨架（見 js/wed-model.js 的 TEMPLATES）
-│   ├─ lobby-botanical.html  lobby-garden.html
-│   │                         # 整套插圖做完的場景版型，各有自己的大廳
-│   ├─ lobby-scene.html       # 其餘「場景版型」共用的大廳骨架（長相見 css/lobby-scene.css）
+│   ├─ lobby-botanical.html  lobby-garden.html  lobby-orangerie.html  lobby-night.html
+│   │  lobby-manor.html  lobby-window.html  lobby-chapel.html
+│   │                         # 場景版型，各有自己的大廳（長相見 css/lobby-*.css）
 │   ├─ wall.html  cake.html
 │   ├─ draw.html  exhibition.html  quiz.html
 │   ├─ seating.html           # 我的桌次（婚禮當天查桌次 + 桌次圖）
@@ -155,7 +155,7 @@
 │   ├─ set-pages.js           # 改已建站台的開關
 │   ├─ sync-assets.js         # 掃描素材資料夾產生 manifest.json
 │   ├─ build-og.js            # 產生社群分享縮圖與各站專屬的 og 標籤
-│   ├─ build-previews.js      # 從正式的大廳骨架產出 preview/tapestry.html、scene.html
+│   ├─ build-previews.js      # 從正式的大廳骨架產出 preview/ 底下各版型的示範頁
 │   ├─ check-site.js          # 檢查某站台為什麼打不開
 │   ├─ export-rsvps.js        # 匯出某站台的 RSVP 成 CSV
 │   └─ create-short-link.js
@@ -222,8 +222,8 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | `envelope` | 拆信・封蠟 | 點封蠟 → 封口掀起 → 信封四散 | tapestry |
 | `book` | 翻頁・古書 | 點封面 → 翻開 → 扉頁 → 翻過扉頁 | （可選） |
 | `bloom` | 花朵盛開 | 自己演：一整面綠籬 → 到處冒出小花苞 → 從中間往外一波波開成白玫瑰 → 名字（綠籬與玫瑰都是真的照片） | spring-orangerie |
-| `curtain` | 窗簾拉開 | 點一下 → 布幕收到兩側 → 光進來 | morning-window |
-| `candle` | 燭光點亮 | 點一下 → 三根蠟燭一根根亮 | midnight-chapel |
+| `curtain` | 窗簾拉開 | 點一下 → 布幕收到兩側 → 光進來（晨光房間：真的白紗簾，後面是窗台上一瓶鬱金香的窗） | morning-window |
+| `candle` | 燭光點亮 | 點一下 → 三根蠟燭一根根亮（蠟燭與火焰都是真的照片；午夜教堂的房間是大廳那座中殿） | midnight-chapel |
 | `stars` | 星圖展開 | 自己演：星星 → 連線成一顆心 → 名字 | night-sky |
 | `door` | 門／拱門 | 晴朗的早上站在門口，點一下 → 門往內開 → 陽光湧出來、穿過門口。莊園是黑色鍛鐵大門（門後是一張真的城堡照片，石柱、矮牆、草地、碎石路、花也是真的照片；教堂／刺繡用尖拱版），秘密花園是常春藤牆上一扇白框玻璃門（牆、垂下來的藤、牆腳的花、門後的玫瑰拱門小徑都是真的照片） | secret-garden、french-manor |
 | `ribbon` | 拉開絲帶 | 拖緞帶尾（或點）→ 蝴蝶結鬆開 → 卡片打開。緞帶疊了一張真的絲綢布紋，光澤跟著游標滑（手機上自己慢慢飄）；卡片與桌面是真的棉紙、纖維紙，封面貼一枝真的壓花 | botanical-letter |
@@ -306,13 +306,43 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 >
 > 開場鐵門石甕裡的白玫瑰、牆腳的花，借用春日溫室的 `white-roses.webp` 與秘密花園的 `flowers-row.webp`。
 
+> **午夜教堂的照片素材**（`public/img/chapel/`，開場的蠟燭與 `lobby-chapel.html` 共用）：一樣是 Unsplash License。
+>
+> | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
+> |---|---|---|---|
+> | `chapel/nave.webp` | 大廳 hero、開場（candle）的房間 | [肋拱穹頂與彩繪玻璃的中殿](https://unsplash.com/photos/BgEaxd_bBQA)・Joss Broward | 縮圖 |
+> | `chapel/candle-top.webp`、`candle-base.webp`、`candle-body.webp` | 開場的三根蠟燭（不管哪個版型用燭光開場都是這根） | [一根白蠟燭](https://unsplash.com/photos/DfGYqdUl2WY)・KaLisa Veer | 去背，擦掉燭芯以上的火、重畫燒過的燭芯；再切成燭頂、燭身下半、一段燭身，疊起來高矮都不會拉長 |
+> | `chapel/flame.webp` | 開場點亮的火焰 | [黑底裡的一根蠟燭](https://unsplash.com/photos/Fqqrfvq0Zgg)・PhotographyCourse | 只取火焰，依亮度轉成透明度 |
+> | `chapel/v-candle.webp` | 婚禮資訊的尖拱小照片 | [彩繪玻璃前的一根蠟燭](https://unsplash.com/photos/Yy9w15Qg2og)・Jeffrey Zhang | 裁切 |
+> | `chapel/v-rose.webp` | 當日流程 | [玫瑰窗](https://unsplash.com/photos/NKXcBuBXbLY)・Robert Thiemann | 裁切 |
+> | `chapel/v-tapers.webp` | 小提醒 | [一把細蠟燭](https://unsplash.com/photos/UrAKbpKnak8)・Nicola Fioravanti | 裁切 |
+> | `chapel/v-door.webp` | 交通資訊 | [尖拱石框裡的木門](https://unsplash.com/photos/vbbBhPxD-SM)・T | 裁切 |
+> | `chapel/v-window.webp` | R.S.V.P. | [彩繪玻璃的拱窗](https://unsplash.com/photos/vqoKHmMKgOE)・Andre Hunter | 裁切 |
+> | `chapel/glass-light.webp` | 「我們的故事」的背景 | [彩繪玻璃透進來的光](https://unsplash.com/photos/u2uK6KHUGAc)・Jakub Pierożyński | 縮圖 |
+> | `chapel/votives.webp` | 倒數（捲動時一盞一盞亮起來） | [一整片許願燭](https://unsplash.com/photos/fvl4b1gjpbk)・Mike Labrum | 縮圖 |
+
+> **晨光房間的照片素材**（`public/img/window/`，開場的紗簾與 `lobby-window.html` 共用）：一樣是 Unsplash License。
+>
+> | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
+> |---|---|---|---|
+> | `window/morning.webp` | 大廳 hero | [紗簾前、窗台上的白瓷壺](https://unsplash.com/photos/MmtGyAll-NM)・Viktoriia Kondratiuk | 縮圖 |
+> | `window/sheer.webp` | 開場（curtain）的紗簾、大廳 hero 左邊被風吹的紗簾 | [垂到地上的白紗簾](https://unsplash.com/photos/don7oK9K6us)・sander traa | 只取上半的布 |
+> | `window/tulips.webp` | 開場紗簾後面的窗 | [白框窗前的一瓶鬱金香](https://unsplash.com/photos/YH1h9tN8_ac)・Zoe Richardson | 縮圖 |
+> | `window/sun-patch.webp` | 整頁牆上窗格形狀的陽光、「我們的故事」滑過去的光 | [白牆上的窗光](https://unsplash.com/photos/X8sWlFdQElQ)・H&CO | 轉成灰階、拉開明暗，做成 multiply 用的光影 |
+> | `window/v-coffee.webp` | 婚禮資訊的圓拱小窗 | [木桌上的一杯咖啡](https://unsplash.com/photos/_hnL_961xTk)・Caleb | 裁切 |
+> | `window/v-tulips.webp` | 當日流程 | [窗台上的鬱金香](https://unsplash.com/photos/l-6cbjLd2N4)・Natalie Kinnear | 裁切 |
+> | `window/v-breakfast.webp` | 小提醒 | [窗邊的早餐與書](https://unsplash.com/photos/b4lcWyZ0acg)・Yuliia Martsynkevych | 裁切 |
+> | `window/v-window.webp` | 交通資訊 | [白紗簾與窗](https://unsplash.com/photos/qMYhrV18sTU)・Jonathan Borba | 裁切 |
+> | `window/v-book.webp` | R.S.V.P. | [窗台上的書、咖啡與蠟燭](https://unsplash.com/photos/dV2JQTFwvWI)・Nadiia Shuran | 裁切 |
+> | `window/linen.webp` | 「我們的故事」的亞麻布 | [米色的布紋](https://unsplash.com/photos/QFQ6vsou7XA)・Safwan Thottoli | 縮圖 |
+> | `window/sheer-light.webp` | 倒數（陽光跟著捲動移過來） | [陽光斜斜照在白紗簾上](https://unsplash.com/photos/VUu9rAmb9R0)・Mila Albrecht | 縮圖 |
+
 同一種開場在不同版型可以長得不一樣（門：法式莊園是黑色鍛鐵大門、秘密花園是爬滿植物的玻璃門、
 午夜教堂與中古刺繡是尖拱的鍛鐵大門）。要賓客親手做的開場，那一下也會開始播背景音樂。
 每一種開場單獨看：`preview/openings.html`。
 
 **場景版型**：`botanical-letter`、`secret-garden`、`spring-orangerie`、`night-sky`、
-`french-manor`、`morning-window`、`midnight-chapel`。每一個都有自己的色票、字體與預設開場；
-專屬的整套插圖依序一個一個補，補完的就搬出去自己一副大廳骨架：
+`french-manor`、`morning-window`、`midnight-chapel`。每一個都有自己的色票、字體、預設開場與大廳骨架：
 
 | 版型 | 進度 | 大廳 |
 |---|---|---|
@@ -321,12 +351,13 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | spring-orangerie | ✅ 真的照片（白框玻璃溫室與兩旁的柑橘樹、玻璃罩裡的白玫瑰、鬱金香、檸檬枝、蕨葉、澆水壺、溫室屋頂、玻璃罩裡的紅玫瑰、白牆上的葉影、一束白玫瑰）＋ 捲動編排（葉影隨捲動移動、斜射的光、玻璃反光、倒數區玻璃罩裡的紅玫瑰捲到時慢慢亮起來），素材見上面〈春日溫室與植物信箋的照片素材〉 | `lobby-orangerie.html` |
 | night-sky | ✅ 整套插圖（現代星空：開場那張心形星圖停在 hero、寫實的月亮、三層山稜、亮燈的帳篷、坐著看星星的兩個人、細金線星座）＋ 捲動編排（三層星星視差、星圖外環跟著轉、星座一條一條連起來、望遠鏡視野的軌道、倒數的月亮越捲越圓、頁尾天快亮了） | `lobby-night.html` |
 | french-manor | ✅ 真的照片（城堡與碎石路、凡爾賽花箱、鍛鐵大門、日晷、花箱裡的樹、壁燈、蠟封的信、鍍金畫框、白色描金牆板、從空中往下看的法式花園）＋ 捲動編排（往下捲像沿著碎石路走向城堡、區塊標題上的橢圓小照片從金邊裡顯出來、牆板上的陽光隨捲動滑過、倒數時花園從中間的噴泉往外展開），素材見上面〈法式莊園的照片素材〉 | `lobby-manor.html` |
-| 其餘兩個 | 世界觀、hero 場景、開場 | 共用 `lobby-scene.html` |
+| morning-window | ✅ 真的照片（紗簾前的白瓷壺、窗台上的鬱金香、咖啡、早餐桌、書、白牆上窗格形狀的陽光、亞麻布、照著陽光的紗簾）＋ 捲動編排（整頁牆上的窗光跟著捲動移、hero 左邊一片被風吹的紗簾、圓拱小窗從霧白裡清楚起來、故事照片上滑過的窗光、倒數時陽光移過紗簾），素材見上面〈晨光房間的照片素材〉 | `lobby-window.html` |
+| midnight-chapel | ✅ 真的照片（肋拱穹頂與彩繪玻璃的中殿、蠟燭、玫瑰窗、細蠟燭、尖拱木門、彩繪玻璃的拱窗、彩繪玻璃透進來的光、一整片許願燭）＋ 捲動編排（燭光一直輕輕地晃、尖拱小照片從暗處被照亮、故事照片放在尖拱窗裡、倒數時許願燭一盞一盞亮起來），開場三根真的蠟燭點亮之後就是大廳那座中殿，素材見上面〈午夜教堂的照片素材〉 | `lobby-chapel.html` |
 
 Night Sky 與 Midnight Chapel 的大廳是深色的，但子頁暫時還是淺色版（見 common.css）。
-還沒整套做完的版型並排看：`preview/scene.html`；做完的各有一頁（`preview/botanical-letter.html`、`preview/secret-garden.html`、`preview/spring-orangerie.html`、`preview/night-sky.html`、`preview/french-manor.html`）。右下角都可以切換開場。
+每個版型各有一頁示範（`preview/botanical-letter.html`、`preview/secret-garden.html`、`preview/spring-orangerie.html`、`preview/night-sky.html`、`preview/french-manor.html`、`preview/morning-window.html`、`preview/midnight-chapel.html`）。右下角都可以切換開場。
 
-`preview/` 底下 tapestry、botanical-letter、secret-garden、spring-orangerie、night-sky、french-manor、scene 這幾頁是 `npm run build-previews` 從
+`preview/` 底下 tapestry、botanical-letter、secret-garden、spring-orangerie、night-sky、french-manor、morning-window、midnight-chapel 這幾頁是 `npm run build-previews` 從
 `public/lobby-*.html` 產出來的，改了大廳骨架記得重跑。
 
 ---

@@ -6,7 +6,8 @@
    產出（⚙️ 不要手改，改來源再重跑）：
      preview/tapestry.html          ← public/lobby-tapestry.html
      preview/botanical-letter.html  ← public/lobby-botanical.html
-     preview/scene.html             ← public/lobby-scene.html（還沒整套做完的場景版型共用）
+     preview/midnight-chapel.html   ← public/lobby-chapel.html
+     ……（每一副大廳骨架一頁；幾個版型共用一副骨架時只產一頁，名字是那副骨架的 lobbyKey）
      —— 清單從 TEMPLATES 的 lobbyFile 算出來，新增版型不必改這支
 
    為什麼用產的而不是手寫一份：示範頁要跟賓客看到的一模一樣，
@@ -30,9 +31,9 @@ const PAGES = [...new Map(Object.entries(TEMPLATES)
   .filter(([, t]) => t.lobbyFile)
   .map(([key, t]) => {
     const lobby = t.lobbyKey || key;
-    const name = lobby === 'scene' ? 'scene' : key;
+    const name = t.lobbyKey || key;
     return [lobby, { src: `public/${t.lobbyFile}`, out: `preview/${name}.html`, lobby,
-      title: lobby === 'scene' ? '場景版型' : t.label.split(' ')[0] }];
+      title: t.lobbyKey ? '場景版型' : t.label.split(' ')[0] }];
   })).values()]
   /* korean／forest 的示範頁是手寫的（preview/korean-modern.html…），不動它們 */
   .filter((p) => !['korean', 'forest'].includes(p.lobby));

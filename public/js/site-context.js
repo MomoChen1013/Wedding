@@ -205,8 +205,8 @@ async function swapLobbyLayout(templateKey) {
   const t = TEMPLATES[templateKey];
   const file = t.lobbyFile;
   if (!file) return;                                   /* Classic 系列不用換 */
-  /* 骨架的名字：多數版型一個版型一副骨架（名字＝版型代號），
-     場景版型七個共用一副（lobbyKey:'scene'） */
+  /* 骨架的名字：一個版型一副骨架（名字＝版型代號）；
+     幾個版型共用一副時寫 lobbyKey */
   const lobbyKey = t.lobbyKey || templateKey;
   if (document.body.dataset.lobby === lobbyKey) return;  /* 已經是對的骨架 */
 
