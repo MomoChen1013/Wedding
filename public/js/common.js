@@ -1133,6 +1133,76 @@ const DataStore = {
 
     return { attend, meal, child, card, gift };
   },
+
+  /* ===== 單一活動的環狀圖 =====
+     getRsvpCharts() 讀的是頂層欄位，也就是**主要活動**（婚宴）。
+     多活動時新人要的是「證婚那一場」「派對那一場」各自的分布，
+     所以這裡改從每一筆回覆的 events[eventId] 算（eventResponse() 會把
+     舊回覆對回主要活動，和 getEventStats() 用的是同一套判斷）。
+
+       attend   會出席／無法出席／待回覆（依回覆筆數；三者加起來＝總筆數）
+       meal     葷／素（依這一場的出席人數）
+       questions 這一場的自訂選擇題，各自一張（依這一場會來的回覆）
+     兒童座椅、喜帖、喜餅不是「某一場」的事，呼叫端自己從 getRsvpCharts() 拿。 */
+  getEventCharts(ev){
+    const rows = this._rsvps;
+    let yes = 0, no = 0, pending = 0;
+    let meat = 0, veg = 0, unset = 0;
+    const going = [];
+    rows.forEach(r => {
+      const res = eventResponse(r, ev.id);
+      if(!res || res.tentative){ pending++; return; }
+      if(!res.going){ no++; return; }
+      yes++;
+      going.push(res);
+      /* 舊回覆沒有葷素分配（mealMeat、mealVeg 都是 0）→ 算「未填」，和 getRsvpCharts() 一致 */
+      if(res.legacy && !(Number(r.mealMeat) || 0) && !(Number(r.mealVeg) || 0)){
+        unset += res.count;
+        return;
+      }
+      const v = Math.min(res.veg, res.count);
+      veg += v;
+      meat += res.count - v;
+    });
+
+    const attendSlices = [
+      { key:'yes', label:'會出席',   value: yes },
+      { key:'no',  label:'無法出席', value: no },
+    ];
+    if(pending) attendSlices.push({ key:'na', label:'待回覆', value: pending });
+    const attend = { total: rows.length, slices: attendSlices };
+
+    const mealSlices = [
+      { key:'meat', label:'葷食', value: meat },
+      { key:'veg',  label:'素食', value: veg },
+    ];
+    if(unset) mealSlices.push({ key:'na', label:'未填', value: unset });
+    const meal = { total: meat + veg + unset, slices: mealSlices, unit:'位' };
+
+    /* 自訂題：單選以「筆」計、加上沒答的；複選一個人可以勾好幾個，
+       改以「勾選次數」計，圓環才不會超過一圈 */
+    const questions = (ev.questions || [])
+      .filter(q => q.kind === 'choice' || q.kind === 'multi')
+      .map(q => {
+        const counts = new Map(q.opts.map(o => [o.id, 0]));
+        let na = 0;
+        going.forEach(res => {
+          const ids = String(res.answers[q.id] || '')
+            .split(',').map(x => x.trim()).filter(id => counts.has(id));
+          if(!ids.length){ na++; return; }
+          (q.kind === 'multi' ? ids : ids.slice(0, 1))
+            .forEach(id => counts.set(id, counts.get(id) + 1));
+        });
+        const slices = q.opts.map(o => ({ key:o.id, label:o.label, value: counts.get(o.id) }));
+        if(q.kind === 'multi'){
+          return { q, total: slices.reduce((n, s) => n + s.value, 0), slices, unit:'次' };
+        }
+        if(na) slices.push({ key:'na', label:'未填', value: na });
+        return { q, total: going.length, slices };
+      });
+
+    return { attend, meal, questions };
+  },
 };
 
 /* site-context.js 已確保 window.fb 與 window.SITE 就緒才載入本檔 */
@@ -1685,11 +1755,15 @@ function ownerEmails(){
   return Array.isArray(list) ? list.map(e => String(e).toLowerCase()) : [];
 }
 
-/* 目前登入的帳號是不是這組新人 */
+/* 目前登入的帳號是不是這組新人。
+   比對方式要和 firestore.rules 的 isSiteOwner() 一模一樣（信箱原樣或轉小寫，
+   名單本身不轉）—— 這裡比規則寬鬆的話，新人會進得了後台、卻每一份資料都讀不到 */
 function isSiteOwner(){
   const user = window.fb && window.fb.auth && window.fb.auth.currentUser;
   if(!user || !user.email || !user.emailVerified) return false;
-  return ownerEmails().includes(user.email.toLowerCase());
+  const list = window.SITE && window.SITE.data && window.SITE.data.ownerEmails;
+  if(!Array.isArray(list)) return false;
+  return list.includes(user.email) || list.includes(user.email.toLowerCase());
 }
 
 /* 跳出 Google 登入視窗，回傳登入後的 email（失敗回 null） */

@@ -840,6 +840,7 @@
         <summary>這些數字怎麼算的</summary>
         <div class="ad-fine-body">
           <p>只有<b>飲食</b>是以「人」為單位（把每一筆的葷素分配加起來），其餘四張都是算<b>回覆筆數</b>。</p>
+          <p>有好幾場活動時，分布圖上方可以切換要看<b>哪一場</b>；兒童座椅、喜帖、喜餅是整場婚禮共用的，每一場看到的都一樣。</p>
           <p>回覆是賓客自己送出的，這裡只能看與匯出，改不動。</p>
         </div>
       </details>
@@ -860,6 +861,14 @@
       <!-- 各活動出席統計：多活動時才出現（js/admin.js 判斷）。
            放在環狀圖上面 —— 「哪一場有幾個人」比分布圖更急著知道 -->
       <div class="ad-evstats" id="adEvStats" hidden></div>
+
+      <!-- 多活動時，環狀圖一次看一場：每一場的出席、飲食、自訂題目各自統計。
+           只有一個活動的站台整排收起來（js/admin.js 的 renderChartEventChips） -->
+      <div class="ad-filterbar-row ad-chartev" id="adRsvpChartEvRow" hidden>
+        <span class="ad-filterbar-lab">分布圖</span>
+        <div class="ad-chips ad-chips-oneline" id="adRsvpChartEvs"
+             role="group" aria-label="選擇要看哪一場的分布圖"></div>
+      </div>
 
       <div class="ad-donuts" id="adRsvpCharts"></div>
 
@@ -1960,14 +1969,15 @@
       <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-stats"/></svg>收禮統計</h2>
       <p class="ad-page-sub" id="adBtPageSub"></p>
 
-      <!-- 金額預設是遮起來的（見 js/admin.js 的 moneyHidden）：
+      <!-- 統計的金額預設是遮起來的（見 js/admin.js 的 moneyHidden）：
            婚宴當天這一頁常常就開在手上、擺在收禮台上，
-           旁邊經過的人不該一眼看到今天收了多少。按眼睛才顯示。 -->
+           旁邊經過的人不該一眼看到今天收了多少。按眼睛才顯示。
+           「收禮明細」那一頁相反，預設就看得到。 -->
       <div class="ad-hero-stat">
         <div class="ad-hero-num" id="adBtSum">$ -⁠-⁠-</div>
         <div class="ad-hero-lab">
           禮金總額
-          <button class="ad-eye" data-money-eye type="button"
+          <button class="ad-eye" data-money-eye="stats" type="button"
                   aria-pressed="false" aria-label="顯示金額">
             <svg class="ad-eye-ic" viewBox="0 0 24 24" aria-hidden="true">
               <g class="ad-eye-open">
@@ -2010,8 +2020,10 @@
           <p class="ad-page-sub" id="adBtEntryPageSub"></p>
         </div>
         <div class="ad-sec-head-actions">
-          <button class="ad-eye" data-money-eye type="button"
-                  aria-pressed="false" aria-label="顯示金額">
+          <!-- 明細的金額預設是打開的（對帳、改金額就是要看得到），
+               這顆眼睛只管這一頁，不跟著統計那一顆變 -->
+          <button class="ad-eye is-on" data-money-eye="entries" type="button"
+                  aria-pressed="true" aria-label="遮住金額">
             <svg class="ad-eye-ic" viewBox="0 0 24 24" aria-hidden="true">
               <g class="ad-eye-open">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
@@ -2022,12 +2034,12 @@
                 <line x1="1" y1="1" x2="23" y2="23"/>
               </g>
             </svg>
-            <span class="ad-eye-tx">顯示金額</span>
+            <span class="ad-eye-tx">遮住金額</span>
           </button>
           <button class="btn small ghost" id="adBtExport" type="button">匯出 CSV</button>
         </div>
       </div>
-      <p class="ad-sec-note">點一列就看得到完整內容。</p>
+      <p class="ad-sec-note">點一筆就看得到完整內容，記錯的金額也可以直接改。</p>
 
       <div class="ad-list-head">
         <span id="adBtCount">目前 0 筆</span>
@@ -2060,7 +2072,8 @@
           <p class="ad-page-sub" id="adBtLinkPageSub"></p>
         </div>
         <div class="ad-sec-head-actions">
-          <button class="btn small" id="adBtNewLink" type="button">產生新連結</button>
+          <!-- 已經有一組連結之後就收起來（見 js/admin.js 的 renderLinks） -->
+          <button class="btn small" id="adBtNewLink" type="button" hidden>產生新連結</button>
         </div>
       </div>
       <p class="ad-sec-note">產生一組連結交給當天幫忙收禮的親友，他們記的每一筆都會即時回到這裡。</p>

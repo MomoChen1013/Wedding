@@ -218,13 +218,24 @@ const app  = initializeApp(firebaseConfig);
    新人在捷運上改的東西「看起來存好了」，回到家卻不見。
    開了 persistentLocalCache 之後，離線期間的改動會排在 IndexedDB 的佇列裡，
    連線回來自己送出去，關掉分頁也撐得住。
-   ・multipleTab：後台常常同時開好幾個分頁（一邊排桌一邊看回覆）
-   ・無痕視窗、瀏覽器擋 site data 時會開不起來，退回記憶體快取就好 */
+   ・multipleTab：賓客常常同時開好幾個分頁
+   ・無痕視窗、瀏覽器擋 site data 時會開不起來，退回記憶體快取就好
+
+   ⚠️ 新人後台例外，一律用記憶體快取。
+   多分頁模式下，**只有「主分頁」真的連線**，其他分頁的讀寫都交給它送 ——
+   用的是主分頁那邊的登入身分。新人常常一邊開著賓客頁（匿名帳號）一邊進後台：
+   後台這一頁剛用 Google 登入，主分頁卻還是匿名（另一個分頁要好一陣子才同步到，
+   被瀏覽器丟到背景的分頁更久），結果每一份名單都被規則擋下、
+   每一次存檔都跳「沒有寫入權限」，畫面上明明已經登入了。
+   後台改用自己的連線，身分就永遠是這一頁自己登入的那一個。 */
+const isAdminPage = document.body && document.body.dataset.page === 'admin';
 let db;
 try{
-  db = initializeFirestore(app, {
-    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
-  });
+  db = isAdminPage
+    ? getFirestore(app)
+    : initializeFirestore(app, {
+        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+      });
 }catch(err){
   console.warn('[site] 離線快取開不起來，改用記憶體快取', err);
   db = getFirestore(app);

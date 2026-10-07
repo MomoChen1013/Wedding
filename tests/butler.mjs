@@ -445,6 +445,8 @@ console.log('\n【後台】');
     () => document.querySelectorAll('#adBtLinks .ad-bt-link').length === 1,
     null, { timeout:20000 });
   ok('產生得出一組連結', true);
+  /* 一場婚禮只要一組：有了之後「產生新連結」就收起來，免得統計被拆成好幾本 */
+  ok('有一組連結之後「產生新連結」收起來', !(await page.isVisible('#adBtNewLink')));
 
   const url = await page.inputValue('#adBtLinks input[data-url]');
   const pass = (await page.textContent('#adBtLinks .ad-bt-pass')).trim();
@@ -517,11 +519,47 @@ console.log('\n【後台】');
   ok('收禮明細是自己一個子分頁', page.url().endsWith('#butler/entries'), page.url());
   ok('明細列出那一筆',
     (await page.textContent('#adBtTableWrap')).includes('黃美麗'));
-  ok('明細的金額跟著眼睛一起顯示',
+  ok('明細的金額看得到',
+    (await page.textContent('#adBtTableWrap')).includes('3,600'));
+
+  /* 統計那顆眼睛只管統計：遮回去之後，明細照樣看得到金額 */
+  await page.click('.ad-subtab[data-subtab="stats"]');
+  await page.click('.ad-subpanel[data-subpanel="stats"] [data-money-eye]');
+  await page.click('.ad-subtab[data-subtab="entries"]');
+  await page.waitForTimeout(200);
+  ok('統計遮住時，明細的金額仍然預設打開',
     (await page.textContent('#adBtTableWrap')).includes('3,600'));
 
   ok('沒有 console 錯誤', errors.length === 0, errors.join(' / '));
   await page.close();
+
+  /* 手機：明細是一筆一張卡，點下去要能就地改金額（原本卡片什麼都點不了） */
+  const phone = await newPage({ viewport:{ width:390, height:844 }, isMobile:true, hasTouch:true });
+  const phoneErrors = [];
+  phone.on('pageerror', (e) => phoneErrors.push('pageerror: ' + e.message));
+  await phone.goto(`${BASE}/w/butler-test/admin#butler/entries`, { waitUntil:'domcontentloaded' });
+  await phone.waitForFunction(() => document.documentElement.dataset.siteReady === '1',
+    null, { timeout:20000 });
+  await signInAsOwner(phone, 'couple@example.com');
+  await phone.waitForSelector('#adPage:not([hidden])', { timeout:20000 });
+  await phone.waitForSelector('#adBtTableWrap .ad-btcard[data-entry]', { timeout:20000 });
+  ok('手機的明細卡片預設看得到金額',
+    (await phone.textContent('#adBtTableWrap .ad-btcard')).includes('3,600'));
+
+  await phone.tap('#adBtTableWrap .ad-btcard[data-entry]');
+  await phone.waitForSelector('.ad-drawer:not([hidden]) [data-entry-field="amount"]', { timeout:5000 });
+  ok('手機點卡片打得開修改抽屜', true);
+  const amt = phone.locator('.ad-drawer [data-entry-field="amount"]');
+  ok('手機上的金額欄位可以改', await amt.isEditable());
+  await amt.fill('5200');
+  await amt.press('Enter');
+  const edited = await waitForServer(
+    () => adb.collection('butlers').doc(derived).collection('entries').get(),
+    (snap) => snap.docs.some((d) => d.data().amount === 5200));
+  ok('手機上改的金額寫回去了',
+    edited.docs.some((d) => d.data().amount === 5200));
+  ok('手機沒有 console 錯誤', phoneErrors.length === 0, phoneErrors.join(' / '));
+  await phone.close();
 }
 
 await browser.close();

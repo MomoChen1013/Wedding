@@ -26,14 +26,18 @@ service cloud.firestore {
     }
 
     /* 是不是這組新人本人：用已驗證的 Google 信箱比對站台的白名單。
-       信箱由 Firebase Auth 簽發，前端偽造不了，才是真正的保護。 */
+       信箱由 Firebase Auth 簽發，前端偽造不了，才是真正的保護。
+       白名單一律存小寫（scripts/create-site.js、set-pages.js），
+       後台畫面的判斷也是不分大小寫（common.js 的 isSiteOwner）——
+       這裡要跟著不分，不然信箱帶大寫的帳號會「進得了後台、卻什麼都讀不到」。 */
     function isSiteOwner(siteId) {
       let s = site(siteId);
       return request.auth != null
         && request.auth.token.email_verified == true
         && 'ownerEmails' in s
         && s.ownerEmails is list
-        && request.auth.token.email in s.ownerEmails;
+        && (request.auth.token.email in s.ownerEmails
+            || request.auth.token.email.lower() in s.ownerEmails);
     }
 
     /* 賓客留下的內容共用的基本欄位：暱稱、icon、時間 */
