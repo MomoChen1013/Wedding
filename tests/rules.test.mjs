@@ -556,6 +556,15 @@ describe('letters 的擁有者權限', () => {
     await assertSucceeds(getDocs(collection(db, `sites/${SITE_ID}/letters`)));
   });
 
+  /* 名單存小寫；登入帶回來的信箱有大寫時，後台畫面不分大小寫放行，
+     規則也要放行 —— 不然就是「進得了後台、卻什麼都讀不到」 */
+  it('信箱大小寫不同，名單內的帳號一樣讀得到', async () => {
+    const db = testEnv
+      .authenticatedContext('couple', { email:'Couple@Example.com', email_verified: true })
+      .firestore();
+    await assertSucceeds(getDocs(collection(db, `sites/${SITE_ID}/letters`)));
+  });
+
   it('站台沒設定 ownerEmails 時，誰都讀不到', async () => {
     await seedSite(SITE_ID);
     const db = testEnv
