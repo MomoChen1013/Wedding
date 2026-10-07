@@ -1,20 +1,28 @@
 /* ============================================================
-   openers/door.js — 開場：門／拱門
+   openers/door.js — 開場：門（莊園的鍛鐵大門／秘密花園的玻璃門）
    ------------------------------------------------------------
-   畫面中央是一扇關著的門，門縫透出一線光：
+   一個晴朗的早上，站在門口：
 
-     點一下 → 兩扇門往內推開 → 光從門後湧出來
+     點一下 → 兩扇門往裡推開 → 陽光湧出來
      → 鏡頭穿過門口往前走 → 溶進網站
 
    每個版型有自己的門（[data-variant]，見 css/openers/door.css）：
-     french-manor     石牆、圓拱、木門與鐵環（預設）
-     secret-garden    綠籬、爬滿藤蔓的拱、鍛鐵花園門（門是鏤空的，看得到後面的花園）
-     midnight-chapel  石砌尖拱、深色橡木門與鐵條（tapestry 也用這一扇）
-   門的結構每一版都一樣，只有材質不同。
+     french-manor（預設）  黑色鍛鐵大門：兩根石柱、柱頂的石甕插滿花、門上一道鍛鐵拱，
+                           兩旁是矮石牆與鐵欄杆；門是鏤空的，看得到後面陽光下的城堡
+     midnight-chapel／tapestry  同一種鍛鐵大門，但是中古的尖拱、石柱頂是小尖塔，
+                           門後遠遠是一座有圓塔的城堡
+     secret-garden         一整面爬滿植物的牆上，一扇白框的玻璃門：
+                           上面一扇半圓的氣窗，紫藤從門楣垂下來，兩邊是盆栽，
+                           門上也爬著藤與小白玫瑰；隔著玻璃看得到後面的花園
+
+   畫面全部是程式畫的 SVG（亂數有固定的種子，每一次都一樣）：
+     .dr-land   門後的風景（天空、太陽、遠山、城堡、草地、碎石路），滿版
+     .dr-front  門以外的東西（石柱、牆、鐵欄杆、地面、植物），跟門同一個座標
+     .dr-leaf   兩扇門，各自一個 SVG，用 CSS 3D 轉開
 ============================================================ */
 (function () {
   const LM = window.LobbyMotion;
-  const T = { open: 1500, walk: 1300 };
+  const T = { open: 1700, walk: 1400 };
 
   const KIND = {
     'secret-garden': 'garden',
@@ -22,24 +30,413 @@
     'tapestry': 'gothic',
   };
 
+  const f = (n) => +(+n).toFixed(1);
+  function rng(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
+  const IRON = '#1c1d20', GOLD = '#c9a24a';
+
+  /* ==========================================================
+     門後的風景（viewBox 1600×1000，slice 滿版；地平線在 y=560）
+     ========================================================== */
+  function land(kind) {
+    const r = rng(kind === 'garden' ? 7 : 3);
+    let s = `<defs>
+      <linearGradient id="dr-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fc3ea"/><stop offset=".45" stop-color="#cfe6f4"/><stop offset=".56" stop-color="#fff4dc"/></linearGradient>
+      <radialGradient id="dr-sunG"><stop offset="0" stop-color="#fffef6"/><stop offset=".25" stop-color="#fff6d6" stop-opacity=".9"/><stop offset="1" stop-color="#fff2cc" stop-opacity="0"/></radialGradient>
+      <linearGradient id="dr-lawn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c3d99a"/><stop offset="1" stop-color="#7fa95c"/></linearGradient>
+      <linearGradient id="dr-path" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6ecd4"/><stop offset="1" stop-color="#e3d2ad"/></linearGradient>
+      <filter id="dr-soft"><feGaussianBlur stdDeviation="6"/></filter>
+    </defs>`;
+    s += `<rect width="1600" height="1000" fill="url(#dr-sky)"/>`;
+    s += `<circle cx="800" cy="330" r="380" fill="url(#dr-sunG)"/>`;
+    /* 雲：幾團軟軟的白 */
+    let clouds = '';
+    for (const [cx, cy, w] of [[260, 170, 220], [1180, 120, 260], [1420, 300, 180], [520, 330, 150], [980, 260, 140]]) {
+      for (let k = 0; k < 6; k++) clouds += `<ellipse cx="${f(cx + (r() - .5) * w)}" cy="${f(cy + (r() - .5) * w * .18)}" rx="${f(w * (.22 + r() * .2))}" ry="${f(w * (.1 + r() * .08))}"/>`;
+    }
+    s += `<g fill="#fff" opacity=".85" filter="url(#dr-soft)">${clouds}</g>`;
+    /* 遠方的樹：一排淡淡的藍綠（空氣遠近） */
+    let far = '';
+    for (let x = -40; x < 1660; x += 26 + r() * 30) far += `<circle cx="${f(x)}" cy="${f(548 - r() * 24)}" r="${f(26 + r() * 30)}"/>`;
+    s += `<g fill="#a9c3a4">${far}</g>`;
+    /* 門後的主角：城堡（莊園）／圓塔城堡（尖拱）／噴泉與玫瑰拱（花園） */
+    if (kind === 'manor') s += chateau(800, 560, 1);
+    else if (kind === 'gothic') s += castle(800, 560);
+    let near = '';
+    for (let x = -40; x < 1660; x += 40 + r() * 40) {
+      if (x > 640 && x < 960) continue;
+      near += `<circle cx="${f(x)}" cy="${f(560 - r() * 14)}" r="${f(34 + r() * 26)}"/>`;
+    }
+    s += `<g fill="#8fb07c">${near}</g>`;
+    /* 草地、碎石路 */
+    s += `<rect y="556" width="1600" height="444" fill="url(#dr-lawn)"/>`;
+    s += `<path d="M770 560H830L1180 1000H420Z" fill="url(#dr-path)"/>`;
+    /* 路兩旁的圓球樹雕 */
+    for (const [t, side] of [[.12, -1], [.12, 1], [.32, -1], [.32, 1], [.62, -1], [.62, 1]]) {
+      const y = 560 + t * 440, half = 30 + t * 350, x = 800 + side * (half + 20 + t * 60), sc = .3 + t * 1.4;
+      s += `<ellipse cx="${f(x + 6 * sc)}" cy="${f(y + 2)}" rx="${f(22 * sc)}" ry="${f(5 * sc)}" fill="#5f8a4a" opacity=".5"/>` +
+        `<rect x="${f(x - 2 * sc)}" y="${f(y - 34 * sc)}" width="${f(4 * sc)}" height="${f(34 * sc)}" fill="#7a5a3a"/>` +
+        `<circle cx="${f(x)}" cy="${f(y - 46 * sc)}" r="${f(20 * sc)}" fill="#6f9a52"/><circle cx="${f(x - 6 * sc)}" cy="${f(y - 52 * sc)}" r="${f(9 * sc)}" fill="#9cc27a" opacity=".7"/>`;
+    }
+    if (kind === 'garden') s += gardenBeyond(r);
+    /* 花境：路邊一點一點的花 */
+    let flowers = '';
+    for (let k = 0; k < 160; k++) {
+      const t = r(), y = 562 + t * t * 430, side = r() < .5 ? -1 : 1;
+      const x = 800 + side * (34 + t * t * 360 + r() * (30 + t * 120));
+      flowers += `<circle cx="${f(x)}" cy="${f(y)}" r="${f(1.5 + t * 4)}" fill="${['#fff', '#f6d3dc', '#f3e3a6', '#e9c4e6'][k % 4]}"/>`;
+    }
+    s += flowers;
+    return `<svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">${s}</svg>`;
+  }
+
+  /* 莊園：石灰岩、石板瓦，跟法式莊園大廳的那一座同一個樣子 */
+  function chateau(cx, g, k) {
+    const x = (v) => f(cx + v * k), y = (v) => f(g - v * k);
+    let s = `<g>`;
+    s += `<path d="M${x(-170)} ${y(0)}V${y(70)}H${x(170)}V${y(0)}Z" fill="#f4ecda"/>`;
+    s += `<path d="M${x(-176)} ${y(70)}L${x(-160)} ${y(100)}H${x(160)}L${x(176)} ${y(70)}Z" fill="#8d9aa6"/>`;
+    s += `<path d="M${x(-50)} ${y(0)}V${y(84)}H${x(50)}V${y(0)}Z" fill="#f7f0e0"/>`;
+    s += `<path d="M${x(-56)} ${y(84)}L${x(-40)} ${y(134)}H${x(40)}L${x(56)} ${y(84)}Z" fill="#7f8c99"/>`;
+    s += `<path d="M${x(-54)} ${y(84)}L${x(0)} ${y(104)}L${x(54)} ${y(84)}Z" fill="#efe6d2"/>`;
+    for (const dx of [-140, -110, -80, 80, 110, 140]) for (const dy of [14, 44]) s += `<rect x="${x(dx - 6)}" y="${y(dy + 20)}" width="${f(12 * k)}" height="${f(20 * k)}" fill="#8796a0"/>`;
+    for (const dx of [-30, 0, 30]) for (const dy of [14, 48]) s += `<rect x="${x(dx - 6)}" y="${y(dy + 22)}" width="${f(12 * k)}" height="${f(22 * k)}" fill="#8796a0"/>`;
+    for (const dx of [-120, 120]) s += `<rect x="${x(dx - 5)}" y="${y(118)}" width="${f(10 * k)}" height="${f(24 * k)}" fill="#e6dccb"/>`;
+    s += `<path d="M${x(-170)} ${y(70)}H${x(170)}" stroke="#d6cab3" stroke-width="${f(3 * k)}"/>`;
+    return s + `</g>`;
+  }
+  /* 中古城堡：兩座圓塔、尖尖的屋頂、城垛 */
+  function castle(cx, g) {
+    const x = (v) => f(cx + v), y = (v) => f(g - v);
+    let s = `<g>`;
+    s += `<path d="M${x(-120)} ${y(0)}V${y(80)}H${x(120)}V${y(0)}Z" fill="#efe6d4"/>`;
+    let crenel = '';
+    for (let v = -120; v < 120; v += 16) crenel += `<rect x="${x(v)}" y="${y(90)}" width="9" height="10" fill="#efe6d4"/>`;
+    s += crenel;
+    for (const dx of [-140, 140]) {
+      s += `<rect x="${x(dx - 26)}" y="${y(130)}" width="52" height="130" fill="#f3ead9"/>`;
+      s += `<path d="M${x(dx - 32)} ${y(130)}L${x(dx)} ${y(210)}L${x(dx + 32)} ${y(130)}Z" fill="#8d9aa6"/>`;
+      s += `<path d="M${x(dx)} ${y(210)}V${y(232)}" stroke="#6b5a45" stroke-width="2"/><path d="M${x(dx)} ${y(232)}L${x(dx + 14)} ${y(226)}L${x(dx)} ${y(220)}Z" fill="#c9a24a"/>`;
+      s += `<rect x="${x(dx - 5)}" y="${y(96)}" width="10" height="18" rx="5" fill="#8796a0"/>`;
+    }
+    s += `<rect x="${x(-24)}" y="${y(150)}" width="48" height="70" fill="#f6eedf"/>`;
+    s += `<path d="M${x(-30)} ${y(150)}L${x(0)} ${y(226)}L${x(30)} ${y(150)}Z" fill="#7f8c99"/>`;
+    s += `<path d="M${x(-16)} ${y(0)}V${y(30)}A16 16 0 0 1 ${x(16)} ${y(30)}V${y(0)}Z" fill="#6b5a45"/>`;
+    for (const dx of [-80, -50, 50, 80]) s += `<rect x="${x(dx - 5)}" y="${y(60)}" width="10" height="18" rx="5" fill="#8796a0"/>`;
+    return s + `</g>`;
+  }
+  /* 秘密花園的門後：一座噴泉、兩道玫瑰拱、滿滿的花 */
+  function gardenBeyond(r) {
+    let s = '';
+    s += `<ellipse cx="800" cy="640" rx="120" ry="26" fill="#cfd9d4"/><ellipse cx="800" cy="636" rx="104" ry="20" fill="#a9c6cf"/>`;
+    s += `<path d="M790 636V590H810V636Z" fill="#efe6d4"/><ellipse cx="800" cy="590" rx="40" ry="8" fill="#efe6d4"/>`;
+    s += `<path d="M800 586C792 560 780 556 768 572M800 586C808 560 820 556 832 572M800 586V548" stroke="#e4f1f4" stroke-width="3" fill="none" opacity=".9"/>`;
+    for (const cx of [560, 1040]) {
+      s += `<path d="M${cx - 60} 640V560A60 60 0 0 1 ${cx + 60} 560V640" fill="none" stroke="#5f8a4a" stroke-width="12"/>`;
+      for (let k = 0; k < 26; k++) {
+        const a = Math.PI + r() * Math.PI, rad = 60 + (r() - .5) * 12;
+        const px = k < 18 ? cx + Math.cos(a) * rad : cx + (r() < .5 ? -60 : 60) + (r() - .5) * 10;
+        const py = k < 18 ? 560 + Math.sin(a) * rad : 560 + r() * 80;
+        s += `<circle cx="${f(px)}" cy="${f(py)}" r="${f(4 + r() * 3)}" fill="${r() < .5 ? '#f6d3dc' : '#fff'}"/>`;
+      }
+    }
+    return s;
+  }
+
+  /* ==========================================================
+     鍛鐵大門（viewBox 0 0 600 640；門洞 x 110–490、y 160–600）
+     ========================================================== */
+  const GATE = { x0: 110, x1: 490, y0: 160, y1: 600 };
+
+  /* 一扇鐵門（左扇；右扇用 CSS 鏡像）。viewBox 0 0 190 440 */
+  function gateLeaf(kind) {
+    const W = 190, H = 440;
+    /* 上緣：靠鉸鍊那一側低、靠中間高（圓弧）；尖拱版是一道往中間升起的尖拱 */
+    const topY = (x) => kind === 'gothic'
+      ? 96 - Math.sqrt(Math.max(0, 1 - Math.pow((W - x) / W, 2))) * 86
+      : 80 - Math.sin((x / W) * Math.PI / 2) * 50;
+    let bars = '', tips = '', rings = '';
+    for (let x = 18; x < W - 6; x += 17) {
+      const t = topY(x);
+      bars += `M${x} ${f(t - 20)}V${H - 8}`;
+      tips += `<path d="M${x - 4} ${f(t - 18)}L${x} ${f(t - 32)}L${x + 4} ${f(t - 18)}Z"/>`;
+    }
+    for (let x = 26; x < W - 10; x += 17) {
+      if (kind === 'gothic') rings += `<path d="M${x} 262a8 8 0 1 0 .1 0M${x - 8} 270a8 8 0 0 0 16 0" />`;
+      else rings += `<circle cx="${x}" cy="270" r="7.5"/>`;
+    }
+    /* 上緣的那一道橫檔（跟著弧度） */
+    let rail = '';
+    for (let x = 0; x <= W; x += 5) rail += (x ? 'L' : 'M') + `${x} ${f(topY(x))}`;
+    let rail2 = '';
+    for (let x = 0; x <= W; x += 5) rail2 += (x ? 'L' : 'M') + `${x} ${f(topY(x) + 26)}`;
+    /* 上面一排 C 形捲草 */
+    let scrolls = '';
+    for (let x = 18; x < W - 20; x += 34) {
+      const t = topY(x + 8) + 30;
+      scrolls += `M${x + 2} ${f(t + 28)}C${x + 2} ${f(t + 6)} ${x + 26} ${f(t + 4)} ${x + 26} ${f(t + 20)}C${x + 26} ${f(t + 30)} ${x + 14} ${f(t + 30)} ${x + 14} ${f(t + 22)}`;
+    }
+    /* 靠中間那一側：半個花押圓章（兩扇合起來是一個完整的圓） */
+    const crest = `<path d="M${W} 152A44 44 0 0 0 ${W} 240" fill="none" stroke="${IRON}" stroke-width="6"/>` +
+      `<path d="M${W} 162A34 34 0 0 0 ${W} 230" fill="none" stroke="${GOLD}" stroke-width="2.5"/>` +
+      `<path d="M${W} 214C${W - 22} 198 ${W - 24} 178 ${W - 10} 176C${W - 4} 176 ${W} 182 ${W} 186" fill="${GOLD}"/>`;
+    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+      <g fill="none" stroke="${IRON}" stroke-linecap="round">
+        <path d="${bars}" stroke-width="4.2"/>
+        <path d="${bars}" stroke="#5a5c63" stroke-width="1" transform="translate(-1 0)" opacity=".7"/>
+        <path d="${rail}" stroke-width="7"/><path d="${rail2}" stroke-width="5"/>
+        <path d="${scrolls}" stroke-width="3.4"/>
+        <path d="M0 256H${W}M0 284H${W}M0 380H${W}M0 ${H - 6}H${W}" stroke-width="6"/>
+        <g stroke-width="3">${rings}</g>
+        <path d="M4 ${f(topY(4))}V${H}M${W - 3} ${f(topY(W - 3))}V${H}" stroke-width="8"/>
+        <path d="M${f(W * .5)} 300C${f(W * .3)} 300 ${f(W * .3)} 350 ${f(W * .5)} 350C${f(W * .7)} 350 ${f(W * .7)} 300 ${f(W * .5)} 300Z" stroke-width="3"/>
+      </g>
+      <g fill="${GOLD}" stroke="#8e6d31" stroke-width=".8">${tips}<circle cx="${f(W * .5)}" cy="325" r="6"/></g>
+      ${crest}
+      <rect x="${W - 14}" y="300" width="10" height="26" rx="2" fill="${IRON}"/><circle cx="${W - 9}" cy="330" r="5" fill="none" stroke="${GOLD}" stroke-width="2"/>
+    </svg>`;
+  }
+
+  /* 門以外：石柱、柱頂的花、門上的鍛鐵拱、兩旁的矮牆與欄杆、地面、太陽照下來的影子 */
+  function gateFront(kind) {
+    const r = rng(kind === 'gothic' ? 31 : 17);
+    let s = `<defs>
+      <linearGradient id="dr-stone" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e2d8c4"/><stop offset=".45" stop-color="#f6efe0"/><stop offset="1" stop-color="#cfc2a8"/></linearGradient>
+      <linearGradient id="dr-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1e8d6"/><stop offset="1" stop-color="#dccfb5"/></linearGradient>
+      <linearGradient id="dr-gravel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9dcc0"/><stop offset="1" stop-color="#d8c6a0"/></linearGradient>
+      <linearGradient id="dr-grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fb36a"/><stop offset="1" stop-color="#5f8a45"/></linearGradient>
+    </defs>`;
+    /* 地面：草地 ＋ 正中間一條碎石路 */
+    s += `<rect x="-3000" y="596" width="6600" height="2000" fill="url(#dr-grass)"/>`;
+    s += `<path d="M90 596H510L1100 1700H-500Z" fill="url(#dr-gravel)"/>`;
+    /* 太陽在門後：鐵條的影子一條一條往鏡頭這邊拉長（門打開就淡掉） */
+    let sh = '';
+    for (let x = GATE.x0 + 10; x < GATE.x1; x += 17) {
+      const dx = (x - 300) * 2.2;
+      sh += `<path d="M${x - 2} 600L${x + 2} 600L${f(x + dx + 10)} 1300L${f(x + dx - 4)} 1300Z"/>`;
+    }
+    s += `<g class="dr-shadows" fill="#3d3524" opacity=".16">${sh}</g>`;
+    /* 兩旁：矮石牆 ＋ 鐵欄杆（一直延伸到畫面外） */
+    const wall = (xa, xb) => {
+      let bars = '', tips = '';
+      const lo = Math.min(xa, xb), hi = Math.max(xa, xb);
+      for (let x = lo + 8; x < hi; x += 16) { bars += `M${x} 470V376`; tips += `<path d="M${x - 3.5} 378L${x} 366L${x + 3.5} 378Z"/>`; }
+      return `<rect x="${lo}" y="470" width="${hi - lo}" height="130" fill="url(#dr-wall)"/>` +
+        `<rect x="${lo}" y="460" width="${hi - lo}" height="12" fill="#e9dfcb" stroke="#c9bb9f"/>` +
+        `<path d="${Array.from({ length: Math.ceil((hi - lo) / 60) }, (_, i) => `M${lo + i * 60} 472V600`).join('')}M${lo} 516H${hi}M${lo} 558H${hi}" stroke="#cdbfa3" stroke-width="1.5"/>` +
+        `<g stroke="${IRON}" stroke-width="3.2" fill="none"><path d="${bars}"/><path d="M${lo} 392H${hi}M${lo} 452H${hi}" stroke-width="4"/></g>` +
+        `<g fill="${GOLD}">${tips}</g>`;
+    };
+    s += wall(-3000, 40) + wall(560, 3600);
+    /* 牆上爬的藤與玫瑰 */
+    const ivy = (x0, x1, y0, y1, n) => {
+      let t = '';
+      for (let k = 0; k < n; k++) {
+        const x = x0 + r() * (x1 - x0), y = y0 + r() * (y1 - y0);
+        t += `<ellipse cx="${f(x)}" cy="${f(y)}" rx="${f(7 + r() * 5)}" ry="${f(4 + r() * 2)}" transform="rotate(${f(r() * 360)} ${f(x)} ${f(y)})" fill="${['#5f8a45', '#7fa65a', '#4c7438'][k % 3]}"/>`;
+        if (k % 7 === 0) t += rose(x + 4, y - 3, 6 + r() * 3, r() < .5 ? '#fff' : '#f7d7de');
+      }
+      return t;
+    };
+    s += ivy(-420, 40, 440, 600, 120) + ivy(560, 1020, 440, 600, 120);
+    /* 石柱 */
+    const pillar = (x) => {
+      let p = `<rect x="${x - 6}" y="560" width="92" height="40" fill="#d8ccb2"/>`;
+      p += `<rect x="${x}" y="150" width="80" height="410" fill="url(#dr-stone)"/>`;
+      for (let y = 180; y < 560; y += 30) p += `<path d="M${x} ${y}H${x + 80}" stroke="#cbbd9f" stroke-width="1.6"/>`;
+      p += `<rect x="${x + 10}" y="200" width="60" height="300" fill="none" stroke="#d3c6aa" stroke-width="2"/>`;
+      if (kind === 'gothic') {
+        /* 小尖塔：方形的塔身 ＋ 尖頂 ＋ 頂上一顆十字花 */
+        p += `<rect x="${x - 6}" y="136" width="92" height="16" fill="#e9dfcb" stroke="#c9bb9f"/>`;
+        p += `<path d="M${x + 6} 136L${x + 40} 30L${x + 74} 136Z" fill="url(#dr-stone)" stroke="#c9bb9f"/>`;
+        for (let k = 0; k < 5; k++) { const yy = 120 - k * 18, w = 30 - k * 5.5; p += `<path d="M${f(x + 40 - w)} ${yy}q-6 -4 -2 -9M${f(x + 40 + w)} ${yy}q6 -4 2 -9" stroke="#c9bb9f" stroke-width="2.5" fill="none"/>`; }
+        p += `<path d="M${x + 40} 30V10M${x + 32} 18H${x + 48}" stroke="${GOLD}" stroke-width="3"/>`;
+      } else {
+        /* 柱頂的石甕，插滿白色、淡粉的花 */
+        p += `<rect x="${x - 8}" y="136" width="96" height="16" fill="#e9dfcb" stroke="#c9bb9f"/>`;
+        p += `<path d="M${x + 22} 136H${x + 58}L${x + 54} 126Q${x + 74} 112 ${x + 70} 92H${x + 10}Q${x + 6} 112 ${x + 26} 126Z" fill="url(#dr-stone)" stroke="#c9bb9f"/>`;
+        let fl = '';
+        for (let k = 0; k < 22; k++) {
+          const a = Math.PI + r() * Math.PI, d = 18 + r() * 26;
+          const px = x + 40 + Math.cos(a) * d * 1.3, py = 92 + Math.sin(a) * d * .9;
+          fl += `<ellipse cx="${f(px)}" cy="${f(py)}" rx="9" ry="4.5" transform="rotate(${f(r() * 180)} ${f(px)} ${f(py)})" fill="${k % 2 ? '#6f9a52' : '#5f8a45'}"/>`;
+        }
+        for (let k = 0; k < 12; k++) {
+          const a = Math.PI * 1.05 + r() * Math.PI * .9, d = 10 + r() * 26;
+          fl += rose(x + 40 + Math.cos(a) * d * 1.2, 92 + Math.sin(a) * d * .8, 6 + r() * 4, k % 3 ? '#fff' : '#f7d7de');
+        }
+        p += fl;
+      }
+      return p;
+    };
+    s += pillar(30) + pillar(490);
+    /* 門上的那一道鍛鐵拱（固定不動） */
+    s += kind === 'gothic' ? overthrowGothic() : overthrow();
+    return `<svg viewBox="0 0 600 640" aria-hidden="true">${s}</svg>`;
+  }
+  function overthrow() {
+    let s = `<g fill="none" stroke="${IRON}" stroke-linecap="round">`;
+    s += `<path d="M110 160Q300 40 490 160" stroke-width="7"/><path d="M110 136Q300 20 490 136" stroke-width="4"/>`;
+    let v = '';
+    for (let x = 130; x <= 470; x += 20) { const t = (x - 300) / 190; v += `M${x} ${f(160 - 60 * (1 - t * t) - 3)}V${f(136 - 58 * (1 - t * t) + 2)}`; }
+    s += `<path d="${v}" stroke-width="2.6"/>`;
+    /* 兩邊的大捲草 */
+    s += `<path d="M118 152C150 96 214 92 228 120C238 140 214 152 202 138M482 152C450 96 386 92 372 120C362 140 386 152 398 138" stroke-width="4"/>`;
+    s += `<path d="M300 34C286 14 262 16 262 34C262 46 280 50 286 40M300 34C314 14 338 16 338 34C338 46 320 50 314 40" stroke-width="3.5"/>`;
+    s += `</g>`;
+    /* 正中間的花押圓章 ＋ 鍍金的葉 */
+    s += `<circle cx="300" cy="66" r="24" fill="#fbf6ea" stroke="${IRON}" stroke-width="5"/>`;
+    s += `<path d="M300 78C288 68 286 58 294 56C298 55 300 58 300 61C300 58 302 55 306 56C314 58 312 68 300 78Z" fill="${GOLD}"/>`;
+    s += `<g fill="${GOLD}"><ellipse cx="258" cy="76" rx="12" ry="4" transform="rotate(-24 258 76)"/><ellipse cx="342" cy="76" rx="12" ry="4" transform="rotate(24 342 76)"/><ellipse cx="300" cy="30" rx="4" ry="10"/></g>`;
+    return s;
+  }
+  function overthrowGothic() {
+    let s = `<g fill="none" stroke="${IRON}" stroke-linecap="round">`;
+    s += `<path d="M110 160Q120 70 300 26Q480 70 490 160" stroke-width="7"/><path d="M134 160Q146 92 300 52Q454 92 466 160" stroke-width="4"/>`;
+    /* 三葉形的窗花 */
+    for (const [cx, cy, rr] of [[300, 96, 22], [214, 126, 14], [386, 126, 14]]) {
+      s += `<path d="M${cx} ${cy - rr}a${rr * .55} ${rr * .55} 0 1 1 ${f(rr * .95)} ${f(rr * 1.2)}a${rr * .55} ${rr * .55} 0 1 1 ${f(-rr * 1.9)} 0a${rr * .55} ${rr * .55} 0 1 1 ${f(rr * .95)} ${f(-rr * 1.2)}Z" stroke-width="3"/>`;
+    }
+    s += `</g><path d="M300 26V2M290 12H310" stroke="${GOLD}" stroke-width="3.5"/><circle cx="300" cy="96" r="5" fill="${GOLD}"/>`;
+    return s;
+  }
+  function rose(x, y, rr, c) {
+    return `<g transform="translate(${f(x)} ${f(y)})"><circle r="${f(rr)}" fill="${c}" stroke="#d8cdb6" stroke-width=".8"/>` +
+      `<circle r="${f(rr * .55)}" fill="none" stroke="#d8cdb6" stroke-width=".8"/><circle r="${f(rr * .2)}" fill="#e9dcc0"/></g>`;
+  }
+
+  /* ==========================================================
+     秘密花園的玻璃門（viewBox 0 0 600 640；
+     半圓氣窗 x 150–450、y 100–250；兩扇門 x 150–450、y 260–600）
+     ========================================================== */
+  const GLASS = { x0: 150, x1: 450, y0: 260, y1: 600 };
+
+  /* 一扇玻璃門（左扇；右扇用 CSS 鏡像）。viewBox 0 0 150 340 */
+  function glassLeaf() {
+    const W = 150, H = 340, r = rng(5);
+    let panes = '', glints = '', holes = '';
+    const cols = 2, rows = 4, px0 = 16, py0 = 16, pw = (W - 32 - (cols - 1) * 8) / cols, ph = (236 - (rows - 1) * 8) / rows;
+    for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) {
+      const x = px0 + i * (pw + 8), y = py0 + j * (ph + 8);
+      panes += `<rect x="${f(x)}" y="${f(y)}" width="${f(pw)}" height="${f(ph)}"/>`;
+      holes += `M${f(x)} ${f(y)}h${f(pw)}v${f(ph)}h${f(-pw)}Z`;
+      glints += `<path d="M${f(x + pw * .15)} ${f(y + ph)}L${f(x + pw * .55)} ${f(y)}H${f(x + pw * .75)}L${f(x + pw * .35)} ${f(y + ph)}Z"/>`;
+    }
+    /* 門上的藤：沿著外框往上爬，帶幾朵小白玫瑰 */
+    let vine = `<path d="M10 ${H}C18 300 4 260 12 220S6 140 14 100S8 40 16 6" fill="none" stroke="#5a4a32" stroke-width="2.4"/>`;
+    for (let y = H - 10; y > 10; y -= 14 + r() * 10) {
+      const x = 12 + Math.sin(y / 30) * 4, side = r() < .5 ? -1 : 1;
+      vine += `<ellipse cx="${f(x + side * 9)}" cy="${f(y)}" rx="9" ry="4.4" transform="rotate(${f(side * 30 + (r() - .5) * 40)} ${f(x + side * 9)} ${f(y)})" fill="${r() < .5 ? '#6f9a52' : '#4f7a3c'}"/>`;
+      if (r() < .3) vine += rose(x + side * 4, y - 6, 5.5 + r() * 2, '#fff');
+    }
+    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 0H${W}V${H}H0Z${holes}" fill="#f4f1e8" fill-rule="evenodd"/>
+      <rect x="2" y="2" width="${W - 4}" height="${H - 4}" fill="none" stroke="#d9d3c3" stroke-width="2"/>
+      <g fill="rgba(226,240,232,.16)" stroke="#d6cfbd" stroke-width="2">${panes}</g>
+      <g fill="#fff" opacity=".3">${glints}</g>
+      <rect x="16" y="268" width="${W - 32}" height="56" fill="#ebe6d8" stroke="#d6cfbd" stroke-width="2"/>
+      <rect x="28" y="280" width="${W - 56}" height="32" fill="none" stroke="#d6cfbd" stroke-width="1.5"/>
+      <rect x="${W - 14}" y="190" width="6" height="34" rx="3" fill="#c9a24a" stroke="#8e6d31" stroke-width=".8"/>
+      ${vine}
+    </svg>`;
+  }
+
+  function glassFront() {
+    const r = rng(23);
+    let s = `<defs>
+      <pattern id="dr-hedge" width="110" height="90" patternUnits="userSpaceOnUse">${hedgeTile(r)}</pattern>
+      <linearGradient id="dr-pave" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9d1c0"/><stop offset="1" stop-color="#bdb19a"/></linearGradient>
+      <radialGradient id="dr-pot" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#e3a07a"/><stop offset="1" stop-color="#a65a3a"/></radialGradient>
+    </defs>`;
+    /* 一整面綠牆，門的位置挖空（半圓氣窗 ＋ 門） */
+    const hole = `M150 600V250A150 150 0 0 1 450 250V600Z`;
+    s += `<path d="M-3000 -3000H3600V600H-3000Z${hole}" fill="#3f5f33" fill-rule="evenodd"/>`;
+    s += `<path d="M-3000 -3000H3600V600H-3000Z${hole}" fill="url(#dr-hedge)" fill-rule="evenodd"/>`;
+    /* 牆上點點的花：白玫瑰、薰衣草 */
+    let fl = '';
+    for (let k = 0; k < 140; k++) {
+      const x = -700 + r() * 2000, y = -200 + r() * 780;
+      if (x > 120 && x < 480 && y > 70) continue;
+      fl += r() < .7 ? rose(x, y, 5 + r() * 4, r() < .8 ? '#fff' : '#f7d7de')
+        : `<path d="M${f(x)} ${f(y)}v-16" stroke="#9a86c4" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 3"/>`;
+    }
+    s += fl;
+    /* 地面：石板 ＋ 一級台階 */
+    s += `<rect x="-3000" y="600" width="6600" height="2000" fill="url(#dr-pave)"/>`;
+    s += `<rect x="120" y="600" width="360" height="16" fill="#e7e0d0" stroke="#c9bfa8"/>`;
+    let joints = '';
+    for (let y = 640; y < 1400; y += 44) joints += `M-3000 ${y}H3600`;
+    s += `<path d="${joints}" stroke="#b3a68d" stroke-width="1.5" opacity=".6"/>`;
+    /* 白色的門框、半圓氣窗（放射狀的窗格）、門楣 */
+    s += `<path d="M150 250A150 150 0 0 1 450 250Z" fill="rgba(214,234,222,.25)"/>`;
+    let rays = '';
+    for (let k = 1; k < 6; k++) { const a = Math.PI + k * Math.PI / 6; rays += `M300 250L${f(300 + Math.cos(a) * 150)} ${f(250 + Math.sin(a) * 150)}`; }
+    s += `<path d="${rays}M220 250A80 80 0 0 1 380 250" stroke="#f4f1e8" stroke-width="6" fill="none"/>`;
+    s += `<path d="M138 604V250A162 162 0 0 1 462 250V604" fill="none" stroke="#f4f1e8" stroke-width="24"/>`;
+    s += `<path d="M126 604V250A174 174 0 0 1 474 250V604" fill="none" stroke="#d9d3c3" stroke-width="2"/>`;
+    s += `<rect x="146" y="248" width="308" height="14" fill="#f4f1e8" stroke="#d9d3c3"/>`;
+    /* 門楣上垂下來的紫藤 ＋ 兩邊爬的玫瑰藤 */
+    let wis = '';
+    for (let k = 0; k < 16; k++) {
+      const a = Math.PI * (1.05 + k * .9 / 15), x = 300 + Math.cos(a) * 168, y = 250 + Math.sin(a) * 168;
+      const len = 40 + r() * 60;
+      for (let j = 0; j < 9; j++) {
+        const t = j / 9, w = (1 - t) * 7 + 2;
+        wis += `<ellipse cx="${f(x + Math.sin(j) * 2)}" cy="${f(y + t * len)}" rx="${f(w)}" ry="${f(w * .8)}" fill="${['#b9a3dc', '#cdb9ea', '#a48cc9'][(j + k) % 3]}"/>`;
+      }
+      wis += `<ellipse cx="${f(x - 10)}" cy="${f(y - 4)}" rx="12" ry="5" transform="rotate(${f(r() * 60 - 30)} ${f(x - 10)} ${f(y - 4)})" fill="#6f9a52"/>`;
+    }
+    s += wis;
+    for (const side of [-1, 1]) {
+      let v = '';
+      for (let y = 600; y > 120; y -= 12 + r() * 10) {
+        const x = 300 + side * (170 + Math.sin(y / 40) * 8);
+        v += `<ellipse cx="${f(x)}" cy="${f(y)}" rx="10" ry="5" transform="rotate(${f(r() * 180)} ${f(x)} ${f(y)})" fill="${r() < .5 ? '#5f8a45' : '#7fa65a'}"/>`;
+        if (r() < .28) v += rose(x + side * 6, y, 7 + r() * 3, r() < .75 ? '#fff' : '#f7d7de');
+      }
+      s += v;
+    }
+    /* 兩邊的盆栽：陶盆 ＋ 蕨與薰衣草 */
+    const pot = (cx) => {
+      let p = `<ellipse cx="${cx + 6}" cy="604" rx="56" ry="9" fill="#2d2a22" opacity=".25"/>`;
+      p += `<path d="M${cx - 44} 520H${cx + 44}L${cx + 34} 602H${cx - 34}Z" fill="url(#dr-pot)"/><rect x="${cx - 50}" y="510" width="100" height="14" rx="3" fill="#c7764e"/>`;
+      for (let k = 0; k < 14; k++) {
+        const a = -Math.PI * (.1 + k * .8 / 13), len = 60 + r() * 50;
+        p += `<path d="M${cx} 512Q${f(cx + Math.cos(a) * len * .5)} ${f(512 + Math.sin(a) * len * .9)} ${f(cx + Math.cos(a) * len)} ${f(512 + Math.sin(a) * len * .7)}" stroke="${k % 2 ? '#6f9a52' : '#4f7a3c'}" stroke-width="7" fill="none" stroke-linecap="round"/>`;
+      }
+      for (let k = 0; k < 6; k++) p += `<path d="M${cx - 30 + k * 12} 500v-${30 + r() * 30}" stroke="#9a86c4" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 3"/>`;
+      return p;
+    };
+    s += pot(64) + pot(536);
+    return `<svg viewBox="0 0 600 640" aria-hidden="true">${s}</svg>`;
+  }
+  function hedgeTile(r) {
+    let t = '';
+    for (let k = 0; k < 46; k++) {
+      const x = r() * 110, y = r() * 90;
+      t += `<ellipse cx="${f(x)}" cy="${f(y)}" rx="${f(8 + r() * 5)}" ry="${f(4 + r() * 2)}" transform="rotate(${f(r() * 360)} ${f(x)} ${f(y)})" fill="${['#5f8a45', '#7fa65a', '#4c7438', '#8fb36a'][k % 4]}"/>`;
+    }
+    return t;
+  }
+
   function door(host, ctx) {
     const kind = KIND[ctx.variant] || 'manor';
     host.classList.add('dr-host', `dr-${kind}`);
-    const vines = kind === 'garden' ? `<div class="dr-vines">${vineSvg()}</div>` : '';
+    const garden = kind === 'garden';
+    const box = garden ? GLASS : GATE;
+    const leaf = garden ? glassLeaf() : gateLeaf(kind);
+    /* 門洞在 600×640 裡的位置（百分比），兩扇門就照這個放 */
+    const pos = `left:${f(box.x0 / 6)}%;width:${f((box.x1 - box.x0) / 6)}%;top:${f(box.y0 / 6.4)}%;height:${f((box.y1 - box.y0) / 6.4)}%`;
     host.innerHTML = `
+      <div class="dr-land" aria-hidden="true">${land(kind)}</div>
+      <div class="dr-rays" aria-hidden="true"></div>
       <div class="dr-world" aria-hidden="true">
-        <div class="dr-wall"></div>
         <div class="dr-portal">
-          <div class="dr-frame"></div>
-          <div class="dr-opening">
-            <div class="dr-beyond"><div class="dr-sun"></div></div>
-            <div class="dr-gap"></div>
-            <div class="dr-leaf dr-l"><i class="dr-ring"></i></div>
-            <div class="dr-leaf dr-r"><i class="dr-ring"></i></div>
+          <div class="dr-front">${garden ? glassFront() : gateFront(kind)}</div>
+          <div class="dr-opening" style="${pos}">
+            <div class="dr-leaf dr-l">${leaf}</div>
+            <div class="dr-leaf dr-r">${leaf}</div>
           </div>
-          ${vines}
         </div>
-        <div class="dr-step"></div>
       </div>
       <div class="dr-flood" aria-hidden="true"></div>
       <div class="dr-text" aria-hidden="true">
@@ -47,46 +444,22 @@
         <div class="dr-names">${LM.namesHtml(ctx)}</div>
         <div class="dr-date">${LM.esc(ctx.date)}</div>
       </div>
-      <div class="dr-hint"><span class="en">Push the door</span><span class="cn">輕觸畫面・推開這扇門</span></div>`;
+      <div class="dr-hint"><span class="en">${garden ? 'Open the garden door' : 'Push the gate'}</span><span class="cn">輕觸畫面・${garden ? '推開這扇玻璃門' : '推開這扇鐵門'}</span></div>`;
 
-    LM.hitButton(host, '推開門，進入邀請函', () => {
+    LM.hitButton(host, garden ? '推開玻璃門，進入邀請函' : '推開鐵門，進入邀請函', () => {
       if (host.classList.contains('is-open')) { ctx.finish(); return; }
       ctx.gesture();
       if (ctx.reduce) { ctx.finish(); return; }
+      /* 往前走的時候，鏡頭對準門洞的正中間 */
+      const o = host.querySelector('.dr-opening').getBoundingClientRect();
+      const h = host.getBoundingClientRect();
+      host.querySelector('.dr-world').style.transformOrigin =
+        `${f(o.left - h.left + o.width / 2)}px ${f(o.top - h.top + o.height * .45)}px`;
       host.classList.add('is-open');
       ctx.later(() => host.classList.add('is-walking'), T.open);
       ctx.later(ctx.reveal, T.open + T.walk * .45);
       ctx.later(ctx.done, T.open + T.walk + 500);
     });
-  }
-
-  /* 秘密花園的拱：沿著拱爬的一條藤，葉子與小花用程式排 */
-  function vineSvg() {
-    const f = (n) => +n.toFixed(1);
-    let s = '<svg viewBox="0 0 200 310" preserveAspectRatio="none">';
-    const path = [];
-    for (let i = 0; i <= 40; i++) {
-      const t = i / 40, a = Math.PI * (1 - t);
-      const x = 100 + Math.cos(a) * 96, y = 100 - Math.sin(a) * 96 + (t < .5 ? 0 : 0);
-      path.push([x, y]);
-    }
-    const full = [[4, 300], [4, 100], ...path, [196, 100], [196, 300]];
-    s += `<path d="M${full.map(([x, y]) => `${f(x)} ${f(y)}`).join('L')}" fill="none" stroke="#4e6b3c" stroke-width="2.4"/>`;
-    full.forEach(([x, y], i) => {
-      if (i % 2) return;
-      const side = i % 4 ? 1 : -1;
-      const a = (i * 37) % 360;
-      s += `<ellipse cx="${f(x + side * 5)}" cy="${f(y)}" rx="7" ry="3.4" fill="${i % 3 ? '#6f8f55' : '#8fae6e'}" transform="rotate(${a} ${f(x + side * 5)} ${f(y)})"/>`;
-      if (i % 6 === 0) {
-        const c = i % 12 ? '#e9c7d6' : '#f6e9b8';
-        for (let k = 0; k < 5; k++) {
-          const b = k * 72 * Math.PI / 180;
-          s += `<circle cx="${f(x - side * 4 + Math.cos(b) * 3)}" cy="${f(y + 4 + Math.sin(b) * 3)}" r="2.4" fill="${c}"/>`;
-        }
-        s += `<circle cx="${f(x - side * 4)}" cy="${f(y + 4)}" r="1.4" fill="#d7a24a"/>`;
-      }
-    });
-    return s + '</svg>';
   }
 
   LM.register('door', door);

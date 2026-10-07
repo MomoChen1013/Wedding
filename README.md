@@ -221,11 +221,11 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 |---|---|---|---|
 | `envelope` | 拆信・封蠟 | 點封蠟 → 封口掀起 → 信封四散 | tapestry |
 | `book` | 翻頁・古書 | 點封面 → 翻開 → 扉頁 → 翻過扉頁 | （可選） |
-| `bloom` | 花朵盛開 | 自己演：芽 → 葉 → 花開 → 名字 | spring-orangerie |
+| `bloom` | 花朵盛開 | 自己演：爬滿藤蔓的花牆 → 到處冒出小花苞 → 從中間往外一波波開成白玫瑰 → 名字 | spring-orangerie |
 | `curtain` | 窗簾拉開 | 點一下 → 布幕收到兩側 → 光進來 | morning-window |
 | `candle` | 燭光點亮 | 點一下 → 三根蠟燭一根根亮 | midnight-chapel |
 | `stars` | 星圖展開 | 自己演：星星 → 連線成一顆心 → 名字 | night-sky |
-| `door` | 門／拱門 | 點一下 → 門往內開 → 穿過門口 | secret-garden、french-manor |
+| `door` | 門／拱門 | 晴朗的早上站在門口，點一下 → 門往內開 → 陽光湧出來、穿過門口。莊園是黑色鍛鐵大門（門後看得到城堡；教堂／刺繡用尖拱版），秘密花園是爬滿植物的牆上一扇白框玻璃門 | secret-garden、french-manor |
 | `ribbon` | 拉開絲帶 | 拖緞帶尾（或點）→ 蝴蝶結鬆開 → 卡片打開 | botanical-letter |
 
 同一種開場在不同版型可以長得不一樣（門：法式莊園是木門、秘密花園是鍛鐵花園門、

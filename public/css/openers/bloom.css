@@ -1,102 +1,90 @@
 /* ============================================================
    openers/bloom.css — 開場：花朵盛開（js/openers/bloom.js）
    ------------------------------------------------------------
-   每一片葉子、每一片花瓣的出場時間寫在它自己的 --d 上（JS 算的），
-   這裡只定義「怎麼出場」：莖用 stroke-dashoffset 一路畫上去，
-   葉子從葉柄那一端張開，花瓣從花心往外翻開。
-
-   顏色吃一組 --bl-* 變數；[data-variant] 可以換一套
-   （春日溫室多一層玻璃窗格與斜射的陽光）。
+   一面爬滿藤蔓的植物牆，開滿白色玫瑰。
+   每一朵花有兩個時間（JS 算的）：
+     --d  花苞冒出來（亂序）
+     --b  開花（從中間往外一波一波）
+   開花的順序跟真的玫瑰一樣：花苞先鼓起來 → 外圈花瓣先翻開 → 中圈 → 內圈 → 花心。
+   SVG 的單位就是 px，所以這裡的 transform 都用 fill-box 當原點。
 ============================================================ */
 .bl-host{
-  --bl-paper:#f6f2e8; --bl-paper-2:#ebe4d3;
-  --bl-stem:#5f7a4e; --bl-leaf:#7f9a67; --bl-leaf-2:#a4b98c; --bl-vein:#e8efd8;
-  --bl-petal:#f1c9c4; --bl-petal-2:#e6a8a8; --bl-petal-3:#fbe4df; --bl-center:#d7a24a;
-  --bl-ink:#3d4636; --bl-accent:#8a5a5a;
-  cursor:pointer;background:var(--bl-paper);
+  --bl-ink:#2f3a2a; --bl-accent:#7b6a4a;
+  cursor:pointer;background:#2c3d24;overflow:hidden;
 }
-.bl-host[data-variant="spring-orangerie"]{
-  --bl-paper:#f7f7f1; --bl-paper-2:#e6ede4; --bl-petal:#f6d3bd; --bl-petal-2:#eeb08d; --bl-petal-3:#fdeee2;
-  --bl-center:#e2b35a; --bl-ink:#2e3a36; --bl-accent:#4f7a66;
-}
-.bl-host[data-variant="botanical-letter"],.bl-host[data-variant="secret-garden"]{
-  --bl-petal:#e9d2e4; --bl-petal-2:#c9a6c9; --bl-petal-3:#f6ecf4; --bl-accent:#6b5a7a;
-}
+.bl-host[data-variant="spring-orangerie"]{--bl-accent:#4f7a66;}
+.bl-host[data-variant="botanical-letter"],.bl-host[data-variant="secret-garden"]{--bl-accent:#6b5a7a;}
 
+/* 牆的底色：葉子之間的縫是深綠，左上一點陽光 */
 .bl-bg{position:absolute;inset:0;
   background:
-    radial-gradient(70% 60% at 50% 45%,#fff 0%,transparent 70%),
-    radial-gradient(120% 90% at 50% 110%,var(--bl-paper-2),transparent 60%),
-    var(--bl-paper);}
-/* 溫室：一格一格的玻璃窗框 */
-.bl-host[data-variant="spring-orangerie"] .bl-bg::after{content:'';position:absolute;inset:0;opacity:.55;
-  background:
-    repeating-linear-gradient(90deg,transparent 0 calc(25% - 2px),rgba(79,122,102,.28) calc(25% - 2px) 25%),
-    repeating-linear-gradient(0deg,transparent 0 calc(33.33% - 2px),rgba(79,122,102,.22) calc(33.33% - 2px) 33.33%);
-  -webkit-mask:radial-gradient(90% 80% at 50% 40%,transparent 35%,#000 80%);mask:radial-gradient(90% 80% at 50% 40%,transparent 35%,#000 80%);}
-/* 斜射進來的一道光：跟著花一起慢慢亮起來 */
-.bl-light{position:absolute;inset:-20%;pointer-events:none;opacity:0;
-  background:linear-gradient(115deg,transparent 30%,rgba(255,244,214,.55) 45%,transparent 60%);
-  animation:bl-light 4s ease 1.6s forwards;}
-@keyframes bl-light{to{opacity:1;}}
+    radial-gradient(60% 50% at 30% 20%,rgba(255,244,210,.35),transparent 70%),
+    linear-gradient(180deg,#3a5230,#26371f);}
+.bl-stage{position:absolute;inset:0;animation:bl-in 1.2s ease both;}
+@keyframes bl-in{from{opacity:0;transform:scale(1.04);}}
+.bl-wall{position:absolute;inset:0;display:block;width:100%;height:100%;}
 
-.bl-stage{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:clamp(6px,2vh,18px);padding:4vh 20px;}
-.bl-plant{height:min(58vh,480px);width:auto;overflow:visible;}
+/* ---- 藤與葉 ---- */
+.bl-vines path{fill:none;stroke:#4a3e2a;stroke-width:3.2;stroke-linecap:round;opacity:.75;}
+.bl-lf{stroke:rgba(30,45,22,.35);stroke-width:.03;}
+.bl-sway{transform-box:view-box;transform-origin:50% 0;animation:bl-sway 6s ease-in-out infinite alternate;}
+.bl-sway.s1{animation-duration:7.4s;animation-delay:-2s;}
+.bl-sway.s2{animation-duration:5.2s;animation-delay:-4s;}
+@keyframes bl-sway{to{transform:translate(2px,1px) rotate(.25deg);}}
 
-/* ---- 植物 ---- */
-.bl-soil{fill:rgba(95,80,55,.18);transform-box:fill-box;transform-origin:center;
-  animation:bl-soil .8s ease .1s both;}
-@keyframes bl-soil{from{transform:scaleX(0);opacity:0;}}
-.bl-stem{fill:none;stroke:var(--bl-stem);stroke-width:4;stroke-linecap:round;
-  stroke-dasharray:1;stroke-dashoffset:1;animation:bl-draw 2s cubic-bezier(.4,0,.3,1) .35s forwards;}
-@keyframes bl-draw{to{stroke-dashoffset:0;}}
-.bl-leaf{fill:var(--bl-leaf);transform-box:fill-box;transform-origin:left center;transform:scale(0);
-  animation:bl-leaf .9s cubic-bezier(.3,1.35,.5,1) var(--d) forwards;}
-.bl-leaf:nth-of-type(odd){fill:var(--bl-leaf-2);}
-@keyframes bl-leaf{from{transform:scale(0) rotate(-25deg);}to{transform:scale(1) rotate(0);}}
-.bl-vein{fill:none;stroke:var(--bl-vein);stroke-width:1.2;stroke-linecap:round;opacity:.8;
-  stroke-dasharray:1;stroke-dashoffset:1;animation:bl-draw .7s ease var(--d) forwards;}
-.bl-twig{fill:none;stroke:var(--bl-stem);stroke-width:2;stroke-linecap:round;
-  stroke-dasharray:1;stroke-dashoffset:1;animation:bl-draw .7s ease var(--d) forwards;}
-.bl-bud{fill:var(--bl-petal-2);transform:scale(0);animation:bl-pop .8s cubic-bezier(.3,1.4,.5,1) var(--d) forwards;}
-.bl-bud .bl-heart{fill:var(--bl-center);}
+/* ---- 玫瑰 ---- */
+.bl-rose{transform:scale(0);animation:bl-pop .7s cubic-bezier(.3,1.5,.5,1) var(--d) forwards;}
 @keyframes bl-pop{to{transform:scale(1);}}
-
-.bl-flower{transform:scale(1.3);animation:bl-breathe 5s ease-in-out 4s infinite;}
-@keyframes bl-breathe{50%{transform:scale(1.35);}}
-.bl-sepals path{fill:var(--bl-stem);transform:scale(0);animation:bl-pop .6s ease 2.2s forwards;}
-.bl-petal{transform:scale(.05) rotate(-40deg);opacity:0;
-  animation:bl-petal 1.1s cubic-bezier(.25,1.15,.4,1) var(--d) forwards;}
-.bl-p1{fill:var(--bl-petal-3);}
-.bl-p2{fill:var(--bl-petal);}
-.bl-p3{fill:var(--bl-petal-2);}
-@keyframes bl-petal{
-  0%  {transform:scale(.05) rotate(-40deg);opacity:0;}
-  30% {opacity:1;}
-  100%{transform:scale(1) rotate(0);opacity:1;}
-}
-.bl-center{fill:var(--bl-center);transform:scale(0);animation:bl-pop .7s ease 2.4s forwards;}
-.bl-seed{fill:#8a5a2a;opacity:0;animation:bl-fade .4s ease var(--d) forwards;}
+.bl-shade{fill:url(#bl-sh);opacity:0;animation:bl-fade .9s ease var(--b) forwards;}
+.bl-sepal path{fill:#5d7a45;stroke:#3f5a2e;stroke-width:.02;}
+/* 花苞：小小一顆，先冒出來；開花的時候鼓起來然後被花瓣蓋過去 */
+.bl-budhead .h{fill:url(#bl-bud);stroke:#c9c7a6;stroke-width:.02;}
+.bl-budhead .c{fill:#6d8a50;stroke:#47622f;stroke-width:.015;}
+.bl-budhead{transform-box:fill-box;transform-origin:50% 100%;
+  animation:bl-swell .6s ease calc(var(--b) - .25s) forwards;}
+@keyframes bl-swell{50%{transform:scale(1.35,1.2);}100%{transform:scale(.6);opacity:0;}}
+/* 花瓣：從花心往外翻開（每一圈晚一點） */
+.bl-pt{stroke:#cfc4aa;stroke-width:.03;stroke-linejoin:round;}
+.bl-pt.po{fill:url(#bl-po);}
+.bl-pt.pm{fill:url(#bl-pm);}
+.bl-pt.pi{fill:url(#bl-pi);}
+.bl-ring{transform:scale(.08) rotate(-60deg);opacity:0;
+  animation:bl-open 1.15s cubic-bezier(.25,1.12,.4,1) var(--b) forwards;}
+.bl-ring.m{animation-delay:calc(var(--b) + .14s);}
+.bl-ring.i{animation-delay:calc(var(--b) + .28s);}
+@keyframes bl-open{0%{transform:scale(.08) rotate(-60deg);opacity:0;}25%{opacity:1;}100%{transform:scale(1) rotate(0);opacity:1;}}
+.bl-core{transform:scale(0);animation:bl-pop .7s ease calc(var(--b) + .45s) forwards;}
+.bl-core circle{fill:#ece2c8;stroke:#d6caa9;stroke-width:.03;}
+.bl-core path{fill:none;stroke:#bfae86;stroke-width:.045;stroke-linecap:round;}
 @keyframes bl-fade{to{opacity:1;}}
 
-/* ---- 字 ---- */
-.bl-text{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;color:var(--bl-ink);}
+/* 一道斜斜的陽光，跟著花一起慢慢亮 */
+.bl-light{position:absolute;inset:-20%;pointer-events:none;opacity:0;mix-blend-mode:soft-light;
+  background:linear-gradient(115deg,transparent 25%,rgba(255,246,220,.9) 42%,transparent 60%);
+  animation:bl-fade 3s ease 2s forwards;}
+
+/* ---- 字：中間空出來的那一塊，墊一層霧白 ---- */
+.bl-text{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(88vw,620px);
+  display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;color:var(--bl-ink);
+  padding:clamp(18px,3vh,28px) 24px;pointer-events:none;}
+.bl-text::before{content:'';position:absolute;inset:-30% -12%;z-index:-1;border-radius:50%;opacity:0;
+  background:radial-gradient(closest-side,rgba(255,252,244,.96) 55%,rgba(255,252,244,.75) 75%,rgba(255,252,244,0));
+  animation:bl-fade 1.2s ease 3.9s forwards;}
 .bl-text > *{opacity:0;transform:translateY(10px);animation:bl-rise 1.1s ease forwards;}
 .bl-kicker{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(17px,2.4vw,22px);
-  color:var(--bl-accent);animation-delay:3.6s !important;}
+  color:var(--bl-accent);animation-delay:4.3s !important;}
 .bl-names{font-family:var(--font-display,'Cormorant Garamond'),'Noto Serif TC',serif;font-weight:400;
-  font-size:clamp(28px,5vw,48px);letter-spacing:.06em;animation-delay:4s !important;}
+  font-size:clamp(28px,5vw,48px);letter-spacing:.06em;animation-delay:4.6s !important;}
 .bl-names .op-amp{font-style:italic;color:var(--bl-accent);padding:0 .2em;}
-.bl-date{font-size:12.5px;letter-spacing:.4em;color:#7a7866;animation-delay:4.4s !important;}
+.bl-date{font-size:12.5px;letter-spacing:.4em;color:#6d6a58;animation-delay:4.9s !important;}
 @keyframes bl-rise{to{opacity:1;transform:none;}}
 
-.bl-skip{position:absolute;right:18px;bottom:16px;font-size:12px;letter-spacing:.24em;color:rgba(61,70,54,.5);
-  pointer-events:none;}
+.bl-skip{position:absolute;right:18px;bottom:16px;font-size:12px;letter-spacing:.24em;color:rgba(255,252,240,.7);
+  pointer-events:none;text-shadow:0 1px 4px rgba(0,0,0,.5);}
 
-/* ---- 溶進網站：花稍微放大、整個畫面淡掉 ---- */
+/* ---- 溶進網站：整面牆往前一點、淡掉 ---- */
 .bl-host.is-leaving{transition:opacity 1s ease;opacity:0;}
-.bl-host.is-leaving .bl-stage{transform:scale(1.08) translateY(-3%);transition:transform 1s cubic-bezier(.4,0,.2,1);}
+.bl-host.is-leaving .bl-stage{transform:scale(1.08);transition:transform 1.1s cubic-bezier(.4,0,.2,1);}
 
-/* 減少動態：直接是開好的那一刻 */
-.bl-host.is-still *{animation-duration:1ms !important;animation-delay:0s !important;}
+/* 減少動態：直接是開滿的那一刻 */
+.bl-host.is-still *,.bl-host.is-still *::before{animation-duration:1ms !important;animation-delay:0s !important;}
