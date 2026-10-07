@@ -71,15 +71,8 @@
         <path class="rb-glint" d="M-4-8C-1-3-1 4-3 9" filter="url(#rbSoft)"/></g>
     </svg>`;
 
-  /* 左扇封面上的一枝壓花（植物圖鑑式的線稿） */
-  const SPRIG = `
-    <svg class="rb-sprig" viewBox="0 0 80 160" aria-hidden="true">
-      <path d="M40 158C38 120 44 80 38 20" fill="none" stroke="currentColor" stroke-width="1.2"/>
-      ${[[40, 130, -1], [41, 108, 1], [40, 86, -1], [39, 64, 1], [39, 44, -1]].map(([x, y, s], i) =>
-        `<path d="M${x} ${y}C${x + s * 10} ${y - 10} ${x + s * 22} ${y - 8} ${x + s * 26} ${y - 16}C${x + s * 16} ${y - 18} ${x + s * 6} ${y - 12} ${x} ${y}Z" fill="currentColor" opacity="${.55 + i * .08}"/>`).join('')}
-      ${[[38, 18], [30, 26], [46, 28]].map(([x, y]) =>
-        [0, 72, 144, 216, 288].map((a) => `<circle cx="${(x + Math.cos(a * Math.PI / 180) * 3).toFixed(1)}" cy="${(y + Math.sin(a * Math.PI / 180) * 3).toFixed(1)}" r="2.3" style="fill:var(--rb-flower)"/>`).join('')).join('')}
-    </svg>`;
+  /* 左扇封面上的一枝壓花：一張真的壓花照片（樣子在 css/openers/ribbon.css 的 .rb-sprig） */
+  const SPRIG = '<i class="rb-sprig" aria-hidden="true"></i>';
 
   function ribbon(host, ctx) {
     host.classList.add('rb-host');

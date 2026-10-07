@@ -81,7 +81,7 @@ export const TEMPLATES = {
   /* ---- 場景版型：共用一副大廳骨架（lobby-scene.html），
      lobbyKey 是那副骨架的名字（寫在 <body data-lobby>），長相由
      css/lobby-scene.css 依 data-template 換。每一個都有自己的預設開場。 ---- */
-  /* 植物信箋：一本植物標本冊 —— 仿棉紙、描圖紙、乾燥花；墨線 ＋ 水彩的標本手繪、
+  /* 植物信箋：一本植物標本冊 —— 真的棉紙、描圖紙、壓花標本的照片、
      標本標籤。第一個「整套做完」的場景版型，所以有自己的骨架（不再共用 lobby-scene） */
   'botanical-letter': { label:'Botanical Letter 植物信箋', lobbyFile:'lobby-botanical.html',
                      lobbyCss:['/css/lobby-botanical.css'], lobbyJs:['/js/lobby-motion.js'], opening:'ribbon',
@@ -91,7 +91,7 @@ export const TEMPLATES = {
   'secret-garden':  { label:'Secret Garden 秘密花園', lobbyFile:'lobby-garden.html',
                      lobbyCss:['/css/lobby-garden.css'], lobbyJs:['/js/lobby-motion.js'], opening:'door',
                      fonts:['https://fonts.googleapis.com/css2?family=Italiana&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
-  /* 春日溫室：玻璃、花影、斜射的陽光；開場是一朵花慢慢開 */
+  /* 春日溫室：真的玻璃溫室照片、花影、斜射的陽光；開場是一整面綠籬開滿白玫瑰 */
   'spring-orangerie': { label:'Spring Orangerie 春日溫室', lobbyFile:'lobby-orangerie.html',
                      lobbyCss:['/css/lobby-orangerie.css'], lobbyJs:['/js/lobby-motion.js'], opening:'bloom',
                      fonts:['https://fonts.googleapis.com/css2?family=Marcellus&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Sans+TC:wght@300;400;500&family=Noto+Serif+TC:wght@400;500&display=swap'] },

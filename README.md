@@ -221,12 +221,12 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 |---|---|---|---|
 | `envelope` | 拆信・封蠟 | 點封蠟 → 封口掀起 → 信封四散 | tapestry |
 | `book` | 翻頁・古書 | 點封面 → 翻開 → 扉頁 → 翻過扉頁 | （可選） |
-| `bloom` | 花朵盛開 | 自己演：爬滿藤蔓的花牆 → 到處冒出小花苞 → 從中間往外一波波開成白玫瑰 → 名字 | spring-orangerie |
+| `bloom` | 花朵盛開 | 自己演：一整面綠籬 → 到處冒出小花苞 → 從中間往外一波波開成白玫瑰 → 名字（綠籬與玫瑰都是真的照片） | spring-orangerie |
 | `curtain` | 窗簾拉開 | 點一下 → 布幕收到兩側 → 光進來 | morning-window |
 | `candle` | 燭光點亮 | 點一下 → 三根蠟燭一根根亮 | midnight-chapel |
 | `stars` | 星圖展開 | 自己演：星星 → 連線成一顆心 → 名字 | night-sky |
 | `door` | 門／拱門 | 晴朗的早上站在門口，點一下 → 門往內開 → 陽光湧出來、穿過門口。莊園是黑色鍛鐵大門（門後看得到城堡；教堂／刺繡用尖拱版），秘密花園是常春藤牆上一扇白框玻璃門（牆、垂下來的藤、牆腳的花、門後的玫瑰拱門小徑都是真的照片） | secret-garden、french-manor |
-| `ribbon` | 拉開絲帶 | 拖緞帶尾（或點）→ 蝴蝶結鬆開 → 卡片打開。緞帶疊了一張真的絲綢布紋，光澤跟著游標滑（手機上自己慢慢飄） | botanical-letter |
+| `ribbon` | 拉開絲帶 | 拖緞帶尾（或點）→ 蝴蝶結鬆開 → 卡片打開。緞帶疊了一張真的絲綢布紋，光澤跟著游標滑（手機上自己慢慢飄）；卡片與桌面是真的棉紙、纖維紙，封面貼一枝真的壓花 | botanical-letter |
 
 > **緞帶的布紋素材**：`public/css/openers/satin-silk.jpg` 是把一張真的絲綢 normal map
 > 打光成灰階的布紋。原圖是 Khronos [glTF Sample Assets](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/SpecularSilkPouf)
@@ -255,6 +255,34 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 >
 > 要換圖：檔名不變直接蓋過去就好（去背的那幾張要是透明底的 webp）。
 
+> **春日溫室與植物信箋的照片素材**（`public/img/orangerie/`、`public/img/botanical/`）：
+> 一樣全部來自 [Unsplash](https://unsplash.com)，[Unsplash License](https://unsplash.com/license)（可以免費商用、可以修改、不必標示出處；
+> 不能把原圖原封不動拿去賣）。Europeana、紐約公共圖書館那兩張是館藏老標本、老插畫的掃描，在 Unsplash 上一樣是這個授權。
+>
+> | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
+> |---|---|---|---|
+> | `orangerie/glasshouse.webp` | 溫室大廳 hero | [白框玻璃溫室與柑橘樹](https://unsplash.com/photos/ofVrf6rVLAY)・Belinda Fewings | 縮圖 |
+> | `orangerie/glass-roof.webp` | 溫室「我們的故事」的底 | [溫室的玻璃屋頂](https://unsplash.com/photos/jihTT_05_tk)・Annie Spratt | 縮圖 |
+> | `orangerie/white-rose.webp` | 玻璃罩裡的那一朵 | [白玫瑰](https://unsplash.com/photos/ZzTFupfsL4I)・Fiona Murray-deGraaff | 去背 |
+> | `orangerie/white-roses.webp` | R.S.V.P. | [一束白玫瑰](https://unsplash.com/photos/NUX8vT_lkWI)・Evie S. | 去背 |
+> | `orangerie/tulip.webp` | 婚禮資訊 | [紅色鬱金香](https://unsplash.com/photos/62saZ_T5AP0)・Ananthu Selvam | 去背、裁掉花瓶 |
+> | `orangerie/lemon.webp` | 當日流程 | [檸檬枝](https://unsplash.com/photos/OvC1Bojh_Fw)・Rafael Albaladejo | 去背 |
+> | `orangerie/fern.webp` | 小提醒 | [蕨葉](https://unsplash.com/photos/lPikxQg6SWQ)・Shovit Chettri | 去背 |
+> | `orangerie/can.webp` | 交通資訊 | [澆水壺](https://unsplash.com/photos/VENhzgCW5eg)・Hitomi Bremmer | 去背 |
+> | `orangerie/seedling.webp` | 倒數（捲下去從盆裡長出來） | [一盆幼苗](https://unsplash.com/photos/LGmuIxf0YTg)・Suri Huang | 去背 |
+> | `orangerie/leaf-wall.webp` | 開場（bloom）的綠籬 | [綠籬](https://unsplash.com/photos/rDIo23uIQrY)・Wyxina Tresse | 縮圖 |
+> | `orangerie/bloom-rose1.webp` | 開場開出來的玫瑰 | [帶水珠的白玫瑰](https://unsplash.com/photos/B2oNSGZbUnU)・Wyxina Tresse | 去背 |
+> | `orangerie/bloom-rose3a/b/c.webp` | 開場開出來的玫瑰 | [三朵白玫瑰](https://unsplash.com/photos/Xh4TROIQM3A)・Gomezgai Jere | 三朵各自去背 |
+> | `botanical/herbarium-sheet.webp` | 植物信箋 hero 的標本台紙 | [老標本台紙](https://unsplash.com/photos/qimVDE-EDpg)・Europeana | 縮圖 |
+> | `botanical/fern.webp`、`bit3.webp` | Plate I、飄的壓花 | [壓過的蕨](https://unsplash.com/photos/t7aBfsmat8Y)・Anton Maksimov | 去背；bit 是剪下來的一小截 |
+> | `botanical/statice.webp`、`bit2.webp` | Plate II、飄的壓花 | [乾燥星辰花](https://unsplash.com/photos/nBcOnMoP18g)・Isabella Fischer | 去背 |
+> | `botanical/daisy.webp`、`bit0.webp` | Plate III、飄的壓花 | [壓花雛菊](https://unsplash.com/photos/TzlcQPHoZ6g)・Cary Bates | 去背 |
+> | `botanical/olive.webp` | Plate IV | [橄欖枝](https://unsplash.com/photos/9viBtYo_gsM)・The New York Public Library | 去背 |
+> | `botanical/globe-amaranth.webp`、`bit1.webp` | 郵票、頁尾、開場（ribbon）封面、飄的壓花 | [壓花](https://unsplash.com/photos/aTLMgabd9b8)・Evie S. | 去背 |
+> | `botanical/dandelion.webp`、`seed.webp` | 倒數（種子一撮一撮被吹走） | [蒲公英](https://unsplash.com/photos/uff5ce89Ggs)・Josie Weiss | 黑底轉透明；seed 是剪下來的一撮冠毛 |
+> | `botanical/paper.webp` | 植物信箋整頁的底、開場（ribbon）的卡片 | [棉紙](https://unsplash.com/photos/cqhXfrRHCPo)・Kiwihug | 接成可以無縫平鋪 |
+> | `botanical/fibre-paper.webp` | 「我們的故事」的底、開場（ribbon）的桌面 | [纖維紙](https://unsplash.com/photos/2nKcZGDHpEs)・360floralflaves | 縮圖 |
+
 同一種開場在不同版型可以長得不一樣（門：法式莊園是黑色鍛鐵大門、秘密花園是爬滿植物的玻璃門、
 午夜教堂與中古刺繡是尖拱的鍛鐵大門）。要賓客親手做的開場，那一下也會開始播背景音樂。
 每一種開場單獨看：`preview/openings.html`。
@@ -265,9 +293,9 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 
 | 版型 | 進度 | 大廳 |
 |---|---|---|
-| botanical-letter | ✅ 整套插圖（墨線＋水彩的標本、蒲公英、郵票）＋ 捲動編排 | `lobby-botanical.html` |
+| botanical-letter | ✅ 真的照片（一整張老標本台紙、壓過的蕨／星辰花／雛菊／橄欖枝、蒲公英、棉紙與纖維紙、郵票裡的千日紅）＋ 捲動編排，素材見上面〈春日溫室與植物信箋的照片素材〉 | `lobby-botanical.html` |
 | secret-garden | ✅ 真的照片 ＋ 手繪水彩（玫瑰拱門的小徑、垂下來的常春藤、鏡頭前的花、水彩的罌粟／藍雛菊／海芋／鬱金香／牡丹、去背的蝴蝶、常春藤牆、黃昏草地的螢火蟲）＋ 捲動編排，素材見上面〈秘密花園的照片素材〉 | `lobby-garden.html` |
-| spring-orangerie | ✅ 整套插圖（春日玻璃溫室：白鐵框拱窗、柑橘樹、玻璃罩裡的花、鬱金香、檸檬枝、蕨、澆水壺、種子包）＋ 捲動編排（葉影隨捲動移動、斜射的光、玻璃反光、倒數區的幼苗隨捲動長高結出花苞） | `lobby-orangerie.html` |
+| spring-orangerie | ✅ 真的照片（白框玻璃溫室與兩旁的柑橘樹、玻璃罩裡的白玫瑰、鬱金香、檸檬枝、蕨葉、澆水壺、溫室屋頂、一盆幼苗、一束白玫瑰）＋ 捲動編排（葉影隨捲動移動、斜射的光、玻璃反光、倒數區的幼苗隨捲動從盆裡長出來），素材見上面〈春日溫室與植物信箋的照片素材〉 | `lobby-orangerie.html` |
 | night-sky | ✅ 整套插圖（現代星空：開場那張心形星圖停在 hero、寫實的月亮、三層山稜、亮燈的帳篷、坐著看星星的兩個人、細金線星座）＋ 捲動編排（三層星星視差、星圖外環跟著轉、星座一條一條連起來、望遠鏡視野的軌道、倒數的月亮越捲越圓、頁尾天快亮了） | `lobby-night.html` |
 | french-manor | ✅ 整套插圖（銅版畫風的莊園：石灰岩城堡立面、孟薩式屋頂、碎石路與凡爾賽花箱的樹雕、鍛鐵大門、日晷、壁燈、金框畫、花園平面圖）＋ 捲動編排（進站時百葉窗一扇扇打開、往下捲像沿著碎石路走向城堡、銅版小圖先畫線再印上排線、牆板上的陽光隨捲動滑過、倒數時花園平面圖一筆筆畫出來、最後噴泉噴起來） | `lobby-manor.html` |
 | 其餘兩個 | 世界觀、hero 場景、開場 | 共用 `lobby-scene.html` |

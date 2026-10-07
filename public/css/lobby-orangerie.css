@@ -6,16 +6,16 @@
      世界觀  一朵花在溫室裡開了（開場），溫室裡陽光很好
      材質    玻璃擬真：霧面、邊緣的高光、斜斜的反光、一點水氣；
              陶盆、鐵框、磨石地；光影與半透明
-     素材    微擬真的植物：葉子與果實都有受光面與背光面（漸層），
-             帶一點攝影感的陽光與葉影
-     圖像    玻璃、花影、陽光、植物（柑橘樹、鬱金香、蕨、檸檬、幼苗）
+     素材    真的照片：溫室、柑橘樹、白玫瑰、鬱金香、檸檬枝、蕨葉、澆水壺、幼苗；
+             全部在 public/img/orangerie/，出處與授權見 README〈春日溫室與植物信箋的照片素材〉
+     圖像    玻璃、花影、陽光、植物
 
    捲動：
      ・陽光的光束往下捲時慢慢轉角度，像太陽在移動
      ・整頁鋪一層葉影（花影），固定在視窗上、跟著捲動慢慢移
      ・每一張玻璃卡：一道反光隨著捲動從左滑到右（--sp）
      ・每一盆植物捲到時從盆裡長出來（data-reveal="grow"）
-     ・倒數那一株幼苗：捲下去就長高，葉子一片一片冒出來，最後結出花苞
+     ・倒數那一盆幼苗：捲下去就從盆裡長出來
      ・故事的拱窗：玻璃的反光跟著捲動滑過照片
 
    每一條規則都收在 .so-* 或 body[data-lobby="spring-orangerie"] 底下。
@@ -33,8 +33,6 @@ body[data-lobby="spring-orangerie"] .bg-decor{
     linear-gradient(180deg,#fbfbf5,#f1f5ec);}
 .so-lobby{position:relative;}
 .so-art{display:block;width:100%;height:auto;overflow:visible;}
-.so-packet-t{font:600 12px 'Marcellus',Georgia,serif;letter-spacing:.14em;fill:#4f7a66;}
-.so-packet-s{font:400 10px 'Marcellus',Georgia,serif;letter-spacing:.2em;fill:#8a6a5a;}
 
 /* 整頁的葉影（花影）：一層固定在視窗上的遮罩，跟著捲動慢慢移、自己也輕輕晃 */
 .so-dapple{position:fixed;inset:-10%;z-index:1;pointer-events:none;opacity:.04;background:#23402f;
@@ -64,24 +62,16 @@ body[data-lobby="spring-orangerie"] .bg-decor{
 ============================================================ */
 .so-hero{position:relative;overflow:hidden;min-height:calc(100svh - var(--nav-h));padding:0;gap:0;justify-content:flex-end;}
 .so-house{position:absolute;inset:0;}
-/* 窗外：模糊的春天花園（霧面玻璃後面看出去的樣子） */
-.so-outside{position:absolute;inset:-4%;filter:blur(10px) saturate(1.1);
+/* 溫室：一張真的照片（Belinda Fewings／Unsplash）。往下捲時慢慢推近；
+   名字那一塊的底下墊一層霧白，底部淡進頁面的底色 */
+.so-photo{position:absolute;inset:-4% 0 -8%;
   background:
-    radial-gradient(18% 14% at 22% 62%,#f4c7cf,transparent 70%),
-    radial-gradient(14% 10% at 78% 58%,#f6d88f,transparent 70%),
-    radial-gradient(40% 24% at 20% 72%,#8fb87a,transparent 70%),
-    radial-gradient(40% 26% at 82% 70%,#7faa6c,transparent 70%),
-    radial-gradient(60% 30% at 50% 82%,#a4c98c,transparent 70%),
-    radial-gradient(50% 40% at 50% 20%,#fffbe8,transparent 70%),
-    linear-gradient(180deg,#e3f0f3 0%,#eef5ea 50%,#cfe2bf 100%);
-  transform:translateY(calc(var(--lp,0) * 60px));}
-.so-frame{position:absolute;inset:0;width:100%;height:100%;transform:translateY(calc(var(--lp,0) * 30px));}
-/* 磨石地 */
-.so-floor{position:absolute;left:-10%;right:-10%;bottom:0;height:22%;
-  background:
-    repeating-linear-gradient(90deg,transparent 0 78px,rgba(120,110,95,.12) 78px 80px),
-    linear-gradient(180deg,#ebe6da,#ddd6c6);
-  transform:perspective(600px) rotateX(38deg);transform-origin:50% 0;}
+    radial-gradient(52% 44% at 50% 74%,rgba(251,251,245,.55),rgba(251,251,245,0) 75%),
+    linear-gradient(180deg,rgba(251,251,245,.1),rgba(251,251,245,0) 40%,rgba(251,251,245,0) 80%,#f6f8f0 100%),
+    url(../img/orangerie/glasshouse.webp) 50% 40%/cover no-repeat;
+  transform:translateY(calc(var(--lp,0) * 50px)) scale(calc(1.03 + var(--lp,0) * .06));}
+.app-show .so-photo{animation:so-push 2.4s cubic-bezier(.2,.7,.2,1) both;}
+@keyframes so-push{from{opacity:.5;scale:1.1;filter:blur(3px);}}
 /* 陽光：三道斜斜的光束，往下捲時慢慢轉角度 */
 .so-beams{position:absolute;inset:-30%;pointer-events:none;mix-blend-mode:screen;
   transform:rotate(calc(-6deg + var(--lp,0) * 16deg));transform-origin:0 0;transition:transform .2s linear;}
@@ -91,18 +81,22 @@ body[data-lobby="spring-orangerie"] .bg-decor{
 .so-beams i:nth-child(2){left:46%;width:6%;animation-delay:-2s;opacity:.8;}
 .so-beams i:nth-child(3){left:58%;width:12%;animation-delay:-4s;opacity:.6;}
 @keyframes so-beam{to{opacity:.55;}}
-.so-tree{position:absolute;bottom:4%;width:clamp(150px,19vw,260px);z-index:2;
-  transform:translateY(calc(var(--lp,0) * 90px));}
-.so-tree.l{left:clamp(-40px,3vw,60px);}
-.so-tree.r{right:clamp(-40px,3vw,60px);}
-@media (max-width:640px){.so-tree{width:140px;bottom:2%;}.so-tree.l{left:-44px;}.so-tree.r{right:-44px;}}
-.app-show .so-tree{animation:so-tree-in 1.4s cubic-bezier(.25,1.2,.4,1) .2s both;}
-@keyframes so-tree-in{from{opacity:0;transform:translateY(40px) scale(.95);}}
-
 .so-hero-body{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;text-align:center;
   padding:0 20px clamp(40px,7vh,80px);color:var(--so-ink);
   transform:translateY(calc(var(--lp,0) * 40px));opacity:calc(1 - var(--lp,0) * 1.2);}
-.so-cloche{width:clamp(120px,14vw,170px);margin-bottom:-6px;}
+/* 玻璃罩：罩子是 CSS 畫的玻璃（霧面、邊緣的高光），裡面是一朵真的白玫瑰（Fiona Murray-deGraaff／Unsplash） */
+.so-cloche{position:relative;width:clamp(120px,13vw,160px);aspect-ratio:3/4;margin-bottom:14px;}
+.so-cloche-rose{position:absolute;left:8%;right:8%;top:14%;bottom:4%;
+  background:url(../img/orangerie/white-rose.webp) 50% 100%/contain no-repeat;filter:drop-shadow(0 6px 8px rgba(35,64,47,.25));}
+.so-cloche-glass{position:absolute;inset:0;border-radius:50% 50% 6px 6px / 42% 42% 6px 6px;
+  background:
+    linear-gradient(100deg,rgba(255,255,255,0) 18%,rgba(255,255,255,.55) 24%,rgba(255,255,255,0) 32%),
+    radial-gradient(70% 50% at 50% 30%,rgba(255,255,255,.18),rgba(255,255,255,.06));
+  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.85),inset 0 0 18px rgba(255,255,255,.45),0 18px 24px -18px rgba(35,64,47,.45);}
+.so-cloche-glass::before{content:'';position:absolute;left:50%;top:-7%;width:14%;aspect-ratio:1;transform:translateX(-50%);border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff,rgba(255,255,255,.5) 45%,rgba(200,215,205,.6));box-shadow:0 1px 2px rgba(35,64,47,.25);}
+.so-cloche-glass::after{content:'';position:absolute;left:-6%;right:-6%;bottom:-5%;height:9%;border-radius:50%;
+  background:linear-gradient(180deg,#c9a27a,#8a6244);box-shadow:0 6px 10px -4px rgba(35,64,47,.45);}
 /* 開場開完的那一朵花，放進玻璃罩裡 */
 .app-show .so-cloche{animation:so-cloche-in 1.3s cubic-bezier(.2,.7,.2,1) both;}
 @keyframes so-cloche-in{from{opacity:0;transform:scale(.9) translateY(20px);}}
@@ -141,8 +135,14 @@ body[data-hero-name="cn"] .so-hero .so-names{font-family:'Noto Serif TC',serif;f
   margin-top:0;padding:clamp(64px,9vw,110px) 0 0;text-align:center;}
 .so-sec[hidden]{display:none;}
 .so-head{display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:clamp(18px,3vw,28px);}
+/* 區塊標題上的植物：真的照片去背（出處見 README） */
 .so-pot{width:clamp(110px,14vw,150px);margin:0 0 6px;}
 .so-pot.is-branch,.so-pot.is-can{width:clamp(150px,18vw,200px);}
+.so-plant{height:clamp(120px,15vw,160px);background:50% 100%/contain no-repeat;filter:drop-shadow(0 10px 10px rgba(35,64,47,.2));}
+.so-plant.p-tulip{background-image:url(../img/orangerie/tulip.webp);}
+.so-plant.p-lemon{background-image:url(../img/orangerie/lemon.webp);height:clamp(110px,13vw,140px);}
+.so-plant.p-fern{background-image:url(../img/orangerie/fern.webp);}
+.so-plant.p-can{background-image:url(../img/orangerie/can.webp);height:clamp(90px,11vw,120px);}
 .so-head .block-title{margin:0;font:400 clamp(28px,4vw,40px)/1.15 'Marcellus','Noto Serif TC',serif;letter-spacing:.06em;
   text-transform:none;color:var(--so-ink);}
 .so-head .block-sub{margin:0;font-size:13px;letter-spacing:.36em;color:var(--so-soft);}
@@ -181,7 +181,10 @@ body[data-hero-name="cn"] .so-hero .so-names{font-family:'Noto Serif TC',serif;f
 .so-rsvp{display:grid;grid-template-columns:1fr;gap:18px;justify-items:center;}
 @media (min-width:640px){.so-rsvp{grid-template-columns:150px minmax(0,1fr);text-align:left;gap:32px;align-items:center;}
   .so-rsvp .rsvp-cta{text-align:left;}}
-.so-packet-wrap{width:130px;margin:0;transform:rotate(-6deg);}
+.so-packet-wrap{width:130px;margin:0;}
+/* 一束白玫瑰（Evie S.／Unsplash） */
+.so-bouquet{display:block;aspect-ratio:366/420;background:url(../img/orangerie/white-roses.webp) center/contain no-repeat;
+  filter:drop-shadow(0 12px 12px rgba(35,64,47,.22));}
 .so-rsvp .rsvp-cta h3{font-family:'Marcellus','Noto Serif TC',serif;}
 
 /* ============================================================
@@ -198,10 +201,11 @@ body[data-hero-name="cn"] .so-hero .so-names{font-family:'Noto Serif TC',serif;f
 
 /* ---- 故事：溫室的綠 ＋ 一扇拱窗 ---- */
 .so-story{color:#fbfcf8;}
+/* 溫室的玻璃屋頂與棕櫚（Annie Spratt／Unsplash），壓一層溫室的綠，字才讀得到 */
 .so-story .so-band-bg{background:
-  repeating-linear-gradient(90deg,transparent 0 calc(16.66% - 2px),rgba(255,255,255,.18) calc(16.66% - 2px) 16.66%),
-  linear-gradient(115deg,transparent 30%,rgba(255,244,214,.3) 45%,transparent 60%),
-  linear-gradient(180deg,#6f9a86,#4f7a66);}
+  linear-gradient(115deg,transparent 30%,rgba(255,244,214,.22) 45%,transparent 60%),
+  linear-gradient(180deg,rgba(47,82,66,.72),rgba(47,82,66,.82)),
+  #4f7a66 url(../img/orangerie/glass-roof.webp) 50% 30%/cover no-repeat;}
 .so-story .so-band-sub{color:rgba(251,252,248,.75);}
 .so-story .so-band-inner{display:grid;grid-template-columns:1fr;gap:40px;justify-items:center;text-align:center;}
 @media (min-width:780px){.so-story .so-band-inner{grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:clamp(40px,6vw,76px);align-items:center;text-align:left;justify-items:stretch;}}
@@ -228,11 +232,12 @@ body[data-hero-name="cn"] .so-hero .so-names{font-family:'Noto Serif TC',serif;f
 @media (min-width:780px){.so-count .so-band-inner{flex-direction:row;justify-content:center;gap:clamp(40px,7vw,90px);text-align:left;}}
 .so-count .so-band-sub{color:var(--so-soft);}
 .so-seedling-wrap{width:clamp(120px,14vw,160px);margin:0;}
-/* 長高：--grow 由這一條帶子穿過視窗的進度算出來 */
+/* 一盆真的幼苗（Suri Huang／Unsplash）：--grow 由這一條帶子穿過視窗的進度算出來；
+   從上面往下裁掉，捲下去就從盆裡長出來（盆子一開始就在） */
 .so-count{--grow:clamp(0,calc((var(--sp,0) - .12) * 2.6),1);}
-.so-grow-stem{stroke-dasharray:1;stroke-dashoffset:calc(1 - var(--grow));}
-.so-grow-leaf,.so-grow-bud{transform-box:fill-box;transform-origin:50% 100%;
-  --on:clamp(0,calc((var(--grow) - var(--at)) * 9),1);opacity:var(--on);transform:scale(calc(.3 + var(--on) * .7));}
+.so-sprout{display:block;aspect-ratio:280/520;background:url(../img/orangerie/seedling.webp) 50% 100%/contain no-repeat;
+  filter:drop-shadow(0 12px 12px rgba(35,64,47,.22));
+  clip-path:inset(calc((1 - var(--grow)) * 62%) -20% 0 -20%);}
 .so-count .cd-grid{margin:22px 0 0;}
 @media (max-width:779px){.so-count .cd-grid{margin:22px auto 0;}}
 .so-count .cd-unit{border-left:1px solid var(--so-line);}

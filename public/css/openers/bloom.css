@@ -1,12 +1,11 @@
 /* ============================================================
    openers/bloom.css — 開場：花朵盛開（js/openers/bloom.js）
    ------------------------------------------------------------
-   一面爬滿藤蔓的植物牆，開滿白色玫瑰。
+   一面密密的綠籬（照片），開滿白色玫瑰（去背的照片）。
    每一朵花有兩個時間（JS 算的）：
-     --d  花苞冒出來（亂序）
-     --b  開花（從中間往外一波一波）
-   開花的順序跟真的玫瑰一樣：花苞先鼓起來 → 外圈花瓣先翻開 → 中圈 → 內圈 → 花心。
-   SVG 的單位就是 px，所以這裡的 transform 都用 fill-box 當原點。
+     --d  花苞冒出來（亂序）：很小一顆、偏暗偏綠
+     --b  開花（從中間往外一波一波）：鼓起來、轉一點點、亮起來，開成一整朵
+   每一朵花各自的大小與角度寫在 inline style（left／top／width／--rot）。
 ============================================================ */
 .bl-host{
   --bl-ink:#2f3a2a; --bl-accent:#7b6a4a;
@@ -15,47 +14,31 @@
 .bl-host[data-variant="spring-orangerie"]{--bl-accent:#4f7a66;}
 .bl-host[data-variant="botanical-letter"],.bl-host[data-variant="secret-garden"]{--bl-accent:#6b5a7a;}
 
-/* 牆的底色：葉子之間的縫是深綠，左上一點陽光 */
-.bl-bg{position:absolute;inset:0;
-  background:
-    radial-gradient(60% 50% at 30% 20%,rgba(255,244,210,.35),transparent 70%),
-    linear-gradient(180deg,#3a5230,#26371f);}
+/* 綠籬：一張真的照片，左上一點陽光、四周壓暗；整面牆輕輕地晃（風） */
+.bl-bg{position:absolute;inset:0;background:#26371f;}
 .bl-stage{position:absolute;inset:0;animation:bl-in 1.2s ease both;}
 @keyframes bl-in{from{opacity:0;transform:scale(1.04);}}
-.bl-wall{position:absolute;inset:0;display:block;width:100%;height:100%;}
-
-/* ---- 藤與葉 ---- */
-.bl-vines path{fill:none;stroke:#4a3e2a;stroke-width:3.2;stroke-linecap:round;opacity:.75;}
-.bl-lf{stroke:rgba(30,45,22,.35);stroke-width:.03;}
-.bl-sway{transform-box:view-box;transform-origin:50% 0;animation:bl-sway 6s ease-in-out infinite alternate;}
-.bl-sway.s1{animation-duration:7.4s;animation-delay:-2s;}
-.bl-sway.s2{animation-duration:5.2s;animation-delay:-4s;}
-@keyframes bl-sway{to{transform:translate(2px,1px) rotate(.25deg);}}
+.bl-wall{position:absolute;inset:0;overflow:hidden;}
+.bl-leaves{position:absolute;inset:-3%;
+  background:
+    radial-gradient(60% 50% at 30% 20%,rgba(255,244,210,.28),transparent 70%),
+    radial-gradient(90% 80% at 50% 50%,transparent 40%,rgba(12,20,8,.55)),
+    var(--leaf) center/cover no-repeat;
+  animation:bl-sway 7s ease-in-out infinite alternate;}
+@keyframes bl-sway{to{transform:translate(4px,2px) rotate(.3deg) scale(1.01);}}
 
 /* ---- 玫瑰 ---- */
-.bl-rose{transform:scale(0);animation:bl-pop .7s cubic-bezier(.3,1.5,.5,1) var(--d) forwards;}
-@keyframes bl-pop{to{transform:scale(1);}}
-.bl-shade{fill:url(#bl-sh);opacity:0;animation:bl-fade .9s ease var(--b) forwards;}
-.bl-sepal path{fill:#5d7a45;stroke:#3f5a2e;stroke-width:.02;}
-/* 花苞：小小一顆，先冒出來；開花的時候鼓起來然後被花瓣蓋過去 */
-.bl-budhead .h{fill:url(#bl-bud);stroke:#c9c7a6;stroke-width:.02;}
-.bl-budhead .c{fill:#6d8a50;stroke:#47622f;stroke-width:.015;}
-.bl-budhead{transform-box:fill-box;transform-origin:50% 100%;
-  animation:bl-swell .6s ease calc(var(--b) - .25s) forwards;}
-@keyframes bl-swell{50%{transform:scale(1.35,1.2);}100%{transform:scale(.6);opacity:0;}}
-/* 花瓣：從花心往外翻開（每一圈晚一點） */
-.bl-pt{stroke:#cfc4aa;stroke-width:.03;stroke-linejoin:round;}
-.bl-pt.po{fill:url(#bl-po);}
-.bl-pt.pm{fill:url(#bl-pm);}
-.bl-pt.pi{fill:url(#bl-pi);}
-.bl-ring{transform:scale(.08) rotate(-60deg);opacity:0;
-  animation:bl-open 1.15s cubic-bezier(.25,1.12,.4,1) var(--b) forwards;}
-.bl-ring.m{animation-delay:calc(var(--b) + .14s);}
-.bl-ring.i{animation-delay:calc(var(--b) + .28s);}
-@keyframes bl-open{0%{transform:scale(.08) rotate(-60deg);opacity:0;}25%{opacity:1;}100%{transform:scale(1) rotate(0);opacity:1;}}
-.bl-core{transform:scale(0);animation:bl-pop .7s ease calc(var(--b) + .45s) forwards;}
-.bl-core circle{fill:#ece2c8;stroke:#d6caa9;stroke-width:.03;}
-.bl-core path{fill:none;stroke:#bfae86;stroke-width:.045;stroke-linecap:round;}
+.bl-rose{position:absolute;aspect-ratio:1;background:center/contain no-repeat;
+  translate:-50% -50%;rotate:var(--rot);scale:0;
+  filter:drop-shadow(0 8px 10px rgba(10,18,6,.5)) brightness(.6) saturate(.4) sepia(.35) hue-rotate(40deg);
+  animation:bl-bud .7s cubic-bezier(.3,1.5,.5,1) var(--d) forwards,bl-open 1.4s cubic-bezier(.25,1.12,.4,1) var(--b) forwards;}
+/* 花苞：一小顆，顏色還是青青的 */
+@keyframes bl-bud{to{scale:.2;}}
+/* 開花：鼓起來、轉一點，顏色亮回白色 */
+@keyframes bl-open{
+  0%{scale:.2;rotate:var(--rot);}
+  30%{scale:.32;}
+  100%{scale:1;rotate:calc(var(--rot) + 50deg);filter:drop-shadow(0 8px 10px rgba(10,18,6,.5)) brightness(1) saturate(1) sepia(0) hue-rotate(0deg);}}
 @keyframes bl-fade{to{opacity:1;}}
 
 /* 一道斜斜的陽光，跟著花一起慢慢亮 */
