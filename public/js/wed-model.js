@@ -99,7 +99,7 @@ export const TEMPLATES = {
   'night-sky':   { label:'Night Sky 現代星空', lobbyFile:'lobby-night.html',
                      lobbyCss:['/css/lobby-night.css'], lobbyJs:['/js/lobby-motion.js'], opening:'stars',
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Josefin+Sans:wght@300;400&family=Noto+Sans+TC:wght@300;400;500&family=Noto+Serif+TC:wght@400;500&display=swap'] },
-  /* 法式莊園：石牆、拱門、鍛鐵與花園；推開一扇木門進去 */
+  /* 法式莊園：真的城堡、碎石路與法式花園的照片；推開一扇鍛鐵大門進去 */
   'french-manor': { label:'French Manor 法式莊園', lobbyFile:'lobby-manor.html',
                      lobbyCss:['/css/lobby-manor.css'], lobbyJs:['/js/lobby-motion.js'], opening:'door',
                      fonts:['https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },

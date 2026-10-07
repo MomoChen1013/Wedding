@@ -83,8 +83,9 @@
 <button class="intro-skip" id="introSkip" type="button" hidden>跳過</button>
 
 <!-- ============ 主畫面：一本植物標本冊 ============
-     hero 是一張標本台紙（花束用紙膠帶貼著、右下角一張標本標籤寫著名字），
-     往下每一個區塊是一頁「圖版」（Plate I、II…），左邊一枝標本、右邊是內容。
+     hero 是一張老標本台紙，上面用相角貼著新人的照片，旁邊壓著一枝鬱金香與一片葉子，
+     右下角一張標本標籤寫著名字；往下每一個區塊是一頁「圖版」（Plate I、II…）：
+     台紙上貼一張新人的照片（照片牆的第 1–4 張），一枝壓花斜斜壓在照片的一角，右邊是內容。
      標本是真的壓花照片（去背）：捲到的時候一張一張壓上台紙（data-reveal="draw"）。 -->
 <div id="app">
   <section class="panel lobby bt-lobby" data-panel="lobby">
@@ -101,7 +102,7 @@
     <header class="lobby-hero bt-hero" data-scroll>
       <div class="bt-hero-grid">
         <div class="bt-sheet" aria-hidden="true">
-          <figure class="bt-bouquet-wrap" data-reveal="draw"><i class="bt-specimen s-sheet"></i></figure>
+          <figure class="bt-bouquet-wrap" data-reveal="draw"><i class="bt-specimen s-sheet"></i><div class="bt-hero-photo" data-photo="hero" aria-hidden="true"><i class="bt-corner c1"></i><i class="bt-corner c2"></i><i class="bt-corner c3"></i><i class="bt-corner c4"></i></div><i class="bt-specimen s-tulip"></i><i class="bt-specimen s-leaf"></i></figure>
           <i class="bt-tape t1"></i><i class="bt-tape t2"></i>
           <div class="bt-label">
             <div class="bt-label-no"><span>HERBARIUM</span><span>No. 0116</span></div>
@@ -126,7 +127,7 @@
       <!-- ===== Plate I 婚禮資訊：蕨 ===== -->
       <section class="info-block bt-sec bt-plate" data-scroll>
         <aside class="bt-plate-art">
-          <div class="bt-mount" data-reveal="draw"><i class="bt-art bt-specimen s-fern"></i>
+          <div class="bt-mount" data-reveal="draw"><div class="bt-mount-ph" data-photo="photo1" aria-hidden="true"></div><i class="bt-art bt-specimen s-fern"></i>
             <div class="bt-plate-label"><b>PLATE I</b><i>Polypodium vulgare</i></div>
           </div>
         </aside>
@@ -159,11 +160,11 @@
         </div>
       </section>
 
-      <!-- ===== Plate II 當日流程：星辰花（乾燥的「海薰衣草」） ===== -->
+      <!-- ===== Plate II 當日流程：穗花婆婆納（乾燥） ===== -->
       <section class="info-block bt-sec bt-plate is-flip" id="scheduleBlock" data-scroll>
         <aside class="bt-plate-art">
-          <div class="bt-mount" data-reveal="draw"><i class="bt-art bt-specimen s-lavender"></i>
-            <div class="bt-plate-label"><b>PLATE II</b><i>Limonium sinuatum</i></div>
+          <div class="bt-mount" data-reveal="draw"><div class="bt-mount-ph" data-photo="photo2" aria-hidden="true"></div><i class="bt-art bt-specimen s-lavender"></i>
+            <div class="bt-plate-label"><b>PLATE II</b><i>Veronica spicata</i></div>
           </div>
         </aside>
         <div class="bt-plate-body">
@@ -179,7 +180,7 @@
       <!-- ===== Plate III 出席前的小提醒：雛菊（沒填就整塊收起） ===== -->
       <section class="info-block bt-sec bt-plate" id="noteBlock" hidden data-scroll>
         <aside class="bt-plate-art">
-          <div class="bt-mount" data-reveal="draw"><i class="bt-art bt-specimen s-daisy"></i>
+          <div class="bt-mount" data-reveal="draw"><div class="bt-mount-ph" data-photo="photo3" aria-hidden="true"></div><i class="bt-art bt-specimen s-daisy"></i>
             <div class="bt-plate-label"><b>PLATE III</b><i>Bellis perennis</i></div>
           </div>
         </aside>
@@ -210,7 +211,7 @@
       <!-- ===== Plate IV 交通資訊：橄欖枝（沒填就整塊收起） ===== -->
       <section class="info-block bt-sec bt-plate is-flip" id="transportBlock" hidden data-scroll>
         <aside class="bt-plate-art">
-          <div class="bt-mount" data-reveal="draw"><i class="bt-art bt-specimen s-olive"></i>
+          <div class="bt-mount" data-reveal="draw"><div class="bt-mount-ph" data-photo="photo4" aria-hidden="true"></div><i class="bt-art bt-specimen s-olive"></i>
             <div class="bt-plate-label"><b>PLATE IV</b><i>Olea europaea</i></div>
           </div>
         </aside>

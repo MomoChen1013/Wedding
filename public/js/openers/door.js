@@ -7,8 +7,9 @@
      → 鏡頭穿過門口往前走 → 溶進網站
 
    每個版型有自己的門（[data-variant]，見 css/openers/door.css）：
-     french-manor（預設）  黑色鍛鐵大門：兩根石柱、柱頂的石甕插滿花、門上一道鍛鐵拱，
-                           兩旁是矮石牆與鐵欄杆；門是鏤空的，看得到後面陽光下的城堡
+     french-manor（預設）  黑色鍛鐵大門：兩根石柱、柱頂的石甕插滿白玫瑰、門上一道鍛鐵拱，
+                           兩旁是矮石牆與鐵欄杆；門是鏤空的，看得到後面陽光下的城堡。
+                           門是程式畫的；城堡、石頭、草地、碎石路、花都是真的照片
      midnight-chapel／tapestry  同一種鍛鐵大門，但是中古的尖拱、石柱頂是小尖塔，
                            門後遠遠是一座有圓塔的城堡
      secret-garden         一整面常春藤牆上，一扇白框的玻璃門：上面一扇半圓的氣窗，
@@ -180,15 +181,24 @@
   /* 門以外：石柱、柱頂的花、門上的鍛鐵拱、兩旁的矮牆與欄杆、地面、太陽照下來的影子 */
   function gateFront(kind) {
     const r = rng(kind === 'gothic' ? 31 : 17);
+    /* 莊園：石柱、矮牆、草地、碎石路都換成真的照片紋理（見 README〈法式莊園的照片素材〉）；
+       尖拱版（教堂、刺繡）維持原本的畫 */
+    const real = kind === 'manor', M = ROOT + 'manor/';
+    const tex = (id, src, w, h, extra = '') => `<pattern id="${id}" width="${w}" height="${h}" patternUnits="userSpaceOnUse"${extra}><image href="${src}" width="${w}" height="${h}" preserveAspectRatio="none"/></pattern>`;
     let s = `<defs>
       <linearGradient id="dr-stone" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e2d8c4"/><stop offset=".45" stop-color="#f6efe0"/><stop offset="1" stop-color="#cfc2a8"/></linearGradient>
       <linearGradient id="dr-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1e8d6"/><stop offset="1" stop-color="#dccfb5"/></linearGradient>
       <linearGradient id="dr-gravel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9dcc0"/><stop offset="1" stop-color="#d8c6a0"/></linearGradient>
       <linearGradient id="dr-grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fb36a"/><stop offset="1" stop-color="#5f8a45"/></linearGradient>
+      ${real ? tex('dr-stoneT', M + 'stone.webp', 60, 196) + tex('dr-lawnT', M + 'lawn.webp', 180, 65) +
+        tex('dr-gravelT', M + 'gravel.webp', 160, 70) +
+        `<linearGradient id="dr-shade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2a241a" stop-opacity=".28"/><stop offset=".4" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#2a241a" stop-opacity=".38"/></linearGradient>` +
+        `<linearGradient id="dr-dusk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1d2616" stop-opacity=".35"/><stop offset=".25" stop-color="#1d2616" stop-opacity="0"/></linearGradient>` : ''}
     </defs>`;
     /* 地面：草地 ＋ 正中間一條碎石路 */
-    s += `<rect x="-3000" y="596" width="6600" height="2000" fill="url(#dr-grass)"/>`;
-    s += `<path d="M90 596H510L1100 1700H-500Z" fill="url(#dr-gravel)"/>`;
+    s += `<rect x="-3000" y="596" width="6600" height="2000" fill="url(#dr-${real ? 'lawnT' : 'grass'})"/>`;
+    s += `<path d="M90 596H510L1100 1700H-500Z" fill="url(#dr-${real ? 'gravelT' : 'gravel'})"/>`;
+    if (real) s += `<rect x="-3000" y="596" width="6600" height="300" fill="url(#dr-dusk)"/>`;
     /* 太陽在門後：鐵條的影子一條一條往鏡頭這邊拉長（門打開就淡掉） */
     let sh = '';
     for (let x = GATE.x0 + 10; x < GATE.x1; x += 17) {
@@ -201,7 +211,7 @@
       let bars = '', tips = '';
       const lo = Math.min(xa, xb), hi = Math.max(xa, xb);
       for (let x = lo + 8; x < hi; x += 16) { bars += `M${x} 470V376`; tips += `<path d="M${x - 3.5} 378L${x} 366L${x + 3.5} 378Z"/>`; }
-      return `<rect x="${lo}" y="470" width="${hi - lo}" height="130" fill="url(#dr-wall)"/>` +
+      return `<rect x="${lo}" y="470" width="${hi - lo}" height="130" fill="url(#dr-${real ? 'stoneT' : 'wall'})"/>` +
         `<rect x="${lo}" y="460" width="${hi - lo}" height="12" fill="#e9dfcb" stroke="#c9bb9f"/>` +
         `<path d="${Array.from({ length: Math.ceil((hi - lo) / 60) }, (_, i) => `M${lo + i * 60} 472V600`).join('')}M${lo} 516H${hi}M${lo} 558H${hi}" stroke="#cdbfa3" stroke-width="1.5"/>` +
         `<g stroke="${IRON}" stroke-width="3.2" fill="none"><path d="${bars}"/><path d="M${lo} 392H${hi}M${lo} 452H${hi}" stroke-width="4"/></g>` +
@@ -218,12 +228,18 @@
       }
       return t;
     };
-    s += ivy(-420, 40, 440, 600, 120) + ivy(560, 1020, 440, 600, 120);
+    /* 莊園：牆腳兩叢真的花（跟秘密花園同一張，去背） */
+    s += real
+      ? `<g>` +
+        [[-420, 0], [-200, 1], [560, 0], [780, 1]].map(([x, flip]) =>
+          `<image href="${IMG}flowers-row.webp" x="${x}" y="526" width="300" height="76" preserveAspectRatio="xMidYMax meet"${flip ? ` transform="translate(${2 * x + 300} 0) scale(-1 1)"` : ''}/>`).join('') + `</g>`
+      : ivy(-420, 40, 440, 600, 120) + ivy(560, 1020, 440, 600, 120);
     /* 石柱 */
     const pillar = (x) => {
       let p = `<rect x="${x - 6}" y="560" width="92" height="40" fill="#d8ccb2"/>`;
-      p += `<rect x="${x}" y="150" width="80" height="410" fill="url(#dr-stone)"/>`;
-      for (let y = 180; y < 560; y += 30) p += `<path d="M${x} ${y}H${x + 80}" stroke="#cbbd9f" stroke-width="1.6"/>`;
+      p += `<rect x="${x}" y="150" width="80" height="410" fill="url(#dr-${real ? 'stoneT' : 'stone'})"/>`;
+      if (real) p += `<rect x="${x}" y="150" width="80" height="410" fill="url(#dr-shade)"/>`;
+      for (let y = 180; y < 560; y += 30) p += `<path d="M${x} ${y}H${x + 80}" stroke="${real ? 'rgba(40,34,24,.28)' : '#cbbd9f'}" stroke-width="1.6"/>`;
       p += `<rect x="${x + 10}" y="200" width="60" height="300" fill="none" stroke="#d3c6aa" stroke-width="2"/>`;
       if (kind === 'gothic') {
         /* 小尖塔：方形的塔身 ＋ 尖頂 ＋ 頂上一顆十字花 */
@@ -234,7 +250,12 @@
       } else {
         /* 柱頂的石甕，插滿白色、淡粉的花 */
         p += `<rect x="${x - 8}" y="136" width="96" height="16" fill="#e9dfcb" stroke="#c9bb9f"/>`;
-        p += `<path d="M${x + 22} 136H${x + 58}L${x + 54} 126Q${x + 74} 112 ${x + 70} 92H${x + 10}Q${x + 6} 112 ${x + 26} 126Z" fill="url(#dr-stone)" stroke="#c9bb9f"/>`;
+        p += `<path d="M${x + 22} 136H${x + 58}L${x + 54} 126Q${x + 74} 112 ${x + 70} 92H${x + 10}Q${x + 6} 112 ${x + 26} 126Z" fill="url(#dr-${real ? 'stoneT' : 'stone'})" stroke="#c9bb9f"/>`;
+        if (real) {
+          /* 石甕裡插一束真的白玫瑰（去背，春日溫室那一束） */
+          p += `<image href="${ROOT}orangerie/white-roses.webp" x="${x + 2}" y="44" width="76" height="96" preserveAspectRatio="xMidYMax meet"/>`;
+          return p;
+        }
         let fl = '';
         for (let k = 0; k < 22; k++) {
           const a = Math.PI + r() * Math.PI, d = 18 + r() * 26;
@@ -299,7 +320,8 @@
      ========================================================== */
   const GLASS = { x0: 150, x1: 450, y0: 260, y1: 600 };
   const SCRIPT = document.currentScript && document.currentScript.src;
-  const IMG = SCRIPT ? SCRIPT.replace(/js\/openers\/door\.js.*$/, 'img/secret-garden/') : '/img/secret-garden/';
+  const ROOT = SCRIPT ? SCRIPT.replace(/js\/openers\/door\.js.*$/, 'img/') : '/img/';
+  const IMG = ROOT + 'secret-garden/';
 
   /* 一扇玻璃門（左扇；右扇用 CSS 鏡像）。viewBox 0 0 150 340 */
   function glassLeaf() {
@@ -389,7 +411,7 @@
     /* 門洞在 600×640 裡的位置（百分比），兩扇門就照這個放 */
     const pos = `left:${f(box.x0 / 6)}%;width:${f((box.x1 - box.x0) / 6)}%;top:${f(box.y0 / 6.4)}%;height:${f((box.y1 - box.y0) / 6.4)}%`;
     host.innerHTML = `
-      <div class="dr-land" aria-hidden="true">${garden ? '' : land(kind)}</div>
+      <div class="dr-land" aria-hidden="true">${garden || kind === 'manor' ? '' : land(kind)}</div>
       <div class="dr-rays" aria-hidden="true"></div>
       <div class="dr-world" aria-hidden="true">
         <div class="dr-portal">

@@ -41,10 +41,12 @@ body[data-lobby="botanical-letter"] .bg-decor{
 .bt-specimen{display:block;background:center/contain no-repeat;filter:drop-shadow(0 2px 2px rgba(60,50,30,.22));}
 .bt-specimen.s-sheet{position:absolute;inset:0;background:url(../img/botanical/herbarium-sheet.webp) 50% 30%/cover no-repeat;filter:none;}
 .bt-specimen.s-fern{aspect-ratio:449/560;background-image:url(../img/botanical/fern.webp);}
-.bt-specimen.s-lavender{aspect-ratio:449/560;background-image:url(../img/botanical/statice.webp);}
+.bt-specimen.s-lavender{aspect-ratio:449/560;background-image:url(../img/botanical/veronica.webp);}
+.bt-specimen.s-tulip{background-image:url(../img/botanical/pressed-tulip.webp);}
+.bt-specimen.s-leaf{background-image:url(../img/botanical/pressed-leaf.webp);}
 .bt-specimen.s-daisy{aspect-ratio:449/560;background-image:url(../img/botanical/daisy.webp);}
 .bt-specimen.s-olive{aspect-ratio:449/560;background-image:url(../img/botanical/olive.webp);}
-.bt-specimen.s-sprig{width:60px;aspect-ratio:132/420;margin:0 auto;background-image:url(../img/botanical/globe-amaranth.webp);}
+.bt-specimen.s-sprig{width:60px;aspect-ratio:154/420;margin:0 auto;background-image:url(../img/botanical/globe-amaranth.webp);}
 
 /* ============================================================
    捲動進場
@@ -93,8 +95,16 @@ body[data-lobby="botanical-letter"] .bg-decor{
   background:#efe6d2;overflow:hidden;
   border-radius:2px;transform:rotate(-2.2deg) translateY(calc(var(--lp,0) * 40px));
   box-shadow:0 1px 0 #fff inset,0 2px 3px rgba(80,70,40,.12),0 28px 50px -30px rgba(70,60,30,.5);}
-/* 一整張真的老標本台紙（Europeana／Unsplash），標籤與紙膠帶貼在上面 */
+/* 一整張真的老標本台紙（Europeana／Unsplash）；新人的照片用相角貼在上面，
+   一枝壓過的鬱金香、一片葉子斜斜壓在照片的兩角，標籤與紙膠帶也貼在上面 */
 .bt-bouquet-wrap{position:absolute;inset:0;margin:0;}
+.bt-hero-photo{position:absolute;left:17%;width:66%;top:8%;aspect-ratio:4/5;border:7px solid #fbf8f1;
+  background:#cfc6b1 center 30%/cover no-repeat;box-shadow:0 2px 3px rgba(60,50,30,.18),0 14px 24px -14px rgba(60,50,30,.5);rotate:1.2deg;}
+.bt-hero-photo .bt-corner{width:24px;height:24px;}
+.bt-hero-photo .bt-corner.c1{left:-9px;top:-9px;}.bt-hero-photo .bt-corner.c2{right:-9px;top:-9px;}
+.bt-hero-photo .bt-corner.c3{left:-9px;bottom:-9px;}.bt-hero-photo .bt-corner.c4{right:-9px;bottom:-9px;}
+.bt-bouquet-wrap .s-tulip{position:absolute;left:1%;top:34%;height:52%;aspect-ratio:207/560;rotate:-16deg;}
+.bt-bouquet-wrap .s-leaf{position:absolute;right:2%;top:2%;height:34%;aspect-ratio:219/560;rotate:24deg;}
 .bt-tape{position:absolute;width:24%;height:22px;background:rgba(226,214,180,.62);
   box-shadow:0 1px 2px rgba(80,70,40,.12);}
 .bt-tape::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 3px,rgba(255,255,255,.2) 3px 4px);}
@@ -166,7 +176,15 @@ body[data-hero-name="cn"] .bt-hero .bt-names{font-family:'Noto Serif TC',serif;f
   box-shadow:0 1px 2px rgba(80,70,40,.12),0 22px 36px -26px rgba(70,60,30,.55);
   transform:rotate(calc(-2deg + (var(--sp,.5) - .5) * 5deg));transition:transform .2s linear;}
 .bt-plate.is-flip .bt-mount{transform:rotate(calc(2deg - (var(--sp,.5) - .5) * 5deg));}
-.bt-mount .bt-art{max-height:300px;margin:0 auto;}
+/* 台紙上：新人的照片（照片牆的第 1–4 張），一枝壓花斜斜壓在照片的一角，伸出台紙外 */
+.bt-mount-ph{aspect-ratio:4/5;background:#cfc6b1 center 30%/cover no-repeat;border:5px solid #fbf8f1;
+  box-shadow:0 1px 2px rgba(60,50,30,.18),0 10px 18px -12px rgba(60,50,30,.45);}
+.bt-mount .bt-specimen{position:absolute;right:-24%;bottom:48px;width:62%;aspect-ratio:3/4;margin:0;rotate:10deg;
+  background-position:center bottom;}
+.bt-plate.is-flip .bt-mount .bt-specimen{right:auto;left:-24%;rotate:-10deg;}
+@media (max-width:779px){.bt-mount .bt-specimen{right:-18%;width:54%;}.bt-plate.is-flip .bt-mount .bt-specimen{left:-18%;}}
+.tp-motion [data-reveal="draw"] .bt-mount-ph,.tp-motion [data-reveal="draw"] .bt-hero-photo{transition:opacity 1s ease,transform 1.2s cubic-bezier(.2,.7,.2,1);}
+.tp-motion [data-reveal="draw"]:not(.is-in) .bt-mount-ph,.tp-motion [data-reveal="draw"]:not(.is-in) .bt-hero-photo{opacity:0;transform:translateY(12px);}
 .bt-mount::after{content:'';position:absolute;left:50%;top:-9px;width:56px;height:18px;margin-left:-28px;
   background:rgba(226,214,180,.62);transform:rotate(-3deg);}
 .bt-plate-label{position:absolute;left:14px;right:14px;bottom:12px;display:flex;flex-direction:column;gap:2px;

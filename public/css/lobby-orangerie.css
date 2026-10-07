@@ -6,7 +6,7 @@
      世界觀  一朵花在溫室裡開了（開場），溫室裡陽光很好
      材質    玻璃擬真：霧面、邊緣的高光、斜斜的反光、一點水氣；
              陶盆、鐵框、磨石地；光影與半透明
-     素材    真的照片：溫室、柑橘樹、白玫瑰、鬱金香、檸檬枝、蕨葉、澆水壺、幼苗；
+     素材    真的照片：溫室、柑橘樹、白玫瑰、鬱金香、檸檬枝、蕨葉、澆水壺、玻璃罩裡的紅玫瑰、白牆上的葉影；
              全部在 public/img/orangerie/，出處與授權見 README〈春日溫室與植物信箋的照片素材〉
      圖像    玻璃、花影、陽光、植物
 
@@ -15,7 +15,7 @@
      ・整頁鋪一層葉影（花影），固定在視窗上、跟著捲動慢慢移
      ・每一張玻璃卡：一道反光隨著捲動從左滑到右（--sp）
      ・每一盆植物捲到時從盆裡長出來（data-reveal="grow"）
-     ・倒數那一盆幼苗：捲下去就從盆裡長出來
+     ・倒數那一朵玻璃罩裡的紅玫瑰：捲到的時候罩子裡慢慢亮起來
      ・故事的拱窗：玻璃的反光跟著捲動滑過照片
 
    每一條規則都收在 .so-* 或 body[data-lobby="spring-orangerie"] 底下。
@@ -24,21 +24,17 @@
 body[data-lobby="spring-orangerie"]{
   --so-ink:#2e3a36; --so-soft:#6c7a74; --so-green:#4f7a66; --so-leaf:#6f9a7e; --so-apricot:#e7a178;
   --so-line:rgba(79,122,102,.18);
-  --so-shadow-tile:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22420%22%20height%3D%22420%22%20viewBox%3D%220%200%20420%20420%22%3E%3Cpath%20d%3D%22M0%20243C5.2%20277.4%2041.3%20288.7%2068.6%20273.8C61.6%20243.5%2029.2%20223.9%200%20243Z%22%2F%3E%3Cpath%20d%3D%22M165.1%20263.6C160.8%20237.4%20133.1%20229.2%20112.5%20240.9C118.2%20264%20143.2%20278.4%20165.1%20263.6Z%22%2F%3E%3Cpath%20d%3D%22M63.7%2090.9C65.7%2062.4%2038.8%2046.9%2014.2%2054C14.4%2079.5%2036.9%20100.9%2063.7%2090.9Z%22%2F%3E%3Cpath%20d%3D%22M408.1%20174.2C417.9%20144.4%20393.4%20120.6%20365.3%20121.6C358.6%20148.8%20376.8%20177.7%20408.1%20174.2Z%22%2F%3E%3Cpath%20d%3D%22M22.6%2038.8C25.3%20-2.9%20-14.2%20-25.2%20-50%20-14.6C-49.5%2022.7%20-16.4%2053.7%2022.6%2038.8Z%22%2F%3E%3Cpath%20d%3D%22M4.1%20101.3C8%20128%2036%20136.9%2057.2%20125.4C51.9%20101.9%2026.8%2086.7%204.1%20101.3Z%22%2F%3E%3Cpath%20d%3D%22M64.7%20135.7C61.2%20178.4%20101.3%20201.9%20138.2%20191.7C138.3%20153.4%20104.9%20121.1%2064.7%20135.7Z%22%2F%3E%3Cpath%20d%3D%22M416.6%20174C439.6%20187.2%20463.5%20171%20467.5%20147.6C446.1%20137.4%20419.1%20147.6%20416.6%20174Z%22%2F%3E%3Cpath%20d%3D%22M62.8%20239.2C107.6%20237%20126.7%20192.1%20111%20155.2C71.2%20160.2%2042.1%20199.4%2062.8%20239.2Z%22%2F%3E%3Cpath%20d%3D%22M248.5%2032.3C278.9%2042.5%20303.3%2017.7%20302.5%20-11C274.7%20-18%20245.1%200.4%20248.5%2032.3Z%22%2F%3E%3Cpath%20d%3D%22M405.1%20332.1C416.8%20311%20401.8%20289.6%20380.6%20286.2C371.6%20305.7%20381.1%20330.1%20405.1%20332.1Z%22%2F%3E%3Cpath%20d%3D%22M343.7%20366.3C341%20329%20303.3%20313.9%20272.7%20327.6C277.7%20360.7%20310.8%20384.3%20343.7%20366.3Z%22%2F%3E%3Cpath%20d%3D%22M114.5%2099.5C89.4%20130.9%20108.3%20170.2%20142.3%20181.6C162.4%20151.9%20153.4%20109.2%20114.5%2099.5Z%22%2F%3E%3Cpath%20d%3D%22M358.4%20125.5C312.9%20134.1%20299.7%20182.6%20320.9%20218.1C360.8%20207.4%20385.1%20163.3%20358.4%20125.5Z%22%2F%3E%3Cpath%20d%3D%22M352%20324.2C388.3%20341.2%20422%20313.8%20425.1%20278.2C391.6%20265.6%20352.4%20284.2%20352%20324.2Z%22%2F%3E%3Cpath%20d%3D%22M359.5%2022.8C333.5%2056.3%20354.1%2097.5%20390.1%20108.9C410.9%2077.3%20400.7%2032.4%20359.5%2022.8Z%22%2F%3E%3Cpath%20d%3D%22M352.7%20389.6C337.5%20409.8%20350%20434.2%20371.5%20440.7C383.7%20421.7%20377.3%20395.1%20352.7%20389.6Z%22%2F%3E%3Cpath%20d%3D%22M156.7%20371.7C175.2%20404.1%20215.6%20401.4%20237.1%20376C218.4%20348.4%20178.5%20341.4%20156.7%20371.7Z%22%2F%3E%3Cpath%20d%3D%22M136.5%20405.6C100.2%20401.9%2079.4%20435.6%2087.5%20467.2C120.1%20468%20148.3%20440.1%20136.5%20405.6Z%22%2F%3E%3Cpath%20d%3D%22M122.5%20252.4C114.1%20279.9%20137%20301.2%20162.7%20299.8C168.3%20274.7%20151.1%20248.6%20122.5%20252.4Z%22%2F%3E%3Cpath%20d%3D%22M392.2%20211.8C375.1%20235.5%20390.1%20263.5%20415.3%20270.5C428.9%20248.3%20420.9%20217.5%20392.2%20211.8Z%22%2F%3E%3Cpath%20d%3D%22M176%20232.9C215.4%20231.4%20232.6%20192.1%20219.2%20159.4C184.2%20163.5%20158.1%20197.7%20176%20232.9Z%22%2F%3E%3Cpath%20d%3D%22M417.3%20278.4C454.7%20268.2%20462.4%20226.7%20442.3%20198.4C409.7%20210.2%20392.3%20248.6%20417.3%20278.4Z%22%2F%3E%3Cpath%20d%3D%22M89.1%2066.9C88.7%2093.6%20114.6%20106.6%20137.1%2098.8C135.6%2075%20113.5%2056.2%2089.1%2066.9Z%22%2F%3E%3Cpath%20d%3D%22M396.9%2041.2C361.3%2070.3%20372.8%20118.9%20408.2%20139.8C437.9%20111.4%20438.2%2061.4%20396.9%2041.2Z%22%2F%3E%3Cpath%20d%3D%22M188%20258.3C167.2%20242%20141.5%20254.6%20134.2%20277.1C153.9%20290.1%20181.9%20284%20188%20258.3Z%22%2F%3E%3C%2Fsvg%3E");
 }
 body[data-lobby="spring-orangerie"] .bg-decor{
-  background:
-    repeating-linear-gradient(90deg,transparent 0 calc(20% - 1px),rgba(79,122,102,.05) calc(20% - 1px) 20%),
-    radial-gradient(90% 60% at 20% 0%,rgba(255,238,200,.55),transparent 70%),
-    linear-gradient(180deg,#fbfbf5,#f1f5ec);}
+  background:radial-gradient(90% 60% at 20% 0%,rgba(255,238,200,.5),transparent 70%),linear-gradient(180deg,#fbfbf5,#f3f5ee);}
 .so-lobby{position:relative;}
 .so-art{display:block;width:100%;height:auto;overflow:visible;}
 
-/* 整頁的葉影（花影）：一層固定在視窗上的遮罩，跟著捲動慢慢移、自己也輕輕晃 */
-.so-dapple{position:fixed;inset:-10%;z-index:1;pointer-events:none;opacity:.04;background:#23402f;
-  -webkit-mask:var(--so-shadow-tile) 0 calc(var(--sp,0) * -900px)/420px 420px;
-  mask:var(--so-shadow-tile) 0 calc(var(--sp,0) * -900px)/420px 420px;
-  filter:blur(5px);animation:so-sway 9s ease-in-out infinite alternate;}
+/* 整頁的葉影：一張真的照片 —— 陽光把楓葉的影子投在白牆上（Akira／Unsplash）。
+   固定在視窗上，multiply 疊在底色上只留下影子；跟著捲動慢慢往上移、自己也輕輕晃 */
+.so-dapple{position:fixed;inset:-12%;z-index:1;pointer-events:none;opacity:.32;mix-blend-mode:multiply;
+  background:url(../img/orangerie/leaf-shadow.webp) 50% calc(30% + var(--sp,0) * -40%)/cover no-repeat;
+  filter:saturate(.8);animation:so-sway 11s ease-in-out infinite alternate;}
 @keyframes so-sway{from{transform:rotate(-1.2deg) translateX(-8px);}to{transform:rotate(1.2deg) translateX(8px);}}
 
 /* ============================================================
@@ -222,7 +218,7 @@ body[data-hero-name="cn"] .so-hero .so-names{font-family:'Noto Serif TC',serif;f
   background-size:300% 100%;background-position:calc(100% - var(--sp,.5) * 100%) 0;}
 .so-story .story-text{margin:22px 0 0;max-width:32em;color:#fbfcf8;font-size:15px;text-align:left;}
 
-/* ---- 倒數：幼苗跟著捲動長高 ---- */
+/* ---- 倒數：玻璃罩裡的一朵紅玫瑰 ---- */
 .so-count{color:var(--so-ink);}
 .so-count .so-band-bg{background:
   radial-gradient(60% 80% at 20% 30%,rgba(255,238,200,.6),transparent 70%),
@@ -231,13 +227,17 @@ body[data-hero-name="cn"] .so-hero .so-names{font-family:'Noto Serif TC',serif;f
 .so-count .so-band-inner{display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center;}
 @media (min-width:780px){.so-count .so-band-inner{flex-direction:row;justify-content:center;gap:clamp(40px,7vw,90px);text-align:left;}}
 .so-count .so-band-sub{color:var(--so-soft);}
-.so-seedling-wrap{width:clamp(120px,14vw,160px);margin:0;}
-/* 一盆真的幼苗（Suri Huang／Unsplash）：--grow 由這一條帶子穿過視窗的進度算出來；
-   從上面往下裁掉，捲下去就從盆裡長出來（盆子一開始就在） */
-.so-count{--grow:clamp(0,calc((var(--sp,0) - .12) * 2.6),1);}
-.so-sprout{display:block;aspect-ratio:280/520;background:url(../img/orangerie/seedling.webp) 50% 100%/contain no-repeat;
-  filter:drop-shadow(0 12px 12px rgba(35,64,47,.22));
-  clip-path:inset(calc((1 - var(--grow)) * 62%) -20% 0 -20%);}
+/* 一朵封在玻璃罩裡的紅玫瑰（Christos Papadopoulos／Unsplash），放在一扇拱窗形的暗框裡；
+   捲到這一帶的時候，罩子裡慢慢亮起來（--glow 由這一條帶子穿過視窗的進度算出來） */
+.so-count{--glow:clamp(0,calc((var(--sp,0) - .15) * 2.4),1);}
+.so-cloche-wrap{position:relative;width:clamp(200px,24vw,270px);aspect-ratio:3/4;margin:0;padding:8px;
+  border-radius:999px 999px 14px 14px;background:#f7f8f3;box-shadow:0 26px 40px -24px rgba(35,64,47,.55);}
+.so-rosedome{position:absolute;inset:8px;border-radius:999px 999px 8px 8px;overflow:hidden;
+  background:#0b0b0a url(../img/orangerie/red-rose-cloche.webp) 50% 100%/112% auto no-repeat;
+  filter:brightness(calc(.75 + var(--glow) * .35)) saturate(calc(.85 + var(--glow) * .25));}
+.so-rosedome::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(40% 30% at 50% 62%,rgba(255,120,110,calc(var(--glow) * .28)),transparent 70%),
+    linear-gradient(115deg,transparent 35%,rgba(255,255,255,.14) 45%,transparent 55%);}
 .so-count .cd-grid{margin:22px 0 0;}
 @media (max-width:779px){.so-count .cd-grid{margin:22px auto 0;}}
 .so-count .cd-unit{border-left:1px solid var(--so-line);}

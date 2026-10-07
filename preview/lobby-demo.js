@@ -61,9 +61,12 @@
   if (tr[1]) { $('transportParking').textContent = tr[1].text; $('transportParkingItem').hidden = false; }
   $('transportBlock').hidden = !tr.length;
   if (D.story) { $('storyText').textContent = D.story; $('storyBlock').hidden = false; }
-  /* 照片借用 ginny-one 的封面 */
+  /* 照片借用 ginny-one 的封面；photo1–4（照片牆的前四張）借用它的抽卡小卡 */
   document.querySelectorAll('[data-photo]').forEach((el) => {
-    el.style.backgroundImage = 'url("../public/assets/ginny-one-20260919/cover.jpg")';
+    const n = /^photo(\d)$/.exec(el.dataset.photo);
+    el.style.backgroundImage = n
+      ? `url("../public/assets/ginny-one-20260919/cards/0${n[1]}.jpg")`
+      : 'url("../public/assets/ginny-one-20260919/cover.jpg")';
     el.classList.add('has-photo');
   });
 

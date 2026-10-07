@@ -12,7 +12,7 @@
    綠籬與玫瑰都是真的照片（public/img/orangerie/，出處見 README）：
      leaf-wall.webp        綠籬（Wyxina Tresse／Unsplash）
      bloom-rose1.webp      帶水珠的白玫瑰（Wyxina Tresse／Unsplash）
-     bloom-rose3a/b/c.webp 三朵白玫瑰，從同一張照片去背（Gomezgai Jere／Unsplash）
+     bloom-rose3a.webp     一朵白玫瑰（Gomezgai Jere／Unsplash）
    花的位置依照當下視窗大小算出來（單位就是 px），花的密度跟面積走，
    手機直立、桌機橫向都是滿版；名字那一塊會空出來不放花，字才讀得清楚。
    亂數有固定的種子：每一次打開都是同一面牆。
@@ -29,7 +29,7 @@
   /* 圖檔的位置從這支 script 自己的位置推回去（預覽頁與正式站的根目錄不一樣） */
   const SCRIPT = document.currentScript && document.currentScript.src;
   const IMG = SCRIPT ? SCRIPT.replace(/js\/openers\/bloom\.js.*$/, 'img/orangerie/') : '/img/orangerie/';
-  const ROSES = ['bloom-rose1', 'bloom-rose3a', 'bloom-rose3b', 'bloom-rose3c'];
+  const ROSES = ['bloom-rose1', 'bloom-rose3a'];
 
   function wall(W, H) {
     const r = rng(20260919);

@@ -1,19 +1,20 @@
 /* ============================================================
    lobby-manor.css — French Manor 法式莊園 的大廳（lobby-manor.html 專用）
    ------------------------------------------------------------
-   疊在 common.css ＋ index.css 之後。結構主張：**推開木門，走進一座莊園**。
+   疊在 common.css ＋ index.css 之後。結構主張：**推開鐵門，走進一座莊園**。
 
-     世界觀  開場推開一扇木門，門後是莊園的前庭；兩個人在城堡裡等你
-     材質    石灰岩、石板瓦、鍛鐵、黃楊綠、鍍金畫框、灰綠色的牆板
-     素材    銅版畫：墨線 ＋ 排線陰影（斜線、交叉線、點描）＋ 一層淡淡的水彩
-     圖像    城堡立面、碎石路、凡爾賽花箱、鍛鐵大門、日晷、壁燈、花園平面圖
+     世界觀  開場推開一扇鍛鐵大門，門後是莊園的前庭；兩個人在城堡裡等你
+     材質    石灰岩、石板瓦、鍛鐵、黃楊綠、鍍金畫框、白色描金的牆板
+     素材    真的照片：城堡與碎石路、鍛鐵大門、日晷、花箱裡的樹、壁燈、蠟封的信、
+             鍍金畫框、牆板、從空中往下看的花園；全部在 public/img/manor/，出處見 README
+     圖像    區塊標題上是一枚一枚橢圓形的小照片（像掛在牆上的小肖像）
 
    捲動：
-     ・進站：城堡的百葉窗一扇一扇打開
-     ・hero：像沿著碎石路走過去 —— 城堡慢慢變大，兩排樹雕往兩邊退開
-     ・每一區的銅版小圖：墨線先一筆一筆畫出來，陰影的排線再由上往下印上去
-     ・故事：沙龍牆板上的金框畫；窗外的陽光跟著捲動滑過牆面
-     ・倒數：花園的平面圖跟著捲動一筆一筆畫出來，畫完噴泉就噴起來
+     ・進站：從門口的亮光裡走出來，照片一開始有點過曝，慢慢定下來
+     ・hero：像沿著碎石路走過去 —— 照片慢慢推近
+     ・每一區的橢圓小照片：捲到的時候從金邊裡慢慢顯出來
+     ・故事：沙龍牆板上的金框，框裡是兩個人的照片；窗外的陽光跟著捲動滑過牆面
+     ・倒數：從空中往下看的法式花園，跟著捲動從中間的噴泉往外展開
 
    每一條規則都收在 .fm-* 或 body[data-lobby="french-manor"] 底下。
 ============================================================ */
@@ -23,10 +24,7 @@ body[data-lobby="french-manor"]{
   --fm-paper:#fcfaf6; --fm-line:#ddd4c6;
 }
 body[data-lobby="french-manor"] .bg-decor{
-  background:
-    repeating-linear-gradient(0deg,transparent 0 58px,rgba(120,104,84,.08) 58px 59px),
-    repeating-linear-gradient(90deg,transparent 0 118px,rgba(120,104,84,.05) 118px 119px),
-    linear-gradient(180deg,#f4efe7,#ece5d9);}
+  background:radial-gradient(120% 70% at 50% 0%,#f7f3ec,#f1ece2 60%,#ebe4d7);}
 .fm-lobby{position:relative;}
 .fm-art{display:block;width:100%;height:auto;overflow:visible;}
 
@@ -42,41 +40,21 @@ body[data-lobby="french-manor"] .bg-decor{
 .tp-motion [data-lobby="french-manor"] [data-reveal="list"] > :nth-child(4){transition-delay:.36s;}
 .tp-motion [data-lobby="french-manor"] [data-reveal="list"] > :nth-child(n+5){transition-delay:.48s;}
 
-/* 銅版小圖：墨線一筆一筆畫出來 → 水彩與排線由上往下印上去（只裁子元素，觀察器看得到 figure 本身） */
-.fm-ln{fill:none;stroke:var(--fm-ink);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:0;}
-.tp-motion [data-reveal="draw"] .fm-ln{transition:stroke-dashoffset .9s cubic-bezier(.5,0,.3,1) calc(var(--i) * .14s);}
-.tp-motion [data-reveal="draw"]:not(.is-in) .fm-ln{stroke-dashoffset:1;}
-.tp-motion [data-reveal="draw"] :is(.fm-hatch,.fm-washes){transition:clip-path 1.2s cubic-bezier(.4,0,.2,1) .7s,opacity .6s ease .7s;clip-path:inset(0 0 0 0);}
-.tp-motion [data-reveal="draw"]:not(.is-in) :is(.fm-hatch,.fm-washes){clip-path:inset(0 0 100% 0);opacity:0;}
-.fm-lamp{animation:fm-lamp 3.2s ease-in-out infinite;}
-@keyframes fm-lamp{40%{opacity:.8;}55%{opacity:1;}70%{opacity:.88;}}
+/* 橢圓小照片：捲到的時候從金邊裡慢慢顯出來（照片先霧霧的、小一點，再定下來） */
+.tp-motion [data-reveal="draw"] .fm-vignette{transition:opacity 1s ease,transform 1.2s cubic-bezier(.2,.7,.2,1),filter 1.2s ease;}
+.tp-motion [data-reveal="draw"]:not(.is-in) .fm-vignette{opacity:0;transform:scale(.92);filter:blur(4px) sepia(.6);}
 
 /* ============================================================
    Hero：前庭
 ============================================================ */
 .fm-hero{position:relative;overflow:hidden;min-height:calc(100svh - var(--nav-h));padding:0;gap:0;justify-content:flex-start;background:transparent;}
 .fm-scene{position:absolute;inset:0;pointer-events:none;}
-/* 天空：銅版畫的天空是一條一條的橫線，越往上越密 */
-.fm-sky{position:absolute;inset:0;
-  background:
-    repeating-linear-gradient(0deg,transparent 0 5px,rgba(59,53,48,.07) 5px 6px) top/100% 40% no-repeat,
-    radial-gradient(70% 50% at 50% 0%,rgba(255,250,236,.9),transparent 70%),
-    linear-gradient(180deg,#e7eae6 0%,#eff0ea 55%,#f4efe7 100%);}
-.fm-stage{position:absolute;left:0;right:0;bottom:0;height:74%;}
-.fm-layer{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
-/* 往下捲：沿著碎石路走過去 */
-.fm-trees{transform:translateY(calc(var(--lp,0) * 30px));}
-.fm-chateau{transform-origin:50% 76%;transform:scale(calc(1 + var(--lp,0) * .16));}
-.fm-front{transform-origin:50% 100%;transform:translateY(calc(var(--lp,0) * 50px)) scale(calc(1 + var(--lp,0) * .3));}
-.fm-row{transform-box:view-box;}
-.fm-row.l{transform:translateX(calc(var(--lp,0) * -220px));}
-.fm-row.r{transform:translateX(calc(var(--lp,0) * 220px));}
-/* 百葉窗：預設是打開的；進站時從關著翻開（鉸鍊在窗的外側，scaleX 1 → -1） */
-.fm-shutter{transform-box:fill-box;transform:scaleX(-1);}
-.fm-shutter.l{transform-origin:0 50%;}
-.fm-shutter.r{transform-origin:100% 50%;}
-.app-show .fm-shutter{animation:fm-shutter 1.1s cubic-bezier(.5,0,.3,1) calc(.5s + var(--d)) both;}
-@keyframes fm-shutter{from{transform:scaleX(1);}to{transform:scaleX(-1);}}
+/* 前庭：一張真的照片（Menfis Gálvez／Unsplash，Château de Sceaux）。上半是天空，名字的題牌放在那裡；
+   往下捲時照片慢慢推近，像沿著碎石路走過去 */
+.fm-photo{position:absolute;inset:0;background:#d9dfe3 url(../img/manor/chateau.webp) 50% 26%/cover no-repeat;
+  transform-origin:50% 70%;transform:scale(calc(1.02 + var(--lp,0) * .14));}
+.fm-photo::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(244,239,231,.35),rgba(244,239,231,0) 35%,rgba(244,239,231,0) 82%,#f1ece2 100%);}
 
 .fm-hero-body{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;text-align:center;
   padding:clamp(22px,5vh,56px) 20px 0;transform:translateY(calc(var(--lp,0) * -40px));opacity:calc(1 - var(--lp,0) * 1.4);}
@@ -104,12 +82,12 @@ body[data-hero-name="cn"] .fm-hero .fm-names{font-family:'Noto Serif TC',serif;f
 .app-show .fm-cartouche,.app-show .fm-hero .hashtags{animation:fm-rise 1.2s cubic-bezier(.2,.7,.2,1) both;}
 .app-show .fm-cartouche{animation-delay:.2s;}
 .app-show .fm-hero .hashtags{animation-delay:.45s;}
-.app-show .fm-stage{animation:fm-settle 1.8s cubic-bezier(.2,.7,.2,1) both;}
+.app-show .fm-photo{animation:fm-settle 1.8s cubic-bezier(.2,.7,.2,1) both;}
 @keyframes fm-rise{from{opacity:0;transform:translateY(14px);}}
 /* 從門口的亮光裡走出來：一開始有點過曝，慢慢定下來 */
 @keyframes fm-settle{from{opacity:.2;filter:brightness(1.5) saturate(.4);}}
 @media (max-width:640px){
-  .fm-stage{height:66%;}
+  .fm-photo{background-position:50% 64%;}
   .fm-hero .hashtags{display:none;}
 }
 
@@ -121,7 +99,15 @@ body[data-hero-name="cn"] .fm-hero .fm-names{font-family:'Noto Serif TC',serif;f
   margin-top:0;padding:clamp(64px,9vw,110px) 0 0;text-align:center;}
 .fm-sec[hidden]{display:none;}
 .fm-head{display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:clamp(18px,3vw,28px);}
-.fm-icon{width:clamp(150px,19vw,200px);margin:0 0 4px;}
+.fm-icon{width:clamp(108px,13vw,136px);margin:0 0 10px;}
+/* 一枚橢圓形的小照片，金色的雙線框（像掛在牆上的小肖像） */
+.fm-vignette{display:block;aspect-ratio:3/4;border-radius:50%;background:#c9c0ac center/cover no-repeat;
+  box-shadow:0 0 0 3px #fbf8f1,0 0 0 4.5px var(--fm-gold),0 0 0 8px #fbf8f1,0 0 0 9px rgba(176,141,76,.6),0 16px 22px -14px rgba(60,50,40,.55);}
+.fm-vignette.v-gate{background-image:url(../img/manor/vignette-gate.webp);}
+.fm-vignette.v-sundial{background-image:url(../img/manor/vignette-sundial.webp);}
+.fm-vignette.v-topiary{background-image:url(../img/manor/vignette-topiary.webp);}
+.fm-vignette.v-lantern{background-image:url(../img/manor/vignette-lantern.webp);}
+.fm-vignette.v-seal{background-image:url(../img/manor/vignette-seal.webp);}
 .fm-head .block-title{margin:0;font:400 clamp(28px,4vw,40px)/1.15 'Bodoni Moda','Noto Serif TC',serif;letter-spacing:.04em;
   text-transform:none;color:var(--fm-ink);}
 .fm-head .block-sub{margin:0;font-size:13px;letter-spacing:.4em;color:var(--fm-soft);}
@@ -148,7 +134,7 @@ body[data-hero-name="cn"] .fm-hero .fm-names{font-family:'Noto Serif TC',serif;f
 .fm-rsvp{display:grid;grid-template-columns:1fr;gap:10px;justify-items:center;}
 @media (min-width:640px){.fm-rsvp{grid-template-columns:170px minmax(0,1fr);text-align:left;gap:26px;align-items:center;}
   .fm-rsvp .rsvp-cta{text-align:left;}}
-.fm-rsvp-icon{width:170px;margin:0;}
+.fm-rsvp-icon{width:120px;margin:10px;}
 .fm-rsvp .rsvp-cta h3{font-family:'Bodoni Moda','Noto Serif TC',serif;}
 
 /* ============================================================
@@ -164,11 +150,11 @@ body[data-hero-name="cn"] .fm-hero .fm-names{font-family:'Noto Serif TC',serif;f
 .fm-band-sub{margin-top:8px;font-size:13px;letter-spacing:.42em;color:var(--fm-soft);}
 
 /* ---- 故事：灰綠色的牆板 ＋ 金框 ＋ 滑過牆面的陽光 ---- */
+/* 一面真的白色描金牆板（Blair Roberts Castagnetta／Unsplash），淡淡壓一層，字才讀得清楚 */
 .fm-story .fm-band-bg{overflow:hidden;
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='460'%3E%3Crect x='22' y='30' width='216' height='400' fill='none' stroke='%23a9ae9b' stroke-width='3'/%3E%3Crect x='25' y='33' width='210' height='394' fill='none' stroke='%23f4f4ec' stroke-opacity='.7' stroke-width='1.5'/%3E%3Crect x='38' y='46' width='184' height='368' fill='none' stroke='%23b3b8a6' stroke-width='1.2'/%3E%3Crect x='40' y='48' width='184' height='368' fill='none' stroke='%23f4f4ec' stroke-opacity='.6'/%3E%3C/svg%3E") center/260px 460px repeat-x,
-    linear-gradient(180deg,#e2e3d6,#d6d8c8);
-  border-top:10px solid #cfd1bf;border-bottom:14px solid #c4c6b3;}
+  background:linear-gradient(90deg,rgba(247,243,236,.15),rgba(247,243,236,.55) 55%,rgba(247,243,236,.75)),
+    #efe8dc url(../img/manor/salon-panels.webp) 0 30%/auto 160% repeat-x;
+  border-top:10px solid #e6dccb;border-bottom:14px solid #dbcfb9;}
 /* 窗外照進來的光：一格一格的窗框影子，跟著捲動從左滑到右 */
 .fm-sun{position:absolute;top:10%;bottom:10%;left:0;width:min(46vw,520px);mix-blend-mode:soft-light;pointer-events:none;
   background:
@@ -178,16 +164,17 @@ body[data-hero-name="cn"] .fm-hero .fm-names{font-family:'Noto Serif TC',serif;f
   filter:blur(6px);transform:translateX(calc(-60% + var(--sp,.5) * 220%)) skewX(-18deg);}
 .fm-story .fm-band-inner{display:grid;grid-template-columns:1fr;gap:40px;justify-items:center;text-align:center;}
 @media (min-width:780px){.fm-story .fm-band-inner{grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:clamp(40px,6vw,80px);align-items:center;text-align:left;justify-items:stretch;}}
-.fm-frame{position:relative;width:min(76vw,300px);aspect-ratio:300/380;justify-self:center;
+/* 一面真的鍍金畫框（Patrick von der Wehd／Unsplash），框裡的鏡面挖空，放兩個人的照片 */
+.fm-frame{position:relative;width:min(66vw,270px);aspect-ratio:640/1127;justify-self:center;
   filter:drop-shadow(0 22px 22px rgba(60,50,40,.35));}
 .fm-frame::before{content:'';position:absolute;left:50%;top:-44px;width:44%;height:50px;margin-left:-22%;pointer-events:none;
   background:linear-gradient(to top right,transparent calc(50% - 1px),#8e6d31 calc(50% - 1px) calc(50% + .5px),transparent calc(50% + .5px)) left/50% 100% no-repeat,
     linear-gradient(to top left,transparent calc(50% - 1px),#8e6d31 calc(50% - 1px) calc(50% + .5px),transparent calc(50% + .5px)) right/50% 100% no-repeat;}
-.fm-frame-ph{position:absolute;inset:8.9% 11.3%;background:#c9c0ac center/cover no-repeat;}
-.fm-frame-art{position:absolute;inset:0;width:100%;height:100%;}
+.fm-frame-ph{position:absolute;inset:12.6% 19.6% 11.7% 22.2%;background:#c9c0ac center/cover no-repeat;}
+.fm-frame-gilt{position:absolute;inset:0;background:url(../img/manor/gilt-frame.webp) center/100% 100% no-repeat;}
 .fm-story .story-text{margin:22px 0 0;max-width:32em;color:var(--fm-ink);font-size:15px;text-align:left;}
 
-/* ---- 倒數：花園平面圖，跟著捲動一筆一筆畫出來 ---- */
+/* ---- 倒數：從空中往下看的法式花園，跟著捲動從中間的噴泉往外展開 ---- */
 .fm-count{--grow:clamp(0,calc((var(--sp,0) - .1) * 2.6),1);}
 .fm-count .fm-band-bg{background:
   repeating-linear-gradient(0deg,transparent 0 23px,rgba(107,90,69,.06) 23px 24px),
@@ -197,15 +184,10 @@ body[data-hero-name="cn"] .fm-hero .fm-names{font-family:'Noto Serif TC',serif;f
 @media (min-width:780px){.fm-count .fm-band-inner{flex-direction:row;justify-content:center;gap:clamp(40px,7vw,90px);text-align:left;}}
 .fm-plan-wrap{width:min(84vw,380px);margin:0;padding:12px;background:#f8f4ea;transform:rotate(-1.5deg);
   box-shadow:0 1px 0 #fff inset,0 20px 30px -20px rgba(60,50,40,.45);}
-.fm-plan-ln{stroke-width:1.2;stroke-dasharray:1;stroke-linecap:round;
-  stroke-dashoffset:calc(1 - clamp(0,calc((var(--grow) - var(--at)) * 5),1));}
-.fm-plan-ln.is-box{stroke:var(--fm-box);stroke-width:3;}
-.fm-plan-lawn{opacity:clamp(0,calc((var(--grow) - .4) * 2.4),1);}
-.fm-plan-water{opacity:clamp(0,calc((var(--grow) - .3) * 4),1);}
-.fm-jet{transform-box:fill-box;transform-origin:50% 100%;
-  opacity:clamp(0,calc((var(--grow) - .9) * 10),1);transform:scaleY(clamp(0,calc((var(--grow) - .88) * 8.4),1));}
-.fm-jet path{animation:fm-jet 1.6s ease-in-out infinite alternate;}
-@keyframes fm-jet{to{opacity:.6;}}
+/* 一張真的空拍（Leo_Visions／Unsplash）：--grow 由這一條帶子穿過視窗的進度算出來，
+   花園從正中間的噴泉往外一圈一圈展開 */
+.fm-parterre{display:block;aspect-ratio:1400/1093;background:#c7cfb2 url(../img/manor/parterre.webp) center/cover no-repeat;
+  clip-path:circle(calc(12% + var(--grow) * 62%) at 50% 50%);filter:saturate(calc(.6 + var(--grow) * .4));}
 .fm-count .cd-grid{margin:22px 0 0;}
 @media (max-width:779px){.fm-count .cd-grid{margin:22px auto 0;}}
 .fm-count .cd-unit{border-left:1px solid var(--fm-line);}
