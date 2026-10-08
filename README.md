@@ -366,7 +366,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 >
 > | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
 > |---|---|---|---|
-> | `forest/deer.webp` | hero 底下一排、交通資訊標題 | [雪地裡的小鹿](https://unsplash.com/illustrations/qrR4Xh-QTyo)・Alvaro Montoro | 原圖是色塊：去掉天空、雪地與影子，沿著色塊的邊描成線稿，眼睛、鼻子留實心 |
+> | `forest/bear.webp` | hero 底下一排、交通資訊標題 | [抱著蜂蜜罐的小熊](https://unsplash.com/illustrations/CA-ggcjOo4I)・Shazia Asif | 只留外框線，換成墨水色 |
 > | `forest/bunny.webp` | hero 底下一排（會跳）、Moments 標題、倒數照片帶、頁尾 | [小動物線稿](https://unsplash.com/illustrations/Dn0GNJk0SyU)・Mila Okta Safitri | 切出兔子，線條加粗一點 |
 > | `forest/bird.webp`、`squirrel.webp` | 當日流程／Explore 標題、故事照片帶、頁尾 | [秋天小物貼紙](https://unsplash.com/illustrations/0UefjX8SdlQ)・godsfavoriteart | 只留外框線 |
 > | `forest/dove.webp`、`dove2.webp`、`dove3.webp` | hero 上方飛的白鴿、R.S.V.P. 標題、頁邊 | [一群飛鳥](https://unsplash.com/illustrations/usjlgy7I5wY)・remapstudio | 一隻一隻切開 |

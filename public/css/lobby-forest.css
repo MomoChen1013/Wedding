@@ -149,8 +149,8 @@
 .fd-blueberries{background-image:url(../img/forest/blueberries.webp);aspect-ratio:257/320;}
 .fd-sprig2{background-image:url(../img/forest/sprig2.webp);aspect-ratio:151/320;}
 .fd-sprig3{background-image:url(../img/forest/sprig3.webp);aspect-ratio:185/320;}
-/* 小動物：小鹿、小兔子、小鳥、松鼠、白鴿 */
-.fd-deer{background-image:url(../img/forest/deer.webp);aspect-ratio:269/348;}
+/* 小動物：小熊、小兔子、小鳥、松鼠、白鴿 */
+.fd-bear{background-image:url(../img/forest/bear.webp);aspect-ratio:242/328;}
 .fd-bunny{background-image:url(../img/forest/bunny.webp);aspect-ratio:201/328;}
 .fd-bird{background-image:url(../img/forest/bird.webp);aspect-ratio:304/248;}
 .fd-squirrel{background-image:url(../img/forest/squirrel.webp);aspect-ratio:349/328;}
@@ -169,8 +169,8 @@
 @keyframes f-bob{0%,100%{transform:rotate(-3deg);}50%{transform:rotate(3deg) translateY(-2px);}}
 /* 照片底部再壓暗一點，白色的小東西才看得清楚；中間留給名字與日期 */
 @media (max-width:640px){.f-floor .f-dd:nth-child(n+6){display:none;}}
-/* 小鹿站得高一點；小兔子不晃，隔一陣子跳一下 */
-.f-floor .fd-deer{height:clamp(40px,6.8vw,74px);}
+/* 小熊站得高一點；小兔子不晃，隔一陣子跳一下 */
+.f-floor .fd-bear{height:clamp(40px,6.6vw,70px);}
 .f-floor .fd-bunny{height:clamp(32px,5.4vw,58px);}
 .f-dd.f-hop{animation:f-hop 3.8s ease-in-out infinite;transform-origin:50% 100%;}
 .f-foot-floor .f-hop{animation-delay:-1.9s;}
