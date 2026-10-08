@@ -6,7 +6,7 @@
      世界觀  開場拉開一片亞麻紗簾，簾子後面是早晨的窗邊
      材質    亞麻、白牆、木頭、白瓷、早晨淡淡的金色陽光
      素材    真的照片：紗簾與窗、白牆上窗格形狀的陽光、亞麻布、照著陽光的紗簾；
-             去背的咖啡杯、鬧鐘、可頌、攤開的書、一束鬱金香；全部在 public/img/window/，出處見 README
+             去背的咖啡杯、鬧鐘、北歐抱枕、攤開的書、一束鬱金香；全部在 public/img/window/，出處見 README
      圖像    區塊標題上是一件一件去背的早晨小物（不放在框裡），像擺在桌上
      新人照片  早餐桌上四張（照片牆前四張）、故事兩張、倒數旁一張 —— 都是洗出來的照片
 
@@ -61,9 +61,9 @@ body[data-lobby="morning-window"] .bg-decor{background:var(--mw-wall);}
 ============================================================ */
 .mw-hero{position:relative;z-index:2;overflow:hidden;min-height:calc(100svh - var(--nav-h));padding:0;gap:0;justify-content:flex-start;background:transparent;}
 .mw-scene{position:absolute;inset:0;pointer-events:none;}
-/* 一張真的照片（Viktoriia Kondratiuk／Unsplash）：亞麻紗簾、窗台上的白瓷壺。
+/* 一張真的照片（Zoe Richardson／Unsplash）：白框窗前的一瓶鬱金香 —— 跟開場紗簾後面那扇窗是同一張。
    往下捲時照片慢慢推近 */
-.mw-photo{position:absolute;inset:0;background:#e9e0d2 url(../img/window/morning.webp) 50% 62%/cover no-repeat;
+.mw-photo{position:absolute;inset:0;background:#f1ece2 url(../img/window/tulips.webp) 50% 45%/cover no-repeat;
   transform-origin:50% 70%;transform:scale(calc(1.02 + var(--lp,0) * .12));}
 .mw-photo::after{content:'';position:absolute;inset:0;
   background:
@@ -124,7 +124,7 @@ body[data-hero-name="cn"] .mw-hero .mw-names{font-family:'Noto Serif TC',serif;f
 .mw-table .p4{left:calc(50% + clamp(220px,26vw,330px));top:12%;--r:7deg;}
 .mw-table .mw-obj{position:absolute;height:auto;z-index:3;}
 .mw-table .t-cup{width:clamp(110px,13vw,160px);left:calc(50% - clamp(220px,24vw,300px));top:62%;}
-.mw-table .t-croissant{width:clamp(110px,13vw,160px);left:calc(50% + clamp(10px,2vw,30px));top:64%;transform:rotate(-20deg);}
+.mw-table .t-cushion{width:clamp(140px,16vw,200px);left:calc(50% + clamp(4px,1.6vw,24px));top:58%;transform:rotate(-4deg);}
 .mw-table .t-tulips{width:clamp(150px,18vw,220px);left:calc(50% + clamp(190px,24vw,300px));top:58%;transform:rotate(12deg);}
 @media (max-width:640px){
   .mw-table{height:520px;}
@@ -134,7 +134,7 @@ body[data-hero-name="cn"] .mw-hero .mw-names{font-family:'Noto Serif TC',serif;f
   .mw-table .p3{left:6vw;top:40%;}
   .mw-table .p4{left:52vw;top:37%;}
   .mw-table .t-cup{width:28vw;left:2vw;top:76%;}
-  .mw-table .t-croissant{width:26vw;left:38vw;top:80%;}
+  .mw-table .t-cushion{width:30vw;left:36vw;top:78%;}
   .mw-table .t-tulips{width:34vw;left:64vw;top:72%;}
 }
 
@@ -147,13 +147,13 @@ body[data-hero-name="cn"] .mw-hero .mw-names{font-family:'Noto Serif TC',serif;f
 .mw-sec[hidden]{display:none;}
 .mw-head{display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:clamp(18px,3vw,28px);}
 .mw-icon{position:relative;margin:0 0 10px;display:flex;justify-content:center;align-items:flex-end;height:clamp(96px,11vw,128px);}
-/* 去背的早晨小物（真的照片）：咖啡杯（Alexandr Marynkin）、鬧鐘（insung yoon）、可頌（Olga Petnyunene）、
+/* 去背的早晨小物（真的照片）：咖啡杯（Alexandr Marynkin）、鬧鐘（insung yoon）、北歐抱枕（Content Pixie）、
    攤開的書（Olga Tutunaru）、一束鬱金香（Hayley Maxwell）／Unsplash。底下落一點桌面的影子 */
 .mw-obj{display:block;height:100%;background:center bottom/contain no-repeat;
   filter:drop-shadow(6px 14px 10px rgba(110,85,60,.24));}
 .mw-obj.o-cup{aspect-ratio:480/479;background-image:url(../img/window/cup.webp);}
 .mw-obj.o-clock{aspect-ratio:383/560;background-image:url(../img/window/clock.webp);}
-.mw-obj.o-croissant{aspect-ratio:560/539;background-image:url(../img/window/croissant.webp);}
+.mw-obj.o-cushion{aspect-ratio:560/409;background-image:url(../img/window/cushion.webp);}
 .mw-obj.o-book{aspect-ratio:640/559;background-image:url(../img/window/book.webp);}
 .mw-obj.o-tulips{aspect-ratio:600/567;background-image:url(../img/window/tulip-bunch.webp);}
 

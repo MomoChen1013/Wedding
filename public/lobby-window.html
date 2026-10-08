@@ -27,7 +27,7 @@
 <link rel="preload" as="script" href="/js/common.js">
 <link rel="preload" as="script" href="/js/lobby-motion.js">
 <link rel="preload" as="script" href="/js/index.js">
-<link rel="preload" as="image" href="/img/window/morning.webp" type="image/webp">
+<link rel="preload" as="image" href="/img/window/tulips.webp" type="image/webp">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- 字體依版型不同，由 build-og（預產）或 site-context.js（執行期）依 TEMPLATES[x].fonts 補上 -->
@@ -83,8 +83,8 @@
 <button class="intro-skip" id="introSkip" type="button" hidden>跳過</button>
 
 <!-- ============ 主畫面：紗簾拉開之後，早晨的窗邊與一張早餐桌 ============
-     一張真的照片：亞麻紗簾、窗台上一只插著綠葉的白瓷壺。
-     往下是一張鋪著亞麻桌巾的早餐桌：洗出來的照片散在桌上，旁邊是咖啡、可頌、一束鬱金香
+     一張真的照片：白框窗前的一瓶鬱金香（跟開場紗簾後面那扇窗是同一張）。
+     往下是一張鋪著亞麻桌巾的早餐桌：洗出來的照片散在桌上，旁邊是咖啡、北歐抱枕、一束鬱金香
      （全部是去背的真實物件，不放在框裡）。整頁的牆上落著窗格形狀的陽光，跟著捲動慢慢移動。 -->
 <div id="app">
   <section class="panel lobby mw-lobby" data-panel="lobby" data-scroll>
@@ -120,7 +120,7 @@
     <div class="scene-body mw-body">
 
       <!-- ===== 早餐桌：亞麻桌巾上散著四張洗出來的照片（照片牆前四張），
-           咖啡、可頌、一束鬱金香擺在照片之間；窗光跟著捲動滑過桌面 ===== -->
+           咖啡、北歐抱枕、一束鬱金香擺在照片之間；窗光跟著捲動滑過桌面 ===== -->
       <section class="mw-table" data-scroll aria-hidden="true">
         <i class="mw-table-sun"></i>
         <figure class="mw-print p1" data-reveal="rise"><div class="mw-print-ph" data-photo="photo1"></div></figure>
@@ -128,7 +128,7 @@
         <figure class="mw-print p3" data-reveal="rise"><div class="mw-print-ph" data-photo="photo3"></div></figure>
         <figure class="mw-print p4" data-reveal="rise"><div class="mw-print-ph" data-photo="photo4"></div></figure>
         <i class="mw-obj o-cup t-cup"></i>
-        <i class="mw-obj o-croissant t-croissant"></i>
+        <i class="mw-obj o-cushion t-cushion"></i>
         <i class="mw-obj o-tulips t-tulips"></i>
       </section>
 
@@ -173,10 +173,10 @@
         </div>
       </section>
 
-      <!-- ===== 出席前的小提醒：一個可頌（沒填就整塊收起） ===== -->
+      <!-- ===== 出席前的小提醒：一對北歐抱枕（沒填就整塊收起） ===== -->
       <section class="info-block mw-sec" id="noteBlock" hidden>
         <div class="mw-head">
-          <figure class="mw-icon" data-reveal="draw"><i class="mw-obj o-croissant"></i></figure>
+          <figure class="mw-icon" data-reveal="draw"><i class="mw-obj o-cushion"></i></figure>
           <span class="en block-title">Notes</span>
           <span class="cn block-sub">出席前的小提醒</span>
         </div>
