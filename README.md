@@ -343,6 +343,30 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > | `window/book.webp` | 交通資訊 | [攤開的書與一枝小草](https://unsplash.com/photos/H1G1fa_UIkA)・Olga Tutunaru | 去背 |
 > | `window/tulip-bunch.webp` | 早餐桌、R.S.V.P. | [一束粉紅鬱金香](https://unsplash.com/photos/BN0tsi5c52w)・Hayley Maxwell | 去背 |
 
+> **Korean Modern 的海邊白色咖啡廳**（`public/img/korean/`，`lobby-korean.html`）：Unsplash 的照片（Unsplash License）。
+> 小物件是去背的實物；窗光是把牆上的窗影照片只留下陰影、四周淡掉。
+>
+> | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
+> |---|---|---|---|
+> | `korean/light.webp` | hero 白牆上的一片窗光（慢慢移動） | [牆上的窗影](https://unsplash.com/photos/X8sWlFdQElQ)・H&CO | 只留陰影、換成霧藍灰、四周羽化 |
+> | `korean/sea-cafe.webp` | hero 下面那張「海邊的一杯咖啡」 | [看得到海的桌上一杯咖啡](https://unsplash.com/photos/slOufMH_7bI)・Kristina Tochilko | 裁切 |
+> | `korean/cafe-window.webp` | 兩人的故事 | [海邊陽台的桌椅](https://unsplash.com/photos/IIpWx1LOhi4)・Evan Jeung | 裁切 |
+> | `korean/sea.webp` | 倒數的底 | [很淡的海平面](https://unsplash.com/photos/7NjKwGDUmBM)・Sergei A | 縮圖 |
+> | `korean/sea-strip.webp` | 頁尾前的一條海 | [粉色天空下的海](https://unsplash.com/photos/sbNlS7dWqKE)・Clark Gu | 裁成長條 |
+> | `korean/cup.webp` | hero 桌角、R.S.V.P. | [白色杯盤](https://unsplash.com/photos/xY9oAtHSxQI)・Sixteen Miles Out | 去背 |
+> | `korean/mug.webp` | 婚禮資訊 | [白瓷馬克杯](https://unsplash.com/photos/nDd3dIkkOLo)・NordWood Themes | 去背 |
+> | `korean/latte.webp` | 當日流程 | [俯拍的拿鐵](https://unsplash.com/photos/gkzFuyAeXeY)・Mockup Graphics | 去背 |
+> | `korean/posy.webp` | 小提醒 | [小盆花與咖啡杯](https://unsplash.com/photos/uJ16Qvua6O8)・Debby Hudson | 去背 |
+> | `korean/conch.webp` | 交通資訊 | [一枚海螺](https://unsplash.com/photos/plELgxMbjTE)・Natalia Gasiorowska | 去背 |
+> | `korean/glass.webp` | 兩人的故事 | [陽光下的玻璃杯](https://unsplash.com/photos/e60Z2AVSvp4)・Rob Martin | 去背（連影子） |
+> | `korean/whelk.webp` | Moments | [白色小螺](https://unsplash.com/photos/ZNumKMTd8K0)・Ilya Chunin | 去背 |
+> | `korean/scallop.webp` | 倒數 | [扇貝](https://unsplash.com/photos/loZ_0TCJNUY)・Content Pixie | 去背 |
+> | `korean/auger.webp` | hero 桌角、Explore | [白色細螺](https://unsplash.com/photos/outjnHJmZLU)・Anya Chernykh | 去背 |
+
+> **捲動縫線**（`public/css/lobby-thread.css`）：tapestry 那條跟著捲動縫下去的金線，搬給
+> korean（藏青細線＋小結）、forest（麻線，縫過的地方長出葉子、橡實）、
+> 午夜教堂（一串珍珠）、晨光房間（亞麻繡線，縫一朵小花）。全部是 CSS，沒有圖檔。
+
 > **Forest Botanical 的手繪森林小物**（`public/img/forest/`，`lobby-forest.html`）：全部來自同一張 Unsplash 插畫
 > [森林小物貼紙](https://unsplash.com/illustrations/2EwBPCpvWA4)・Kamara Rahmat（Unsplash License）。
 > 只留下原圖深色的外框線、拿掉上色，換成同一種森林墨水色、透明底，再一個一個切開（照片上的那幾個用 CSS filter 換成白墨水）。

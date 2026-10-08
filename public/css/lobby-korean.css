@@ -165,3 +165,84 @@ body[data-hero-name="en"] .k-nameB{font-size:clamp(24px,4.6vw,58px);}
 
 /* footer 收成細字 */
 .k-body footer{border-top:1px solid var(--line);text-transform:uppercase;letter-spacing:.24em;}
+
+/* ============================================================
+   海邊的白色咖啡廳：一片窗光、一杯咖啡、幾枚貝殼、一扇看得到海的窗
+   （素材都在 /img/korean/，來源見 README）
+============================================================ */
+.k-lobby{position:relative;overflow-x:clip;}
+
+/* ---- hero：白牆上的一片窗光，慢慢移動 ---- */
+.k-hero{position:relative;isolation:isolate;}
+.k-light{position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:url(../img/korean/light.webp) 22% 100%/clamp(520px,62vw,980px) auto no-repeat;opacity:.42;
+  animation:k-sun 26s ease-in-out infinite alternate;}
+@keyframes k-sun{from{background-position:18% 100%;}to{background-position:30% 94%;}}
+/* 桌角：一杯咖啡、一枚小貝殼 */
+.k-still{position:absolute;z-index:2;right:clamp(20px,5vw,64px);bottom:clamp(28px,5vw,64px);
+  display:flex;align-items:flex-end;gap:6px;pointer-events:none;}
+.k-still .o-cup{height:clamp(48px,6.4vw,82px);}
+.k-still .o-auger{height:clamp(30px,3.8vw,48px);transform:rotate(-58deg) translate(4px,6px);}
+@media(max-width:760px){
+  .k-still{position:static;justify-content:flex-end;margin-top:14px;}
+}
+
+/* ---- 小物件：去背的實物照片 ---- */
+.k-obj{display:block;flex:none;background:center/contain no-repeat;pointer-events:none;
+  filter:drop-shadow(0 6px 8px rgba(33,40,79,.10));}
+.o-cup{background-image:url(../img/korean/cup.webp);aspect-ratio:480/276;}
+.o-mug{background-image:url(../img/korean/mug.webp);aspect-ratio:480/343;}
+.o-latte{background-image:url(../img/korean/latte.webp);aspect-ratio:461/360;}
+.o-posy{background-image:url(../img/korean/posy.webp);aspect-ratio:480/284;}
+.o-conch{background-image:url(../img/korean/conch.webp);aspect-ratio:480/220;}
+.o-glass{background-image:url(../img/korean/glass.webp);aspect-ratio:332/360;filter:none;}
+.o-whelk{background-image:url(../img/korean/whelk.webp);aspect-ratio:239/360;}
+.o-scallop{background-image:url(../img/korean/scallop.webp);aspect-ratio:367/360;}
+.o-auger{background-image:url(../img/korean/auger.webp);aspect-ratio:198/360;}
+
+/* 左欄標題底下放一樣，捲到時輕輕落下來 */
+.k-sec-head{position:relative;}
+.k-sec-head .k-obj{height:clamp(56px,6vw,80px);margin-top:20px;max-width:150px;}
+.k-sec-head .o-conch,.k-sec-head .o-cup,.k-sec-head .o-posy{height:clamp(40px,4.2vw,54px);}
+.tp-motion .k-sec-head[data-reveal] .k-obj{transition:opacity .9s ease,transform 1.1s cubic-bezier(.2,.7,.2,1);}
+.tp-motion .k-sec-head[data-reveal]:not(.is-in) .k-obj{opacity:0;transform:translateY(-14px);}
+@media(max-width:760px){
+  .k-sec-head .k-obj{position:absolute;right:0;top:0;margin:0;height:46px;}
+  .k-sec-head .o-conch,.k-sec-head .o-cup,.k-sec-head .o-posy{height:34px;}
+}
+
+/* ---- 一扇看得到海的窗：左邊一行字，右邊一張照片，照片跟著捲動慢慢往上移 ---- */
+.k-seaband{position:relative;margin:clamp(10px,3vw,40px) auto clamp(30px,5vw,64px);max-width:1080px;
+  padding:0 clamp(20px,5vw,64px);display:grid;grid-template-columns:1fr 1.5fr;gap:clamp(20px,4vw,56px);align-items:end;}
+.k-seaband-ph{grid-column:2;grid-row:1;aspect-ratio:5/4;overflow:hidden;position:relative;}
+.k-seaband-ph::before{content:'';position:absolute;inset:-8% 0;
+  background:url(../img/korean/sea-cafe.webp) center/cover no-repeat;
+  transform:translateY(calc((var(--sp,.5) - .5) * -10%));}
+.k-seaband figcaption{grid-column:1;grid-row:1;display:flex;flex-direction:column;gap:8px;
+  padding-bottom:clamp(6px,2vw,24px);border-bottom:1px solid var(--line);color:var(--ink);}
+.k-seaband .en{font-family:var(--font-display);font-style:italic;font-size:clamp(22px,2.6vw,32px);line-height:1.2;letter-spacing:.03em;}
+.k-seaband .cn{font-family:var(--font-hand);font-size:13px;letter-spacing:.3em;color:var(--ink-soft);}
+@media(max-width:760px){
+  .k-seaband{grid-template-columns:1fr;gap:14px;}
+  .k-seaband-ph,.k-seaband figcaption{grid-column:1;grid-row:auto;}
+}
+
+/* ---- 故事：咖啡廳窗邊的一張桌子 ---- */
+.k-story-ph{aspect-ratio:5/4;max-width:440px;margin-bottom:24px;
+  background:url(../img/korean/cafe-window.webp) center/cover no-repeat;}
+
+/* ---- 倒數：一片很淡的海 ---- */
+.k-sec .k-sea-card{position:relative;isolation:isolate;padding:clamp(26px,4vw,44px);
+  background:url(../img/korean/sea.webp) center 62%/cover no-repeat;}
+.k-sec .k-sea-card::before{content:'';position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.28));}
+
+/* ---- 頁尾前的一條海，兩端淡掉 ---- */
+.k-strip{height:clamp(90px,13vw,170px);margin-top:clamp(30px,5vw,60px);
+  background:url(../img/korean/sea-strip.webp) center/cover no-repeat;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 16%,#000 84%,transparent);
+          mask-image:linear-gradient(90deg,transparent,#000 16%,#000 84%,transparent);}
+
+/* ---- 縫線：藏青色的細線，每縫一段打一個小結 ---- */
+.k-thread{--th-color:var(--primary-deep);--th-w:1.5px;--th-dash:7px;--th-gap:13px;--knot-size:7px;}
+@media (prefers-reduced-motion:reduce){.k-light{animation:none;}}

@@ -36,6 +36,7 @@
 <link rel="stylesheet" href="/css/common.css">
 <link rel="stylesheet" href="/css/index.css">
 <link rel="stylesheet" href="/css/lobby-chapel.css">
+<link rel="stylesheet" href="/css/lobby-thread.css">
 </head>
 <body data-template="midnight-chapel" data-page="lobby" data-lobby="midnight-chapel">
 <!-- 開場遮罩：只有**沒預產到**的頁面會顯示（見 css/common.css 的 .boot-veil） -->
@@ -87,6 +88,14 @@
      區塊標題上不是框，是一件一件去背的實物（戒指、水晶燈、香檳、百合、繡球）。 -->
 <div id="app">
   <section class="panel lobby mc-lobby" data-panel="lobby" data-scroll>
+
+    <!-- 一串珍珠：跟著捲動一路縫下去，每隔一段串上一顆大一點的珍珠（--ap 由 lobby-motion.js 算，樣式在 lobby-thread.css） -->
+    <div class="lx-thread mc-thread" data-scroll aria-hidden="true">
+      <i class="lx-thread-line"></i>
+      <i class="lx-knot" style="--k:0.1"></i><i class="lx-knot" style="--k:0.24"></i><i class="lx-knot" style="--k:0.38"></i><i class="lx-knot" style="--k:0.52"></i>
+      <i class="lx-knot" style="--k:0.66"></i><i class="lx-knot" style="--k:0.8"></i><i class="lx-knot" style="--k:0.94"></i>
+      <span class="lx-needle"><svg viewBox="0 0 12 64"><path d="M6 0C7.6 0 8 2 8 5V52L6 64L4 52V5C4 2 4.4 0 6 0Z" fill="#cfd4d8"/><path d="M5.2 4.4H6.8V11H5.2Z" fill="#6a7178"/><path d="M6 1.2V60" stroke="#fff" stroke-width=".6" opacity=".7"/></svg></span>
+    </div>
 
     <!-- 三稜鏡的彩虹光：固定在視窗上，跟著捲動慢慢滑過整頁（--sp 來自 .mc-lobby） -->
     <div class="mc-prisms" aria-hidden="true"><i></i><i></i></div>

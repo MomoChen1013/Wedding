@@ -256,3 +256,11 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
 .mc-foot{position:relative;z-index:2;margin:clamp(80px,12vw,130px) 0 0;padding:40px 24px 40px;
   display:flex;flex-direction:column;align-items:center;gap:8px;border-top:none;color:var(--mc-soft);}
 .mc-fin{font:italic 400 24px 'Cormorant Garamond',serif;color:var(--mc-gold);text-transform:none;letter-spacing:.02em;}
+
+/* ---- 縫線：一串珍珠跟著捲動縫下去，每隔一段串上一顆大的（lobby-thread.css） ---- */
+.mc-thread{--th-w:6px;--knot-size:12px;z-index:2;
+  --knot:radial-gradient(circle at 38% 34%,#fff 0 18%,#f3eee6 40%,#d9cfbf 64%,rgba(176,148,96,.5) 70%,transparent 74%);}
+.mc-thread .lx-thread-line{
+  background:radial-gradient(circle at 40% 36%,#fff 0 22%,#ece6dc 46%,#d3c8b6 62%,transparent 68%) 0 0/6px 8px repeat-y;
+  filter:drop-shadow(0 1px 1px rgba(70,64,100,.18));}
+.mc-thread .lx-knot{filter:drop-shadow(0 1px 2px rgba(70,64,100,.25));}

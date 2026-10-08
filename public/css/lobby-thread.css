@@ -1,0 +1,44 @@
+/* ============================================================
+   lobby-thread.css — 跟著捲動一路縫下去的一條線（多個版型共用）
+   ------------------------------------------------------------
+   原本是 tapestry 的金線，搬出來給 korean／forest／教堂／晨光房間用。
+   版型只要在大廳 section 裡放：
+
+     <div class="lx-thread" data-scroll aria-hidden="true">
+       <i class="lx-thread-line"></i>
+       <i class="lx-knot" style="--k:.3"></i> …   縫到這裡才出現的小東西（可省略）
+       <span class="lx-needle"><svg …></svg></span>
+     </div>
+
+   --ap 由 lobby-motion.js 算（元素頂端越過視窗 62% 之後走了多少，0 → 1）：
+   線縫到 --ap，針停在線頭；--k 是小結在整條線上的位置（0 → 1），
+   線縫過它就跳出來。
+
+   顏色、虛線長度、位置都是變數，各版型在自己的 lobby-*.css 裡設：
+     --th-color  線的顏色            --th-w     線的粗細
+     --th-dash   一針的長度          --th-gap   一針＋空白的長度
+     --th-left   線離左邊多遠        --th-top / --th-bottom  從哪縫到哪
+     --knot      小結的樣子（background）  --knot-size  小結的大小
+   ============================================================ */
+.lx-thread{position:absolute;z-index:2;pointer-events:none;width:12px;
+  top:var(--th-top,calc(100svh - var(--nav-h)));bottom:var(--th-bottom,60px);
+  left:var(--th-left,max(8px,calc(50% - 540px)));}
+.lx-thread-line{position:absolute;left:calc(6px - var(--th-w,2px) / 2);top:0;bottom:0;width:var(--th-w,2px);
+  background:repeating-linear-gradient(180deg,var(--th-color,#8a93a6) 0 var(--th-dash,9px),
+    transparent var(--th-dash,9px) var(--th-gap,15px));
+  clip-path:inset(0 0 calc((1 - var(--ap,0)) * 100%) 0);}
+.lx-needle{position:absolute;left:0;width:12px;top:calc(var(--ap,0) * 100% - 12px);
+  opacity:calc(var(--ap,0) * 40);filter:drop-shadow(1px 2px 1px rgba(40,30,20,.3));}
+.lx-needle svg{display:block;width:12px;height:auto;}
+.lx-knot{position:absolute;left:6px;top:calc(var(--k) * 100%);
+  width:var(--knot-size,7px);height:var(--knot-size,7px);
+  margin:calc(var(--knot-size,7px) / -2) 0 0 calc(var(--knot-size,7px) / -2);
+  background:var(--knot,radial-gradient(circle,var(--th-color,#8a93a6) 0 45%,transparent 50%));
+  background-size:contain;background-repeat:no-repeat;background-position:center;
+  opacity:clamp(0,calc((var(--ap,0) - var(--k)) * 30),1);
+  transform:scale(clamp(.3,calc(.3 + (var(--ap,0) - var(--k)) * 30),1)) rotate(var(--kr,0deg));}
+/* 沒有 lobby-motion（或系統要求減少動態）時 --ap 不會被算：整條線直接縫好 */
+@media (prefers-reduced-motion:reduce){
+  .lx-thread{--ap:1;}
+  .lx-needle{display:none;}
+}

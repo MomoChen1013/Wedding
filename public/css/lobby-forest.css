@@ -229,3 +229,14 @@
 .f-foot-floor{display:flex;align-items:flex-end;gap:clamp(6px,2vw,16px);}
 .f-foot-floor .f-dd{height:clamp(36px,6vw,58px);}
 .f-foot-floor .fd-acorns{height:clamp(30px,5vw,46px);}
+
+/* ---- 縫線：一條麻線跟著捲動縫下去，縫過的地方長出葉子、橡實（lobby-thread.css） ---- */
+.f-thread{--th-color:#8a7556;--th-w:1.6px;--th-dash:8px;--th-gap:14px;--knot-size:20px;z-index:2;}
+.f-thread .lx-knot{opacity:calc(clamp(0,(var(--ap,0) - var(--k)) * 30,1) * .85);}
+.f-thread .lx-knot:nth-of-type(odd){--kr:-28deg;}
+.f-thread .lx-knot:nth-of-type(even){--kr:24deg;}
+.f-thread .kn-leaf{--knot:url(../img/forest/leaf.webp);}
+.f-thread .kn-acorn{--knot:url(../img/forest/acorn.webp);}
+.f-thread .kn-sprig{--knot:url(../img/forest/sprig2.webp);}
+.f-thread .kn-berries{--knot:url(../img/forest/berries.webp);}
+.f-thread .kn-oak{--knot:url(../img/forest/oak-leaf2.webp);}

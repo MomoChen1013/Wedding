@@ -32,6 +32,7 @@
 <link rel="stylesheet" href="../public/css/common.css">
 <link rel="stylesheet" href="../public/css/index.css">
 <link rel="stylesheet" href="../public/css/lobby-forest.css">
+<link rel="stylesheet" href="../public/css/lobby-thread.css">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&amp;family=Noto+Sans+TC:wght@300;400;500&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../public/css/openers/envelope.css">
 <link rel="stylesheet" href="../public/css/openers/book.css">
@@ -87,6 +88,14 @@
 <!-- ============ 主畫面 ============ -->
 <div id="app">
   <section class="panel lobby f-lobby" data-panel="lobby" data-scroll>
+
+    <!-- 一條麻線：跟著捲動一路縫下去，縫過的地方長出一片葉子、一顆橡實（--ap 由 lobby-motion.js 算，樣式在 lobby-thread.css） -->
+    <div class="lx-thread f-thread" data-scroll aria-hidden="true">
+      <i class="lx-thread-line"></i>
+      <i class="lx-knot kn-leaf" style="--k:0.1"></i><i class="lx-knot kn-acorn" style="--k:0.24"></i><i class="lx-knot kn-sprig" style="--k:0.38"></i><i class="lx-knot kn-berries" style="--k:0.52"></i>
+      <i class="lx-knot kn-oak" style="--k:0.66"></i><i class="lx-knot kn-leaf" style="--k:0.8"></i><i class="lx-knot kn-acorn" style="--k:0.94"></i>
+      <span class="lx-needle"><svg viewBox="0 0 12 64"><path d="M6 0C7.6 0 8 2 8 5V52L6 64L4 52V5C4 2 4.4 0 6 0Z" fill="#cfd4d8"/><path d="M5.2 4.4H6.8V11H5.2Z" fill="#6a7178"/><path d="M6 1.2V60" stroke="#fff" stroke-width=".6" opacity=".7"/></svg></span>
+    </div>
 
     <!-- ===== Hero：照片就是整個畫面 ===== -->
     <header class="lobby-hero f-hero">

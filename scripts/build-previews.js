@@ -8,6 +8,7 @@
      preview/botanical-letter.html  ← public/lobby-botanical.html
      preview/midnight-chapel.html   ← public/lobby-chapel.html
      preview/forest-botanical.html  ← public/lobby-forest.html
+     preview/korean-modern.html     ← public/lobby-korean.html
      ……（每一副大廳骨架一頁；幾個版型共用一副骨架時只產一頁，名字是那副骨架的 lobbyKey）
      —— 清單從 TEMPLATES 的 lobbyFile 算出來，新增版型不必改這支
 
@@ -32,13 +33,11 @@ const PAGES = [...new Map(Object.entries(TEMPLATES)
   .filter(([, t]) => t.lobbyFile)
   .map(([key, t]) => {
     const lobby = t.lobbyKey || key;
-    /* forest 的示範頁沿用原本的檔名（preview/forest-botanical.html） */
-    const name = key === 'forest' ? 'forest-botanical' : (t.lobbyKey || key);
+    /* forest／korean 的示範頁沿用原本的檔名（preview/forest-botanical.html、preview/korean-modern.html） */
+    const name = { forest: 'forest-botanical', korean: 'korean-modern' }[key] || t.lobbyKey || key;
     return [lobby, { src: `public/${t.lobbyFile}`, out: `preview/${name}.html`, lobby,
       title: t.lobbyKey ? '場景版型' : t.label.split(' ')[0] }];
-  })).values()]
-  /* korean 的示範頁是手寫的（preview/korean-modern.html），不動它 */
-  .filter((p) => p.lobby !== 'korean');
+  })).values()];
 
 const esc = (s) => String(s).replace(/&/g, '&amp;');
 

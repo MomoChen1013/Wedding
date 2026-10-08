@@ -67,11 +67,11 @@ export const TEMPLATES = {
      沒跑過 build-og 的站台落回 index.html（Classic 骨架＋版型色票）。
      其餘子頁全部共用，靠色票與字體換裝。 */
   'korean':        { label:'Korean Modern', lobbyFile:'lobby-korean.html',
-                     lobbyCss:['/css/lobby-korean.css'],
+                     lobbyCss:['/css/lobby-korean.css','/css/lobby-thread.css'], lobbyJs:['/js/lobby-motion.js'],
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
   /* forest：滿版照片 ＋ 整頁可愛的手繪森林小物（橡實、松果、香菇、葉子、小鹿、兔子、小鳥） */
   'forest':        { label:'Forest Botanical', lobbyFile:'lobby-forest.html',
-                     lobbyCss:['/css/lobby-forest.css'], lobbyJs:['/js/lobby-motion.js'],
+                     lobbyCss:['/css/lobby-forest.css','/css/lobby-thread.css'], lobbyJs:['/js/lobby-motion.js'],
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
   /* 中古刺繡：開場是一封蓋了封蠟的信（取代兩句字幕＋簾幕），
      內容是刺繡插圖 ＋ 捲動編排（見 css/lobby-tapestry.css 開頭的說明） */
@@ -104,11 +104,11 @@ export const TEMPLATES = {
                      fonts:['https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,500;1,400&family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
   /* 晨光房間：真的紗簾與窗光、一張早餐桌（洗出來的照片、去背的咖啡與可頌）；拉開紗簾，早晨照進來 */
   'morning-window': { label:'Morning Window 晨光房間', lobbyFile:'lobby-window.html',
-                     lobbyCss:['/css/lobby-window.css'], lobbyJs:['/js/lobby-motion.js'], opening:'curtain',
+                     lobbyCss:['/css/lobby-window.css','/css/lobby-thread.css'], lobbyJs:['/js/lobby-motion.js'], opening:'curtain',
                      fonts:['https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
   /* 午夜教堂：午夜一根一根點亮蠟燭，天一亮是一座純白的教堂 —— 真的照片、厚玻璃相片、毛玻璃 */
   'midnight-chapel': { label:'Midnight Chapel 午夜教堂', lobbyFile:'lobby-chapel.html',
-                     lobbyCss:['/css/lobby-chapel.css'], lobbyJs:['/js/lobby-motion.js'], opening:'candle',
+                     lobbyCss:['/css/lobby-chapel.css','/css/lobby-thread.css'], lobbyJs:['/js/lobby-motion.js'], opening:'candle',
                      fonts:['https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=UnifrakturMaguntia&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
 };
 export const DEFAULT_TEMPLATE = 'classic';
