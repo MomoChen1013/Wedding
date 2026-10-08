@@ -97,15 +97,15 @@ export const TEMPLATES = {
   'night-sky':   { label:'Night Sky 現代星空', lobbyFile:'lobby-night.html',
                      lobbyCss:['/css/lobby-night.css'], lobbyJs:['/js/lobby-motion.js'], opening:'stars',
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Josefin+Sans:wght@300;400&family=Noto+Sans+TC:wght@300;400;500&family=Noto+Serif+TC:wght@400;500&display=swap'] },
-  /* 法式莊園：真的城堡、碎石路與法式花園的照片；推開一扇鍛鐵大門進去 */
+  /* 法式莊園：文藝復興 —— 從真的照片描出來的剪紙莊園、大理石雕像、天頂濕壁畫；推開一扇鍛鐵大門進去 */
   'french-manor': { label:'French Manor 法式莊園', lobbyFile:'lobby-manor.html',
                      lobbyCss:['/css/lobby-manor.css'], lobbyJs:['/js/lobby-motion.js'], opening:'door',
-                     fonts:['https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
-  /* 晨光房間：真的紗簾、窗台上的花與咖啡、白牆上窗格形狀的陽光；拉開紗簾，早晨照進來 */
+                     fonts:['https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,500;1,400&family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
+  /* 晨光房間：真的紗簾與窗光、一張早餐桌（洗出來的照片、去背的咖啡與可頌）；拉開紗簾，早晨照進來 */
   'morning-window': { label:'Morning Window 晨光房間', lobbyFile:'lobby-window.html',
                      lobbyCss:['/css/lobby-window.css'], lobbyJs:['/js/lobby-motion.js'], opening:'curtain',
                      fonts:['https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
-  /* 午夜教堂：真的中殿、彩繪玻璃、燭光的照片；一根一根把蠟燭點亮 */
+  /* 午夜教堂：午夜一根一根點亮蠟燭，天一亮是一座純白的教堂 —— 真的照片、厚玻璃相片、毛玻璃 */
   'midnight-chapel': { label:'Midnight Chapel 午夜教堂', lobbyFile:'lobby-chapel.html',
                      lobbyCss:['/css/lobby-chapel.css'], lobbyJs:['/js/lobby-motion.js'], opening:'candle',
                      fonts:['https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=UnifrakturMaguntia&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },

@@ -81,9 +81,10 @@
 </div>
 <button class="intro-skip" id="introSkip" type="button" hidden>跳過</button>
 
-<!-- ============ 主畫面：紗簾拉開之後，早晨的窗邊 ============
+<!-- ============ 主畫面：紗簾拉開之後，早晨的窗邊與一張早餐桌 ============
      一張真的照片：亞麻紗簾、窗台上一只插著綠葉的白瓷壺。
-     整頁的牆上落著一塊一塊窗格形狀的陽光，跟著捲動慢慢移動。 -->
+     往下是一張鋪著亞麻桌巾的早餐桌：洗出來的照片散在桌上，旁邊是咖啡、可頌、一束鬱金香
+     （全部是去背的真實物件，不放在框裡）。整頁的牆上落著窗格形狀的陽光，跟著捲動慢慢移動。 -->
 <div id="app">
   <section class="panel lobby mw-lobby" data-panel="lobby" data-scroll>
 
@@ -109,10 +110,23 @@
 
     <div class="scene-body mw-body">
 
-      <!-- ===== 婚禮資訊：窗邊的一杯咖啡 ===== -->
+      <!-- ===== 早餐桌：亞麻桌巾上散著四張洗出來的照片（照片牆前四張），
+           咖啡、可頌、一束鬱金香擺在照片之間；窗光跟著捲動滑過桌面 ===== -->
+      <section class="mw-table" data-scroll aria-hidden="true">
+        <i class="mw-table-sun"></i>
+        <figure class="mw-print p1" data-reveal="rise"><div class="mw-print-ph" data-photo="photo1"></div></figure>
+        <figure class="mw-print p2" data-reveal="rise"><div class="mw-print-ph" data-photo="photo2"></div></figure>
+        <figure class="mw-print p3" data-reveal="rise"><div class="mw-print-ph" data-photo="photo3"></div></figure>
+        <figure class="mw-print p4" data-reveal="rise"><div class="mw-print-ph" data-photo="photo4"></div></figure>
+        <i class="mw-obj o-cup t-cup"></i>
+        <i class="mw-obj o-croissant t-croissant"></i>
+        <i class="mw-obj o-tulips t-tulips"></i>
+      </section>
+
+      <!-- ===== 婚禮資訊：一杯咖啡 ===== -->
       <section class="info-block mw-sec">
         <div class="mw-head">
-          <figure class="mw-icon" data-reveal="draw"><i class="mw-vignette v-coffee"></i></figure>
+          <figure class="mw-icon" data-reveal="draw"><i class="mw-obj o-cup"></i></figure>
           <span class="en block-title">Information</span>
           <span class="cn block-sub">婚禮資訊</span>
         </div>
@@ -138,10 +152,10 @@
         </div>
       </section>
 
-      <!-- ===== 當日流程：窗台上的鬱金香 ===== -->
+      <!-- ===== 當日流程：一只鬧鐘 ===== -->
       <section class="info-block mw-sec" id="scheduleBlock">
         <div class="mw-head">
-          <figure class="mw-icon" data-reveal="draw"><i class="mw-vignette v-tulips"></i></figure>
+          <figure class="mw-icon" data-reveal="draw"><i class="mw-obj o-clock"></i></figure>
           <span class="en block-title">Schedule</span>
           <span class="cn block-sub">當日流程</span>
         </div>
@@ -150,10 +164,10 @@
         </div>
       </section>
 
-      <!-- ===== 出席前的小提醒：早餐桌（沒填就整塊收起） ===== -->
+      <!-- ===== 出席前的小提醒：一個可頌（沒填就整塊收起） ===== -->
       <section class="info-block mw-sec" id="noteBlock" hidden>
         <div class="mw-head">
-          <figure class="mw-icon" data-reveal="draw"><i class="mw-vignette v-breakfast"></i></figure>
+          <figure class="mw-icon" data-reveal="draw"><i class="mw-obj o-croissant"></i></figure>
           <span class="en block-title">Notes</span>
           <span class="cn block-sub">出席前的小提醒</span>
         </div>
@@ -174,10 +188,10 @@
         </div>
       </section>
 
-      <!-- ===== 交通資訊：窗（沒填就整塊收起） ===== -->
+      <!-- ===== 交通資訊：一本攤開的書（沒填就整塊收起） ===== -->
       <section class="info-block mw-sec" id="transportBlock" hidden>
         <div class="mw-head">
-          <figure class="mw-icon" data-reveal="draw"><i class="mw-vignette v-window"></i></figure>
+          <figure class="mw-icon" data-reveal="draw"><i class="mw-obj o-book"></i></figure>
           <span class="en block-title">Access</span>
           <span class="cn block-sub">交通資訊</span>
         </div>
@@ -195,12 +209,13 @@
         </div>
       </section>
 
-      <!-- ===== 兩人的故事：亞麻布上放著一張照片，窗格的陽光跟著捲動慢慢滑過去 ===== -->
+      <!-- ===== 兩人的故事：亞麻布上疊著兩張照片（故事照、照片牆第五張），窗格的陽光跟著捲動慢慢滑過去 ===== -->
       <section class="info-block mw-band mw-story" id="storyBlock" hidden data-scroll>
         <div class="mw-band-bg" aria-hidden="true"><i class="mw-sun"></i></div>
         <div class="mw-band-inner">
-          <div class="mw-frame" data-reveal="rise">
-            <div class="mw-frame-ph" data-photo="story" aria-hidden="true"></div>
+          <div class="mw-story-pics" data-reveal="rise">
+            <figure class="mw-print s-back"><div class="mw-print-ph" data-photo="photo5" aria-hidden="true"></div></figure>
+            <figure class="mw-print s-front"><div class="mw-print-ph" data-photo="story" aria-hidden="true"></div></figure>
           </div>
           <div class="mw-story-body" data-reveal="rise">
             <div class="mw-band-title">Our Story</div>
@@ -219,11 +234,14 @@
         <div class="photo-rail" id="photoRail"></div>
       </section>
 
-      <!-- ===== 日期倒數：一整面紗簾，陽光跟著捲動慢慢移過來 ===== -->
+      <!-- ===== 日期倒數：一整面照著陽光的紗簾（滿版）；一只鬧鐘、一張照片（第六張）擺在倒數旁邊 ===== -->
       <section class="info-block mw-band mw-count" data-scroll>
         <div class="mw-band-bg" aria-hidden="true"></div>
         <div class="mw-band-inner">
-          <figure class="mw-sheer-wrap" aria-hidden="true"><i class="mw-sheer"></i></figure>
+          <div class="mw-count-pics" aria-hidden="true">
+            <figure class="mw-print c-pic" data-reveal="rise"><div class="mw-print-ph" data-photo="photo6"></div></figure>
+            <i class="mw-obj o-clock c-clock"></i>
+          </div>
           <div class="mw-count-body">
             <div class="mw-band-title">Every morning, a little closer</div>
             <div class="mw-band-sub">距離我們的大日子還有</div>
@@ -235,14 +253,14 @@
         </div>
       </section>
 
-      <!-- ===== R.S.V.P.：窗台上的一本書 ===== -->
+      <!-- ===== R.S.V.P.：一束鬱金香 ===== -->
       <section class="info-block mw-sec">
         <div class="mw-head">
           <span class="en block-title">R.S.V.P.</span>
           <span class="cn block-sub">出席回覆</span>
         </div>
         <div class="mw-card mw-rsvp" data-reveal="rise" data-scroll>
-          <figure class="mw-icon mw-rsvp-icon" data-reveal="draw" aria-hidden="true"><i class="mw-vignette v-book"></i></figure>
+          <figure class="mw-icon mw-rsvp-icon" data-reveal="draw" aria-hidden="true"><i class="mw-obj o-tulips"></i></figure>
           <div class="rsvp-cta">
             <h3>能來參加我們的婚禮嗎？</h3>
             <p>花 30 秒回覆出席，讓我們把最好的位置留給你</p>

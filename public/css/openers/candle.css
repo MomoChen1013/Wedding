@@ -5,7 +5,8 @@
    --lit 用 @property 註冊成數字，才能「慢慢」變亮，而不是一格一格跳。
    蠟燭是一張真的白蠟燭照片（去背，燭芯以上的火擦掉）；火焰是另一張真的照片
    （黑底，依亮度轉成透明度，只留下火），自己會晃；光暈用 screen 疊在房間上。
-   午夜教堂的房間是大廳 hero 那張中殿的照片（img/chapel/，出處見 README）。
+   午夜教堂的房間是大廳 hero 那座純白禮堂的照片（img/chapel/，出處見 README）：
+   三根都亮了之後燭火熄掉、天亮，變成白天的禮堂（.is-dawn）。
 ============================================================ */
 @property --lit{syntax:'<number>';inherits:true;initial-value:0;}
 
@@ -23,22 +24,49 @@
     repeating-linear-gradient(0deg,transparent 0 58px,rgba(0,0,0,.25) 58px 60px),
     repeating-linear-gradient(90deg,transparent 0 118px,rgba(0,0,0,.18) 118px 120px),
     radial-gradient(90% 80% at 50% 60%,var(--cd-wall),#0c0a10 80%);}
-/* 午夜教堂：房間就是那座教堂（Joss Broward／Unsplash）—— 燭光越亮，中殿與盡頭的彩繪玻璃越清楚 */
-.cd-host[data-variant="midnight-chapel"] .cd-room{opacity:calc(.05 + var(--cd-l) * .95);
+/* 午夜教堂：房間是大廳那座純白禮堂（Thay Jesus／Unsplash）在午夜的樣子 ——
+   照片壓暗、蓋一層夜裡的藍；燭光越亮，圓拱與吊燈越看得見 */
+.cd-host[data-variant="midnight-chapel"] .cd-room{opacity:1;
   background:
-    radial-gradient(55% 50% at 50% 80%,rgba(255,180,100,.22),transparent 70%),
-    linear-gradient(180deg,rgba(7,6,10,.2),rgba(7,6,10,.1) 40%,rgba(7,6,10,.85) 88%),
-    #07060a url(../../img/chapel/nave.webp) 50% 40%/cover no-repeat;
-  filter:brightness(calc(.35 + var(--cd-l) * .65));}
+    radial-gradient(50% 45% at 50% 82%,rgba(255,176,96,calc(var(--cd-l) * .5)),transparent 70%),
+    linear-gradient(rgba(16,20,44,.62),rgba(10,10,24,.78)),
+    #07060a url(../../img/chapel/hall.webp) 50% 55%/cover no-repeat;
+  filter:brightness(calc(.3 + var(--cd-l) * .55));}
+/* 天亮：同一座禮堂的白天，從一片白光裡定下來 */
+.cd-day{display:none;}
+.cd-host[data-variant="midnight-chapel"] .cd-day{display:block;position:absolute;inset:0;opacity:0;pointer-events:none;
+  background:#f6f4f0 url(../../img/chapel/hall.webp) 50% 55%/cover no-repeat;transition:opacity 1.6s ease;}
+.cd-host[data-variant="midnight-chapel"] .cd-day::after{content:'';position:absolute;inset:0;
+  background:radial-gradient(50% 40% at 50% 50%,rgba(255,255,255,.6),transparent 75%);}
+.cd-host.is-dawn .cd-day{opacity:1;animation:cd-dawn 2.4s ease both;}
+@keyframes cd-dawn{from{filter:brightness(2.2) saturate(.2);}}
+/* 天亮了，燭火熄掉：火焰縮回去，冒一縷煙 */
+.cd-host.is-dawn .cd-candle.is-lit .cd-flame,.cd-host.is-dawn .cd-candle.is-lit .cd-glow{opacity:0;transition:opacity .5s ease,transform .5s ease;}
+.cd-host.is-dawn .cd-candle.is-lit .cd-flame{transform:translateY(6px) scale(.3);}
+.cd-host.is-dawn .cd-wick::before{content:'';position:absolute;left:50%;bottom:4px;width:8px;height:46px;margin-left:-4px;
+  border-radius:50%;background:radial-gradient(closest-side,rgba(150,150,160,.55),transparent);filter:blur(2px);
+  animation:cd-smoke 2.2s ease-out forwards;}
+.cd-host.is-dawn .cd-c0 .cd-wick::before{animation-delay:.15s;}
+.cd-host.is-dawn .cd-c2 .cd-wick::before{animation-delay:.3s;}
+@keyframes cd-smoke{from{opacity:.9;transform:translateY(0) scaleX(1);}to{opacity:0;transform:translateY(-70px) scaleX(3) rotate(8deg);}}
+.cd-host.is-dawn .cd-wax{filter:none;transition:filter 1.6s ease;}
+.cd-host.is-dawn .cd-base{box-shadow:none;opacity:.35;transition:opacity 1.2s ease;}
 
 /* ---- 名字：從暗處被照出來 ---- */
 .cd-text{position:absolute;left:0;right:0;top:clamp(80px,22vh,220px);display:flex;flex-direction:column;
   align-items:center;gap:8px;text-align:center;color:var(--cd-ink);padding:0 24px;
   opacity:calc(var(--cd-l) * var(--cd-l));}
 .cd-host[data-variant="midnight-chapel"] .cd-text{top:auto;bottom:calc(clamp(170px,36vh,320px) + 40px);}
-/* 名字後面一團很淡的暗，彩繪玻璃的花樣才不會跟字打架 */
+/* 名字後面一團很淡的暗（天亮之後換成一團白），背景的花樣才不會跟字打架 */
 .cd-host[data-variant="midnight-chapel"] .cd-text::before{content:'';position:absolute;inset:-40% 0;z-index:-1;pointer-events:none;
-  background:radial-gradient(closest-side,rgba(7,6,10,.7),rgba(7,6,10,.35) 60%,transparent);}
+  background:radial-gradient(closest-side,rgba(7,6,10,.7),rgba(7,6,10,.35) 60%,transparent);transition:opacity 1.2s ease;}
+.cd-host[data-variant="midnight-chapel"] .cd-text::after{content:'';position:absolute;inset:-40% 0;z-index:-1;pointer-events:none;opacity:0;
+  background:radial-gradient(closest-side,rgba(255,255,255,.85),rgba(255,255,255,.45) 60%,transparent);transition:opacity 1.2s ease;}
+.cd-host.is-dawn .cd-text::before{opacity:0;}
+.cd-host.is-dawn .cd-text::after{opacity:1;}
+.cd-host.is-dawn .cd-text{color:#3d3743;transition:color 1.2s ease;}
+.cd-host.is-dawn .cd-names{text-shadow:none;}
+.cd-host.is-dawn .cd-date{color:#857e8c;}
 .cd-kicker{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(16px,2.2vw,21px);color:var(--cd-gold);}
 .cd-names{font-family:'Cinzel','Noto Serif TC',serif;font-size:clamp(28px,5.6vw,56px);letter-spacing:.08em;line-height:1.2;
   text-shadow:0 0 24px rgba(255,190,110,.35);}
@@ -51,13 +79,17 @@
 .cd-base{position:absolute;left:-30px;right:-30px;bottom:-12px;height:24px;border-radius:50%;
   background:radial-gradient(closest-side,rgba(0,0,0,.45),transparent);
   box-shadow:0 0 calc(50px * var(--cd-l)) rgba(255,190,110,calc(.3 * var(--cd-l)));}
-.cd-candle{position:relative;width:clamp(34px,4.6vw,48px);display:flex;flex-direction:column;align-items:center;}
-/* 同一根蠟燭疊三層：貼頂的燭頂（下緣淡出）、貼底的燭身下半（上緣淡出）、中間墊一段往下重複的燭身 —— 蠟燭再高也不會被拉長或斷掉 */
+.cd-candle{--cw:clamp(34px,4.6vw,48px);position:relative;width:var(--cw);display:flex;flex-direction:column;align-items:center;}
+/* 同一根蠟燭疊三層，蠟燭再高也不會被拉長或斷掉：
+   燭身下半貼底（上緣淡出，.cd-wax 自己的底）、中間一段往下重複的燭身（::before，只鋪在中段）、
+   燭頂與燭芯貼頂（::after，下緣淡出） */
 .cd-wax{width:100%;position:relative;
-  background:url(../../img/chapel/candle-top.webp) center top/100% auto no-repeat,
-    url(../../img/chapel/candle-base.webp) center bottom/100% auto no-repeat,
-    url(../../img/chapel/candle-body.webp) center top/100% auto repeat-y;
+  background:url(../../img/chapel/candle-base.webp) center bottom/100% auto no-repeat;
   filter:brightness(calc(.16 + var(--cd-l) * .84)) drop-shadow(0 0 calc(14px * var(--cd-l)) rgba(255,190,110,calc(.25 * var(--cd-l))));}
+.cd-wax::before{content:'';position:absolute;left:0;right:0;top:calc(var(--cw) * .6);bottom:calc(var(--cw) * 1.4);
+  background:url(../../img/chapel/candle-body.webp) center top/100% auto repeat-y;}
+.cd-wax::after{content:'';position:absolute;inset:0;
+  background:url(../../img/chapel/candle-top.webp) center top/100% auto no-repeat;}
 .cd-c0 .cd-wax{height:clamp(100px,17vh,140px);}
 .cd-c1 .cd-wax{height:clamp(150px,26vh,210px);}
 .cd-c2 .cd-wax{height:clamp(124px,21vh,170px);}

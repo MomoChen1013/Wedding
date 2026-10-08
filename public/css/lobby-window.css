@@ -5,17 +5,19 @@
 
      世界觀  開場拉開一片亞麻紗簾，簾子後面是早晨的窗邊
      材質    亞麻、白牆、木頭、白瓷、早晨淡淡的金色陽光
-     素材    真的照片：紗簾與窗、窗台上的花、咖啡、早餐桌、書、
-             白牆上窗格形狀的陽光、亞麻布；全部在 public/img/window/，出處見 README
-     圖像    區塊標題上是一扇一扇圓拱形的小窗，窗裡是早晨的一個角落
+     素材    真的照片：紗簾與窗、白牆上窗格形狀的陽光、亞麻布、照著陽光的紗簾；
+             去背的咖啡杯、鬧鐘、可頌、攤開的書、一束鬱金香；全部在 public/img/window/，出處見 README
+     圖像    區塊標題上是一件一件去背的早晨小物（不放在框裡），像擺在桌上
+     新人照片  早餐桌上四張（照片牆前四張）、故事兩張、倒數旁一張 —— 都是洗出來的照片
 
    捲動：
      ・進站：從一片很亮的晨光裡慢慢定下來（接開場：紗簾拉開、光進來）
      ・hero：照片慢慢推近；左邊垂著一片真的紗簾，被風吹得輕輕晃
      ・整頁：白牆上落著一塊一塊窗格形狀的陽光，跟著捲動慢慢移動
-     ・每一區的小窗：捲到的時候從霧白裡慢慢清楚
-     ・故事：亞麻布上的一張照片，窗格的陽光跟著捲動滑過去
-     ・倒數：一整面紗簾，陽光跟著捲動慢慢移過來
+     ・早餐桌：照片一張一張落到桌上，窗光跟著捲動滑過桌面
+     ・每一區的小物：捲到的時候從桌面滑進來
+     ・故事：亞麻布上疊著兩張照片，窗格的陽光跟著捲動滑過去
+     ・倒數：一整面照著陽光的紗簾，越捲越暖
 
    每一條規則都收在 .mw-* 或 body[data-lobby="morning-window"] 底下。
 ============================================================ */
@@ -29,7 +31,7 @@ body[data-lobby="morning-window"] .bg-decor{background:var(--mw-wall);}
 /* 整頁的牆：一塊一塊窗格形狀的陽光（真的照片，H&CO／Unsplash）。固定在視窗上，
    multiply 疊在暖白的底色上；跟著捲動慢慢往下斜移 —— 像太陽在走（--sp 來自 .mw-lobby） */
 .mw-sunwall{position:fixed;inset:-10% -20%;z-index:1;pointer-events:none;mix-blend-mode:multiply;
-  background:url(../img/window/sun-patch.webp) 70% 0/cover no-repeat;opacity:.7;
+  background:url(../img/window/sun-patch.webp) 70% 0/cover no-repeat;opacity:.5;
   transform:translate3d(calc(var(--sp,0) * -8%),calc(var(--sp,0) * 10%),0);}
 
 /* ============================================================
@@ -45,10 +47,14 @@ body[data-lobby="morning-window"] .bg-decor{background:var(--mw-wall);}
 .tp-motion [data-lobby="morning-window"] [data-reveal="list"] > :nth-child(n+5){transition-delay:.48s;}
 
 /* 小窗：捲到的時候從霧白裡慢慢清楚（像玻璃上的霧氣散掉） */
-.tp-motion [data-reveal="draw"] .mw-vignette::after{transition:filter 1.4s ease,opacity 1.4s ease;}
-.tp-motion [data-reveal="draw"]:not(.is-in) .mw-vignette::after{filter:blur(5px) brightness(1.35) saturate(.4);}
-.tp-motion [data-reveal="draw"] .mw-vignette{transition:transform 1.2s cubic-bezier(.2,.7,.2,1);}
-.tp-motion [data-reveal="draw"]:not(.is-in) .mw-vignette{transform:translateY(10px);}
+.tp-motion [data-reveal="draw"] .mw-obj{transition:opacity 1s ease,transform 1.2s cubic-bezier(.2,.7,.2,1);}
+.tp-motion [data-reveal="draw"]:not(.is-in) .mw-obj{opacity:0;transform:translate(-26px,8px) rotate(-6deg);}
+/* 早餐桌上的照片：一張一張落到桌上（從上面一點、歪一點、放下來） */
+.tp-motion .mw-table [data-reveal="rise"]{transition:opacity .9s ease,transform 1.1s cubic-bezier(.2,.8,.25,1);}
+.tp-motion .mw-table [data-reveal="rise"]:not(.is-in){opacity:0;transform:translateY(-30px) rotate(calc(var(--r,0deg) - 8deg)) scale(1.06);}
+.tp-motion .mw-table .p2{transition-delay:.12s;}
+.tp-motion .mw-table .p3{transition-delay:.24s;}
+.tp-motion .mw-table .p4{transition-delay:.36s;}
 
 /* ============================================================
    Hero：窗邊
@@ -100,6 +106,39 @@ body[data-hero-name="cn"] .mw-hero .mw-names{font-family:'Noto Serif TC',serif;f
 }
 
 /* ============================================================
+   早餐桌：亞麻桌巾上的照片與早餐（不是框，是擺在桌上的東西）
+============================================================ */
+.mw-table{position:relative;z-index:3;height:clamp(420px,52vw,560px);margin:clamp(-50px,-4vw,-20px) calc(50% - 50vw) 0;
+  /* 一塊真的亞麻布（Safwan Thottoli／Unsplash），上下淡進牆面 */
+  background:#ece2d0 url(../img/window/linen.webp) center/cover no-repeat;
+  -webkit-mask:linear-gradient(180deg,transparent,#000 12%,#000 88%,transparent);mask:linear-gradient(180deg,transparent,#000 12%,#000 88%,transparent);
+  overflow:hidden;}
+/* 窗光：同一張白牆上的窗光，跟著捲動從左滑到右 */
+.mw-table-sun{position:absolute;inset:0 -30%;pointer-events:none;mix-blend-mode:soft-light;z-index:5;
+  background:url(../img/window/sun-patch.webp) center/cover no-repeat;filter:contrast(2.4) brightness(1.1);
+  transform:translateX(calc((var(--sp,.5) - .5) * 30%));}
+.mw-table .mw-print{position:absolute;width:clamp(120px,17vw,210px);}
+.mw-table .p1{left:calc(50% - clamp(300px,36vw,460px));top:16%;--r:-8deg;}
+.mw-table .p2{left:calc(50% - clamp(120px,15vw,190px));top:9%;--r:3deg;z-index:2;}
+.mw-table .p3{left:calc(50% + clamp(60px,7vw,90px));top:22%;--r:-3deg;}
+.mw-table .p4{left:calc(50% + clamp(220px,26vw,330px));top:12%;--r:7deg;}
+.mw-table .mw-obj{position:absolute;height:auto;z-index:3;}
+.mw-table .t-cup{width:clamp(110px,13vw,160px);left:calc(50% - clamp(220px,24vw,300px));top:62%;}
+.mw-table .t-croissant{width:clamp(110px,13vw,160px);left:calc(50% + clamp(10px,2vw,30px));top:64%;transform:rotate(-20deg);}
+.mw-table .t-tulips{width:clamp(150px,18vw,220px);left:calc(50% + clamp(190px,24vw,300px));top:58%;transform:rotate(12deg);}
+@media (max-width:640px){
+  .mw-table{height:520px;}
+  .mw-table .mw-print{width:42vw;}
+  .mw-table .p1{left:4vw;top:7%;}
+  .mw-table .p2{left:50vw;top:4%;}
+  .mw-table .p3{left:6vw;top:40%;}
+  .mw-table .p4{left:52vw;top:37%;}
+  .mw-table .t-cup{width:28vw;left:2vw;top:76%;}
+  .mw-table .t-croissant{width:26vw;left:38vw;top:80%;}
+  .mw-table .t-tulips{width:34vw;left:64vw;top:72%;}
+}
+
+/* ============================================================
    區塊：一張一張的便條卡
 ============================================================ */
 .mw-body{max-width:900px;padding:0 22px 0;position:relative;z-index:2;}
@@ -107,16 +146,22 @@ body[data-hero-name="cn"] .mw-hero .mw-names{font-family:'Noto Serif TC',serif;f
   margin-top:0;padding:clamp(64px,9vw,110px) 0 0;text-align:center;}
 .mw-sec[hidden]{display:none;}
 .mw-head{display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:clamp(18px,3vw,28px);}
-.mw-icon{width:clamp(96px,11vw,120px);margin:0 0 12px;filter:drop-shadow(0 16px 18px rgba(110,85,60,.28));}
-/* 一扇圓拱形的小窗：白色的窗框，窗裡是早晨的一個角落 */
-.mw-vignette{position:relative;display:block;aspect-ratio:3/4;border-radius:999px 999px 4px 4px;background:#fbf8f2;
-  box-shadow:inset 0 0 0 1px #e2d8c8;}
-.mw-vignette::after{content:'';position:absolute;inset:7px;border-radius:999px 999px 2px 2px;background:#e9e0d2 center/cover no-repeat;}
-.mw-vignette.v-coffee::after{background-image:url(../img/window/v-coffee.webp);}
-.mw-vignette.v-tulips::after{background-image:url(../img/window/v-tulips.webp);}
-.mw-vignette.v-breakfast::after{background-image:url(../img/window/v-breakfast.webp);}
-.mw-vignette.v-window::after{background-image:url(../img/window/v-window.webp);}
-.mw-vignette.v-book::after{background-image:url(../img/window/v-book.webp);}
+.mw-icon{position:relative;margin:0 0 10px;display:flex;justify-content:center;align-items:flex-end;height:clamp(96px,11vw,128px);}
+/* 去背的早晨小物（真的照片）：咖啡杯（Alexandr Marynkin）、鬧鐘（insung yoon）、可頌（Olga Petnyunene）、
+   攤開的書（Olga Tutunaru）、一束鬱金香（Hayley Maxwell）／Unsplash。底下落一點桌面的影子 */
+.mw-obj{display:block;height:100%;background:center bottom/contain no-repeat;
+  filter:drop-shadow(6px 14px 10px rgba(110,85,60,.24));}
+.mw-obj.o-cup{aspect-ratio:480/479;background-image:url(../img/window/cup.webp);}
+.mw-obj.o-clock{aspect-ratio:383/560;background-image:url(../img/window/clock.webp);}
+.mw-obj.o-croissant{aspect-ratio:560/539;background-image:url(../img/window/croissant.webp);}
+.mw-obj.o-book{aspect-ratio:640/559;background-image:url(../img/window/book.webp);}
+.mw-obj.o-tulips{aspect-ratio:600/567;background-image:url(../img/window/tulip-bunch.webp);}
+
+/* 洗出來的照片：白邊、一點點厚度、落在桌上的影子 */
+.mw-print{position:relative;margin:0;aspect-ratio:4/5;padding:9px 9px 30px;background:#fffdf8;transform:rotate(var(--r,0deg));
+  box-shadow:0 1px 1px rgba(80,60,40,.12),0 2px 3px rgba(80,60,40,.08),0 22px 30px -18px rgba(80,60,40,.45);}
+.mw-print-ph{width:100%;height:100%;background:#e9e0d2 center/cover no-repeat;}
+
 .mw-head .block-title{margin:0;font:400 clamp(30px,4.2vw,42px)/1.15 'EB Garamond','Noto Serif TC',serif;letter-spacing:.02em;
   text-transform:none;color:var(--mw-ink);}
 .mw-head .block-sub{margin:0;font-size:13px;letter-spacing:.4em;color:var(--mw-soft);}
@@ -142,7 +187,7 @@ body[data-hero-name="cn"] .mw-hero .mw-names{font-family:'Noto Serif TC',serif;f
 .mw-rsvp{display:grid;grid-template-columns:1fr;gap:10px;justify-items:center;}
 @media (min-width:640px){.mw-rsvp{grid-template-columns:150px minmax(0,1fr);text-align:left;gap:26px;align-items:center;}
   .mw-rsvp .rsvp-cta{text-align:left;}}
-.mw-rsvp-icon{width:110px;margin:10px;}
+.mw-rsvp-icon{height:110px;margin:10px;}
 .mw-rsvp .rsvp-cta h3{font-family:'EB Garamond','Noto Serif TC',serif;font-size:22px;}
 
 /* ============================================================
@@ -167,27 +212,30 @@ body[data-hero-name="cn"] .mw-hero .mw-names{font-family:'Noto Serif TC',serif;f
   -webkit-mask:radial-gradient(closest-side,#000 55%,transparent);mask:radial-gradient(closest-side,#000 55%,transparent);
   transform:translateX(calc(-40% + var(--sp,.5) * 120%));}
 .mw-story .mw-band-inner{display:grid;grid-template-columns:1fr;gap:40px;justify-items:center;text-align:center;}
-@media (min-width:780px){.mw-story .mw-band-inner{grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:clamp(40px,6vw,80px);align-items:center;text-align:left;justify-items:stretch;}}
-/* 一張洗出來的照片：白邊、稍微歪一點，用一小段紙膠帶貼著 */
-.mw-frame{position:relative;width:min(66vw,270px);aspect-ratio:4/5;justify-self:center;padding:12px 12px 46px;background:#fffdf8;
-  transform:rotate(-2.5deg);box-shadow:0 2px 3px rgba(80,60,40,.12),0 26px 34px -20px rgba(80,60,40,.5);}
-.mw-frame::before{content:'';position:absolute;left:50%;top:-12px;z-index:2;width:86px;height:24px;margin-left:-43px;
+@media (min-width:780px){.mw-story .mw-band-inner{grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:clamp(40px,6vw,80px);align-items:center;text-align:left;justify-items:stretch;}}
+/* 兩張照片疊在亞麻布上：後面一張歪一點，前面一張用一小段紙膠帶貼著 */
+.mw-story-pics{position:relative;width:min(76vw,320px);height:calc(min(76vw,320px) * 1.2);justify-self:center;}
+.mw-story-pics .mw-print{position:absolute;width:72%;}
+.mw-story-pics .s-back{right:0;top:0;--r:7deg;}
+.mw-story-pics .s-front{left:0;bottom:0;--r:-4deg;}
+.mw-story-pics .s-front::before{content:'';position:absolute;left:50%;top:-12px;z-index:2;width:86px;height:24px;margin-left:-43px;
   background:rgba(232,216,186,.78);transform:rotate(3deg);box-shadow:0 1px 2px rgba(80,60,40,.15);}
-.mw-frame-ph{width:100%;height:100%;background:#e9e0d2 center/cover no-repeat;}
 .mw-story .story-text{margin:22px 0 0;max-width:32em;color:var(--mw-ink);font-size:15px;text-align:left;}
 
 /* ---- 倒數：一整面紗簾，陽光跟著捲動慢慢移過來 ---- */
 .mw-count{--warm:clamp(0,calc((var(--sp,0) - .1) * 2.2),1);}
-.mw-count .mw-band-bg{background:linear-gradient(180deg,#f3ece1,#efe6d8);}
-.mw-count .mw-band-inner{display:flex;flex-direction:column;align-items:center;gap:30px;text-align:center;}
+/* 一張真的照片（Mila Albrecht／Unsplash）：照著陽光的紗簾，滿版；--warm 由這一條帶子穿過視窗的進度算出來，
+   從清晨的冷白慢慢變成有太陽的暖色 */
+.mw-count .mw-band-bg{background:#eef0f0 url(../img/window/sheer-light.webp) calc(30% + var(--warm) * 40%) 40%/cover no-repeat;
+  filter:sepia(calc(var(--warm) * .35)) saturate(calc(.7 + var(--warm) * .5)) brightness(calc(.98 + var(--warm) * .06));}
+.mw-count .mw-band-bg::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(250,246,238,.1),rgba(250,246,238,.55) 55%,rgba(250,246,238,.7));}
+.mw-count .mw-band-inner{display:flex;flex-direction:column;align-items:center;gap:34px;text-align:center;}
 @media (min-width:780px){.mw-count .mw-band-inner{flex-direction:row;justify-content:center;gap:clamp(40px,7vw,90px);text-align:left;}}
-.mw-sheer-wrap{width:min(84vw,380px);margin:0;aspect-ratio:1;border-radius:999px 999px 4px 4px;background:#fbf8f2;padding:9px;
-  box-shadow:inset 0 0 0 1px #e2d8c8,0 26px 40px -26px rgba(110,85,60,.45);}
-/* 一張真的照片（Mila Albrecht／Unsplash）：--warm 由這一條帶子穿過視窗的進度算出來，
-   照片從清晨的冷白慢慢變成有太陽的暖色，斜斜的陽光一起移過來 */
-.mw-sheer{display:block;width:100%;height:100%;border-radius:999px 999px 2px 2px;
-  background:#eef0f0 url(../img/window/sheer-light.webp) calc(30% + var(--warm) * 40%) 50%/140% auto no-repeat;
-  filter:sepia(calc(var(--warm) * .35)) saturate(calc(.7 + var(--warm) * .5)) brightness(calc(.92 + var(--warm) * .12));}
+.mw-count-pics{position:relative;width:min(70vw,260px);height:min(80vw,300px);}
+.mw-count-pics .c-pic{position:absolute;left:0;top:0;width:78%;--r:-5deg;}
+.mw-count-pics .c-clock{position:absolute;right:-6%;bottom:-4%;height:52%;}
+.mw-count-body{padding:clamp(24px,4vw,36px) clamp(22px,4vw,40px);background:rgba(255,253,249,.82);border-radius:3px;
+  box-shadow:0 2px 4px rgba(110,85,60,.06),0 24px 36px -26px rgba(110,85,60,.45);}
 .mw-count .cd-grid{margin:22px 0 0;}
 @media (max-width:779px){.mw-count .cd-grid{margin:22px auto 0;}}
 .mw-count .cd-unit{border-left:1px solid var(--mw-line);}

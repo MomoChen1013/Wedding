@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- 社群預覽文案：與 index.html 同一套備援，build-og 會針對站台換成專屬內容。
-     這一份是 French Manor（法式莊園）版型的大廳：推開木門後的莊園前庭。
+     這一份是 French Manor（法式莊園）版型的大廳：文藝復興 —— 剪紙的莊園、大理石雕像、天頂濕壁畫。
      由 build-og 依 TEMPLATES.lobbyFile 選用；沒跑過 build-og 的站台
      由 site-context.js 在執行期換成這一份骨架。畫面用的是真的照片（public/img/manor/，出處見 README）。 -->
 <title>我們結婚了｜婚禮邀請函</title>
@@ -27,7 +27,7 @@
 <link rel="preload" as="script" href="/js/common.js">
 <link rel="preload" as="script" href="/js/lobby-motion.js">
 <link rel="preload" as="script" href="/js/index.js">
-<link rel="preload" as="image" href="/img/manor/chateau.webp" type="image/webp">
+<link rel="preload" as="image" href="/img/manor/fresco-sky.webp" type="image/webp">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- 字體依版型不同，由 build-og（預產）或 site-context.js（執行期）依 TEMPLATES[x].fonts 補上 -->
@@ -81,16 +81,23 @@
 </div>
 <button class="intro-skip" id="introSkip" type="button" hidden>跳過</button>
 
-<!-- ============ 主畫面：推開鐵門之後，站在莊園的前庭 ============
-     一張真的照片：眼前是一條碎石路，兩旁是凡爾賽花箱裡的樹，路的盡頭是城堡。
-     往下捲就像沿著碎石路走過去 —— 照片慢慢推近。 -->
+<!-- ============ 主畫面：推開鐵門之後，一座剪紙的莊園 ============
+     hero 是一層一層的剪紙：最後面是一片真的天頂濕壁畫的天空，前面是從真的照片描出來的
+     柏樹、城堡（剪出一排一排的窗）、再一排柏樹；兩旁站著兩尊真的大理石雕像。
+     往下捲，每一層剪紙走得快慢不一樣（像立體卡片）。
+     區塊標題上是一件一件去背的大理石雕刻；兩個人的照片放在剪紙的橢圓花邊框裡。 -->
 <div id="app">
   <section class="panel lobby fm-lobby" data-panel="lobby" data-scroll>
 
     <!-- ===== Hero：前庭 ===== -->
     <header class="lobby-hero fm-hero" data-scroll>
       <div class="fm-scene" aria-hidden="true">
-        <div class="fm-photo"></div>
+        <div class="fm-sky"></div>
+        <i class="fm-paper p-far"></i>
+        <i class="fm-paper p-chateau"></i>
+        <i class="fm-paper p-near"></i>
+        <i class="fm-statue st-left"></i>
+        <i class="fm-statue st-right"></i>
       </div>
       <div class="fm-hero-body">
         <div class="fm-cartouche">
@@ -105,10 +112,17 @@
 
     <div class="scene-body fm-body">
 
-      <!-- ===== 婚禮資訊：鍛鐵大門 ===== -->
+      <!-- ===== 三張肖像：剪紙的橢圓花邊框，框裡是照片牆的前三張 ===== -->
+      <section class="fm-cameos" data-scroll aria-hidden="true">
+        <figure class="fm-cameo c1" data-reveal="rise"><div class="fm-cameo-ph" data-photo="photo1"></div><i class="fm-cameo-frame"></i></figure>
+        <figure class="fm-cameo c2" data-reveal="rise"><div class="fm-cameo-ph" data-photo="photo2"></div><i class="fm-cameo-frame"></i></figure>
+        <figure class="fm-cameo c3" data-reveal="rise"><div class="fm-cameo-ph" data-photo="photo3"></div><i class="fm-cameo-frame"></i></figure>
+      </section>
+
+      <!-- ===== 婚禮資訊：大理石的小天使胸像 ===== -->
       <section class="info-block fm-sec">
         <div class="fm-head">
-          <figure class="fm-icon" data-reveal="draw"><i class="fm-vignette v-gate"></i></figure>
+          <figure class="fm-icon" data-reveal="draw"><i class="fm-marble m-bust"></i></figure>
           <span class="en block-title">Information</span>
           <span class="cn block-sub">婚禮資訊</span>
         </div>
@@ -134,10 +148,10 @@
         </div>
       </section>
 
-      <!-- ===== 當日流程：花園裡的日晷 ===== -->
+      <!-- ===== 當日流程：大理石的玫瑰花飾 ===== -->
       <section class="info-block fm-sec" id="scheduleBlock">
         <div class="fm-head">
-          <figure class="fm-icon" data-reveal="draw"><i class="fm-vignette v-sundial"></i></figure>
+          <figure class="fm-icon" data-reveal="draw"><i class="fm-marble m-rosette"></i></figure>
           <span class="en block-title">Schedule</span>
           <span class="cn block-sub">當日流程</span>
         </div>
@@ -146,10 +160,10 @@
         </div>
       </section>
 
-      <!-- ===== 出席前的小提醒：花箱裡的樹（沒填就整塊收起） ===== -->
+      <!-- ===== 出席前的小提醒：一尊披著長袍的女神像（沒填就整塊收起） ===== -->
       <section class="info-block fm-sec" id="noteBlock" hidden>
         <div class="fm-head">
-          <figure class="fm-icon" data-reveal="draw"><i class="fm-vignette v-topiary"></i></figure>
+          <figure class="fm-icon" data-reveal="draw"><i class="fm-marble m-maiden"></i></figure>
           <span class="en block-title">Notes</span>
           <span class="cn block-sub">出席前的小提醒</span>
         </div>
@@ -170,10 +184,10 @@
         </div>
       </section>
 
-      <!-- ===== 交通資訊：門口的壁燈（沒填就整塊收起） ===== -->
+      <!-- ===== 交通資訊：睡在球上的小天使（沒填就整塊收起） ===== -->
       <section class="info-block fm-sec" id="transportBlock" hidden>
         <div class="fm-head">
-          <figure class="fm-icon" data-reveal="draw"><i class="fm-vignette v-lantern"></i></figure>
+          <figure class="fm-icon" data-reveal="draw"><i class="fm-marble m-sleeping"></i></figure>
           <span class="en block-title">Access</span>
           <span class="cn block-sub">交通資訊</span>
         </div>
@@ -191,15 +205,15 @@
         </div>
       </section>
 
-      <!-- ===== 兩人的故事：沙龍的牆板上掛著一面金框；窗外的陽光跟著捲動滑過牆面 ===== -->
+      <!-- ===== 兩人的故事：抬頭是一整片天頂濕壁畫；剪紙的橢圓框裡是故事照，旁邊一張小的（第四張） ===== -->
       <section class="info-block fm-band fm-story" id="storyBlock" hidden data-scroll>
-        <div class="fm-band-bg" aria-hidden="true"><i class="fm-sun"></i></div>
+        <div class="fm-band-bg" aria-hidden="true"></div>
         <div class="fm-band-inner">
-          <div class="fm-frame" data-reveal="rise">
-            <div class="fm-frame-ph" data-photo="story" aria-hidden="true"></div>
-            <i class="fm-frame-gilt"></i>
+          <div class="fm-story-pics" data-reveal="rise">
+            <figure class="fm-cameo s-big"><div class="fm-cameo-ph" data-photo="story" aria-hidden="true"></div><i class="fm-cameo-frame"></i></figure>
+            <figure class="fm-cameo s-small"><div class="fm-cameo-ph" data-photo="photo4" aria-hidden="true"></div><i class="fm-cameo-frame"></i></figure>
           </div>
-          <div class="fm-story-body" data-reveal="rise">
+          <div class="fm-story-body fm-paper-card" data-reveal="rise">
             <div class="fm-band-title">Our Story</div>
             <div class="fm-band-sub">關於我們這一路</div>
             <p class="story-text" id="storyText"></p>
@@ -216,12 +230,16 @@
         <div class="photo-rail" id="photoRail"></div>
       </section>
 
-      <!-- ===== 日期倒數：從空中往下看的法式花園，跟著捲動從中間的噴泉往外展開 ===== -->
+      <!-- ===== 日期倒數：剪紙的法式花園（從真的空拍描出來的三層紙），捲動時一層一層疊上去；
+           旁邊一個剪紙橢圓框，放照片牆第五張 ===== -->
       <section class="info-block fm-band fm-count" data-scroll>
         <div class="fm-band-bg" aria-hidden="true"></div>
         <div class="fm-band-inner">
-          <figure class="fm-plan-wrap" aria-hidden="true"><i class="fm-parterre"></i></figure>
-          <div class="fm-count-body">
+          <figure class="fm-plan-wrap" aria-hidden="true">
+            <i class="fm-plan pl-gravel"></i><i class="fm-plan pl-lawn"></i><i class="fm-plan pl-hedge"></i>
+          </figure>
+          <div class="fm-count-body fm-paper-card">
+            <figure class="fm-cameo c-count"><div class="fm-cameo-ph" data-photo="photo5" aria-hidden="true"></div><i class="fm-cameo-frame"></i></figure>
             <div class="fm-band-title">The garden awaits</div>
             <div class="fm-band-sub">距離我們的大日子還有</div>
             <div class="cd-card">
@@ -232,14 +250,15 @@
         </div>
       </section>
 
-      <!-- ===== R.S.V.P.：一封蠟封的信 ===== -->
+      <!-- ===== R.S.V.P.：丘比特與賽姬的吻（大理石） ＋ 一個剪紙橢圓框（第六張） ===== -->
       <section class="info-block fm-sec">
         <div class="fm-head">
+          <figure class="fm-icon" data-reveal="draw"><i class="fm-marble m-cupid"></i></figure>
           <span class="en block-title">R.S.V.P.</span>
           <span class="cn block-sub">出席回覆</span>
         </div>
         <div class="fm-card fm-rsvp" data-reveal="rise" data-scroll>
-          <figure class="fm-icon fm-rsvp-icon" data-reveal="draw" aria-hidden="true"><i class="fm-vignette v-seal"></i></figure>
+          <figure class="fm-cameo fm-rsvp-pic" aria-hidden="true"><div class="fm-cameo-ph" data-photo="photo6"></div><i class="fm-cameo-frame"></i></figure>
           <div class="rsvp-cta">
             <h3>能來參加我們的婚禮嗎？</h3>
             <p>花 30 秒回覆出席，讓我們把最好的位置留給你</p>
@@ -248,7 +267,7 @@
         </div>
       </section>
 
-      <!-- ===== Explore：一張一張的名片 ===== -->
+      <!-- ===== Explore：一張一張疊起來的剪紙卡 ===== -->
       <section class="link-section fm-sec">
         <div class="fm-head">
           <span class="en block-title">Explore</span>

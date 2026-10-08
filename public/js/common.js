@@ -2194,7 +2194,7 @@ function injectTemplateDeco(){
      hero       forest hero 的滿版照
      story      forest「Our Story」照片帶
      countdown  forest「Countdown」照片帶
-     photo1–4   照片牆的第 1–4 張（植物信箋的標本台紙上，照片旁邊壓著乾燥花）
+     photo1–6   照片牆的第 1–6 張（植物信箋的標本台紙、教堂的玻璃相片、晨光的餐桌、莊園的剪紙橢圓框）
 
    優先序和 Classic 的固定背景一致：lobby → cover → Firestore 的封面；
    forest 的兩條照片帶優先用照片牆的前兩張，沒有就退回封面。
@@ -2216,9 +2216,9 @@ function applyLobbyPhotos(){
     story:     pick(a.gallery, 0) || cover,
     countdown: pick(a.gallery, 1) || cover,
   };
-  /* 照片牆（Firestore 的 photos，沒有就是素材資料夾的 gallery）的前四張；不夠就退回封面 */
+  /* 照片牆（Firestore 的 photos，沒有就是素材資料夾的 gallery）的前六張；不夠就退回封面 */
   const wall = (Array.isArray(W.photos) ? W.photos : []).filter(p => typeof p === 'string' && p.trim());
-  for(let i = 0; i < 4; i++) map[`photo${i + 1}`] = wall[i] || pick(a.gallery, i) || cover;
+  for(let i = 0; i < 6; i++) map[`photo${i + 1}`] = wall[i] || pick(a.gallery, i) || cover;
 
   slots.forEach(el => {
     const src = map[el.dataset.photo];
