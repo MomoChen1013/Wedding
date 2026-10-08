@@ -29,6 +29,7 @@
   /* ---------- 填資料（markup 對齊 js/index.js） ---------- */
   const W = {
     couple: D.couple, groomEn: title(D.nameA), brideEn: title(D.nameB),
+    groom: title(D.nameA), bride: title(D.nameB),     /* forest 的名字欄位 */
     date: D.date, weekday: D.weekday,
   };
   document.querySelectorAll('[data-tpl]').forEach((el) => {

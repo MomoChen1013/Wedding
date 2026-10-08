@@ -69,8 +69,9 @@ export const TEMPLATES = {
   'korean':        { label:'Korean Modern', lobbyFile:'lobby-korean.html',
                      lobbyCss:['/css/lobby-korean.css'],
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
+  /* forest：滿版照片 ＋ 手繪的植物線稿 ＋ 用兩個人的照片畫成的純線條似顏繪 */
   'forest':        { label:'Forest Botanical', lobbyFile:'lobby-forest.html',
-                     lobbyCss:['/css/lobby-forest.css'],
+                     lobbyCss:['/css/lobby-forest.css'], lobbyJs:['/js/lobby-motion.js'],
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
   /* 中古刺繡：開場是一封蓋了封蠟的信（取代兩句字幕＋簾幕），
      內容是刺繡插圖 ＋ 捲動編排（見 css/lobby-tapestry.css 開頭的說明） */
