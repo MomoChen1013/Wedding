@@ -67,7 +67,7 @@ export const TEMPLATES = {
      沒跑過 build-og 的站台落回 index.html（Classic 骨架＋版型色票）。
      其餘子頁全部共用，靠色票與字體換裝。 */
   'korean':        { label:'Korean Modern', lobbyFile:'lobby-korean.html',
-                     lobbyCss:['/css/lobby-korean.css','/css/lobby-trail.css'], lobbyJs:['/js/lobby-motion.js'],
+                     lobbyCss:['/css/lobby-korean.css'],
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
   /* forest：滿版照片 ＋ 整頁可愛的手繪森林小物（橡實、松果、香菇、葉子、小鹿、兔子、小鳥） */
   'forest':        { label:'Forest Botanical', lobbyFile:'lobby-forest.html',

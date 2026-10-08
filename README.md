@@ -343,32 +343,11 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > | `window/book.webp` | 交通資訊 | [攤開的書與一枝小草](https://unsplash.com/photos/H1G1fa_UIkA)・Olga Tutunaru | 去背 |
 > | `window/tulip-bunch.webp` | 早餐桌、R.S.V.P. | [一束粉紅鬱金香](https://unsplash.com/photos/BN0tsi5c52w)・Hayley Maxwell | 去背 |
 
-> **Korean Modern 的海邊白色咖啡廳**（`public/img/korean/`，`lobby-korean.html`）：Unsplash 的照片（Unsplash License）。
-> 小物件是去背的實物；窗光是把牆上的窗影照片只留下陰影、四周淡掉。
->
-> | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
-> |---|---|---|---|
-> | `korean/light.webp` | hero 白牆上的一片窗光（慢慢移動） | [牆上的窗影](https://unsplash.com/photos/X8sWlFdQElQ)・H&CO | 只留陰影、換成霧藍灰、四周羽化 |
-> | `korean/sea-cafe.webp` | hero 下面那張「海邊的一杯咖啡」 | [看得到海的桌上一杯咖啡](https://unsplash.com/photos/slOufMH_7bI)・Kristina Tochilko | 裁切 |
-> | `korean/cafe-window.webp` | 兩人的故事 | [海邊陽台的桌椅](https://unsplash.com/photos/IIpWx1LOhi4)・Evan Jeung | 裁切 |
-> | `korean/sea.webp` | 倒數的底 | [很淡的海平面](https://unsplash.com/photos/7NjKwGDUmBM)・Sergei A | 縮圖 |
-> | `korean/sea-strip.webp` | 頁尾前的一條海 | [粉色天空下的海](https://unsplash.com/photos/sbNlS7dWqKE)・Clark Gu | 裁成長條 |
-> | `korean/cup.webp` | hero 桌角、R.S.V.P. | [白色杯盤](https://unsplash.com/photos/xY9oAtHSxQI)・Sixteen Miles Out | 去背 |
-> | `korean/mug.webp` | 婚禮資訊 | [白瓷馬克杯](https://unsplash.com/photos/nDd3dIkkOLo)・NordWood Themes | 去背 |
-> | `korean/latte.webp` | 當日流程 | [俯拍的拿鐵](https://unsplash.com/photos/gkzFuyAeXeY)・Mockup Graphics | 去背 |
-> | `korean/posy.webp` | 小提醒 | [小盆花與咖啡杯](https://unsplash.com/photos/uJ16Qvua6O8)・Debby Hudson | 去背 |
-> | `korean/conch.webp` | 交通資訊 | [一枚海螺](https://unsplash.com/photos/plELgxMbjTE)・Natalia Gasiorowska | 去背 |
-> | `korean/glass.webp` | 兩人的故事 | [陽光下的玻璃杯](https://unsplash.com/photos/e60Z2AVSvp4)・Rob Martin | 去背（連影子） |
-> | `korean/whelk.webp` | Moments | [白色小螺](https://unsplash.com/photos/ZNumKMTd8K0)・Ilya Chunin | 去背 |
-> | `korean/scallop.webp` | 倒數 | [扇貝](https://unsplash.com/photos/loZ_0TCJNUY)・Content Pixie | 去背 |
-> | `korean/auger.webp` | hero 桌角、Explore | [白色細螺](https://unsplash.com/photos/outjnHJmZLU)・Anya Chernykh | 去背 |
-
 > **捲動軌跡**（`public/css/lobby-trail.css`）：跟著捲動沿左緣一路畫下去，每個版型用自己的素材，
-> 經過的地方會留下小東西：
+> 經過的地方會留下小東西（Korean Modern 維持原本乾淨的版面，沒有放）：
 >
 > | 版型 | 線 | 領頭 | 沿路留下 |
 > |---|---|---|---|
-> | Korean Modern | 一條海浪線（CSS） | `korean/boat.webp` 紙船 —— [白色紙船](https://unsplash.com/photos/x-S_g6TnUhU)・Christopher Bill，去背、調成紙白 | 海螺、扇貝、細螺（上面那幾張） |
 > | Forest Botanical | 一根藤蔓（CSS） | `forest/sprig.webp` 新芽 | 葉子、橡實、莓果（森林小物） |
 > | Midnight Chapel | `chapel/crystal-bead.webp` 一顆一顆的水晶珠 | `chapel/crystal-drop.webp` 稜鏡水晶墜 —— [掛在樹上的水晶串](https://unsplash.com/photos/m4YOs3Js2WQ)・Haley Owens，去背後切成一節珠子（重複接成一串）與最下面的水晶墜 | 彩虹光點（CSS） |
 > | Morning Window | 亞麻布條（`window/linen.webp`）＋一道粉色縫線 | `window/tulip-stem.webp` 一枝鬱金香 —— [一枝粉白鬱金香](https://unsplash.com/photos/d3C86xPipVs)・Sabina Hassan，去背 | `window/petal1-3.webp` 花瓣 —— [散落的玫瑰花瓣](https://unsplash.com/photos/j8lW5HLruow)・Debby Hudson，一片一片切開、調成鬱金香的粉 |
