@@ -343,19 +343,18 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > | `window/book.webp` | 交通資訊 | [攤開的書與一枝小草](https://unsplash.com/photos/H1G1fa_UIkA)・Olga Tutunaru | 去背 |
 > | `window/tulip-bunch.webp` | 早餐桌、R.S.V.P. | [一束粉紅鬱金香](https://unsplash.com/photos/BN0tsi5c52w)・Hayley Maxwell | 去背 |
 
-> **Forest Botanical 的手繪線稿**（`public/img/forest/`，`lobby-forest.html`）：Unsplash 上的插畫，一樣是 Unsplash License。
-> 全部換成同一種森林綠的墨水、透明底（照片上的那幾枝用 CSS filter 換成白墨水）。
-> 兩個人的**似顏繪不是圖檔** —— 是 CSS 在瀏覽器裡用新人自己的照片畫成線條（兩層錯開 1px 做 difference），換照片就換畫。
+> **Forest Botanical 的手繪森林小物**（`public/img/forest/`，`lobby-forest.html`）：全部來自同一張 Unsplash 插畫
+> [森林小物貼紙](https://unsplash.com/illustrations/2EwBPCpvWA4)・Kamara Rahmat（Unsplash License）。
+> 只留下原圖深色的外框線、拿掉上色，換成同一種森林墨水色、透明底，再一個一個切開（照片上的那幾個用 CSS filter 換成白墨水）。
 >
-> | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
-> |---|---|---|---|
-> | `forest/garland.webp` | 似顏繪上下的月桂枝、倒數照片帶上的白墨水 | [對稱的兩枝葉子](https://unsplash.com/illustrations/rRbrw_xApfE)・Emily Hawke | 換成墨水色、透明底 |
-> | `forest/ruscus.webp` | hero 左下角的白墨水枝葉 | [一枝帶果實的枝葉](https://unsplash.com/illustrations/RiVxexbSWuo)・Wahyu Setyanto | 同上 |
-> | `forest/maidenhair.webp` | hero、似顏繪左邊的鐵線蕨 | [一枝細葉](https://unsplash.com/illustrations/fM0F-zuKjfs)・Annie Spratt | 同上 |
-> | `forest/wildflower.webp` | 似顏繪右邊的野花 | [開花植物的細線稿](https://unsplash.com/illustrations/Kk_02wRoz4I)・Katie Kirkman | 同上 |
-> | `forest/bellflowers.webp` | 頁邊（寬螢幕）、故事照片帶上的白墨水 | [鐘形花的素描](https://unsplash.com/illustrations/2N7pSkY3F6w)・Maria Beddingfield | 同上 |
-> | `forest/coneflowers.webp` | 頁邊（寬螢幕）、頁尾 | [一叢松果菊](https://unsplash.com/illustrations/OK3P4ALdIP8)・Mila Okta Safitri | 同上 |
-> | `forest/doodle-*.webp` | 每一區標題上的小植物、速寫本的角落 | [一整張手繪小花草](https://unsplash.com/illustrations/szrzeji4V9M)・Royyan Wijaya | 一張切成一枝一枝，換成墨水色 |
+> | 檔案 | 用在哪裡 |
+> |---|---|
+> | `forest/acorn.webp`、`acorns.webp` | hero 底下一排、婚禮資訊／R.S.V.P. 標題、照片帶上的白墨水、頁邊 |
+> | `forest/pinecone.webp` | hero 底下一排、小提醒標題、頁邊 |
+> | `forest/mushroom*.webp`（4 種） | hero 底下一排、當日流程／Explore 標題、倒數照片帶、頁尾、頁邊 |
+> | `forest/oak-leaf.webp`、`oak-leaf2.webp`、`ginkgo.webp`、`maple.webp`、`leaf.webp` | 交通資訊標題、故事照片帶、頁邊飄落的葉子 |
+> | `forest/fern.webp`、`sprig*.webp`（3 種） | hero 底下一排、頁尾、頁邊 |
+> | `forest/berries.webp`、`blueberries.webp`、`flower.webp` | Moments 標題、頁邊 |
 
 同一種開場在不同版型可以長得不一樣（門：法式莊園是黑色鍛鐵大門、秘密花園是爬滿植物的玻璃門、
 午夜教堂與中古刺繡是尖拱的鍛鐵大門）。要賓客親手做的開場，那一下也會開始播背景音樂。

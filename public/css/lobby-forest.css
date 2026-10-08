@@ -3,8 +3,8 @@
    ------------------------------------------------------------
    疊在 common.css ＋ index.css 之後。結構主張：照片就是整個畫面 ——
    hero 是滿版照片、白字直接壓上去，往下捲照片帶再滿版出現兩次
-   （故事、倒數），把這個主張重講一遍。內容區置中，區塊標題上是一枝手繪的小植物；
-   另外有手繪植物線稿與一張用兩個人的照片畫成的似顏繪（見檔案後半）。
+   （故事、倒數），把這個主張重講一遍。內容區置中，標題上是一個手繪的森林小東西；
+   整頁散落著手繪的橡實、香菇、葉子（見檔案後半）。
    風格關鍵字：Forest / Organic / Quiet / Earthy。
 ============================================================ */
 
@@ -50,7 +50,7 @@
 .f-hero .scroll-cue{margin-top:14px;color:rgba(255,255,255,.72);}
 .f-hero .scroll-cue .arrow{background:rgba(255,255,255,.5);}
 
-/* ---- 內容：置中、手繪小植物的標題，收掉 Classic 的白卡 ---- */
+/* ---- 內容：置中、手繪小東西當標題記號，收掉 Classic 的白卡 ---- */
 .f-body{max-width:860px;padding-bottom:0;}
 .f-sec{background:transparent;border:none;border-radius:0;backdrop-filter:none;
   -webkit-backdrop-filter:none;margin-top:0;
@@ -121,107 +121,83 @@
 .f-body footer{margin-top:clamp(44px,7vw,76px);text-transform:uppercase;letter-spacing:.26em;}
 
 /* ============================================================
-   手繪植物線稿 ＋ 似顏繪（純線條的兩人肖像）
+   手繪的森林小東西：橡實、香菇、松果、葉子、莓果
    ------------------------------------------------------------
-   線稿是真的手繪插畫（Unsplash 的插畫，出處見 README），統一換成同一種森林綠的墨水
-   （圖檔是透明底、只有墨線）；壓在照片上的那幾枝用 filter 換成白墨水（.f-white）。
-   不用 mask-image：直接用 file:// 打開示範頁時，遮罩圖會被瀏覽器的跨來源規則擋掉。
-
-   似顏繪：兩個人的照片在瀏覽器裡畫成線條（不用另外準備圖，任何照片都可以）——
-   同一張照片疊兩層、錯開 1px 做 difference，留下來的就是輪廓；再反白、提亮、
-   換成森林綠的墨水，multiply 疊在紙上。往下捲，照片本身像水彩一樣慢慢暈進線條裡（--paint）。
+   可愛、簡單的單線塗鴉（不是寫實的植物圖鑑）。原圖是一整張彩色的森林貼紙
+   （Unsplash 的插畫，出處見 README），只留下深色的外框線，切成一個一個，
+   統一成同一種墨水；照片上的那幾個用 filter 換成白墨水（.f-white）。
    需要 js/lobby-motion.js：[data-reveal] 進場、[data-scroll] 給 --sp。
 ============================================================ */
-body[data-lobby="forest"]{--f-ink:#2f4a3a;}
-.f-hand{position:absolute;display:block;pointer-events:none;background:center/contain no-repeat;}
-/* 白墨水：同一張線稿，用 filter 換成白的 */
-.f-white{filter:brightness(0) invert(1);opacity:.82;}
-.f-hand.h-ruscus,.f-hand.f-ruscus{background-image:url(../img/forest/ruscus.webp);aspect-ratio:520/834;}
-.f-hand.h-maiden,.f-hand.s-maiden{background-image:url(../img/forest/maidenhair.webp);aspect-ratio:520/610;}
-.f-hand.s-wild{background-image:url(../img/forest/wildflower.webp);aspect-ratio:360/1374;}
-.f-hand.g-top,.f-hand.g-bottom,.f-hand.c-garland{background-image:url(../img/forest/garland.webp);aspect-ratio:900/345;}
-.f-hand.bellflowers,.f-hand.b-bells{background-image:url(../img/forest/bellflowers.webp);aspect-ratio:640/706;}
-.f-hand.coneflowers,.f-hand.f-coneflower{background-image:url(../img/forest/coneflowers.webp);aspect-ratio:640/744;}
+.f-lobby{position:relative;overflow-x:clip;}      /* 兩旁散落的小東西不撐開手機的頁寬 */
+.f-body{position:relative;}
+.f-dd{display:block;background:center bottom/contain no-repeat;pointer-events:none;}
+.f-white{filter:brightness(0) invert(1);opacity:.85;}
+.fd-acorn{background-image:url(../img/forest/acorn.webp);aspect-ratio:243/320;}
+.fd-acorns{background-image:url(../img/forest/acorns.webp);aspect-ratio:320/248;}
+.fd-pinecone{background-image:url(../img/forest/pinecone.webp);aspect-ratio:232/320;}
+.fd-mushroom-dots{background-image:url(../img/forest/mushroom-dots.webp);aspect-ratio:247/320;}
+.fd-mushroom{background-image:url(../img/forest/mushroom.webp);aspect-ratio:259/320;}
+.fd-mushroom-tall{background-image:url(../img/forest/mushroom-tall.webp);aspect-ratio:219/320;}
+.fd-mushroom-round{background-image:url(../img/forest/mushroom-round.webp);aspect-ratio:249/320;}
+.fd-oak-leaf{background-image:url(../img/forest/oak-leaf.webp);aspect-ratio:217/320;}
+.fd-oak-leaf2{background-image:url(../img/forest/oak-leaf2.webp);aspect-ratio:196/320;}
+.fd-ginkgo{background-image:url(../img/forest/ginkgo.webp);aspect-ratio:284/320;}
+.fd-maple{background-image:url(../img/forest/maple.webp);aspect-ratio:310/320;}
+.fd-leaf{background-image:url(../img/forest/leaf.webp);aspect-ratio:238/320;}
+.fd-fern{background-image:url(../img/forest/fern.webp);aspect-ratio:286/320;}
+.fd-berries{background-image:url(../img/forest/berries.webp);aspect-ratio:191/320;}
+.fd-blueberries{background-image:url(../img/forest/blueberries.webp);aspect-ratio:257/320;}
+.fd-sprig2{background-image:url(../img/forest/sprig2.webp);aspect-ratio:151/320;}
+.fd-sprig3{background-image:url(../img/forest/sprig3.webp);aspect-ratio:185/320;}
 
-/* 手繪線稿「畫出來」：從下往上慢慢露出來（像筆一筆一筆往上畫） */
-.tp-motion [data-reveal="draw"] .f-hand,.tp-motion [data-reveal="draw"] .f-doodle{transition:clip-path 1.8s cubic-bezier(.3,.6,.2,1),opacity .6s ease;}
-.tp-motion [data-reveal="draw"]:not(.is-in) .f-hand,.tp-motion [data-reveal="draw"]:not(.is-in) .f-doodle{clip-path:inset(100% 0 0 0);opacity:0;}
-.tp-motion [data-lobby="forest"] [data-reveal="rise"]{transition:opacity 1s ease,transform 1.1s cubic-bezier(.2,.7,.2,1);}
-.tp-motion [data-lobby="forest"] [data-reveal="rise"]:not(.is-in){opacity:0;transform:translateY(26px);}
+/* ---- Hero：照片底下一排森林地面上的小東西，輕輕地晃 ---- */
+.f-floor{position:absolute;left:0;right:0;bottom:clamp(10px,2vh,22px);z-index:1;display:flex;justify-content:space-between;align-items:flex-end;
+  padding:0 clamp(10px,4vw,60px);pointer-events:none;}
+.f-floor .f-dd{height:clamp(34px,6vw,66px);filter:brightness(0) invert(1);opacity:.78;transform-origin:50% 100%;
+  animation:f-bob 4.6s ease-in-out infinite;}
+.f-floor .f-dd:nth-child(2n){animation-delay:-1.4s;animation-duration:5.2s;}
+.f-floor .f-dd:nth-child(3n){animation-delay:-2.6s;}
+.f-floor .fd-acorns,.f-floor .fd-pinecone{height:clamp(30px,5vw,54px);}
+@keyframes f-bob{0%,100%{transform:rotate(-3deg);}50%{transform:rotate(3deg) translateY(-2px);}}
+/* 照片底部再壓暗一點，白色的小東西才看得清楚；中間留給名字與日期 */
+@media (max-width:640px){.f-floor .f-dd:nth-child(n+6){display:none;}}
 
-/* ---- Hero：左下角長出一枝假葉樹、一枝鐵線蕨（白墨水） ---- */
-.f-hand.h-ruscus{left:clamp(-30px,-1vw,0px);bottom:-4%;height:min(62%,560px);z-index:1;transform-origin:20% 100%;
-  animation:f-grow 2.4s cubic-bezier(.3,.6,.2,1) .4s both,f-sway 9s ease-in-out 2.8s infinite;}
-.f-hand.h-maiden{left:clamp(60px,9vw,150px);bottom:-6%;height:min(38%,340px);z-index:1;transform:rotate(16deg);transform-origin:10% 100%;
-  animation:f-grow 2.4s cubic-bezier(.3,.6,.2,1) .8s both;}
-@keyframes f-grow{from{clip-path:inset(100% 0 0 0);}to{clip-path:inset(0 0 0 0);}}
-@keyframes f-sway{0%,100%{transform:rotate(0);}50%{transform:rotate(1.6deg);}}
-@media (max-width:640px){.f-hand.h-ruscus{height:42%;}.f-hand.h-maiden{height:26%;left:70px;}}
+/* ---- 區塊標題上的一個小東西：跳出來 ---- */
+.f-head-dd{height:clamp(46px,6vw,60px);margin-bottom:10px;}
+.tp-motion [data-reveal="pop"] .f-head-dd{transition:opacity .6s ease,transform .9s cubic-bezier(.3,1.6,.5,1);}
+.tp-motion [data-reveal="pop"]:not(.is-in) .f-head-dd{opacity:0;transform:translateY(10px) scale(.6) rotate(-14deg);}
 
-/* ---- 似顏繪 ---- */
-.f-sketch-sec{position:relative;padding:clamp(56px,8vw,90px) 0 0;display:flex;flex-direction:column;align-items:center;
-  margin:0 calc(50% - 50vw);overflow:hidden;      /* 兩旁的花草可以伸出去，但不撐開手機的頁寬 */
-  --paint:clamp(0,calc((var(--sp,0) - .35) * 2.2),1);}
-.f-sketch-wrap{position:relative;width:min(78vw,400px);padding:clamp(54px,8vw,84px) 0;}
-/* 遮罩會把裡面隔成一個獨立的圖層，所以 multiply 要下在 .f-sk 自己身上（白紙的地方才會透出底下的紙色） */
-.f-sk{position:relative;aspect-ratio:3/4;mix-blend-mode:multiply;
-  -webkit-mask:radial-gradient(closest-side,#000 62%,transparent 100%);mask:radial-gradient(closest-side,#000 62%,transparent 100%);}
-.f-sk-ink{position:absolute;inset:0;isolation:isolate;}
-.f-sk-lines{position:absolute;inset:0;isolation:isolate;filter:brightness(3.4) invert(1) grayscale(1) contrast(1.5);}
-.f-sk-lines i{position:absolute;inset:0;background:#fff center/cover no-repeat;filter:blur(.6px);}
-.f-sk-lines i + i{mix-blend-mode:difference;transform:translate(1px,1px);}
-.f-sk-tint{position:absolute;inset:0;background:var(--f-ink);mix-blend-mode:screen;}
-/* 水彩：照片本身淡淡地暈進來（顏色收一點、邊緣更淡） */
-.f-sk-paint{position:absolute;inset:0;background:transparent center/cover no-repeat;mix-blend-mode:multiply;
-  opacity:calc(var(--paint,0) * .55);filter:saturate(.75) brightness(1.08) blur(.4px);
-  -webkit-mask:radial-gradient(closest-side,#000 30%,transparent 92%);mask:radial-gradient(closest-side,#000 30%,transparent 92%);}
-/* 一圈手繪的月桂枝：上面一道、下面一道（翻過來），兩旁一枝鐵線蕨、一枝野花 */
-.f-hand.g-top{left:-6%;right:-6%;top:0;}
-.f-hand.g-bottom{left:-6%;right:-6%;bottom:0;transform:scaleY(-1);}
-.f-hand.s-maiden{left:-30%;top:40%;width:36%;transform:rotate(-24deg);}
-.f-hand.s-wild{right:-16%;top:18%;width:16%;transform:rotate(10deg);}
-@media (max-width:640px){.f-hand.s-maiden{left:-16%;width:30%;}.f-hand.s-wild{right:-4%;width:13%;}}
-.f-sketch-cap{display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:6px;}
-.f-sketch-cap .en{font-family:var(--font-display);font-style:italic;font-size:clamp(20px,2.6vw,26px);color:var(--ink);}
-.f-sketch-cap .cn{font-family:var(--font-hand);font-size:13px;letter-spacing:.3em;color:var(--ink-soft);}
-
-/* ---- 區塊標題上的一枝手繪小植物（取代原本的點線） ---- */
-.f-doodle{display:block;height:clamp(54px,7vw,72px);aspect-ratio:3/4;margin-bottom:8px;background:center bottom/contain no-repeat;}
-.f-doodle.d0{background-image:url(../img/forest/doodle-0.webp);}
-.f-doodle.d1{background-image:url(../img/forest/doodle-1.webp);}
-.f-doodle.d3{background-image:url(../img/forest/doodle-3.webp);}
-.f-doodle.d4{background-image:url(../img/forest/doodle-4.webp);}
-.f-doodle.d5{background-image:url(../img/forest/doodle-5.webp);}
-.f-doodle.d6{background-image:url(../img/forest/doodle-6.webp);}
-.f-doodle.d7{background-image:url(../img/forest/doodle-7.webp);}
-.f-doodle.d8{background-image:url(../img/forest/doodle-8.webp);}
-.f-doodle.d10{background-image:url(../img/forest/doodle-10.webp);}
-.f-doodle.d11{background-image:url(../img/forest/doodle-11.webp);}
-
-/* ---- 頁邊的大幅手繪（只有寬螢幕才放得下） ---- */
-.f-sec{position:relative;}
-.f-margin{display:none;}
-@media (min-width:1180px){
-  .f-margin{display:block;width:250px;top:40px;opacity:.85;}
-  .f-margin.m-right{right:-300px;}
-  .f-margin.m-left{left:-300px;}
+/* ---- 整頁散落：沿著兩旁，跟著捲動慢慢往下飄、轉一點點 ---- */
+.f-scatter{position:absolute;inset:0;pointer-events:none;z-index:0;}
+.f-scatter .f-dd{position:absolute;height:clamp(30px,4vw,46px);opacity:.65;
+  transform:translateY(calc(var(--sp,0) * var(--fall,60px))) rotate(calc(var(--r,0deg) + var(--sp,0) * var(--spin,40deg)));}
+.f-scatter .s1{left:-2%;top:3%;--r:-18deg;}
+.f-scatter .s2{right:-1%;top:9%;--r:24deg;--spin:-60deg;}
+.f-scatter .s3{left:3%;top:18%;--r:10deg;height:clamp(22px,3vw,36px);}
+.f-scatter .s4{right:2%;top:26%;--r:-8deg;}
+.f-scatter .s5{left:-1%;top:35%;--r:30deg;--spin:-50deg;}
+.f-scatter .s6{right:-2%;top:44%;--r:6deg;--spin:10deg;}
+.f-scatter .s7{left:2%;top:52%;--r:-30deg;}
+.f-scatter .s8{right:3%;top:60%;--r:16deg;height:clamp(22px,3vw,36px);}
+.f-scatter .s9{left:-2%;top:68%;--r:-12deg;}
+.f-scatter .s10{right:0;top:76%;--r:-20deg;--spin:20deg;}
+.f-scatter .s11{left:1%;top:85%;--r:8deg;}
+.f-scatter .s12{right:-1%;top:93%;--r:-26deg;}
+.f-sec,.f-band{position:relative;z-index:1;}
+@media (min-width:1100px){
+  .f-scatter{left:-140px;right:-140px;}
+  .f-scatter .f-dd{height:56px;opacity:.6;}
 }
 
 /* ---- 照片帶上的白墨水 ---- */
-.f-band .f-hand{z-index:1;}
-.f-hand.b-bells{right:-4%;bottom:-10%;width:clamp(160px,22vw,300px);opacity:.42;}
-.f-hand.c-garland{left:50%;top:clamp(20px,4vw,40px);width:min(70vw,420px);margin-left:calc(min(70vw,420px) / -2);opacity:.6;}
+.f-band .f-dd{position:absolute;z-index:1;height:clamp(40px,6vw,70px);}
+.f-band .b1{left:6%;top:12%;transform:rotate(-16deg);}
+.f-band .b2{right:8%;bottom:12%;transform:rotate(12deg);}
+.f-band .b3{left:7%;bottom:14%;transform:rotate(-8deg);}
+.f-band .b4{right:7%;top:14%;transform:rotate(8deg);}
 
-/* ---- 速寫本：三張線條的照片 ---- */
-.f-sketchbook{display:flex;justify-content:center;gap:clamp(12px,3vw,40px);margin:clamp(56px,8vw,90px) auto 0;padding:0 8px;}
-.f-page{position:relative;margin:0;width:clamp(100px,24vw,230px);padding:12px 12px 34px;background:#fbf9f2;
-  box-shadow:0 1px 2px rgba(38,56,45,.12),0 20px 30px -22px rgba(38,56,45,.45);--paint:clamp(0,calc((var(--sp,0) - .3) * 2),1);}
-.f-page .f-sk{-webkit-mask:radial-gradient(closest-side,#000 72%,transparent 100%);mask:radial-gradient(closest-side,#000 72%,transparent 100%);}
-.f-page .f-doodle{position:absolute;right:-12px;bottom:-14px;height:clamp(46px,6vw,64px);margin:0;}
-.f-sketchbook .p1{transform:rotate(-3deg);}
-.f-sketchbook .p2{transform:translateY(-14px) rotate(1.5deg);}
-.f-sketchbook .p3{transform:rotate(3deg);}
-
-/* ---- 頁尾：一叢手繪的松果菊 ---- */
-.f-foot{position:relative;display:flex;flex-direction:column;align-items:center;gap:14px;}
-.f-hand.f-coneflower{position:relative;width:140px;opacity:.8;}
+/* ---- 頁尾：一小叢森林 ---- */
+.f-foot{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.f-foot-floor{display:flex;align-items:flex-end;gap:clamp(6px,2vw,16px);}
+.f-foot-floor .f-dd{height:clamp(36px,6vw,58px);}
+.f-foot-floor .fd-acorns{height:clamp(30px,5vw,46px);}
