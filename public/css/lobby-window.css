@@ -1,12 +1,13 @@
 /* ============================================================
    lobby-window.css — Morning Window 晨光房間 的大廳（lobby-window.html 專用）
    ------------------------------------------------------------
-   疊在 common.css ＋ index.css 之後。結構主張：**拉開紗簾，早晨照進房間**。
+   疊在 common.css ＋ index.css 之後。結構主張：**拉開紗簾，早晨照進房間**，整體是侘寂（Wabi-Sabi）：
+   不完美、樸素、褪過色的自然材質 —— 灰泥牆、亞麻、手捏的陶、乾燥的花草。
 
      世界觀  開場拉開一片亞麻紗簾，簾子後面是早晨的窗邊
-     材質    亞麻、白牆、木頭、白瓷、早晨淡淡的金色陽光
+     材質    灰泥牆、亞麻、木頭、粗陶、乾燥花草、早晨淡淡的陽光
      素材    真的照片：紗簾與窗、白牆上窗格形狀的陽光、亞麻布、照著陽光的紗簾；
-             去背的咖啡杯、鬧鐘、北歐抱枕、攤開的書、一束鬱金香；全部在 public/img/window/，出處見 README
+             去背的手作陶杯、粗陶瓶、北歐抱枕、攤開的書、乾燥的薊花與種子花、乾草穗；全部在 public/img/window/，出處見 README
      圖像    區塊標題上是一件一件去背的早晨小物（不放在框裡），像擺在桌上
      新人照片  早餐桌上四張（照片牆前四張）、故事兩張、倒數旁一張 —— 都是洗出來的照片
 
@@ -23,15 +24,17 @@
 ============================================================ */
 
 body[data-lobby="morning-window"]{
-  --mw-ink:#463c34; --mw-soft:#867a6e; --mw-wood:#9a7b5b; --mw-sun:#e8c98e;
-  --mw-paper:#fffdf9; --mw-line:#e6ddd0; --mw-wall:#f6f1e9;
+  /* 侘寂的顏色：都是褪過的大地色，沒有純白、沒有亮色 */
+  --mw-ink:#4a4139; --mw-soft:#8a7f73; --mw-wood:#8d7a64; --mw-sun:#d8c4a2;
+  --mw-paper:#f8f4ec; --mw-line:#ddd3c4; --mw-wall:#ece5da;
 }
-body[data-lobby="morning-window"] .bg-decor{background:var(--mw-wall);}
+/* 整頁的牆：一面真的灰泥牆（Pawel Czerwinski／Unsplash），調淡成燕麥白 */
+body[data-lobby="morning-window"] .bg-decor{background:var(--mw-wall) url(../img/window/plaster.webp) center/cover fixed;}
 .mw-lobby{position:relative;}
 /* 整頁的牆：一塊一塊窗格形狀的陽光（真的照片，H&CO／Unsplash）。固定在視窗上，
    multiply 疊在暖白的底色上；跟著捲動慢慢往下斜移 —— 像太陽在走（--sp 來自 .mw-lobby） */
 .mw-sunwall{position:fixed;inset:-10% -20%;z-index:1;pointer-events:none;mix-blend-mode:multiply;
-  background:url(../img/window/sun-patch.webp) 70% 0/cover no-repeat;opacity:.5;
+  background:url(../img/window/sun-patch.webp) 70% 0/cover no-repeat;opacity:.32;
   transform:translate3d(calc(var(--sp,0) * -8%),calc(var(--sp,0) * 10%),0);}
 
 /* ============================================================
@@ -64,7 +67,9 @@ body[data-lobby="morning-window"] .bg-decor{background:var(--mw-wall);}
 /* 一張真的照片（Zoe Richardson／Unsplash）：白框窗前的一瓶鬱金香 —— 跟開場紗簾後面那扇窗是同一張。
    往下捲時照片慢慢推近 */
 .mw-photo{position:absolute;inset:0;background:#f1ece2 url(../img/window/tulips.webp) 50% 45%/cover no-repeat;
-  transform-origin:50% 70%;transform:scale(calc(1.02 + var(--lp,0) * .12));}
+  transform-origin:50% 70%;transform:scale(calc(1.02 + var(--lp,0) * .12));
+  /* 侘寂：顏色褪一點，像曬過太陽的照片 */
+  filter:saturate(.72) sepia(.14) contrast(.96);}
 .mw-photo::after{content:'';position:absolute;inset:0;
   background:
     radial-gradient(60% 45% at 50% 22%,rgba(250,246,238,.82),rgba(250,246,238,.35) 60%,transparent 80%),
@@ -123,9 +128,9 @@ body[data-hero-name="cn"] .mw-hero .mw-names{font-family:'Noto Serif TC',serif;f
 .mw-table .p3{left:calc(50% + clamp(60px,7vw,90px));top:22%;--r:-3deg;}
 .mw-table .p4{left:calc(50% + clamp(220px,26vw,330px));top:12%;--r:7deg;}
 .mw-table .mw-obj{position:absolute;height:auto;z-index:3;}
-.mw-table .t-cup{width:clamp(110px,13vw,160px);left:calc(50% - clamp(220px,24vw,300px));top:62%;}
+.mw-table .t-cup{width:clamp(90px,10vw,120px);left:calc(50% - clamp(220px,24vw,300px));top:62%;}
 .mw-table .t-cushion{width:clamp(140px,16vw,200px);left:calc(50% + clamp(4px,1.6vw,24px));top:58%;transform:rotate(-4deg);}
-.mw-table .t-tulips{width:clamp(150px,18vw,220px);left:calc(50% + clamp(190px,24vw,300px));top:58%;transform:rotate(12deg);}
+.mw-table .t-vase{width:clamp(90px,10vw,130px);left:calc(50% + clamp(220px,26vw,330px));top:52%;}
 @media (max-width:640px){
   .mw-table{height:520px;}
   .mw-table .mw-print{width:42vw;}
@@ -135,7 +140,7 @@ body[data-hero-name="cn"] .mw-hero .mw-names{font-family:'Noto Serif TC',serif;f
   .mw-table .p4{left:52vw;top:37%;}
   .mw-table .t-cup{width:28vw;left:2vw;top:76%;}
   .mw-table .t-cushion{width:30vw;left:36vw;top:78%;}
-  .mw-table .t-tulips{width:34vw;left:64vw;top:72%;}
+  .mw-table .t-vase{width:22vw;left:70vw;top:70%;}
 }
 
 /* ============================================================
@@ -147,18 +152,19 @@ body[data-hero-name="cn"] .mw-hero .mw-names{font-family:'Noto Serif TC',serif;f
 .mw-sec[hidden]{display:none;}
 .mw-head{display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:clamp(18px,3vw,28px);}
 .mw-icon{position:relative;margin:0 0 10px;display:flex;justify-content:center;align-items:flex-end;height:clamp(96px,11vw,128px);}
-/* 去背的早晨小物（真的照片）：咖啡杯（Alexandr Marynkin）、鬧鐘（insung yoon）、北歐抱枕（Content Pixie）、
-   攤開的書（Olga Tutunaru）、一束鬱金香（Hayley Maxwell）／Unsplash。底下落一點桌面的影子 */
+/* 去背的侘寂小物（真的照片）：手作陶杯（Annie Spratt）、粗陶瓶與乾燥薊花（Anya Chernykh）、北歐抱枕（Content Pixie）、
+   攤開的書（Olga Tutunaru）、乾燥的種子花（Stacy）／Unsplash。底下落一點桌面的影子 */
 .mw-obj{display:block;height:100%;background:center bottom/contain no-repeat;
   filter:drop-shadow(6px 14px 10px rgba(110,85,60,.24));}
-.mw-obj.o-cup{aspect-ratio:480/479;background-image:url(../img/window/cup.webp);}
-.mw-obj.o-clock{aspect-ratio:383/560;background-image:url(../img/window/clock.webp);}
+.mw-obj.o-cup{aspect-ratio:350/458;background-image:url(../img/window/clay-cup.webp);}
+.mw-obj.o-vase{aspect-ratio:352/480;background-image:url(../img/window/stone-vase.webp);}
+.mw-obj.o-thistle{aspect-ratio:303/560;background-image:url(../img/window/thistle.webp);height:118%;}
+.mw-obj.o-seed{aspect-ratio:214/320;background-image:url(../img/window/seedhead.webp);}
 .mw-obj.o-cushion{aspect-ratio:560/409;background-image:url(../img/window/cushion.webp);}
 .mw-obj.o-book{aspect-ratio:640/559;background-image:url(../img/window/book.webp);}
-.mw-obj.o-tulips{aspect-ratio:600/567;background-image:url(../img/window/tulip-bunch.webp);}
 
 /* 洗出來的照片：白邊、一點點厚度、落在桌上的影子 */
-.mw-print{position:relative;margin:0;aspect-ratio:4/5;padding:9px 9px 30px;background:#fffdf8;transform:rotate(var(--r,0deg));
+.mw-print{position:relative;margin:0;aspect-ratio:4/5;padding:9px 9px 30px;background:#f6f1e7;transform:rotate(var(--r,0deg));
   box-shadow:0 1px 1px rgba(80,60,40,.12),0 2px 3px rgba(80,60,40,.08),0 22px 30px -18px rgba(80,60,40,.45);}
 .mw-print-ph{width:100%;height:100%;background:#e9e0d2 center/cover no-repeat;}
 
@@ -227,14 +233,14 @@ body[data-hero-name="cn"] .mw-hero .mw-names{font-family:'Noto Serif TC',serif;f
 /* 一張真的照片（Mila Albrecht／Unsplash）：照著陽光的紗簾，滿版；--warm 由這一條帶子穿過視窗的進度算出來，
    從清晨的冷白慢慢變成有太陽的暖色 */
 .mw-count .mw-band-bg{background:#eef0f0 url(../img/window/sheer-light.webp) calc(30% + var(--warm) * 40%) 40%/cover no-repeat;
-  filter:sepia(calc(var(--warm) * .35)) saturate(calc(.7 + var(--warm) * .5)) brightness(calc(.98 + var(--warm) * .06));}
+  filter:sepia(calc(.25 + var(--warm) * .25)) saturate(calc(.55 + var(--warm) * .25)) brightness(calc(.97 + var(--warm) * .04));}
 .mw-count .mw-band-bg::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(250,246,238,.1),rgba(250,246,238,.55) 55%,rgba(250,246,238,.7));}
 .mw-count .mw-band-inner{display:flex;flex-direction:column;align-items:center;gap:34px;text-align:center;}
 @media (min-width:780px){.mw-count .mw-band-inner{flex-direction:row;justify-content:center;gap:clamp(40px,7vw,90px);text-align:left;}}
 .mw-count-pics{position:relative;width:min(70vw,260px);height:min(80vw,300px);}
 .mw-count-pics .c-pic{position:absolute;left:0;top:0;width:78%;--r:-5deg;}
-.mw-count-pics .c-clock{position:absolute;right:-6%;bottom:-4%;height:52%;}
-.mw-count-body{padding:clamp(24px,4vw,36px) clamp(22px,4vw,40px);background:rgba(255,253,249,.82);border-radius:3px;
+.mw-count-pics .c-seed{position:absolute;right:-8%;bottom:-6%;height:62%;transform:rotate(14deg);}
+.mw-count-body{padding:clamp(24px,4vw,36px) clamp(22px,4vw,40px);background:rgba(248,244,236,.86);border-radius:3px;
   box-shadow:0 2px 4px rgba(110,85,60,.06),0 24px 36px -26px rgba(110,85,60,.45);}
 .mw-count .cd-grid{margin:22px 0 0;}
 @media (max-width:779px){.mw-count .cd-grid{margin:22px auto 0;}}
@@ -263,15 +269,11 @@ body[data-hero-name="cn"] .mw-hero .mw-names{font-family:'Noto Serif TC',serif;f
   display:flex;flex-direction:column;align-items:center;gap:8px;border-top:none;}
 .mw-fin{font:italic 400 24px 'EB Garamond',serif;color:var(--mw-wood);text-transform:none;letter-spacing:.01em;}
 
-/* ---- 捲動軌跡：一條亞麻布條往下鋪，一枝鬱金香領在前面，沿路掉下花瓣（lobby-trail.css） ---- */
-.mw-trail{--line-w:14px;
-  --line:linear-gradient(180deg,rgba(214,160,150,.7) 0 6px,transparent 6px 12px) center top/1.4px 12px repeat-y,
-    linear-gradient(90deg,rgba(176,140,104,.30),rgba(214,186,150,.12) 30% 70%,rgba(176,140,104,.30)),
-    url(../img/window/linen.webp) center/260px auto;
-  --tip:url(../img/window/tulip-stem.webp);--tip-w:24px;--tip-ar:85/420;--tip-y:-6%;--tip-r:172deg;--mark-size:20px;}
-.mw-trail{--line-w-m:9px;}
-.mw-trail .lx-trail-line{filter:drop-shadow(0 2px 3px rgba(70,60,52,.14));}
-.mw-trail .lx-trail-tip{transform-origin:50% 50%;filter:drop-shadow(0 6px 6px rgba(70,60,52,.16));}
-.mw-trail .m-p1{--mark:url(../img/window/petal1.webp);}
-.mw-trail .m-p2{--mark:url(../img/window/petal2.webp);}
-.mw-trail .m-p3{--mark:url(../img/window/petal3.webp);}
+/* ---- 捲動軌跡：一枝乾草跟著捲動往下垂 —— 一根細細的、不太直的草莖，末端是一束乾草穗（Evie S.／Unsplash），
+   沿路落下幾顆乾燥的種子花頭（Stacy／Unsplash）（lobby-trail.css） ---- */
+.mw-trail{--line-w:10px;
+  --line:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='120'%3E%3Cpath d='M5 0C6.4 22 3.6 38 5.2 60S6.2 98 5 120' fill='none' stroke='%238d7656' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") center top/10px 120px repeat-y;
+  --tip:url(../img/window/grass-plume.webp);--tip-w:46px;--tip-ar:191/560;--tip-y:-6%;--tip-r:180deg;
+  --mark:url(../img/window/seedhead.webp);--mark-size:26px;--line-w-m:8px;}
+.mw-trail .lx-trail-tip{transform-origin:50% 50%;filter:drop-shadow(0 6px 6px rgba(70,60,52,.14));}
+.mw-trail .lx-mark{opacity:calc(clamp(0,(var(--ap,0) - var(--k)) * 30,1) * .8);}

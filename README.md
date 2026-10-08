@@ -338,11 +338,14 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > | `window/sun-patch.webp` | 整頁牆上窗格形狀的陽光、早餐桌與「我們的故事」上滑過去的光 | [白牆上的窗光](https://unsplash.com/photos/X8sWlFdQElQ)・H&CO | 轉成灰階、拉開明暗，做成 multiply 用的光影 |
 > | `window/linen.webp` | 早餐桌的桌巾、「我們的故事」的亞麻布 | [米色的布紋](https://unsplash.com/photos/QFQ6vsou7XA)・Safwan Thottoli | 縮圖 |
 > | `window/sheer-light.webp` | 倒數（陽光跟著捲動移過來） | [陽光斜斜照在白紗簾上](https://unsplash.com/photos/VUu9rAmb9R0)・Mila Albrecht | 縮圖 |
-> | `window/cup.webp` | 早餐桌、婚禮資訊 | [白瓷咖啡杯](https://unsplash.com/photos/oJ9CgpidOco)・Alexandr Marynkin | 去背 |
-> | `window/clock.webp` | 當日流程、倒數 | [鬧鐘](https://unsplash.com/photos/w2JtIQQXoRU)・insung yoon | 去背 |
+> | `window/clay-cup.webp` | 早餐桌、婚禮資訊 | [手捏的陶杯](https://unsplash.com/photos/x6XqtHVag7c)・Annie Spratt | 去背 |
+> | `window/stone-vase.webp` | 早餐桌、當日流程 | [一只粗陶瓶](https://unsplash.com/photos/YxWqfvc8l2s)・Anya Chernykh | 去背 |
 > | `window/cushion.webp` | 早餐桌、小提醒 | [一對北歐風抱枕](https://unsplash.com/photos/k8AlRsl7L8E)・Content Pixie | 去背 |
 > | `window/book.webp` | 交通資訊 | [攤開的書與一枝小草](https://unsplash.com/photos/H1G1fa_UIkA)・Olga Tutunaru | 去背 |
-> | `window/tulip-bunch.webp` | 早餐桌、R.S.V.P. | [一束粉紅鬱金香](https://unsplash.com/photos/BN0tsi5c52w)・Hayley Maxwell | 去背 |
+> | `window/thistle.webp` | R.S.V.P. | [粗陶瓶裡的一朵乾燥薊花](https://unsplash.com/photos/UGOVKgymeVQ)・Anya Chernykh | 去背（只留花） |
+> | `window/seedhead.webp` | 倒數照片旁、捲動軌跡沿路落下的種子花 | [一枝乾燥的種子花](https://unsplash.com/photos/mpt2pljjzf4)・Stacy | 去背 |
+> | `window/grass-plume.webp` | 捲動軌跡末端的乾草穗 | [一枝乾草穗](https://unsplash.com/photos/_88DsHh1F20)・Evie S. | 去背 |
+> | `window/plaster.webp` | 整頁的灰泥牆 | [米色灰泥牆](https://unsplash.com/photos/hyVwWTaGsxI)・Pawel Czerwinski | 調淡成燕麥白 |
 
 > **捲動軌跡**（`public/css/lobby-trail.css`）：跟著捲動沿左緣一路畫下去，每個版型用自己的素材，
 > 經過的地方會留下小東西（Korean Modern 維持原本乾淨的版面，沒有放）：
@@ -351,7 +354,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > |---|---|---|---|
 > | Forest Botanical | 一根藤蔓（CSS） | `forest/sprig.webp` 新芽 | 葉子、橡實、莓果（森林小物） |
 > | Midnight Chapel | `chapel/pearl-strand.webp` 一串真的珍珠 | `chapel/lily-valley2.webp` 末端綁著一小枝鈴蘭 | `chapel/pearl.webp` 一顆一顆掉下的珍珠 |
-> | Morning Window | 亞麻布條（`window/linen.webp`）＋一道粉色縫線 | `window/tulip-stem.webp` 一枝鬱金香 —— [一枝粉白鬱金香](https://unsplash.com/photos/d3C86xPipVs)・Sabina Hassan，去背 | `window/petal1-3.webp` 花瓣 —— [散落的玫瑰花瓣](https://unsplash.com/photos/j8lW5HLruow)・Debby Hudson，一片一片切開、調成鬱金香的粉 |
+> | Morning Window | 一根細細的、不太直的乾草莖（CSS） | `window/grass-plume.webp` 一束乾草穗 | `window/seedhead.webp` 乾燥的種子花頭 |
 
 > **Forest Botanical 的手繪森林小物**（`public/img/forest/`，`lobby-forest.html`）：全部來自同一張 Unsplash 插畫
 > [森林小物貼紙](https://unsplash.com/illustrations/2EwBPCpvWA4)・Kamara Rahmat（Unsplash License）。
@@ -389,7 +392,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | spring-orangerie | ✅ 真的照片（明亮的玻璃溫室、白玫瑰、鬱金香、檸檬枝、蕨葉、澆水壺、溫室屋頂、小王子的那一朵紅玫瑰、白牆上的葉影、一束白玫瑰）＋ 捲動編排（葉影隨捲動移動、斜射的光、倒數區的紅玫瑰捲到時亮起暖光），素材見上面〈春日溫室與植物信箋的照片素材〉 | `lobby-orangerie.html` |
 | night-sky | ✅ 整套插圖（現代星空：開場那張心形星圖停在 hero、寫實的月亮、三層山稜、亮燈的帳篷、坐著看星星的兩個人、細金線星座）＋ 捲動編排（三層星星視差、星圖外環跟著轉、星座一條一條連起來、望遠鏡視野的軌道、倒數的月亮越捲越圓、頁尾天快亮了） | `lobby-night.html` |
 | french-manor | ✅ 文藝復興：真的天頂濕壁畫、去背的大理石雕像與雕刻（花神、天使、小天使胸像、玫瑰花飾、女神、丘比特與賽姬）、大理石名牌 ＋ 從真的照片描出來的剪紙（城堡剪出一排排窗、托斯卡尼柏樹）＋ 開場走進的那座花園當倒數的背景 ＋ 新人照片放在剪紙橢圓花邊框（共 7 處）＋ 捲動編排（hero 的剪紙一層一層視差、倒數的花園照片視差），素材見上面〈法式莊園的照片素材〉 | `lobby-manor.html` |
-| morning-window | ✅ 真的照片（紗簾前的白瓷壺、白牆上窗格形狀的陽光、亞麻布、照著陽光的紗簾）＋ 一張早餐桌：洗出來的照片散在亞麻桌巾上、去背的咖啡／可頌／鬱金香 ＋ 區塊標題上是去背的早晨小物（不放在框裡）＋ 新人照片共 7 處 ＋ 捲動編排（照片一張張落到桌上、窗光滑過桌面、倒數時紗簾越捲越暖），素材見上面〈晨光房間的照片素材〉 | `lobby-window.html` |
+| morning-window | ✅ 侘寂（Wabi-Sabi）：真的照片（窗前的一瓶鬱金香、灰泥牆、牆上窗格形狀的陽光、亞麻布、照著陽光的紗簾），顏色都是褪過的大地色 ＋ 一張桌子：洗出來的照片散在亞麻桌巾上、去背的手作陶杯／北歐抱枕／粗陶瓶 ＋ 區塊標題上是去背的侘寂小物（陶杯、粗陶瓶、乾燥薊花，不放在框裡）＋ 左邊一枝乾草跟著捲動垂下來＋ 新人照片共 7 處 ＋ 捲動編排（照片一張張落到桌上、窗光滑過桌面、倒數時紗簾越捲越暖），素材見上面〈晨光房間的照片素材〉 | `lobby-window.html` |
 | midnight-chapel | ✅ 開場在午夜的禮堂點亮三根真的蠟燭 → 燭火熄掉、天亮 → 大廳是同一座純白禮堂；玻璃感：照片壓在厚玻璃裡（反光隨捲動滑過）、毛玻璃的卡；兩旁垂著白紗、hero 下緣一圈蕾絲、每一區標題底下一條蕾絲、左邊一串珍珠跟著捲動往下垂（末端一小枝鈴蘭）、頁尾一片滿天星；區塊標題上是去背的實物（戒指、水晶燈、鈴蘭、百合、白色蝴蝶蘭）；新人照片共 8 處（倒數那張在毛玻璃後面，越捲越清楚），素材見上面〈午夜教堂的照片素材〉 | `lobby-chapel.html` |
 
 Night Sky 與 Midnight Chapel 的大廳是深色的，但子頁暫時還是淺色版（見 common.css）。
