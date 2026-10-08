@@ -197,26 +197,16 @@ body[data-hero-name="cn"] .fm-hero .fm-names{font-family:'Noto Serif TC',serif;f
 .fm-story-body{padding:clamp(28px,4vw,42px);text-align:left;}
 .fm-story .story-text{margin:18px 0 0;max-width:32em;color:var(--fm-ink);font-size:15px;text-align:left;}
 
-/* ---- 倒數：剪紙的法式花園，一層一層疊上去 ---- */
-.fm-count{--grow:clamp(0,calc((var(--sp,0) - .1) * 2.4),1);}
-.fm-count .fm-band-bg{background:linear-gradient(180deg,rgba(233,226,212,.6),rgba(233,226,212,.9));}
-.fm-count .fm-band-inner{display:flex;flex-direction:column;align-items:center;gap:34px;text-align:center;}
-@media (min-width:780px){.fm-count .fm-band-inner{flex-direction:row;justify-content:center;gap:clamp(40px,7vw,90px);text-align:left;}}
-/* 從真的空拍（Leo_Visions／Unsplash）描出來的三層紙：碎石底、草地、黃楊綠籬 ——
-   --grow 由這一條帶子穿過視窗的進度算出來；草地先從中間的噴泉長出去，綠籬晚一點才疊上來 */
-.fm-plan-wrap{position:relative;width:min(84vw,400px);aspect-ratio:900/703;margin:0;padding:0;background:var(--fm-paper);
-  box-shadow:var(--fm-sheet);transform:rotate(-1.5deg);}
-.fm-plan{position:absolute;inset:12px;background:center/100% 100% no-repeat;}
-.fm-plan.pl-gravel{background-image:url(../img/manor/parterre-gravel.webp);}
-.fm-plan.pl-lawn{background-image:url(../img/manor/parterre-lawn.webp);filter:drop-shadow(1px 2px 1.5px rgba(40,34,28,.35));
-  clip-path:circle(calc(8% + var(--grow) * 70%) at 50% 52%);}
-.fm-plan.pl-hedge{background-image:url(../img/manor/parterre-hedge.webp);filter:drop-shadow(1.5px 3px 2px rgba(40,34,28,.45));
-  clip-path:circle(calc(-20% + var(--grow) * 100%) at 50% 52%);}
-.fm-count-body{padding:clamp(24px,4vw,36px) clamp(24px,4vw,40px);}
-.fm-count .c-count{width:96px;margin:0 0 12px;transform:rotate(-4deg);}
-@media (max-width:779px){.fm-count .c-count{margin:0 auto 12px;}}
-.fm-count .cd-grid{margin:22px 0 0;}
-@media (max-width:779px){.fm-count .cd-grid{margin:22px auto 0;}}
+/* ---- 倒數：開場走進的那座花園（Daniel Welsh／Unsplash）：平視的綠籬小徑，盡頭一尊白色雕像 ----
+   照片跟著捲動慢慢往上移（.fm-band-bg 的視差），中間一張紙卡 */
+.fm-count .fm-band-bg{background:
+  linear-gradient(180deg,rgba(243,238,228,.35),rgba(243,238,228,.08) 35%,rgba(243,238,228,.08) 70%,rgba(243,238,228,.55)),
+  #c9d4c0 url(../img/manor/garden-path.webp) 50% 58%/cover no-repeat;}
+.fm-count{padding-top:clamp(70px,12vw,140px);padding-bottom:clamp(70px,12vw,140px);}
+.fm-count .fm-band-inner{display:flex;flex-direction:column;align-items:center;text-align:center;}
+.fm-count-body{padding:clamp(24px,4vw,36px) clamp(24px,4vw,44px);text-align:center;}
+.fm-count .c-count{width:96px;margin:0 auto 12px;transform:rotate(-4deg);}
+.fm-count .cd-grid{margin:22px auto 0;}
 .fm-count .cd-unit{border-left:1px solid var(--fm-line);}
 .fm-count .cd-num{font-family:'Cinzel',serif;font-weight:400;color:var(--fm-ink);}
 .fm-count .cd-lab,.fm-count .cd-target{color:var(--fm-soft);}

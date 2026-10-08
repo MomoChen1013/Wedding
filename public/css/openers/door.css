@@ -79,8 +79,29 @@
 /* 門後：開滿玫瑰的拱門小徑（Annie Spratt／Unsplash，見 README〈秘密花園的照片素材〉） */
 .dr-garden .dr-land{background:#e8ece4 url(../../img/secret-garden/garden-arch.webp) 50% 42%/cover no-repeat;}
 .dr-gothic{--dr-accent:#7a5a3a;}
-/* 莊園：門後是一張真的城堡照片（Menfis Gálvez／Unsplash，跟大廳的 hero 同一座），走進門就到了大廳 */
-.dr-manor .dr-land{background:#cfe0ec url(../../img/manor/chateau.webp) 50% 30%/cover no-repeat;}
+/* ---- 莊園：全部是真的照片（見 README〈法式莊園的照片素材〉） ----
+   門：磚牆圓拱裡的鍛鐵花園門（Bruce Barrow／Unsplash），照片直立，兩旁用同一張模糊後補滿；
+   門後：修剪整齊的綠籬夾著碎石路，盡頭一尊白色雕像（Daniel Welsh／Unsplash），走進門就到了大廳 */
+.dr-manor{--dr-accent:#7a6a46;background:#2d3a26;}
+.dr-manor .dr-land{background:#dfe8e2 url(../../img/manor/garden-path.webp) 50% 62%/cover no-repeat;}
+/* 兩旁：一整面修剪過的綠籬（春日溫室開場那一張），微微失焦、壓暗一點，門那張照片的邊淡進來 */
+.dr-manor .dr-blur{position:absolute;inset:-4%;background:#2d3a26 url(../../img/orangerie/leaf-wall.webp) center/720px auto repeat;
+  filter:blur(1.5px) brightness(.72) saturate(.9);}
+.dr-manor .dr-blur::after{content:'';position:absolute;inset:0;
+  background:radial-gradient(60% 70% at 50% 50%,transparent 40%,rgba(18,24,14,.45));}
+/* 直立的手機：照片撐滿寬度（上下裁一點）；橫的螢幕：整道拱門完整放在中間 */
+.dr-manor .dr-photo{position:absolute;left:50%;top:50%;height:max(100%,calc(100vw * 2052 / 900));aspect-ratio:900/2052;
+  transform:translate(-50%,-50%);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);
+          mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);}
+@media (min-aspect-ratio:3/4){.dr-manor .dr-photo{height:100%;}}
+.dr-manor .dr-scene{position:absolute;inset:0;background:url(../../img/manor/gate-scene.webp) center/100% 100% no-repeat;}
+/* 鐵門：繞著右邊的鉸鍊往花園裡轉開 */
+.dr-manor .dr-opening{perspective:1800px;}
+.dr-manor .dr-iron{position:absolute;inset:0;background:url(../../img/manor/gate-leaf.webp) center/100% 100% no-repeat;
+  transform-origin:97.5% 50%;transition:transform 1.9s cubic-bezier(.45,.05,.25,1);
+  filter:drop-shadow(2px 4px 3px rgba(20,18,10,.35));}
+.dr-host.dr-manor.is-open .dr-iron{transform:rotateY(-84deg);animation:dr-unlatch .35s ease;}
 /* 手機直立：門只佔下半部，字放到上面的天空 */
 @media (max-aspect-ratio:3/4){.dr-text{top:28%;}}
 /* 秘密花園在手機上，字落在門上面那一片深色的常春藤：改成淺色的字、深色的光暈 */

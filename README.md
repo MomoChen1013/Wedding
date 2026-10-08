@@ -225,7 +225,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | `curtain` | 窗簾拉開 | 點一下 → 布幕收到兩側 → 光進來（晨光房間：真的白紗簾，後面是窗台上一瓶鬱金香的窗） | morning-window |
 | `candle` | 燭光點亮 | 點一下 → 三根蠟燭一根根亮（蠟燭與火焰都是真的照片）；午夜教堂：燭火熄掉、天亮，變成大廳那座純白禮堂 | midnight-chapel |
 | `stars` | 星圖展開 | 自己演：星星 → 連線成一顆心 → 名字 | night-sky |
-| `door` | 門／拱門 | 晴朗的早上站在門口，點一下 → 門往內開 → 陽光湧出來、穿過門口。莊園是黑色鍛鐵大門（門後是一張真的城堡照片，石柱、矮牆、草地、碎石路、花也是真的照片；教堂／刺繡用尖拱版），秘密花園是常春藤牆上一扇白框玻璃門（牆、垂下來的藤、牆腳的花、門後的玫瑰拱門小徑都是真的照片） | secret-garden、french-manor |
+| `door` | 門／拱門 | 晴朗的早上站在門口，點一下 → 門往內開 → 陽光湧出來、穿過門口。莊園全部是真的照片：綠籬牆上、磚砌圓拱裡的一扇鍛鐵花園門，鐵門從照片分離出來繞著鉸鍊轉開，走進去是一座綠籬夾道的歐式花園（教堂／刺繡用程式畫的尖拱鐵門），秘密花園是常春藤牆上一扇白框玻璃門（牆、垂下來的藤、牆腳的花、門後的玫瑰拱門小徑都是真的照片） | secret-garden、french-manor |
 | `ribbon` | 拉開絲帶 | 拖緞帶尾（或點）→ 蝴蝶結鬆開 → 卡片打開。緞帶疊了一張真的絲綢布紋，光澤跟著游標滑（手機上自己慢慢飄）；卡片與桌面是真的棉紙、纖維紙，封面貼一枝真的壓花 | botanical-letter |
 
 > **緞帶的布紋素材**：`public/css/openers/satin-silk.jpg` 是把一張真的絲綢 normal map
@@ -289,17 +289,15 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > | `botanical/fibre-paper.webp` | 「我們的故事」的底、開場（ribbon）的桌面 | [纖維紙](https://unsplash.com/photos/2nKcZGDHpEs)・360floralflaves | 縮圖 |
 
 > **法式莊園的照片素材**（`public/img/manor/`，開場的鐵門與 `lobby-manor.html` 共用）：一樣是 Unsplash License。
-> 剪紙（`paper-*`、`parterre-*`、`cameo-frame`）是從真的照片描出剪影，填上紙的顏色與真的紙紋（借植物信箋的 `botanical/paper.webp`），影子在 CSS 裡加。
+> 剪紙（`paper-*`、`cameo-frame`）是從真的照片描出剪影，填上紙的顏色與真的紙紋（借植物信箋的 `botanical/paper.webp`），影子在 CSS 裡加。
 >
 > | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
 > |---|---|---|---|
-> | `manor/chateau.webp` | 開場鐵門後面的城堡 | [Château de Sceaux 與碎石路、凡爾賽花箱](https://unsplash.com/photos/XKhQ3mvgvmU)・Menfis Gálvez | 縮圖 |
-> | `manor/stone.webp` | 開場的石柱、矮牆、石甕 | [鐵門兩旁的石柱](https://unsplash.com/photos/PcdMVvTQ0zw)・Laila | 取一塊柱面，調亮成石灰岩色，接成可以無縫平鋪 |
-> | `manor/lawn.webp`、`manor/gravel.webp` | 開場的草地、碎石路 | 同 chateau | 取一塊，接成可以無縫平鋪 |
+> | `manor/gate-scene.webp`、`manor/gate-leaf.webp` | 開場：磚牆圓拱裡的鍛鐵花園門 | [花園裡的一扇鍛鐵門](https://unsplash.com/photos/s5frADBPUfs)・Bruce Barrow | 鐵門依顏色從照片裡分離成自己的一層（gate-leaf，可以轉開）；門後原本被鐵條擋住的地方補成小徑（gate-scene） |
+> | `manor/garden-path.webp` | 開場走進門之後的花園、倒數的背景 | [綠籬夾著碎石路，盡頭一尊白色雕像](https://unsplash.com/photos/Cx3aQT2LMhI)・Daniel Welsh | 陰天的天空換成晴朗的淡藍、整張調亮 |
 > | `manor/fresco-sky.webp`、`manor/fresco.webp` | 大廳 hero 的天空、「我們的故事」的背景 | [天頂濕壁畫](https://unsplash.com/photos/D5bp0H8iKv8)・Harold Wainwright | 天空取中間一塊；故事用整張 |
-> | `manor/paper-chateau.webp` | 大廳 hero 中間那一層剪紙城堡 | 同 chateau | 去掉天空留下天際線，剪出一排排圓拱窗與大門，做成象牙色的紙 |
+> | `manor/paper-chateau.webp` | 大廳 hero 中間那一層剪紙城堡 | [Château de Sceaux](https://unsplash.com/photos/XKhQ3mvgvmU)・Menfis Gálvez | 去掉天空留下天際線，剪出一排排圓拱窗與大門，做成象牙色的紙 |
 > | `manor/paper-cypress.webp` | 大廳 hero 前後兩層剪紙柏樹、頁尾的一排柏樹 | [托斯卡尼的一叢柏樹](https://unsplash.com/photos/UTUidSQLI8I)・Peter Boccia | 描出柏樹與地面的剪影，做成鼠尾草綠的紙 |
-> | `manor/parterre-gravel.webp`、`parterre-lawn.webp`、`parterre-hedge.webp` | 倒數（三層紙一層一層疊上去） | [從空中往下看的法式花園](https://unsplash.com/photos/Q1XTUCuRvw8)・Leo_Visions | 依顏色分成碎石、草地、黃楊綠籬三層紙 |
 > | `manor/cameo-frame.webp` | 新人照片的剪紙橢圓花邊框（肖像 ×3、故事、倒數、出席回覆） | — | 波浪外緣 ＋ 一圈打孔的橢圓，用同一張紙紋做成紙 |
 > | `manor/marble.webp` | 名字的大理石牌 | [白色大理石](https://unsplash.com/photos/EIYA7E626Xk)・Rachel Kelli | 縮圖 |
 > | `manor/statue-flora.webp` | 大廳 hero 左邊的雕像 | [披著長袍的大理石像](https://unsplash.com/photos/ZR8WQ5fDbo8)・Clarence E. Hsu | 去背 |
@@ -310,7 +308,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > | `manor/cherub-sleeping.webp` | 交通資訊 | [睡在球上的小天使](https://unsplash.com/photos/GEvYKWpmOAI)・Alexander Zvir | 去背，底部淡出 |
 > | `manor/cupid-psyche.webp` | R.S.V.P. | [相擁親吻的兩個小天使（丘比特與賽姬）](https://unsplash.com/photos/xg8CkTqnLAU)・Tammy Perla | 去背，去掉門框 |
 >
-> 開場鐵門石甕裡的白玫瑰、牆腳的花，借用春日溫室的 `white-roses.webp` 與秘密花園的 `flowers-row.webp`。
+> 開場門旁那一整面綠籬，借用春日溫室開場的 `orangerie/leaf-wall.webp`。
 
 > **午夜教堂的照片素材**（`public/img/chapel/`，開場的蠟燭與 `lobby-chapel.html` 共用）：一樣是 Unsplash License。
 >
@@ -373,7 +371,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > | `forest/bird.webp`、`squirrel.webp` | 當日流程／Explore 標題、故事照片帶、頁尾 | [秋天小物貼紙](https://unsplash.com/illustrations/0UefjX8SdlQ)・godsfavoriteart | 只留外框線 |
 > | `forest/dove.webp`、`dove2.webp`、`dove3.webp` | hero 上方飛的白鴿、R.S.V.P. 標題、頁邊 | [一群飛鳥](https://unsplash.com/illustrations/usjlgy7I5wY)・remapstudio | 一隻一隻切開 |
 
-同一種開場在不同版型可以長得不一樣（門：法式莊園是黑色鍛鐵大門、秘密花園是爬滿植物的玻璃門、
+同一種開場在不同版型可以長得不一樣（門：法式莊園是圓拱裡的鍛鐵花園門、秘密花園是爬滿植物的玻璃門、
 午夜教堂與中古刺繡是尖拱的鍛鐵大門）。要賓客親手做的開場，那一下也會開始播背景音樂。
 每一種開場單獨看：`preview/openings.html`。
 
@@ -386,7 +384,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | secret-garden | ✅ 真的照片 ＋ 手繪水彩（玫瑰拱門的小徑、垂下來的常春藤、鏡頭前的花、水彩的罌粟／藍雛菊／海芋／鬱金香／牡丹、去背的蝴蝶、常春藤牆、黃昏草地的螢火蟲）＋ 捲動編排，素材見上面〈秘密花園的照片素材〉 | `lobby-garden.html` |
 | spring-orangerie | ✅ 真的照片（明亮的玻璃溫室、白玫瑰、鬱金香、檸檬枝、蕨葉、澆水壺、溫室屋頂、小王子的那一朵紅玫瑰、白牆上的葉影、一束白玫瑰）＋ 捲動編排（葉影隨捲動移動、斜射的光、倒數區的紅玫瑰捲到時亮起暖光），素材見上面〈春日溫室與植物信箋的照片素材〉 | `lobby-orangerie.html` |
 | night-sky | ✅ 整套插圖（現代星空：開場那張心形星圖停在 hero、寫實的月亮、三層山稜、亮燈的帳篷、坐著看星星的兩個人、細金線星座）＋ 捲動編排（三層星星視差、星圖外環跟著轉、星座一條一條連起來、望遠鏡視野的軌道、倒數的月亮越捲越圓、頁尾天快亮了） | `lobby-night.html` |
-| french-manor | ✅ 文藝復興：真的天頂濕壁畫、去背的大理石雕像與雕刻（花神、天使、小天使胸像、玫瑰花飾、女神、丘比特與賽姬）、大理石名牌 ＋ 從真的照片描出來的剪紙（城堡剪出一排排窗、托斯卡尼柏樹、分成三層的法式花園）＋ 新人照片放在剪紙橢圓花邊框（共 7 處）＋ 捲動編排（hero 的剪紙一層一層視差、倒數的剪紙花園一層一層疊上去），素材見上面〈法式莊園的照片素材〉 | `lobby-manor.html` |
+| french-manor | ✅ 文藝復興：真的天頂濕壁畫、去背的大理石雕像與雕刻（花神、天使、小天使胸像、玫瑰花飾、女神、丘比特與賽姬）、大理石名牌 ＋ 從真的照片描出來的剪紙（城堡剪出一排排窗、托斯卡尼柏樹）＋ 開場走進的那座花園當倒數的背景 ＋ 新人照片放在剪紙橢圓花邊框（共 7 處）＋ 捲動編排（hero 的剪紙一層一層視差、倒數的花園照片視差），素材見上面〈法式莊園的照片素材〉 | `lobby-manor.html` |
 | morning-window | ✅ 真的照片（紗簾前的白瓷壺、白牆上窗格形狀的陽光、亞麻布、照著陽光的紗簾）＋ 一張早餐桌：洗出來的照片散在亞麻桌巾上、去背的咖啡／可頌／鬱金香 ＋ 區塊標題上是去背的早晨小物（不放在框裡）＋ 新人照片共 7 處 ＋ 捲動編排（照片一張張落到桌上、窗光滑過桌面、倒數時紗簾越捲越暖），素材見上面〈晨光房間的照片素材〉 | `lobby-window.html` |
 | midnight-chapel | ✅ 開場在午夜的禮堂點亮三根真的蠟燭 → 燭火熄掉、天亮 → 大廳是同一座純白禮堂；玻璃感：照片壓在厚玻璃裡（反光隨捲動滑過）、毛玻璃的卡、整頁飄過三稜鏡的彩虹光；區塊標題上是去背的實物（戒指、水晶燈、香檳、百合、繡球）；新人照片共 8 處（倒數那張在毛玻璃後面，越捲越清楚），素材見上面〈午夜教堂的照片素材〉 | `lobby-chapel.html` |
 
