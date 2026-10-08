@@ -349,12 +349,21 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 >
 > | 檔案 | 用在哪裡 |
 > |---|---|
-> | `forest/acorn.webp`、`acorns.webp` | hero 底下一排、婚禮資訊／R.S.V.P. 標題、照片帶上的白墨水、頁邊 |
+> | `forest/acorn.webp`、`acorns.webp` | hero 底下一排、婚禮資訊標題、照片帶上的白墨水、頁邊 |
 > | `forest/pinecone.webp` | hero 底下一排、小提醒標題、頁邊 |
-> | `forest/mushroom*.webp`（4 種） | hero 底下一排、當日流程／Explore 標題、倒數照片帶、頁尾、頁邊 |
-> | `forest/oak-leaf.webp`、`oak-leaf2.webp`、`ginkgo.webp`、`maple.webp`、`leaf.webp` | 交通資訊標題、故事照片帶、頁邊飄落的葉子 |
+> | `forest/mushroom*.webp`（4 種） | hero 底下一排、頁尾、頁邊 |
+> | `forest/oak-leaf.webp`、`oak-leaf2.webp`、`ginkgo.webp`、`maple.webp`、`leaf.webp` | hero 底下一排、故事照片帶、頁邊飄落的葉子 |
 > | `forest/fern.webp`、`sprig*.webp`（3 種） | hero 底下一排、頁尾、頁邊 |
-> | `forest/berries.webp`、`blueberries.webp`、`flower.webp` | Moments 標題、頁邊 |
+> | `forest/berries.webp`、`blueberries.webp`、`flower.webp` | 頁邊 |
+>
+> 小動物來自另外幾張 Unsplash 插畫（一樣是 Unsplash License），處理成同一種墨水色的線稿：
+>
+> | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
+> |---|---|---|---|
+> | `forest/deer.webp` | hero 底下一排、交通資訊標題 | [卡通小鹿](https://unsplash.com/illustrations/5yUnSGvJ6y8)・The Creative Idea | 原圖是色塊，沿著色塊的邊描成線稿，眼睛、鼻子、蹄留實心 |
+> | `forest/bunny.webp` | hero 底下一排（會跳）、Moments 標題、倒數照片帶、頁尾 | [小動物線稿](https://unsplash.com/illustrations/Dn0GNJk0SyU)・Mila Okta Safitri | 切出兔子，線條加粗一點 |
+> | `forest/bird.webp`、`squirrel.webp` | 當日流程／Explore 標題、故事照片帶、頁尾 | [秋天小物貼紙](https://unsplash.com/illustrations/0UefjX8SdlQ)・godsfavoriteart | 只留外框線 |
+> | `forest/dove.webp`、`dove2.webp`、`dove3.webp` | hero 上方飛的白鴿、R.S.V.P. 標題、頁邊 | [一群飛鳥](https://unsplash.com/illustrations/usjlgy7I5wY)・remapstudio | 一隻一隻切開 |
 
 同一種開場在不同版型可以長得不一樣（門：法式莊園是黑色鍛鐵大門、秘密花園是爬滿植物的玻璃門、
 午夜教堂與中古刺繡是尖拱的鍛鐵大門）。要賓客親手做的開場，那一下也會開始播背景音樂。

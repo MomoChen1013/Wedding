@@ -149,6 +149,14 @@
 .fd-blueberries{background-image:url(../img/forest/blueberries.webp);aspect-ratio:257/320;}
 .fd-sprig2{background-image:url(../img/forest/sprig2.webp);aspect-ratio:151/320;}
 .fd-sprig3{background-image:url(../img/forest/sprig3.webp);aspect-ratio:185/320;}
+/* 小動物：小鹿、小兔子、小鳥、松鼠、白鴿 */
+.fd-deer{background-image:url(../img/forest/deer.webp);aspect-ratio:212/368;}
+.fd-bunny{background-image:url(../img/forest/bunny.webp);aspect-ratio:201/328;}
+.fd-bird{background-image:url(../img/forest/bird.webp);aspect-ratio:304/248;}
+.fd-squirrel{background-image:url(../img/forest/squirrel.webp);aspect-ratio:349/328;}
+.fd-dove{background-image:url(../img/forest/dove.webp);aspect-ratio:279/248;}
+.fd-dove2{background-image:url(../img/forest/dove2.webp);aspect-ratio:323/208;}
+.fd-dove3{background-image:url(../img/forest/dove3.webp);aspect-ratio:269/248;}
 
 /* ---- Hero：照片底下一排森林地面上的小東西，輕輕地晃 ---- */
 .f-floor{position:absolute;left:0;right:0;bottom:clamp(10px,2vh,22px);z-index:1;display:flex;justify-content:space-between;align-items:flex-end;
@@ -161,6 +169,22 @@
 @keyframes f-bob{0%,100%{transform:rotate(-3deg);}50%{transform:rotate(3deg) translateY(-2px);}}
 /* 照片底部再壓暗一點，白色的小東西才看得清楚；中間留給名字與日期 */
 @media (max-width:640px){.f-floor .f-dd:nth-child(n+6){display:none;}}
+/* 小鹿站得高一點；小兔子不晃，隔一陣子跳一下 */
+.f-floor .fd-deer{height:clamp(44px,7.6vw,84px);}
+.f-floor .fd-bunny{height:clamp(32px,5.4vw,58px);}
+.f-dd.f-hop{animation:f-hop 3.8s ease-in-out infinite;transform-origin:50% 100%;}
+.f-foot-floor .f-hop{animation-delay:-1.9s;}
+@keyframes f-hop{0%,62%,100%{transform:none;}70%{transform:translateY(-9px) scaleY(1.04);}
+  78%{transform:translateY(0) scaleY(.94);}84%{transform:translateY(-4px);}90%{transform:none;}}
+
+/* ---- Hero 上方：兩隻白鴿慢慢飛 ---- */
+.f-sky{position:absolute;inset:0;z-index:1;pointer-events:none;}
+.f-sky .f-dd{position:absolute;filter:brightness(0) invert(1);opacity:.8;}
+.f-dove1{left:9%;top:11%;height:clamp(26px,4vw,46px);animation:f-glide 11s ease-in-out infinite alternate;}
+.f-dove2{right:11%;top:19%;height:clamp(18px,2.8vw,32px);transform:scaleX(-1);animation:f-glide2 13s ease-in-out infinite alternate;}
+@keyframes f-glide{from{transform:translate(0,0) rotate(-4deg);}to{transform:translate(clamp(30px,6vw,90px),-14px) rotate(3deg);}}
+@keyframes f-glide2{from{transform:scaleX(-1) translate(0,0) rotate(-3deg);}to{transform:scaleX(-1) translate(clamp(24px,5vw,70px),10px) rotate(4deg);}}
+@media (prefers-reduced-motion:reduce){.f-floor .f-dd,.f-sky .f-dd,.f-dd.f-hop{animation:none;}}
 
 /* ---- 區塊標題上的一個小東西：跳出來 ---- */
 .f-head-dd{height:clamp(46px,6vw,60px);margin-bottom:10px;}
@@ -183,6 +207,10 @@
 .f-scatter .s10{right:0;top:76%;--r:-20deg;--spin:20deg;}
 .f-scatter .s11{left:1%;top:85%;--r:8deg;}
 .f-scatter .s12{right:-1%;top:93%;--r:-26deg;}
+/* 白鴿不往下飄，跟著捲動往旁邊飛 */
+.f-scatter .f-fly{transform:translate(calc(var(--sp,0) * var(--drift,80px)),calc(var(--sp,0) * -40px)) scaleX(var(--face,1));}
+.f-scatter .s13{left:3%;top:40%;--drift:90px;}
+.f-scatter .s14{right:3%;top:71%;--drift:-90px;--face:-1;}
 .f-sec,.f-band{position:relative;z-index:1;}
 @media (min-width:1100px){
   .f-scatter{left:-140px;right:-140px;}

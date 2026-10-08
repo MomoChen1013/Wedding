@@ -69,7 +69,7 @@ export const TEMPLATES = {
   'korean':        { label:'Korean Modern', lobbyFile:'lobby-korean.html',
                      lobbyCss:['/css/lobby-korean.css'],
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
-  /* forest：滿版照片 ＋ 整頁可愛的手繪森林小物（橡實、松果、香菇、葉子） */
+  /* forest：滿版照片 ＋ 整頁可愛的手繪森林小物（橡實、松果、香菇、葉子、小鹿、兔子、小鳥） */
   'forest':        { label:'Forest Botanical', lobbyFile:'lobby-forest.html',
                      lobbyCss:['/css/lobby-forest.css'], lobbyJs:['/js/lobby-motion.js'],
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
