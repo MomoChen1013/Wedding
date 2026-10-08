@@ -363,9 +363,15 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > | `korean/scallop.webp` | 倒數 | [扇貝](https://unsplash.com/photos/loZ_0TCJNUY)・Content Pixie | 去背 |
 > | `korean/auger.webp` | hero 桌角、Explore | [白色細螺](https://unsplash.com/photos/outjnHJmZLU)・Anya Chernykh | 去背 |
 
-> **捲動縫線**（`public/css/lobby-thread.css`）：tapestry 那條跟著捲動縫下去的金線，搬給
-> korean（藏青細線＋小結）、forest（麻線，縫過的地方長出葉子、橡實）、
-> 午夜教堂（一串珍珠）、晨光房間（亞麻繡線，縫一朵小花）。全部是 CSS，沒有圖檔。
+> **捲動軌跡**（`public/css/lobby-trail.css`）：跟著捲動沿左緣一路畫下去，每個版型用自己的素材，
+> 經過的地方會留下小東西：
+>
+> | 版型 | 線 | 領頭 | 沿路留下 |
+> |---|---|---|---|
+> | Korean Modern | 一條海浪線（CSS） | `korean/boat.webp` 紙船 —— [白色紙船](https://unsplash.com/photos/x-S_g6TnUhU)・Christopher Bill，去背、調成紙白 | 海螺、扇貝、細螺（上面那幾張） |
+> | Forest Botanical | 一根藤蔓（CSS） | `forest/sprig.webp` 新芽 | 葉子、橡實、莓果（森林小物） |
+> | Midnight Chapel | `chapel/crystal-bead.webp` 一顆一顆的水晶珠 | `chapel/crystal-drop.webp` 稜鏡水晶墜 —— [掛在樹上的水晶串](https://unsplash.com/photos/m4YOs3Js2WQ)・Haley Owens，去背後切成一節珠子（重複接成一串）與最下面的水晶墜 | 彩虹光點（CSS） |
+> | Morning Window | 亞麻布條（`window/linen.webp`）＋一道粉色縫線 | `window/tulip-stem.webp` 一枝鬱金香 —— [一枝粉白鬱金香](https://unsplash.com/photos/d3C86xPipVs)・Sabina Hassan，去背 | `window/petal1-3.webp` 花瓣 —— [散落的玫瑰花瓣](https://unsplash.com/photos/j8lW5HLruow)・Debby Hudson，一片一片切開、調成鬱金香的粉 |
 
 > **Forest Botanical 的手繪森林小物**（`public/img/forest/`，`lobby-forest.html`）：全部來自同一張 Unsplash 插畫
 > [森林小物貼紙](https://unsplash.com/illustrations/2EwBPCpvWA4)・Kamara Rahmat（Unsplash License）。

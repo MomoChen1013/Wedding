@@ -230,13 +230,13 @@
 .f-foot-floor .f-dd{height:clamp(36px,6vw,58px);}
 .f-foot-floor .fd-acorns{height:clamp(30px,5vw,46px);}
 
-/* ---- 縫線：一條麻線跟著捲動縫下去，縫過的地方長出葉子、橡實（lobby-thread.css） ---- */
-.f-thread{--th-color:#8a7556;--th-w:1.6px;--th-dash:8px;--th-gap:14px;--knot-size:20px;z-index:2;}
-.f-thread .lx-knot{opacity:calc(clamp(0,(var(--ap,0) - var(--k)) * 30,1) * .85);}
-.f-thread .lx-knot:nth-of-type(odd){--kr:-28deg;}
-.f-thread .lx-knot:nth-of-type(even){--kr:24deg;}
-.f-thread .kn-leaf{--knot:url(../img/forest/leaf.webp);}
-.f-thread .kn-acorn{--knot:url(../img/forest/acorn.webp);}
-.f-thread .kn-sprig{--knot:url(../img/forest/sprig2.webp);}
-.f-thread .kn-berries{--knot:url(../img/forest/berries.webp);}
-.f-thread .kn-oak{--knot:url(../img/forest/oak-leaf2.webp);}
+/* ---- 捲動軌跡：一根藤蔓往下長，前端是新芽，兩旁長出葉子與橡實（lobby-trail.css） ---- */
+.f-trail{--line:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='64'%3E%3Cpath d='M8 0C13 10 13 22 8 32S3 54 8 64' fill='none' stroke='%236b6450' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center top/16px 64px repeat-y;--line-w:16px;
+  --tip:url(../img/forest/sprig.webp);--tip-w:22px;--tip-ar:189/320;--tip-y:-4%;--tip-r:180deg;--mark-size:20px;}
+.f-trail{--line-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='40'%3E%3Cpath d='M5 0C8.2 6 8.2 14 5 20S1.8 34 5 40' fill='none' stroke='%236b6450' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") center top/10px 40px repeat-y;--line-w-m:10px;}
+.f-trail .lx-trail-tip{transform-origin:50% 50%;}
+.f-trail .lx-mark{opacity:calc(clamp(0,(var(--ap,0) - var(--k)) * 30,1) * .85);}
+.f-trail .m-leaf{--mark:url(../img/forest/leaf.webp);}
+.f-trail .m-oak{--mark:url(../img/forest/oak-leaf2.webp);}
+.f-trail .m-acorn{--mark:url(../img/forest/acorn.webp);--mark-size:17px;}
+.f-trail .m-berries{--mark:url(../img/forest/berries.webp);}

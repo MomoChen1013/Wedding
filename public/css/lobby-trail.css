@@ -1,0 +1,53 @@
+/* ============================================================
+   lobby-trail.css — 跟著捲動沿左緣一路畫下去的一條「軌跡」（多個版型共用）
+   ------------------------------------------------------------
+   概念來自 tapestry 的金線，但每個版型用**自己的素材**：
+     korean   一條海浪線，紙船在浪頭上漂，經過的地方留下貝殼
+     forest   一根藤蔓往下長，前端是新芽，兩旁長出葉子與橡實
+     chapel   一串水晶燈的水晶珠往下垂，前端是稜鏡水晶墜，閃出彩虹光點
+     window   一條亞麻布條往下鋪，一枝鬱金香領在前面，沿路掉下花瓣
+
+   版型只要在大廳 section 裡放：
+     <div class="lx-trail xx-trail" data-scroll aria-hidden="true">
+       <i class="lx-trail-line"></i>
+       <i class="lx-mark" style="--k:.3"></i> …   經過才出現的小東西（--k＝在整條上的位置 0 → 1）
+       <i class="lx-trail-tip"></i>                領頭的那一個
+     </div>
+
+   --ap 由 lobby-motion.js 算（元素頂端越過視窗 62% 之後走了多少，0 → 1）。
+   長相全部是變數，各版型在自己的 lobby-*.css 裡設：
+     --line / --line-w           線本身的 background 與寬度
+     --tip / --tip-w / --tip-ar  領頭素材的圖、寬度、長寬比
+     --tip-y / --tip-r           領頭素材相對線頭的位移與角度
+     --mark / --mark-size        小東西的圖與大小；--mx 左右偏移、--mr 角度（寫在各自身上）
+   ============================================================ */
+.lx-trail{position:absolute;z-index:2;pointer-events:none;width:24px;
+  top:var(--tr-top,calc(100svh - var(--nav-h)));bottom:var(--tr-bottom,60px);
+  left:var(--tr-left,max(0px,calc(50% - 556px)));}
+.lx-trail-line{position:absolute;left:50%;top:0;bottom:0;width:var(--line-w,2px);transform:translateX(-50%);
+  background:var(--line);clip-path:inset(0 0 calc((1 - var(--ap,0)) * 100%) 0);}
+.lx-trail-tip{position:absolute;left:50%;top:calc(var(--ap,0) * 100%);
+  width:var(--tip-w,24px);aspect-ratio:var(--tip-ar,1);
+  background:var(--tip) center/contain no-repeat;
+  transform:translate(-50%,var(--tip-y,-50%)) rotate(var(--tip-r,0deg));transform-origin:50% 0;
+  opacity:clamp(0,calc(var(--ap,0) * 40),1);}
+.lx-mark{position:absolute;left:50%;top:calc(var(--k) * 100%);
+  width:var(--mark-size,18px);height:var(--mark-size,18px);
+  margin:calc(var(--mark-size,18px) / -2) 0 0 calc(var(--mx,0px) - var(--mark-size,18px) / 2);
+  background:var(--mark) center/contain no-repeat;
+  opacity:clamp(0,calc((var(--ap,0) - var(--k)) * 30),1);
+  transform:scale(clamp(.2,calc(.2 + (var(--ap,0) - var(--k)) * 30),1)) rotate(var(--mr,0deg));}
+/* 手機：內文貼近畫面邊緣，整條縮小、貼到最左邊，不壓到字。
+   線的手機版長相由各版型給 --line-m／--line-w-m（沒給就沿用桌機版） */
+@media (max-width:600px){
+  .lx-trail{left:var(--tr-left-m,-5px);width:16px;}
+  .lx-trail-line{width:var(--line-w-m,var(--line-w,2px));background:var(--line-m,var(--line));}
+  .lx-trail-tip{width:calc(var(--tip-w,24px) * .6);}
+  .lx-mark{width:calc(var(--mark-size,18px) * .65);height:calc(var(--mark-size,18px) * .65);
+    margin:calc(var(--mark-size,18px) * -.325) 0 0 calc(var(--mx,0px) * .55 - var(--mark-size,18px) * .325);}
+}
+/* 沒有 lobby-motion（或系統要求減少動態）時 --ap 不會被算：整條直接畫好，不放領頭的 */
+@media (prefers-reduced-motion:reduce){
+  .lx-trail{--ap:1;}
+  .lx-trail-tip{display:none;}
+}

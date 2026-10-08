@@ -257,10 +257,24 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
   display:flex;flex-direction:column;align-items:center;gap:8px;border-top:none;color:var(--mc-soft);}
 .mc-fin{font:italic 400 24px 'Cormorant Garamond',serif;color:var(--mc-gold);text-transform:none;letter-spacing:.02em;}
 
-/* ---- 縫線：一串珍珠跟著捲動縫下去，每隔一段串上一顆大的（lobby-thread.css） ---- */
-.mc-thread{--th-w:6px;--knot-size:12px;z-index:2;
-  --knot:radial-gradient(circle at 38% 34%,#fff 0 18%,#f3eee6 40%,#d9cfbf 64%,rgba(176,148,96,.5) 70%,transparent 74%);}
-.mc-thread .lx-thread-line{
-  background:radial-gradient(circle at 40% 36%,#fff 0 22%,#ece6dc 46%,#d3c8b6 62%,transparent 68%) 0 0/6px 8px repeat-y;
-  filter:drop-shadow(0 1px 1px rgba(70,64,100,.18));}
-.mc-thread .lx-knot{filter:drop-shadow(0 1px 2px rgba(70,64,100,.25));}
+/* ---- 捲動軌跡：水晶燈的水晶珠一顆一顆往下垂，前端是稜鏡水晶墜，經過的地方閃出彩虹光點（lobby-trail.css） ---- */
+.mc-trail{--line:url(../img/chapel/crystal-bead.webp) center top/20px 24px repeat-y;--line-w:20px;
+  --tip:url(../img/chapel/crystal-drop.webp);--tip-w:26px;}
+.lx-trail.mc-trail{z-index:6;--tip-ar:102/240;--tip-y:-8%;--mark-size:18px;}
+.mc-trail{--line-m:url(../img/chapel/crystal-bead.webp) center top/13px 16px repeat-y;--line-w-m:13px;}
+.mc-trail .lx-trail-line{filter:drop-shadow(0 2px 2px rgba(70,64,100,.18));}
+.mc-trail .lx-trail-tip{animation:mc-swing 4s ease-in-out infinite alternate;filter:drop-shadow(0 6px 6px rgba(70,64,100,.2));}
+@keyframes mc-swing{from{rotate:-5deg;}to{rotate:5deg;}}
+/* 彩虹光點：十字星芒＋一圈稜鏡色 */
+.mc-trail .lx-mark{border-radius:50%;
+  --mark:radial-gradient(circle,#fff 0 9%,rgba(255,255,255,0) 30%),
+    linear-gradient(0deg,transparent 47%,rgba(255,255,255,.95) 50%,transparent 53%),
+    linear-gradient(90deg,transparent 47%,rgba(255,255,255,.95) 50%,transparent 53%),
+    radial-gradient(circle,transparent 30%,rgba(255,255,255,0) 31%,transparent 70%),
+    conic-gradient(from 20deg,rgba(255,190,210,.55),rgba(255,240,170,.55),rgba(180,240,200,.55),
+      rgba(170,210,255,.55),rgba(220,190,255,.55),rgba(255,190,210,.55));
+  -webkit-mask-image:radial-gradient(circle,#000 40%,transparent 71%);mask-image:radial-gradient(circle,#000 40%,transparent 71%);
+  animation:mc-glint 5s linear infinite;}
+.mc-trail .lx-mark:nth-of-type(even){animation-duration:7s;animation-direction:reverse;}
+@keyframes mc-glint{to{rotate:360deg;}}
+@media (prefers-reduced-motion:reduce){.mc-trail .lx-trail-tip,.mc-trail .lx-mark{animation:none;}}

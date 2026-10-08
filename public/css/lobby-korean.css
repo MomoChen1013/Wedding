@@ -242,7 +242,15 @@ body[data-hero-name="en"] .k-nameB{font-size:clamp(24px,4.6vw,58px);}
   background:url(../img/korean/sea-strip.webp) center/cover no-repeat;
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 16%,#000 84%,transparent);
           mask-image:linear-gradient(90deg,transparent,#000 16%,#000 84%,transparent);}
-
-/* ---- 縫線：藏青色的細線，每縫一段打一個小結 ---- */
-.k-thread{--th-color:var(--primary-deep);--th-w:1.5px;--th-dash:7px;--th-gap:13px;--knot-size:7px;}
 @media (prefers-reduced-motion:reduce){.k-light{animation:none;}}
+
+/* ---- 捲動軌跡：一條海浪線往下畫，紙船在浪頭上漂，經過的地方留下貝殼（lobby-trail.css） ---- */
+.k-trail{--line:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='40'%3E%3Cpath d='M7 0C12.5 6 12.5 14 7 20S1.5 34 7 40' fill='none' stroke='%235c7085' stroke-width='1.3' stroke-linecap='round'/%3E%3C/svg%3E") center top/14px 40px repeat-y;--line-w:14px;
+  --tip:url(../img/korean/boat.webp);--tip-w:58px;--tip-ar:300/149;--tip-y:-78%;--mark-size:20px;}
+.k-trail .lx-trail-tip{animation:k-bob 3.2s ease-in-out infinite alternate;filter:drop-shadow(0 4px 4px rgba(33,40,79,.14));}
+@keyframes k-bob{from{rotate:-7deg;translate:0 -2px;}to{rotate:6deg;translate:0 2px;}}
+.k-trail{--line-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='26'%3E%3Cpath d='M4.5 0C8 4 8 9 4.5 13S1 22 4.5 26' fill='none' stroke='%235c7085' stroke-width='1.1' stroke-linecap='round'/%3E%3C/svg%3E") center top/9px 26px repeat-y;--line-w-m:9px;}
+.k-trail .m-whelk{--mark:url(../img/korean/whelk.webp);}
+.k-trail .m-auger{--mark:url(../img/korean/auger.webp);}
+.k-trail .m-scallop{--mark:url(../img/korean/scallop.webp);}
+@media (prefers-reduced-motion:reduce){.k-trail .lx-trail-tip{animation:none;}}

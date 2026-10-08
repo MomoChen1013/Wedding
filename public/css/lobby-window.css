@@ -263,13 +263,15 @@ body[data-hero-name="cn"] .mw-hero .mw-names{font-family:'Noto Serif TC',serif;f
   display:flex;flex-direction:column;align-items:center;gap:8px;border-top:none;}
 .mw-fin{font:italic 400 24px 'EB Garamond',serif;color:var(--mw-wood);text-transform:none;letter-spacing:.01em;}
 
-/* ---- 縫線：一條亞麻繡線跟著捲動縫下去，縫過的地方繡一朵小花（lobby-thread.css） ---- */
-.mw-thread{--th-color:#d4a59a;--th-w:1.8px;--th-dash:7px;--th-gap:12px;--knot-size:16px;z-index:2;}
-/* --knot 寫在小花自己身上：--petal 才會吃到各自的顏色 */
-.mw-thread .lx-knot{--petal:#e3aaa2;
-  --knot:radial-gradient(circle at 50% 50%,var(--mw-sun) 0 17%,transparent 19%),
-    radial-gradient(circle at 50% 24%,var(--petal) 0 19%,transparent 21%),
-    radial-gradient(circle at 76% 50%,var(--petal) 0 19%,transparent 21%),
-    radial-gradient(circle at 50% 76%,var(--petal) 0 19%,transparent 21%),
-    radial-gradient(circle at 24% 50%,var(--petal) 0 19%,transparent 21%);}
-.mw-thread .kn-b{--petal:#f0d39a;--kr:45deg;}
+/* ---- 捲動軌跡：一條亞麻布條往下鋪，一枝鬱金香領在前面，沿路掉下花瓣（lobby-trail.css） ---- */
+.mw-trail{--line-w:14px;
+  --line:linear-gradient(180deg,rgba(214,160,150,.7) 0 6px,transparent 6px 12px) center top/1.4px 12px repeat-y,
+    linear-gradient(90deg,rgba(176,140,104,.30),rgba(214,186,150,.12) 30% 70%,rgba(176,140,104,.30)),
+    url(../img/window/linen.webp) center/260px auto;
+  --tip:url(../img/window/tulip-stem.webp);--tip-w:24px;--tip-ar:85/420;--tip-y:-6%;--tip-r:172deg;--mark-size:20px;}
+.mw-trail{--line-w-m:9px;}
+.mw-trail .lx-trail-line{filter:drop-shadow(0 2px 3px rgba(70,60,52,.14));}
+.mw-trail .lx-trail-tip{transform-origin:50% 50%;filter:drop-shadow(0 6px 6px rgba(70,60,52,.16));}
+.mw-trail .m-p1{--mark:url(../img/window/petal1.webp);}
+.mw-trail .m-p2{--mark:url(../img/window/petal2.webp);}
+.mw-trail .m-p3{--mark:url(../img/window/petal3.webp);}

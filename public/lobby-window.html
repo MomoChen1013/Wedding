@@ -36,7 +36,7 @@
 <link rel="stylesheet" href="/css/common.css">
 <link rel="stylesheet" href="/css/index.css">
 <link rel="stylesheet" href="/css/lobby-window.css">
-<link rel="stylesheet" href="/css/lobby-thread.css">
+<link rel="stylesheet" href="/css/lobby-trail.css">
 </head>
 <body data-template="morning-window" data-page="lobby" data-lobby="morning-window">
 <!-- 開場遮罩：只有**沒預產到**的頁面會顯示（見 css/common.css 的 .boot-veil） -->
@@ -89,12 +89,12 @@
 <div id="app">
   <section class="panel lobby mw-lobby" data-panel="lobby" data-scroll>
 
-    <!-- 一條亞麻繡線：跟著捲動一路縫下去，縫過的地方繡出一朵小花（--ap 由 lobby-motion.js 算，樣式在 lobby-thread.css） -->
-    <div class="lx-thread mw-thread" data-scroll aria-hidden="true">
-      <i class="lx-thread-line"></i>
-      <i class="lx-knot" style="--k:0.1"></i><i class="lx-knot kn-b" style="--k:0.24"></i><i class="lx-knot" style="--k:0.38"></i><i class="lx-knot kn-b" style="--k:0.52"></i>
-      <i class="lx-knot" style="--k:0.66"></i><i class="lx-knot kn-b" style="--k:0.8"></i><i class="lx-knot" style="--k:0.94"></i>
-      <span class="lx-needle"><svg viewBox="0 0 12 64"><path d="M6 0C7.6 0 8 2 8 5V52L6 64L4 52V5C4 2 4.4 0 6 0Z" fill="#cfd4d8"/><path d="M5.2 4.4H6.8V11H5.2Z" fill="#6a7178"/><path d="M6 1.2V60" stroke="#fff" stroke-width=".6" opacity=".7"/></svg></span>
+    <!-- 一條亞麻布條跟著捲動往下鋪，一枝鬱金香領在前面，沿路掉下花瓣（--ap 由 lobby-motion.js 算，共用的部分在 lobby-trail.css） -->
+    <div class="lx-trail mw-trail" data-scroll aria-hidden="true">
+      <i class="lx-trail-line"></i>
+      <i class="lx-mark m-p1" style="--k:0.1;--mx:18px;--mr:-30deg"></i><i class="lx-mark m-p2" style="--k:0.23;--mx:-17px;--mr:40deg"></i><i class="lx-mark m-p3" style="--k:0.36;--mx:18px;--mr:-60deg"></i><i class="lx-mark m-p1" style="--k:0.49;--mx:-18px;--mr:20deg"></i>
+      <i class="lx-mark m-p2" style="--k:0.62;--mx:17px;--mr:-35deg"></i><i class="lx-mark m-p3" style="--k:0.75;--mx:-18px;--mr:55deg"></i><i class="lx-mark m-p1" style="--k:0.88;--mx:18px;--mr:-15deg"></i>
+      <i class="lx-trail-tip"></i>
     </div>
 
     <!-- 整頁的牆上落著窗格形狀的陽光：固定在視窗上，跟著捲動慢慢移（--sp 來自 .mw-lobby） -->

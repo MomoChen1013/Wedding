@@ -32,7 +32,7 @@
 <link rel="stylesheet" href="../public/css/common.css">
 <link rel="stylesheet" href="../public/css/index.css">
 <link rel="stylesheet" href="../public/css/lobby-korean.css">
-<link rel="stylesheet" href="../public/css/lobby-thread.css">
+<link rel="stylesheet" href="../public/css/lobby-trail.css">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&amp;family=Noto+Sans+TC:wght@300;400;500&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../public/css/openers/envelope.css">
 <link rel="stylesheet" href="../public/css/openers/book.css">
@@ -89,12 +89,12 @@
 <div id="app">
   <section class="panel lobby k-lobby" data-panel="lobby">
 
-    <!-- 一條細線：跟著捲動一路縫下去（--ap 由 lobby-motion.js 算），縫過的地方打一個小結 -->
-    <div class="lx-thread k-thread" data-scroll aria-hidden="true">
-      <i class="lx-thread-line"></i>
-      <i class="lx-knot" style="--k:.12"></i><i class="lx-knot" style="--k:.3"></i><i class="lx-knot" style="--k:.48"></i>
-      <i class="lx-knot" style="--k:.66"></i><i class="lx-knot" style="--k:.84"></i>
-      <span class="lx-needle"><svg viewBox="0 0 12 64"><path d="M6 0C7.6 0 8 2 8 5V52L6 64L4 52V5C4 2 4.4 0 6 0Z" fill="#cfd4d8"/><path d="M5.2 4.4H6.8V11H5.2Z" fill="#6a7178"/><path d="M6 1.2V60" stroke="#fff" stroke-width=".6" opacity=".7"/></svg></span>
+    <!-- 一條海浪線跟著捲動往下畫，紙船在浪頭上漂，經過的地方留下貝殼（--ap 由 lobby-motion.js 算，共用的部分在 lobby-trail.css） -->
+    <div class="lx-trail k-trail" data-scroll aria-hidden="true">
+      <i class="lx-trail-line"></i>
+      <i class="lx-mark m-whelk" style="--k:0.12;--mx:14px;--mr:-20deg"></i><i class="lx-mark m-scallop" style="--k:0.28;--mx:-14px;--mr:12deg"></i><i class="lx-mark m-auger" style="--k:0.44;--mx:15px;--mr:-40deg"></i><i class="lx-mark m-whelk" style="--k:0.6;--mx:-14px;--mr:24deg"></i>
+      <i class="lx-mark m-scallop" style="--k:0.76;--mx:14px;--mr:-8deg"></i><i class="lx-mark m-auger" style="--k:0.9;--mx:-15px;--mr:30deg"></i>
+      <i class="lx-trail-tip"></i>
     </div>
 
     <!-- ===== Hero：兩人名字併成一行，照片橫切過它，下面接 Wedding =====
