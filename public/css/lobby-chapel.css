@@ -5,15 +5,15 @@
 
      世界觀  開場在午夜的教堂裡一根一根點亮蠟燭；三根都亮了，晨光湧進來，
              整座教堂變成白天的樣子 —— 大廳就是那個白天
-     材質    白色圓拱與格子天花板、水晶、厚玻璃、毛玻璃、三稜鏡的彩虹光
-     素材    真的照片：純白禮堂、白花走道、去背的戒指／水晶吊燈／香檳杯／百合／繡球、
-             牆上的彩虹光；全部在 public/img/chapel/，出處見 README
+     材質    白色圓拱與格子天花板、水晶燈、厚玻璃、毛玻璃、白紗、蕾絲、珍珠
+     素材    真的照片：純白禮堂、白花走道、去背的戒指／水晶吊燈／鈴蘭／百合／白色蝴蝶蘭、
+             白紗、蕾絲、珍珠、滿天星；全部在 public/img/chapel/，出處見 README
      新人照片  玻璃相片 ×3（照片牆前三張）、故事兩張、倒數的毛玻璃後面一張、出席回覆旁一張
 
    捲動：
      ・進站：接開場最後一刻 —— 從一片白光裡慢慢定下來
      ・hero：照片慢慢推近；前景一盞水晶燈輕輕晃
-     ・整頁：牆上飄著三稜鏡的彩虹光，跟著捲動慢慢滑過
+     ・整頁：兩旁垂著白紗，輕輕飄、跟著捲動慢慢移；左邊一串珍珠跟著捲動往下垂
      ・玻璃相片：捲動時輕輕轉，玻璃上的反光從左滑到右
      ・區塊標題上的實物：捲到的時候從下面浮上來
      ・倒數：毛玻璃後面是兩個人的照片，越捲越清楚
@@ -51,13 +51,20 @@ body[data-lobby="midnight-chapel"] .bg-decor{
 .tp-motion [data-reveal="draw"]:not(.is-in) .mc-obj{opacity:0;transform:translateY(24px) scale(.94);filter:brightness(1.4) blur(3px);}
 
 /* ============================================================
-   整頁：三稜鏡的彩虹光（真的照片，Declan Sun／Unsplash：牆上的一道彩虹，只留下彩虹）
+   整頁：兩旁垂下來的白紗（真的照片，Kristina Tochilko／Unsplash：一片垂墜的白紗）
+   固定在視窗兩側，往中間淡掉；輕輕地飄，往下捲時慢慢往上移一點
 ============================================================ */
-.mc-prisms{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden;}
-.mc-prisms i{position:absolute;width:min(70vw,760px);aspect-ratio:900/710;opacity:.5;
-  background:url(../img/chapel/prism.webp) center/contain no-repeat;}
-.mc-prisms i:nth-child(1){left:-12%;top:calc(30% - var(--sp,0) * 60%);transform:rotate(-8deg);}
-.mc-prisms i:nth-child(2){right:-18%;top:calc(85% - var(--sp,0) * 70%);transform:scaleX(-1) rotate(-14deg);opacity:.38;}
+.mc-veils{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden;}
+.mc-veils i{position:absolute;top:-10%;bottom:-10%;width:clamp(90px,17vw,240px);opacity:.78;
+  background:url(../img/chapel/tulle.webp) 40% 0/auto 100% no-repeat;
+  -webkit-mask-image:linear-gradient(90deg,#000 20%,transparent);mask-image:linear-gradient(90deg,#000 20%,transparent);
+  transform-origin:50% 0;animation:mc-veil 9s ease-in-out infinite alternate;
+  translate:0 calc(var(--sp,0) * -6%);}
+.mc-veils i:nth-child(1){left:0;}
+.mc-veils i:nth-child(2){right:0;scale:-1 1;animation-delay:-4s;}
+@keyframes mc-veil{from{transform:skewX(-1.5deg);}to{transform:skewX(1.5deg) scaleX(1.04);}}
+@media (max-width:640px){.mc-veils i{width:64px;opacity:.6;}}
+@media (prefers-reduced-motion:reduce){.mc-veils i{animation:none;}}
 
 /* ============================================================
    Hero：純白的禮堂
@@ -116,15 +123,14 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
 }
 
 /* ============================================================
-   玻璃相片：照片壓在一塊厚玻璃裡（亮邊、內側一點點藍、邊上一絲彩虹、反光滑過）
+   玻璃相片：照片壓在一塊厚玻璃裡（亮邊、珍珠白的內光、反光滑過）
 ============================================================ */
 .mc-slab{position:relative;margin:0;aspect-ratio:3/4;border-radius:14px;padding:11px;
-  background:linear-gradient(135deg,rgba(255,255,255,.82),rgba(222,233,244,.4) 42%,rgba(255,255,255,.66));
+  background:linear-gradient(135deg,rgba(255,255,255,.84),rgba(240,237,232,.45) 42%,rgba(255,255,255,.68));
   -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
   box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,.95),inset 0 0 22px rgba(170,195,225,.4),
-    -1px 0 0 rgba(255,160,200,.35),1px 0 0 rgba(130,200,255,.35),
-    0 0 0 1px rgba(160,175,205,.35),0 34px 44px -26px rgba(70,64,110,.42);}
+    inset 0 0 0 1px rgba(255,255,255,.95),inset 0 0 22px rgba(225,215,200,.45),
+    0 0 0 1px rgba(190,180,165,.35),0 34px 44px -26px rgba(80,70,60,.38);}
 .mc-slab-ph{width:100%;height:100%;border-radius:5px;background:#e8e6ea center/cover no-repeat;
   box-shadow:0 0 0 1px rgba(255,255,255,.6);}
 /* 反光：一道斜斜的亮光，跟著捲動從左上滑到右下 */
@@ -157,14 +163,14 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
    百合（Eddie Hsu）、繡球（Larisa Birta）／Unsplash */
 .mc-obj.o-rings{width:clamp(150px,18vw,200px);height:auto;aspect-ratio:640/219;align-self:center;}
 .mc-obj.o-chandelier{aspect-ratio:700/760;}
-.mc-obj.o-champagne{aspect-ratio:288/720;height:118%;filter:drop-shadow(0 16px 14px rgba(80,76,110,.28)) contrast(1.08);}
+.mc-obj.o-lily-valley{aspect-ratio:651/420;width:clamp(170px,20vw,230px);height:auto;align-self:center;}
 .mc-obj.o-lilies{aspect-ratio:542/720;}
-.mc-obj.o-hydrangea{aspect-ratio:483/720;}
+.mc-obj.o-orchid{aspect-ratio:620/322;width:clamp(190px,22vw,250px);height:auto;align-self:center;}
 .mc-obj.o-rings{background-image:url(../img/chapel/rings.webp);}
 .mc-obj.o-chandelier{background-image:url(../img/chapel/chandelier.webp);}
-.mc-obj.o-champagne{background-image:url(../img/chapel/champagne.webp);}
+.mc-obj.o-lily-valley{background-image:url(../img/chapel/lily-valley.webp);}
 .mc-obj.o-lilies{background-image:url(../img/chapel/lilies.webp);}
-.mc-obj.o-hydrangea{background-image:url(../img/chapel/hydrangea.webp);}
+.mc-obj.o-orchid{background-image:url(../img/chapel/orchid.webp);}
 .mc-head .block-title{margin:0;font:400 clamp(26px,3.6vw,38px)/1.15 'Cinzel','Noto Serif TC',serif;letter-spacing:.12em;
   text-transform:none;color:var(--mc-ink);}
 .mc-head .block-sub{margin:0;font-size:13px;letter-spacing:.4em;color:var(--mc-soft);}
@@ -257,24 +263,38 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
   display:flex;flex-direction:column;align-items:center;gap:8px;border-top:none;color:var(--mc-soft);}
 .mc-fin{font:italic 400 24px 'Cormorant Garamond',serif;color:var(--mc-gold);text-transform:none;letter-spacing:.02em;}
 
-/* ---- 捲動軌跡：水晶燈的水晶珠一顆一顆往下垂，前端是稜鏡水晶墜，經過的地方閃出彩虹光點（lobby-trail.css） ---- */
-.mc-trail{--line:url(../img/chapel/crystal-bead.webp) center top/20px 24px repeat-y;--line-w:20px;
-  --tip:url(../img/chapel/crystal-drop.webp);--tip-w:26px;}
-.lx-trail.mc-trail{z-index:6;--tip-ar:102/240;--tip-y:-8%;--mark-size:18px;}
-.mc-trail{--line-m:url(../img/chapel/crystal-bead.webp) center top/13px 16px repeat-y;--line-w-m:13px;}
-.mc-trail .lx-trail-line{filter:drop-shadow(0 2px 2px rgba(70,64,100,.18));}
-.mc-trail .lx-trail-tip{animation:mc-swing 4s ease-in-out infinite alternate;filter:drop-shadow(0 6px 6px rgba(70,64,100,.2));}
-@keyframes mc-swing{from{rotate:-5deg;}to{rotate:5deg;}}
-/* 彩虹光點：十字星芒＋一圈稜鏡色 */
-.mc-trail .lx-mark{border-radius:50%;
-  --mark:radial-gradient(circle,#fff 0 9%,rgba(255,255,255,0) 30%),
-    linear-gradient(0deg,transparent 47%,rgba(255,255,255,.95) 50%,transparent 53%),
-    linear-gradient(90deg,transparent 47%,rgba(255,255,255,.95) 50%,transparent 53%),
-    radial-gradient(circle,transparent 30%,rgba(255,255,255,0) 31%,transparent 70%),
-    conic-gradient(from 20deg,rgba(255,190,210,.55),rgba(255,240,170,.55),rgba(180,240,200,.55),
-      rgba(170,210,255,.55),rgba(220,190,255,.55),rgba(255,190,210,.55));
-  -webkit-mask-image:radial-gradient(circle,#000 40%,transparent 71%);mask-image:radial-gradient(circle,#000 40%,transparent 71%);
-  animation:mc-glint 5s linear infinite;}
-.mc-trail .lx-mark:nth-of-type(even){animation-duration:7s;animation-direction:reverse;}
-@keyframes mc-glint{to{rotate:360deg;}}
-@media (prefers-reduced-motion:reduce){.mc-trail .lx-trail-tip,.mc-trail .lx-mark{animation:none;}}
+/* ---- 捲動軌跡：一串真的珍珠（Paula Bustillos／Unsplash）往下垂，末端綁著一小枝鈴蘭，
+   沿路掉下幾顆珍珠（lobby-trail.css） ---- */
+.mc-trail{--line:url(../img/chapel/pearl-strand.webp) center top/22px auto repeat-y;--line-w:22px;
+  --tip:url(../img/chapel/lily-valley2.webp);--tip-w:46px;--tip-ar:213/460;--tip-y:-4%;
+  --mark:url(../img/chapel/pearl.webp);--mark-size:13px;
+  --line-m:url(../img/chapel/pearl-strand.webp) center top/14px auto repeat-y;--line-w-m:14px;}
+.lx-trail.mc-trail{z-index:6;}
+.mc-trail .lx-trail-line{filter:drop-shadow(0 2px 2px rgba(80,70,60,.18));}
+.mc-trail .lx-trail-tip{animation:mc-swing 4s ease-in-out infinite alternate;filter:drop-shadow(0 6px 6px rgba(80,70,60,.18));}
+@keyframes mc-swing{from{rotate:-4deg;}to{rotate:4deg;}}
+.mc-trail .lx-mark{filter:drop-shadow(0 1px 1.5px rgba(80,70,60,.25));}
+@media (prefers-reduced-motion:reduce){.mc-trail .lx-trail-tip{animation:none;}}
+
+/* ---- hero 右下角一枝白色蝴蝶蘭（Jocelyn Morales／Unsplash，去背） ---- */
+.mc-orchid{position:absolute;right:clamp(-30px,-1vw,0px);bottom:clamp(30px,8vh,90px);z-index:2;width:clamp(200px,30vw,420px);aspect-ratio:620/322;
+  background:url(../img/chapel/orchid.webp) center/contain no-repeat;transform:rotate(-8deg);transform-origin:100% 100%;
+  filter:drop-shadow(0 14px 16px rgba(80,70,60,.25));animation:mc-orchid 7s ease-in-out infinite alternate;}
+@keyframes mc-orchid{to{transform:rotate(-5deg) translateY(-4px);}}
+@media (prefers-reduced-motion:reduce){.mc-orchid{animation:none;}}
+
+/* ---- 蕾絲：hero 下緣垂一圈（Anna Evans／Unsplash 的蕾絲花邊，鏡射接成連續的波浪） ---- */
+.mc-hero{position:relative;}
+.mc-lace-hem{position:absolute;left:0;right:0;bottom:-2px;z-index:3;height:clamp(54px,7vw,90px);pointer-events:none;
+  background:url(../img/chapel/lace-edge.webp) 50% 100%/auto 100% repeat-x;transform:scaleY(-1);
+  filter:drop-shadow(0 -2px 2px rgba(80,70,60,.12));}
+/* 區塊標題底下一條細細的蕾絲（Susan Wilkinson／Unsplash 的蕾絲緞帶） */
+.mc-head::after{content:'';display:block;width:min(230px,60vw);height:22px;margin-top:10px;
+  background:url(../img/chapel/lace-trim.webp) center/auto 100% repeat-x;opacity:.9;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent);mask-image:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent);}
+
+/* ---- 頁尾：一片柔焦的滿天星（Danielle Suijkerbuijk／Unsplash） ---- */
+.mc-foot{overflow:hidden;padding-top:clamp(70px,10vw,120px);padding-bottom:clamp(60px,8vw,100px);}
+.mc-foot-bg{position:absolute;inset:0;z-index:-1;background:url(../img/chapel/gypsophila.webp) 50% 40%/cover no-repeat;opacity:.75;
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 35%);mask-image:linear-gradient(180deg,transparent,#000 35%);}
+.mc-foot{isolation:isolate;}

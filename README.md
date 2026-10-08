@@ -318,12 +318,16 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > | `chapel/candle-top.webp`、`candle-base.webp`、`candle-body.webp` | 開場的三根蠟燭（不管哪個版型用燭光開場都是這根） | [一根白蠟燭](https://unsplash.com/photos/DfGYqdUl2WY)・KaLisa Veer | 去背，擦掉燭芯以上的火、重畫燒過的燭芯；再切成燭頂、燭身下半、一段燭身，疊起來高矮都不會拉長 |
 > | `chapel/flame.webp` | 開場點亮的火焰 | [黑底裡的一根蠟燭](https://unsplash.com/photos/Fqqrfvq0Zgg)・PhotographyCourse | 只取火焰，依亮度轉成透明度 |
 > | `chapel/aisle.webp` | 「我們的故事」的背景 | [開滿白花的婚禮走道](https://unsplash.com/photos/aRQrz0fclB8)・Soulseeker - Creative Photography | 縮圖 |
-> | `chapel/prism.webp` | 整頁飄過的彩虹光 | [三稜鏡投在牆上的彩虹](https://unsplash.com/photos/dFImzGIzZZ0)・Declan Sun | 只留下彩虹（依彩度轉成透明度） |
 > | `chapel/chandelier.webp` | hero 前景的水晶燈、當日流程 | [水晶吊燈](https://unsplash.com/photos/ayj4F0PC-I8)・CHUTTERSNAP | 去背 |
 > | `chapel/rings.webp` | 婚禮資訊 | [一對戒指](https://unsplash.com/photos/Vyy8tY3D3nk)・Deena Englard | 去背 |
-> | `chapel/champagne.webp` | 小提醒 | [插著一朵花的香檳杯](https://unsplash.com/photos/ad37Q9exJuA)・Fiona Murray-deGraaff | 去背 |
 > | `chapel/lilies.webp` | 交通資訊 | [一瓶百合](https://unsplash.com/photos/JwhaKMTJAD0)・Eddie Hsu | 去背，底部淡出 |
-> | `chapel/hydrangea.webp` | R.S.V.P. | [一枝繡球](https://unsplash.com/photos/9YwlCD8-Gh4)・Larisa Birta | 去背 |
+> | `chapel/lily-valley.webp`、`lily-valley2.webp` | 小提醒（一枝鈴蘭）、珍珠串末端綁的那一小枝 | [鈴蘭](https://unsplash.com/photos/81NtL7snxoI)・Svetlana Butovskaya、[兩枝鈴蘭](https://unsplash.com/photos/2R5jr_bvgUw)・Anthony Cantin | 去背 |
+> | `chapel/orchid.webp` | hero 右下角、R.S.V.P. | [黑底上的一枝白色蝴蝶蘭](https://unsplash.com/photos/kGckDAbXZA8)・Jocelyn Morales | 依亮度去背 |
+> | `chapel/gypsophila.webp` | 頁尾的背景 | [一片滿天星](https://unsplash.com/photos/AWZ3l66_iKw)・Danielle Suijkerbuijk | 縮圖 |
+> | `chapel/tulle.webp` | 整頁兩旁垂下來的白紗 | [垂墜的白紗](https://unsplash.com/photos/hM7P386VIOg)・Kristina Tochilko | 縮圖 |
+> | `chapel/lace-edge.webp` | hero 下緣的一圈蕾絲 | [波浪邊的白色蕾絲](https://unsplash.com/photos/AdX5Qpl7Xy0)・Anna Evans | 依亮度去背，取波浪邊那一段，鏡射接成連續的波浪 |
+> | `chapel/lace-trim.webp` | 每一區標題底下的一條蕾絲 | [一條蕾絲緞帶](https://unsplash.com/photos/4zd2OfT06MU)・Susan Wilkinson | 扣掉藍綠色的底，調成暖白 |
+> | `chapel/pearl-strand.webp`、`pearl.webp` | 整頁左邊跟著捲動往下垂的珍珠串、沿路掉下的珍珠 | [垂下來的一串珍珠](https://unsplash.com/photos/ZR_XjFWn0J4)・Paula Bustillos | 取筆直的一段（三顆）接成可以無縫重複，依亮度去背；再切出一顆單獨的 |
 
 > **晨光房間的照片素材**（`public/img/window/`，開場的紗簾與 `lobby-window.html` 共用）：一樣是 Unsplash License。
 >
@@ -346,7 +350,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > | 版型 | 線 | 領頭 | 沿路留下 |
 > |---|---|---|---|
 > | Forest Botanical | 一根藤蔓（CSS） | `forest/sprig.webp` 新芽 | 葉子、橡實、莓果（森林小物） |
-> | Midnight Chapel | `chapel/crystal-bead.webp` 一顆一顆的水晶珠 | `chapel/crystal-drop.webp` 稜鏡水晶墜 —— [掛在樹上的水晶串](https://unsplash.com/photos/m4YOs3Js2WQ)・Haley Owens，去背後切成一節珠子（重複接成一串）與最下面的水晶墜 | 彩虹光點（CSS） |
+> | Midnight Chapel | `chapel/pearl-strand.webp` 一串真的珍珠 | `chapel/lily-valley2.webp` 末端綁著一小枝鈴蘭 | `chapel/pearl.webp` 一顆一顆掉下的珍珠 |
 > | Morning Window | 亞麻布條（`window/linen.webp`）＋一道粉色縫線 | `window/tulip-stem.webp` 一枝鬱金香 —— [一枝粉白鬱金香](https://unsplash.com/photos/d3C86xPipVs)・Sabina Hassan，去背 | `window/petal1-3.webp` 花瓣 —— [散落的玫瑰花瓣](https://unsplash.com/photos/j8lW5HLruow)・Debby Hudson，一片一片切開、調成鬱金香的粉 |
 
 > **Forest Botanical 的手繪森林小物**（`public/img/forest/`，`lobby-forest.html`）：全部來自同一張 Unsplash 插畫
@@ -386,7 +390,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | night-sky | ✅ 整套插圖（現代星空：開場那張心形星圖停在 hero、寫實的月亮、三層山稜、亮燈的帳篷、坐著看星星的兩個人、細金線星座）＋ 捲動編排（三層星星視差、星圖外環跟著轉、星座一條一條連起來、望遠鏡視野的軌道、倒數的月亮越捲越圓、頁尾天快亮了） | `lobby-night.html` |
 | french-manor | ✅ 文藝復興：真的天頂濕壁畫、去背的大理石雕像與雕刻（花神、天使、小天使胸像、玫瑰花飾、女神、丘比特與賽姬）、大理石名牌 ＋ 從真的照片描出來的剪紙（城堡剪出一排排窗、托斯卡尼柏樹）＋ 開場走進的那座花園當倒數的背景 ＋ 新人照片放在剪紙橢圓花邊框（共 7 處）＋ 捲動編排（hero 的剪紙一層一層視差、倒數的花園照片視差），素材見上面〈法式莊園的照片素材〉 | `lobby-manor.html` |
 | morning-window | ✅ 真的照片（紗簾前的白瓷壺、白牆上窗格形狀的陽光、亞麻布、照著陽光的紗簾）＋ 一張早餐桌：洗出來的照片散在亞麻桌巾上、去背的咖啡／可頌／鬱金香 ＋ 區塊標題上是去背的早晨小物（不放在框裡）＋ 新人照片共 7 處 ＋ 捲動編排（照片一張張落到桌上、窗光滑過桌面、倒數時紗簾越捲越暖），素材見上面〈晨光房間的照片素材〉 | `lobby-window.html` |
-| midnight-chapel | ✅ 開場在午夜的禮堂點亮三根真的蠟燭 → 燭火熄掉、天亮 → 大廳是同一座純白禮堂；玻璃感：照片壓在厚玻璃裡（反光隨捲動滑過）、毛玻璃的卡、整頁飄過三稜鏡的彩虹光；區塊標題上是去背的實物（戒指、水晶燈、香檳、百合、繡球）；新人照片共 8 處（倒數那張在毛玻璃後面，越捲越清楚），素材見上面〈午夜教堂的照片素材〉 | `lobby-chapel.html` |
+| midnight-chapel | ✅ 開場在午夜的禮堂點亮三根真的蠟燭 → 燭火熄掉、天亮 → 大廳是同一座純白禮堂；玻璃感：照片壓在厚玻璃裡（反光隨捲動滑過）、毛玻璃的卡；兩旁垂著白紗、hero 下緣一圈蕾絲、每一區標題底下一條蕾絲、左邊一串珍珠跟著捲動往下垂（末端一小枝鈴蘭）、頁尾一片滿天星；區塊標題上是去背的實物（戒指、水晶燈、鈴蘭、百合、白色蝴蝶蘭）；新人照片共 8 處（倒數那張在毛玻璃後面，越捲越清楚），素材見上面〈午夜教堂的照片素材〉 | `lobby-chapel.html` |
 
 Night Sky 與 Midnight Chapel 的大廳是深色的，但子頁暫時還是淺色版（見 common.css）。
 每個版型各有一頁示範（`preview/botanical-letter.html`、`preview/secret-garden.html`、`preview/spring-orangerie.html`、`preview/night-sky.html`、`preview/french-manor.html`、`preview/morning-window.html`、`preview/midnight-chapel.html`）。右下角都可以切換開場。

@@ -84,28 +84,31 @@
 
 <!-- ============ 主畫面：蠟燭點完，天亮了 ============
      一張真的照片：一整排白色圓拱、格子天花板、水晶吊燈的純白禮堂。
-     玻璃感：兩個人的照片壓在一塊一塊厚玻璃裡、毛玻璃的卡片、牆上飄過三稜鏡的彩虹光；
-     區塊標題上不是框，是一件一件去背的實物（戒指、水晶燈、香檳、百合、繡球）。 -->
+     玻璃感：兩個人的照片壓在一塊一塊厚玻璃裡、毛玻璃的卡片；兩旁垂著白紗，hero 下緣一圈蕾絲。
+     區塊標題上不是框，是一件一件去背的實物（戒指、水晶燈、鈴蘭、百合、白色蝴蝶蘭），底下一條蕾絲。 -->
 <div id="app">
   <section class="panel lobby mc-lobby" data-panel="lobby" data-scroll>
 
-    <!-- 一串水晶燈的水晶珠跟著捲動往下垂，前端是稜鏡水晶墜，經過的地方閃出彩虹光點（--ap 由 lobby-motion.js 算，共用的部分在 lobby-trail.css） -->
+    <!-- 一串珍珠跟著捲動往下垂，末端綁著一小枝鈴蘭，沿路掉下幾顆珍珠（--ap 由 lobby-motion.js 算，共用的部分在 lobby-trail.css） -->
     <div class="lx-trail mc-trail" data-scroll aria-hidden="true">
       <i class="lx-trail-line"></i>
-      <i class="lx-mark " style="--k:0.12;--mx:16px;--mr:0deg"></i><i class="lx-mark " style="--k:0.27;--mx:-16px;--mr:0deg"></i><i class="lx-mark " style="--k:0.42;--mx:16px;--mr:0deg"></i><i class="lx-mark " style="--k:0.57;--mx:-16px;--mr:0deg"></i>
-      <i class="lx-mark " style="--k:0.72;--mx:16px;--mr:0deg"></i><i class="lx-mark " style="--k:0.87;--mx:-16px;--mr:0deg"></i>
+      <i class="lx-mark" style="--k:0.1;--mx:15px;--mr:-10deg"></i><i class="lx-mark" style="--k:0.24;--mx:-15px;--mr:20deg"></i><i class="lx-mark" style="--k:0.38;--mx:16px;--mr:0deg"></i><i class="lx-mark" style="--k:0.52;--mx:-15px;--mr:-25deg"></i><i class="lx-mark" style="--k:0.66;--mx:15px;--mr:15deg"></i><i class="lx-mark" style="--k:0.8;--mx:-16px;--mr:-5deg"></i><i class="lx-mark" style="--k:0.94;--mx:15px;--mr:25deg"></i>
       <i class="lx-trail-tip"></i>
     </div>
 
-    <!-- 三稜鏡的彩虹光：固定在視窗上，跟著捲動慢慢滑過整頁（--sp 來自 .mc-lobby） -->
-    <div class="mc-prisms" aria-hidden="true"><i></i><i></i></div>
+    <!-- 兩旁垂下來的白紗：固定在視窗兩側，輕輕地飄，跟著捲動慢慢移（--sp 來自 .mc-lobby） -->
+    <div class="mc-veils" aria-hidden="true"><i></i><i></i></div>
 
     <!-- ===== Hero ===== -->
     <header class="lobby-hero mc-hero" data-scroll>
       <div class="mc-scene" aria-hidden="true">
         <div class="mc-photo"></div>
         <i class="mc-chandelier"></i>
+        <!-- 右下角一枝白色蝴蝶蘭 -->
+        <i class="mc-orchid"></i>
       </div>
+      <!-- hero 下緣垂著一圈蕾絲 -->
+      <i class="mc-lace-hem" aria-hidden="true"></i>
       <div class="mc-hero-body">
         <div class="mc-cartouche">
           <div class="mc-kicker"><span class="en">In the light of day, we gather</span><span class="cn">誠摯邀請您</span></div>
@@ -167,10 +170,10 @@
         </div>
       </section>
 
-      <!-- ===== 出席前的小提醒：插著一朵芍藥的香檳杯（沒填就整塊收起） ===== -->
+      <!-- ===== 出席前的小提醒：一枝鈴蘭（沒填就整塊收起） ===== -->
       <section class="info-block mc-sec" id="noteBlock" hidden>
         <div class="mc-head">
-          <figure class="mc-icon" data-reveal="draw"><i class="mc-obj o-champagne"></i></figure>
+          <figure class="mc-icon" data-reveal="draw"><i class="mc-obj o-lily-valley"></i></figure>
           <span class="en block-title">Notes</span>
           <span class="cn block-sub">出席前的小提醒</span>
         </div>
@@ -252,10 +255,10 @@
         </div>
       </section>
 
-      <!-- ===== R.S.V.P.：一枝繡球 ＋ 一塊玻璃相片（第六張） ===== -->
+      <!-- ===== R.S.V.P.：一枝白色蝴蝶蘭 ＋ 一塊玻璃相片（第六張） ===== -->
       <section class="info-block mc-sec">
         <div class="mc-head">
-          <figure class="mc-icon" data-reveal="draw"><i class="mc-obj o-hydrangea"></i></figure>
+          <figure class="mc-icon" data-reveal="draw"><i class="mc-obj o-orchid"></i></figure>
           <span class="en block-title">R.S.V.P.</span>
           <span class="cn block-sub">出席回覆</span>
         </div>
@@ -315,7 +318,9 @@
         </div>
       </section>
 
+      <!-- 頁尾：一片柔焦的滿天星 -->
       <footer class="mc-foot">
+        <div class="mc-foot-bg" aria-hidden="true"></div>
         <div class="mc-fin">in the light, together</div>
         <span>made for <span data-tpl="couple"></span>・小港製作所 設計製作</span>
       </footer>
