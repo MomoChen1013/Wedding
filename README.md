@@ -261,15 +261,15 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 >
 > | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
 > |---|---|---|---|
-> | `orangerie/glasshouse.webp` | 溫室大廳 hero | [白框玻璃溫室與柑橘樹](https://unsplash.com/photos/ofVrf6rVLAY)・Belinda Fewings | 縮圖 |
+> | `orangerie/greenhouse.webp` | 溫室大廳 hero | [明亮的玻璃溫室](https://unsplash.com/photos/ywAtdnYPwR4)・Annie Spratt | 裁掉底部、縮圖 |
 > | `orangerie/glass-roof.webp` | 溫室「我們的故事」的底 | [溫室的玻璃屋頂](https://unsplash.com/photos/jihTT_05_tk)・Annie Spratt | 縮圖 |
-> | `orangerie/white-rose.webp` | 玻璃罩裡的那一朵 | [白玫瑰](https://unsplash.com/photos/ZzTFupfsL4I)・Fiona Murray-deGraaff | 去背 |
+> | `orangerie/white-rose.webp` | hero 名字上面那一朵 | [白玫瑰](https://unsplash.com/photos/ZzTFupfsL4I)・Fiona Murray-deGraaff | 去背 |
 > | `orangerie/white-roses.webp` | R.S.V.P. | [一束白玫瑰](https://unsplash.com/photos/NUX8vT_lkWI)・Evie S. | 去背 |
 > | `orangerie/tulip.webp` | 婚禮資訊 | [紅色鬱金香](https://unsplash.com/photos/62saZ_T5AP0)・Ananthu Selvam | 去背、裁掉花瓶 |
 > | `orangerie/lemon.webp` | 當日流程 | [檸檬枝](https://unsplash.com/photos/OvC1Bojh_Fw)・Rafael Albaladejo | 去背 |
 > | `orangerie/fern.webp` | 小提醒 | [蕨葉](https://unsplash.com/photos/lPikxQg6SWQ)・Shovit Chettri | 去背 |
 > | `orangerie/can.webp` | 交通資訊 | [澆水壺](https://unsplash.com/photos/VENhzgCW5eg)・Hitomi Bremmer | 去背 |
-> | `orangerie/red-rose-cloche.webp` | 倒數（玻璃罩裡的紅玫瑰，捲到的時候慢慢亮起來） | [玻璃罩裡的紅玫瑰](https://unsplash.com/photos/MAcxMWYwmes)・Christos Papadopoulos | 裁切、縮圖 |
+> | `orangerie/prince-rose.webp` | 倒數（像小王子星球上的那一朵，捲到的時候亮起一圈暖光） | [一枝長莖紅玫瑰](https://unsplash.com/illustrations/EkvQiOsNJas)・Ifeolu Kayode | 去背 |
 > | `orangerie/leaf-shadow.webp` | 溫室整頁的底（白牆上的葉影，跟著捲動慢慢移） | [白牆上的楓葉影子](https://unsplash.com/photos/HeLGgUTzIhM)・Akira | 縮圖；multiply 疊在底色上 |
 > | `orangerie/leaf-wall.webp` | 開場（bloom）的綠籬 | [綠籬](https://unsplash.com/photos/rDIo23uIQrY)・Wyxina Tresse | 縮圖 |
 > | `orangerie/bloom-rose1.webp` | 開場開出來的玫瑰 | [帶水珠的白玫瑰](https://unsplash.com/photos/B2oNSGZbUnU)・Wyxina Tresse | 去背 |
@@ -384,7 +384,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 |---|---|---|
 | botanical-letter | ✅ 真的照片（一整張老標本台紙、壓過的鬱金香／葉子／蕨／穗花／雛菊／橄欖枝、蒲公英、棉紙與纖維紙、郵票裡的千日紅）＋ 新人的照片（hero 是封面，四頁圖版是照片牆的前四張，每張旁邊壓一枝乾燥花）＋ 捲動編排，素材見上面〈春日溫室與植物信箋的照片素材〉 | `lobby-botanical.html` |
 | secret-garden | ✅ 真的照片 ＋ 手繪水彩（玫瑰拱門的小徑、垂下來的常春藤、鏡頭前的花、水彩的罌粟／藍雛菊／海芋／鬱金香／牡丹、去背的蝴蝶、常春藤牆、黃昏草地的螢火蟲）＋ 捲動編排，素材見上面〈秘密花園的照片素材〉 | `lobby-garden.html` |
-| spring-orangerie | ✅ 真的照片（白框玻璃溫室與兩旁的柑橘樹、玻璃罩裡的白玫瑰、鬱金香、檸檬枝、蕨葉、澆水壺、溫室屋頂、玻璃罩裡的紅玫瑰、白牆上的葉影、一束白玫瑰）＋ 捲動編排（葉影隨捲動移動、斜射的光、玻璃反光、倒數區玻璃罩裡的紅玫瑰捲到時慢慢亮起來），素材見上面〈春日溫室與植物信箋的照片素材〉 | `lobby-orangerie.html` |
+| spring-orangerie | ✅ 真的照片（明亮的玻璃溫室、白玫瑰、鬱金香、檸檬枝、蕨葉、澆水壺、溫室屋頂、小王子的那一朵紅玫瑰、白牆上的葉影、一束白玫瑰）＋ 捲動編排（葉影隨捲動移動、斜射的光、倒數區的紅玫瑰捲到時亮起暖光），素材見上面〈春日溫室與植物信箋的照片素材〉 | `lobby-orangerie.html` |
 | night-sky | ✅ 整套插圖（現代星空：開場那張心形星圖停在 hero、寫實的月亮、三層山稜、亮燈的帳篷、坐著看星星的兩個人、細金線星座）＋ 捲動編排（三層星星視差、星圖外環跟著轉、星座一條一條連起來、望遠鏡視野的軌道、倒數的月亮越捲越圓、頁尾天快亮了） | `lobby-night.html` |
 | french-manor | ✅ 文藝復興：真的天頂濕壁畫、去背的大理石雕像與雕刻（花神、天使、小天使胸像、玫瑰花飾、女神、丘比特與賽姬）、大理石名牌 ＋ 從真的照片描出來的剪紙（城堡剪出一排排窗、托斯卡尼柏樹、分成三層的法式花園）＋ 新人照片放在剪紙橢圓花邊框（共 7 處）＋ 捲動編排（hero 的剪紙一層一層視差、倒數的剪紙花園一層一層疊上去），素材見上面〈法式莊園的照片素材〉 | `lobby-manor.html` |
 | morning-window | ✅ 真的照片（紗簾前的白瓷壺、白牆上窗格形狀的陽光、亞麻布、照著陽光的紗簾）＋ 一張早餐桌：洗出來的照片散在亞麻桌巾上、去背的咖啡／可頌／鬱金香 ＋ 區塊標題上是去背的早晨小物（不放在框裡）＋ 新人照片共 7 處 ＋ 捲動編排（照片一張張落到桌上、窗光滑過桌面、倒數時紗簾越捲越暖），素材見上面〈晨光房間的照片素材〉 | `lobby-window.html` |

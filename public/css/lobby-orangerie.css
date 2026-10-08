@@ -58,13 +58,13 @@ body[data-lobby="spring-orangerie"] .bg-decor{
 ============================================================ */
 .so-hero{position:relative;overflow:hidden;min-height:calc(100svh - var(--nav-h));padding:0;gap:0;justify-content:flex-end;}
 .so-house{position:absolute;inset:0;}
-/* 溫室：一張真的照片（Belinda Fewings／Unsplash）。往下捲時慢慢推近；
+/* 溫室：一張真的照片（Annie Spratt／Unsplash）—— 明亮的玻璃屋頂、底下一片綠，畫面很乾淨。往下捲時慢慢推近；
    名字那一塊的底下墊一層霧白，底部淡進頁面的底色 */
 .so-photo{position:absolute;inset:-4% 0 -8%;
   background:
     radial-gradient(52% 44% at 50% 74%,rgba(251,251,245,.55),rgba(251,251,245,0) 75%),
     linear-gradient(180deg,rgba(251,251,245,.1),rgba(251,251,245,0) 40%,rgba(251,251,245,0) 80%,#f6f8f0 100%),
-    url(../img/orangerie/glasshouse.webp) 50% 40%/cover no-repeat;
+    url(../img/orangerie/greenhouse.webp) 50% 30%/cover no-repeat;
   transform:translateY(calc(var(--lp,0) * 50px)) scale(calc(1.03 + var(--lp,0) * .06));}
 .app-show .so-photo{animation:so-push 2.4s cubic-bezier(.2,.7,.2,1) both;}
 @keyframes so-push{from{opacity:.5;scale:1.1;filter:blur(3px);}}
@@ -80,20 +80,10 @@ body[data-lobby="spring-orangerie"] .bg-decor{
 .so-hero-body{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;text-align:center;
   padding:0 20px clamp(40px,7vh,80px);color:var(--so-ink);
   transform:translateY(calc(var(--lp,0) * 40px));opacity:calc(1 - var(--lp,0) * 1.2);}
-/* 玻璃罩：罩子是 CSS 畫的玻璃（霧面、邊緣的高光），裡面是一朵真的白玫瑰（Fiona Murray-deGraaff／Unsplash） */
-.so-cloche{position:relative;width:clamp(120px,13vw,160px);aspect-ratio:3/4;margin-bottom:14px;}
-.so-cloche-rose{position:absolute;left:8%;right:8%;top:14%;bottom:4%;
-  background:url(../img/orangerie/white-rose.webp) 50% 100%/contain no-repeat;filter:drop-shadow(0 6px 8px rgba(35,64,47,.25));}
-.so-cloche-glass{position:absolute;inset:0;border-radius:50% 50% 6px 6px / 42% 42% 6px 6px;
-  background:
-    linear-gradient(100deg,rgba(255,255,255,0) 18%,rgba(255,255,255,.55) 24%,rgba(255,255,255,0) 32%),
-    radial-gradient(70% 50% at 50% 30%,rgba(255,255,255,.18),rgba(255,255,255,.06));
-  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.85),inset 0 0 18px rgba(255,255,255,.45),0 18px 24px -18px rgba(35,64,47,.45);}
-.so-cloche-glass::before{content:'';position:absolute;left:50%;top:-7%;width:14%;aspect-ratio:1;transform:translateX(-50%);border-radius:50%;
-  background:radial-gradient(circle at 35% 30%,#fff,rgba(255,255,255,.5) 45%,rgba(200,215,205,.6));box-shadow:0 1px 2px rgba(35,64,47,.25);}
-.so-cloche-glass::after{content:'';position:absolute;left:-6%;right:-6%;bottom:-5%;height:9%;border-radius:50%;
-  background:linear-gradient(180deg,#c9a27a,#8a6244);box-shadow:0 6px 10px -4px rgba(35,64,47,.45);}
-/* 開場開完的那一朵花，放進玻璃罩裡 */
+/* 一朵真的白玫瑰（Fiona Murray-deGraaff／Unsplash），開場開完的那一朵花；不再罩玻璃 */
+.so-cloche{position:relative;width:clamp(110px,12vw,150px);aspect-ratio:3/4;margin-bottom:14px;}
+.so-cloche-rose{position:absolute;inset:0;
+  background:url(../img/orangerie/white-rose.webp) 50% 100%/contain no-repeat;filter:drop-shadow(0 8px 10px rgba(35,64,47,.28));}
 .app-show .so-cloche{animation:so-cloche-in 1.3s cubic-bezier(.2,.7,.2,1) both;}
 @keyframes so-cloche-in{from{opacity:0;transform:scale(.9) translateY(20px);}}
 /* 霧面玻璃牌 */
@@ -195,7 +185,7 @@ body[data-hero-name="cn"] .so-hero .so-names{font-family:'Noto Serif TC',serif;f
 .so-band-title{font:400 clamp(28px,4.4vw,44px)/1.15 'Marcellus','Noto Serif TC',serif;letter-spacing:.05em;}
 .so-band-sub{margin-top:6px;font-size:13px;letter-spacing:.4em;}
 
-/* ---- 故事：溫室的綠 ＋ 一扇拱窗 ---- */
+/* ---- 故事：溫室的綠 ＋ 一張相片 ---- */
 .so-story{color:#fbfcf8;}
 /* 溫室的玻璃屋頂與棕櫚（Annie Spratt／Unsplash），壓一層溫室的綠，字才讀得到 */
 .so-story .so-band-bg{background:
@@ -205,20 +195,14 @@ body[data-hero-name="cn"] .so-hero .so-names{font-family:'Noto Serif TC',serif;f
 .so-story .so-band-sub{color:rgba(251,252,248,.75);}
 .so-story .so-band-inner{display:grid;grid-template-columns:1fr;gap:40px;justify-items:center;text-align:center;}
 @media (min-width:780px){.so-story .so-band-inner{grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:clamp(40px,6vw,76px);align-items:center;text-align:left;justify-items:stretch;}}
-.so-window{position:relative;width:min(100%,300px);aspect-ratio:3/4.2;border-radius:999px 999px 14px 14px;padding:10px;
+/* 兩人的照片：一張白邊的相片，不再加窗格（窗格會擋到人） */
+.so-window{position:relative;width:min(100%,300px);aspect-ratio:3/4;border-radius:16px;padding:10px;
   background:#f7f8f3;box-shadow:0 26px 40px -24px rgba(0,0,0,.5);overflow:hidden;justify-self:center;}
-.so-window-ph{position:absolute;inset:10px;border-radius:999px 999px 8px 8px;background:#9fbfa8 center/cover;
-  background-position:50% calc(50% + (var(--sp,.5) - .5) * 30%);}
-.so-window-bars{position:absolute;inset:10px;border-radius:999px 999px 8px 8px;pointer-events:none;
-  background:
-    linear-gradient(90deg,transparent calc(50% - 3px),#f7f8f3 calc(50% - 3px) calc(50% + 3px),transparent calc(50% + 3px)),
-    linear-gradient(0deg,transparent 33%,#f7f8f3 33% calc(33% + 5px),transparent calc(33% + 5px));}
-.so-window-glint{position:absolute;inset:10px;border-radius:999px 999px 8px 8px;pointer-events:none;
-  background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.5) 45%,transparent 55%);
-  background-size:300% 100%;background-position:calc(100% - var(--sp,.5) * 100%) 0;}
+.so-window-ph{position:absolute;inset:10px;border-radius:10px;background:#9fbfa8 center/cover;
+  background-position:50% calc(50% + (var(--sp,.5) - .5) * 20%);}
 .so-story .story-text{margin:22px 0 0;max-width:32em;color:#fbfcf8;font-size:15px;text-align:left;}
 
-/* ---- 倒數：玻璃罩裡的一朵紅玫瑰 ---- */
+/* ---- 倒數：小王子的那一朵玫瑰 ---- */
 .so-count{color:var(--so-ink);}
 .so-count .so-band-bg{background:
   radial-gradient(60% 80% at 20% 30%,rgba(255,238,200,.6),transparent 70%),
@@ -227,17 +211,17 @@ body[data-hero-name="cn"] .so-hero .so-names{font-family:'Noto Serif TC',serif;f
 .so-count .so-band-inner{display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center;}
 @media (min-width:780px){.so-count .so-band-inner{flex-direction:row;justify-content:center;gap:clamp(40px,7vw,90px);text-align:left;}}
 .so-count .so-band-sub{color:var(--so-soft);}
-/* 一朵封在玻璃罩裡的紅玫瑰（Christos Papadopoulos／Unsplash），放在一扇拱窗形的暗框裡；
-   捲到這一帶的時候，罩子裡慢慢亮起來（--glow 由這一條帶子穿過視窗的進度算出來） */
+/* 一枝長長的紅玫瑰（Ifeolu Kayode／Unsplash 插畫）：像小王子星球上那一朵。
+   捲到這一帶的時候輕輕亮起一圈暖光（--glow 由這一條帶子穿過視窗的進度算出來） */
 .so-count{--glow:clamp(0,calc((var(--sp,0) - .15) * 2.4),1);}
-.so-cloche-wrap{position:relative;width:clamp(200px,24vw,270px);aspect-ratio:3/4;margin:0;padding:8px;
-  border-radius:999px 999px 14px 14px;background:#f7f8f3;box-shadow:0 26px 40px -24px rgba(35,64,47,.55);}
-.so-rosedome{position:absolute;inset:8px;border-radius:999px 999px 8px 8px;overflow:hidden;
-  background:#0b0b0a url(../img/orangerie/red-rose-cloche.webp) 50% 100%/112% auto no-repeat;
-  filter:brightness(calc(.75 + var(--glow) * .35)) saturate(calc(.85 + var(--glow) * .25));}
-.so-rosedome::after{content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(40% 30% at 50% 62%,rgba(255,120,110,calc(var(--glow) * .28)),transparent 70%),
-    linear-gradient(115deg,transparent 35%,rgba(255,255,255,.14) 45%,transparent 55%);}
+.so-cloche-wrap{position:relative;margin:0;height:clamp(240px,30vw,340px);aspect-ratio:141/720;}
+.so-rosedome{position:absolute;inset:0;background:url(../img/orangerie/prince-rose.webp) 50% 100%/contain no-repeat;
+  transform-origin:50% 100%;animation:so-sway 6s ease-in-out infinite alternate;
+  filter:drop-shadow(0 0 calc(var(--glow) * 16px) rgba(255,170,140,.55)) drop-shadow(0 10px 8px rgba(35,64,47,.18));}
+.so-cloche-wrap::after{content:'';position:absolute;left:50%;bottom:-6px;width:260%;height:14px;transform:translateX(-50%);
+  border-radius:50%;background:radial-gradient(closest-side,rgba(35,64,47,.16),transparent);}
+@keyframes so-sway{from{rotate:-2deg;}to{rotate:2deg;}}
+@media (prefers-reduced-motion:reduce){.so-rosedome{animation:none;}}
 .so-count .cd-grid{margin:22px 0 0;}
 @media (max-width:779px){.so-count .cd-grid{margin:22px auto 0;}}
 .so-count .cd-unit{border-left:1px solid var(--so-line);}
