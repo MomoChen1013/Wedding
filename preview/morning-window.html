@@ -74,7 +74,7 @@
 <!-- ============ 主畫面：紗簾拉開之後，早晨的窗邊與一張早餐桌 ============
      一張真的照片：白框窗前的一瓶鬱金香（跟開場紗簾後面那扇窗是同一張）。
      侘寂（Wabi-Sabi）：灰泥牆、亞麻、手捏的陶、乾燥的花草，顏色都是褪過的大地色。
-     往下是一張鋪著亞麻桌巾的桌子：洗出來的照片散在桌上，旁邊是手作陶杯、北歐抱枕、一只粗陶瓶
+     「我們的故事」那裡是一張鋪著亞麻桌巾的桌子：洗出來的照片散在桌上，旁邊是手作陶杯、素色抱枕、一盆室內植物
      （全部是去背的真實物件，不放在框裡）。整頁的灰泥牆上落著窗格形狀的陽光，跟著捲動慢慢移動。 -->
 <div id="app">
   <section class="panel lobby mw-lobby" data-panel="lobby" data-scroll>
@@ -108,19 +108,6 @@
 
     <div class="scene-body mw-body">
 
-      <!-- ===== 早餐桌：亞麻桌巾上散著四張洗出來的照片（照片牆前四張），
-           手作陶杯、北歐抱枕、一只粗陶瓶擺在照片之間；窗光跟著捲動滑過桌面 ===== -->
-      <section class="mw-table" data-scroll aria-hidden="true">
-        <i class="mw-table-sun"></i>
-        <figure class="mw-print p1" data-reveal="rise"><div class="mw-print-ph" data-photo="photo1"></div></figure>
-        <figure class="mw-print p2" data-reveal="rise"><div class="mw-print-ph" data-photo="photo2"></div></figure>
-        <figure class="mw-print p3" data-reveal="rise"><div class="mw-print-ph" data-photo="photo3"></div></figure>
-        <figure class="mw-print p4" data-reveal="rise"><div class="mw-print-ph" data-photo="photo4"></div></figure>
-        <i class="mw-obj o-cup t-cup"></i>
-        <i class="mw-obj o-cushion t-cushion"></i>
-        <i class="mw-obj o-vase t-vase"></i>
-      </section>
-
       <!-- ===== 婚禮資訊：一只手作陶杯 ===== -->
       <section class="info-block mw-sec">
         <div class="mw-head">
@@ -150,10 +137,10 @@
         </div>
       </section>
 
-      <!-- ===== 當日流程：一只粗陶瓶 ===== -->
+      <!-- ===== 當日流程：一只白色花瓶 ===== -->
       <section class="info-block mw-sec" id="scheduleBlock">
         <div class="mw-head">
-          <figure class="mw-icon" data-reveal="draw"><i class="mw-obj o-vase"></i></figure>
+          <figure class="mw-icon" data-reveal="draw"><i class="mw-obj o-wvase"></i></figure>
           <span class="en block-title">Schedule</span>
           <span class="cn block-sub">當日流程</span>
         </div>
@@ -162,7 +149,7 @@
         </div>
       </section>
 
-      <!-- ===== 出席前的小提醒：一對北歐抱枕（沒填就整塊收起） ===== -->
+      <!-- ===== 出席前的小提醒：一顆素色抱枕（沒填就整塊收起） ===== -->
       <section class="info-block mw-sec" id="noteBlock" hidden>
         <div class="mw-head">
           <figure class="mw-icon" data-reveal="draw"><i class="mw-obj o-cushion"></i></figure>
@@ -207,7 +194,7 @@
         </div>
       </section>
 
-      <!-- ===== 兩人的故事：亞麻布上疊著兩張照片（故事照、照片牆第五張），窗格的陽光跟著捲動慢慢滑過去 ===== -->
+      <!-- ===== 兩人的故事：亞麻布上疊著兩張照片（故事照、照片牆第五張），下面接著散著照片的桌巾；窗格的陽光跟著捲動慢慢滑過去 ===== -->
       <section class="info-block mw-band mw-story" id="storyBlock" hidden data-scroll>
         <div class="mw-band-bg" aria-hidden="true"><i class="mw-sun"></i></div>
         <div class="mw-band-inner">
@@ -221,6 +208,18 @@
             <p class="story-text" id="storyText"></p>
           </div>
         </div>
+              <!-- 故事下面接著一張亞麻桌巾：散著四張洗出來的照片（照片牆前四張），
+                   手作陶杯、素色抱枕、一盆室內植物擺在照片之間；窗光跟著捲動滑過桌面 -->
+          <section class="mw-table" data-scroll aria-hidden="true">
+            <i class="mw-table-sun"></i>
+            <figure class="mw-print p1" data-reveal="rise"><div class="mw-print-ph" data-photo="photo1"></div></figure>
+            <figure class="mw-print p2" data-reveal="rise"><div class="mw-print-ph" data-photo="photo2"></div></figure>
+            <figure class="mw-print p3" data-reveal="rise"><div class="mw-print-ph" data-photo="photo3"></div></figure>
+            <figure class="mw-print p4" data-reveal="rise"><div class="mw-print-ph" data-photo="photo4"></div></figure>
+            <i class="mw-obj o-cup t-cup"></i>
+            <i class="mw-obj o-cushion t-cushion"></i>
+            <i class="mw-obj o-plant t-plant"></i>
+          </section>
       </section>
 
       <!-- ===== Moments 相遇之間 ===== -->
@@ -251,14 +250,14 @@
         </div>
       </section>
 
-      <!-- ===== R.S.V.P.：一朵乾燥的薊花 ===== -->
+      <!-- ===== R.S.V.P.：一枝粉色鬱金香 ===== -->
       <section class="info-block mw-sec">
         <div class="mw-head">
           <span class="en block-title">R.S.V.P.</span>
           <span class="cn block-sub">出席回覆</span>
         </div>
         <div class="mw-card mw-rsvp" data-reveal="rise" data-scroll>
-          <figure class="mw-icon mw-rsvp-icon" data-reveal="draw" aria-hidden="true"><i class="mw-obj o-thistle"></i></figure>
+          <figure class="mw-icon mw-rsvp-icon" data-reveal="draw" aria-hidden="true"><i class="mw-obj o-tulip"></i></figure>
           <div class="rsvp-cta">
             <h3>能來參加我們的婚禮嗎？</h3>
             <p>花 30 秒回覆出席，讓我們把最好的位置留給你</p>

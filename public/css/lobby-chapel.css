@@ -227,7 +227,7 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
 .mc-story-body{padding:clamp(26px,4vw,40px);text-align:left;}
 .mc-story .story-text{margin:18px 0 0;max-width:32em;color:var(--mc-ink);font-size:15px;text-align:left;}
 
-/* ---- 倒數：毛玻璃後面是兩個人的照片，越捲越清楚 ---- */
+/* ---- 倒數：毛玻璃後面是一片鈴蘭，越捲越清楚 ---- */
 .mc-count{--clear:clamp(0,calc((var(--sp,0) - .12) * 2.4),1);}
 /* 毛玻璃後面：一片柔白的鈴蘭（Svetlana Butovskaya／Unsplash），捲到這裡慢慢清楚 */
 .mc-frost-ph{position:absolute;inset:-30px;background:#f3f2ee url(../img/chapel/lily-field.webp) 50% 45%/cover no-repeat;
