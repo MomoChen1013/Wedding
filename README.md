@@ -334,8 +334,8 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > |---|---|---|---|
 > | `window/sheer.webp` | 開場（curtain）的紗簾、大廳 hero 左邊被風吹的紗簾 | [垂到地上的白紗簾](https://unsplash.com/photos/don7oK9K6us)・sander traa | 只取上半的布 |
 > | `window/tulips.webp` | 開場紗簾後面的窗、大廳 hero（同一張） | [白框窗前的一瓶鬱金香](https://unsplash.com/photos/YH1h9tN8_ac)・Zoe Richardson | 縮圖 |
-> | `window/sun-patch.webp` | 整頁牆上窗格形狀的陽光、早餐桌與「我們的故事」上滑過去的光 | [白牆上的窗光](https://unsplash.com/photos/X8sWlFdQElQ)・H&CO | 轉成灰階、拉開明暗，做成 multiply 用的光影 |
-> | `window/linen.webp` | 早餐桌的桌巾、「我們的故事」的亞麻布 | [米色的布紋](https://unsplash.com/photos/QFQ6vsou7XA)・Safwan Thottoli | 縮圖 |
+> | `window/sun-patch.webp` | 整頁牆上窗格形狀的陽光、「我們的故事」上滑過去的光 | [白牆上的窗光](https://unsplash.com/photos/X8sWlFdQElQ)・H&CO | 轉成灰階、拉開明暗，做成 multiply 用的光影 |
+> | `window/linen.webp` | 「我們的故事」的亞麻布（也是桌巾） | [米色的布紋](https://unsplash.com/photos/QFQ6vsou7XA)・Safwan Thottoli | 縮圖 |
 > | `window/sheer-light.webp` | 倒數（陽光跟著捲動移過來） | [陽光斜斜照在白紗簾上](https://unsplash.com/photos/VUu9rAmb9R0)・Mila Albrecht | 縮圖 |
 > | `window/clay-cup.webp` | 「我們的故事」的桌巾上、婚禮資訊 | [手捏的陶杯](https://unsplash.com/photos/x6XqtHVag7c)・Annie Spratt | 去背 |
 > | `window/plant.webp` | 「我們的故事」的桌巾上 | [白色條紋盆裡的一盆草](https://unsplash.com/photos/zbQ3vh9zLwo)・Ceyda Çiftci | 去背 |
