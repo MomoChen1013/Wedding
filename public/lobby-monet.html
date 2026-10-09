@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- 社群預覽文案：與 index.html 同一套備援，build-og 會針對站台換成專屬內容。
+     這一份是 Monet Garden（莫內花園・流動油畫）版型的大廳：走進莫內的日本橋與睡蓮池。
+     由 build-og 依 TEMPLATES.lobbyFile 選用；沒跑過 build-og 的站台
+     由 site-context.js 在執行期換成這一份骨架。畫不是圖檔：canvas[data-monet] 由
+     js/openers/painting.js（版型的 lobbyJs）一筆一筆畫出來，水面一直輕輕流動。 -->
+<title>我們結婚了｜婚禮邀請函</title>
+<meta name="description" content="誠摯邀請您一起見證我們的大喜之日・婚禮資訊、當日流程與互動小遊戲都在這裡">
+<meta property="og:title" content="我們結婚了｜婚禮邀請函">
+<meta property="og:description" content="誠摯邀請您一起見證我們的大喜之日・婚禮資訊、當日流程與互動小遊戲都在這裡">
+<meta property="og:type" content="website">
+
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="/favicon.png">
+<!-- 載入順序的說明見 lobby-forest.html；這裡多一支 lobby-motion.js（開場與捲動編排），
+     一樣只是先下載，執行順序由 site-context.js 決定（它排在 index.js 之前）。 -->
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="modulepreload" href="/js/site-context.js">
+<link rel="modulepreload" href="/js/wed-model.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js" crossorigin>
+<link rel="preload" as="script" href="/js/common.js">
+<link rel="preload" as="script" href="/js/lobby-motion.js">
+<link rel="preload" as="script" href="/js/openers/painting.js">
+<link rel="preload" as="script" href="/js/index.js">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- 字體依版型不同，由 build-og（預產）或 site-context.js（執行期）依 TEMPLATES[x].fonts 補上 -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/css/index.css">
+<link rel="stylesheet" href="/css/lobby-monet.css">
+</head>
+<body data-template="monet-garden" data-page="lobby" data-lobby="monet-garden">
+<!-- 開場遮罩：只有**沒預產到**的頁面會顯示（見 css/common.css 的 .boot-veil） -->
+<div class="boot-veil" aria-hidden="true"><span class="boot-veil-mark">✦</span></div>
+
+<div class="bg-decor"></div>
+<canvas id="fx"></canvas>
+
+<!-- ============ 入場：填名字 + 抽 icon（與 index.html 同一套，js/index.js 操作） ============ -->
+<div class="overlay" id="gate">
+  <div class="gate-card">
+    <div class="ribbon">We're getting married</div>
+    <h1 data-tpl="couple"></h1>
+    <div class="sub"><span data-tpl="date"></span>・在進場前，先報上名來</div>
+    <div class="icon-pick" id="iconPick">✦</div>
+    <div class="icon-hint">這是你的專屬記號・<b id="rerollIcon">換一個</b></div>
+    <div class="field"><input id="nameInput" type="text" maxlength="12" placeholder="輸入你的名字"></div>
+    <button class="btn" id="enterBtn">進場觀禮</button>
+    <div class="gate-sep"><span>或</span></div>
+    <button class="btn btn-google" id="googleBtn" type="button">
+      <svg viewBox="0 0 18 18" aria-hidden="true">
+        <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.17-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.61z"/>
+        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.33A9 9 0 0 0 9 18z"/>
+        <path fill="#FBBC05" d="M3.96 10.71A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.17.28-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.04l3-2.33z"/>
+        <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 9 0 9 9 0 0 0 .96 4.96l3 2.33C4.67 5.16 6.66 3.58 9 3.58z"/>
+      </svg>
+      <span>用 Google 帳號登入</span>
+    </button>
+  </div>
+</div>
+
+<!-- ============ 開場 ============
+     空的容器：用哪一種開場由 sites.opening 決定（沒設就是這個版型的預設開場），
+     畫面由 js/openers/{key}.js 蓋進來。看過開場的賓客由 js/index.js 直接移除。 -->
+<div class="overlay" id="opener" hidden></div>
+
+<!-- 預設開場（字幕 ＋ 開幕簾 ＋ 跳過）：這個版型用信封取代，但 js/index.js 仍會找這幾顆，缺一顆整頁會掛 -->
+<div class="overlay" id="intro"><div class="intro-line" id="introLine"></div></div>
+<div class="overlay" id="curtain">
+  <div class="curtain-panel left"></div>
+  <div class="curtain-panel right"></div>
+</div>
+<button class="intro-skip" id="introSkip" type="button" hidden>跳過</button>
+
+<!-- ============ 主畫面：走進莫內的花園 ============
+     開場是美術館牆上的一幅油畫，點一下就被吸進去 —— 所以 hero 就是那一幅畫的裡面：
+     日本橋、垂柳、開滿睡蓮的池塘，整個畫面是程式一筆一筆畫出來的油畫（canvas[data-monet]，
+     由 js/openers/painting.js 畫），水面一直輕輕流動。名字寫在一抹米白的顏料上，
+     右下角是新人的簽名（莫內都簽在那裡）。
+     往下捲是一間莫內的小展間：每一塊的開頭掛一幅小畫 ＋ 一張美術館的說明卡，
+     捲到時畫才一筆一筆畫上去（data-monet-reveal）。 -->
+<div id="app">
+  <section class="panel lobby mg-lobby" data-panel="lobby" data-scroll>
+
+    <!-- ===== Hero：畫的裡面 ===== -->
+    <header class="lobby-hero mg-hero" data-scroll>
+      <div class="mg-hero-art" aria-hidden="true">
+        <canvas class="mg-canvas" data-monet="bridge"></canvas>
+        <i class="mg-weave"></i>
+        <i class="mg-glaze"></i>
+      </div>
+      <div class="mg-hero-body">
+        <div class="mg-swash">
+          <div class="mg-kicker"><span class="en">Impression, amour</span><span class="cn">誠摯邀請您</span></div>
+          <h1 class="mg-names"><span data-tpl="groomEn"></span><span class="amp">&amp;</span><span data-tpl="brideEn"></span></h1>
+          <div class="mg-date"><span data-tpl="date"></span><i aria-hidden="true"></i><span data-tpl="weekday"></span></div>
+        </div>
+        <div class="hashtags" id="lobbyTags" data-sk="tags"></div>
+        <div class="scroll-cue mg-cue"><span>Scroll</span><span class="arrow"></span></div>
+      </div>
+      <div class="mg-sign" aria-hidden="true"><span data-tpl="groomEn"></span> &amp; <span data-tpl="brideEn"></span></div>
+    </header>
+
+    <div class="scene-body mg-body">
+
+      <!-- ===== 婚禮資訊：睡蓮 ===== -->
+      <section class="info-block mg-sec">
+        <div class="mg-head">
+          <figure class="mg-pic" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="lilies" data-monet-shape="small" data-monet-reveal></canvas><i class="mg-weave"></i></div></figure>
+          <div class="mg-cartel" data-reveal="rise">
+            <span class="mg-no">N° 1 ・ Nymphéas</span>
+            <span class="en block-title">Information</span>
+            <span class="cn block-sub">婚禮資訊</span>
+          </div>
+        </div>
+        <div class="mg-card" data-reveal="rise">
+          <div class="info-card">
+            <div class="info-couple" id="infoCouple" data-tpl="couple"></div>
+            <div class="info-couple-cn" id="infoCoupleCn"></div>
+            <div class="info-rows">
+              <div class="info-row"><div class="ir-label">日期</div><div class="ir-body"><div class="ir-val" id="infoDate" data-sk="text">—</div></div></div>
+              <div class="info-row" id="infoTimeRow"><div class="ir-label">時間</div><div class="ir-body"><div class="ir-val" id="infoTime" data-sk="text">—</div>
+                <a class="ir-jump" id="infoTimeJump" href="#scheduleBlock" hidden>看當日流程 →</a></div></div>
+              <div class="info-row" id="infoVenueRow"><div class="ir-label">地點</div><div class="ir-body"><div class="ir-val" id="infoVenue" data-sk="text">—</div><div class="ir-sub" id="infoAddr"></div>
+                <a class="ir-jump" id="infoVenueJump" href="#transportBlock" hidden>看交通資訊 →</a></div></div>
+            </div>
+            <div class="info-actions">
+              <a class="btn small ghost" id="mapBtn" href="#" target="_blank" rel="noopener">開啟地圖</a>
+              <a class="btn small ghost" id="calBtn" href="#" target="_blank" rel="noopener">加入行事曆</a>
+            </div>
+          </div>
+          <div class="info-seat" id="infoSeatCta">
+            <a class="btn" href="seating.html">尋找我的座位</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 當日流程：罌粟花田 ===== -->
+      <section class="info-block mg-sec mg-alt" id="scheduleBlock">
+        <div class="mg-head">
+          <figure class="mg-pic" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="poppies" data-monet-shape="small" data-monet-reveal></canvas><i class="mg-weave"></i></div></figure>
+          <div class="mg-cartel" data-reveal="rise">
+            <span class="mg-no">N° 2 ・ Coquelicots</span>
+            <span class="en block-title">Schedule</span>
+            <span class="cn block-sub">當日流程</span>
+          </div>
+        </div>
+        <div class="mg-card mg-card-tl" data-reveal="rise">
+          <div class="timeline" id="schedule" data-sk="rows" data-reveal="list"></div>
+        </div>
+      </section>
+
+      <!-- ===== 出席前的小提醒：紫藤（沒填就整塊收起） ===== -->
+      <section class="info-block mg-sec" id="noteBlock" hidden>
+        <div class="mg-head">
+          <figure class="mg-pic" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="wisteria" data-monet-shape="small" data-monet-reveal></canvas><i class="mg-weave"></i></div></figure>
+          <div class="mg-cartel" data-reveal="rise">
+            <span class="mg-no">N° 3 ・ Glycines</span>
+            <span class="en block-title">Notes</span>
+            <span class="cn block-sub">出席前的小提醒</span>
+          </div>
+        </div>
+        <div class="note-grid mg-card" data-reveal="rise">
+          <div class="note-item" id="dressCodeItem" hidden>
+            <div class="note-label">Dress Code</div>
+            <div class="dress-swatches" id="dressSwatches" hidden aria-hidden="true"></div>
+            <p class="info-note" id="dressCode"></p>
+            <div class="dress-refs" id="dressRefs" hidden>
+              <img class="dress-ref-img" id="dressRefFirst" alt="Dress Code 參考圖">
+              <button class="ir-jump" id="dressRefMore" type="button" hidden>查看更多 →</button>
+            </div>
+          </div>
+          <div class="note-item" id="giftNoteItem" hidden>
+            <div class="note-label">關於禮金</div>
+            <p class="info-note" id="giftNote"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 交通資訊：花園小徑（沒填就整塊收起） ===== -->
+      <section class="info-block mg-sec mg-alt" id="transportBlock" hidden>
+        <div class="mg-head">
+          <figure class="mg-pic" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="path" data-monet-shape="small" data-monet-reveal></canvas><i class="mg-weave"></i></div></figure>
+          <div class="mg-cartel" data-reveal="rise">
+            <span class="mg-no">N° 4 ・ Le chemin</span>
+            <span class="en block-title">Access</span>
+            <span class="cn block-sub">交通資訊</span>
+          </div>
+        </div>
+        <div class="note-grid mg-card" data-reveal="rise">
+          <div class="note-item" id="transportPublicItem" hidden>
+            <div class="note-label">大眾運輸</div>
+            <p class="info-note" id="transportPublic"></p>
+            <button class="ir-jump" id="transportPublicMore" type="button" hidden>展開更多 →</button>
+          </div>
+          <div class="note-item" id="transportParkingItem" hidden>
+            <div class="note-label">停車資訊</div>
+            <p class="info-note" id="transportParking"></p>
+            <button class="ir-jump" id="transportParkingMore" type="button" hidden>展開更多 →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 兩人的故事：淡紫色的展牆上，一幅金框的大畫（就是新人的照片） =====
+           照片上疊一層畫布的織紋；投射燈的光隨著捲動從左滑到右 -->
+      <section class="info-block mg-band mg-story" id="storyBlock" hidden data-scroll>
+        <div class="mg-band-bg" aria-hidden="true"></div>
+        <div class="mg-band-inner">
+          <figure class="mg-portrait" data-reveal="hang">
+            <div class="mg-gilt mg-gilt-lg">
+              <div class="mg-portrait-ph" data-photo="story" aria-hidden="true"></div>
+              <i class="mg-weave"></i>
+              <i class="mg-spot" aria-hidden="true"></i>
+            </div>
+            <figcaption class="mg-plate">Portrait de nous deux</figcaption>
+          </figure>
+          <div class="mg-story-body" data-reveal="rise">
+            <div class="mg-band-title">Our Story</div>
+            <div class="mg-band-sub">關於我們這一路</div>
+            <p class="story-text" id="storyText"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Moments 相遇之間 ===== -->
+      <section class="info-block mg-sec gallery-block" id="photoGallery" hidden>
+        <div class="mg-head">
+          <div class="mg-cartel">
+            <span class="mg-no">Salon</span>
+            <span class="en block-title">Moments</span>
+            <span class="cn block-sub">相遇之間</span>
+          </div>
+        </div>
+        <div class="photo-rail" id="photoRail"></div>
+      </section>
+
+      <!-- ===== 日期倒數：印象・日出 —— 霧裡的港口，捲下去太陽就慢慢升起來 ===== -->
+      <section class="info-block mg-band mg-count" data-scroll>
+        <div class="mg-band-bg" aria-hidden="true">
+          <canvas class="mg-canvas" data-monet="sunrise"></canvas>
+          <i class="mg-sun"></i>
+          <i class="mg-sun-path"><b></b><b></b><b></b><b></b><b></b><b></b></i>
+          <i class="mg-weave"></i>
+        </div>
+        <div class="mg-band-inner">
+          <div class="mg-count-body">
+            <div class="mg-band-title">Impression, le grand jour</div>
+            <div class="mg-band-sub">距離我們的大日子還有</div>
+            <div class="cd-card">
+              <div class="cd-grid" id="cdGrid" data-sk="grid"></div>
+              <div class="cd-target" id="cdTarget"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== R.S.V.P.：一張吉維尼的明信片 ===== -->
+      <section class="info-block mg-sec">
+        <div class="mg-head">
+          <div class="mg-cartel">
+            <span class="mg-no">Carte postale</span>
+            <span class="en block-title">R.S.V.P.</span>
+            <span class="cn block-sub">出席回覆</span>
+          </div>
+        </div>
+        <div class="mg-postcard" data-reveal="rise">
+          <div class="mg-postcard-pic" aria-hidden="true"><canvas data-monet="lilies" data-monet-shape="small" data-monet-still></canvas><i class="mg-weave"></i><span>Giverny</span></div>
+          <div class="rsvp-cta">
+            <i class="mg-stamp" aria-hidden="true"></i>
+            <h3>能來參加我們的婚禮嗎？</h3>
+            <p>花 30 秒回覆出席，讓我們把最好的位置留給你</p>
+            <a class="btn" href="invitation.html">前往出席回覆</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Explore：一張一張的展品說明卡 ===== -->
+      <section class="link-section mg-sec">
+        <div class="mg-head">
+          <div class="mg-cartel">
+            <span class="mg-no">Catalogue</span>
+            <span class="en block-title">Explore</span>
+            <span class="cn block-sub">其他活動</span>
+          </div>
+        </div>
+        <div class="link-grid" id="linkGrid" data-reveal="list">
+          <a class="link-card" href="wall.html">
+            <span class="lc-index">02</span>
+            <span class="lc-title">新人祝福牆</span>
+            <span class="lc-sub">寫下想對我們說的話，也讀讀大家的祝福</span>
+            <span class="lc-go">前往</span>
+          </a>
+          <a class="link-card" href="letter.html">
+            <span class="lc-index">03</span>
+            <span class="lc-title">給你的一封信</span>
+            <span class="lc-sub">我們寫了信給你，輸入名字就能拆開來看</span>
+            <span class="lc-go">前往</span>
+          </a>
+          <a class="link-card" href="exhibition.html">
+            <span class="lc-index">04</span>
+            <span class="lc-title">我們的故事</span>
+            <span class="lc-sub">沿著時間線，走過我們一路走來的日子</span>
+            <span class="lc-go">前往</span>
+          </a>
+          <a class="link-card" href="quiz.html">
+            <span class="lc-index">05</span>
+            <span class="lc-title">看你多了解我們</span>
+            <span class="lc-sub">一份小測驗，看看你有多了解我們</span>
+            <span class="lc-go">前往</span>
+          </a>
+          <a class="link-card" href="draw.html">
+            <span class="lc-index">06</span>
+            <span class="lc-title">看你會抽到什麼照片</span>
+            <span class="lc-sub">抽一張婚禮限定小卡，收進你的收藏</span>
+            <span class="lc-go">前往</span>
+          </a>
+          <a class="link-card" href="cake.html">
+            <span class="lc-index">07</span>
+            <span class="lc-title">集氣送祝褔</span>
+            <span class="lc-sub">挑一份甜點放上桌，替我們集氣</span>
+            <span class="lc-go">前往</span>
+          </a>
+        </div>
+      </section>
+
+      <footer class="mg-foot">
+        <div class="mg-fin">Fin ・ peint avec amour</div>
+        <span>made for <span data-tpl="couple"></span>・小港製作所 設計製作</span>
+      </footer>
+    </div>
+  </section>
+</div>
+
+<!-- 自訂卡片／交通「展開更多」共用的彈窗 -->
+<div class="lc-modal" id="lcModal">
+  <div class="lc-modal-card" role="dialog" aria-modal="true" aria-labelledby="lcModalTitle">
+    <button class="lc-modal-close" id="lcModalClose" type="button" aria-label="關閉">✕</button>
+    <h3 class="lc-modal-title" id="lcModalTitle"></h3>
+    <div class="lc-modal-sub" id="lcModalSub"></div>
+    <div class="lc-modal-body" id="lcModalBody"></div>
+  </div>
+</div>
+
+<!-- 站台載入器：解析 slug、載設定，之後才注入 common.js、lobby-motion.js（與版型的 lobbyJs）與 js/index.js -->
+<script type="module" src="/js/site-context.js"></script>
+</body>
+</html>

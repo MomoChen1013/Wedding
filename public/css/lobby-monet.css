@@ -1,0 +1,292 @@
+/* ============================================================
+   lobby-monet.css — Monet Garden 莫內花園・流動油畫 的大廳（lobby-monet.html 專用）
+   ------------------------------------------------------------
+   疊在 common.css ＋ index.css 之後。結構主張：**走進一幅莫內的畫**。
+
+     世界觀  開場是美術館牆上的一幅油畫，點一下被吸進畫裡；
+             hero 就是畫的裡面，往下捲是一間莫內的小展間
+     材質    油畫：一筆一筆的筆觸、畫布的織紋、金框、亞麻內襯、
+             美術館的說明卡、黃銅名牌、投射燈
+     圖像    日本橋、睡蓮、罌粟花田、紫藤、花園小徑、印象・日出
+             —— 全部是 js/openers/painting.js 用程式畫的油畫（canvas[data-monet]），
+             不是圖檔；這份 CSS 只負責框、牆、光與版面
+
+   捲動：
+     ・hero 的畫往下捲時慢慢往下沉、放大一點（--lp），名字那一抹顏料淡掉
+     ・每一幅小畫捲到時從釘子上擺進來（data-reveal="hang"），
+       畫面再一筆一筆畫上去（data-monet-reveal，JS 做的）
+     ・故事那一面展牆：投射燈的光隨著捲動從左滑到右（--sp）
+     ・倒數：霧裡的港口，捲下去太陽慢慢升起來，水面的倒影跟著拉長（--sp）
+
+   每一條規則都收在 .mg-* 或 body[data-lobby="monet-garden"] 底下。
+============================================================ */
+
+body[data-lobby="monet-garden"]{
+  --mg-ink:#2f3f3a; --mg-soft:#6f7a72; --mg-green:#3f6a5a; --mg-lilac:#8f82b4; --mg-rose:#c9748a;
+  --mg-sign:#b4472f; --mg-cream:#faf6ec; --mg-line:rgba(63,106,90,.16);
+}
+/* 整頁的底：一張米白的畫布，上面有幾抹淡淡的顏料 */
+body[data-lobby="monet-garden"] .bg-decor{
+  background:
+    radial-gradient(30% 22% at 12% 18%,rgba(169,156,196,.16),transparent 70%),
+    radial-gradient(26% 20% at 88% 42%,rgba(143,174,150,.18),transparent 70%),
+    radial-gradient(30% 24% at 20% 78%,rgba(201,116,138,.1),transparent 70%),
+    repeating-linear-gradient(0deg,rgba(90,70,40,.025) 0 1px,transparent 1px 3px),
+    repeating-linear-gradient(90deg,rgba(90,70,40,.02) 0 1px,transparent 1px 3px),
+    linear-gradient(180deg,#f8f4eb,#efeadd);}
+.mg-lobby{position:relative;}
+/* 畫布的織紋：疊在每一幅畫上 */
+.mg-weave{position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:.3;
+  background:
+    repeating-linear-gradient(0deg,rgba(80,60,30,.18) 0 1px,transparent 1px 3px),
+    repeating-linear-gradient(90deg,rgba(80,60,30,.14) 0 1px,transparent 1px 3px);}
+/* 畫還沒畫好（或 JS 沒載到）的時候：用接近那幅畫的顏色墊底 */
+canvas[data-monet]{display:block;width:100%;height:100%;opacity:0;transition:opacity .8s ease;}
+canvas[data-monet].is-painted,canvas[data-monet][data-monet-reveal]{opacity:1;}
+
+/* ============================================================
+   捲動進場
+============================================================ */
+.tp-motion [data-lobby="monet-garden"] [data-reveal]{transition:opacity 1s ease,transform 1.1s cubic-bezier(.2,.7,.2,1);}
+.tp-motion [data-lobby="monet-garden"] [data-reveal="rise"]:not(.is-in){opacity:0;transform:translateY(28px);}
+.tp-motion [data-lobby="monet-garden"] [data-reveal="list"] > *{transition:opacity .8s ease,transform .9s cubic-bezier(.2,.7,.2,1);}
+.tp-motion [data-lobby="monet-garden"] [data-reveal="list"]:not(.is-in) > *{opacity:0;transform:translateY(18px);}
+.tp-motion [data-lobby="monet-garden"] [data-reveal="list"] > :nth-child(2){transition-delay:.12s;}
+.tp-motion [data-lobby="monet-garden"] [data-reveal="list"] > :nth-child(3){transition-delay:.24s;}
+.tp-motion [data-lobby="monet-garden"] [data-reveal="list"] > :nth-child(4){transition-delay:.36s;}
+.tp-motion [data-lobby="monet-garden"] [data-reveal="list"] > :nth-child(n+5){transition-delay:.48s;}
+/* 掛上去：畫從上緣的釘子擺進來，晃一下才停 */
+.tp-motion [data-lobby="monet-garden"] [data-reveal="hang"]{transform-origin:50% -12px;
+  transition:opacity .7s ease;}
+.tp-motion [data-lobby="monet-garden"] [data-reveal="hang"]:not(.is-in){opacity:0;}
+.tp-motion [data-lobby="monet-garden"] [data-reveal="hang"].is-in{animation:mg-hang 1.6s cubic-bezier(.3,1.4,.5,1) both;}
+@keyframes mg-hang{0%{transform:rotate(-7deg) translateY(-14px);}45%{transform:rotate(3deg);}75%{transform:rotate(-1.2deg);}100%{transform:none;}}
+
+/* ============================================================
+   Hero：畫的裡面
+============================================================ */
+.mg-hero{position:relative;overflow:hidden;min-height:calc(100svh - var(--nav-h));padding:0;gap:0;justify-content:center;
+  background:#557f5a;}
+.mg-hero-art{position:absolute;inset:-3% 0;transform:translateY(calc(var(--lp,0) * 90px)) scale(calc(1.04 + var(--lp,0) * .08));}
+.mg-hero-art .mg-canvas{position:absolute;inset:0;}
+.mg-glaze{position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(120% 90% at 50% 45%,transparent 55%,rgba(28,46,40,.35) 100%),
+    linear-gradient(180deg,rgba(255,250,232,.12),transparent 30%);}
+.app-show .mg-hero-art{animation:mg-settle 2.4s cubic-bezier(.2,.7,.2,1) both;}
+@keyframes mg-settle{from{filter:saturate(1.3) brightness(1.05);}}
+
+.mg-hero-body{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;text-align:center;
+  padding:40px 20px clamp(40px,7vh,80px);color:var(--mg-ink);
+  transform:translateY(calc(var(--lp,0) * 50px));opacity:calc(1 - var(--lp,0) * 1.3);}
+/* 名字寫在一抹米白的顏料上（邊緣是不規則的筆刷） */
+.mg-swash{position:relative;padding:clamp(30px,5vw,52px) clamp(40px,8vw,96px);}
+@media (max-width:520px){.mg-swash{padding:40px 34px;}.mg-swash::before{inset:-4% -14%;}}
+.mg-swash::before{content:'';position:absolute;inset:-6% -10%;z-index:-1;
+  background:
+    radial-gradient(50% 50% at 50% 50%,rgba(250,246,236,.92) 52%,rgba(250,246,236,0) 100%),
+    radial-gradient(30% 40% at 22% 55%,rgba(250,246,236,.55),transparent 70%),
+    radial-gradient(30% 40% at 78% 45%,rgba(250,246,236,.55),transparent 70%);
+  filter:blur(2px);}
+.mg-kicker{display:flex;flex-direction:column;gap:4px;margin-bottom:4px;}
+.mg-kicker .en{font:italic 400 clamp(18px,2.4vw,24px) 'Cormorant Garamond',serif;color:var(--mg-green);}
+.mg-kicker .cn{font-size:12px;letter-spacing:.5em;color:var(--mg-soft);}
+.mg-hero .mg-names{font-family:'Cormorant Garamond','Noto Serif TC',serif;font-weight:300;font-size:clamp(44px,7.4vw,92px);
+  line-height:1.05;letter-spacing:.02em;color:var(--mg-ink);}
+.mg-hero .mg-names .amp{font-family:'Parisienne',cursive;font-weight:400;color:var(--mg-rose);padding:0 .18em;font-size:.8em;}
+body[data-hero-name="cn"] .mg-hero .mg-names{font-family:'Noto Serif TC',serif;font-weight:500;font-size:clamp(30px,5vw,54px);letter-spacing:.2em;}
+.mg-date{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:10px;font-size:13px;letter-spacing:.32em;color:var(--mg-soft);}
+.mg-date i{width:22px;height:1px;background:var(--mg-rose);}
+.mg-hero .hashtags{margin-top:10px;}
+.mg-hero .hashtags .tag{border-color:rgba(250,246,236,.9);color:var(--mg-green);background:rgba(250,246,236,.78);font-size:12px;}
+.mg-cue{margin-top:16px;color:var(--mg-cream);font-size:11px;letter-spacing:.4em;text-shadow:0 1px 6px rgba(0,0,0,.4);}
+.mg-cue .arrow{background:var(--mg-cream);}
+/* 右下角的簽名 */
+.mg-sign{position:absolute;right:clamp(18px,4vw,56px);bottom:clamp(16px,3vh,34px);z-index:3;
+  font:400 clamp(20px,2.6vw,32px)/1 'Parisienne',cursive;color:var(--mg-sign);transform:rotate(-4deg);
+  text-shadow:0 1px 0 rgba(255,240,220,.35);opacity:calc(.9 - var(--lp,0));}
+.app-show .mg-swash,.app-show .mg-hero .hashtags,.app-show .mg-cue,.app-show .mg-sign{animation:mg-rise 1.4s cubic-bezier(.2,.7,.2,1) both;}
+.app-show .mg-swash{animation-delay:.5s;}
+.app-show .mg-hero .hashtags{animation-delay:.75s;}
+.app-show .mg-cue{animation-delay:.9s;}
+.app-show .mg-sign{animation-delay:1.2s;}
+@keyframes mg-rise{from{opacity:0;transform:translateY(14px);}}
+
+/* ============================================================
+   金框（小畫、故事的大畫共用）
+============================================================ */
+.mg-gilt{position:relative;padding:clamp(10px,1.6vw,16px);
+  background:
+    radial-gradient(circle at 50% 50%,transparent 62%,rgba(90,60,20,.22) 100%),
+    linear-gradient(135deg,#7d5c22,#f1d98a 16%,#a87f32 30%,#f6e4a6 46%,#9c7429 62%,#e9cd7d 80%,#7a5a20);
+  box-shadow:
+    inset 0 0 0 2px #5e4416, inset 0 0 0 4px rgba(255,236,170,.7), inset 0 0 0 5px #8c6a28,
+    inset 0 0 12px 4px rgba(70,45,10,.4),
+    0 26px 40px -24px rgba(40,30,15,.55), 0 6px 12px -6px rgba(40,30,15,.3);}
+.mg-gilt::before{content:'';position:absolute;inset:clamp(4px,.6vw,6px);pointer-events:none;
+  border:3px dotted rgba(255,238,180,.5);}
+.mg-gilt > canvas,.mg-gilt > .mg-portrait-ph{position:relative;display:block;width:100%;aspect-ratio:4/3;height:auto;
+  box-shadow:0 0 0 1px rgba(60,40,10,.45),0 0 0 clamp(4px,.7vw,7px) #e6dcc2,0 0 0 calc(clamp(4px,.7vw,7px) + 1px) rgba(120,95,50,.4);}
+.mg-gilt > .mg-weave{inset:clamp(10px,1.6vw,16px);}
+
+/* ============================================================
+   區塊：小畫 ＋ 說明卡
+============================================================ */
+.mg-body{max-width:960px;padding:0 22px 40px;position:relative;z-index:2;}
+.mg-sec{background:transparent;border:none;border-radius:0;-webkit-backdrop-filter:none;backdrop-filter:none;
+  margin-top:0;padding:clamp(70px,10vw,120px) 0 0;text-align:center;}
+.mg-sec[hidden]{display:none;}
+.mg-head{display:flex;flex-direction:column;align-items:center;gap:22px;margin-bottom:clamp(22px,3.4vw,34px);}
+@media (min-width:760px){
+  .mg-head:has(.mg-pic){flex-direction:row;justify-content:center;gap:clamp(30px,5vw,60px);}
+  .mg-alt .mg-head:has(.mg-pic){flex-direction:row-reverse;}
+  .mg-head:has(.mg-pic) .mg-cartel{text-align:left;align-items:flex-start;}
+}
+.mg-pic{width:clamp(220px,30vw,300px);margin:0;}
+/* 一根掛畫的細繩 */
+.mg-pic::before{content:'';display:block;width:46%;height:22px;margin:0 auto -4px;
+  background:linear-gradient(to top right,transparent calc(50% - 1px),rgba(90,70,40,.45) 50%,transparent calc(50% + 1px)) left/50% 100% no-repeat,
+             linear-gradient(to top left,transparent calc(50% - 1px),rgba(90,70,40,.45) 50%,transparent calc(50% + 1px)) right/50% 100% no-repeat;}
+/* 美術館的說明卡 */
+.mg-cartel{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.mg-no{font:italic 400 15px 'Cormorant Garamond',serif;color:var(--mg-lilac);letter-spacing:.06em;}
+.mg-cartel .block-title{margin:0;font:300 clamp(34px,5vw,52px)/1.05 'Cormorant Garamond','Noto Serif TC',serif;letter-spacing:.03em;
+  text-transform:none;color:var(--mg-ink);}
+.mg-cartel .block-sub{margin:4px 0 0;font-size:13px;letter-spacing:.36em;color:var(--mg-soft);}
+/* 標題下一抹顏料 */
+.mg-cartel .block-sub::before{content:'';display:block;width:78px;height:7px;margin:0 0 10px;border-radius:50%;
+  background:linear-gradient(90deg,rgba(143,174,150,0),rgba(143,174,150,.8) 20%,rgba(169,156,196,.75) 60%,rgba(201,116,138,0));
+  transform:skewX(-20deg);}
+.mg-head:not(:has(.mg-pic)) .block-sub::before{margin:0 auto 10px;}
+@media (max-width:759px){.mg-cartel .block-sub::before{margin:0 auto 10px;}}
+
+/* 內容卡：一張奶油色的厚紙 */
+.mg-card{position:relative;max-width:620px;margin:0 auto;padding:clamp(28px,5vw,44px) clamp(22px,5vw,46px);text-align:center;
+  background:var(--mg-cream);border:1px solid rgba(160,140,100,.22);border-radius:3px;
+  box-shadow:0 1px 0 #fff inset,0 30px 46px -34px rgba(60,50,30,.5);}
+.mg-card::before{content:'';position:absolute;inset:7px;border:1px solid var(--mg-line);pointer-events:none;}
+.note-grid.mg-card{max-width:700px;}
+.mg-card-tl{max-width:560px;}
+.mg-card .info-row,.mg-card .info-seat{border-top:1px solid var(--mg-line);}
+.mg-card .info-row:first-child{border-top:none;}
+.mg-card .info-couple{font-family:'Cormorant Garamond','Noto Serif TC',serif;font-weight:400;font-size:clamp(26px,3.6vw,34px);}
+.mg-sec .ir-label,.mg-sec .note-label{color:var(--mg-green);}
+.mg-sec .note-item + .note-item{border-left:1px solid var(--mg-line);}
+@media (max-width:640px){.mg-sec .note-item + .note-item{border-left:none;border-top:1px solid var(--mg-line);}}
+.mg-sec .timeline{text-align:left;--tl-line:rgba(63,106,90,.22);}
+.mg-sec .tl-time{font:italic 400 17px 'Cormorant Garamond',serif;color:var(--mg-green);}
+.mg-sec .tl-dot::before{width:11px;height:11px;background:radial-gradient(circle at 40% 35%,#f7d6dc,#e77d8e 60%,#c9546a);}
+.mg-sec .btn{border-radius:999px;}
+.mg-sec .btn.ghost{border-color:rgba(63,106,90,.45);color:var(--mg-green);background:transparent;}
+.mg-sec .btn:not(.ghost){background:var(--mg-green);border-color:var(--mg-green);color:#fff;}
+.mg-sec .btn:not(.ghost):hover{background:#2f574a;border-color:#2f574a;}
+
+/* ============================================================
+   場景帶
+============================================================ */
+.mg-band{position:relative;overflow:hidden;border:none;border-radius:0;background:transparent;
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+  margin:clamp(80px,11vw,130px) calc(50% - 50vw) 0;padding:clamp(70px,10vw,120px) 24px;}
+.mg-band[hidden]{display:none;}
+.mg-band-bg{position:absolute;left:0;right:0;top:-12%;bottom:-12%;z-index:0;transform:translateY(calc((var(--sp,.5) - .5) * -10%));}
+.mg-band-inner{position:relative;z-index:2;max-width:940px;margin:0 auto;}
+.mg-band-title{font:300 clamp(32px,5vw,52px)/1.1 'Cormorant Garamond','Noto Serif TC',serif;letter-spacing:.02em;}
+.mg-band-sub{margin-top:6px;font-size:13px;letter-spacing:.4em;}
+
+/* ---- 故事：淡紫色的展牆、一幅金框的大畫 ---- */
+.mg-story{color:var(--mg-ink);}
+.mg-story .mg-band-bg{background:
+  linear-gradient(180deg,transparent 82%,rgba(255,255,255,.4) 82%,rgba(255,255,255,.4) 83%,transparent 83%),
+  radial-gradient(40% 60% at calc(15% + var(--sp,.5) * 70%) 20%,rgba(255,248,226,.7),transparent 70%),
+  linear-gradient(180deg,#ddd5e7,#cfc6df 82%,#c3b9d4 82%,#bdb2cf);}
+.mg-story .mg-band-sub{color:var(--mg-soft);}
+.mg-story .mg-band-inner{display:grid;grid-template-columns:1fr;gap:40px;justify-items:center;text-align:center;}
+@media (min-width:780px){.mg-story .mg-band-inner{grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:clamp(40px,6vw,80px);align-items:center;text-align:left;justify-items:stretch;}}
+.mg-portrait{width:min(100%,320px);margin:0;justify-self:center;}
+.mg-gilt-lg{padding:clamp(16px,2.4vw,24px);}
+.mg-gilt-lg > .mg-weave{inset:clamp(16px,2.4vw,24px);}
+.mg-portrait-ph{aspect-ratio:4/5 !important;background:#a99cc4 center/cover;filter:saturate(.92) contrast(.96);
+  background-position:50% calc(50% + (var(--sp,.5) - .5) * 24%);}
+.mg-spot{position:absolute;inset:0;pointer-events:none;mix-blend-mode:soft-light;
+  background:radial-gradient(60% 50% at calc(var(--sp,.5) * 100%) 0%,rgba(255,246,220,.9),transparent 70%);}
+.mg-plate{width:max-content;margin:16px auto 0;padding:5px 16px;font:italic 400 14px 'Cormorant Garamond',serif;color:#3a2f1c;
+  background:linear-gradient(135deg,#a5884a,#efdba0 30%,#c7a65c 55%,#ecd697 78%,#a3864a);
+  box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 4px 8px -4px rgba(40,30,15,.5);}
+.mg-story .story-text{margin:22px 0 0;max-width:32em;color:var(--mg-ink);font-size:15px;text-align:left;}
+
+/* ---- 倒數：印象・日出，太陽跟著捲動升起來 ---- */
+.mg-count{color:var(--mg-ink);
+  --rise:clamp(0,calc((var(--sp,0) - .15) * 1.5),1);}
+.mg-count .mg-band-bg{background:#8fa8b0;}
+.mg-count .mg-band-bg .mg-canvas{position:absolute;inset:0;}
+.mg-sun{position:absolute;left:38%;top:calc(52% - var(--rise) * 30%);width:clamp(44px,5vw,64px);aspect-ratio:1;border-radius:50%;
+  transform:translate(-50%,-50%);
+  background:radial-gradient(circle at 45% 45%,#ffb069,#f0702f 55%,#e2582a);
+  box-shadow:0 0 40px 18px rgba(240,120,60,.35);opacity:calc(.35 + var(--rise) * .65);}
+/* 太陽在水面上的倒影：幾抹橘色的短筆，太陽越高拉得越長 */
+.mg-sun-path{position:absolute;left:38%;top:54%;width:clamp(44px,5vw,64px);height:calc(14% + var(--rise) * 26%);transform:translateX(-50%);
+  display:flex;flex-direction:column;justify-content:space-between;align-items:center;opacity:calc(.3 + var(--rise) * .7);}
+.mg-sun-path b{display:block;height:5px;border-radius:50%;background:#f0702f;opacity:.85;animation:mg-shimmer 3s ease-in-out infinite alternate;}
+.mg-sun-path b:nth-child(1){width:110%;}
+.mg-sun-path b:nth-child(2){width:80%;animation-delay:-.6s;margin-left:20%;}
+.mg-sun-path b:nth-child(3){width:95%;animation-delay:-1.2s;margin-right:15%;}
+.mg-sun-path b:nth-child(4){width:60%;animation-delay:-1.8s;margin-left:24%;}
+.mg-sun-path b:nth-child(5){width:70%;animation-delay:-2.4s;}
+.mg-sun-path b:nth-child(6){width:40%;animation-delay:-.3s;margin-right:20%;}
+@keyframes mg-shimmer{to{transform:translateX(8px) scaleX(.85);opacity:.55;}}
+.mg-count .mg-band-inner{display:flex;justify-content:center;}
+@media (min-width:780px){.mg-count .mg-band-inner{justify-content:flex-end;}}
+.mg-count-body{position:relative;max-width:440px;padding:clamp(26px,4vw,38px) clamp(24px,4vw,40px);text-align:center;
+  background:rgba(250,246,236,.86);border:1px solid rgba(255,255,255,.7);border-radius:3px;
+  -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);box-shadow:0 30px 40px -30px rgba(20,40,50,.6);}
+.mg-count .mg-band-sub{color:var(--mg-soft);}
+.mg-count .cd-grid{margin:22px auto 0;}
+.mg-count .cd-unit{border-left:1px solid var(--mg-line);}
+.mg-count .cd-num{font-family:'Cormorant Garamond',serif;font-weight:400;color:var(--mg-ink);}
+.mg-count .cd-lab,.mg-count .cd-target{color:var(--mg-soft);}
+
+/* ============================================================
+   R.S.V.P.：一張吉維尼的明信片
+============================================================ */
+.mg-postcard{display:grid;grid-template-columns:1fr;max-width:720px;margin:0 auto;text-align:left;
+  background:var(--mg-cream);border:1px solid rgba(160,140,100,.25);border-radius:3px;overflow:hidden;
+  box-shadow:0 1px 0 #fff inset,0 34px 50px -34px rgba(60,50,30,.55);transform:rotate(-.6deg);}
+@media (min-width:680px){.mg-postcard{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);}}
+.mg-postcard-pic{position:relative;min-height:220px;background:#6f8fa8;}
+.mg-postcard-pic canvas{position:absolute;inset:0;}
+.mg-postcard-pic span{position:absolute;left:18px;bottom:12px;font:400 30px/1 'Parisienne',cursive;color:#fbf6e8;text-shadow:0 2px 8px rgba(20,40,40,.55);}
+.mg-postcard .rsvp-cta{position:relative;padding:clamp(28px,4vw,40px) clamp(24px,4vw,40px);text-align:left;
+  background:repeating-linear-gradient(180deg,transparent 0 33px,rgba(63,106,90,.1) 33px 34px);}
+@media (min-width:680px){.mg-postcard .rsvp-cta{border-left:1px dashed rgba(63,106,90,.25);}}
+.mg-postcard .rsvp-cta h3{font:400 clamp(22px,2.8vw,28px)/1.35 'Cormorant Garamond','Noto Serif TC',serif;padding-right:70px;}
+.mg-postcard .rsvp-cta p{margin:10px 0 22px;}
+/* 郵票：白邊、虛線的齒孔、一朵小睡蓮 */
+.mg-stamp{position:absolute;right:20px;top:20px;width:54px;height:64px;padding:4px;transform:rotate(4deg);
+  background:#fbf6e8;border:2px dotted rgba(120,100,70,.45);box-shadow:0 2px 4px rgba(60,50,30,.15);}
+.mg-stamp::before{content:'';display:block;width:100%;height:100%;
+  background:
+    radial-gradient(circle at 50% 56%,#f0a7b6 0 4px,transparent 5px),
+    radial-gradient(ellipse 15px 6px at 50% 62%,#7fa456 0 100%,transparent 100%),
+    linear-gradient(180deg,#a8c0d0,#6f8fa8);}
+
+/* ============================================================
+   Explore：展品說明卡
+============================================================ */
+.mg-sec .link-grid{border:none;gap:14px;}
+.mg-sec .link-card{text-align:left;border-radius:2px;background:#fffdf8;border:1px solid rgba(160,140,100,.25);
+  box-shadow:0 18px 30px -26px rgba(60,50,30,.5);transition:transform .3s ease,box-shadow .3s ease;}
+.mg-sec .link-card:hover{background:#fffdf8;color:var(--mg-ink);transform:translateY(-3px);box-shadow:0 26px 36px -26px rgba(60,50,30,.55);}
+.mg-sec .link-card:hover .lc-sub{color:var(--mg-soft);}
+.mg-sec .link-card:hover .lc-index{color:var(--mg-lilac);}
+.mg-sec .link-card:hover .lc-go{color:var(--mg-green);}
+.mg-sec .lc-index{font:italic 400 16px 'Cormorant Garamond',serif;color:var(--mg-lilac);}
+.mg-sec .lc-index::before{content:'N° ';}
+.mg-sec .lc-title{font-weight:500;font-size:17px;}
+.mg-sec .lc-go{color:var(--mg-green);}
+
+.mg-foot{margin-top:clamp(70px,10vw,110px);display:flex;flex-direction:column;align-items:center;gap:8px;border-top:none;}
+.mg-fin{font:400 26px 'Parisienne',cursive;color:var(--mg-sign);text-transform:none;letter-spacing:.02em;}
+
+@media (prefers-reduced-motion: reduce){
+  .mg-sun-path b{animation:none;}
+}

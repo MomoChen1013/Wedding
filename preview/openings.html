@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>開場示範</title>
 <!-- ============================================================
-     開場示範：八種開場各自播一次
+     開場示範：十種開場各自播一次
      ------------------------------------------------------------
      開場是獨立的一軸（sites.opening），這一頁把它單獨拿出來看：
      挑一種開場、挑一個版型（同一種開場在不同版型可以長得不一樣，
@@ -17,7 +17,7 @@
 ============================================================ -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&family=Noto+Sans+TC:wght@300;400;500&family=Parisienne&family=Yellowtail&family=Bebas+Neue&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../public/css/common.css">
 <link rel="stylesheet" href="../public/css/index.css">
 <link rel="stylesheet" href="../public/css/openers/envelope.css">
@@ -28,6 +28,8 @@
 <link rel="stylesheet" href="../public/css/openers/stars.css">
 <link rel="stylesheet" href="../public/css/openers/door.css">
 <link rel="stylesheet" href="../public/css/openers/ribbon.css">
+<link rel="stylesheet" href="../public/css/openers/painting.css">
+<link rel="stylesheet" href="../public/css/openers/balloons.css">
 <style>
 body{padding-top:0;}
 .pv{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
@@ -68,22 +70,27 @@ body{padding-top:0;}
 <script src="../public/js/openers/stars.js"></script>
 <script src="../public/js/openers/door.js"></script>
 <script src="../public/js/openers/ribbon.js"></script>
+<script src="../public/js/openers/painting.js"></script>
+<script src="../public/js/openers/balloons.js"></script>
 <script>
 /* 與 public/js/wed-model.js 的 OPENINGS／TEMPLATES 對應（示範頁不 import module，手抄一份標籤） */
 const OPENINGS = {
   envelope:'拆信・封蠟', book:'翻頁・古書', bloom:'花朵盛開', curtain:'窗簾拉開',
   candle:'燭光點亮', stars:'星圖展開', door:'門／拱門', ribbon:'拉開絲帶',
+  painting:'走進油畫', balloons:'氣球升空',
 };
 const VARIANTS = {
   'tapestry':'Tapestry 中古刺繡', 'botanical-letter':'Botanical Letter 植物信箋',
   'secret-garden':'Secret Garden 秘密花園', 'spring-orangerie':'Spring Orangerie 春日溫室',
   'night-sky':'Night Sky 現代星空', 'french-manor':'French Manor 法式莊園',
+  'monet-garden':'Monet Garden 莫內花園', 'outdoor-party':'Outdoor Party 美式戶外派對',
   'morning-window':'Morning Window 晨光房間', 'midnight-chapel':'Midnight Chapel 午夜教堂',
 };
 /* 每個版型的預設開場（對應 TEMPLATES[x].opening） */
 const DEFAULT_OPENING = {
   'tapestry':'envelope', 'botanical-letter':'ribbon', 'secret-garden':'door', 'spring-orangerie':'bloom',
   'night-sky':'stars', 'french-manor':'door', 'morning-window':'curtain', 'midnight-chapel':'candle',
+  'monet-garden':'painting', 'outdoor-party':'balloons',
 };
 const D = window.DEMO || {};
 const title = (s) => String(s || '').charAt(0) + String(s || '').slice(1).toLowerCase();

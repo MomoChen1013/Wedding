@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- ⚙️ 由 scripts/build-previews.js 從 public/lobby-garden.html 產出，不要手改。
+<!-- ⚙️ 由 scripts/build-previews.js 從 public/lobby-monet.html 產出，不要手改。
      骨架一模一樣，差別只在資料由 demo-data.js ＋ lobby-demo.js 填（正式版是 js/index.js）。 -->
-<title>Secret｜大廳模板示範</title>
+<title>Monet｜大廳模板示範</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,8 +14,8 @@
 
 <link rel="stylesheet" href="../public/css/common.css">
 <link rel="stylesheet" href="../public/css/index.css">
-<link rel="stylesheet" href="../public/css/lobby-garden.css">
-<link href="https://fonts.googleapis.com/css2?family=Italiana&amp;family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Noto+Serif+TC:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../public/css/lobby-monet.css">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&amp;family=Parisienne&amp;family=Noto+Serif+TC:wght@400;500;600&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../public/css/openers/envelope.css">
 <link rel="stylesheet" href="../public/css/openers/book.css">
 <link rel="stylesheet" href="../public/css/openers/bloom.css">
@@ -28,10 +28,9 @@
 <link rel="stylesheet" href="../public/css/openers/balloons.css">
 <link rel="stylesheet" href="demo-panel.css">
 </head>
-<body data-template="secret-garden" data-hero-name="en" class="nav-off" data-page="lobby" data-lobby="secret-garden">
+<body data-template="monet-garden" data-hero-name="en" class="nav-off" data-page="lobby" data-lobby="monet-garden">
 <!-- 開場遮罩：只有**沒預產到**的頁面會顯示（見 css/common.css 的 .boot-veil） -->
 <div class="boot-veil" aria-hidden="true"><span class="boot-veil-mark">✦</span></div>
-
 
 <div class="bg-decor"></div>
 <canvas id="fx"></canvas>
@@ -72,48 +71,48 @@
 </div>
 <button class="intro-skip" id="introSkip" type="button" hidden>跳過</button>
 
-<!-- ============ 主畫面：秘密花園 ============
-     hero 是一張真的照片：開滿玫瑰的拱門，一道一道往花園深處去（開場推開花園門，
-     走進來就是這條小徑）。前後各疊一層去背的照片：上緣垂下來的常春藤、
-     鏡頭前糊糊的幾朵花。往下捲的時候三層以不同的速度移動（越前面動得越多），
-     畫面就有了深度。名字在第一道拱門裡。 -->
+<!-- ============ 主畫面：走進莫內的花園 ============
+     開場是美術館牆上的一幅油畫，點一下就被吸進去 —— 所以 hero 就是那一幅畫的裡面：
+     日本橋、垂柳、開滿睡蓮的池塘，整個畫面是程式一筆一筆畫出來的油畫（canvas[data-monet]，
+     由 js/openers/painting.js 畫），水面一直輕輕流動。名字寫在一抹米白的顏料上，
+     右下角是新人的簽名（莫內都簽在那裡）。
+     往下捲是一間莫內的小展間：每一塊的開頭掛一幅小畫 ＋ 一張美術館的說明卡，
+     捲到時畫才一筆一筆畫上去（data-monet-reveal）。 -->
 <div id="app">
-  <section class="panel lobby sg-lobby" data-panel="lobby">
+  <section class="panel lobby mg-lobby" data-panel="lobby" data-scroll>
 
-    <!-- 沿著左右兩邊，跟著捲動一路長下去的藤（--ap 由 lobby-motion.js 算） -->
-    <div class="sg-vine l" data-scroll aria-hidden="true"></div>
-    <div class="sg-vine r" data-scroll aria-hidden="true"></div>
-
-    <!-- ===== Hero：玫瑰拱門的小徑 ===== -->
-    <header class="lobby-hero sg-hero" data-scroll>
-      <div class="sg-diorama" aria-hidden="true">
-        <div class="sg-layer l-far"></div>
-        <div class="sg-veil"></div>
-        <div class="sg-layer l-front"><i class="l"></i><i class="r"></i></div>
-        <div class="sg-layer l-top"></div>
-        <span class="sg-bf b1 k-queen" aria-hidden="true"><i class="sg-wing l"></i><i class="sg-wing r"></i></span>
-        <span class="sg-bf b2 k-swallowtail" aria-hidden="true"><i class="sg-wing l"></i><i class="sg-wing r"></i></span>
-        <span class="sg-bf b3 k-queen" aria-hidden="true"><i class="sg-wing l"></i><i class="sg-wing r"></i></span>
+    <!-- ===== Hero：畫的裡面 ===== -->
+    <header class="lobby-hero mg-hero" data-scroll>
+      <div class="mg-hero-art" aria-hidden="true">
+        <canvas class="mg-canvas" data-monet="bridge"></canvas>
+        <i class="mg-weave"></i>
+        <i class="mg-glaze"></i>
       </div>
-      <div class="sg-hero-body">
-        <div class="sg-kicker"><span class="en">Come find us in the garden</span><span class="cn">誠摯邀請您</span></div>
-        <h1 class="sg-names"><span data-tpl="groomEn"></span><span class="amp">&amp;</span><span data-tpl="brideEn"></span></h1>
-        <div class="sg-date"><span data-tpl="date"></span><i aria-hidden="true"></i><span data-tpl="weekday"></span></div>
+      <div class="mg-hero-body">
+        <div class="mg-swash">
+          <div class="mg-kicker"><span class="en">Impression, amour</span><span class="cn">誠摯邀請您</span></div>
+          <h1 class="mg-names"><span data-tpl="groomEn"></span><span class="amp">&amp;</span><span data-tpl="brideEn"></span></h1>
+          <div class="mg-date"><span data-tpl="date"></span><i aria-hidden="true"></i><span data-tpl="weekday"></span></div>
+        </div>
         <div class="hashtags" id="lobbyTags" data-sk="tags"></div>
+        <div class="scroll-cue mg-cue"><span>Scroll</span><span class="arrow"></span></div>
       </div>
-      <div class="scroll-cue sg-cue"><span>Scroll</span><span class="arrow"></span></div>
+      <div class="mg-sign" aria-hidden="true"><span data-tpl="groomEn"></span> &amp; <span data-tpl="brideEn"></span></div>
     </header>
 
-    <div class="scene-body sg-body">
+    <div class="scene-body mg-body">
 
-      <!-- ===== 婚禮資訊：水彩罌粟 ===== -->
-      <section class="info-block sg-sec">
-        <div class="sg-head">
-          <figure class="sg-pop" data-reveal="pop"><i class="sg-flower f-poppy"></i></figure>
-          <span class="en block-title">Information</span>
-          <span class="cn block-sub">婚禮資訊</span>
+      <!-- ===== 婚禮資訊：睡蓮 ===== -->
+      <section class="info-block mg-sec">
+        <div class="mg-head">
+          <figure class="mg-pic" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="lilies" data-monet-shape="small" data-monet-reveal></canvas><i class="mg-weave"></i></div></figure>
+          <div class="mg-cartel" data-reveal="rise">
+            <span class="mg-no">N° 1 ・ Nymphéas</span>
+            <span class="en block-title">Information</span>
+            <span class="cn block-sub">婚禮資訊</span>
+          </div>
         </div>
-        <div class="sg-card" data-reveal="rise">
+        <div class="mg-card" data-reveal="rise">
           <div class="info-card">
             <div class="info-couple" id="infoCouple" data-tpl="couple"></div>
             <div class="info-couple-cn" id="infoCoupleCn"></div>
@@ -135,26 +134,32 @@
         </div>
       </section>
 
-      <!-- ===== 當日流程：水彩藍雛菊 ===== -->
-      <section class="info-block sg-sec" id="scheduleBlock">
-        <div class="sg-head">
-          <figure class="sg-pop" data-reveal="pop"><i class="sg-flower f-daisy"></i></figure>
-          <span class="en block-title">Schedule</span>
-          <span class="cn block-sub">當日流程</span>
+      <!-- ===== 當日流程：罌粟花田 ===== -->
+      <section class="info-block mg-sec mg-alt" id="scheduleBlock">
+        <div class="mg-head">
+          <figure class="mg-pic" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="poppies" data-monet-shape="small" data-monet-reveal></canvas><i class="mg-weave"></i></div></figure>
+          <div class="mg-cartel" data-reveal="rise">
+            <span class="mg-no">N° 2 ・ Coquelicots</span>
+            <span class="en block-title">Schedule</span>
+            <span class="cn block-sub">當日流程</span>
+          </div>
         </div>
-        <div class="sg-card sg-card-tl" data-reveal="rise">
+        <div class="mg-card mg-card-tl" data-reveal="rise">
           <div class="timeline" id="schedule" data-sk="rows" data-reveal="list"></div>
         </div>
       </section>
 
-      <!-- ===== 出席前的小提醒：水彩海芋（沒填就整塊收起） ===== -->
-      <section class="info-block sg-sec" id="noteBlock" hidden>
-        <div class="sg-head">
-          <figure class="sg-pop" data-reveal="pop"><i class="sg-flower f-calla"></i></figure>
-          <span class="en block-title">Notes</span>
-          <span class="cn block-sub">出席前的小提醒</span>
+      <!-- ===== 出席前的小提醒：紫藤（沒填就整塊收起） ===== -->
+      <section class="info-block mg-sec" id="noteBlock" hidden>
+        <div class="mg-head">
+          <figure class="mg-pic" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="wisteria" data-monet-shape="small" data-monet-reveal></canvas><i class="mg-weave"></i></div></figure>
+          <div class="mg-cartel" data-reveal="rise">
+            <span class="mg-no">N° 3 ・ Glycines</span>
+            <span class="en block-title">Notes</span>
+            <span class="cn block-sub">出席前的小提醒</span>
+          </div>
         </div>
-        <div class="note-grid sg-card" data-reveal="rise">
+        <div class="note-grid mg-card" data-reveal="rise">
           <div class="note-item" id="dressCodeItem" hidden>
             <div class="note-label">Dress Code</div>
             <div class="dress-swatches" id="dressSwatches" hidden aria-hidden="true"></div>
@@ -171,14 +176,17 @@
         </div>
       </section>
 
-      <!-- ===== 交通資訊：水彩鬱金香（沒填就整塊收起） ===== -->
-      <section class="info-block sg-sec" id="transportBlock" hidden>
-        <div class="sg-head">
-          <figure class="sg-pop" data-reveal="pop"><i class="sg-flower f-tulip"></i></figure>
-          <span class="en block-title">Access</span>
-          <span class="cn block-sub">交通資訊</span>
+      <!-- ===== 交通資訊：花園小徑（沒填就整塊收起） ===== -->
+      <section class="info-block mg-sec mg-alt" id="transportBlock" hidden>
+        <div class="mg-head">
+          <figure class="mg-pic" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="path" data-monet-shape="small" data-monet-reveal></canvas><i class="mg-weave"></i></div></figure>
+          <div class="mg-cartel" data-reveal="rise">
+            <span class="mg-no">N° 4 ・ Le chemin</span>
+            <span class="en block-title">Access</span>
+            <span class="cn block-sub">交通資訊</span>
+          </div>
         </div>
-        <div class="note-grid sg-card" data-reveal="rise">
+        <div class="note-grid mg-card" data-reveal="rise">
           <div class="note-item" id="transportPublicItem" hidden>
             <div class="note-label">大眾運輸</div>
             <p class="info-note" id="transportPublic"></p>
@@ -192,55 +200,72 @@
         </div>
       </section>
 
-      <!-- ===== 兩人的故事：常春藤牆上的一扇拱窗 ===== -->
-      <section class="info-block sg-band sg-story" id="storyBlock" hidden data-scroll>
-        <div class="sg-band-bg" aria-hidden="true"></div>
-        <div class="sg-band-inner">
-          <div class="sg-window" data-reveal="rise">
-            <div class="sg-window-ph" data-photo="story" aria-hidden="true"></div>
-            <i class="sg-window-ivy" aria-hidden="true"></i>
-          </div>
-          <div class="sg-story-body" data-reveal="rise">
-            <div class="sg-band-title">Our Story</div>
-            <div class="sg-band-sub">關於我們這一路</div>
+      <!-- ===== 兩人的故事：淡紫色的展牆上，一幅金框的大畫（就是新人的照片） =====
+           照片上疊一層畫布的織紋；投射燈的光隨著捲動從左滑到右 -->
+      <section class="info-block mg-band mg-story" id="storyBlock" hidden data-scroll>
+        <div class="mg-band-bg" aria-hidden="true"></div>
+        <div class="mg-band-inner">
+          <figure class="mg-portrait" data-reveal="hang">
+            <div class="mg-gilt mg-gilt-lg">
+              <div class="mg-portrait-ph" data-photo="story" aria-hidden="true"></div>
+              <i class="mg-weave"></i>
+              <i class="mg-spot" aria-hidden="true"></i>
+            </div>
+            <figcaption class="mg-plate">Portrait de nous deux</figcaption>
+          </figure>
+          <div class="mg-story-body" data-reveal="rise">
+            <div class="mg-band-title">Our Story</div>
+            <div class="mg-band-sub">關於我們這一路</div>
             <p class="story-text" id="storyText"></p>
           </div>
-          <span class="sg-bf in-band k-swallowtail" aria-hidden="true"><i class="sg-wing l"></i><i class="sg-wing r"></i></span>
         </div>
       </section>
 
       <!-- ===== Moments 相遇之間 ===== -->
-      <section class="info-block sg-sec gallery-block" id="photoGallery" hidden>
-        <div class="sg-head">
-          <span class="en block-title">Moments</span>
-          <span class="cn block-sub">相遇之間</span>
+      <section class="info-block mg-sec gallery-block" id="photoGallery" hidden>
+        <div class="mg-head">
+          <div class="mg-cartel">
+            <span class="mg-no">Salon</span>
+            <span class="en block-title">Moments</span>
+            <span class="cn block-sub">相遇之間</span>
+          </div>
         </div>
         <div class="photo-rail" id="photoRail"></div>
       </section>
 
-      <!-- ===== 日期倒數：黃昏的花園，螢火蟲慢慢亮起來 ===== -->
-      <section class="info-block sg-band sg-dusk" data-scroll>
-        <div class="sg-band-bg" aria-hidden="true"></div>
-        <div class="sg-fireflies" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-        <div class="sg-band-inner">
-          <div class="sg-band-title">Countdown</div>
-          <div class="sg-band-sub">距離我們的大日子還有</div>
-          <div class="cd-card">
-            <div class="cd-grid" id="cdGrid" data-sk="grid"></div>
-            <div class="cd-target" id="cdTarget"></div>
+      <!-- ===== 日期倒數：印象・日出 —— 霧裡的港口，捲下去太陽就慢慢升起來 ===== -->
+      <section class="info-block mg-band mg-count" data-scroll>
+        <div class="mg-band-bg" aria-hidden="true">
+          <canvas class="mg-canvas" data-monet="sunrise"></canvas>
+          <i class="mg-sun"></i>
+          <i class="mg-sun-path"><b></b><b></b><b></b><b></b><b></b><b></b></i>
+          <i class="mg-weave"></i>
+        </div>
+        <div class="mg-band-inner">
+          <div class="mg-count-body">
+            <div class="mg-band-title">Impression, le grand jour</div>
+            <div class="mg-band-sub">距離我們的大日子還有</div>
+            <div class="cd-card">
+              <div class="cd-grid" id="cdGrid" data-sk="grid"></div>
+              <div class="cd-target" id="cdTarget"></div>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- ===== R.S.V.P.：水彩牡丹 ===== -->
-      <section class="info-block sg-sec">
-        <div class="sg-head">
-          <figure class="sg-pop" data-reveal="pop"><i class="sg-flower f-peony"></i></figure>
-          <span class="en block-title">R.S.V.P.</span>
-          <span class="cn block-sub">出席回覆</span>
+      <!-- ===== R.S.V.P.：一張吉維尼的明信片 ===== -->
+      <section class="info-block mg-sec">
+        <div class="mg-head">
+          <div class="mg-cartel">
+            <span class="mg-no">Carte postale</span>
+            <span class="en block-title">R.S.V.P.</span>
+            <span class="cn block-sub">出席回覆</span>
+          </div>
         </div>
-        <div class="sg-card sg-rsvp" data-reveal="rise">
+        <div class="mg-postcard" data-reveal="rise">
+          <div class="mg-postcard-pic" aria-hidden="true"><canvas data-monet="lilies" data-monet-shape="small" data-monet-still></canvas><i class="mg-weave"></i><span>Giverny</span></div>
           <div class="rsvp-cta">
+            <i class="mg-stamp" aria-hidden="true"></i>
             <h3>能來參加我們的婚禮嗎？</h3>
             <p>花 30 秒回覆出席，讓我們把最好的位置留給你</p>
             <a class="btn" href="invitation.html">前往出席回覆</a>
@@ -248,11 +273,14 @@
         </div>
       </section>
 
-      <!-- ===== Explore：掛在花園裡的一張張小吊牌 ===== -->
-      <section class="link-section sg-sec">
-        <div class="sg-head">
-          <span class="en block-title">Explore</span>
-          <span class="cn block-sub">其他活動</span>
+      <!-- ===== Explore：一張一張的展品說明卡 ===== -->
+      <section class="link-section mg-sec">
+        <div class="mg-head">
+          <div class="mg-cartel">
+            <span class="mg-no">Catalogue</span>
+            <span class="en block-title">Explore</span>
+            <span class="cn block-sub">其他活動</span>
+          </div>
         </div>
         <div class="link-grid" id="linkGrid" data-reveal="list">
           <a class="link-card" href="wall.html">
@@ -294,9 +322,8 @@
         </div>
       </section>
 
-      <footer class="sg-foot">
-        <span class="sg-bf foot k-queen" aria-hidden="true"><i class="sg-wing l"></i><i class="sg-wing r"></i></span>
-        <div class="sg-fin">see you in the garden</div>
+      <footer class="mg-foot">
+        <div class="mg-fin">Fin ・ peint avec amour</div>
         <span>made for <span data-tpl="couple"></span>・小港製作所 設計製作</span>
       </footer>
     </div>
@@ -314,7 +341,7 @@
 </div>
 
 <script src="demo-data.js"></script>
-<script>window.DEMO_CFG = {"templates":{"secret-garden":{"label":"Secret Garden 秘密花園","opening":"door"}},"openings":{"envelope":"拆信・封蠟","book":"翻頁・古書","bloom":"花朵盛開","curtain":"窗簾拉開","candle":"燭光點亮","stars":"星圖展開","door":"門／拱門","ribbon":"拉開絲帶","painting":"走進油畫","balloons":"氣球升空"}};</script>
+<script>window.DEMO_CFG = {"templates":{"monet-garden":{"label":"Monet Garden 莫內花園流動油畫","opening":"painting"}},"openings":{"envelope":"拆信・封蠟","book":"翻頁・古書","bloom":"花朵盛開","curtain":"窗簾拉開","candle":"燭光點亮","stars":"星圖展開","door":"門／拱門","ribbon":"拉開絲帶","painting":"走進油畫","balloons":"氣球升空"}};</script>
 <script src="../public/js/lobby-motion.js"></script>
 <script src="../public/js/openers/envelope.js"></script>
 <script src="../public/js/openers/book.js"></script>

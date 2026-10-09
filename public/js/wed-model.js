@@ -102,6 +102,18 @@ export const TEMPLATES = {
   'french-manor': { label:'French Manor 法式莊園', lobbyFile:'lobby-manor.html',
                      lobbyCss:['/css/lobby-manor.css'], lobbyJs:['/js/lobby-motion.js'], opening:'door',
                      fonts:['https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,500;1,400&family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
+  /* 莫內花園・流動油畫：美術館牆上一幅莫內的日本橋，點一下被吸進畫裡（開場）；
+     hero 就是那一幅畫的裡面，整頁的畫都是程式一筆一筆畫的油畫、水面一直流動。
+     畫畫的那一支（window.MonetPaint）就住在開場 painting.js 裡，所以 lobbyJs 也掛它 ——
+     就算這組新人換成別種開場，大廳的畫照樣畫得出來 */
+  'monet-garden': { label:'Monet Garden 莫內花園流動油畫', lobbyFile:'lobby-monet.html',
+                     lobbyCss:['/css/lobby-monet.css'], lobbyJs:['/js/lobby-motion.js', '/js/openers/painting.js'], opening:'painting',
+                     fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Parisienne&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
+  /* 美式戶外婚禮派對：滿滿一畫面的氣球慢慢升空（開場），露出底下的藍天與草地；
+     白色帳篷、串燈、三角旗、野餐格紋 */
+  'outdoor-party': { label:'Outdoor Party 美式戶外婚禮派對', lobbyFile:'lobby-party.html',
+                     lobbyCss:['/css/lobby-party.css'], lobbyJs:['/js/lobby-motion.js'], opening:'balloons',
+                     fonts:['https://fonts.googleapis.com/css2?family=Yellowtail&family=Bebas+Neue&family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@500&display=swap'] },
   /* 晨光房間：真的紗簾與窗光、一張早餐桌（洗出來的照片、去背的咖啡與可頌）；拉開紗簾，早晨照進來 */
   'morning-window': { label:'Morning Window 晨光房間', lobbyFile:'lobby-window.html',
                      lobbyCss:['/css/lobby-window.css','/css/lobby-trail.css'], lobbyJs:['/js/lobby-motion.js'], opening:'curtain',
@@ -144,6 +156,8 @@ export const OPENINGS = {
   'stars':    { label:'星圖展開', auto:true },
   'door':     { label:'門／拱門' },
   'ribbon':   { label:'拉開絲帶' },
+  'painting': { label:'走進油畫' },
+  'balloons': { label:'氣球升空', auto:true },
 };
 
 /* 這組新人的開場：sites.opening → 版型預設 → null（原本的字幕＋簾幕）。

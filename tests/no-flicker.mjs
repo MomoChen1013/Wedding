@@ -334,7 +334,7 @@ console.log('\n【⑥ 載入順序：預載的網址要跟實際 import 的一�
                  'exhibition','quiz','seating','lobby-korean','lobby-forest',
                  'lobby-tapestry','lobby-botanical',
                  'lobby-garden','lobby-orangerie','lobby-night','lobby-manor',
-                 'lobby-chapel','lobby-window'];
+                 'lobby-chapel','lobby-window','lobby-monet','lobby-party'];
   const missing = [];
   const wrongJs = [];
   for(const name of pages){

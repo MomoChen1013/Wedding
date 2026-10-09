@@ -178,7 +178,7 @@ body[data-template="tapestry"]{
 /* ============================================================
    場景版型（每一個都有自己的大廳骨架 lobby-*.html 與 css/lobby-*.css）
    ------------------------------------------------------------
-   七個版型各自一組色票與字體；這裡這一份是**子頁**穿的衣服
+   九個版型各自一組色票與字體；這裡這一份是**子頁**穿的衣服
    （祝福牆、給你的信、出席回覆……），所以一律是淺色底 ——
    Night Sky 與 Midnight Chapel 的大廳是深色的，但深色只在大廳
    （lobby-night.css／lobby-chapel.css 在 body[data-lobby] 底下覆寫），
@@ -239,6 +239,28 @@ body[data-template="french-manor"]{
   --font-display:'Bodoni Moda','Noto Serif TC',serif;
   --font-body:'Noto Serif TC',serif; --font-hand:'Cormorant Garamond','Noto Serif TC',serif; --font-ui:'Noto Serif TC',serif;
 }
+/* 莫內花園 —— 畫布的米白、池水的藍綠、睡蓮的粉、紫藤的淡紫 */
+body[data-template="monet-garden"]{
+  --ink-rgb:47,63,58; --surface-rgb:252,250,244;
+  --ink:#2f3f3a; --ink-soft:#6f7a72; --line:#ddd8c8; --line-soft:#ebe7da;
+  --surface:#fcfaf4; --ink-hover:#3f5650; --ink-active:#1f2b27;
+  --primary:#8fae96; --primary-deep:#3f6a5a; --primary-soft:#eef2ea;
+  --secondary:#a99cc4; --accent:#c9748a; --sun:#efd9a8;
+  --bg1:#f7f3ea; --bg2:#ece8dc; --card:#fcfaf4;
+  --font-display:'Cormorant Garamond','Noto Serif TC',serif;
+  --font-body:'Noto Serif TC',serif; --font-hand:'Parisienne','Cormorant Garamond','Noto Serif TC',serif; --font-ui:'Noto Serif TC',serif;
+}
+/* 美式戶外派對 —— 藍天、白帳篷、珊瑚紅的氣球、奶油黃的串燈 */
+body[data-template="outdoor-party"]{
+  --ink-rgb:31,48,73; --surface-rgb:255,255,255;
+  --ink:#1f3049; --ink-soft:#5f6f86; --line:#d9e2ea; --line-soft:#e9eff4;
+  --surface:#ffffff; --ink-hover:#2e4566; --ink-active:#131f31;
+  --primary:#7fbfe3; --primary-deep:#2f6fa8; --primary-soft:#eaf5fb;
+  --secondary:#f6c85f; --accent:#f07a5a; --sun:#ffe3a3;
+  --bg1:#f8fbfd; --bg2:#eaf3f9; --card:#ffffff;
+  --font-display:'Bebas Neue','Noto Sans TC',sans-serif;
+  --font-body:'Noto Sans TC','Noto Sans',sans-serif; --font-hand:'Yellowtail','Noto Sans TC',cursive; --font-ui:'Noto Sans TC','Noto Sans',sans-serif;
+}
 /* 晨光房間 —— 暖白、亞麻、木頭、早晨的淡藍 */
 body[data-template="morning-window"]{
   --ink-rgb:74,64,56; --surface-rgb:255,253,249;
@@ -294,7 +316,7 @@ body[data-template="forest"] .scene-bg::after{
 body:is([data-template="korean"],[data-template="forest"],[data-template="tapestry"],
   [data-template="botanical-letter"],[data-template="secret-garden"],[data-template="spring-orangerie"],
   [data-template="night-sky"],[data-template="french-manor"],[data-template="morning-window"],
-  [data-template="midnight-chapel"]) :is(
+  [data-template="midnight-chapel"],[data-template="monet-garden"],[data-template="outdoor-party"]) :is(
   .lobby-hero .tag, .ir-label, .cd-lab, .lc-go, .icon-hint, .gate-sep,
   .rf-req, .st-card-label, .st-mates-label, .st-letter-go, .st-lb-tip,
   .draw-info-hint, .cv-hint, .tl-eyebrow, .tl-meta .when, .lb-body .lb-date,
@@ -305,7 +327,7 @@ body:is([data-template="korean"],[data-template="forest"],[data-template="tapest
 body:is([data-template="korean"],[data-template="forest"],[data-template="tapestry"],
   [data-template="botanical-letter"],[data-template="secret-garden"],[data-template="spring-orangerie"],
   [data-template="night-sky"],[data-template="french-manor"],[data-template="morning-window"],
-  [data-template="midnight-chapel"]) :is(
+  [data-template="midnight-chapel"],[data-template="monet-garden"],[data-template="outdoor-party"]) :is(
   .inv-lead, .tl-meta .desc, .st-letter-text, .st-miss-body,
   .q-intro, .q-bar-label, .card-desc, .rsvp-cta p,
   .step-pane .step-hint, .gate-card .sub){

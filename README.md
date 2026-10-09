@@ -117,7 +117,7 @@
 │   ├─ lobby-korean.html  lobby-forest.html  lobby-tapestry.html
 │   │                         # 版型自己的大廳骨架（見 js/wed-model.js 的 TEMPLATES）
 │   ├─ lobby-botanical.html  lobby-garden.html  lobby-orangerie.html  lobby-night.html
-│   │  lobby-manor.html  lobby-window.html  lobby-chapel.html
+│   │  lobby-manor.html  lobby-window.html  lobby-chapel.html  lobby-monet.html  lobby-party.html
 │   │                         # 場景版型，各有自己的大廳（長相見 css/lobby-*.css）
 │   ├─ wall.html  cake.html
 │   ├─ draw.html  exhibition.html  quiz.html
@@ -139,7 +139,7 @@
 │       ├─ site-context.js    # ★ 每頁唯一進入點：解析 slug、載設定、注入其他 JS
 │       ├─ common.js          # 資料層 DataStore、導覽、特效、樣板文字
 │       ├─ lobby-motion.js    # 大廳的開場（登記＋播放）與捲動編排
-│       ├─ openers/{key}.js   # 八種開場，各一支（css/openers/{key}.css 是它的樣子）
+│       ├─ openers/{key}.js   # 十種開場，各一支（css/openers/{key}.css 是它的樣子）
 │       ├─ cropper.js         # 後台專用的照片裁切器（只有 admin.html 載入）
 │       ├─ seating-plan.js    # 後台專用的排桌工作台（只有 admin.html 載入）
 │       ├─ xlsx-lite.js       # 極小的 Excel 讀寫器（排桌的匯入匯出用，無外部函式庫）
@@ -156,6 +156,7 @@
 │   ├─ sync-assets.js         # 掃描素材資料夾產生 manifest.json
 │   ├─ build-og.js            # 產生社群分享縮圖與各站專屬的 og 標籤
 │   ├─ build-previews.js      # 從正式的大廳骨架產出 preview/ 底下各版型的示範頁
+│   ├─ build-party-sky.js     # 把氣球開場的那片天空烤進 lobby-party.html 的 hero
 │   ├─ check-site.js          # 檢查某站台為什麼打不開
 │   ├─ export-rsvps.js        # 匯出某站台的 RSVP 成 CSV
 │   └─ create-short-link.js
@@ -215,7 +216,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 
 清單都在 `public/js/wed-model.js`（`TEMPLATES`／`OPENINGS`／`STORY_LAYOUTS`）。
 
-**開場**（`opening`）有八種，任何版型都能用任何一種：
+**開場**（`opening`）有十種，任何版型都能用任何一種：
 
 | 代號 | 開場 | 怎麼動 | 誰的預設 |
 |---|---|---|---|
@@ -227,6 +228,8 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | `stars` | 星圖展開 | 自己演：星星 → 連線成一顆心 → 名字 | night-sky |
 | `door` | 門／拱門 | 晴朗的早上站在門口，點一下 → 門往內開 → 陽光湧出來、穿過門口。莊園全部是真的照片：綠籬牆上、磚砌圓拱裡的一扇鍛鐵花園門，鐵門從照片分離出來繞著鉸鍊轉開，走進去是一座綠籬夾道的歐式花園（教堂／刺繡用程式畫的尖拱鐵門），秘密花園是常春藤牆上一扇白框玻璃門（牆、垂下來的藤、牆腳的花、門後的玫瑰拱門小徑都是真的照片） | secret-garden、french-manor |
 | `ribbon` | 拉開絲帶 | 拖緞帶尾（或點）→ 蝴蝶結鬆開 → 卡片打開。緞帶疊了一張真的絲綢布紋，光澤跟著游標滑（手機上自己慢慢飄）；卡片與桌面是真的棉紙、纖維紙，封面貼一枝真的壓花 | botanical-letter |
+| `painting` | 走進油畫 | 美術館牆上一幅金框的莫內《日本橋》，畫是活的（池水起伏、柳條晃、水面光點閃）。點一下 → 牆往外退、畫框往前衝、畫裡的筆觸捲成漩渦，四周的顏料點被吸進畫裡 → 掉進畫裡 | monet-garden |
+| `balloons` | 氣球升空 | 自己演：滿滿一畫面的氣球在原地晃 → 一顆一顆放開、慢慢升空 → 露出底下的藍天、白雲、草地、白帳篷、串燈與三角旗 → 名字浮在天空上 | outdoor-party |
 
 > **緞帶的布紋素材**：`public/css/openers/satin-silk.jpg` 是把一張真的絲綢 normal map
 > 打光成灰階的布紋。原圖是 Khronos [glTF Sample Assets](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/SpecularSilkPouf)
@@ -383,7 +386,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 每一種開場單獨看：`preview/openings.html`。
 
 **場景版型**：`botanical-letter`、`secret-garden`、`spring-orangerie`、`night-sky`、
-`french-manor`、`morning-window`、`midnight-chapel`。每一個都有自己的色票、字體、預設開場與大廳骨架：
+`french-manor`、`monet-garden`、`outdoor-party`、`morning-window`、`midnight-chapel`。每一個都有自己的色票、字體、預設開場與大廳骨架：
 
 | 版型 | 進度 | 大廳 |
 |---|---|---|
@@ -392,14 +395,26 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | spring-orangerie | ✅ 真的照片（明亮的玻璃溫室、白玫瑰、鬱金香、檸檬枝、蕨葉、澆水壺、溫室屋頂、小王子的那一朵紅玫瑰、白牆上的葉影、一束白玫瑰）＋ 捲動編排（葉影隨捲動移動、斜射的光、倒數區的紅玫瑰捲到時亮起暖光），素材見上面〈春日溫室與植物信箋的照片素材〉 | `lobby-orangerie.html` |
 | night-sky | ✅ 整套插圖（現代星空：開場那張心形星圖停在 hero、寫實的月亮、三層山稜、亮燈的帳篷、坐著看星星的兩個人、細金線星座）＋ 捲動編排（三層星星視差、星圖外環跟著轉、星座一條一條連起來、望遠鏡視野的軌道、倒數的月亮越捲越圓、頁尾天快亮了） | `lobby-night.html` |
 | french-manor | ✅ 文藝復興：真的天頂濕壁畫、去背的大理石雕像與雕刻（花神、天使、小天使胸像、玫瑰花飾、女神、丘比特與賽姬）、大理石名牌 ＋ 從真的照片描出來的剪紙（城堡剪出一排排窗、托斯卡尼柏樹）＋ 開場走進的那座花園當倒數的背景 ＋ 新人照片放在剪紙橢圓花邊框（共 7 處）＋ 捲動編排（hero 的剪紙一層一層視差、倒數的花園照片視差），素材見上面〈法式莊園的照片素材〉 | `lobby-manor.html` |
+| monet-garden | ✅ 莫內花園・流動油畫：整頁的畫都是程式一筆一筆畫的油畫（日本橋、睡蓮、罌粟花田、紫藤、花園小徑、印象・日出），不是圖檔；金框、亞麻內襯、畫布織紋、美術館說明卡、黃銅名牌、吉維尼明信片 ＋ 捲動編排（hero 的池水一直流動、往下捲畫慢慢沉下去；每一幅小畫捲到時從釘子上擺進來、再一筆一筆畫上去；故事展牆的投射燈隨捲動滑過；倒數時太陽從霧裡的港口升起來、水面倒影跟著拉長） | `lobby-monet.html` |
+| outdoor-party | ✅ 美式戶外婚禮派對：開場那片天空（白雲、太陽、白帳篷、三角旗、串燈）就是 hero，幾顆漏網的氣球一直往上飄；格紋白卡、字母板的流程、一瓶野花、綁著氣球的「Just Married」小貨車、夾在串燈上的拍立得、入場券、彩色園遊券 ＋ 捲動編排（雲飄、串燈往上退；三角旗一面一面翻下來；小貨車從左邊開進來；拍立得跟著捲動擺；倒數的串燈一顆一顆亮起來，全亮了就放煙火） | `lobby-party.html` |
 | morning-window | ✅ 侘寂（Wabi-Sabi）：真的照片（窗前的一瓶鬱金香、灰泥牆、牆上窗格形狀的陽光、亞麻布、照著陽光的紗簾），顏色都是褪過的大地色 ＋ 「我們的故事」接著一張桌巾：洗出來的照片散在亞麻布上、去背的手作陶杯／素色抱枕／一盆室內植物 ＋ 區塊標題上是去背的小物（陶杯、白色花瓶、素色抱枕、攤開的書、一枝粉色鬱金香，不放在框裡）＋ 左邊一枝乾草跟著捲動垂下來＋ 新人照片共 7 處 ＋ 捲動編排（照片一張張落到桌上、窗光滑過桌面、倒數時紗簾越捲越暖），素材見上面〈晨光房間的照片素材〉 | `lobby-window.html` |
 | midnight-chapel | ✅ 開場在午夜的禮堂點亮三根真的蠟燭 → 燭火熄掉、天亮 → 大廳是同一座純白禮堂；玻璃感：照片壓在厚玻璃裡（反光隨捲動滑過）、毛玻璃的卡；兩旁垂著白紗、hero 下緣一圈蕾絲、兩旁的蕾絲邊跟著捲動一路縫下來、頁尾一片滿天星；區塊標題上是去背的實物（戒指、水晶燈、鈴蘭、百合、白色蝴蝶蘭）；新人照片共 7 處（倒數的毛玻璃後面是一片鈴蘭，越捲越清楚），素材見上面〈午夜教堂的照片素材〉 | `lobby-chapel.html` |
 
 Night Sky 與 Midnight Chapel 的大廳是深色的，但子頁暫時還是淺色版（見 common.css）。
-每個版型各有一頁示範（`preview/botanical-letter.html`、`preview/secret-garden.html`、`preview/spring-orangerie.html`、`preview/night-sky.html`、`preview/french-manor.html`、`preview/morning-window.html`、`preview/midnight-chapel.html`）。右下角都可以切換開場。
+每個版型各有一頁示範（`preview/botanical-letter.html`、`preview/secret-garden.html`、`preview/spring-orangerie.html`、`preview/night-sky.html`、`preview/french-manor.html`、`preview/monet-garden.html`、`preview/outdoor-party.html`、`preview/morning-window.html`、`preview/midnight-chapel.html`）。右下角都可以切換開場。
 
-`preview/` 底下 tapestry、botanical-letter、secret-garden、spring-orangerie、night-sky、french-manor、morning-window、midnight-chapel 這幾頁是 `npm run build-previews` 從
+`preview/` 底下 tapestry、botanical-letter、secret-garden、spring-orangerie、night-sky、french-manor、monet-garden、outdoor-party、morning-window、midnight-chapel 這幾頁是 `npm run build-previews` 從
 `public/lobby-*.html` 產出來的，改了大廳骨架記得重跑。
+
+> **莫內花園的畫怎麼來的**：`js/openers/painting.js` 同時是開場與一具「油畫繪製器」（`window.MonetPaint`）。
+> 先用柔和的色塊打底稿，再在底稿上取色、疊幾萬筆短筆觸（大筆鋪色、中筆塑形、小筆點花與光；
+> 顏色每一筆都偏一點，筆觸方向跟著場景走），每一筆補一道亮邊當顏料的厚度。亂數有固定種子，每次都是同一幅。
+> 「流動」是把畫好的圖切成橫帶、依高度左右錯開（水面錯得多、樹叢錯得少），看不到的畫不動，減少動態時完全不動。
+> 大廳的畫是 `<canvas data-monet="場景">`，所以這個版型的 `lobbyJs` 也掛了 painting.js —— 換成別種開場，大廳的畫照樣畫得出來。
+>
+> **派對的天空**：開場（`js/openers/balloons.js` 的 `window.PartySky.svg()`）和大廳 hero 是同一張圖。
+> 大廳那一段由 `npm run build-party-sky` 烤進 `lobby-party.html`（`<!-- party-sky -->` 之間，不要手改）；
+> 改了天空，先跑它、再跑 `npm run build-previews`。
 
 ---
 

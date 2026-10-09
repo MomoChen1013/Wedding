@@ -1,0 +1,120 @@
+/* ============================================================
+   openers/painting.css — 開場：走進油畫（js/openers/painting.js）
+   ------------------------------------------------------------
+   美術館的一面牆：上面一盞投射燈，牆上掛一幅金框的油畫，
+   框下一塊黃銅的說明牌。畫本身是 <canvas>（程式一筆一筆畫的），
+   上面再疊一層畫布的織紋（.pt-weave）。
+
+   點了之後（.is-open）：
+     ・.pt-room   牆、燈、地板往外退、糊掉、淡掉（鏡頭往前衝）
+     ・.pt-stage  畫框往前放大到畫布蓋滿整個視窗（--pt-z 由 JS 量好）
+     ・.pt-dabs   畫面四周的顏料點被吸進畫的正中間
+     ・畫裡的筆觸捲成漩渦（JS 在 canvas 上做）
+============================================================ */
+.pt-host{
+  --pt-wall:#e9e3d6; --pt-wall-2:#d8cfbd; --pt-ink:#3c4a42; --pt-gold:#c9a24a;
+  --pt-z:3; --pt-cx:0px; --pt-cy:0px;
+  background:var(--pt-wall);cursor:pointer;
+}
+
+/* ---- 展間 ---- */
+.pt-room{position:absolute;inset:0;transition:transform 1.9s cubic-bezier(.7,0,.85,.25),filter 1.6s ease,opacity 1.3s ease .4s;}
+.pt-wall{position:absolute;inset:0;
+  background:
+    radial-gradient(60% 50% at 50% 38%,rgba(255,250,236,.95),rgba(255,250,236,0) 70%),
+    repeating-linear-gradient(90deg,rgba(0,0,0,.012) 0 2px,transparent 2px 5px),
+    linear-gradient(180deg,#efe9dd,var(--pt-wall) 55%,var(--pt-wall-2));}
+/* 投射燈：從天花板斜斜打下來的一束光 */
+.pt-light{position:absolute;left:50%;top:-10%;width:min(120vw,1300px);height:90%;transform:translateX(-50%);pointer-events:none;
+  background:radial-gradient(50% 60% at 50% 0%,rgba(255,244,214,.75),rgba(255,244,214,0) 70%);mix-blend-mode:soft-light;
+  animation:pt-flicker 7s ease-in-out infinite alternate;}
+@keyframes pt-flicker{to{opacity:.8;}}
+/* 地板：一條深色的木地板與踢腳板 */
+.pt-floor{position:absolute;left:0;right:0;bottom:0;height:13%;
+  background:
+    linear-gradient(180deg,#c9bea8 0 6px,#b6a88e 6px 9px,transparent 9px),
+    repeating-linear-gradient(90deg,#8a6f52 0 120px,#80664b 120px 122px,#927657 122px 240px,#7a6046 240px 242px);
+  box-shadow:inset 0 14px 18px -10px rgba(0,0,0,.35);}
+
+/* ---- 畫 ---- */
+.pt-stage{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(18px,3vh,30px);
+  padding:0 18px 9vh;transform-origin:50% 50%;}
+.pt-frame{--tx:0deg;--ty:0deg;position:relative;width:min(84vw,calc(62vh * 1.42),980px);aspect-ratio:1.42;padding:clamp(14px,2.6vw,30px);
+  transform:perspective(1400px) rotateX(var(--tx)) rotateY(var(--ty));transition:transform .6s ease;
+  background:
+    radial-gradient(circle at 50% 50%,transparent 62%,rgba(90,60,20,.25) 100%),
+    linear-gradient(135deg,#7d5c22,#f1d98a 16%,#a87f32 30%,#f6e4a6 46%,#9c7429 62%,#e9cd7d 80%,#7a5a20);
+  box-shadow:
+    inset 0 0 0 2px #5e4416, inset 0 0 0 5px rgba(255,236,170,.7), inset 0 0 0 7px #8c6a28,
+    inset 0 0 18px 6px rgba(70,45,10,.45),
+    0 2px 0 rgba(255,255,255,.4),
+    0 40px 60px -26px rgba(40,30,15,.55), 0 10px 18px -8px rgba(40,30,15,.35);
+  animation:pt-breathe 6s ease-in-out infinite alternate;}
+/* 畫框上一圈雕花的珠子 */
+.pt-frame::before{content:'';position:absolute;inset:clamp(5px,.9vw,10px);pointer-events:none;border-radius:2px;
+  background:repeating-radial-gradient(circle at 50% 50%,transparent 0 2px,transparent 2px);
+  border:clamp(3px,.5vw,6px) dotted rgba(255,238,180,.55);filter:drop-shadow(0 1px 0 rgba(80,55,15,.6));}
+@media (max-width:640px){.pt-frame{width:min(86vw,calc(58vh * .78));aspect-ratio:.78;}}
+@keyframes pt-breathe{to{filter:brightness(1.04);}}
+/* 亞麻的內襯 */
+.pt-liner{position:relative;width:100%;height:100%;padding:clamp(6px,1.1vw,12px);
+  background:repeating-linear-gradient(45deg,#e9e0c8 0 2px,#ddd3b8 2px 4px);
+  box-shadow:inset 0 0 0 1px rgba(120,95,50,.4),inset 0 4px 10px rgba(60,40,10,.35);}
+.pt-canvas{position:relative;width:100%;height:100%;overflow:hidden;background:#557f5a;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.25);}
+.pt-paint{position:absolute;inset:0;width:100%;height:100%;display:block;}
+/* 畫布的織紋：疊在畫上面，乘一點點 */
+.pt-weave{position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:.35;
+  background:
+    repeating-linear-gradient(0deg,rgba(80,60,30,.18) 0 1px,transparent 1px 3px),
+    repeating-linear-gradient(90deg,rgba(80,60,30,.14) 0 1px,transparent 1px 3px);}
+/* 畫上右下角的簽名（莫內都簽在這裡） */
+.pt-sign{position:absolute;right:4%;bottom:3.5%;z-index:2;display:flex;align-items:baseline;gap:.3em;
+  font:400 clamp(16px,2.4vw,26px)/1 'Parisienne','Cormorant Garamond',cursive;color:#b4472f;
+  text-shadow:0 1px 0 rgba(255,240,220,.3);opacity:.92;transform:rotate(-4deg);}
+.pt-sign .op-amp{font-style:normal;padding:0 .1em;}
+.pt-sign em{font-style:normal;font-size:.7em;}
+
+/* 黃銅說明牌 */
+.pt-plaque{padding:10px 22px 11px;text-align:center;color:#3a2f1c;border-radius:2px;
+  background:linear-gradient(135deg,#a5884a,#efdba0 30%,#c7a65c 55%,#ecd697 78%,#a3864a);
+  box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 -1px 0 rgba(70,50,15,.4) inset,0 6px 12px -6px rgba(40,30,15,.5);}
+.pt-plaque-t{font:italic 400 clamp(14px,1.8vw,17px) 'Cormorant Garamond',serif;}
+.pt-plaque-n{margin-top:2px;font:500 clamp(15px,2vw,19px) 'Cormorant Garamond','Noto Serif TC',serif;letter-spacing:.14em;text-transform:uppercase;}
+.pt-plaque-n .op-amp{font-style:italic;text-transform:none;padding:0 .25em;}
+.pt-plaque-s{margin-top:3px;font-size:11px;letter-spacing:.24em;color:rgba(58,47,28,.75);}
+
+/* 提示寫在地板上：淺色的字 */
+.pt-hint{position:absolute;left:0;right:0;bottom:0;height:13%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  color:#f6efe0;text-shadow:0 1px 4px rgba(40,25,10,.6);pointer-events:none;z-index:3;}
+.pt-hint .en{font:italic 400 clamp(16px,2vw,20px) 'Cormorant Garamond',serif;}
+.pt-hint .cn{font-size:12px;letter-spacing:.4em;opacity:.85;animation:pt-pulse 2.6s ease-in-out infinite;}
+@keyframes pt-pulse{50%{opacity:.35;}}
+
+/* 進場：畫框從牆上微微浮出來 */
+.pt-stage > *{animation:pt-in 1.3s cubic-bezier(.2,.7,.2,1) both;}
+.pt-plaque{animation-delay:.25s;}
+@keyframes pt-in{from{opacity:0;transform:translateY(14px) scale(.985);}}
+
+/* ---- 被吸進去 ---- */
+.pt-dabs{position:absolute;inset:0;pointer-events:none;z-index:4;}
+.pt-dabs i{position:absolute;left:50%;top:50%;width:46px;height:14px;margin:-7px 0 0 -23px;border-radius:50%;background:var(--c);
+  opacity:0;transform:translate(var(--x),var(--y)) rotate(var(--r));}
+.pt-host.is-open .pt-dabs i{animation:pt-suck 1.25s cubic-bezier(.55,0,.9,.4) calc(.25s + var(--d)) forwards;}
+@keyframes pt-suck{
+  0%{opacity:0;transform:translate(var(--x),var(--y)) rotate(var(--r)) scale(1.4);}
+  25%{opacity:.85;}
+  100%{opacity:0;transform:translate(calc(var(--pt-cx) * -1),calc(var(--pt-cy) * -1)) rotate(calc(var(--r) + 220deg)) scale(.1);}
+}
+.pt-host.is-open .pt-hint{opacity:0;transition:opacity .3s ease;}
+.pt-host.is-open .pt-plaque{opacity:0;transition:opacity .4s ease;}
+.pt-host.is-open .pt-frame{animation:none;transform:none;}
+.pt-host.is-open .pt-stage{
+  transform:scale(var(--pt-z)) translate(var(--pt-cx),var(--pt-cy));
+  transition:transform 1.95s cubic-bezier(.6,-.12,.78,.2);}
+.pt-host.is-open .pt-room{transform:scale(1.8);filter:blur(10px);opacity:0;}
+.pt-host.is-leaving{background:transparent;}
+
+@media (prefers-reduced-motion: reduce){
+  .pt-light,.pt-frame,.pt-hint .cn{animation:none;}
+}

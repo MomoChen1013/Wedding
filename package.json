@@ -20,7 +20,8 @@
     "build-og": "node scripts/build-og.js",
     "check-site": "node scripts/check-site.js",
     "set-pages": "node scripts/set-pages.js",
-    "build-previews": "node scripts/build-previews.js"
+    "build-previews": "node scripts/build-previews.js",
+    "build-party-sky": "node scripts/build-party-sky.js"
   },
   "repository": {
     "type": "git",

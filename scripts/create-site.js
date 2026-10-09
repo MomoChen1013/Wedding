@@ -23,10 +23,12 @@
      --template       選填，版型；預設 classic
                       classic / classic-blush / classic-sage / classic-dusk
                       / korean / forest / tapestry / botanical-letter / secret-garden
-                      / spring-orangerie / night-sky / french-manor / morning-window
-                      / midnight-chapel（見 js/wed-model.js 的 TEMPLATES）
+                      / spring-orangerie / night-sky / french-manor / monet-garden
+                      / outdoor-party / morning-window / midnight-chapel
+                      （見 js/wed-model.js 的 TEMPLATES）
      --opening        選填，開場；不填就用版型的預設開場
                       envelope / book / bloom / curtain / candle / stars / door / ribbon
+                      / painting / balloons
                       （見 js/wed-model.js 的 OPENINGS）
      --cover          選填，封面圖片網址
      --story          選填，兩人的故事
