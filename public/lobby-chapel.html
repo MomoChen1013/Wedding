@@ -89,12 +89,9 @@
 <div id="app">
   <section class="panel lobby mc-lobby" data-panel="lobby" data-scroll>
 
-    <!-- 一串珍珠跟著捲動往下垂，末端綁著一小枝鈴蘭，沿路掉下幾顆珍珠（--ap 由 lobby-motion.js 算，共用的部分在 lobby-trail.css） -->
-    <div class="lx-trail mc-trail" data-scroll aria-hidden="true">
-      <i class="lx-trail-line"></i>
-      <i class="lx-mark" style="--k:0.1;--mx:15px;--mr:-10deg"></i><i class="lx-mark" style="--k:0.24;--mx:-15px;--mr:20deg"></i><i class="lx-mark" style="--k:0.38;--mx:16px;--mr:0deg"></i><i class="lx-mark" style="--k:0.52;--mx:-15px;--mr:-25deg"></i><i class="lx-mark" style="--k:0.66;--mx:15px;--mr:15deg"></i><i class="lx-mark" style="--k:0.8;--mx:-16px;--mr:-5deg"></i><i class="lx-mark" style="--k:0.94;--mx:15px;--mr:25deg"></i>
-      <i class="lx-trail-tip"></i>
-    </div>
+    <!-- 兩旁的蕾絲縫邊：跟著捲動一路往下縫出來（--ap 由 lobby-motion.js 算，共用的部分在 lobby-trail.css） -->
+    <div class="lx-trail mc-trail mc-trail-l" data-scroll aria-hidden="true"><i class="lx-trail-line"></i></div>
+    <div class="lx-trail mc-trail mc-trail-r" data-scroll aria-hidden="true"><i class="lx-trail-line"></i></div>
 
     <!-- 兩旁垂下來的白紗：固定在視窗兩側，輕輕地飄，跟著捲動慢慢移（--sp 來自 .mc-lobby） -->
     <div class="mc-veils" aria-hidden="true"><i></i><i></i></div>
@@ -240,9 +237,9 @@
         <div class="photo-rail" id="photoRail"></div>
       </section>
 
-      <!-- ===== 日期倒數：一整片毛玻璃，後面是兩個人的照片（第五張）—— 越捲越清楚 ===== -->
+      <!-- ===== 日期倒數：一整片毛玻璃，後面是一片柔白的鈴蘭 —— 越捲越清楚 ===== -->
       <section class="info-block mc-band mc-count" data-scroll>
-        <div class="mc-band-bg" aria-hidden="true"><div class="mc-frost-ph" data-photo="photo5"></div><i class="mc-frost"></i></div>
+        <div class="mc-band-bg" aria-hidden="true"><div class="mc-frost-ph"></div><i class="mc-frost"></i></div>
         <div class="mc-band-inner">
           <div class="mc-count-body mc-glass">
             <div class="mc-band-title">Until the bells ring</div>
