@@ -264,14 +264,14 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
   display:flex;flex-direction:column;align-items:center;gap:8px;border-top:none;color:var(--mc-soft);}
 .mc-fin{font:italic 400 24px 'Cormorant Garamond',serif;color:var(--mc-gold);text-transform:none;letter-spacing:.02em;}
 
-/* ---- 捲動軌跡：兩旁的蕾絲縫邊（Anna Evans／Unsplash 的波浪蕾絲，轉成直的、接成一整條），
-   跟著捲動一路往下縫出來；波浪朝向頁面中間（lobby-trail.css） ---- */
-.mc-trail{--line:url(../img/chapel/lace-side.webp) left top/34px auto repeat-y;--line-w:34px;
-  --line-m:url(../img/chapel/lace-side.webp) left top/20px auto repeat-y;--line-w-m:20px;}
+/* ---- 捲動軌跡：兩旁各一條蕾絲緞帶（The HK Photo Company／Unsplash 的花朵蕾絲：取有花邊的那一段，
+   上下鏡射成兩邊都是花朵波浪的緞帶，再轉成直的接成一整條），跟著捲動一路往下縫出來（lobby-trail.css） ---- */
+.mc-trail{--line:url(../img/chapel/lace-ribbon.webp) center top/44px auto repeat-y;--line-w:44px;
+  --line-m:url(../img/chapel/lace-ribbon.webp) center top/24px auto repeat-y;--line-w-m:24px;}
 .lx-trail.mc-trail{z-index:6;}
-.mc-trail .lx-trail-line{opacity:.9;filter:drop-shadow(0 1px 1px rgba(80,70,60,.12));}
-.mc-trail-r{--tr-left:min(calc(100% - 24px),calc(50% + 532px));--tr-left-m:calc(100% - 11px);}
-.mc-trail-r .lx-trail-line{transform:translateX(-50%) scaleX(-1);}
+.mc-trail .lx-trail-line{opacity:.92;filter:drop-shadow(0 1px 1.5px rgba(80,70,60,.14));}
+.mc-trail{--tr-left:max(10px,calc(50% - 564px));--tr-left-m:4px;}
+.mc-trail-r{--tr-left:min(calc(100% - 34px),calc(50% + 540px));--tr-left-m:calc(100% - 20px);}
 
 /* ---- hero 右下角一枝白色蝴蝶蘭（Jocelyn Morales／Unsplash，去背） ---- */
 .mc-orchid{position:absolute;right:clamp(-30px,-1vw,0px);bottom:clamp(30px,8vh,90px);z-index:2;width:clamp(200px,30vw,420px);aspect-ratio:620/322;

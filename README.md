@@ -329,7 +329,8 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > | `chapel/orchid.webp` | hero 右下角、R.S.V.P. | [黑底上的一枝白色蝴蝶蘭](https://unsplash.com/photos/kGckDAbXZA8)・Jocelyn Morales | 依亮度去背 |
 > | `chapel/gypsophila.webp` | 頁尾的背景 | [一片滿天星](https://unsplash.com/photos/AWZ3l66_iKw)・Danielle Suijkerbuijk | 縮圖 |
 > | `chapel/tulle.webp` | 整頁兩旁垂下來的白紗 | [垂墜的白紗](https://unsplash.com/photos/hM7P386VIOg)・Kristina Tochilko | 縮圖 |
-> | `chapel/lace-edge.webp`、`lace-side.webp` | hero 下緣的一圈蕾絲；兩旁跟著捲動縫出來的蕾絲邊 | [波浪邊的白色蕾絲](https://unsplash.com/photos/AdX5Qpl7Xy0)・Anna Evans | 依亮度去背、加深花紋，取波浪邊那一段，鏡射接成連續的波浪；再轉成直的一條 |
+> | `chapel/lace-edge.webp` | hero 下緣的一圈蕾絲 | [波浪邊的白色蕾絲](https://unsplash.com/photos/AdX5Qpl7Xy0)・Anna Evans | 依亮度去背、加深花紋，取波浪邊那一段，鏡射接成連續的波浪 |
+> | `chapel/lace-ribbon.webp` | 兩旁跟著捲動縫出來的蕾絲緞帶 | [麻布上的花朵蕾絲](https://unsplash.com/photos/f1GJZNOzk2I)・The HK Photo Company | 取有花朵波浪邊的那一段、依亮度去背；上下鏡射成兩邊都是花邊的緞帶，取一個花樣週期接成可以無縫重複，再轉成直的 |
 
 > **晨光房間的照片素材**（`public/img/window/`，開場的紗簾與 `lobby-window.html` 共用）：一樣是 Unsplash License。
 >
@@ -356,7 +357,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > | 版型 | 線 | 領頭 | 沿路留下 |
 > |---|---|---|---|
 > | Forest Botanical | 一根藤蔓（CSS） | `forest/sprig.webp` 新芽 | 葉子、橡實、莓果（森林小物） |
-> | Midnight Chapel | `chapel/lace-side.webp` 兩旁各一條蕾絲邊，波浪朝向頁面中間 | — | — |
+> | Midnight Chapel | `chapel/lace-ribbon.webp` 兩旁各一條蕾絲緞帶（兩邊都是花朵波浪邊） | — | — |
 > | Morning Window | 一根細細的、不太直的乾草莖（CSS） | `window/grass-plume.webp` 一束乾草穗 | `window/seedhead.webp` 乾燥的種子花頭 |
 
 > **Forest Botanical 的手繪森林小物**（`public/img/forest/`，`lobby-forest.html`）：全部來自同一張 Unsplash 插畫
@@ -398,7 +399,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | monet-garden | ✅ 莫內花園・流動油畫：整頁的畫都是程式一筆一筆畫的油畫（日本橋、睡蓮、罌粟花田、紫藤、花園小徑、印象・日出），不是圖檔；金框、亞麻內襯、畫布織紋、美術館說明卡、黃銅名牌、吉維尼明信片 ＋ 捲動編排（hero 的池水一直流動、往下捲畫慢慢沉下去；每一幅小畫捲到時從釘子上擺進來、再一筆一筆畫上去；故事展牆的投射燈隨捲動滑過；倒數時太陽從霧裡的港口升起來、水面倒影跟著拉長） | `lobby-monet.html` |
 | outdoor-party | ✅ 美式戶外婚禮派對：開場那片天空（白雲、太陽、白帳篷、三角旗、串燈）就是 hero，幾顆漏網的氣球一直往上飄；格紋白卡、字母板的流程、一瓶野花、綁著氣球的「Just Married」小貨車、夾在串燈上的拍立得、入場券、彩色園遊券 ＋ 捲動編排（雲飄、串燈往上退；三角旗一面一面翻下來；小貨車從左邊開進來；拍立得跟著捲動擺；倒數的串燈一顆一顆亮起來，全亮了就放煙火） | `lobby-party.html` |
 | morning-window | ✅ 侘寂（Wabi-Sabi）：真的照片（窗前的一瓶鬱金香、灰泥牆、牆上窗格形狀的陽光、亞麻布、照著陽光的紗簾），顏色都是褪過的大地色 ＋ 「我們的故事」接著一張桌巾：洗出來的照片散在亞麻布上、去背的手作陶杯／素色抱枕／一盆室內植物 ＋ 區塊標題上是去背的小物（陶杯、白色花瓶、素色抱枕、攤開的書、一枝粉色鬱金香，不放在框裡）＋ 左邊一枝乾草跟著捲動垂下來＋ 新人照片共 7 處 ＋ 捲動編排（照片一張張落到桌上、窗光滑過桌面、倒數時紗簾越捲越暖），素材見上面〈晨光房間的照片素材〉 | `lobby-window.html` |
-| midnight-chapel | ✅ 開場在午夜的禮堂點亮三根真的蠟燭 → 燭火熄掉、天亮 → 大廳是同一座純白禮堂；玻璃感：照片壓在厚玻璃裡（反光隨捲動滑過）、毛玻璃的卡；兩旁垂著白紗、hero 下緣一圈蕾絲、兩旁的蕾絲邊跟著捲動一路縫下來、頁尾一片滿天星；區塊標題上是去背的實物（戒指、水晶燈、鈴蘭、百合、白色蝴蝶蘭）；新人照片共 7 處（倒數的毛玻璃後面是一片鈴蘭，越捲越清楚），素材見上面〈午夜教堂的照片素材〉 | `lobby-chapel.html` |
+| midnight-chapel | ✅ 開場在午夜的禮堂點亮三根真的蠟燭 → 燭火熄掉、天亮 → 大廳是同一座純白禮堂；玻璃感：照片壓在厚玻璃裡（反光隨捲動滑過）、毛玻璃的卡；兩旁垂著白紗、hero 下緣一圈蕾絲、兩旁的蕾絲緞帶跟著捲動一路縫下來、頁尾一片滿天星；區塊標題上是去背的實物（戒指、水晶燈、鈴蘭、百合、白色蝴蝶蘭）；新人照片共 7 處（倒數的毛玻璃後面是一片鈴蘭，越捲越清楚），素材見上面〈午夜教堂的照片素材〉 | `lobby-chapel.html` |
 
 Night Sky 與 Midnight Chapel 的大廳是深色的，但子頁暫時還是淺色版（見 common.css）。
 每個版型各有一頁示範（`preview/botanical-letter.html`、`preview/secret-garden.html`、`preview/spring-orangerie.html`、`preview/night-sky.html`、`preview/french-manor.html`、`preview/monet-garden.html`、`preview/outdoor-party.html`、`preview/morning-window.html`、`preview/midnight-chapel.html`）。右下角都可以切換開場。
