@@ -6,8 +6,8 @@
 <!-- 社群預覽文案：與 index.html 同一套備援，build-og 會針對站台換成專屬內容。
      這一份是 Monet Garden（莫內花園・流動油畫）版型的大廳：走進莫內的日本橋與睡蓮池。
      由 build-og 依 TEMPLATES.lobbyFile 選用；沒跑過 build-og 的站台
-     由 site-context.js 在執行期換成這一份骨架。畫不是圖檔：canvas[data-monet] 由
-     js/openers/painting.js（版型的 lobbyJs）一筆一筆畫出來，水面一直輕輕流動。 -->
+     由 site-context.js 在執行期換成這一份骨架。畫是莫內的真跡掃描（public/img/monet/，出處見 README），
+     canvas[data-monet] 由 js/openers/painting.js（版型的 lobbyJs）掛上去，水面一直輕輕流動。 -->
 <title>我們結婚了｜婚禮邀請函</title>
 <meta name="description" content="誠摯邀請您一起見證我們的大喜之日・婚禮資訊、當日流程與互動小遊戲都在這裡">
 <meta property="og:title" content="我們結婚了｜婚禮邀請函">
@@ -28,6 +28,7 @@
 <link rel="preload" as="script" href="/js/common.js">
 <link rel="preload" as="script" href="/js/lobby-motion.js">
 <link rel="preload" as="script" href="/js/openers/painting.js">
+<link rel="preload" as="image" href="/img/monet/footbridge.webp" type="image/webp">
 <link rel="preload" as="script" href="/js/index.js">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -83,19 +84,17 @@
 
 <!-- ============ 主畫面：走進莫內的花園 ============
      開場是美術館牆上的一幅油畫，點一下就被吸進去 —— 所以 hero 就是那一幅畫的裡面：
-     日本橋、垂柳、開滿睡蓮的池塘，整個畫面是程式一筆一筆畫出來的油畫（canvas[data-monet]，
-     由 js/openers/painting.js 畫），水面一直輕輕流動。名字寫在一抹米白的顏料上，
-     右下角是新人的簽名（莫內都簽在那裡）。
-     往下捲是一間莫內的小展間：每一塊的開頭掛一幅小畫 ＋ 一張美術館的說明卡，
-     捲到時畫才一筆一筆畫上去（data-monet-reveal）。 -->
+     莫內的《日本橋》（1899，美國國家藝廊館藏），畫在 canvas[data-monet] 上，
+     由 js/openers/painting.js 把它切成橫帶、讓池水一直輕輕流動。名字寫在一抹米白的顏料上。
+     往下捲是一間莫內的小展間：每一塊的開頭掛一幅莫內的小畫（真的金框）＋ 一張美術館的說明卡，
+     捲到時畫才一筆一筆刷上去（data-monet-reveal）。 -->
 <div id="app">
   <section class="panel lobby mg-lobby" data-panel="lobby" data-scroll>
 
     <!-- ===== Hero：畫的裡面 ===== -->
     <header class="lobby-hero mg-hero" data-scroll>
       <div class="mg-hero-art" aria-hidden="true">
-        <canvas class="mg-canvas" data-monet="bridge"></canvas>
-        <i class="mg-weave"></i>
+        <canvas class="mg-canvas" data-monet="footbridge"></canvas>
         <i class="mg-glaze"></i>
       </div>
       <div class="mg-hero-body">
@@ -107,7 +106,6 @@
         <div class="hashtags" id="lobbyTags" data-sk="tags"></div>
         <div class="scroll-cue mg-cue"><span>Scroll</span><span class="arrow"></span></div>
       </div>
-      <div class="mg-sign" aria-hidden="true"><span data-tpl="groomEn"></span> &amp; <span data-tpl="brideEn"></span></div>
     </header>
 
     <div class="scene-body mg-body">
@@ -115,9 +113,9 @@
       <!-- ===== 婚禮資訊：睡蓮 ===== -->
       <section class="info-block mg-sec">
         <div class="mg-head">
-          <figure class="mg-pic" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="lilies" data-monet-shape="small" data-monet-reveal></canvas><i class="mg-weave"></i></div></figure>
+          <figure class="mg-pic" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="seine" data-monet-shape="small" data-monet-reveal></canvas></div></figure>
           <div class="mg-cartel" data-reveal="rise">
-            <span class="mg-no">N° 1 ・ Nymphéas</span>
+            <span class="mg-no">N° 1 ・ La Seine à Giverny, 1897</span>
             <span class="en block-title">Information</span>
             <span class="cn block-sub">婚禮資訊</span>
           </div>
@@ -147,9 +145,9 @@
       <!-- ===== 當日流程：罌粟花田 ===== -->
       <section class="info-block mg-sec mg-alt" id="scheduleBlock">
         <div class="mg-head">
-          <figure class="mg-pic" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="poppies" data-monet-shape="small" data-monet-reveal></canvas><i class="mg-weave"></i></div></figure>
+          <figure class="mg-pic" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="poppies2" data-monet-shape="small" data-monet-reveal></canvas></div></figure>
           <div class="mg-cartel" data-reveal="rise">
-            <span class="mg-no">N° 2 ・ Coquelicots</span>
+            <span class="mg-no">N° 2 ・ Champ de coquelicots</span>
             <span class="en block-title">Schedule</span>
             <span class="cn block-sub">當日流程</span>
           </div>
@@ -162,9 +160,9 @@
       <!-- ===== 出席前的小提醒：紫藤（沒填就整塊收起） ===== -->
       <section class="info-block mg-sec" id="noteBlock" hidden>
         <div class="mg-head">
-          <figure class="mg-pic" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="wisteria" data-monet-shape="small" data-monet-reveal></canvas><i class="mg-weave"></i></div></figure>
+          <figure class="mg-pic" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="willows" data-monet-shape="small" data-monet-reveal></canvas></div></figure>
           <div class="mg-cartel" data-reveal="rise">
-            <span class="mg-no">N° 3 ・ Glycines</span>
+            <span class="mg-no">N° 3 ・ Les Saules, 1880</span>
             <span class="en block-title">Notes</span>
             <span class="cn block-sub">出席前的小提醒</span>
           </div>
@@ -189,9 +187,9 @@
       <!-- ===== 交通資訊：花園小徑（沒填就整塊收起） ===== -->
       <section class="info-block mg-sec mg-alt" id="transportBlock" hidden>
         <div class="mg-head">
-          <figure class="mg-pic" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="path" data-monet-shape="small" data-monet-reveal></canvas><i class="mg-weave"></i></div></figure>
+          <figure class="mg-pic is-tall" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="vetheuil" data-monet-shape="small" data-monet-reveal></canvas></div></figure>
           <div class="mg-cartel" data-reveal="rise">
-            <span class="mg-no">N° 4 ・ Le chemin</span>
+            <span class="mg-no">N° 4 ・ Le jardin à Vétheuil, 1881</span>
             <span class="en block-title">Access</span>
             <span class="cn block-sub">交通資訊</span>
           </div>
@@ -243,13 +241,11 @@
         <div class="photo-rail" id="photoRail"></div>
       </section>
 
-      <!-- ===== 日期倒數：印象・日出 —— 霧裡的港口，捲下去太陽就慢慢升起來 ===== -->
+      <!-- ===== 日期倒數：莫內的《國會大廈・日落》—— 捲下去，夕陽的光越來越暖 ===== -->
       <section class="info-block mg-band mg-count" data-scroll>
         <div class="mg-band-bg" aria-hidden="true">
-          <canvas class="mg-canvas" data-monet="sunrise"></canvas>
-          <i class="mg-sun"></i>
-          <i class="mg-sun-path"><b></b><b></b><b></b><b></b><b></b><b></b></i>
-          <i class="mg-weave"></i>
+          <canvas class="mg-canvas" data-monet="parliament"></canvas>
+          <i class="mg-glow"></i>
         </div>
         <div class="mg-band-inner">
           <div class="mg-count-body">
@@ -273,7 +269,7 @@
           </div>
         </div>
         <div class="mg-postcard" data-reveal="rise">
-          <div class="mg-postcard-pic" aria-hidden="true"><canvas data-monet="lilies" data-monet-shape="small" data-monet-still></canvas><i class="mg-weave"></i><span>Giverny</span></div>
+          <div class="mg-postcard-pic" aria-hidden="true"><canvas data-monet="argenteuil" data-monet-shape="small" data-monet-still></canvas><span>Argenteuil</span></div>
           <div class="rsvp-cta">
             <i class="mg-stamp" aria-hidden="true"></i>
             <h3>能來參加我們的婚禮嗎？</h3>

@@ -228,8 +228,8 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | `stars` | 星圖展開 | 自己演：星星 → 連線成一顆心 → 名字 | night-sky |
 | `door` | 門／拱門 | 晴朗的早上站在門口，點一下 → 門往內開 → 陽光湧出來、穿過門口。莊園全部是真的照片：綠籬牆上、磚砌圓拱裡的一扇鍛鐵花園門，鐵門從照片分離出來繞著鉸鍊轉開，走進去是一座綠籬夾道的歐式花園（教堂／刺繡用程式畫的尖拱鐵門），秘密花園是常春藤牆上一扇白框玻璃門（牆、垂下來的藤、牆腳的花、門後的玫瑰拱門小徑都是真的照片） | secret-garden、french-manor |
 | `ribbon` | 拉開絲帶 | 拖緞帶尾（或點）→ 蝴蝶結鬆開 → 卡片打開。緞帶疊了一張真的絲綢布紋，光澤跟著游標滑（手機上自己慢慢飄）；卡片與桌面是真的棉紙、纖維紙，封面貼一枝真的壓花 | botanical-letter |
-| `painting` | 走進油畫 | 美術館牆上一幅金框的莫內《日本橋》，畫是活的（池水起伏、柳條晃、水面光點閃）。點一下 → 牆往外退、畫框往前衝、畫裡的筆觸捲成漩渦，四周的顏料點被吸進畫裡 → 掉進畫裡 | monet-garden |
-| `balloons` | 氣球升空 | 自己演：滿滿一畫面的氣球在原地晃 → 一顆一顆放開、慢慢升空 → 露出底下的藍天、白雲、草地、白帳篷、串燈與三角旗 → 名字浮在天空上 | outdoor-party |
+| `painting` | 走進油畫 | 鼠尾草綠錦緞壁紙的展間，牆上一幅真的金框（照片做的九宮格）裡掛著莫內的《日本橋》（美國國家藝廊館藏的掃描），畫是活的（池水起伏、水面光點閃）。點一下 → 牆往外退、畫框往前衝、畫裡的筆觸捲成漩渦，四周的顏料點被吸進畫裡 → 掉進畫裡 | monet-garden |
+| `balloons` | 氣球升空 | 自己演：滿滿一畫面真的乳膠氣球（一顆白氣球的照片，套上七種顏色）在原地晃 → 一顆一顆放開、慢慢升空 → 露出底下一片真的夏日藍天與兩條串燈 → 名字浮在天空上 | outdoor-party |
 
 > **緞帶的布紋素材**：`public/css/openers/satin-silk.jpg` 是把一張真的絲綢 normal map
 > 打光成灰階的布紋。原圖是 Khronos [glTF Sample Assets](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/SpecularSilkPouf)
@@ -351,6 +351,36 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > | `window/grass-plume.webp` | 捲動軌跡末端的乾草穗 | [一枝乾草穗](https://unsplash.com/photos/_88DsHh1F20)・Evie S. | 去背 |
 > | `window/plaster.webp` | 整頁的灰泥牆 | [米色灰泥牆](https://unsplash.com/photos/hyVwWTaGsxI)・Pawel Czerwinski | 調淡成燕麥白 |
 
+> **莫內花園的素材**（`public/img/monet/`，開場 `painting` 與 `lobby-monet.html` 共用）：一樣是 [Unsplash License](https://unsplash.com/license)。
+> 七幅畫是美國國家藝廊（National Gallery of Art）與芝加哥藝術博物館（Art Institute of Chicago）上傳到 Unsplash 的館藏掃描，
+> 莫內（1840–1926）的作品本身也早就是公共領域。
+>
+> | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
+> |---|---|---|---|
+> | `footbridge.webp` | 開場牆上那一幅、大廳 hero | [《日本橋》1899](https://unsplash.com/photos/Z-S0resW6gQ)・National Gallery of Art | 縮圖 |
+> | `seine.webp` | 婚禮資訊 | [《吉維尼的塞納河》1897](https://unsplash.com/photos/SDxGWcz1zLA)・National Gallery of Art | 縮圖 |
+> | `poppies.webp` | 當日流程 | [罌粟花田](https://unsplash.com/photos/dynKVvbZ-5Q)・Art Institute of Chicago | 縮圖 |
+> | `willows.webp` | 小提醒 | [《柳樹》1880](https://unsplash.com/photos/8x00ZK5WxlY)・National Gallery of Art | 縮圖 |
+> | `garden-path.webp` | 交通資訊（直的那一幅） | [《維特伊的畫家花園》1881](https://unsplash.com/photos/OfxgFy2Vo0Q)・National Gallery of Art | 縮圖 |
+> | `parliament.webp` | 倒數的底 | [《國會大廈・日落》1903](https://unsplash.com/photos/UAL6ps2g7I0)・National Gallery of Art | 縮圖 |
+> | `argenteuil.webp` | R.S.V.P. 的明信片 | [《阿讓特伊的畫家花園》1873](https://unsplash.com/photos/E-fUZYaqFRs)・National Gallery of Art | 縮圖 |
+> | `frame.webp` | 開場與大廳每一幅畫的金框 | [金色雕花畫框的一角](https://unsplash.com/photos/WbH2fNjw1UA)・Adam Kring | 拉正；取角落、上緣、左緣，兩端交疊漸變成可以一直接下去的一段，鏡射拼成九宮格（`border-image` 用，角 149px） |
+> | `linen.webp` | 大廳整頁的底 | [米色亞麻布紋](https://unsplash.com/photos/xTaOPMa6wAE)・Annie Spratt | 取中間一塊、縮圖 |
+> | `damask.webp` | 開場的展牆、「我們的故事」的展牆 | [淺灰錦緞壁紙樣本，約 1843](https://unsplash.com/photos/WkKcFljs7g0)・Smithsonian | 縮圖；multiply 疊在牆色上 |
+
+> **美式戶外派對的素材**（`public/img/party/`，開場 `balloons` 與 `lobby-party.html` 共用）：一樣是 [Unsplash License](https://unsplash.com/license)。
+>
+> | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
+> |---|---|---|---|
+> | `sky.webp` | 開場氣球飛走後的天空、大廳 hero | [夏日藍天與白雲](https://unsplash.com/photos/xbYbeaxLWHI)・Nick Fewings | 縮圖 |
+> | `balloon-*.webp`（coral、butter、sky、mint、pearl、blush、gold） | 開場滿滿的氣球、hero 漏網的氣球、小貨車上綁的氣球 | [一顆白色氣球](https://unsplash.com/photos/uHBUxADBdoU)・Avinash Kumar | 去背、邊緣抹平；取它的明暗，依派對的七種顏色上色（金色對比拉高一點） |
+> | `truck.webp` | 交通資訊的小貨車 | [插著美國國旗的淺藍老雪佛蘭](https://unsplash.com/photos/bI8E-avD8Ug)・Bohdan Hyrovych | 去背，扣掉車斗後面的其他車 |
+> | `barn.webp` | 倒數的底 | [黃昏亮著串燈的穀倉](https://unsplash.com/photos/hXprYkqi9bs)・Troy Olson | 縮圖 |
+> | `reception.webp` | 「我們的故事」的底 | [草地上掛著白紗的戶外婚宴](https://unsplash.com/photos/Zi_NOBHIk9A)・Vidit Goswami | 縮圖 |
+> | `banquet.webp` | 婚禮資訊的拍立得 | [草地上的長桌派對](https://unsplash.com/photos/7PuxGo267Bw)・Malia Moore | 裁成正方形 |
+> | `wildflowers.webp` | 小提醒的拍立得 | [一罐野花](https://unsplash.com/photos/WyT5NTvNT7k)・Rebecca Winter | 裁成正方形 |
+> | `gingham.webp` | 白卡上緣的格紋、拍立得的紙膠帶 | [紅白格紋布](https://unsplash.com/photos/KzJunPli4VA)・Meg | 取中間一塊，鏡射成可以無縫平鋪 |
+
 > **捲動軌跡**（`public/css/lobby-trail.css`）：跟著捲動沿左緣一路畫下去，每個版型用自己的素材，
 > 經過的地方會留下小東西（Korean Modern 維持原本乾淨的版面，沒有放）：
 >
@@ -396,8 +426,8 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | spring-orangerie | ✅ 真的照片（明亮的玻璃溫室、白玫瑰、鬱金香、檸檬枝、蕨葉、澆水壺、溫室屋頂、小王子的那一朵紅玫瑰、白牆上的葉影、一束白玫瑰）＋ 捲動編排（葉影隨捲動移動、斜射的光、倒數區的紅玫瑰捲到時亮起暖光），素材見上面〈春日溫室與植物信箋的照片素材〉 | `lobby-orangerie.html` |
 | night-sky | ✅ 整套插圖（現代星空：開場那張心形星圖停在 hero、寫實的月亮、三層山稜、亮燈的帳篷、坐著看星星的兩個人、細金線星座）＋ 捲動編排（三層星星視差、星圖外環跟著轉、星座一條一條連起來、望遠鏡視野的軌道、倒數的月亮越捲越圓、頁尾天快亮了） | `lobby-night.html` |
 | french-manor | ✅ 文藝復興：真的天頂濕壁畫、去背的大理石雕像與雕刻（花神、天使、小天使胸像、玫瑰花飾、女神、丘比特與賽姬）、大理石名牌 ＋ 從真的照片描出來的剪紙（城堡剪出一排排窗、托斯卡尼柏樹）＋ 開場走進的那座花園當倒數的背景 ＋ 新人照片放在剪紙橢圓花邊框（共 7 處）＋ 捲動編排（hero 的剪紙一層一層視差、倒數的花園照片視差），素材見上面〈法式莊園的照片素材〉 | `lobby-manor.html` |
-| monet-garden | ✅ 莫內花園・流動油畫：整頁的畫都是程式一筆一筆畫的油畫（日本橋、睡蓮、罌粟花田、紫藤、花園小徑、印象・日出），不是圖檔；金框、亞麻內襯、畫布織紋、美術館說明卡、黃銅名牌、吉維尼明信片 ＋ 捲動編排（hero 的池水一直流動、往下捲畫慢慢沉下去；每一幅小畫捲到時從釘子上擺進來、再一筆一筆畫上去；故事展牆的投射燈隨捲動滑過；倒數時太陽從霧裡的港口升起來、水面倒影跟著拉長） | `lobby-monet.html` |
-| outdoor-party | ✅ 美式戶外婚禮派對：開場那片天空（白雲、太陽、白帳篷、三角旗、串燈）就是 hero，幾顆漏網的氣球一直往上飄；格紋白卡、字母板的流程、一瓶野花、綁著氣球的「Just Married」小貨車、夾在串燈上的拍立得、入場券、彩色園遊券 ＋ 捲動編排（雲飄、串燈往上退；三角旗一面一面翻下來；小貨車從左邊開進來；拍立得跟著捲動擺；倒數的串燈一顆一顆亮起來，全亮了就放煙火） | `lobby-party.html` |
+| monet-garden | ✅ 莫內花園・流動油畫：莫內真跡的掃描（日本橋、塞納河、罌粟花田、柳樹、維特伊的花園小徑、國會大廈日落、阿讓特伊的花園），水面在 canvas 上一直流動；真的金框（照片做成九宮格）、真的亞麻畫布、錦緞壁紙的展牆、美術館說明卡、黃銅名牌、阿讓特伊的明信片 ＋ 捲動編排（hero 的池水一直流動、往下捲畫慢慢沉下去；每一幅小畫捲到時從釘子上擺進來、再一筆一筆刷上去；故事展牆的投射燈隨捲動滑過；倒數時夕陽的光越捲越暖），素材見上面〈莫內花園的素材〉 | `lobby-monet.html` |
+| outdoor-party | ✅ 美式戶外婚禮派對：開場露出來的那片真的藍天就是 hero，兩條串燈、幾顆漏網的真氣球一直往上飄；三角旗資訊卡（上緣是真的紅白格紋布）、長桌派對與野花玻璃罐的拍立得、字母板的流程、綁著氣球的「Just Married」老雪佛蘭小貨車、真的戶外婚宴當故事的底、黃昏亮燈的穀倉當倒數的底、入場券、彩色園遊券 ＋ 捲動編排（雲往上退、串燈往上退；三角旗一面一面翻下來；小貨車從右邊開進來；拍立得跟著捲動擺；倒數的串燈一顆一顆亮、穀倉越來越亮，全亮了就放煙火），素材見上面〈美式戶外派對的素材〉 | `lobby-party.html` |
 | morning-window | ✅ 侘寂（Wabi-Sabi）：真的照片（窗前的一瓶鬱金香、灰泥牆、牆上窗格形狀的陽光、亞麻布、照著陽光的紗簾），顏色都是褪過的大地色 ＋ 「我們的故事」接著一張桌巾：洗出來的照片散在亞麻布上、去背的手作陶杯／素色抱枕／一盆室內植物 ＋ 區塊標題上是去背的小物（陶杯、白色花瓶、素色抱枕、攤開的書、一枝粉色鬱金香，不放在框裡）＋ 左邊一枝乾草跟著捲動垂下來＋ 新人照片共 7 處 ＋ 捲動編排（照片一張張落到桌上、窗光滑過桌面、倒數時紗簾越捲越暖），素材見上面〈晨光房間的照片素材〉 | `lobby-window.html` |
 | midnight-chapel | ✅ 開場在午夜的禮堂點亮三根真的蠟燭 → 燭火熄掉、天亮 → 大廳是同一座純白禮堂；玻璃感：照片壓在厚玻璃裡（反光隨捲動滑過）、毛玻璃的卡；兩旁垂著白紗、hero 下緣一圈蕾絲、兩旁的蕾絲緞帶跟著捲動一路縫下來、頁尾一片滿天星；區塊標題上是去背的實物（戒指、水晶燈、鈴蘭、百合、白色蝴蝶蘭）；新人照片共 7 處（倒數的毛玻璃後面是一片鈴蘭，越捲越清楚），素材見上面〈午夜教堂的照片素材〉 | `lobby-chapel.html` |
 
@@ -408,14 +438,15 @@ Night Sky 與 Midnight Chapel 的大廳是深色的，但子頁暫時還是淺�
 `public/lobby-*.html` 產出來的，改了大廳骨架記得重跑。
 
 > **莫內花園的畫怎麼來的**：`js/openers/painting.js` 同時是開場與一具「油畫繪製器」（`window.MonetPaint`）。
-> 先用柔和的色塊打底稿，再在底稿上取色、疊幾萬筆短筆觸（大筆鋪色、中筆塑形、小筆點花與光；
-> 顏色每一筆都偏一點，筆觸方向跟著場景走），每一筆補一道亮邊當顏料的厚度。亂數有固定種子，每次都是同一幅。
-> 「流動」是把畫好的圖切成橫帶、依高度左右錯開（水面錯得多、樹叢錯得少），看不到的畫不動，減少動態時完全不動。
-> 大廳的畫是 `<canvas data-monet="場景">`，所以這個版型的 `lobbyJs` 也掛了 painting.js —— 換成別種開場，大廳的畫照樣畫得出來。
+> 大廳與開場掛的都是莫內真跡的掃描（見上面〈莫內花園的素材〉），掛在 `<canvas data-monet="場景">` 上；
+> 「流動」是把畫切成橫帶、依高度左右錯開（水面錯得多、樹叢錯得少），看不到的畫不動，減少動態時完全不動。
+> 圖載不到的時候，同一個場景會退回程式畫的那一幅（先用色塊打底稿，再取色疊幾萬筆短筆觸，固定種子）。
+> 因為大廳的畫要靠這一支，這個版型的 `lobbyJs` 也掛了 painting.js —— 換成別種開場，大廳的畫照樣在。
 >
-> **派對的天空**：開場（`js/openers/balloons.js` 的 `window.PartySky.svg()`）和大廳 hero 是同一張圖。
+> **派對的天空**：天空是一張真的照片（`img/party/sky.webp`，CSS 鋪在後面）；上面兩條串燈是
+> `js/openers/balloons.js` 的 `window.PartySky.svg()` 畫的，開場與大廳 hero 共用。
 > 大廳那一段由 `npm run build-party-sky` 烤進 `lobby-party.html`（`<!-- party-sky -->` 之間，不要手改）；
-> 改了天空，先跑它、再跑 `npm run build-previews`。
+> 改了串燈，先跑它、再跑 `npm run build-previews`。
 
 ---
 

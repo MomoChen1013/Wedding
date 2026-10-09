@@ -20,10 +20,13 @@
 /* ---- 展間 ---- */
 .pt-room{position:absolute;inset:0;transition:transform 1.9s cubic-bezier(.7,0,.85,.25),filter 1.6s ease,opacity 1.3s ease .4s;}
 .pt-wall{position:absolute;inset:0;
+  /* 鼠尾草綠的錦緞壁紙（真的壁紙樣本，乘在牆色上）＋ 投射燈照亮的那一塊 */
   background:
-    radial-gradient(60% 50% at 50% 38%,rgba(255,250,236,.95),rgba(255,250,236,0) 70%),
-    repeating-linear-gradient(90deg,rgba(0,0,0,.012) 0 2px,transparent 2px 5px),
-    linear-gradient(180deg,#efe9dd,var(--pt-wall) 55%,var(--pt-wall-2));}
+    radial-gradient(55% 48% at 50% 36%,rgba(255,248,228,.55),rgba(255,248,228,0) 72%),
+    linear-gradient(180deg,rgba(255,255,255,.08),rgba(30,40,30,.18)),
+    url(../../img/monet/damask.webp) 50% 0/520px auto repeat,
+    #b9c0a4;
+  background-blend-mode:normal,normal,multiply,normal;}
 /* 投射燈：從天花板斜斜打下來的一束光 */
 .pt-light{position:absolute;left:50%;top:-10%;width:min(120vw,1300px);height:90%;transform:translateX(-50%);pointer-events:none;
   background:radial-gradient(50% 60% at 50% 0%,rgba(255,244,214,.75),rgba(255,244,214,0) 70%);mix-blend-mode:soft-light;
@@ -32,42 +35,28 @@
 /* 地板：一條深色的木地板與踢腳板 */
 .pt-floor{position:absolute;left:0;right:0;bottom:0;height:13%;
   background:
-    linear-gradient(180deg,#c9bea8 0 6px,#b6a88e 6px 9px,transparent 9px),
-    repeating-linear-gradient(90deg,#8a6f52 0 120px,#80664b 120px 122px,#927657 122px 240px,#7a6046 240px 242px);
+    linear-gradient(180deg,#e9e4d6 0 10px,#cfc8b6 10px 12px,transparent 12px),
+    repeating-linear-gradient(90deg,#6e5440 0 140px,#634a37 140px 142px,#765943 142px 280px,#5c4433 280px 282px);
   box-shadow:inset 0 14px 18px -10px rgba(0,0,0,.35);}
 
 /* ---- 畫 ---- */
 .pt-stage{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(18px,3vh,30px);
   padding:0 18px 9vh;transform-origin:50% 50%;}
-.pt-frame{--tx:0deg;--ty:0deg;position:relative;width:min(84vw,calc(62vh * 1.42),980px);aspect-ratio:1.42;padding:clamp(14px,2.6vw,30px);
+.pt-frame{--tx:0deg;--ty:0deg;position:relative;width:min(84vw,calc(62vh * 1.24),900px);aspect-ratio:1.24;
+  /* 真的金框：一張畫框角落的照片做成九宮格（public/img/monet/frame.webp，四個角 149px、邊 140px 一段一段接） */
+  border:clamp(22px,3.4vw,44px) solid #b8933f;border-image:url(../../img/monet/frame.webp) 149 round;
   transform:perspective(1400px) rotateX(var(--tx)) rotateY(var(--ty));transition:transform .6s ease;
-  background:
-    radial-gradient(circle at 50% 50%,transparent 62%,rgba(90,60,20,.25) 100%),
-    linear-gradient(135deg,#7d5c22,#f1d98a 16%,#a87f32 30%,#f6e4a6 46%,#9c7429 62%,#e9cd7d 80%,#7a5a20);
-  box-shadow:
-    inset 0 0 0 2px #5e4416, inset 0 0 0 5px rgba(255,236,170,.7), inset 0 0 0 7px #8c6a28,
-    inset 0 0 18px 6px rgba(70,45,10,.45),
-    0 2px 0 rgba(255,255,255,.4),
-    0 40px 60px -26px rgba(40,30,15,.55), 0 10px 18px -8px rgba(40,30,15,.35);
+  box-shadow:0 40px 60px -26px rgba(30,25,12,.6),0 10px 18px -8px rgba(30,25,12,.4);
   animation:pt-breathe 6s ease-in-out infinite alternate;}
-/* 畫框上一圈雕花的珠子 */
-.pt-frame::before{content:'';position:absolute;inset:clamp(5px,.9vw,10px);pointer-events:none;border-radius:2px;
-  background:repeating-radial-gradient(circle at 50% 50%,transparent 0 2px,transparent 2px);
-  border:clamp(3px,.5vw,6px) dotted rgba(255,238,180,.55);filter:drop-shadow(0 1px 0 rgba(80,55,15,.6));}
-@media (max-width:640px){.pt-frame{width:min(86vw,calc(58vh * .78));aspect-ratio:.78;}}
-@keyframes pt-breathe{to{filter:brightness(1.04);}}
-/* 亞麻的內襯 */
-.pt-liner{position:relative;width:100%;height:100%;padding:clamp(6px,1.1vw,12px);
-  background:repeating-linear-gradient(45deg,#e9e0c8 0 2px,#ddd3b8 2px 4px);
-  box-shadow:inset 0 0 0 1px rgba(120,95,50,.4),inset 0 4px 10px rgba(60,40,10,.35);}
+@media (max-width:640px){.pt-frame{width:min(86vw,calc(58vh * .86));aspect-ratio:.86;}}
+@keyframes pt-breathe{to{filter:brightness(1.05);}}
+.pt-liner{position:relative;width:100%;height:100%;}
 .pt-canvas{position:relative;width:100%;height:100%;overflow:hidden;background:#557f5a;
-  box-shadow:inset 0 0 0 1px rgba(0,0,0,.25);}
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.35),inset 0 3px 8px rgba(0,0,0,.35);}
 .pt-paint{position:absolute;inset:0;width:100%;height:100%;display:block;}
-/* 畫布的織紋：疊在畫上面，乘一點點 */
-.pt-weave{position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:.35;
-  background:
-    repeating-linear-gradient(0deg,rgba(80,60,30,.18) 0 1px,transparent 1px 3px),
-    repeating-linear-gradient(90deg,rgba(80,60,30,.14) 0 1px,transparent 1px 3px);}
+/* 畫面上一層很淡的光澤（油彩表面的反光），跟著畫框一起呼吸 */
+.pt-weave{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(115deg,rgba(255,255,255,0) 35%,rgba(255,250,235,.12) 48%,rgba(255,255,255,0) 60%);}
 /* 畫上右下角的簽名（莫內都簽在這裡） */
 .pt-sign{position:absolute;right:4%;bottom:3.5%;z-index:2;display:flex;align-items:baseline;gap:.3em;
   font:400 clamp(16px,2.4vw,26px)/1 'Parisienne','Cormorant Garamond',cursive;color:#b4472f;

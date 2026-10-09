@@ -1,8 +1,9 @@
 /* ============================================================
    openers/painting.js — 開場：走進油畫（莫內花園）
    ------------------------------------------------------------
-   一開始是美術館的一面牆，牆上掛著一幅金框的油畫：
-   莫內的日本橋 —— 綠色的拱橋、垂柳、開滿睡蓮的池塘。
+   一開始是美術館的一面牆（鼠尾草綠的錦緞壁紙），牆上掛著一幅金框的油畫：
+   莫內的《日本橋》（1899，美國國家藝廊館藏的掃描，public/img/monet/）——
+   綠色的拱橋、開滿睡蓮的池塘。金框也是真的照片做的（frame.webp，九宮格）。
 
      這幅畫是「活的」：池水輕輕起伏、柳葉微微晃、水面的光點一閃一閃
      → 點一下 → 牆往外退、畫框往前衝，畫裡的筆觸被捲成一個漩渦
@@ -10,7 +11,8 @@
        （莫內花園的首頁 hero 就是同一幅畫，所以是「掉進畫裡」）
 
    ▸ 這支同時是一具「油畫繪製器」（window.MonetPaint）
-     畫不是圖檔，是程式一筆一筆畫出來的：
+     有 src 的場景是莫內真跡的掃描（日本橋、塞納河、罌粟花田、柳樹、維特伊的花園、
+     國會大廈日落、阿讓特伊的花園），直接載圖；圖載不到才退回程式畫的那一幅：
        1. 先用柔和的色塊打一層底稿（base：天空、樹叢、橋、池塘、睡蓮）
        2. 在底稿上取色，疊上幾萬筆短短的筆觸 —— 大筆鋪色、中筆塑形、
           小筆點出花與光；顏色每一筆都偏一點（莫內的「破色」：
@@ -315,11 +317,28 @@
       dir(x, y, r) { return (r() - .5) * (y < .5 ? .6 : .25); },
       detail(x, y) { return y > .55; },
     },
+
+    /* ---- 真的莫內（美國國家藝廊、芝加哥藝術博物館上傳到 Unsplash 的館藏掃描，見 README）----
+       有 src 的場景直接用那一張畫，一樣切成橫帶讓水面流動；
+       圖載不到就退回 fallback 那一幅程式畫的。water／sway 是照著每一幅畫量的 */
+    footbridge:  { src:'footbridge.webp',  water:.38, sway:.9, fallback:'bridge',  seed:1899 },
+    seine:       { src:'seine.webp',       water:.5,  sway:.6, fallback:'lilies',  seed:1897 },
+    poppies2:    { src:'poppies.webp',     water:1,   sway:.5, fallback:'poppies', seed:1890 },
+    willows:     { src:'willows.webp',     water:1,   sway:1.1, fallback:'wisteria', seed:1880 },
+    vetheuil:    { src:'garden-path.webp', water:1,   sway:.7, fallback:'path',    seed:1881 },
+    parliament:  { src:'parliament.webp',  water:.56, sway:.3, fallback:'sunrise', seed:1903 },
+    argenteuil:  { src:'argenteuil.webp',  water:1,   sway:.5, fallback:'lilies',  seed:1873 },
   };
 
   /* ==========================================================
      繪製：底稿 → 取色 → 一層一層的筆觸
      ========================================================== */
+  /* 畫的圖檔放在 public/img/monet/：從這一支自己的網址往回推，
+     正式站（/js/openers/）與 preview（../public/js/openers/）都對得上 */
+  const IMG = (() => {
+    try { return new URL('../../img/monet/', document.currentScript.src).href; } catch (e) { return '/img/monet/'; }
+  })();
+
   const SHAPES = { wide: [1200, 800], tall: [780, 1170], square: [960, 960], small: [560, 420], smallTall: [420, 560] };
   const cache = new Map();
 
@@ -332,6 +351,7 @@
      （每一格最多 9ms），不會卡住捲動；progress 0 → 1 */
   function get(sceneKey, shape) {
     const scene = SCENES[sceneKey] || SCENES.bridge;
+    if (scene.src) return getPhoto(sceneKey, scene);
     const sh = SHAPES[shape] ? shape : 'wide';
     const key = `${sceneKey}:${sh}`;
     if (cache.has(key)) return cache.get(key);
@@ -341,6 +361,33 @@
     job.ready = new Promise((res) => { job._res = res; });
     cache.set(key, job);
     paint(job);
+    return job;
+  }
+
+  /* 真的畫：載入圖檔畫進 canvas（同一幅只載一次）；載不到就改畫 fallback 那一幅 */
+  function getPhoto(sceneKey, scene) {
+    if (cache.has(sceneKey)) return cache.get(sceneKey);
+    const job = { canvas: document.createElement('canvas'), w: 0, h: 0, scene, done: false, progress: 0, photo: true };
+    job.ready = new Promise((res) => { job._res = res; });
+    cache.set(sceneKey, job);
+    const img = new Image();
+    img.decoding = 'async';
+    img.onload = () => {
+      const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+      job.w = job.canvas.width = Math.round(img.naturalWidth * k);
+      job.h = job.canvas.height = Math.round(img.naturalHeight * k);
+      job.canvas.getContext('2d').drawImage(img, 0, 0, job.w, job.h);
+      job.done = true; job.progress = 1;
+      job._res(job);
+    };
+    img.onerror = () => {
+      const fb = SCENES[scene.fallback] || SCENES.bridge;
+      [job.w, job.h] = SHAPES.wide;
+      job.canvas.width = job.w; job.canvas.height = job.h;
+      job.scene = fb;
+      paint(job);
+    };
+    img.src = IMG + scene.src;
     return job;
   }
 
@@ -458,7 +505,7 @@
 
     function draw(now) {
       raf = 0;
-      if (!job || !W) return;
+      if (!job || !W || !job.w) return;
       /* 平常的流動只要每秒 30 格就夠了（省電）；被吸進去、一筆一筆畫上去的時候才全速 */
       if (last && pull === 0 && revealAt <= 0 && job.done && now - last < 30) { raf = requestAnimationFrame(draw); return; }
       const dt = last ? Math.min(.05, (now - last) / 1000) : 0;
@@ -611,21 +658,20 @@
             <div class="pt-canvas">
               <canvas class="pt-paint"></canvas>
               <i class="pt-weave"></i>
-              <div class="pt-sign">${LM.namesHtml(ctx)}<em>${LM.esc((ctx.date || '').slice(0, 4))}</em></div>
             </div>
           </div>
         </div>
         <div class="pt-plaque">
-          <div class="pt-plaque-t">Le jardin, ${LM.esc((ctx.date || '').slice(0, 4) || 'aujourd’hui')}</div>
+          <div class="pt-plaque-t">Claude Monet ・ Le Pont japonais, 1899</div>
           <div class="pt-plaque-n">${LM.namesHtml(ctx)}</div>
-          <div class="pt-plaque-s">huile sur toile ・ ${LM.esc(ctx.date)}</div>
+          <div class="pt-plaque-s">une exposition d’amour ・ ${LM.esc(ctx.date)}</div>
         </div>
       </div>
       <div class="pt-dabs" aria-hidden="true">${dabs}</div>
       <div class="pt-hint"><span class="en">Step into the painting</span><span class="cn">輕觸畫作・走進畫裡</span></div>`;
 
     const cv = host.querySelector('.pt-paint');
-    const v = view(cv, 'bridge', { still: ctx.reduce });
+    const v = view(cv, 'footbridge', { still: ctx.reduce });
     const frame = host.querySelector('.pt-frame');
 
     /* 滑鼠移動時畫框跟著輕輕轉一點（手機上不必） */

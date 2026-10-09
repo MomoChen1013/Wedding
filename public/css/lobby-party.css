@@ -46,13 +46,11 @@ body[data-lobby="outdoor-party"] .bg-decor{
 /* 彈出來 */
 .tp-motion [data-lobby="outdoor-party"] [data-reveal="pop"]{transform-origin:50% 100%;transition:opacity .5s ease,transform .9s cubic-bezier(.3,1.6,.5,1);}
 .tp-motion [data-lobby="outdoor-party"] [data-reveal="pop"]:not(.is-in){opacity:0;transform:scale(.4) translateY(20px);}
-/* 開進來：從左邊、輪子在轉。
+/* 開進來：從右邊（照片裡車頭朝左），車頭在前。
    位移掛在裡面的圖上，外框不動 —— 外框要是先被推到畫面外，
    IntersectionObserver 永遠看不到它，車就永遠開不進來 */
 .tp-motion [data-lobby="outdoor-party"] [data-reveal="drive"] .yp-art{transition:opacity .6s ease,transform 1.6s cubic-bezier(.25,.8,.3,1);}
-.tp-motion [data-lobby="outdoor-party"] [data-reveal="drive"]:not(.is-in) .yp-art{opacity:0;transform:translateX(-60vw);}
-.tp-motion [data-lobby="outdoor-party"] [data-reveal="drive"].is-in .yp-wheel{animation:yp-roll 1.6s cubic-bezier(.25,.8,.3,1);}
-@keyframes yp-roll{from{transform:rotate(-720deg);}}
+.tp-motion [data-lobby="outdoor-party"] [data-reveal="drive"]:not(.is-in) .yp-art{opacity:0;transform:translateX(60vw);}
 /* 三角旗：一面一面翻下來 */
 .tp-motion [data-lobby="outdoor-party"] [data-reveal="flags"]{transition:none;}
 .yp-flag{transform-box:fill-box;transform-origin:50% 0;}
@@ -63,29 +61,21 @@ body[data-lobby="outdoor-party"] .bg-decor{
    Hero：氣球飛走之後的天空
 ============================================================ */
 .yp-hero{position:relative;overflow:hidden;min-height:calc(100svh - var(--nav-h));padding:0;gap:0;justify-content:flex-start;
-  background:#a6d6f2;}
-.yp-sky{position:absolute;inset:0;}
-.yp-sky .ps-sky{position:absolute;inset:0;width:100%;height:100%;display:block;}
-.yp-sky .ps-cloud{animation:yp-drift 26s ease-in-out infinite alternate;animation-delay:calc(var(--cd) * -5s);}
-/* 雲是 svg 裡的 <g>，本身有 transform 屬性（位置），CSS 的 transform 會把它蓋掉 ——
-   所以飄、跟著捲動移動，一律用獨立的 translate 屬性 */
-@keyframes yp-drift{to{translate:60px 0;}}
+  background:#7fb6e3;}
+/* 一片真的夏日藍天（img/party/sky.webp），往下捲時雲慢慢往上退 */
+.yp-sky{position:absolute;inset:-4% 0;background:url(../img/party/sky.webp) 50% calc(40% + var(--lp,0) * 20%)/cover;}
+.yp-sky .ps-sky{position:absolute;inset:4% 0;width:100%;height:92%;display:block;}
 .yp-sky .ps-lights{translate:0 calc(var(--lp,0) * -120px);}
 .yp-sky .ps-lights-b{translate:0 calc(var(--lp,0) * -200px);}
-.yp-sky .ps-tent,.yp-sky .ps-bunting{translate:0 calc(var(--lp,0) * 30px);}
 .yp-sky .ps-glow{animation:yp-twinkle 2.6s ease-in-out infinite alternate;animation-delay:calc(var(--i) * -.37s);}
 @keyframes yp-twinkle{to{opacity:.45;}}
 
 /* 漏網的氣球：一直慢慢往上飄 */
 .yp-float{position:absolute;inset:0;pointer-events:none;z-index:2;}
-.yp-bl{position:absolute;left:var(--x);bottom:-160px;width:calc(56px * var(--s));height:calc(66px * var(--s));
-  border-radius:50% 50% 48% 48% / 56% 56% 44% 44%;
-  background:radial-gradient(circle at 34% 28%,var(--hi) 0 8%,var(--a) 22%,var(--b) 62%,var(--c) 100%);
-  filter:drop-shadow(0 6px 6px rgba(30,50,80,.15));
+.yp-bl{position:absolute;left:var(--x);bottom:-180px;width:calc(54px * var(--s));aspect-ratio:240/335;
+  background:var(--img) center/contain no-repeat;
   animation:yp-up var(--t) linear var(--d) infinite;}
-.yp-bl::before{content:'';position:absolute;left:50%;bottom:-5px;width:8px;height:7px;margin-left:-4px;background:var(--b);
-  clip-path:polygon(25% 0,75% 0,100% 100%,0 100%);}
-.yp-bl::after{content:'';position:absolute;left:50%;top:100%;width:1px;height:calc(90px * var(--s));margin-top:2px;
+.yp-bl::after{content:'';position:absolute;left:50%;top:99%;width:1px;height:calc(90px * var(--s));
   background:rgba(255,255,255,.85);transform-origin:50% 0;animation:yp-string 3s ease-in-out infinite alternate;}
 @keyframes yp-string{from{transform:rotate(-6deg);}to{transform:rotate(6deg);}}
 @keyframes yp-up{
@@ -93,30 +83,36 @@ body[data-lobby="outdoor-party"] .bg-decor{
   50%{transform:translate(24px,-65vh) rotate(4deg);}
   100%{transform:translate(-10px,calc(-100vh - 320px)) rotate(-3deg);}
 }
-.yp-bl.c1{--hi:#fff;--a:#ffb39f;--b:#f07a5a;--c:#c9533a;}
-.yp-bl.c2{--hi:#fff;--a:#ffe6a8;--b:#f6c85f;--c:#d49b2a;}
-.yp-bl.c3{--hi:#fff;--a:#cfeafb;--b:#7fbfe3;--c:#4a8fbf;}
-.yp-bl.c4{--hi:#fff;--a:#dcf5ea;--b:#9fd6c0;--c:#5fae92;}
-.yp-bl.c5{--hi:#fff;--a:#ffe2de;--b:#f6b8b0;--c:#d98a80;}
+/* 真的乳膠氣球（同一顆白氣球的明暗，套上不同的顏色） */
+.yp-bl.c1{--img:url(../img/party/balloon-coral.webp);}
+.yp-bl.c2{--img:url(../img/party/balloon-butter.webp);}
+.yp-bl.c3{--img:url(../img/party/balloon-sky.webp);}
+.yp-bl.c4{--img:url(../img/party/balloon-mint.webp);}
+.yp-bl.c5{--img:url(../img/party/balloon-blush.webp);}
 
 .yp-hero-body{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;text-align:center;
   padding:clamp(70px,15vh,150px) 20px 40px;color:var(--yp-ink);
   transform:translateY(calc(var(--lp,0) * 60px));opacity:calc(1 - var(--lp,0) * 1.3);}
+/* 名字後面一層淡淡的藍（雲太白，白色的字會不見） */
+.yp-hero-body::before{content:'';position:absolute;left:50%;top:clamp(40px,10vh,110px);width:min(900px,120vw);height:clamp(300px,46vh,440px);
+  transform:translateX(-50%);z-index:-1;pointer-events:none;
+  background:radial-gradient(50% 50% at 50% 50%,rgba(38,92,150,.42),rgba(38,92,150,.18) 55%,rgba(38,92,150,0) 75%);}
 .yp-kicker{display:flex;flex-direction:column;gap:4px;align-items:center;}
 .yp-kicker .en{font:400 clamp(20px,2.6vw,28px)/1 'Bebas Neue','Noto Sans TC',sans-serif;letter-spacing:.3em;color:var(--yp-coral);
   padding:6px 14px 4px;background:rgba(255,255,255,.8);border-radius:999px;}
-.yp-kicker .cn{font-size:12px;letter-spacing:.5em;color:var(--yp-ink);margin-top:4px;}
+.yp-kicker .cn{font-size:12px;letter-spacing:.5em;color:#fff;margin-top:6px;text-shadow:0 1px 6px rgba(20,40,70,.6);}
 .yp-hero .yp-names{font:400 clamp(44px,11vw,128px)/1.02 'Yellowtail','Noto Serif TC',cursive;color:#fff;margin-top:6px;
   text-shadow:0 3px 0 rgba(31,48,73,.18),0 12px 34px rgba(31,48,73,.28);}
 .yp-hero .yp-names .amp{color:var(--yp-butter);padding:0 .14em;}
 body[data-hero-name="cn"] .yp-hero .yp-names{font-family:'Noto Sans TC',sans-serif;font-weight:700;font-size:clamp(36px,6vw,64px);letter-spacing:.14em;}
 .yp-date{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:6px;
-  font:400 clamp(18px,2.2vw,24px)/1 'Bebas Neue','Noto Sans TC',sans-serif;letter-spacing:.38em;color:var(--yp-ink);}
+  font:400 clamp(18px,2.2vw,24px)/1 'Bebas Neue','Noto Sans TC',sans-serif;letter-spacing:.38em;color:#fff;
+  text-shadow:0 1px 8px rgba(20,40,70,.65);}
 .yp-date i{width:8px;height:8px;border-radius:50%;background:var(--yp-coral);}
 .yp-hero .hashtags{margin-top:16px;}
 .yp-hero .hashtags .tag{border-color:#fff;color:var(--yp-ink);background:rgba(255,255,255,.75);font-size:12px;border-radius:999px;}
-.yp-cue{margin-top:16px;color:var(--yp-ink);font-size:11px;letter-spacing:.4em;}
-.yp-cue .arrow{background:var(--yp-ink);}
+.yp-cue{margin-top:16px;color:#fff;font-size:11px;letter-spacing:.4em;text-shadow:0 1px 6px rgba(20,40,70,.6);}
+.yp-cue .arrow{background:#fff;}
 .app-show .yp-kicker,.app-show .yp-hero .yp-names,.app-show .yp-date,.app-show .yp-hero .hashtags,.app-show .yp-cue{
   animation:yp-in 1.1s cubic-bezier(.2,.7,.2,1) both;}
 .app-show .yp-hero .yp-names{animation-delay:.12s;}
@@ -139,20 +135,37 @@ body[data-hero-name="cn"] .yp-hero .yp-names{font-family:'Noto Sans TC',sans-ser
 .yp-head .block-sub{margin:6px 0 0;font-size:13px;letter-spacing:.4em;color:var(--yp-soft);}
 .yp-icon{margin:0 0 6px;}
 .yp-art{display:block;width:100%;height:auto;overflow:visible;}
-.yp-jar{width:clamp(110px,14vw,140px);}
-.yp-truck{width:clamp(220px,32vw,320px);margin-bottom:14px;}
-.yp-truck-sign{font:400 14px 'Bebas Neue',sans-serif;letter-spacing:.14em;fill:#f07a5a;}
-.yp-truck .yp-truck-balloons{animation:yp-tug 3s ease-in-out infinite alternate;transform-origin:268px 96px;}
-@keyframes yp-tug{from{transform:rotate(-3deg);}to{transform:rotate(3deg);}}
+/* 拍立得：一張真的照片，上緣一條紙膠帶 */
+.yp-snap{position:relative;width:clamp(130px,16vw,160px);padding:9px 9px 30px;margin-bottom:14px;background:#fff;
+  box-shadow:0 18px 26px -18px rgba(31,48,73,.5),0 2px 4px rgba(31,48,73,.08);rotate:-4deg;}
+.yp-snap.is-flowers{rotate:3deg;}
+.yp-snap-ph{display:block;aspect-ratio:1;background:#dfe9ee center/cover;}
+.yp-snap.is-banquet .yp-snap-ph{background-image:url(../img/party/banquet.webp);}
+.yp-snap.is-flowers .yp-snap-ph{background-image:url(../img/party/wildflowers.webp);}
+.yp-tape{position:absolute;left:50%;top:-10px;width:62px;height:20px;margin-left:-31px;rotate:-3deg;
+  background:url(../img/party/gingham.webp) 0 0/90px auto;opacity:.85;box-shadow:0 1px 2px rgba(0,0,0,.12);}
+/* 小貨車：一台真的老雪佛蘭（去背），車斗綁著三顆氣球，車尾掛著 Just Married */
+.yp-truck{width:clamp(260px,40vw,400px);margin-bottom:10px;}
+.yp-truck-art{position:relative;aspect-ratio:900/422;margin-top:clamp(70px,9vw,100px);}
+.yp-truck-img{position:absolute;inset:0;background:url(../img/party/truck.webp) center/contain no-repeat;
+  filter:drop-shadow(0 14px 10px rgba(31,48,73,.22));}
+.yp-truck-sign{position:absolute;left:63%;top:33%;width:30%;padding:2px 0 3px;text-align:center;rotate:-3deg;
+  font:400 clamp(13px,1.7vw,18px)/1 'Yellowtail',cursive;color:#e0613f;background:#fffdf6;border-radius:2px;
+  box-shadow:0 1px 3px rgba(0,0,0,.25);}
+.yp-truck-bl{position:absolute;width:13%;aspect-ratio:240/335;background:center/contain no-repeat;transform-origin:50% 260%;
+  animation:yp-tug 3s ease-in-out infinite alternate;}
+.yp-truck-bl::after{content:'';position:absolute;left:50%;top:98%;width:1px;height:150%;background:rgba(80,80,80,.55);}
+.yp-truck-bl.b1{left:66%;bottom:96%;background-image:url(../img/party/balloon-coral.webp);rotate:-8deg;}
+.yp-truck-bl.b2{left:76%;bottom:108%;background-image:url(../img/party/balloon-sky.webp);animation-delay:-1s;}
+.yp-truck-bl.b3{left:85%;bottom:92%;background-image:url(../img/party/balloon-butter.webp);rotate:9deg;animation-delay:-2s;}
+@keyframes yp-tug{from{transform:rotate(-4deg);}to{transform:rotate(4deg);}}
 
-/* 白卡：上緣一條野餐格紋 */
+/* 白卡：上緣一條真的紅白野餐格紋布（img/party/gingham.webp） */
 .yp-card{position:relative;max-width:620px;margin:0 auto;padding:clamp(30px,5vw,46px) clamp(22px,5vw,46px) clamp(26px,4vw,40px);
   background:#fff;border-radius:20px;overflow:hidden;
   box-shadow:0 2px 0 rgba(31,48,73,.04),0 30px 50px -34px rgba(31,48,73,.4);}
 .yp-card::before{content:'';position:absolute;left:0;right:0;top:0;height:12px;
-  background:
-    repeating-linear-gradient(90deg,rgba(240,122,90,.5) 0 12px,transparent 12px 24px),
-    repeating-linear-gradient(0deg,rgba(240,122,90,.5) 0 6px,transparent 6px 12px),#fff;}
+  background:url(../img/party/gingham.webp) 0 0/120px auto;}
 .note-grid.yp-card{max-width:700px;}
 /* 婚禮資訊：三角旗掛在卡片上緣（卡片本身不要那條格紋） */
 .yp-card-flags{overflow:visible;padding-top:clamp(72px,9vw,96px);}
@@ -206,7 +219,9 @@ body[data-hero-name="cn"] .yp-hero .yp-names{font-family:'Noto Sans TC',sans-ser
 
 /* ---- 故事：黃昏 ＋ 夾在串燈上的拍立得 ---- */
 .yp-story{color:var(--yp-ink);}
-.yp-story .yp-band-bg{background:linear-gradient(180deg,#ffd9b0 0%,#ffc4b0 35%,#f6b8c8 70%,#d9c4ea 100%);}
+.yp-story .yp-band-bg{background:
+  linear-gradient(180deg,rgba(255,226,200,.78) 0%,rgba(255,214,200,.72) 45%,rgba(246,206,220,.8) 100%),
+  url(../img/party/reception.webp) center/cover;}
 .yp-story .yp-bulb{animation:yp-blink 2.4s ease-in-out infinite alternate;animation-delay:calc(var(--i) * -.3s);}
 @keyframes yp-blink{to{box-shadow:0 0 8px 3px rgba(255,214,110,.3);}}
 .yp-story .yp-band-inner{display:grid;grid-template-columns:1fr;gap:40px;justify-items:center;text-align:center;}
@@ -226,13 +241,11 @@ body[data-hero-name="cn"] .yp-hero .yp-names{font-family:'Noto Sans TC',sans-ser
 
 /* ---- 倒數：傍晚 ＋ 捲下去串燈一顆一顆亮 ＋ 煙火 ---- */
 .yp-count{color:#fff;text-align:center;--lit:clamp(0,calc((var(--ap,0) + .05) * 1.4),1);}
-.yp-count .yp-band-bg{background:linear-gradient(180deg,#1f2b55 0%,#3b3d78 40%,#8a5a8f 75%,#f09a7a 100%);}
-.yp-stars{position:absolute;inset:0 0 40% 0;opacity:.8;
-  background:
-    radial-gradient(1.5px 1.5px at 12% 20%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 28% 46%,#fff 50%,transparent 51%),
-    radial-gradient(1.5px 1.5px at 44% 14%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 58% 36%,#fff 50%,transparent 51%),
-    radial-gradient(1.5px 1.5px at 72% 18%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 86% 40%,#fff 50%,transparent 51%),
-    radial-gradient(1px 1px at 94% 12%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 6% 52%,#fff 50%,transparent 51%);}
+/* 黃昏亮著串燈的穀倉（img/party/barn.webp）：一開始暗暗的，捲下去越來越亮 */
+.yp-count .yp-band-bg{background:url(../img/party/barn.webp) center 60%/cover;}
+.yp-count .yp-band-bg::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(14,20,44,.82),rgba(20,26,56,.6) 45%,rgba(30,24,40,.78));
+  opacity:calc(1 - var(--lit,0) * .45);}
 .yp-count .yp-bulb{background:radial-gradient(circle at 40% 35%,#8b8f99,#5c606a);box-shadow:none;}
 .yp-count .yp-bulb::after{content:'';position:absolute;inset:0;border-radius:inherit;
   background:radial-gradient(circle at 40% 35%,#fffef2,#fff1b8 60%,#f6d878);box-shadow:0 0 18px 8px rgba(255,214,110,.55);
@@ -302,6 +315,6 @@ body[data-hero-name="cn"] .yp-hero .yp-names{font-family:'Noto Sans TC',sans-ser
 .yp-fin{font:400 clamp(28px,4vw,36px)/1.1 'Yellowtail',cursive;color:var(--yp-coral);text-transform:none;letter-spacing:.01em;}
 
 @media (prefers-reduced-motion: reduce){
-  .yp-bl,.yp-sky .ps-cloud,.yp-sky .ps-glow,.yp-confetti i,.yp-fireworks i,.yp-story .yp-bulb,.yp-truck .yp-truck-balloons{animation:none;}
+  .yp-bl,.yp-sky .ps-glow,.yp-confetti i,.yp-fireworks i,.yp-story .yp-bulb,.yp-truck-bl{animation:none;}
   .yp-bl{display:none;}
 }

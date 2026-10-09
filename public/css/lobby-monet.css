@@ -7,16 +7,17 @@
              hero 就是畫的裡面，往下捲是一間莫內的小展間
      材質    油畫：一筆一筆的筆觸、畫布的織紋、金框、亞麻內襯、
              美術館的說明卡、黃銅名牌、投射燈
-     圖像    日本橋、睡蓮、罌粟花田、紫藤、花園小徑、印象・日出
-             —— 全部是 js/openers/painting.js 用程式畫的油畫（canvas[data-monet]），
-             不是圖檔；這份 CSS 只負責框、牆、光與版面
+     圖像    莫內的真跡掃描（public/img/monet/，出處見 README）：日本橋、塞納河、
+             罌粟花田、柳樹、維特伊的花園、國會大廈日落、阿讓特伊的花園。
+             畫掛在 canvas[data-monet] 上，由 js/openers/painting.js 讓水面流動；
+             金框、亞麻、錦緞壁紙也是真的照片，這份 CSS 只負責光與版面
 
    捲動：
      ・hero 的畫往下捲時慢慢往下沉、放大一點（--lp），名字那一抹顏料淡掉
      ・每一幅小畫捲到時從釘子上擺進來（data-reveal="hang"），
        畫面再一筆一筆畫上去（data-monet-reveal，JS 做的）
      ・故事那一面展牆：投射燈的光隨著捲動從左滑到右（--sp）
-     ・倒數：霧裡的港口，捲下去太陽慢慢升起來，水面的倒影跟著拉長（--sp）
+     ・倒數：《國會大廈・日落》，捲下去夕陽的光越來越暖（--sp）
 
    每一條規則都收在 .mg-* 或 body[data-lobby="monet-garden"] 底下。
 ============================================================ */
@@ -25,15 +26,14 @@ body[data-lobby="monet-garden"]{
   --mg-ink:#2f3f3a; --mg-soft:#6f7a72; --mg-green:#3f6a5a; --mg-lilac:#8f82b4; --mg-rose:#c9748a;
   --mg-sign:#b4472f; --mg-cream:#faf6ec; --mg-line:rgba(63,106,90,.16);
 }
-/* 整頁的底：一張米白的畫布，上面有幾抹淡淡的顏料 */
+/* 整頁的底：一張真的亞麻畫布（public/img/monet/linen.webp），上面幾抹淡淡的顏料 */
 body[data-lobby="monet-garden"] .bg-decor{
   background:
-    radial-gradient(30% 22% at 12% 18%,rgba(169,156,196,.16),transparent 70%),
-    radial-gradient(26% 20% at 88% 42%,rgba(143,174,150,.18),transparent 70%),
-    radial-gradient(30% 24% at 20% 78%,rgba(201,116,138,.1),transparent 70%),
-    repeating-linear-gradient(0deg,rgba(90,70,40,.025) 0 1px,transparent 1px 3px),
-    repeating-linear-gradient(90deg,rgba(90,70,40,.02) 0 1px,transparent 1px 3px),
-    linear-gradient(180deg,#f8f4eb,#efeadd);}
+    radial-gradient(30% 22% at 12% 18%,rgba(169,156,196,.14),transparent 70%),
+    radial-gradient(26% 20% at 88% 42%,rgba(143,174,150,.16),transparent 70%),
+    radial-gradient(30% 24% at 20% 78%,rgba(201,116,138,.08),transparent 70%),
+    linear-gradient(180deg,rgba(250,247,239,.62),rgba(244,239,228,.7)),
+    url(../img/monet/linen.webp) center/cover;}
 .mg-lobby{position:relative;}
 /* 畫布的織紋：疊在每一幅畫上 */
 .mg-weave{position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:.3;
@@ -101,33 +101,24 @@ body[data-hero-name="cn"] .mg-hero .mg-names{font-family:'Noto Serif TC',serif;f
 .mg-hero .hashtags .tag{border-color:rgba(250,246,236,.9);color:var(--mg-green);background:rgba(250,246,236,.78);font-size:12px;}
 .mg-cue{margin-top:16px;color:var(--mg-cream);font-size:11px;letter-spacing:.4em;text-shadow:0 1px 6px rgba(0,0,0,.4);}
 .mg-cue .arrow{background:var(--mg-cream);}
-/* 右下角的簽名 */
-.mg-sign{position:absolute;right:clamp(18px,4vw,56px);bottom:clamp(16px,3vh,34px);z-index:3;
-  font:400 clamp(20px,2.6vw,32px)/1 'Parisienne',cursive;color:var(--mg-sign);transform:rotate(-4deg);
-  text-shadow:0 1px 0 rgba(255,240,220,.35);opacity:calc(.9 - var(--lp,0));}
-.app-show .mg-swash,.app-show .mg-hero .hashtags,.app-show .mg-cue,.app-show .mg-sign{animation:mg-rise 1.4s cubic-bezier(.2,.7,.2,1) both;}
+.app-show .mg-swash,.app-show .mg-hero .hashtags,.app-show .mg-cue{animation:mg-rise 1.4s cubic-bezier(.2,.7,.2,1) both;}
 .app-show .mg-swash{animation-delay:.5s;}
 .app-show .mg-hero .hashtags{animation-delay:.75s;}
 .app-show .mg-cue{animation-delay:.9s;}
-.app-show .mg-sign{animation-delay:1.2s;}
 @keyframes mg-rise{from{opacity:0;transform:translateY(14px);}}
 
 /* ============================================================
    金框（小畫、故事的大畫共用）
 ============================================================ */
-.mg-gilt{position:relative;padding:clamp(10px,1.6vw,16px);
-  background:
-    radial-gradient(circle at 50% 50%,transparent 62%,rgba(90,60,20,.22) 100%),
-    linear-gradient(135deg,#7d5c22,#f1d98a 16%,#a87f32 30%,#f6e4a6 46%,#9c7429 62%,#e9cd7d 80%,#7a5a20);
-  box-shadow:
-    inset 0 0 0 2px #5e4416, inset 0 0 0 4px rgba(255,236,170,.7), inset 0 0 0 5px #8c6a28,
-    inset 0 0 12px 4px rgba(70,45,10,.4),
-    0 26px 40px -24px rgba(40,30,15,.55), 0 6px 12px -6px rgba(40,30,15,.3);}
-.mg-gilt::before{content:'';position:absolute;inset:clamp(4px,.6vw,6px);pointer-events:none;
-  border:3px dotted rgba(255,238,180,.5);}
+.mg-gilt{position:relative;
+  /* 真的金框：一張畫框角落的照片做成九宮格（frame.webp：四個角 149px、邊上 140px 一段一段接），亞麻內襯也在框裡 */
+  border:clamp(16px,2.4vw,26px) solid #b8933f;border-image:url(../img/monet/frame.webp) 149 round;
+  box-shadow:0 26px 40px -24px rgba(40,30,15,.55),0 6px 12px -6px rgba(40,30,15,.3);}
 .mg-gilt > canvas,.mg-gilt > .mg-portrait-ph{position:relative;display:block;width:100%;aspect-ratio:4/3;height:auto;
-  box-shadow:0 0 0 1px rgba(60,40,10,.45),0 0 0 clamp(4px,.7vw,7px) #e6dcc2,0 0 0 calc(clamp(4px,.7vw,7px) + 1px) rgba(120,95,50,.4);}
-.mg-gilt > .mg-weave{inset:clamp(10px,1.6vw,16px);}
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.3);}
+.mg-pic.is-tall{width:clamp(180px,24vw,240px);}
+.mg-pic.is-tall .mg-gilt > canvas{aspect-ratio:4/5;}
+
 
 /* ============================================================
    區塊：小畫 ＋ 說明卡
@@ -162,7 +153,8 @@ body[data-hero-name="cn"] .mg-hero .mg-names{font-family:'Noto Serif TC',serif;f
 
 /* 內容卡：一張奶油色的厚紙 */
 .mg-card{position:relative;max-width:620px;margin:0 auto;padding:clamp(28px,5vw,44px) clamp(22px,5vw,46px);text-align:center;
-  background:var(--mg-cream);border:1px solid rgba(160,140,100,.22);border-radius:3px;
+  background:var(--mg-cream);
+  border:1px solid rgba(160,140,100,.22);border-radius:3px;
   box-shadow:0 1px 0 #fff inset,0 30px 46px -34px rgba(60,50,30,.5);}
 .mg-card::before{content:'';position:absolute;inset:7px;border:1px solid var(--mg-line);pointer-events:none;}
 .note-grid.mg-card{max-width:700px;}
@@ -198,13 +190,14 @@ body[data-hero-name="cn"] .mg-hero .mg-names{font-family:'Noto Serif TC',serif;f
 .mg-story .mg-band-bg{background:
   linear-gradient(180deg,transparent 82%,rgba(255,255,255,.4) 82%,rgba(255,255,255,.4) 83%,transparent 83%),
   radial-gradient(40% 60% at calc(15% + var(--sp,.5) * 70%) 20%,rgba(255,248,226,.7),transparent 70%),
-  linear-gradient(180deg,#ddd5e7,#cfc6df 82%,#c3b9d4 82%,#bdb2cf);}
+  url(../img/monet/damask.webp) 50% 0/460px auto repeat,
+  linear-gradient(180deg,#ddd5e7,#cfc6df 82%,#c3b9d4 82%,#bdb2cf);
+  background-blend-mode:normal,normal,multiply,normal;}
 .mg-story .mg-band-sub{color:var(--mg-soft);}
 .mg-story .mg-band-inner{display:grid;grid-template-columns:1fr;gap:40px;justify-items:center;text-align:center;}
 @media (min-width:780px){.mg-story .mg-band-inner{grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:clamp(40px,6vw,80px);align-items:center;text-align:left;justify-items:stretch;}}
 .mg-portrait{width:min(100%,320px);margin:0;justify-self:center;}
-.mg-gilt-lg{padding:clamp(16px,2.4vw,24px);}
-.mg-gilt-lg > .mg-weave{inset:clamp(16px,2.4vw,24px);}
+.mg-gilt-lg{border-width:clamp(22px,3vw,32px);}
 .mg-portrait-ph{aspect-ratio:4/5 !important;background:#a99cc4 center/cover;filter:saturate(.92) contrast(.96);
   background-position:50% calc(50% + (var(--sp,.5) - .5) * 24%);}
 .mg-spot{position:absolute;inset:0;pointer-events:none;mix-blend-mode:soft-light;
@@ -214,26 +207,13 @@ body[data-hero-name="cn"] .mg-hero .mg-names{font-family:'Noto Serif TC',serif;f
   box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 4px 8px -4px rgba(40,30,15,.5);}
 .mg-story .story-text{margin:22px 0 0;max-width:32em;color:var(--mg-ink);font-size:15px;text-align:left;}
 
-/* ---- 倒數：印象・日出，太陽跟著捲動升起來 ---- */
+/* ---- 倒數：莫內的《國會大廈・日落》，捲下去夕陽的光越來越暖 ---- */
 .mg-count{color:var(--mg-ink);
   --rise:clamp(0,calc((var(--sp,0) - .15) * 1.5),1);}
-.mg-count .mg-band-bg{background:#8fa8b0;}
+.mg-count .mg-band-bg{background:#6f86a8;}
 .mg-count .mg-band-bg .mg-canvas{position:absolute;inset:0;}
-.mg-sun{position:absolute;left:38%;top:calc(52% - var(--rise) * 30%);width:clamp(44px,5vw,64px);aspect-ratio:1;border-radius:50%;
-  transform:translate(-50%,-50%);
-  background:radial-gradient(circle at 45% 45%,#ffb069,#f0702f 55%,#e2582a);
-  box-shadow:0 0 40px 18px rgba(240,120,60,.35);opacity:calc(.35 + var(--rise) * .65);}
-/* 太陽在水面上的倒影：幾抹橘色的短筆，太陽越高拉得越長 */
-.mg-sun-path{position:absolute;left:38%;top:54%;width:clamp(44px,5vw,64px);height:calc(14% + var(--rise) * 26%);transform:translateX(-50%);
-  display:flex;flex-direction:column;justify-content:space-between;align-items:center;opacity:calc(.3 + var(--rise) * .7);}
-.mg-sun-path b{display:block;height:5px;border-radius:50%;background:#f0702f;opacity:.85;animation:mg-shimmer 3s ease-in-out infinite alternate;}
-.mg-sun-path b:nth-child(1){width:110%;}
-.mg-sun-path b:nth-child(2){width:80%;animation-delay:-.6s;margin-left:20%;}
-.mg-sun-path b:nth-child(3){width:95%;animation-delay:-1.2s;margin-right:15%;}
-.mg-sun-path b:nth-child(4){width:60%;animation-delay:-1.8s;margin-left:24%;}
-.mg-sun-path b:nth-child(5){width:70%;animation-delay:-2.4s;}
-.mg-sun-path b:nth-child(6){width:40%;animation-delay:-.3s;margin-right:20%;}
-@keyframes mg-shimmer{to{transform:translateX(8px) scaleX(.85);opacity:.55;}}
+.mg-glow{position:absolute;inset:0;pointer-events:none;mix-blend-mode:soft-light;
+  background:radial-gradient(45% 55% at 52% 48%,rgba(255,170,90,.95),rgba(255,140,80,0) 70%);opacity:calc(.15 + var(--rise) * .85);}
 .mg-count .mg-band-inner{display:flex;justify-content:center;}
 @media (min-width:780px){.mg-count .mg-band-inner{justify-content:flex-end;}}
 .mg-count-body{position:relative;max-width:440px;padding:clamp(26px,4vw,38px) clamp(24px,4vw,40px);text-align:center;
@@ -287,6 +267,3 @@ body[data-hero-name="cn"] .mg-hero .mg-names{font-family:'Noto Serif TC',serif;f
 .mg-foot{margin-top:clamp(70px,10vw,110px);display:flex;flex-direction:column;align-items:center;gap:8px;border-top:none;}
 .mg-fin{font:400 26px 'Parisienne',cursive;color:var(--mg-sign);text-transform:none;letter-spacing:.02em;}
 
-@media (prefers-reduced-motion: reduce){
-  .mg-sun-path b{animation:none;}
-}
