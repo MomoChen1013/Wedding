@@ -220,7 +220,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 
 | 代號 | 開場 | 怎麼動 | 誰的預設 |
 |---|---|---|---|
-| `envelope` | 拆信・封蠟 | 點封蠟 → 封蠟沿著鋸齒裂成兩半、封口掀起 → 信封四散。封蠟是一枚真的紅色封蠟（[SHAN LU／Unsplash](https://unsplash.com/photos/_IBWeoe1VAA)：一雙相握的手、三顆星、麥穗花圈；`img/envelope/wax-seal.webp`，依顏色去背） | tapestry |
+| `envelope` | 拆信・封蠟 | 點封蠟 → 封蠟沿著鋸齒裂成兩半、封口掀起 → 信封四散。封蠟是一枚真的紅色封蠟（[SHAN LU／Unsplash](https://unsplash.com/photos/_IBWeoe1VAA)，依顏色去背；保留外圈的蠟、把中間的印面整平，再壓上一枚鑽戒；`img/envelope/wax-seal.webp`）。拆開前蓋著一枚完整的封蠟，看不出裂縫 | tapestry |
 | `book` | 翻頁・古書 | 點封面 → 翻開 → 扉頁 → 翻過扉頁 | （可選） |
 | `bloom` | 花朵盛開 | 自己演：一整面綠籬 → 到處冒出小花苞 → 從中間往外一波波開成白玫瑰 → 名字（綠籬與玫瑰都是真的照片） | spring-orangerie |
 | `curtain` | 窗簾拉開 | 點一下 → 布幕收到兩側 → 光進來（晨光房間：真的白紗簾，後面是窗台上一瓶鬱金香的窗） | morning-window |

@@ -24,7 +24,7 @@
 
 /* 按鈕蓋滿整封信：點哪裡都拆得開（封蠟只是視線的落點） */
 .env .op-hit{z-index:6;}
-.env:not(.is-opening) .op-hit:focus-visible ~ .env-flap .env-seal{outline:2px solid #e2c47a;outline-offset:6px;border-radius:50%;}
+.env:not(.is-opening) .op-hit:focus-visible ~ .env-flap .env-seal-whole{outline:2px solid #e2c47a;outline-offset:6px;border-radius:50%;}
 
 /* ---- 內襯：信封裡面那層花紋紙（封口掀起來才看得到） ---- */
 .env-inside{
@@ -107,8 +107,12 @@
 /* 同一枚封蠟沿著鋸齒切成兩半：上半黏在封口、下半黏在下片（兩條鋸齒錯開一點點，裂開時才有縫） */
 .env-seal-t .env-seal-art{clip-path:polygon(0% 0%,100% 0%,100.00% 49.25%,91.67% 52.67%,83.33% 48.00%,75.00% 53.92%,66.67% 48.00%,58.33% 52.67%,50.00% 49.25%,41.67% 52.67%,33.33% 48.00%,25.00% 53.92%,16.67% 48.00%,8.33% 52.67%,0.00% 49.25%);}
 .env-seal-b .env-seal-art{clip-path:polygon(0% 100%,100% 100%,100.00% 48.25%,91.67% 51.67%,83.33% 47.00%,75.00% 52.92%,66.67% 47.00%,58.33% 51.67%,50.00% 48.25%,41.67% 51.67%,33.33% 47.00%,25.00% 52.92%,16.67% 47.00%,8.33% 51.67%,0.00% 48.25%);}
-.env.is-ready:not(.is-opening) .env-flap .env-seal{animation:env-seal-breathe 3.2s ease-in-out 1s infinite;}
-.env.is-ready:not(.is-opening) .op-hit:hover ~ .env-flap .env-seal{transform:scale(1.04);}
+/* 拆開前只看得到完整的那一枚（兩半疊在一起會被上半的陰影描出一條縫），點下去的那一刻才換成兩半 */
+.env-seal-whole .env-seal-art{clip-path:none;}
+.env:not(.is-opening) .env-seal-t,.env:not(.is-opening) .env-seal-b{opacity:0;}
+.env.is-opening .env-seal-whole{opacity:0;}
+.env.is-ready:not(.is-opening) .env-seal-whole{animation:env-seal-breathe 3.2s ease-in-out 1s infinite;}
+.env.is-ready:not(.is-opening) .op-hit:hover ~ .env-flap .env-seal-whole{transform:scale(1.04);}
 @keyframes env-seal-breathe{50%{filter:drop-shadow(0 3px 3px rgba(40,6,8,.35)) drop-shadow(0 0 14px rgba(226,196,122,.55));}}
 
 /* ---- 提示 ---- */
