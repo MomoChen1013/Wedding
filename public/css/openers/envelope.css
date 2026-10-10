@@ -100,7 +100,7 @@
 /* ---- 封蠟 ---- */
 .env-seal{position:absolute;left:50%;top:var(--tip);width:var(--seal);height:var(--seal);
   margin:calc(var(--seal) / -2) 0 0 calc(var(--seal) / -2);
-  filter:drop-shadow(0 3px 3px rgba(40,6,8,.35)) drop-shadow(0 1px 1px rgba(40,6,8,.4));
+  filter:drop-shadow(0 3px 3px rgba(60,40,18,.32)) drop-shadow(0 1px 1px rgba(60,40,18,.38));
   transition:transform .35s cubic-bezier(.3,1.4,.5,1);}
 .env-seal-art{position:absolute;inset:0;width:100%;height:100%;display:block;
   background:url(../../img/envelope/wax-seal.webp) center/contain no-repeat;}
@@ -113,7 +113,7 @@
 .env.is-opening .env-seal-whole{opacity:0;}
 .env.is-ready:not(.is-opening) .env-seal-whole{animation:env-seal-breathe 3.2s ease-in-out 1s infinite;}
 .env.is-ready:not(.is-opening) .op-hit:hover ~ .env-flap .env-seal-whole{transform:scale(1.04);}
-@keyframes env-seal-breathe{50%{filter:drop-shadow(0 3px 3px rgba(40,6,8,.35)) drop-shadow(0 0 14px rgba(226,196,122,.55));}}
+@keyframes env-seal-breathe{50%{filter:drop-shadow(0 3px 3px rgba(60,40,18,.32)) drop-shadow(0 0 14px rgba(226,196,122,.55));}}
 
 /* ---- 提示 ---- */
 .env-hint{position:absolute;left:0;right:0;top:calc(var(--tip) + var(--seal) / 2 + 26px);
