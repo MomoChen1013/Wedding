@@ -1,11 +1,11 @@
 /* ============================================================
    openers/balloons.js — 開場：氣球升空（美式戶外婚禮派對）
    ------------------------------------------------------------
-   一開始整個畫面塞滿了一束一束粉嫩的氣球（粉紅、蜜桃、薄荷、薰衣草、奶油白，
-   再夾幾束混色的真乳膠氣球 —— 都是真的氣球照片去背、調成低對比的粉彩，public/img/party/bunch-*.webp），
-   分成遠、中、近三層：遠的小、淡一點；近的大、有一點景深的糊。每一束都在原地輕輕晃：
+   一開始整個畫面塞滿了一顆一顆霧面的粉彩氣球（奶油白、腮紅粉、蜜桃、奶油黃、薄荷、薰衣草 ——
+   一顆真的霧面白氣球照片去背，再淡淡地上色，public/img/party/balloon-*.webp；線是 SVG 畫的），
+   分成遠、中、近三層：遠的小、淡一點；近的大、有一點景深的糊。每一顆都在原地輕輕晃：
 
-     氣球一束一束被放開 → 慢慢升空、越飛越快（近的飛得比遠的快）
+     氣球一顆一顆各自被放開（每一顆的時間、速度、往哪邊飄都不一樣）→ 慢慢升空、越飛越快
      → 底下露出一片藍天、綠色草原與遠山（img/party/meadow.webp）
      → 名字浮在天空上 → 溶進網站（美式戶外派對的首頁 hero 就是同一片草原）
 
@@ -29,56 +29,45 @@
     try { return new URL('../../img/party/', document.currentScript.src).href; } catch (e) { return '/img/party/'; }
   })();
 
-  /* 一束氣球的照片：ar = 寬 / 高；head = 氣球本身佔圖高的比例（下面是線） */
-  const BUNCH = {
-    pink: { ar: 514 / 899, head: .6 },
-    peach: { ar: 514 / 899, head: .6 },
-    mint: { ar: 514 / 899, head: .6 },
-    lilac: { ar: 514 / 899, head: .6 },
-    cream: { ar: 514 / 899, head: .6 },
-    mix: { ar: 1000 / 773, head: .72 },
-  };
-  const MIX = ['pink', 'cream', 'mint', 'peach', 'lilac', 'pink', 'mix', 'cream', 'peach', 'lilac', 'mint', 'mix'];
+  /* 一顆氣球的照片：寬 / 高（結也在照片裡，線另外畫） */
+  const AR = 300 / 389;
+  const COLORS = ['white', 'blush', 'peach', 'butter', 'mint', 'lilac'];
 
-  /* 三層：遠、中、近。k = 相對大小、gap = 間距（相對於一束氣球頭的寬）、
-     sp = 飛的速度（越近越快）、cls = 景深 */
+  /* 三層：遠、中、近。k = 相對大小、gap = 間距（相對於氣球的寬）、sp = 飛得多慢（越近越快）、cls = 景深 */
   const LAYERS = [
-    { k: .6, gap: 1.15, sp: 1.12, cls: 'is-far' },
-    { k: 1, gap: .86, sp: 1, cls: 'is-mid' },
-    { k: 1.5, gap: 1.5, sp: .8, cls: 'is-near' },
+    { k: .55, gap: 2.8, sp: 1.15, cls: 'is-far' },
+    { k: 1, gap: 1.08, sp: 1, cls: 'is-mid' },
+    { k: 1.6, gap: 1.9, sp: .78, cls: 'is-near' },
   ];
 
   function crowd(W, H) {
     const r = rng(20260704);
-    /* 中景一束氣球「頭」的寬度 */
-    const base = Math.max(150, Math.min(330, Math.min(W, H) * .5));
+    /* 中景一顆氣球的寬 */
+    const base = Math.max(76, Math.min(128, Math.min(W, H) * .17));
     const out = [];
     let n = 0;
     LAYERS.forEach((L, li) => {
-      const hw = base * L.k;                /* 氣球頭的寬 */
-      const step = hw * L.gap;
+      const w0 = base * L.k, step = w0 * L.gap;
       let row = 0;
-      for (let y = -hw * .35; y < H + hw * .2; y += step * .82, row++) {
-        for (let x = -hw * .3 + (row % 2) * step * .5; x < W + hw * .3; x += step) {
-          if (li === 2 && r() < .45) continue;          /* 近景稀一點，不要整片糊掉 */
-          const kind = MIX[(n++ + row) % MIX.length];
-          const b = BUNCH[kind];
-          const s = 1 + (r() - .5) * .22;
-          const w = hw * s / .9;                         /* 圖的寬（頭大約佔圖寬的九成） */
-          const h = w / b.ar;
-          const cx = x + (r() - .5) * step * .35, cy = y + (r() - .5) * step * .3;   /* 頭的中心 */
+      for (let y = -w0 * .4; y < H + w0 * .3; y += step * .8, row++) {
+        for (let x = -w0 * .3 + (row % 2) * step * .5; x < W + w0 * .3; x += step) {
+          if (li === 2 && r() < .5) continue;            /* 近景稀一點，不要整片糊掉 */
+          const w = w0 * (.88 + r() * .24), h = w / AR;
+          const cx = x + (r() - .5) * step * .4, cy = y + (r() - .5) * step * .35;   /* 氣球的中心 */
+          const sx = (r() - .5) * 16, len = 1.15 + r() * .4;   /* 線：擺多少、多長（氣球高的幾倍） */
           out.push({
-            kind, cls: L.cls, w, h,
-            left: cx - w / 2, top: cy - h * b.head * .5,
+            color: COLORS[(n++ * 7 + row * 3 + Math.floor(r() * 3)) % COLORS.length], cls: L.cls, w, h,
+            left: cx - w / 2, top: cy - h / 2,
             z: li * 100 + Math.round(r() * 60),
             flip: r() < .5,
-            /* 從上面的先飛（天空從上面開始露出來），每一束再錯開一點 */
-            del: (Math.max(0, cy) / H) * .6 * L.sp + r() * .5,
-            dur: (2 + r() * .9) * L.sp,
-            tilt: (r() - .5) * 16,
-            drift: (r() - .5) * 120,
-            dy: -(cy + h + 60),
-            bob: 2.4 + r() * 1.8, ph: r() * -3,
+            str: `M20 0C${f(20 + sx)} 40 ${f(20 - sx)} 80 ${f(20 + sx * .6)} 120`, len,
+            /* 每一顆自己的時間：上面的稍微早一點（天空從上面開始露出來），但大多是亂的 */
+            del: ((Math.max(0, cy) / H) * .7 + r() * 1.6) * L.sp,
+            dur: (2.2 + r() * 1.3) * L.sp,
+            tilt: (r() - .5) * 14,
+            drift: (r() - .5) * 160,
+            dy: -(cy + h * (1 + len) + 40),
+            bob: 2 + r() * 1.8, ph: r() * -3,
           });
         }
       }
@@ -103,7 +92,8 @@
       <div class="bp-crowd" aria-hidden="true">${list.map((b) =>
         `<div class="bp-b ${b.cls}" style="left:${f(b.left)}px;top:${f(b.top)}px;width:${f(b.w)}px;z-index:${b.z};rotate:${f(b.tilt)}deg;` +
         `--dy:${f(b.dy)}px;--del:${b.del.toFixed(2)}s;--dur:${b.dur.toFixed(2)}s;--dx:${f(b.drift)};--bob:${b.bob.toFixed(2)}s;--ph:${b.ph.toFixed(2)}s">` +
-        `<div class="bp-rise"><div class="bp-sway"><img class="bp-img${b.flip ? ' is-flip' : ''}" src="${IMG}bunch-${b.kind}.webp" alt="" draggable="false"></div></div></div>`).join('')}</div>
+        `<div class="bp-rise"><div class="bp-sway"><img class="bp-img${b.flip ? ' is-flip' : ''}" src="${IMG}balloon-${b.color}.webp" alt="" draggable="false">` +
+        `<svg class="bp-str" viewBox="0 0 40 120" preserveAspectRatio="none" style="height:${f(b.h * b.len)}px"><path d="${b.str}"/></svg></div></div></div>`).join('')}</div>
       <div class="bp-skip">輕觸畫面・直接進入</div>`;
 
     if (ctx.reduce) { host.classList.add('is-still'); return; }

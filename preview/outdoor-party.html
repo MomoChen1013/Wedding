@@ -72,12 +72,12 @@
 <button class="intro-skip" id="introSkip" type="button" hidden>跳過</button>
 
 <!-- ============ 主畫面：一場在草地上的美式婚禮派對 ============
-     開場是滿滿一畫面的氣球，放開之後一束一束升空，露出底下的草原 —— 所以 hero 就是那一片草原：
+     開場是滿滿一畫面的氣球，一顆一顆各自升空，露出底下的草原 —— 所以 hero 就是那一片草原：
      藍天、綠地、遠山（img/party/meadow.webp，和開場同一張），草地上擺著野餐：
-     一只籐編野餐籃、一瓶雛菊、琺瑯杯、一籃蘋果；還有幾束漏網的氣球（粉嫩的真氣球照片）一直慢慢往上飄。
+     一只籐編野餐籃、一瓶雛菊、琺瑯杯、一籃蘋果；還有幾顆漏網的霧面粉彩氣球一直慢慢往上飄。
      往下捲：資訊卡掛著三角旗、旁邊貼一張長桌派對的拍立得、卡片後面探出幾枝野花；
      流程寫在一塊字母板上，兩邊擺著老銀餐具和琺瑯杯；
-     小提醒旁邊一張野花玻璃罐的拍立得、交通是一台綁著一束粉紅氣球的「Just Married」老福特小貨車開進來、
+     小提醒旁邊一張野花玻璃罐的拍立得、交通是一台綁著三顆粉彩氣球的「Just Married」老福特小貨車開進來、
      故事是夾在串燈上的拍立得（後面是真的戶外婚宴）、倒數是黃昏亮著串燈的穀倉，
      捲下去串燈一顆一顆亮起來，全亮的時候放煙火。照片都在 public/img/party/（出處見 README）。 -->
 <div id="app">
@@ -86,7 +86,7 @@
     <!-- ===== Hero：氣球飛走之後的那片天空 ===== -->
     <header class="lobby-hero yp-hero" data-scroll>
       <div class="yp-sky" aria-hidden="true"></div>
-      <div class="yp-float" aria-hidden="true"><i class="yp-bn is-pink" style="--x:5%;--t:24s;--d:-3s;--s:1"></i><i class="yp-bn is-cream" style="--x:82%;--t:28s;--d:-12s;--s:1.15"></i><i class="yp-bn is-mint" style="--x:64%;--t:31s;--d:-22s;--s:.7"></i><i class="yp-bn is-lilac" style="--x:22%;--t:35s;--d:-27s;--s:.6"></i></div>
+      <div class="yp-float" aria-hidden="true"><i class="yp-bn is-blush" style="--x:6%;--t:19s;--d:-3s;--s:1"></i><i class="yp-bn is-white" style="--x:18%;--t:24s;--d:-13s;--s:.75"></i><i class="yp-bn is-mint" style="--x:84%;--t:21s;--d:-7s;--s:1.1"></i><i class="yp-bn is-butter" style="--x:93%;--t:26s;--d:-17s;--s:.7"></i><i class="yp-bn is-lilac" style="--x:72%;--t:28s;--d:-21s;--s:.85"></i><i class="yp-bn is-peach" style="--x:31%;--t:30s;--d:-25s;--s:.65"></i></div>
       <!-- 草地上的野餐（照片去背）：左邊籐籃＋一瓶雛菊＋琺瑯杯，右邊一籃蘋果＋一枝黑心金光菊 -->
       <div class="yp-picnic" aria-hidden="true">
         <div class="yp-picnic-l"><i class="yp-pc is-basket"></i><i class="yp-pc is-daisies"></i><i class="yp-pc is-mug"></i></div>
@@ -182,7 +182,7 @@
       <section class="info-block yp-sec" id="transportBlock" hidden>
         <div class="yp-head">
           <figure class="yp-icon yp-truck" data-reveal="drive"><div class="yp-art yp-truck-art">
-            <i class="yp-truck-bn"></i>
+            <i class="yp-truck-bl b1"></i><i class="yp-truck-bl b2"></i><i class="yp-truck-bl b3"></i>
             <span class="yp-truck-img"></span><span class="yp-truck-sign">Just Married</span>
           </div></figure>
           <span class="yp-script">getting there</span>

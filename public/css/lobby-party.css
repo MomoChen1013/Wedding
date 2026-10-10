@@ -7,7 +7,7 @@
              hero 就是那片草原（草地上擺著野餐），往下捲是派對現場的各個角落
      材質    陽光下的白帆布、野餐格紋、牛皮紙、字母板的黑絨布與木框、
              拍立得、入場券、彩色紙屑
-     圖像    一束一束粉嫩的氣球、野餐籃、雛菊、琺瑯杯、老銀餐具、野花、三角旗、
+     圖像    一顆一顆霧面的粉彩氣球、野餐籃、雛菊、琺瑯杯、老銀餐具、野花、三角旗、
              綁著一束氣球的「Just Married」小貨車、串燈、煙火（照片都是去背的真實素材）
 
    捲動：
@@ -69,20 +69,25 @@ body[data-lobby="outdoor-party"] .bg-decor{
 /* 藍天、綠地、遠山（img/party/meadow.webp，和開場同一張），往下捲時慢慢往上退 */
 .yp-sky{position:absolute;inset:0;background:url(../img/party/meadow.webp) 50% calc(62% + var(--lp,0) * 18%)/cover;}
 
-/* 漏網的氣球：幾束粉嫩的氣球，一直慢慢往上飄 */
+/* 漏網的氣球：幾顆霧面粉彩的氣球（和開場同一組），各自慢慢往上飄，下面拖著一條線 */
 .yp-float{position:absolute;inset:0;pointer-events:none;z-index:2;}
-.yp-bn{position:absolute;left:var(--x);bottom:-300px;width:calc(96px * var(--s));aspect-ratio:514/899;
-  background:var(--img) center/contain no-repeat;transform-origin:50% 100%;
+.yp-bn{position:absolute;left:var(--x);bottom:-240px;width:calc(50px * var(--s));aspect-ratio:300/389;
+  background:var(--img) center/contain no-repeat;transform-origin:50% 40%;
   animation:yp-up var(--t) linear var(--d) infinite;}
+.yp-bn::after{content:'';position:absolute;left:50%;top:99%;width:1px;height:150%;background:rgba(255,255,255,.75);
+  transform-origin:50% 0;animation:yp-string 3s ease-in-out infinite alternate;}
+@keyframes yp-string{from{transform:rotate(-5deg);}to{transform:rotate(5deg);}}
 @keyframes yp-up{
-  0%{transform:translate(0,0) rotate(-3deg);}
-  50%{transform:translate(28px,-65vh) rotate(3deg);}
-  100%{transform:translate(-12px,calc(-100vh - 420px)) rotate(-2deg);}
+  0%{transform:translate(0,0) rotate(-4deg);}
+  50%{transform:translate(28px,-65vh) rotate(4deg);}
+  100%{transform:translate(-12px,calc(-100vh - 360px)) rotate(-3deg);}
 }
-.yp-bn.is-pink{--img:url(../img/party/bunch-pink.webp);}
-.yp-bn.is-mint{--img:url(../img/party/bunch-mint.webp);}
-.yp-bn.is-cream{--img:url(../img/party/bunch-cream.webp);}
-.yp-bn.is-lilac{--img:url(../img/party/bunch-lilac.webp);}
+.yp-bn.is-blush{--img:url(../img/party/balloon-blush.webp);}
+.yp-bn.is-mint{--img:url(../img/party/balloon-mint.webp);}
+.yp-bn.is-white{--img:url(../img/party/balloon-white.webp);}
+.yp-bn.is-lilac{--img:url(../img/party/balloon-lilac.webp);}
+.yp-bn.is-peach{--img:url(../img/party/balloon-peach.webp);}
+.yp-bn.is-butter{--img:url(../img/party/balloon-butter.webp);}
 
 /* 草地上的野餐：照片去背，底下一圈淡淡的影子壓在草上 */
 .yp-picnic{position:absolute;left:0;right:0;bottom:0;height:0;z-index:2;pointer-events:none;}
@@ -155,7 +160,7 @@ body[data-hero-name="cn"] .yp-hero .yp-names{font-family:'Noto Sans TC',sans-ser
 .yp-snap.is-flowers .yp-snap-ph{background-image:url(../img/party/wildflowers.webp);}
 .yp-tape{position:absolute;left:50%;top:-10px;width:62px;height:20px;margin-left:-31px;rotate:-3deg;
   background:url(../img/party/gingham.webp) 0 0/90px auto;opacity:.85;box-shadow:0 1px 2px rgba(0,0,0,.12);}
-/* 小貨車：一台真的老福特（去背，車窗換成淡淡的玻璃反光），車斗綁著一束粉紅氣球，車尾掛著 Just Married */
+/* 小貨車：一台真的老福特（去背，車窗換成淡淡的玻璃反光），車斗綁著三顆粉彩氣球，車尾掛著 Just Married */
 .yp-truck{width:clamp(280px,46vw,460px);margin-bottom:10px;}
 .yp-truck-art{position:relative;aspect-ratio:1000/312;margin-top:clamp(110px,14vw,150px);}
 .yp-truck-img{position:absolute;inset:0;background:url(../img/party/truck.webp) center/contain no-repeat;
@@ -163,8 +168,12 @@ body[data-hero-name="cn"] .yp-hero .yp-names{font-family:'Noto Sans TC',sans-ser
 .yp-truck-sign{position:absolute;left:66%;top:47%;width:24%;padding:2px 0 3px;text-align:center;rotate:-3deg;
   font:400 clamp(12px,1.6vw,17px)/1 'Yellowtail',cursive;color:#e0613f;background:#fffdf6;border-radius:2px;
   box-shadow:0 1px 3px rgba(0,0,0,.25);}
-.yp-truck-bn{position:absolute;left:72%;bottom:62%;width:19%;aspect-ratio:514/899;background:url(../img/party/bunch-pink.webp) center bottom/contain no-repeat;
-  transform-origin:50% 100%;animation:yp-tug 3s ease-in-out infinite alternate;}
+.yp-truck-bl{position:absolute;width:11%;aspect-ratio:300/389;background:var(--img) center/contain no-repeat;transform-origin:50% 260%;
+  animation:yp-tug 3s ease-in-out infinite alternate;}
+.yp-truck-bl::after{content:'';position:absolute;left:50%;top:98%;width:1px;height:150%;background:rgba(90,90,90,.45);}
+.yp-truck-bl.b1{left:68%;bottom:96%;--img:url(../img/party/balloon-blush.webp);rotate:-8deg;}
+.yp-truck-bl.b2{left:77%;bottom:110%;--img:url(../img/party/balloon-mint.webp);animation-delay:-1s;}
+.yp-truck-bl.b3{left:85%;bottom:93%;--img:url(../img/party/balloon-butter.webp);rotate:9deg;animation-delay:-2s;}
 @keyframes yp-tug{from{transform:rotate(-3deg);}to{transform:rotate(3deg);}}
 
 /* 點綴：卡片後面探出來的野花、字母板旁邊的老銀餐具與琺瑯杯、入場券旁邊的野餐籃（都是照片去背）。
@@ -353,6 +362,6 @@ body[data-hero-name="cn"] .yp-hero .yp-names{font-family:'Noto Sans TC',sans-ser
 .yp-fin{font:400 clamp(28px,4vw,36px)/1.1 'Yellowtail',cursive;color:var(--yp-coral);text-transform:none;letter-spacing:.01em;}
 
 @media (prefers-reduced-motion: reduce){
-  .yp-bn,.yp-confetti i,.yp-fireworks i,.yp-story .yp-bulb,.yp-truck-bn,.yp-pc.is-sprig,.yp-sprig.is-in{animation:none;}
+  .yp-bn,.yp-confetti i,.yp-fireworks i,.yp-story .yp-bulb,.yp-truck-bl,.yp-pc.is-sprig,.yp-sprig.is-in{animation:none;}
   .yp-bn{display:none;}
 }

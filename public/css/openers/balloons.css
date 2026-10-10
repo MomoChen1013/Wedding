@@ -4,11 +4,11 @@
    三層：
      .bp-scene  底下：一片藍天、綠色草原與遠山（img/party/meadow.webp），和派對大廳的 hero 同一張
      .bp-text   名字，浮在天空上（氣球飛走之後才出來）
-     .bp-crowd  滿滿的氣球；每一束三層 div：
+     .bp-crowd  滿滿的氣球；每一顆三層 div：
                   .bp-b     位置與大小（JS 排的）；.is-far / .is-mid / .is-near 是遠中近三層
                   .bp-rise  往上飛（--dy 飛多遠、--del 什麼時候放、--dur 飛多久、--dx 飄多遠，單位 px 但不帶單位：同一個數也拿來算轉幾度）
-                  .bp-sway  原地輕輕晃（--bob）；裡面是一束粉嫩的氣球照片（.bp-img，線也在照片裡）
-   只動 transform 與 opacity，一次幾十束也順。
+                  .bp-sway  原地輕輕晃（--bob）；裡面是一顆霧面粉彩氣球的照片（.bp-img）＋ 一條線（.bp-str，SVG）
+   只動 transform 與 opacity，一次一百多顆也順。
 ============================================================ */
 .bp-host{background:#8fc0e8;cursor:pointer;}
 /* 藍天、綠地、遠山（img/party/meadow.webp） */
@@ -19,20 +19,24 @@
 
 .bp-crowd{position:absolute;inset:0;}
 .bp-b{position:absolute;}
-.bp-img{display:block;width:100%;height:auto;-webkit-user-select:none;user-select:none;pointer-events:none;
-  filter:drop-shadow(0 8px 12px rgba(80,90,120,.12));}
+.bp-img{display:block;width:100%;height:auto;-webkit-user-select:none;user-select:none;pointer-events:none;}
 .bp-img.is-flip{transform:scaleX(-1);}
-/* 景深：遠的淡、小、帶一點天空的藍；近的有一點糊 */
-.bp-b.is-far .bp-img{filter:brightness(1.02) saturate(.85) blur(.6px);opacity:.9;}
-.bp-b.is-near .bp-img{filter:blur(2.2px) drop-shadow(0 14px 18px rgba(80,90,120,.14));}
-.bp-sway{transform-origin:50% 100%;animation:bp-bob var(--bob) ease-in-out var(--ph) infinite alternate;}
-@keyframes bp-bob{from{transform:translateY(-4px) rotate(-2.2deg);}to{transform:translateY(4px) rotate(2.2deg);}}
+/* 線：從結垂下來，細細的、半透明的白 */
+.bp-str{display:block;width:26%;margin:-2px auto 0;overflow:visible;}
+.bp-str path{fill:none;stroke:rgba(255,255,255,.75);stroke-width:1;vector-effect:non-scaling-stroke;}
+/* 景深：遠的小、淡一點（像隔了一層空氣）；近的有一點糊 */
+.bp-b.is-far{opacity:.88;}
+.bp-b.is-far .bp-img{filter:brightness(1.03) saturate(.8);}
+.bp-b.is-near .bp-sway{filter:blur(2px);}
+.bp-sway{transform-origin:50% 40%;animation:bp-bob var(--bob) ease-in-out var(--ph) infinite alternate;}
+@keyframes bp-bob{from{transform:translateY(-4px) rotate(-3deg);}to{transform:translateY(4px) rotate(3deg);}}
 /* 放開：先慢後快地往上，順便往旁邊飄 */
 .bp-host.is-up .bp-rise{animation:bp-up var(--dur) cubic-bezier(.45,0,.8,.5) var(--del) forwards;}
 @keyframes bp-up{
   0%{transform:none;}
-  30%{transform:translate(calc(var(--dx) * .3px),calc(var(--dy) * .12)) rotate(calc(var(--dx) * .015deg));}
-  100%{transform:translate(calc(var(--dx) * 1px),var(--dy)) rotate(calc(var(--dx) * -.03deg));}
+  30%{transform:translate(calc(var(--dx) * .3px),calc(var(--dy) * .12)) rotate(calc(var(--dx) * .03deg));}
+  65%{transform:translate(calc(var(--dx) * .75px),calc(var(--dy) * .5)) rotate(calc(var(--dx) * -.02deg));}
+  100%{transform:translate(calc(var(--dx) * 1px),var(--dy)) rotate(calc(var(--dx) * .02deg));}
 }
 
 /* 名字：天空那一段，後面一層很淡的藍讓白字讀得到 */
