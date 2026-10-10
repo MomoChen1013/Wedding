@@ -107,3 +107,59 @@
 @media (prefers-reduced-motion: reduce){
   .pt-light,.pt-frame,.pt-hint .cn{animation:none;}
 }
+
+/* ---- 畫裡的東西跑到框外面來（參考首爾沉浸式美術館的做法） ----
+   素材是真跡掃描的局部（public/img/monet/，出處見 README）：
+     dahlias.webp     莫內《阿讓特伊的畫家花園》裡的一叢大理花 —— 從畫框左下角長出來，蓋過金框
+     hollyhocks.webp  哈森《盛開的花園》（水彩）裡的蜀葵 —— 右下角
+     butterfly-*.webp 三隻蝴蝶從畫的裡面飛出來，停在牆上繞
+     petals.webp      幾小塊顏料（花瓣）從畫面飄到牆上
+   花是用一道橫刷的筆刷遮罩（brush-mask.webp）一筆刷出來的。 */
+.pt-escape{position:absolute;inset:0;pointer-events:none;z-index:2;}
+.pt-bloom{position:absolute;display:block;background:var(--img) center bottom/contain no-repeat;transform-origin:50% 100%;
+  -webkit-mask:url(../../img/monet/brush-mask.webp) 100% 0/300% 100% no-repeat;mask:url(../../img/monet/brush-mask.webp) 100% 0/300% 100% no-repeat;
+  animation:pt-paint 2.4s cubic-bezier(.35,.55,.3,1) var(--d,.5s) forwards,pt-sway 6s ease-in-out 3s infinite alternate;}
+.pt-bloom.is-l{--img:url(../../img/monet/dahlias.webp);aspect-ratio:760/363;left:-22%;bottom:-22%;width:72%;}
+.pt-bloom.is-r{--img:url(../../img/monet/hollyhocks.webp);aspect-ratio:444/560;right:-16%;bottom:-18%;width:40%;--d:1.1s;}
+.pt-plaque{position:relative;z-index:3;}
+@keyframes pt-paint{to{-webkit-mask-position:0 0;mask-position:0 0;}}
+@keyframes pt-sway{from{transform:rotate(-1.2deg);}to{transform:rotate(1.2deg) scale(1.02);}}
+
+.pt-petals{position:absolute;inset:0;}
+.pt-petals i{position:absolute;left:var(--x);top:var(--y);width:clamp(16px,2.2vw,26px);aspect-ratio:1;opacity:0;
+  background:url(../../img/monet/petals.webp) var(--px) 0/600% 100% no-repeat;
+  animation:pt-petal var(--t) linear var(--d) infinite;}
+@keyframes pt-petal{
+  0%{transform:translate(0,0) scale(.4) rotate(0);opacity:0;}
+  12%{opacity:.95;}
+  60%{transform:translate(28vw,14vh) scale(1) rotate(300deg);opacity:.85;}
+  100%{transform:translate(52vw,40vh) scale(1.1) rotate(560deg);opacity:0;}
+}
+
+/* 蝴蝶：外層從畫的裡面飛出來（emerge，只一次），中層在牆上繞（flit），<b> 拍翅膀 */
+.pt-fly{position:absolute;left:var(--x0);top:var(--y0);width:clamp(30px,3.6vw,46px);opacity:0;
+  animation:pt-emerge 3.2s cubic-bezier(.3,.1,.3,1) var(--d) forwards;}
+.pt-fly span{display:block;animation:pt-flit var(--t) ease-in-out var(--d) infinite;}
+.pt-fly b{display:block;aspect-ratio:3/2;background:var(--img) center/contain no-repeat;filter:drop-shadow(0 6px 4px rgba(30,30,20,.25));
+  animation:pt-flap .24s ease-in-out infinite alternate;}
+.pt-fly.is-a{--img:url(../../img/monet/butterfly-lemon.webp);--x0:34%;--y0:48%;--tx:-46vw;--ty:-26vh;--d:1.6s;--t:9s;}
+.pt-fly.is-b{--img:url(../../img/monet/butterfly-blue.webp);--x0:62%;--y0:40%;--tx:40vw;--ty:-30vh;--d:2.4s;--t:11s;}
+.pt-fly.is-c{--img:url(../../img/monet/butterfly-rose.webp);--x0:52%;--y0:66%;--tx:34vw;--ty:18vh;--d:3.3s;--t:10s;}
+@keyframes pt-emerge{
+  0%{opacity:0;transform:translate(0,0) scale(.3);}
+  15%{opacity:1;}
+  100%{opacity:1;transform:translate(var(--tx),var(--ty)) scale(1);}
+}
+@keyframes pt-flit{
+  0%,100%{transform:translate(0,0) rotate(-10deg);}
+  25%{transform:translate(5vw,-4vh) rotate(16deg);}
+  50%{transform:translate(9vw,2vh) rotate(4deg);}
+  75%{transform:translate(3vw,6vh) rotate(-20deg);}
+}
+@keyframes pt-flap{from{transform:scaleX(1);}to{transform:scaleX(.28);}}
+/* 被吸進畫裡的時候：跑出來的東西也一起被吸回去 */
+.pt-host.is-open .pt-escape{transition:opacity .9s ease;opacity:0;}
+@media (prefers-reduced-motion: reduce){
+  .pt-bloom{animation:none;-webkit-mask:none;mask:none;}
+  .pt-petals,.pt-fly{display:none;}
+}

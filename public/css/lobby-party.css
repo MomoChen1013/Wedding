@@ -3,22 +3,23 @@
    ------------------------------------------------------------
    疊在 common.css ＋ index.css 之後。結構主張：**一場在草地上的婚禮派對**。
 
-     世界觀  開場是滿滿一畫面的氣球，放開之後升空，露出底下的天空；
-             hero 就是那片天空，往下捲是派對現場的各個角落
+     世界觀  開場是滿滿一畫面的氣球，放開之後升空，露出底下的藍天、綠地與遠山；
+             hero 就是那片草原（草地上擺著野餐），往下捲是派對現場的各個角落
      材質    陽光下的白帆布、野餐格紋、牛皮紙、字母板的黑絨布與木框、
              拍立得、入場券、彩色紙屑
-     圖像    氣球、串燈、三角旗、白色帳篷、一瓶野花、
-             綁著氣球的「Just Married」小貨車、煙火
+     圖像    一束一束的鋁箔氣球、野餐籃、雛菊、琺瑯杯、老銀餐具、野花、三角旗、
+             綁著一束氣球的「Just Married」小貨車、串燈、煙火（照片都是去背的真實素材）
 
    捲動：
-     ・hero：雲往旁邊飄、串燈往上退得比較快（前景），幾顆氣球一直往上飄
+     ・hero：草原往下捲時慢慢往上退，幾束氣球一直往上飄
      ・三角旗捲到時一面一面翻下來（data-reveal="flags"）
-     ・野花那一瓶彈出來（pop）；小貨車從左邊開進來、輪子在轉（drive）
+     ・野花那一瓶彈出來（pop）；卡片後面的野花長出來、在風裡輕輕擺（grow）；
+       小貨車從右邊開進來（drive）
      ・故事的拍立得夾在串燈上，跟著捲動輕輕擺（--sp）
      ・倒數：傍晚的天空，捲下去串燈一顆一顆亮起來（--ap），全亮了就放煙火
 
    每一條規則都收在 .yp-* 或 body[data-lobby="outdoor-party"] 底下；
-   天空那張 SVG 的 class 是 .ps-*（js/openers/balloons.js 畫的）。
+   開場是 css/openers/balloons.css（.bp-*）。
 ============================================================ */
 
 body[data-lobby="outdoor-party"]{
@@ -30,7 +31,7 @@ body[data-lobby="outdoor-party"] .bg-decor{
     radial-gradient(40% 30% at 85% 10%,rgba(255,227,163,.35),transparent 70%),
     radial-gradient(40% 30% at 10% 60%,rgba(127,191,227,.16),transparent 70%),
     linear-gradient(180deg,#f8fbfd,#eef6fa);}
-.yp-lobby{position:relative;}
+.yp-lobby{position:relative;overflow-x:clip;}
 
 /* ============================================================
    捲動進場
@@ -51,6 +52,9 @@ body[data-lobby="outdoor-party"] .bg-decor{
    IntersectionObserver 永遠看不到它，車就永遠開不進來 */
 .tp-motion [data-lobby="outdoor-party"] [data-reveal="drive"] .yp-art{transition:opacity .6s ease,transform 1.6s cubic-bezier(.25,.8,.3,1);}
 .tp-motion [data-lobby="outdoor-party"] [data-reveal="drive"]:not(.is-in) .yp-art{opacity:0;transform:translateX(60vw);}
+/* 長出來：野花從根部往上長、轉到位（rotate 是每一枝自己的角度，這裡只動 scale） */
+.tp-motion [data-lobby="outdoor-party"] [data-reveal="grow"]{transition:opacity .6s ease,scale 1.4s cubic-bezier(.2,.9,.3,1.15);}
+.tp-motion [data-lobby="outdoor-party"] [data-reveal="grow"]:not(.is-in){opacity:0;scale:.2;}
 /* 三角旗：一面一面翻下來 */
 .tp-motion [data-lobby="outdoor-party"] [data-reveal="flags"]{transition:none;}
 .yp-flag{transform-box:fill-box;transform-origin:50% 0;}
@@ -62,33 +66,39 @@ body[data-lobby="outdoor-party"] .bg-decor{
 ============================================================ */
 .yp-hero{position:relative;overflow:hidden;min-height:calc(100svh - var(--nav-h));padding:0;gap:0;justify-content:flex-start;
   background:#7fb6e3;}
-/* 一片真的夏日藍天（img/party/sky.webp），往下捲時雲慢慢往上退 */
-.yp-sky{position:absolute;inset:-4% 0;background:url(../img/party/sky.webp) 50% calc(40% + var(--lp,0) * 20%)/cover;}
-.yp-sky .ps-sky{position:absolute;inset:4% 0;width:100%;height:92%;display:block;}
-.yp-sky .ps-lights{translate:0 calc(var(--lp,0) * -120px);}
-.yp-sky .ps-lights-b{translate:0 calc(var(--lp,0) * -200px);}
-.yp-sky .ps-glow{animation:yp-twinkle 2.6s ease-in-out infinite alternate;animation-delay:calc(var(--i) * -.37s);}
-@keyframes yp-twinkle{to{opacity:.45;}}
+/* 藍天、綠地、遠山（img/party/meadow.webp，和開場同一張），往下捲時慢慢往上退 */
+.yp-sky{position:absolute;inset:0;background:url(../img/party/meadow.webp) 50% calc(62% + var(--lp,0) * 18%)/cover;}
 
-/* 漏網的氣球：一直慢慢往上飄 */
+/* 漏網的氣球：幾束真的鋁箔氣球，一直慢慢往上飄 */
 .yp-float{position:absolute;inset:0;pointer-events:none;z-index:2;}
-.yp-bl{position:absolute;left:var(--x);bottom:-180px;width:calc(54px * var(--s));aspect-ratio:240/335;
-  background:var(--img) center/contain no-repeat;
+.yp-bn{position:absolute;left:var(--x);bottom:-300px;width:calc(96px * var(--s));aspect-ratio:514/900;
+  background:var(--img) center/contain no-repeat;transform-origin:50% 100%;
   animation:yp-up var(--t) linear var(--d) infinite;}
-.yp-bl::after{content:'';position:absolute;left:50%;top:99%;width:1px;height:calc(90px * var(--s));
-  background:rgba(255,255,255,.85);transform-origin:50% 0;animation:yp-string 3s ease-in-out infinite alternate;}
-@keyframes yp-string{from{transform:rotate(-6deg);}to{transform:rotate(6deg);}}
 @keyframes yp-up{
-  0%{transform:translate(0,0) rotate(-4deg);}
-  50%{transform:translate(24px,-65vh) rotate(4deg);}
-  100%{transform:translate(-10px,calc(-100vh - 320px)) rotate(-3deg);}
+  0%{transform:translate(0,0) rotate(-3deg);}
+  50%{transform:translate(28px,-65vh) rotate(3deg);}
+  100%{transform:translate(-12px,calc(-100vh - 420px)) rotate(-2deg);}
 }
-/* 真的乳膠氣球（同一顆白氣球的明暗，套上不同的顏色） */
-.yp-bl.c1{--img:url(../img/party/balloon-coral.webp);}
-.yp-bl.c2{--img:url(../img/party/balloon-butter.webp);}
-.yp-bl.c3{--img:url(../img/party/balloon-sky.webp);}
-.yp-bl.c4{--img:url(../img/party/balloon-mint.webp);}
-.yp-bl.c5{--img:url(../img/party/balloon-blush.webp);}
+.yp-bn.is-gold{--img:url(../img/party/bunch-gold.webp);}
+.yp-bn.is-rose{--img:url(../img/party/bunch-rose.webp);}
+.yp-bn.is-silver{--img:url(../img/party/bunch-silver.webp);}
+
+/* 草地上的野餐：照片去背，底下一圈淡淡的影子壓在草上 */
+.yp-picnic{position:absolute;left:0;right:0;bottom:0;height:0;z-index:2;pointer-events:none;}
+.yp-picnic-l,.yp-picnic-r{position:absolute;bottom:clamp(6px,2.4vh,26px);}
+.yp-picnic-l{left:clamp(-24px,2vw,48px);width:clamp(210px,30vw,400px);aspect-ratio:400/250;}
+.yp-picnic-r{right:clamp(-8px,2.4vw,56px);width:clamp(140px,19vw,250px);aspect-ratio:250/230;}
+.yp-picnic-l::before,.yp-picnic-r::before{content:'';position:absolute;left:4%;right:2%;bottom:-6%;height:22%;border-radius:50%;
+  background:radial-gradient(50% 50% at 50% 50%,rgba(22,40,12,.45),rgba(22,40,12,0) 70%);}
+.yp-pc{position:absolute;background:center bottom/contain no-repeat;}
+.yp-pc.is-basket{left:0;bottom:0;width:60%;aspect-ratio:640/611;background-image:url(../img/party/basket.webp);}
+.yp-pc.is-daisies{left:50%;bottom:3%;width:25%;aspect-ratio:344/640;background-image:url(../img/party/daisies.webp);}
+.yp-pc.is-mug{left:73%;bottom:0;width:27%;aspect-ratio:420/328;background-image:url(../img/party/mug.webp);}
+.yp-pc.is-apples{right:0;bottom:0;width:80%;aspect-ratio:560/579;background-image:url(../img/party/apples.webp);}
+.yp-pc.is-sprig{left:0;bottom:6%;width:34%;aspect-ratio:251/293;background-image:url(../img/party/sprig-3.webp);
+  rotate:-14deg;transform-origin:50% 100%;animation:yp-breeze 3.6s ease-in-out infinite alternate;}
+@keyframes yp-breeze{from{transform:rotate(-2.5deg);}to{transform:rotate(2.5deg);}}
+@media (max-width:520px){.yp-picnic-r{width:120px;}.yp-picnic-l{width:200px;left:-18px;}}
 
 .yp-hero-body{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;text-align:center;
   padding:clamp(70px,15vh,150px) 20px 40px;color:var(--yp-ink);
@@ -144,21 +154,48 @@ body[data-hero-name="cn"] .yp-hero .yp-names{font-family:'Noto Sans TC',sans-ser
 .yp-snap.is-flowers .yp-snap-ph{background-image:url(../img/party/wildflowers.webp);}
 .yp-tape{position:absolute;left:50%;top:-10px;width:62px;height:20px;margin-left:-31px;rotate:-3deg;
   background:url(../img/party/gingham.webp) 0 0/90px auto;opacity:.85;box-shadow:0 1px 2px rgba(0,0,0,.12);}
-/* 小貨車：一台真的老雪佛蘭（去背），車斗綁著三顆氣球，車尾掛著 Just Married */
-.yp-truck{width:clamp(260px,40vw,400px);margin-bottom:10px;}
-.yp-truck-art{position:relative;aspect-ratio:900/422;margin-top:clamp(70px,9vw,100px);}
+/* 小貨車：一台真的老福特（去背，車窗換成淡淡的玻璃反光），車斗綁著一束金色氣球，車尾掛著 Just Married */
+.yp-truck{width:clamp(280px,46vw,460px);margin-bottom:10px;}
+.yp-truck-art{position:relative;aspect-ratio:1000/312;margin-top:clamp(110px,14vw,150px);}
 .yp-truck-img{position:absolute;inset:0;background:url(../img/party/truck.webp) center/contain no-repeat;
-  filter:drop-shadow(0 14px 10px rgba(31,48,73,.22));}
-.yp-truck-sign{position:absolute;left:63%;top:33%;width:30%;padding:2px 0 3px;text-align:center;rotate:-3deg;
-  font:400 clamp(13px,1.7vw,18px)/1 'Yellowtail',cursive;color:#e0613f;background:#fffdf6;border-radius:2px;
+  filter:drop-shadow(0 12px 8px rgba(31,48,73,.25));}
+.yp-truck-sign{position:absolute;left:66%;top:47%;width:24%;padding:2px 0 3px;text-align:center;rotate:-3deg;
+  font:400 clamp(12px,1.6vw,17px)/1 'Yellowtail',cursive;color:#e0613f;background:#fffdf6;border-radius:2px;
   box-shadow:0 1px 3px rgba(0,0,0,.25);}
-.yp-truck-bl{position:absolute;width:13%;aspect-ratio:240/335;background:center/contain no-repeat;transform-origin:50% 260%;
-  animation:yp-tug 3s ease-in-out infinite alternate;}
-.yp-truck-bl::after{content:'';position:absolute;left:50%;top:98%;width:1px;height:150%;background:rgba(80,80,80,.55);}
-.yp-truck-bl.b1{left:66%;bottom:96%;background-image:url(../img/party/balloon-coral.webp);rotate:-8deg;}
-.yp-truck-bl.b2{left:76%;bottom:108%;background-image:url(../img/party/balloon-sky.webp);animation-delay:-1s;}
-.yp-truck-bl.b3{left:85%;bottom:92%;background-image:url(../img/party/balloon-butter.webp);rotate:9deg;animation-delay:-2s;}
-@keyframes yp-tug{from{transform:rotate(-4deg);}to{transform:rotate(4deg);}}
+.yp-truck-bn{position:absolute;left:72%;bottom:62%;width:19%;aspect-ratio:514/900;background:url(../img/party/bunch-gold.webp) center bottom/contain no-repeat;
+  transform-origin:50% 100%;animation:yp-tug 3s ease-in-out infinite alternate;}
+@keyframes yp-tug{from{transform:rotate(-3deg);}to{transform:rotate(3deg);}}
+
+/* 點綴：卡片後面探出來的野花、字母板旁邊的老銀餐具與琺瑯杯、入場券旁邊的野餐籃（都是照片去背）。
+   .yp-deco 是一條高度 0 的錨線，貼在卡片的上緣（放在卡片前面）或下緣（.is-after，放在卡片後面）；
+   野花在卡片後面（z-index 0），籃子、杯子、餐具在卡片前面（z-index 2） */
+.yp-sec > .yp-card,.yp-sec > .yp-board,.yp-sec > .yp-ticket{position:relative;z-index:1;}
+.yp-deco{position:relative;height:0;max-width:640px;margin:0 auto;pointer-events:none;}
+.yp-deco > i{position:absolute;display:block;background:var(--img) center bottom/contain no-repeat;}
+.yp-sprig{z-index:0;transform-origin:50% 100%;}
+.yp-sprig.is-in{animation:yp-breeze 4s ease-in-out infinite alternate;}
+.yp-sprig.is-s1{--img:url(../img/party/sprig-1.webp);aspect-ratio:403/520;width:clamp(110px,15vw,160px);}
+.yp-sprig.is-s2{--img:url(../img/party/sprig-2.webp);aspect-ratio:514/520;width:clamp(130px,18vw,190px);}
+.yp-sprig.is-s3{--img:url(../img/party/sprig-3.webp);aspect-ratio:251/293;width:clamp(74px,9vw,100px);}
+.yp-sprig.is-s4{--img:url(../img/party/sprig-4.webp);aspect-ratio:273/302;width:clamp(96px,12vw,136px);}
+.yp-sprig.is-tr{right:-34px;bottom:-60px;rotate:16deg;}
+.yp-sprig.is-tl{left:-40px;bottom:-56px;rotate:-20deg;}
+.yp-sprig.is-bl{left:-50px;bottom:-14px;rotate:-24deg;}
+.yp-sprig.is-br{right:-26px;bottom:-10px;rotate:18deg;}
+.yp-cutlery{--img:url(../img/party/cutlery.webp);z-index:2;aspect-ratio:387/640;width:clamp(70px,10vw,118px);left:-96px;top:46px;rotate:-9deg;
+  filter:sepia(.22) brightness(1.04) drop-shadow(0 10px 10px rgba(31,48,73,.22));}
+.yp-mug{--img:url(../img/party/mug-red.webp);z-index:2;aspect-ratio:360/343;width:clamp(70px,10vw,112px);right:-84px;top:150px;
+  filter:drop-shadow(0 10px 10px rgba(31,48,73,.22));}
+.yp-basket{--img:url(../img/party/basket.webp);z-index:2;aspect-ratio:640/611;width:clamp(110px,16vw,186px);right:-74px;bottom:-34px;
+  filter:drop-shadow(0 12px 12px rgba(31,48,73,.25));}
+@media (max-width:760px){
+  .yp-cutlery{left:-4px;top:-78px;width:58px;rotate:-24deg;}
+  .yp-mug{right:-2px;top:-62px;width:68px;}
+  .yp-basket{right:-12px;bottom:-46px;width:104px;}
+  .yp-sprig.is-tr{right:-22px;bottom:-40px;width:104px;}
+  .yp-sprig.is-tl{left:-26px;width:120px;}
+  .yp-sprig.is-bl{left:-30px;width:90px;}
+}
 
 /* 白卡：上緣一條真的紅白野餐格紋布（img/party/gingham.webp） */
 .yp-card{position:relative;max-width:620px;margin:0 auto;padding:clamp(30px,5vw,46px) clamp(22px,5vw,46px) clamp(26px,4vw,40px);
@@ -315,6 +352,6 @@ body[data-hero-name="cn"] .yp-hero .yp-names{font-family:'Noto Sans TC',sans-ser
 .yp-fin{font:400 clamp(28px,4vw,36px)/1.1 'Yellowtail',cursive;color:var(--yp-coral);text-transform:none;letter-spacing:.01em;}
 
 @media (prefers-reduced-motion: reduce){
-  .yp-bl,.yp-sky .ps-glow,.yp-confetti i,.yp-fireworks i,.yp-story .yp-bulb,.yp-truck-bl{animation:none;}
-  .yp-bl{display:none;}
+  .yp-bn,.yp-confetti i,.yp-fireworks i,.yp-story .yp-bulb,.yp-truck-bn,.yp-pc.is-sprig,.yp-sprig.is-in{animation:none;}
+  .yp-bn{display:none;}
 }

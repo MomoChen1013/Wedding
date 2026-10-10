@@ -267,3 +267,119 @@ body[data-hero-name="cn"] .mg-hero .mg-names{font-family:'Noto Serif TC',serif;f
 .mg-foot{margin-top:clamp(70px,10vw,110px);display:flex;flex-direction:column;align-items:center;gap:8px;border-top:none;}
 .mg-fin{font:400 26px 'Parisienne',cursive;color:var(--mg-sign);text-transform:none;letter-spacing:.02em;}
 
+
+/* ============================================================
+   畫裡的東西跑到框外面來（參考首爾沉浸式美術館的做法）
+   ------------------------------------------------------------
+   素材都是真跡掃描的局部（public/img/monet/）：
+     dahlias.webp     莫內《阿讓特伊的畫家花園》裡的一叢大理花
+     hollyhocks.webp  哈森《盛開的花園》（水彩）裡的蜀葵
+     poppies-wc.webp  同一幅水彩裡的罌粟與金盞花
+     bouquet.webp     塞尚《洛可可花瓶裡的花》（去背）
+     butterfly-*.webp 蝴蝶（線稿上色，再化開成水彩的質感）
+     petals.webp      從上面幾幅畫裡取下來的六小塊顏料（花瓣）
+   .mg-bloom：用一道橫刷的筆刷遮罩（brush-mask.webp，寬是高的三倍：左段不透明、中段乾筆的邊、右段透明）
+              把花「刷」出來 —— 遮罩從右滑到左，花就從左往右一筆刷出來；刷完在風裡輕輕擺
+   .mg-fly：  蝴蝶。外層沿著一條繞來繞去的路飛（--t 一圈多久、--d 從哪裡開始），裡層 <b> 拍翅膀（scaleX）；
+              .is-perch 停在畫框或明信片上，翅膀慢慢開合
+   .mg-petal：花瓣從左上往右下飄（風往右吹）
+============================================================ */
+.mg-lobby{overflow-x:clip;}
+.mg-bloom{position:absolute;display:block;pointer-events:none;background:var(--img) center/contain no-repeat;
+  -webkit-mask:url(../img/monet/brush-mask.webp) 0 0/300% 100% no-repeat;mask:url(../img/monet/brush-mask.webp) 0 0/300% 100% no-repeat;
+  transform-origin:50% 100%;}
+.mg-bloom.is-dahlias{--img:url(../img/monet/dahlias.webp);aspect-ratio:760/363;}
+.mg-bloom.is-hollyhocks{--img:url(../img/monet/hollyhocks.webp);aspect-ratio:444/560;}
+.mg-bloom.is-poppies{--img:url(../img/monet/poppies-wc.webp);aspect-ratio:503/540;}
+.mg-bloom.is-bouquet{--img:url(../img/monet/bouquet.webp);aspect-ratio:554/720;}
+/* 捲到的時候刷出來（沒有 JS 的時候直接是刷好的樣子） */
+.tp-motion [data-lobby="monet-garden"] [data-reveal="paint"]{
+  transition:-webkit-mask-position 2.2s cubic-bezier(.35,.55,.3,1) .7s,mask-position 2.2s cubic-bezier(.35,.55,.3,1) .7s;}
+.tp-motion [data-lobby="monet-garden"] [data-reveal="paint"]:not(.is-in){-webkit-mask-position:100% 0;mask-position:100% 0;}
+.mg-bloom.is-in{animation:mg-breeze 6s ease-in-out 2.9s infinite alternate;}
+@keyframes mg-breeze{from{transform:rotate(-1.4deg) scale(1);}to{transform:rotate(1.4deg) scale(1.02);}}
+@keyframes mg-paint{from{-webkit-mask-position:100% 0;mask-position:100% 0;}to{-webkit-mask-position:0 0;mask-position:0 0;}}
+
+/* 小畫旁邊：花從畫框邊長出來，蓋過框的一角 */
+.mg-pic{position:relative;}
+.mg-pic .mg-bloom{z-index:2;}
+.mg-bloom.is-bl{left:-52%;bottom:-34%;width:88%;}
+.mg-bloom.is-br{right:-58%;bottom:-24%;width:118%;}
+.mg-bloom.is-tl{left:-46%;top:-16%;width:74%;}
+
+/* 卡片後面探出來的花：.mg-deco 是一條高度 0 的錨線，貼在卡片的下緣（放在卡片後面），花在卡片的後面 */
+.mg-sec > .mg-card,.mg-sec > .mg-postcard{position:relative;z-index:1;}
+.mg-deco{position:relative;height:0;max-width:640px;margin:0 auto;pointer-events:none;}
+.mg-deco .mg-bloom{z-index:0;}
+.mg-bloom.is-c-br{right:-30%;bottom:-70px;width:min(64%,420px);}
+.mg-bloom.is-hollyhocks.is-c-br{right:-12%;width:min(38%,240px);}
+.mg-bloom.is-c-bl{left:-20%;bottom:-44px;width:min(44%,290px);}
+.mg-bloom.is-dahlias.is-c-bl{left:-22%;width:min(60%,400px);}
+@media (max-width:640px){
+  .mg-bloom.is-c-br{right:-14%;}
+  .mg-bloom.is-c-bl{left:-14%;}
+}
+
+/* hero：左下一叢大理花、右下一叢蜀葵（畫的前景），往下捲時比畫走得快一點（景深） */
+.mg-hero-deco{position:absolute;inset:0;z-index:2;pointer-events:none;}
+.mg-hero-deco .mg-bloom{transform:translateY(calc(var(--lp,0) * -70px));}
+.mg-bloom.is-hero-l{left:-4%;bottom:-6%;width:clamp(300px,50vw,760px);}
+.mg-bloom.is-hero-r{right:-4%;bottom:-8%;width:clamp(190px,28vw,430px);}
+.app-show .mg-hero-deco .mg-bloom{animation:mg-paint 2.6s cubic-bezier(.35,.55,.3,1) 1.1s both;}
+.app-show .mg-hero-deco .mg-bloom.is-hero-r{animation-delay:1.6s;}
+
+/* 花瓣 */
+.mg-petals{position:absolute;inset:0;overflow:hidden;}
+.mg-petal{position:absolute;left:var(--x);top:-8%;width:calc(30px * var(--s));aspect-ratio:1;
+  background:url(../img/monet/petals.webp) var(--px) 0/600% 100% no-repeat;opacity:0;
+  animation:mg-drift var(--t) linear var(--d) infinite;}
+@keyframes mg-drift{
+  0%{transform:translate(0,0) rotate(0);opacity:0;}
+  8%{opacity:.95;}
+  50%{transform:translate(14vw,58vh) rotate(260deg);}
+  88%{opacity:.85;}
+  100%{transform:translate(30vw,118vh) rotate(520deg);opacity:0;}
+}
+
+/* 蝴蝶 */
+.mg-fly{position:absolute;left:var(--x,0);top:var(--y,0);z-index:3;width:clamp(30px,3.6vw,44px);pointer-events:none;
+  animation:mg-flit var(--t,18s) ease-in-out var(--d,0s) infinite;}
+.mg-fly b{display:block;aspect-ratio:3/2;background:var(--img) center/contain no-repeat;
+  animation:mg-flap .26s ease-in-out infinite alternate;filter:drop-shadow(0 6px 4px rgba(30,40,30,.22));}
+.mg-fly.is-blue{--img:url(../img/monet/butterfly-blue.webp);}
+.mg-fly.is-rose{--img:url(../img/monet/butterfly-rose.webp);}
+.mg-fly.is-lemon{--img:url(../img/monet/butterfly-lemon.webp);}
+.mg-fly.is-lilac{--img:url(../img/monet/butterfly-lilac.webp);}
+@keyframes mg-flap{from{transform:scaleX(1);}to{transform:scaleX(.28);}}
+@keyframes mg-flit{
+  0%{transform:translate(0,0) rotate(-12deg);}
+  20%{transform:translate(9vw,-6vh) rotate(18deg);}
+  40%{transform:translate(16vw,4vh) rotate(6deg);}
+  60%{transform:translate(8vw,10vh) rotate(-24deg);}
+  80%{transform:translate(-4vw,3vh) rotate(-8deg);}
+  100%{transform:translate(0,0) rotate(-12deg);}
+}
+/* 停著的蝴蝶：翅膀慢慢開合，偶爾換個姿勢 */
+.mg-fly.is-perch{left:auto;right:-10%;top:10%;width:clamp(30px,3.2vw,40px);animation:mg-perch var(--t) ease-in-out var(--d) infinite;}
+.mg-fly.is-perch b{animation-duration:1.5s;}
+.mg-fly.is-on-card{right:24px;top:96px;}
+@keyframes mg-perch{
+  0%,40%{transform:rotate(18deg);}
+  46%{transform:translate(-18px,-26px) rotate(-10deg);}
+  52%,90%{transform:translate(-6px,-4px) rotate(-22deg);}
+  96%{transform:translate(-14px,-22px) rotate(6deg);}
+  100%{transform:rotate(18deg);}
+}
+
+/* 故事的展牆角落：一瓶塞尚的花（在畫的後面、牆的地上） */
+.mg-bloom.is-bouquet{z-index:1;left:max(1%,calc(50% - 640px));bottom:clamp(8px,2vw,24px);height:clamp(220px,28vw,360px);width:auto;
+  filter:drop-shadow(0 18px 14px rgba(50,40,70,.25));}
+@media (max-width:1099px){
+  .mg-story{padding-bottom:clamp(170px,30vw,240px);}
+  .mg-bloom.is-bouquet{left:auto;right:4%;height:clamp(150px,26vw,220px);}
+}
+
+@media (prefers-reduced-motion: reduce){
+  .mg-petals,.mg-fly:not(.is-perch){display:none;}
+  .mg-fly b,.mg-fly.is-perch,.mg-bloom.is-in{animation:none;}
+}

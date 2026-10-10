@@ -2,59 +2,62 @@
    openers/balloons.css — 開場：氣球升空（js/openers/balloons.js）
    ------------------------------------------------------------
    三層：
-     .bp-scene  底下的天空：真的藍天照片 ＋ 串燈（window.PartySky.svg()），和派對大廳的 hero 同一片
+     .bp-scene  底下：一片藍天、綠色草原與遠山（img/party/meadow.webp），和派對大廳的 hero 同一張
      .bp-text   名字，浮在天空上（氣球飛走之後才出來）
-     .bp-crowd  滿滿的氣球；每一顆三層 div：
-                  .bp-b     位置與大小（JS 排的）
+     .bp-crowd  滿滿的氣球；每一束三層 div：
+                  .bp-b     位置與大小（JS 排的）；.is-far / .is-mid / .is-near 是遠中近三層
                   .bp-rise  往上飛（--dy 飛多遠、--del 什麼時候放、--dur 飛多久、--dx 飄多遠，單位 px 但不帶單位：同一個數也拿來算轉幾度）
-                  .bp-sway  原地輕輕晃（--bob）；裡面是一張氣球照片（.bp-img）與一條線（.bp-str）
-   只動 transform 與 opacity，一次幾十顆也順。
+                  .bp-sway  原地輕輕晃（--bob）；裡面是一束真的氣球照片（.bp-img，線也在照片裡）
+   只動 transform 與 opacity，一次幾十束也順。
 ============================================================ */
-.bp-host{background:#7fb6e3;cursor:pointer;}
-/* 一片真的夏日藍天（img/party/sky.webp）＋ 上面的串燈（PartySky.svg()） */
-.bp-scene{position:absolute;inset:0;background:url(../../img/party/sky.webp) 50% 40%/cover;}
-.bp-scene .ps-sky{position:absolute;inset:0;width:100%;height:100%;display:block;}
-/* 天空在氣球後面也慢慢亮起來、拉近一點 */
-.bp-scene{transform:scale(1.08);transition:transform 6s cubic-bezier(.2,.7,.2,1);}
+.bp-host{background:#8fc0e8;cursor:pointer;}
+/* 藍天、綠地、遠山（img/party/meadow.webp） */
+.bp-scene{position:absolute;inset:0;background:url(../../img/party/meadow.webp) 50% 62%/cover;}
+/* 草原在氣球後面慢慢拉遠一點 */
+.bp-scene{transform:scale(1.1);transition:transform 6.5s cubic-bezier(.2,.7,.2,1);}
 .bp-host.is-up .bp-scene{transform:none;}
 
 .bp-crowd{position:absolute;inset:0;}
 .bp-b{position:absolute;}
-.bp-img{display:block;width:84%;height:auto;margin:0 auto;-webkit-user-select:none;user-select:none;}
-.bp-str{display:block;width:40%;height:auto;margin:-3px auto 0;overflow:visible;}
-.bp-str path{fill:none;stroke:rgba(255,255,255,.9);stroke-width:1.1;}
-.bp-sway{transform-origin:50% 28%;animation:bp-bob var(--bob) ease-in-out var(--ph) infinite alternate;}
-@keyframes bp-bob{from{transform:translateY(-5px) rotate(-3deg);}to{transform:translateY(5px) rotate(3deg);}}
+.bp-img{display:block;width:100%;height:auto;-webkit-user-select:none;user-select:none;pointer-events:none;
+  filter:drop-shadow(0 10px 14px rgba(40,60,90,.18));}
+.bp-img.is-flip{transform:scaleX(-1);}
+/* 景深：遠的淡、小、帶一點天空的藍；近的有一點糊 */
+.bp-b.is-far .bp-img{filter:brightness(.97) saturate(.85) blur(.6px);opacity:.92;}
+.bp-b.is-near .bp-img{filter:blur(2.2px) drop-shadow(0 16px 20px rgba(40,60,90,.2));}
+.bp-sway{transform-origin:50% 100%;animation:bp-bob var(--bob) ease-in-out var(--ph) infinite alternate;}
+@keyframes bp-bob{from{transform:translateY(-4px) rotate(-2.2deg);}to{transform:translateY(4px) rotate(2.2deg);}}
 /* 放開：先慢後快地往上，順便往旁邊飄 */
-.bp-host.is-up .bp-rise{animation:bp-up var(--dur) cubic-bezier(.5,0,.85,.55) var(--del) forwards;}
+.bp-host.is-up .bp-rise{animation:bp-up var(--dur) cubic-bezier(.45,0,.8,.5) var(--del) forwards;}
 @keyframes bp-up{
   0%{transform:none;}
-  30%{transform:translate(calc(var(--dx) * .35px),calc(var(--dy) * .12)) rotate(calc(var(--dx) * .02deg));}
-  100%{transform:translate(calc(var(--dx) * 1px),var(--dy)) rotate(calc(var(--dx) * -.04deg));}
+  30%{transform:translate(calc(var(--dx) * .3px),calc(var(--dy) * .12)) rotate(calc(var(--dx) * .015deg));}
+  100%{transform:translate(calc(var(--dx) * 1px),var(--dy)) rotate(calc(var(--dx) * -.03deg));}
 }
 
-/* 名字 */
+/* 名字：天空那一段，後面一層很淡的藍讓白字讀得到 */
 .bp-text::before{content:'';position:absolute;left:50%;top:50%;width:min(900px,120vw);height:180%;transform:translate(-50%,-50%);z-index:-1;
-  background:radial-gradient(50% 50% at 50% 50%,rgba(38,92,150,.42),rgba(38,92,150,.18) 55%,rgba(38,92,150,0) 75%);opacity:0;transition:opacity 1.4s ease 3s;}
+  background:radial-gradient(50% 50% at 50% 50%,rgba(38,92,150,.36),rgba(38,92,150,.14) 55%,rgba(38,92,150,0) 75%);opacity:0;transition:opacity 1.4s ease 3s;}
 .bp-host.is-up .bp-text::before,.bp-host.is-still .bp-text::before{opacity:1;}
-.bp-text{position:absolute;left:0;right:0;top:24%;z-index:0;display:flex;flex-direction:column;align-items:center;gap:4px;
+.bp-text{position:absolute;left:0;right:0;top:20%;z-index:0;display:flex;flex-direction:column;align-items:center;gap:4px;
   text-align:center;color:#1f3049;padding:0 20px;}
 .bp-text > *{opacity:0;transform:translateY(16px) scale(.96);}
 .bp-host.is-up .bp-text > *{animation:bp-rise-in 1.2s cubic-bezier(.2,.7,.2,1) forwards;}
-.bp-kicker{font:400 clamp(18px,2.6vw,26px)/1 'Bebas Neue','Noto Sans TC',sans-serif;letter-spacing:.3em;color:#f07a5a;animation-delay:3.1s !important;}
+.bp-kicker{font:400 clamp(18px,2.6vw,26px)/1 'Bebas Neue','Noto Sans TC',sans-serif;letter-spacing:.3em;color:#fff;
+  padding:6px 14px 4px;border-radius:999px;background:rgba(240,122,90,.85);animation-delay:3s !important;}
 .bp-names{font:400 clamp(44px,10vw,112px)/1.05 'Yellowtail','Noto Serif TC',cursive;color:#fff;
-  text-shadow:0 3px 0 rgba(31,48,73,.18),0 10px 30px rgba(31,48,73,.25);animation-delay:3.4s !important;}
-.bp-names .op-amp{font-style:normal;color:#f6c85f;padding:0 .12em;}
-.bp-date{font:400 clamp(16px,2vw,22px)/1 'Bebas Neue','Noto Sans TC',sans-serif;letter-spacing:.42em;color:#fff;text-shadow:0 1px 8px rgba(20,40,70,.65);animation-delay:3.7s !important;}
+  text-shadow:0 3px 0 rgba(31,48,73,.18),0 10px 30px rgba(31,48,73,.25);animation-delay:3.3s !important;}
+.bp-names .op-amp{font-style:normal;color:#f6d27a;padding:0 .12em;}
+.bp-date{font:400 clamp(16px,2vw,22px)/1 'Bebas Neue','Noto Sans TC',sans-serif;letter-spacing:.42em;color:#fff;text-shadow:0 1px 8px rgba(20,40,70,.65);animation-delay:3.6s !important;}
 @keyframes bp-rise-in{to{opacity:1;transform:none;}}
 
 .bp-skip{position:absolute;right:18px;bottom:16px;z-index:100000;font-size:12px;letter-spacing:.24em;color:rgba(31,48,73,.6);
   padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.7);pointer-events:none;}
 
-/* 收尾：整片天空淡掉（大廳的 hero 是同一片天空） */
+/* 收尾：整片淡掉（大廳的 hero 是同一片草原） */
 .bp-host.is-leaving{opacity:0;transition:opacity 1s ease;}
 
-/* 減少動態：沒有氣球，直接是天空與名字 */
+/* 減少動態：沒有氣球，直接是草原與名字 */
 .bp-host.is-still .bp-crowd{display:none;}
 .bp-host.is-still .bp-scene{transform:none;}
 .bp-host.is-still .bp-text > *{opacity:1;transform:none;}

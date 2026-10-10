@@ -4,10 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- 社群預覽文案：與 index.html 同一套備援，build-og 會針對站台換成專屬內容。
-     這一份是 Outdoor Party（美式戶外婚禮派對）版型的大廳：藍天、草地、白色帳篷、串燈與氣球。
+     這一份是 Outdoor Party（美式戶外婚禮派對）版型的大廳：藍天、綠地、遠山、野餐與氣球。
      由 build-og 依 TEMPLATES.lobbyFile 選用；沒跑過 build-og 的站台
-     由 site-context.js 在執行期換成這一份骨架。照片在 public/img/party/（出處見 README）；
-     hero 天空上的串燈是 scripts/build-party-sky.js 從開場（js/openers/balloons.js）產出來的同一張圖。 -->
+     由 site-context.js 在執行期換成這一份骨架。照片在 public/img/party/（出處見 README）。 -->
 <title>我們結婚了｜婚禮邀請函</title>
 <meta name="description" content="誠摯邀請您一起見證我們的大喜之日・婚禮資訊、當日流程與互動小遊戲都在這裡">
 <meta property="og:title" content="我們結婚了｜婚禮邀請函">
@@ -28,7 +27,7 @@
 <link rel="preload" as="script" href="/js/common.js">
 <link rel="preload" as="script" href="/js/lobby-motion.js">
 <link rel="preload" as="script" href="/js/index.js">
-<link rel="preload" as="image" href="/img/party/sky.webp" type="image/webp">
+<link rel="preload" as="image" href="/img/party/meadow.webp" type="image/webp">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- 字體依版型不同，由 build-og（預產）或 site-context.js（執行期）依 TEMPLATES[x].fonts 補上 -->
@@ -82,12 +81,12 @@
 <button class="intro-skip" id="introSkip" type="button" hidden>跳過</button>
 
 <!-- ============ 主畫面：一場在草地上的美式婚禮派對 ============
-     開場是滿滿一畫面的氣球，放開之後一顆一顆升空，露出底下的天空 —— 所以 hero 就是那一片天空：
-     一張真的夏日藍天（img/party/sky.webp），兩條串燈橫過畫面（和開場同一張，
-     由 scripts/build-party-sky.js 從 js/openers/balloons.js 的 window.PartySky 產出來，不要手改那一段）。
-     還有幾顆漏網的氣球（真的氣球照片）一直慢慢往上飄。
-     往下捲：資訊卡掛著三角旗、旁邊貼一張長桌派對的拍立得、流程寫在一塊字母板上、
-     小提醒旁邊一張野花玻璃罐的拍立得、交通是一台綁著氣球的「Just Married」老雪佛蘭小貨車開進來、
+     開場是滿滿一畫面的氣球，放開之後一束一束升空，露出底下的草原 —— 所以 hero 就是那一片草原：
+     藍天、綠地、遠山（img/party/meadow.webp，和開場同一張），草地上擺著野餐：
+     一只籐編野餐籃、一瓶雛菊、琺瑯杯、一籃蘋果；還有幾束漏網的氣球（真的鋁箔氣球照片）一直慢慢往上飄。
+     往下捲：資訊卡掛著三角旗、旁邊貼一張長桌派對的拍立得、卡片後面探出幾枝野花；
+     流程寫在一塊字母板上，兩邊擺著老銀餐具和琺瑯杯；
+     小提醒旁邊一張野花玻璃罐的拍立得、交通是一台綁著一束氣球的「Just Married」老福特小貨車開進來、
      故事是夾在串燈上的拍立得（後面是真的戶外婚宴）、倒數是黃昏亮著串燈的穀倉，
      捲下去串燈一顆一顆亮起來，全亮的時候放煙火。照片都在 public/img/party/（出處見 README）。 -->
 <div id="app">
@@ -95,10 +94,13 @@
 
     <!-- ===== Hero：氣球飛走之後的那片天空 ===== -->
     <header class="lobby-hero yp-hero" data-scroll>
-      <div class="yp-sky" aria-hidden="true"><!-- party-sky --><svg class="ps-sky" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false"><defs>
-      <radialGradient id="ps-bulb"><stop offset="0" stop-color="#fffbe6"/><stop offset=".25" stop-color="#ffe9a8" stop-opacity=".9"/><stop offset="1" stop-color="#ffd36a" stop-opacity="0"/></radialGradient>
-    </defs><g class="ps-lights ps-lights-a"><path d="M-40 40Q800 370 1640 110" fill="none" stroke="#2f3338" stroke-width="2.4"/><g transform="translate(36.4 68.8)" class="ps-bulb" style="--i:1"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(112.7 95.1)" class="ps-bulb" style="--i:2"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(189.1 119)" class="ps-bulb" style="--i:3"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(265.5 140.5)" class="ps-bulb" style="--i:4"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(341.8 159.5)" class="ps-bulb" style="--i:5"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(418.2 176.1)" class="ps-bulb" style="--i:6"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(494.5 190.3)" class="ps-bulb" style="--i:7"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(570.9 202)" class="ps-bulb" style="--i:8"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(647.3 211.3)" class="ps-bulb" style="--i:9"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(723.6 218.1)" class="ps-bulb" style="--i:10"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(800 222.5)" class="ps-bulb" style="--i:11"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(876.4 224.5)" class="ps-bulb" style="--i:12"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(952.7 224)" class="ps-bulb" style="--i:13"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(1029.1 221.1)" class="ps-bulb" style="--i:14"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(1105.5 215.7)" class="ps-bulb" style="--i:15"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(1181.8 207.9)" class="ps-bulb" style="--i:16"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(1258.2 197.7)" class="ps-bulb" style="--i:17"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(1334.5 185)" class="ps-bulb" style="--i:18"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(1410.9 169.9)" class="ps-bulb" style="--i:19"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(1487.3 152.4)" class="ps-bulb" style="--i:20"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(1563.6 132.4)" class="ps-bulb" style="--i:21"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g></g><g class="ps-lights ps-lights-b"><path d="M-40 -20Q430 130 900 -40" fill="none" stroke="#2f3338" stroke-width="2.4"/><g transform="translate(38.3 2.8)" class="ps-bulb" style="--i:1"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(116.7 21.1)" class="ps-bulb" style="--i:2"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(195 35)" class="ps-bulb" style="--i:3"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(273.3 44.4)" class="ps-bulb" style="--i:4"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(351.7 49.4)" class="ps-bulb" style="--i:5"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(430 50)" class="ps-bulb" style="--i:6"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(508.3 46.1)" class="ps-bulb" style="--i:7"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(586.7 37.8)" class="ps-bulb" style="--i:8"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(665 25)" class="ps-bulb" style="--i:9"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(743.3 7.8)" class="ps-bulb" style="--i:10"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g><g transform="translate(821.7 -13.9)" class="ps-bulb" style="--i:11"><circle r="26" cy="16" fill="url(#ps-bulb)" class="ps-glow"/><rect x="-3" y="0" width="6" height="7" fill="#2f3338"/><ellipse cy="16" rx="7" ry="9.5" fill="#fff6d2"/></g></g></svg><!-- /party-sky --></div>
-      <div class="yp-float" aria-hidden="true"><i class="yp-bl c1" style="--x:6%;--t:17s;--d:-2s;--s:1"></i><i class="yp-bl c2" style="--x:18%;--t:21s;--d:-11s;--s:0.8"></i><i class="yp-bl c3" style="--x:84%;--t:19s;--d:-6s;--s:1.1"></i><i class="yp-bl c4" style="--x:93%;--t:23s;--d:-15s;--s:0.75"></i><i class="yp-bl c5" style="--x:72%;--t:25s;--d:-19s;--s:0.9"></i><i class="yp-bl c1" style="--x:30%;--t:27s;--d:-23s;--s:0.65"></i><i class="yp-bl c3" style="--x:62%;--t:22s;--d:-8s;--s:0.7"></i></div>
+      <div class="yp-sky" aria-hidden="true"></div>
+      <div class="yp-float" aria-hidden="true"><i class="yp-bn is-gold" style="--x:5%;--t:24s;--d:-3s;--s:1"></i><i class="yp-bn is-silver" style="--x:82%;--t:28s;--d:-12s;--s:1.15"></i><i class="yp-bn is-rose" style="--x:64%;--t:31s;--d:-22s;--s:.7"></i><i class="yp-bn is-silver" style="--x:22%;--t:35s;--d:-27s;--s:.6"></i></div>
+      <!-- 草地上的野餐（照片去背）：左邊籐籃＋一瓶雛菊＋琺瑯杯，右邊一籃蘋果＋一枝黑心金光菊 -->
+      <div class="yp-picnic" aria-hidden="true">
+        <div class="yp-picnic-l"><i class="yp-pc is-basket"></i><i class="yp-pc is-daisies"></i><i class="yp-pc is-mug"></i></div>
+        <div class="yp-picnic-r"><i class="yp-pc is-sprig"></i><i class="yp-pc is-apples"></i></div>
+      </div>
       <div class="yp-hero-body">
         <div class="yp-kicker"><span class="en">Let’s celebrate!</span><span class="cn">誠摯邀請您</span></div>
         <h1 class="yp-names"><span data-tpl="groomEn"></span><span class="amp">&amp;</span><span data-tpl="brideEn"></span></h1>
@@ -118,6 +120,7 @@
           <span class="en block-title">The Details</span>
           <span class="cn block-sub">婚禮資訊</span>
         </div>
+        <div class="yp-deco" aria-hidden="true"><i class="yp-sprig is-s1 is-tr" data-reveal="grow"></i></div>
         <div class="yp-card yp-card-flags" data-reveal="rise">
           <div class="yp-bunting" data-reveal="flags"><svg class="yp-bunting-svg" viewBox="0 0 600 110" aria-hidden="true" focusable="false"><defs><pattern id="yp-gingham" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#fff"/><rect width="6" height="12" fill="#f07a5a" opacity=".5"/><rect width="12" height="6" fill="#f07a5a" opacity=".5"/></pattern><pattern id="yp-gingham-b" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#fff"/><rect width="6" height="12" fill="#7fbfe3" opacity=".55"/><rect width="12" height="6" fill="#7fbfe3" opacity=".55"/></pattern></defs><path d="M0 14Q300 70 600 14" fill="none" stroke="#c9b48f" stroke-width="2.5"/><g class="yp-flag" style="--i:0"><path d="M5.3 16.9L49.3 16.9L27.3 68.9Z" fill="#f07a5a"/><path d="M10.3 20.9L44.3 20.9L27.3 60.9Z" fill="none" stroke="#fff" stroke-width="1.2" stroke-dasharray="3 3" opacity=".8"/></g><g class="yp-flag" style="--i:1"><path d="M59.8 25.2L103.8 25.2L81.8 77.2Z" fill="#f6c85f"/><path d="M64.8 29.2L98.8 29.2L81.8 69.2Z" fill="none" stroke="#fff" stroke-width="1.2" stroke-dasharray="3 3" opacity=".8"/></g><g class="yp-flag" style="--i:2"><path d="M114.4 31.7L158.4 31.7L136.4 83.7Z" fill="#7fbfe3"/><path d="M119.4 35.7L153.4 35.7L136.4 75.7Z" fill="none" stroke="#fff" stroke-width="1.2" stroke-dasharray="3 3" opacity=".8"/></g><g class="yp-flag" style="--i:3"><path d="M168.9 36.3L212.9 36.3L190.9 88.3Z" fill="#9fd6c0"/><path d="M173.9 40.3L207.9 40.3L190.9 80.3Z" fill="none" stroke="#fff" stroke-width="1.2" stroke-dasharray="3 3" opacity=".8"/></g><g class="yp-flag" style="--i:4"><path d="M223.5 39.1L267.5 39.1L245.5 91.1Z" fill="#f6b8b0"/><path d="M228.5 43.1L262.5 43.1L245.5 83.1Z" fill="none" stroke="#fff" stroke-width="1.2" stroke-dasharray="3 3" opacity=".8"/></g><g class="yp-flag" style="--i:5"><path d="M278 40L322 40L300 92Z" fill="url(#yp-gingham)"/><path d="M283 44L317 44L300 84Z" fill="none" stroke="#fff" stroke-width="1.2" stroke-dasharray="3 3" opacity=".8"/></g><g class="yp-flag" style="--i:6"><path d="M332.5 39.1L376.5 39.1L354.5 91.1Z" fill="#f07a5a"/><path d="M337.5 43.1L371.5 43.1L354.5 83.1Z" fill="none" stroke="#fff" stroke-width="1.2" stroke-dasharray="3 3" opacity=".8"/></g><g class="yp-flag" style="--i:7"><path d="M387.1 36.3L431.1 36.3L409.1 88.3Z" fill="#7fbfe3"/><path d="M392.1 40.3L426.1 40.3L409.1 80.3Z" fill="none" stroke="#fff" stroke-width="1.2" stroke-dasharray="3 3" opacity=".8"/></g><g class="yp-flag" style="--i:8"><path d="M441.6 31.7L485.6 31.7L463.6 83.7Z" fill="#f6c85f"/><path d="M446.6 35.7L480.6 35.7L463.6 75.7Z" fill="none" stroke="#fff" stroke-width="1.2" stroke-dasharray="3 3" opacity=".8"/></g><g class="yp-flag" style="--i:9"><path d="M496.2 25.2L540.2 25.2L518.2 77.2Z" fill="url(#yp-gingham-b)"/><path d="M501.2 29.2L535.2 29.2L518.2 69.2Z" fill="none" stroke="#fff" stroke-width="1.2" stroke-dasharray="3 3" opacity=".8"/></g><g class="yp-flag" style="--i:10"><path d="M550.7 16.9L594.7 16.9L572.7 68.9Z" fill="#9fd6c0"/><path d="M555.7 20.9L589.7 20.9L572.7 60.9Z" fill="none" stroke="#fff" stroke-width="1.2" stroke-dasharray="3 3" opacity=".8"/></g></svg></div>
           <div class="info-card">
@@ -139,6 +142,7 @@
             <a class="btn" href="seating.html">尋找我的座位</a>
           </div>
         </div>
+        <div class="yp-deco is-after" aria-hidden="true"><i class="yp-sprig is-s4 is-bl" data-reveal="grow"></i></div>
       </section>
 
       <!-- ===== 當日流程：一塊木框的字母板 ===== -->
@@ -148,6 +152,7 @@
           <span class="en block-title">Schedule</span>
           <span class="cn block-sub">當日流程</span>
         </div>
+        <div class="yp-deco" aria-hidden="true"><i class="yp-cutlery" data-reveal="pop"></i><i class="yp-mug" data-reveal="pop"></i></div>
         <div class="yp-board" data-reveal="rise">
           <div class="yp-board-felt">
             <div class="yp-board-top" aria-hidden="true">WELCOME TO THE PARTY</div>
@@ -164,6 +169,7 @@
           <span class="en block-title">Notes</span>
           <span class="cn block-sub">出席前的小提醒</span>
         </div>
+        <div class="yp-deco" aria-hidden="true"><i class="yp-sprig is-s2 is-tl" data-reveal="grow"></i></div>
         <div class="note-grid yp-card" data-reveal="rise">
           <div class="note-item" id="dressCodeItem" hidden>
             <div class="note-label">Dress Code</div>
@@ -185,7 +191,7 @@
       <section class="info-block yp-sec" id="transportBlock" hidden>
         <div class="yp-head">
           <figure class="yp-icon yp-truck" data-reveal="drive"><div class="yp-art yp-truck-art">
-            <i class="yp-truck-bl b1"></i><i class="yp-truck-bl b2"></i><i class="yp-truck-bl b3"></i>
+            <i class="yp-truck-bn"></i>
             <span class="yp-truck-img"></span><span class="yp-truck-sign">Just Married</span>
           </div></figure>
           <span class="yp-script">getting there</span>
@@ -266,6 +272,7 @@
             <a class="btn" href="invitation.html">前往出席回覆</a>
           </div>
         </div>
+        <div class="yp-deco is-after" aria-hidden="true"><i class="yp-basket" data-reveal="pop"></i><i class="yp-sprig is-s3 is-br" data-reveal="grow"></i></div>
       </section>
 
       <!-- ===== Explore：一張一張彩色的園遊券 ===== -->

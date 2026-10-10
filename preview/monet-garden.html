@@ -76,7 +76,9 @@
      莫內的《日本橋》（1899，美國國家藝廊館藏），畫在 canvas[data-monet] 上，
      由 js/openers/painting.js 把它切成橫帶、讓池水一直輕輕流動。名字寫在一抹米白的顏料上。
      往下捲是一間莫內的小展間：每一塊的開頭掛一幅莫內的小畫（真的金框）＋ 一張美術館的說明卡，
-     捲到時畫才一筆一筆刷上去（data-monet-reveal）。 -->
+     捲到時畫才一筆一筆刷上去（data-monet-reveal）。
+     像首爾的沉浸式美術館：畫裡的東西會跑到框外面來 —— 花從畫框邊長出來（用筆刷一筆刷出來，data-reveal="paint"），
+     hero 有花瓣在飄、蝴蝶在飛，故事的展牆角落有一瓶塞尚的花。這些裝飾都是真跡掃描的局部（public/img/monet/，出處見 README）。 -->
 <div id="app">
   <section class="panel lobby mg-lobby" data-panel="lobby" data-scroll>
 
@@ -85,6 +87,16 @@
       <div class="mg-hero-art" aria-hidden="true">
         <canvas class="mg-canvas" data-monet="footbridge"></canvas>
         <i class="mg-glaze"></i>
+      </div>
+      <!-- 從畫裡長出來的東西（像首爾的沉浸式美術館那樣，畫裡的花與蝴蝶跑到畫外面來）：
+           左下一叢阿讓特伊的大理花、右下一叢哈森的蜀葵，用筆刷一筆刷出來；花瓣一直飄、蝴蝶在飛 -->
+      <div class="mg-hero-deco" aria-hidden="true">
+        <i class="mg-bloom is-dahlias is-hero-l"></i>
+        <i class="mg-bloom is-hollyhocks is-hero-r"></i>
+        <div class="mg-petals"><i class="mg-petal" style="--x:69%;--t:17s;--d:-11s;--px:100%;--s:0.7"></i><i class="mg-petal" style="--x:49%;--t:16s;--d:-20s;--px:0%;--s:0.85"></i><i class="mg-petal" style="--x:4%;--t:18s;--d:-15s;--px:20%;--s:1.15"></i><i class="mg-petal" style="--x:59%;--t:14s;--d:-18s;--px:20%;--s:0.7"></i><i class="mg-petal" style="--x:83%;--t:16s;--d:-13s;--px:40%;--s:0.85"></i><i class="mg-petal" style="--x:88%;--t:19s;--d:-5s;--px:0%;--s:0.85"></i><i class="mg-petal" style="--x:69%;--t:22s;--d:-14s;--px:20%;--s:0.85"></i><i class="mg-petal" style="--x:-10%;--t:13s;--d:-6s;--px:20%;--s:0.85"></i><i class="mg-petal" style="--x:11%;--t:17s;--d:-10s;--px:20%;--s:0.85"></i><i class="mg-petal" style="--x:13%;--t:16s;--d:-12s;--px:40%;--s:0.7"></i></div>
+        <i class="mg-fly is-lemon" style="--x:16%;--y:30%;--t:17s;--d:-2s"><b></b></i>
+        <i class="mg-fly is-blue" style="--x:76%;--y:22%;--t:21s;--d:-9s"><b></b></i>
+        <i class="mg-fly is-rose" style="--x:62%;--y:64%;--t:19s;--d:-14s"><b></b></i>
       </div>
       <div class="mg-hero-body">
         <div class="mg-swash">
@@ -102,7 +114,7 @@
       <!-- ===== 婚禮資訊：睡蓮 ===== -->
       <section class="info-block mg-sec">
         <div class="mg-head">
-          <figure class="mg-pic" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="seine" data-monet-shape="small" data-monet-reveal></canvas></div></figure>
+          <figure class="mg-pic" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="seine" data-monet-shape="small" data-monet-reveal></canvas></div><i class="mg-bloom is-poppies is-bl" data-reveal="paint" aria-hidden="true"></i></figure>
           <div class="mg-cartel" data-reveal="rise">
             <span class="mg-no">N° 1 ・ La Seine à Giverny, 1897</span>
             <span class="en block-title">Information</span>
@@ -129,12 +141,13 @@
             <a class="btn" href="seating.html">尋找我的座位</a>
           </div>
         </div>
+        <div class="mg-deco" aria-hidden="true"><i class="mg-bloom is-dahlias is-c-br" data-reveal="paint"></i></div>
       </section>
 
       <!-- ===== 當日流程：罌粟花田 ===== -->
       <section class="info-block mg-sec mg-alt" id="scheduleBlock">
         <div class="mg-head">
-          <figure class="mg-pic" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="poppies2" data-monet-shape="small" data-monet-reveal></canvas></div></figure>
+          <figure class="mg-pic" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="poppies2" data-monet-shape="small" data-monet-reveal></canvas></div><i class="mg-bloom is-dahlias is-br" data-reveal="paint" aria-hidden="true"></i></figure>
           <div class="mg-cartel" data-reveal="rise">
             <span class="mg-no">N° 2 ・ Champ de coquelicots</span>
             <span class="en block-title">Schedule</span>
@@ -144,12 +157,13 @@
         <div class="mg-card mg-card-tl" data-reveal="rise">
           <div class="timeline" id="schedule" data-sk="rows" data-reveal="list"></div>
         </div>
+        <div class="mg-deco" aria-hidden="true"><i class="mg-bloom is-poppies is-c-bl" data-reveal="paint"></i></div>
       </section>
 
       <!-- ===== 出席前的小提醒：紫藤（沒填就整塊收起） ===== -->
       <section class="info-block mg-sec" id="noteBlock" hidden>
         <div class="mg-head">
-          <figure class="mg-pic" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="willows" data-monet-shape="small" data-monet-reveal></canvas></div></figure>
+          <figure class="mg-pic" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="willows" data-monet-shape="small" data-monet-reveal></canvas></div><i class="mg-bloom is-hollyhocks is-tl" data-reveal="paint" aria-hidden="true"></i></figure>
           <div class="mg-cartel" data-reveal="rise">
             <span class="mg-no">N° 3 ・ Les Saules, 1880</span>
             <span class="en block-title">Notes</span>
@@ -176,7 +190,7 @@
       <!-- ===== 交通資訊：花園小徑（沒填就整塊收起） ===== -->
       <section class="info-block mg-sec mg-alt" id="transportBlock" hidden>
         <div class="mg-head">
-          <figure class="mg-pic is-tall" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="vetheuil" data-monet-shape="small" data-monet-reveal></canvas></div></figure>
+          <figure class="mg-pic is-tall" data-reveal="hang"><div class="mg-gilt"><canvas data-monet="vetheuil" data-monet-shape="small" data-monet-reveal></canvas></div><i class="mg-fly is-lilac is-perch" style="--t:15s;--d:-4s" aria-hidden="true"><b></b></i></figure>
           <div class="mg-cartel" data-reveal="rise">
             <span class="mg-no">N° 4 ・ Le jardin à Vétheuil, 1881</span>
             <span class="en block-title">Access</span>
@@ -195,12 +209,15 @@
             <button class="ir-jump" id="transportParkingMore" type="button" hidden>展開更多 →</button>
           </div>
         </div>
+        <div class="mg-deco" aria-hidden="true"><i class="mg-bloom is-hollyhocks is-c-br" data-reveal="paint"></i></div>
       </section>
 
       <!-- ===== 兩人的故事：淡紫色的展牆上，一幅金框的大畫（就是新人的照片） =====
            照片上疊一層畫布的織紋；投射燈的光隨著捲動從左滑到右 -->
       <section class="info-block mg-band mg-story" id="storyBlock" hidden data-scroll>
         <div class="mg-band-bg" aria-hidden="true"></div>
+        <!-- 展牆角落一瓶花：塞尚的《洛可可花瓶裡的花》（去背），一筆一筆刷出來 -->
+        <i class="mg-bloom is-bouquet" data-reveal="paint" aria-hidden="true"></i>
         <div class="mg-band-inner">
           <figure class="mg-portrait" data-reveal="hang">
             <div class="mg-gilt mg-gilt-lg">
@@ -261,11 +278,13 @@
           <div class="mg-postcard-pic" aria-hidden="true"><canvas data-monet="argenteuil" data-monet-shape="small" data-monet-still></canvas><span>Argenteuil</span></div>
           <div class="rsvp-cta">
             <i class="mg-stamp" aria-hidden="true"></i>
+            <i class="mg-fly is-blue is-perch is-on-card" style="--t:13s;--d:-6s" aria-hidden="true"><b></b></i>
             <h3>能來參加我們的婚禮嗎？</h3>
             <p>花 30 秒回覆出席，讓我們把最好的位置留給你</p>
             <a class="btn" href="invitation.html">前往出席回覆</a>
           </div>
         </div>
+        <div class="mg-deco" aria-hidden="true"><i class="mg-bloom is-dahlias is-c-bl" data-reveal="paint"></i></div>
       </section>
 
       <!-- ===== Explore：一張一張的展品說明卡 ===== -->

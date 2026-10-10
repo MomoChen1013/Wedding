@@ -646,6 +646,9 @@
       const c = ['#7da55a', '#a99cc4', '#f0a7b6', '#5f9a86', '#e9e4b4', '#3f6b52', '#9fb8c4'][i % 7];
       return `<i style="--x:${(Math.cos(a) * 70).toFixed(1)}vmax;--y:${(Math.sin(a) * 70).toFixed(1)}vmax;--r:${(a * 57.3 + 90).toFixed(0)}deg;--c:${c};--d:${(i % 5) * .06}s"></i>`;
     }).join('');
+    /* 從畫裡飄出來的花瓣（位置、速度固定，每一次都一樣） */
+    const petals = Array.from({ length: 9 }, (_, i) =>
+      `<i style="--x:${18 + (i * 37) % 64}%;--y:${22 + (i * 23) % 56}%;--t:${(7 + (i % 4) * 1.6).toFixed(1)}s;--d:${(1.4 + i * .9).toFixed(1)}s;--px:${(i % 6) * 20}%"></i>`).join('');
     host.innerHTML = `
       <div class="pt-room" aria-hidden="true">
         <div class="pt-wall"></div>
@@ -659,6 +662,12 @@
               <canvas class="pt-paint"></canvas>
               <i class="pt-weave"></i>
             </div>
+          </div>
+          <!-- 畫裡的東西跑到畫框外面來（像首爾的沉浸式美術館）：花從框邊長出來、蝴蝶從畫裡飛出來、花瓣飄到牆上 -->
+          <div class="pt-escape">
+            <i class="pt-bloom is-l"></i><i class="pt-bloom is-r"></i>
+            <div class="pt-petals">${petals}</div>
+            <i class="pt-fly is-a"><span><b></b></span></i><i class="pt-fly is-b"><span><b></b></span></i><i class="pt-fly is-c"><span><b></b></span></i>
           </div>
         </div>
         <div class="pt-plaque">
