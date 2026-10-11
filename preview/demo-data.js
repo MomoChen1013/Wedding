@@ -31,6 +31,12 @@ window.DEMO = {
 
   hashtags: ['#Ginny和One結婚了', '#TheOneForGinny'],
 
+  /* 照片：示範頁的骨架由 public/samples/demo.js 依這裡的路徑填 */
+  photos: {
+    cover:   '../public/assets/ginny-one-20260919/cover.jpg',
+    gallery: ['01', '02', '03', '04', '05', '06'].map((n) => `../public/assets/ginny-one-20260919/cards/${n}.jpg`),
+  },
+
   /* ---------- 資訊卡的列 ---------- */
   info: [
     { label:'日期', value:'2026.09.19・星期六' },

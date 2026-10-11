@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- ⚙️ 由 scripts/build-previews.js 用 scripts/sample-index.html 產出（public/samples/index.html），不要手改產出的那一份。
+     卡片文案在 scripts/sample-catalog.js，縮圖由 scripts/build-sample-thumbs.js 產生。 -->
+<title>婚禮網站版型｜小港製作所</title>
+<meta name="description" content="13 種婚禮網站版型，點進去就能看到完整的首頁與開場動畫。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="婚禮網站版型｜小港製作所">
+<meta property="og:description" content="13 種婚禮網站版型，點進去就能看到完整的首頁與開場動畫。">
+<meta property="og:image" content="https://minato-studio-wedding.web.app/samples/thumbs/classic.jpg">
+<link rel="icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ground:#f5f2ec; --surface:#fcfbf8; --ink:#24221f; --muted:#7d776d;
+  --line:#e2ddd2; --line-soft:#ece8df; --chip:#efebe3;
+  --f-en:'Cormorant Garamond',Georgia,serif;
+  --f-cn:'Noto Serif TC',serif;
+  --f-ui:'Noto Sans TC','Noto Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--ground);color:var(--ink);font-family:var(--f-ui);font-weight:300;
+  font-size:15px;line-height:1.85;letter-spacing:.02em;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1200px;margin:0 auto;padding:clamp(40px,7vw,88px) 16px 72px;}
+@media (min-width:600px){.wrap{padding-left:clamp(20px,5vw,52px);padding-right:clamp(20px,5vw,52px);}}
+
+header{text-align:center;margin-bottom:clamp(32px,6vw,60px);}
+.kicker{font-family:var(--f-en);font-size:13px;letter-spacing:.32em;text-transform:uppercase;color:var(--muted);}
+@media (max-width:420px){.kicker{font-size:11.5px;letter-spacing:.2em;}}
+h1{font-family:var(--f-cn);font-weight:500;font-size:clamp(24px,4.4vw,36px);letter-spacing:.14em;line-height:1.5;margin:14px 0 16px;}
+header p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
+
+.grid{display:grid;gap:16px;grid-template-columns:1fr;}
+@media (min-width:600px){.grid{grid-template-columns:repeat(2,1fr);gap:24px;}}
+@media (min-width:1000px){.grid{grid-template-columns:repeat(3,1fr);gap:28px;}}
+
+.card{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);
+  color:inherit;text-decoration:none;transition:border-color .2s ease,transform .2s ease,box-shadow .2s ease;}
+.card:hover{border-color:#cfc8ba;transform:translateY(-2px);box-shadow:0 14px 30px -22px rgba(36,34,31,.45);}
+.card:focus-visible{outline:2px solid var(--ink);outline-offset:3px;}
+.shot{position:relative;aspect-ratio:4/5;overflow:hidden;border-bottom:1px solid var(--line);}
+.shot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;display:block;}
+.body{display:flex;flex-direction:column;gap:12px;flex:1;padding:18px 18px 20px;}
+h2{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;font-weight:400;}
+h2 .en{font-family:var(--f-en);font-size:24px;letter-spacing:.06em;line-height:1.2;}
+h2 .cn{font-family:var(--f-cn);font-size:13.5px;letter-spacing:.2em;color:var(--muted);}
+.mood{font-size:14px;line-height:1.85;}
+.dress{display:flex;flex-wrap:wrap;align-items:center;gap:6px;}
+.dress .lab{font-size:12px;letter-spacing:.12em;color:var(--muted);margin-right:2px;}
+.chip{font-size:12.5px;line-height:1.5;padding:3px 10px;border-radius:99px;background:var(--chip);color:#4d4841;}
+.foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line-soft);}
+.swatches{display:flex;gap:5px;}
+.swatches i{display:block;width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,0,0,.08);}
+.go{font-size:13px;letter-spacing:.1em;white-space:nowrap;}
+
+/* 手機：縮圖放左邊，一張卡不要高過一個螢幕 */
+@media (max-width:599px){
+  .card{flex-direction:row;}
+  .shot{flex:0 0 38%;aspect-ratio:auto;min-height:100%;border-bottom:0;border-right:1px solid var(--line);}
+  .body{padding:14px 14px 16px;gap:9px;}
+  h2 .en{font-size:21px;}
+  .mood{font-size:13.5px;}
+  .chip{font-size:12px;padding:2px 8px;}
+  .swatches i{width:13px;height:13px;}
+}
+
+footer{margin-top:clamp(40px,6vw,64px);text-align:center;color:var(--muted);font-size:13px;line-height:2;}
+footer a{color:inherit;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">Minato Studio · Wedding Websites</div>
+    <h1>挑一種，屬於你們的婚禮樣子</h1>
+    <p>這裡有 13 種版型，點進去就能看到完整的首頁 —— 開場動畫、捲動時的效果都和正式網站一樣。示範裡的新人與婚禮資訊都是虛構的，正式網站會換成你們的照片與內容。</p>
+  </header>
+  <main class="grid">
+    <a class="card" href="/samples/classic">
+      <div class="shot" style="background:#fbfaf7"><img src="/samples/thumbs/classic.jpg" alt="經典版型的首頁" loading="lazy" width="390" height="760"></div>
+      <div class="body">
+        <h2><span class="en">Classic</span><span class="cn">經典</span></h2>
+        <p class="mood">一張滿版的婚紗照當背景，資訊安靜地疊在上面。最不挑照片，四種配色可以換。</p>
+        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">簡約緞面</span><span class="chip">一字領</span><span class="chip">棚拍或戶外都適合</span></div>
+        <div class="foot">
+          <span class="swatches" aria-hidden="true"><i style="background:#fbfaf7"></i><i style="background:#b39a6d"></i><i style="background:#c28794"></i><i style="background:#8b9c7c"></i><i style="background:#8295ad"></i></span>
+          <span class="go">看示範 →</span>
+        </div>
+      </div>
+    </a>
+    <a class="card" href="/samples/korean">
+      <div class="shot" style="background:#fbfaf8"><img src="/samples/thumbs/korean.jpg" alt="韓系簡約版型的首頁" loading="lazy" width="390" height="760"></div>
+      <div class="body">
+        <h2><span class="en">Korean Modern</span><span class="cn">韓系簡約</span></h2>
+        <p class="mood">大量留白、細線條，照片像雜誌內頁一樣被排進版面裡。</p>
+        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">韓系棚拍</span><span class="chip">極簡緞面</span><span class="chip">俐落直筒</span></div>
+        <div class="foot">
+          <span class="swatches" aria-hidden="true"><i style="background:#fbfaf8"></i><i style="background:#a8b8c5"></i><i style="background:#93a3b1"></i><i style="background:#21284f"></i></span>
+          <span class="go">看示範 →</span>
+        </div>
+      </div>
+    </a>
+    <a class="card" href="/samples/forest">
+      <div class="shot" style="background:#f2efe5"><img src="/samples/thumbs/forest.jpg" alt="森林系版型的首頁" loading="lazy" width="390" height="760"></div>
+      <div class="body">
+        <h2><span class="en">Forest Botanical</span><span class="cn">森林系</span></h2>
+        <p class="mood">滿版照片，四周是可愛的手繪森林小物：橡實、香菇、小熊與兔子。</p>
+        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">森林戶外</span><span class="chip">輕紗</span><span class="chip">花環頭飾</span></div>
+        <div class="foot">
+          <span class="swatches" aria-hidden="true"><i style="background:#f2efe5"></i><i style="background:#a5ad94"></i><i style="background:#806f5c"></i><i style="background:#26382d"></i></span>
+          <span class="go">看示範 →</span>
+        </div>
+      </div>
+    </a>
+    <a class="card" href="/samples/tapestry">
+      <div class="shot" style="background:#f1e8d5"><img src="/samples/thumbs/tapestry.jpg" alt="中古刺繡版型的首頁" loading="lazy" width="390" height="760"></div>
+      <div class="body">
+        <h2><span class="en">Tapestry</span><span class="cn">中古刺繡</span></h2>
+        <p class="mood">拆開一封蓋著封蠟的信，走進中世紀的刺繡掛毯。</p>
+        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">復古蕾絲</span><span class="chip">長袖</span><span class="chip">宮廷風</span></div>
+        <div class="foot">
+          <span class="swatches" aria-hidden="true"><i style="background:#f1e8d5"></i><i style="background:#b08a3e"></i><i style="background:#5d6b3a"></i><i style="background:#7a1f2b"></i></span>
+          <span class="go">看示範 →</span>
+        </div>
+      </div>
+    </a>
+    <a class="card" href="/samples/botanical-letter">
+      <div class="shot" style="background:#f6f2e9"><img src="/samples/thumbs/botanical-letter.jpg" alt="植物信箋版型的首頁" loading="lazy" width="390" height="760"></div>
+      <div class="body">
+        <h2><span class="en">Botanical Letter</span><span class="cn">植物信箋</span></h2>
+        <p class="mood">一本植物標本冊：壓花、棉紙、郵票，每張照片旁邊都壓著一枝乾燥花。</p>
+        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">細肩帶雪紡</span><span class="chip">乾燥花捧花</span><span class="chip">自然光</span></div>
+        <div class="foot">
+          <span class="swatches" aria-hidden="true"><i style="background:#f6f2e9"></i><i style="background:#8a9a6b"></i><i style="background:#b88a7a"></i><i style="background:#3a4031"></i></span>
+          <span class="go">看示範 →</span>
+        </div>
+      </div>
+    </a>
+    <a class="card" href="/samples/secret-garden">
+      <div class="shot" style="background:#f3f1e8"><img src="/samples/thumbs/secret-garden.jpg" alt="秘密花園版型的首頁" loading="lazy" width="390" height="760"></div>
+      <div class="body">
+        <h2><span class="en">Secret Garden</span><span class="cn">秘密花園</span></h2>
+        <p class="mood">推開常春藤牆上的玻璃門，走進玫瑰拱門與水彩花朵的花園。</p>
+        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">花園戶外</span><span class="chip">蕾絲刺繡</span><span class="chip">立體花朵</span></div>
+        <div class="foot">
+          <span class="swatches" aria-hidden="true"><i style="background:#f3f1e8"></i><i style="background:#7a9a6a"></i><i style="background:#9b8ab8"></i><i style="background:#2f3b2b"></i></span>
+          <span class="go">看示範 →</span>
+        </div>
+      </div>
+    </a>
+    <a class="card" href="/samples/spring-orangerie">
+      <div class="shot" style="background:#f7f7f1"><img src="/samples/thumbs/spring-orangerie.jpg" alt="春日溫室版型的首頁" loading="lazy" width="390" height="760"></div>
+      <div class="body">
+        <h2><span class="en">Spring Orangerie</span><span class="cn">春日溫室</span></h2>
+        <p class="mood">明亮的玻璃溫室，白玫瑰、檸檬枝與斜射進來的陽光。</p>
+        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">玻璃屋</span><span class="chip">輕盈 A-line</span><span class="chip">薄紗</span></div>
+        <div class="foot">
+          <span class="swatches" aria-hidden="true"><i style="background:#f7f7f1"></i><i style="background:#9fbfa8"></i><i style="background:#e7b18a"></i><i style="background:#2e3a36"></i></span>
+          <span class="go">看示範 →</span>
+        </div>
+      </div>
+    </a>
+    <a class="card" href="/samples/night-sky">
+      <div class="shot" style="background:#141a33"><img src="/samples/thumbs/night-sky.jpg" alt="現代星空版型的首頁" loading="lazy" width="390" height="760"></div>
+      <div class="body">
+        <h2><span class="en">Night Sky</span><span class="cn">現代星空</span></h2>
+        <p class="mood">深藍夜空、會轉的星圖與越捲越圓的月亮。唯一一個深色的版型。</p>
+        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">夜景</span><span class="chip">亮片</span><span class="chip">深色西裝</span></div>
+        <div class="foot">
+          <span class="swatches" aria-hidden="true"><i style="background:#141a33"></i><i style="background:#1f2440"></i><i style="background:#b9a46a"></i><i style="background:#8a93c7"></i></span>
+          <span class="go">看示範 →</span>
+        </div>
+      </div>
+    </a>
+    <a class="card" href="/samples/french-manor">
+      <div class="shot" style="background:#f4efe7"><img src="/samples/thumbs/french-manor.jpg" alt="法式莊園版型的首頁" loading="lazy" width="390" height="760"></div>
+      <div class="body">
+        <h2><span class="en">French Manor</span><span class="cn">法式莊園</span></h2>
+        <p class="mood">天頂壁畫、大理石雕像與剪紙城堡，像走進一座文藝復興的莊園。</p>
+        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">法式宮廷</span><span class="chip">緞面拖尾</span><span class="chip">城堡或莊園</span></div>
+        <div class="foot">
+          <span class="swatches" aria-hidden="true"><i style="background:#f4efe7"></i><i style="background:#a89679"></i><i style="background:#8c9a7c"></i><i style="background:#3b3530"></i></span>
+          <span class="go">看示範 →</span>
+        </div>
+      </div>
+    </a>
+    <a class="card" href="/samples/monet-garden">
+      <div class="shot" style="background:#f7f3ea"><img src="/samples/thumbs/monet-garden.jpg" alt="莫內花園版型的首頁" loading="lazy" width="390" height="760"></div>
+      <div class="body">
+        <h2><span class="en">Monet Garden</span><span class="cn">莫內花園</span></h2>
+        <p class="mood">走進一幅會流動的莫內油畫：日本橋、睡蓮與花園小徑。</p>
+        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">印象派油畫感</span><span class="chip">粉彩</span><span class="chip">輕紗</span></div>
+        <div class="foot">
+          <span class="swatches" aria-hidden="true"><i style="background:#f7f3ea"></i><i style="background:#8fae96"></i><i style="background:#a99cc4"></i><i style="background:#c9748a"></i></span>
+          <span class="go">看示範 →</span>
+        </div>
+      </div>
+    </a>
+    <a class="card" href="/samples/outdoor-party">
+      <div class="shot" style="background:#f8fbfd"><img src="/samples/thumbs/outdoor-party.jpg" alt="美式戶外派對版型的首頁" loading="lazy" width="390" height="760"></div>
+      <div class="body">
+        <h2><span class="en">Outdoor Party</span><span class="cn">美式戶外派對</span></h2>
+        <p class="mood">藍天、草地、野餐籃和一顆顆飄走的粉彩氣球，輕鬆又熱鬧。</p>
+        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">戶外派對</span><span class="chip">短紗</span><span class="chip">輕便禮服</span></div>
+        <div class="foot">
+          <span class="swatches" aria-hidden="true"><i style="background:#f8fbfd"></i><i style="background:#7fbfe3"></i><i style="background:#f6c85f"></i><i style="background:#f07a5a"></i></span>
+          <span class="go">看示範 →</span>
+        </div>
+      </div>
+    </a>
+    <a class="card" href="/samples/morning-window">
+      <div class="shot" style="background:#faf6ef"><img src="/samples/thumbs/morning-window.jpg" alt="晨光房間版型的首頁" loading="lazy" width="390" height="760"></div>
+      <div class="body">
+        <h2><span class="en">Morning Window</span><span class="cn">晨光房間</span></h2>
+        <p class="mood">侘寂風的早晨：窗前的鬱金香、亞麻布與牆上的窗格陽光。</p>
+        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">日系自然光</span><span class="chip">居家婚紗</span><span class="chip">素面簡約</span></div>
+        <div class="foot">
+          <span class="swatches" aria-hidden="true"><i style="background:#faf6ef"></i><i style="background:#d9c3a5"></i><i style="background:#c9d6db"></i><i style="background:#9a7b5b"></i></span>
+          <span class="go">看示範 →</span>
+        </div>
+      </div>
+    </a>
+    <a class="card" href="/samples/white-church">
+      <div class="shot" style="background:#f8f6f3"><img src="/samples/thumbs/white-church.jpg" alt="白色教堂版型的首頁" loading="lazy" width="390" height="760"></div>
+      <div class="body">
+        <h2><span class="en">White Church</span><span class="cn">白色教堂</span></h2>
+        <p class="mood">午夜點亮三根蠟燭，天一亮，是一座純白的教堂。白紗、蕾絲與珍珠。</p>
+        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">教堂證婚</span><span class="chip">長頭紗</span><span class="chip">蕾絲拖尾</span></div>
+        <div class="foot">
+          <span class="swatches" aria-hidden="true"><i style="background:#f8f6f3"></i><i style="background:#b09460"></i><i style="background:#857e8c"></i><i style="background:#3d3743"></i></span>
+          <span class="go">看示範 →</span>
+        </div>
+      </div>
+    </a>
+  </main>
+  <footer>
+    開場動畫可以在示範頁的下方換著看，每一種開場都能搭配任何版型。<br>
+    示範照片：<a href="https://unsplash.com/@vinomamba24" target="_blank" rel="noopener">Vino Li</a>／Unsplash<br>
+    小港製作所 設計製作
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,26 @@
+/* ============================================================
+   demo-panel.css — 示範頁右下角的切換面板（preview/ 與 /samples 共用）
+============================================================ */
+.demo-panel{position:fixed;right:14px;bottom:14px;z-index:2000;display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  max-width:calc(100vw - 28px);padding:10px 12px;border-radius:10px;
+  background:rgba(20,20,24,.78);color:#fff;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  font:13px/1.2 'Noto Sans TC',system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25);}
+.demo-panel label{display:flex;align-items:center;gap:6px;}
+.demo-panel select,.demo-panel button{font:inherit;padding:6px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.25);
+  background:rgba(255,255,255,.1);color:#fff;cursor:pointer;}
+.demo-panel select option{color:#222;}
+.demo-panel button{background:#fff;color:#222;border-color:#fff;}
+
+/* ---- 給客人看的那一版（/samples）：回到所有版型、點到其他頁面時的說明 ---- */
+.demo-panel .demo-back{color:#fff;text-decoration:none;padding:6px 4px;white-space:nowrap;}
+.demo-panel .demo-back:hover{text-decoration:underline;}
+.demo-note{position:fixed;left:50%;bottom:84px;z-index:2001;transform:translate(-50%,12px);
+  width:max-content;max-width:calc(100vw - 32px);padding:12px 16px;border-radius:10px;
+  background:rgba(20,20,24,.86);color:#fff;font:14px/1.6 'Noto Sans TC',system-ui,sans-serif;text-align:center;
+  opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;}
+.demo-note.is-on{opacity:1;transform:translate(-50%,0);}
+@media (max-width:520px){
+  .demo-panel.is-sample{left:12px;right:12px;bottom:12px;max-width:none;justify-content:space-between;gap:6px;padding:8px 10px;font-size:12.5px;}
+  .demo-panel.is-sample label{gap:4px;}
+  .demo-panel.is-sample select{max-width:9.5em;}
+}
