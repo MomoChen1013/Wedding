@@ -10,7 +10,7 @@
      french-manor（預設）  一張真的照片：爬滿藤的磚牆圓拱裡，一扇鍛鐵花園門，門後是開滿薰衣草的小徑。
                            鐵門從照片裡分離成自己的一層，點一下繞著鉸鍊往裡轉開；
                            走進去是一座歐式花園（修剪整齊的綠籬、碎石路、盡頭一尊白色雕像）
-     midnight-chapel／tapestry  同一種鍛鐵大門，但是中古的尖拱、石柱頂是小尖塔，
+     white-church／tapestry  同一種鍛鐵大門，但是中古的尖拱、石柱頂是小尖塔，
                            門後遠遠是一座有圓塔的城堡
      secret-garden         一整面常春藤牆上，一扇白框的玻璃門：上面一扇半圓的氣窗，
                            藤從門楣垂下來，牆腳兩叢花；隔著玻璃看得到後面開滿玫瑰的拱門小徑。
@@ -27,7 +27,7 @@
 
   const KIND = {
     'secret-garden': 'garden',
-    'midnight-chapel': 'gothic',
+    'white-church': 'gothic',
     'tapestry': 'gothic',
   };
 

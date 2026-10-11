@@ -6,7 +6,7 @@
    產出（⚙️ 不要手改，改來源再重跑）：
      preview/tapestry.html          ← public/lobby-tapestry.html
      preview/botanical-letter.html  ← public/lobby-botanical.html
-     preview/midnight-chapel.html   ← public/lobby-chapel.html
+     preview/white-church.html   ← public/lobby-chapel.html
      preview/forest-botanical.html  ← public/lobby-forest.html
      ……（每一副大廳骨架一頁；幾個版型共用一副骨架時只產一頁，名字是那副骨架的 lobbyKey）
      —— 清單從 TEMPLATES 的 lobbyFile 算出來，新增版型不必改這支

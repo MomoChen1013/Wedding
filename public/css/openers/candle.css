@@ -5,7 +5,7 @@
    --lit 用 @property 註冊成數字，才能「慢慢」變亮，而不是一格一格跳。
    蠟燭是一張真的白蠟燭照片（去背，燭芯以上的火擦掉）；火焰是另一張真的照片
    （黑底，依亮度轉成透明度，只留下火），自己會晃；光暈用 screen 疊在房間上。
-   午夜教堂的房間是大廳 hero 那座純白禮堂的照片（img/chapel/，出處見 README）：
+   白色教堂的房間是大廳 hero 那座純白禮堂的照片（img/chapel/，出處見 README）：
    三根都亮了之後燭火熄掉、天亮，變成白天的禮堂（.is-dawn）。
 ============================================================ */
 @property --lit{syntax:'<number>';inherits:true;initial-value:0;}
@@ -24,9 +24,9 @@
     repeating-linear-gradient(0deg,transparent 0 58px,rgba(0,0,0,.25) 58px 60px),
     repeating-linear-gradient(90deg,transparent 0 118px,rgba(0,0,0,.18) 118px 120px),
     radial-gradient(90% 80% at 50% 60%,var(--cd-wall),#0c0a10 80%);}
-/* 午夜教堂：房間是大廳那座純白禮堂（Thay Jesus／Unsplash）在午夜的樣子 ——
+/* 白色教堂：房間是大廳那座純白禮堂（Thay Jesus／Unsplash）在午夜的樣子 ——
    照片壓暗、蓋一層夜裡的藍；燭光越亮，圓拱與吊燈越看得見 */
-.cd-host[data-variant="midnight-chapel"] .cd-room{opacity:1;
+.cd-host[data-variant="white-church"] .cd-room{opacity:1;
   background:
     radial-gradient(50% 45% at 50% 82%,rgba(255,176,96,calc(var(--cd-l) * .5)),transparent 70%),
     linear-gradient(rgba(16,20,44,.62),rgba(10,10,24,.78)),
@@ -34,9 +34,9 @@
   filter:brightness(calc(.3 + var(--cd-l) * .55));}
 /* 天亮：同一座禮堂的白天，從一片白光裡定下來 */
 .cd-day{display:none;}
-.cd-host[data-variant="midnight-chapel"] .cd-day{display:block;position:absolute;inset:0;opacity:0;pointer-events:none;
+.cd-host[data-variant="white-church"] .cd-day{display:block;position:absolute;inset:0;opacity:0;pointer-events:none;
   background:#f6f4f0 url(../../img/chapel/hall.webp) 50% 55%/cover no-repeat;transition:opacity 1.6s ease;}
-.cd-host[data-variant="midnight-chapel"] .cd-day::after{content:'';position:absolute;inset:0;
+.cd-host[data-variant="white-church"] .cd-day::after{content:'';position:absolute;inset:0;
   background:radial-gradient(50% 40% at 50% 50%,rgba(255,255,255,.6),transparent 75%);}
 .cd-host.is-dawn .cd-day{opacity:1;animation:cd-dawn 2.4s ease both;}
 @keyframes cd-dawn{from{filter:brightness(2.2) saturate(.2);}}
@@ -56,11 +56,11 @@
 .cd-text{position:absolute;left:0;right:0;top:clamp(80px,22vh,220px);display:flex;flex-direction:column;
   align-items:center;gap:8px;text-align:center;color:var(--cd-ink);padding:0 24px;
   opacity:calc(var(--cd-l) * var(--cd-l));}
-.cd-host[data-variant="midnight-chapel"] .cd-text{top:auto;bottom:calc(clamp(170px,36vh,320px) + 40px);}
+.cd-host[data-variant="white-church"] .cd-text{top:auto;bottom:calc(clamp(170px,36vh,320px) + 40px);}
 /* 名字後面一團很淡的暗（天亮之後換成一團白），背景的花樣才不會跟字打架 */
-.cd-host[data-variant="midnight-chapel"] .cd-text::before{content:'';position:absolute;inset:-40% 0;z-index:-1;pointer-events:none;
+.cd-host[data-variant="white-church"] .cd-text::before{content:'';position:absolute;inset:-40% 0;z-index:-1;pointer-events:none;
   background:radial-gradient(closest-side,rgba(7,6,10,.7),rgba(7,6,10,.35) 60%,transparent);transition:opacity 1.2s ease;}
-.cd-host[data-variant="midnight-chapel"] .cd-text::after{content:'';position:absolute;inset:-40% 0;z-index:-1;pointer-events:none;opacity:0;
+.cd-host[data-variant="white-church"] .cd-text::after{content:'';position:absolute;inset:-40% 0;z-index:-1;pointer-events:none;opacity:0;
   background:radial-gradient(closest-side,rgba(255,255,255,.85),rgba(255,255,255,.45) 60%,transparent);transition:opacity 1.2s ease;}
 .cd-host.is-dawn .cd-text::before{opacity:0;}
 .cd-host.is-dawn .cd-text::after{opacity:1;}

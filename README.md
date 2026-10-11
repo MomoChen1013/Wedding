@@ -86,6 +86,12 @@
 - **BGM**：預設播內建的 `public/audio/bgm.mp3`，新人放了自己的音檔就換成他們的。
   想換全站的預設曲目，直接換掉這個檔案（路徑寫在 `js/common.js` 的 `DEFAULT_BGM`）。
   音檔真的載不起來時，最後才退回 Web Audio 合成的〈愛的禮讚 Salut d'Amour〉。
+- **不讓搜尋引擎收錄**：婚禮網站上有新人的姓名、日期、場地地址，只該給拿到連結的人看。
+  `firebase.json` 對**所有**回應都加上 `X-Robots-Tag: noindex, nofollow, noarchive`，
+  Google 等搜尋引擎就不會把任何一頁（包括 `/lobby-*.html` 這些版型原始檔）放進搜尋結果。
+  LINE、Facebook 貼連結時的預覽卡片不受影響（它們不看這個標頭）。
+  刻意**不放** `robots.txt` 擋爬蟲：被擋掉的爬蟲讀不到 noindex，
+  網址反而可能因為別處的連結被收錄成一條沒有內容的搜尋結果。
 - **分頁圖示**：`public/favicon.png`（512×512 正方形）。**所有站台共用同一張** ——
   它是工作室的識別，不是某一組新人的。要換就直接覆蓋這個檔案，
   12 個 HTML 都指到同一個路徑，不用改任何一行標記。
@@ -223,18 +229,12 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | `book` | 翻頁・古書 | 點封面 → 翻開 → 扉頁 → 翻過扉頁 | （可選） |
 | `bloom` | 花朵盛開 | 自己演：一整面綠籬 → 到處冒出小花苞 → 從中間往外一波波開成白玫瑰 → 名字（綠籬與玫瑰都是真的照片） | spring-orangerie |
 | `curtain` | 窗簾拉開 | 點一下 → 布幕收到兩側 → 光進來（晨光房間：真的白紗簾，後面是窗台上一瓶鬱金香的窗） | morning-window |
-| `candle` | 燭光點亮 | 點一下 → 三根蠟燭一根根亮（蠟燭與火焰都是真的照片）；午夜教堂：燭火熄掉、天亮，變成大廳那座純白禮堂 | midnight-chapel |
+| `candle` | 燭光點亮 | 點一下 → 三根蠟燭一根根亮（蠟燭與火焰都是真的照片）；白色教堂：燭火熄掉、天亮，變成大廳那座純白禮堂 | white-church |
 | `stars` | 星圖展開 | 自己演：星星 → 連線成一顆心 → 名字 | night-sky |
 | `door` | 門／拱門 | 晴朗的早上站在門口，點一下 → 門往內開 → 陽光湧出來、穿過門口。莊園全部是真的照片：綠籬牆上、磚砌圓拱裡的一扇鍛鐵花園門，鐵門從照片分離出來繞著鉸鍊轉開，走進去是一座綠籬夾道的歐式花園（教堂／刺繡用程式畫的尖拱鐵門），秘密花園是常春藤牆上一扇白框玻璃門（牆、垂下來的藤、牆腳的花、門後的玫瑰拱門小徑都是真的照片） | secret-garden、french-manor |
-| `ribbon` | 拉開絲帶 | 拖緞帶尾（或點）→ 蝴蝶結鬆開 → 卡片打開。緞帶疊了一張真的絲綢布紋，光澤跟著游標滑（手機上自己慢慢飄）；卡片與桌面是真的棉紙、纖維紙，封面貼一枝真的壓花 | botanical-letter |
+| `ribbon` | 拉開絲帶 | 拖緞帶尾（或點）→ 蝴蝶結鬆開 → 卡片打開。緞帶的光澤跟著游標滑（手機上自己慢慢飄）；卡片與桌面是真的棉紙、纖維紙，封面貼一枝真的壓花 | botanical-letter |
 | `painting` | 走進油畫 | 鼠尾草綠錦緞壁紙的展間，牆上一幅真的金框（照片做的九宮格）裡掛著莫內的《日本橋》（美國國家藝廊館藏的掃描），畫是活的（池水起伏、水面光點閃）；像首爾的沉浸式美術館，畫裡的東西跑到框外面來：大理花與蜀葵從框邊一筆刷出來、蝴蝶從畫裡飛到牆上、花瓣飄出畫面。點一下 → 牆往外退、畫框往前衝、畫裡的筆觸捲成漩渦，四周的顏料點被吸進畫裡 → 掉進畫裡 | monet-garden |
 | `balloons` | 氣球升空 | 自己演：滿滿一畫面一顆一顆霧面的粉彩氣球（奶油白、腮紅粉、蜜桃、奶油黃、薄荷、薰衣草；遠中近三層，近的帶一點景深的糊）在原地晃 → 每一顆各自被放開、各自的速度與方向慢慢升空 → 露出底下一片藍天、綠地與遠山 → 名字浮在天空上 | outdoor-party |
-
-> **緞帶的布紋素材**：`public/css/openers/satin-silk.jpg` 是把一張真的絲綢 normal map
-> 打光成灰階的布紋。原圖是 Khronos [glTF Sample Assets](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/SpecularSilkPouf)
-> 的 SpecularSilkPouf（© 2023 Wayfair, LLC，Eric Chadwick 製作），授權是
-> [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)：可以商用、可以修改，**要標示出處**（就是這一段）。
-> 換成別張緞面材質圖也可以：檔名不變，放一張 128 中灰、可以無縫平鋪的灰階圖就好。
 
 > **秘密花園的照片素材**（`public/img/secret-garden/`，開場的玻璃門與 `lobby-garden.html` 共用）：
 > 全部來自 [Unsplash](https://unsplash.com)，授權是 [Unsplash License](https://unsplash.com/license)：
@@ -312,7 +312,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 >
 > 開場門旁那一整面綠籬，借用春日溫室開場的 `orangerie/leaf-wall.webp`。
 
-> **午夜教堂的照片素材**（`public/img/chapel/`，開場的蠟燭與 `lobby-chapel.html` 共用）：一樣是 Unsplash License。
+> **白色教堂的照片素材**（`public/img/chapel/`，開場的蠟燭與 `lobby-chapel.html` 共用）：一樣是 Unsplash License。
 >
 > | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
 > |---|---|---|---|
@@ -398,7 +398,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > | 版型 | 線 | 領頭 | 沿路留下 |
 > |---|---|---|---|
 > | Forest Botanical | 一根藤蔓（CSS） | `forest/sprig.webp` 新芽 | 葉子、橡實、莓果（森林小物） |
-> | Midnight Chapel | `chapel/lace-ribbon.webp` 兩旁各一條蕾絲緞帶（兩邊都是花朵波浪邊） | — | — |
+> | White Church | `chapel/lace-ribbon.webp` 兩旁各一條蕾絲緞帶（兩邊都是花朵波浪邊） | — | — |
 > | Morning Window | 一根細細的、不太直的乾草莖（CSS） | `window/grass-plume.webp` 一束乾草穗 | `window/seedhead.webp` 乾燥的種子花頭 |
 
 > **Forest Botanical 的手繪森林小物**（`public/img/forest/`，`lobby-forest.html`）：全部來自同一張 Unsplash 插畫
@@ -424,11 +424,11 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > | `forest/dove.webp`、`dove2.webp`、`dove3.webp` | hero 上方飛的白鴿、R.S.V.P. 標題、頁邊 | [一群飛鳥](https://unsplash.com/illustrations/usjlgy7I5wY)・remapstudio | 一隻一隻切開 |
 
 同一種開場在不同版型可以長得不一樣（門：法式莊園是圓拱裡的鍛鐵花園門、秘密花園是爬滿植物的玻璃門、
-午夜教堂與中古刺繡是尖拱的鍛鐵大門）。要賓客親手做的開場，那一下也會開始播背景音樂。
+白色教堂與中古刺繡是尖拱的鍛鐵大門）。要賓客親手做的開場，那一下也會開始播背景音樂。
 每一種開場單獨看：`preview/openings.html`。
 
 **場景版型**：`botanical-letter`、`secret-garden`、`spring-orangerie`、`night-sky`、
-`french-manor`、`monet-garden`、`outdoor-party`、`morning-window`、`midnight-chapel`。每一個都有自己的色票、字體、預設開場與大廳骨架：
+`french-manor`、`monet-garden`、`outdoor-party`、`morning-window`、`white-church`。每一個都有自己的色票、字體、預設開場與大廳骨架：
 
 | 版型 | 進度 | 大廳 |
 |---|---|---|
@@ -440,12 +440,12 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | monet-garden | ✅ 莫內花園・流動油畫：莫內真跡的掃描（日本橋、塞納河、罌粟花田、柳樹、維特伊的花園小徑、國會大廈日落、阿讓特伊的花園），水面在 canvas 上一直流動；真的金框（照片做成九宮格）、真的亞麻畫布、錦緞壁紙的展牆、美術館說明卡、黃銅名牌、阿讓特伊的明信片；畫裡的東西跑到框外面來（大理花、哈森的蜀葵與罌粟從畫框與卡片邊一筆刷出來，蝴蝶在飛、花瓣在飄，故事展牆的角落一瓶塞尚的花） ＋ 捲動編排（hero 的池水一直流動、往下捲畫慢慢沉下去；每一幅小畫捲到時從釘子上擺進來、再一筆一筆刷上去；故事展牆的投射燈隨捲動滑過；倒數時夕陽的光越捲越暖），素材見上面〈莫內花園的素材〉 | `lobby-monet.html` |
 | outdoor-party | ✅ 美式戶外婚禮派對：開場露出來的那片藍天、綠地、遠山就是 hero，草地上擺著野餐（籐籃、一瓶雛菊、琺瑯杯、一籃蘋果），幾顆漏網的霧面粉彩氣球一直往上飄；三角旗資訊卡（上緣是真的紅白格紋布、後面探出野花）、長桌派對與野花玻璃罐的拍立得、字母板的流程（旁邊老銀餐具與紅琺瑯杯）、綁著三顆粉彩氣球的「Just Married」老福特小貨車、真的戶外婚宴當故事的底、黃昏亮燈的穀倉當倒數的底、入場券、彩色園遊券 ＋ 捲動編排（草原往上退；野花從卡片後面長出來；三角旗一面一面翻下來；小貨車從右邊開進來；拍立得跟著捲動擺；倒數的串燈一顆一顆亮、穀倉越來越亮，全亮了就放煙火），素材見上面〈美式戶外派對的素材〉 | `lobby-party.html` |
 | morning-window | ✅ 侘寂（Wabi-Sabi）：真的照片（窗前的一瓶鬱金香、灰泥牆、牆上窗格形狀的陽光、亞麻布、照著陽光的紗簾），顏色都是褪過的大地色 ＋ 「我們的故事」接著一張桌巾：洗出來的照片散在亞麻布上、去背的手作陶杯／素色抱枕／一盆室內植物 ＋ 區塊標題上是去背的小物（陶杯、白色花瓶、素色抱枕、攤開的書、一枝粉色鬱金香，不放在框裡）＋ 左邊一枝乾草跟著捲動垂下來＋ 新人照片共 7 處 ＋ 捲動編排（照片一張張落到桌上、窗光滑過桌面、倒數時紗簾越捲越暖），素材見上面〈晨光房間的照片素材〉 | `lobby-window.html` |
-| midnight-chapel | ✅ 開場在午夜的禮堂點亮三根真的蠟燭 → 燭火熄掉、天亮 → 大廳是同一座純白禮堂；玻璃感：照片壓在厚玻璃裡（反光隨捲動滑過）、毛玻璃的卡；兩旁垂著白紗、hero 下緣一圈蕾絲、兩旁的蕾絲緞帶跟著捲動一路縫下來、頁尾一片滿天星；區塊標題上是去背的實物（戒指、水晶燈、鈴蘭、百合、白色蝴蝶蘭）；新人照片共 7 處（倒數的毛玻璃後面是一片鈴蘭，越捲越清楚），素材見上面〈午夜教堂的照片素材〉 | `lobby-chapel.html` |
+| white-church | ✅ 開場在午夜的禮堂點亮三根真的蠟燭 → 燭火熄掉、天亮 → 大廳是同一座純白禮堂；玻璃感：照片壓在厚玻璃裡（反光隨捲動滑過）、毛玻璃的卡；兩旁垂著白紗、hero 下緣一圈蕾絲、兩旁的蕾絲緞帶跟著捲動一路縫下來、頁尾一片滿天星；區塊標題上是去背的實物（戒指、水晶燈、鈴蘭、百合、白色蝴蝶蘭）；新人照片共 7 處（倒數的毛玻璃後面是一片鈴蘭，越捲越清楚），素材見上面〈白色教堂的照片素材〉 | `lobby-chapel.html` |
 
-Night Sky 與 Midnight Chapel 的大廳是深色的，但子頁暫時還是淺色版（見 common.css）。
-每個版型各有一頁示範（`preview/botanical-letter.html`、`preview/secret-garden.html`、`preview/spring-orangerie.html`、`preview/night-sky.html`、`preview/french-manor.html`、`preview/monet-garden.html`、`preview/outdoor-party.html`、`preview/morning-window.html`、`preview/midnight-chapel.html`）。右下角都可以切換開場。
+只有 Night Sky 的大廳是深色的，子頁暫時還是淺色版（見 common.css）。
+每個版型各有一頁示範（`preview/botanical-letter.html`、`preview/secret-garden.html`、`preview/spring-orangerie.html`、`preview/night-sky.html`、`preview/french-manor.html`、`preview/monet-garden.html`、`preview/outdoor-party.html`、`preview/morning-window.html`、`preview/white-church.html`）。右下角都可以切換開場。
 
-`preview/` 底下 tapestry、botanical-letter、secret-garden、spring-orangerie、night-sky、french-manor、monet-garden、outdoor-party、morning-window、midnight-chapel 這幾頁是 `npm run build-previews` 從
+`preview/` 底下 tapestry、botanical-letter、secret-garden、spring-orangerie、night-sky、french-manor、monet-garden、outdoor-party、morning-window、white-church 這幾頁是 `npm run build-previews` 從
 `public/lobby-*.html` 產出來的，改了大廳骨架記得重跑。
 
 > **莫內花園的畫怎麼來的**：`js/openers/painting.js` 同時是開場與一具「油畫繪製器」（`window.MonetPaint`）。

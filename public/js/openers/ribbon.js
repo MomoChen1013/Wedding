@@ -16,15 +16,8 @@
   const T = { untie: 900, open: 1300, hold: 1500, leave: 1100 };
   const PULL = 70;   /* 拉多遠（px）算拉開 */
 
-  /* 緞面的布紋：一張真的絲綢掃描（Khronos glTF Sample Assets 的 SpecularSilkPouf，
-     © 2023 Wayfair，CC BY 4.0）的 normal map，打光成灰階之後放在 css/openers/satin-silk.jpg。
-     緞帶的顏色與光澤是程式畫的漸層，布紋用 soft-light 疊上去 —— 所以有真的絲綢紋理，又能動。
-     路徑從這支 script 自己的位置推回去（預覽頁與正式站的根目錄不一樣） */
-  const SCRIPT = document.currentScript && document.currentScript.src;
-  const TEX = SCRIPT ? SCRIPT.replace(/js\/openers\/ribbon\.js.*$/, 'css/openers/satin-silk.jpg') : '/css/openers/satin-silk.jpg';
-
   /* 蝴蝶結：兩個折起來的圈（看得到圈裡面那一面比較暗）、兩條魚尾剪口的尾巴、中間一個有皺褶的結。
-     每一塊畫兩次：一次是緞面的漸層，一次是布紋（soft-light） */
+     每一塊都是緞面的漸層 */
   const SHAPES = {
     tailL: 'M-7 6C-14 22-24 40-38 60L-29 56L-24 66C-12 46-4 26 5 9Z',
     tailR: 'M7 6C13 24 20 42 30 62L36 55L44 58C30 38 18 22 5 4Z',
@@ -35,13 +28,11 @@
     knot: 'M-11-10C-4-14 4-14 11-10C14 0 14 6 11 14C4 18-4 18-11 14C-14 6-14 0-11-10Z',
   };
   const part = (cls, key, grad) =>
-    `<g class="${cls}"><use href="#rb-${key}" fill="url(#${grad})"/><use class="rb-tex" href="#rb-${key}" fill="url(#rbTex)"/></g>`;
+    `<g class="${cls}"><use href="#rb-${key}" fill="url(#${grad})"/></g>`;
   const BOW = `
     <svg class="rb-bow" viewBox="-80 -52 160 124" aria-hidden="true">
       <defs>
         ${Object.entries(SHAPES).map(([k, d]) => `<path id="rb-${k}" d="${d}"/>`).join('')}
-        <pattern id="rbTex" patternUnits="userSpaceOnUse" width="64" height="22" patternTransform="rotate(-24)">
-          <image href="${TEX}" width="64" height="22" preserveAspectRatio="none"/></pattern>
         <linearGradient id="rbLoopL" x1="0" y1="0" x2=".35" y2="1">
           <stop offset="0" style="stop-color:var(--rb-lo)"/><stop offset=".3" style="stop-color:var(--rb-ribbon)"/>
           <stop offset=".46" style="stop-color:var(--rb-hi)"/><stop offset=".6" style="stop-color:var(--rb-ribbon)"/>

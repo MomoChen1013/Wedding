@@ -24,7 +24,7 @@
                       classic / classic-blush / classic-sage / classic-dusk
                       / korean / forest / tapestry / botanical-letter / secret-garden
                       / spring-orangerie / night-sky / french-manor / monet-garden
-                      / outdoor-party / morning-window / midnight-chapel
+                      / outdoor-party / morning-window / white-church
                       （見 js/wed-model.js 的 TEMPLATES）
      --opening        選填，開場；不填就用版型的預設開場
                       envelope / book / bloom / curtain / candle / stars / door / ribbon

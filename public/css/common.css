@@ -180,8 +180,8 @@ body[data-template="tapestry"]{
    ------------------------------------------------------------
    九個版型各自一組色票與字體；這裡這一份是**子頁**穿的衣服
    （祝福牆、給你的信、出席回覆……），所以一律是淺色底 ——
-   Night Sky 與 Midnight Chapel 的大廳是深色的，但深色只在大廳
-   （lobby-night.css／lobby-chapel.css 在 body[data-lobby] 底下覆寫），
+   Night Sky 的大廳是深色的，但深色只在大廳
+   （lobby-night.css 在 body[data-lobby] 底下覆寫），
    子頁的元件有不少地方預設是淺色底，逐頁改成深色之前先維持淺色。
 ============================================================ */
 /* 植物信箋 —— 棉紙、橄欖墨、鼠尾草、乾燥玫瑰 */
@@ -272,8 +272,8 @@ body[data-template="morning-window"]{
   --font-display:'EB Garamond','Noto Serif TC',serif;
   --font-body:'Noto Serif TC',serif; --font-hand:'EB Garamond','Noto Serif TC',serif; --font-ui:'Noto Serif TC',serif;
 }
-/* 午夜教堂 —— 子頁是燭光下的羊皮紙：深李子墨、酒紅、古金 */
-body[data-template="midnight-chapel"]{
+/* 白色教堂 —— 子頁是燭光下的羊皮紙：深李子墨、酒紅、古金 */
+body[data-template="white-church"]{
   --ink-rgb:37,29,36; --surface-rgb:251,248,244;
   --ink:#251d24; --ink-soft:#74686e; --line:#dcd2cc; --line-soft:#ebe4de;
   --surface:#fbf8f4; --ink-hover:#3a2e38; --ink-active:#150f14;
@@ -316,7 +316,7 @@ body[data-template="forest"] .scene-bg::after{
 body:is([data-template="korean"],[data-template="forest"],[data-template="tapestry"],
   [data-template="botanical-letter"],[data-template="secret-garden"],[data-template="spring-orangerie"],
   [data-template="night-sky"],[data-template="french-manor"],[data-template="morning-window"],
-  [data-template="midnight-chapel"],[data-template="monet-garden"],[data-template="outdoor-party"]) :is(
+  [data-template="white-church"],[data-template="monet-garden"],[data-template="outdoor-party"]) :is(
   .lobby-hero .tag, .ir-label, .cd-lab, .lc-go, .icon-hint, .gate-sep,
   .rf-req, .st-card-label, .st-mates-label, .st-letter-go, .st-lb-tip,
   .draw-info-hint, .cv-hint, .tl-eyebrow, .tl-meta .when, .lb-body .lb-date,
@@ -327,7 +327,7 @@ body:is([data-template="korean"],[data-template="forest"],[data-template="tapest
 body:is([data-template="korean"],[data-template="forest"],[data-template="tapestry"],
   [data-template="botanical-letter"],[data-template="secret-garden"],[data-template="spring-orangerie"],
   [data-template="night-sky"],[data-template="french-manor"],[data-template="morning-window"],
-  [data-template="midnight-chapel"],[data-template="monet-garden"],[data-template="outdoor-party"]) :is(
+  [data-template="white-church"],[data-template="monet-garden"],[data-template="outdoor-party"]) :is(
   .inv-lead, .tl-meta .desc, .st-letter-text, .st-miss-body,
   .q-intro, .q-bar-label, .card-desc, .rsvp-cta p,
   .step-pane .step-hint, .gate-card .sub){

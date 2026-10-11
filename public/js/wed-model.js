@@ -118,8 +118,8 @@ export const TEMPLATES = {
   'morning-window': { label:'Morning Window 晨光房間', lobbyFile:'lobby-window.html',
                      lobbyCss:['/css/lobby-window.css','/css/lobby-trail.css'], lobbyJs:['/js/lobby-motion.js'], opening:'curtain',
                      fonts:['https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
-  /* 午夜教堂：午夜一根一根點亮蠟燭，天一亮是一座純白的教堂 —— 真的照片、厚玻璃相片、毛玻璃 */
-  'midnight-chapel': { label:'Midnight Chapel 午夜教堂', lobbyFile:'lobby-chapel.html',
+  /* 白色教堂：午夜一根一根點亮蠟燭，天一亮是一座純白的教堂 —— 真的照片、厚玻璃相片、毛玻璃 */
+  'white-church': { label:'White Church 白色教堂', lobbyFile:'lobby-chapel.html',
                      lobbyCss:['/css/lobby-chapel.css','/css/lobby-trail.css'], lobbyJs:['/js/lobby-motion.js'], opening:'candle',
                      fonts:['https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=UnifrakturMaguntia&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
 };
@@ -169,12 +169,19 @@ export function openingKey(name, template) {
   return t.opening && Object.hasOwn(OPENINGS, t.opening) ? t.opening : null;
 }
 
+/* 改過名字的版型：舊代號 → 新代號。
+   sites.template 已經寫了舊代號的站台照樣認得，不會落回 classic */
+const RENAMED_TEMPLATES = {
+  'midnight-chapel': 'white-church',   /* 大廳改成白天的純白教堂之後改名 */
+};
+
 /* 認不得的版型一律落回 classic。
    用 hasOwn 而不是 TEMPLATES[name] —— 'toString'、'__proto__' 這些
    原型上的屬性是 truthy，直接判斷會讓它們通過，然後寫出一個
    CSS 對不上的 data-template，整站只剩 :root 的預設值（沒有 --bg1／
    --primary），畫面會壞掉。 */
 export function templateKey(name) {
+  if (Object.hasOwn(RENAMED_TEMPLATES, name)) name = RENAMED_TEMPLATES[name];
   return Object.hasOwn(TEMPLATES, name) ? name : DEFAULT_TEMPLATE;
 }
 
