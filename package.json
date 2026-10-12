@@ -13,6 +13,7 @@
     "test:no-flicker": "firebase emulators:exec --only firestore,hosting,auth \"node tests/seed-no-flicker.mjs && node scripts/build-og.js --project wedding-22b94 --text none && node tests/no-flicker.mjs\"",
     "test:all": "npm run test:rules && npm run test:e2e && npm run test:multipage && npm run test:butler && npm run test:ui && npm run test:no-flicker",
     "emulators": "firebase emulators:start --only firestore,hosting,auth",
+    "samples": "echo 版型展示頁：http://localhost:5000/samples/ && firebase emulators:start --only hosting",
     "create-site": "node scripts/create-site.js",
     "export-rsvps": "node scripts/export-rsvps.js",
     "create-short-link": "node scripts/create-short-link.js",

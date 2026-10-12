@@ -487,8 +487,10 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | `photos/cover.webp` | [dSe8sD9Y8vk](https://unsplash.com/photos/dSe8sD9Y8vk) |
 | `photos/01.webp`～`06.webp` | [KiKn-FCXu_o](https://unsplash.com/photos/KiKn-FCXu_o)、[PkWk1kMiTPo](https://unsplash.com/photos/PkWk1kMiTPo)、[cnO9IQzhUbI](https://unsplash.com/photos/cnO9IQzhUbI)、[752QZG5n-PQ](https://unsplash.com/photos/752QZG5n-PQ)、[_m2w7OBAnsc](https://unsplash.com/photos/_m2w7OBAnsc)、[J4JjsFJKhpI](https://unsplash.com/photos/J4JjsFJKhpI) |
 
-**本機預覽**：`npx firebase emulators:start --only hosting`，開 `http://localhost:5000/samples/`
-（直接雙擊 HTML 檔打不開：路徑都是從網站根目錄開始的，也需要上面那些改寫規則）。
+**本機預覽**：`npm run samples`（第一次先 `npm install`），瀏覽器開 `http://localhost:5000/samples/`，
+看完在終端機按 Ctrl+C 關掉。
+直接雙擊 HTML 檔、或用 VS Code 的 Live Server 都打不開：圖片與連結的路徑是從網站根目錄開始的，
+點進版型也要靠 `firebase.json` 的改寫規則，這兩件事只有 Firebase 的本機伺服器做得到。
 
 **改了什麼要重跑什麼**
 
