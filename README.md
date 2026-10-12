@@ -498,6 +498,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | 卡片文案 `scripts/sample-catalog.js`、總覽模板 `scripts/sample-index.html` | `npm run build-samples` |
 | 大廳的長相（CSS、照片、開場、骨架）——縮圖要跟著換 | `npm run build-sample-thumbs`（截圖後會自己再跑一次 build-samples） |
 | 新增一個版型 | 先在 `scripts/sample-catalog.js` 補一筆（沒補 build 會直接報錯），再跑 `npm run build-sample-thumbs` |
+| 總覽頁的中文字（任何文案改動之後） | `npm run build-samples` 之後再跑 `python3 scripts/build-sample-font.py <源樣明體 otf 資料夾>`：總覽頁的中文是源樣明體，只切了頁面用到的字（`public/samples/fonts/`）；漏跑的話新字會退回思源宋體 |
 
 示範站台本身不用重產：它就是正式的頁面，改了就生效。總覽與縮圖是產出的檔案，要 commit，`firebase deploy` 不會幫你產。
 
