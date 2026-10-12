@@ -373,7 +373,7 @@ function loadScript(src) {
 }
 
 /* ---------- 版型展示頁：示範站台 ----------
-   版型取自網址；?o=開場代號 可以換開場（示範列上的選單用的）。
+   版型取自網址，開場是那個版型的預設開場。
    回傳 null ＝ 網址上的版型不存在。 */
 async function loadDemoSite(template) {
   if (!Object.hasOwn(TEMPLATES, template)) return null;
@@ -383,8 +383,6 @@ async function loadDemoSite(template) {
   ]);
   const siteId = `demo-${template}`;
   const site = { ...demo.SAMPLE_SITE, template };
-  const o = new URLSearchParams(location.search).get('o');
-  if (o && Object.hasOwn(OPENINGS, o)) site.opening = o;
 
   /* 一律以「沒登入的訪客」進來：清掉上次在示範頁留下的名字、收藏 */
   try {
@@ -398,13 +396,13 @@ async function loadDemoSite(template) {
   return { site, siteId, assets: demo.SAMPLE_ASSETS };
 }
 
-/* 示範頁下方的那一條：回總覽、換配色（Classic）、換開場、重播開場。
+/* 示範頁左下角的那一條：回到版型總覽（Classic 另外可以換配色）。
+   開場不給賓客挑：每個版型照它自己的預設開場演。
    只有 /samples 才有，正式網站不會載入 demo-bar.css，也不會走到這裡。 */
-function mountDemoBar({ template, opening, pageKey }) {
+function mountDemoBar({ template }) {
   addStylesheet('/samples/demo-bar.css');
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const seg = location.pathname.split('/').slice(3).join('/');
-  const introKey = `wed.demo-${template}.introSeen`;
 
   /* Classic 四種配色是四個版型，同一頁換到另一個版型就是換配色 */
   const family = template.startsWith('classic')
@@ -413,29 +411,16 @@ function mountDemoBar({ template, opening, pageKey }) {
     ? `<label>配色<select data-k="color">${family.map(([k, t]) =>
         `<option value="${k}"${k === template ? ' selected' : ''}>${esc(t.label.replace(/^Classic\s*/, ''))}</option>`).join('')}</select></label>`
     : '';
-  const openSel = pageKey === 'lobby'
-    ? `<label>開場<select data-k="open"><option value="">原本的</option>${Object.entries(OPENINGS).map(([k, o]) =>
-        `<option value="${k}"${k === opening && new URLSearchParams(location.search).get('o') === k ? ' selected' : ''}>${esc(o.label)}</option>`).join('')}</select></label>` +
-      `<button type="button" data-k="replay">重播開場</button>`
-    : '';
 
   const bar = document.createElement('div');
   bar.className = 'demo-bar';
-  bar.innerHTML = `<a href="/samples/">← 所有版型</a>${colorSel}${openSel}`;
+  bar.innerHTML = `<a href="/samples/">← 版型總覽</a>${colorSel}`;
   document.body.appendChild(bar);
 
-  const replay = (o) => {
-    try { sessionStorage.removeItem(introKey); } catch {}
-    const u = new URL(location.href);
-    if (o) u.searchParams.set('o', o); else if (o === '') u.searchParams.delete('o');
-    location.href = u.toString();
-  };
-  const sel = (k) => bar.querySelector(`[data-k="${k}"]`);
-  if (sel('color')) sel('color').addEventListener('change', (e) => {
-    location.href = `/samples/${e.target.value}/${seg}${location.search}`;
+  const color = bar.querySelector('[data-k="color"]');
+  if (color) color.addEventListener('change', (e) => {
+    location.href = `/samples/${e.target.value}/${seg}`;
   });
-  if (sel('open')) sel('open').addEventListener('change', (e) => replay(e.target.value));
-  if (sel('replay')) sel('replay').addEventListener('click', () => replay());
 }
 
 /* ---------- 主流程 ---------- */
@@ -625,7 +610,7 @@ async function boot() {
     return;
   }
 
-  if (DEMO) mountDemoBar({ template, opening, pageKey });
+  if (DEMO) mountDemoBar({ template });
 
   /* 給測試與外部腳本判斷「整站真的可用了」的旗標 */
   document.documentElement.dataset.siteReady = '1';

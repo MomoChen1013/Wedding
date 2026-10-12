@@ -2,7 +2,7 @@
    samples/demo-bar.css — 版型展示頁（/samples/{版型}/…）左下角的示範列
    ------------------------------------------------------------
    由 js/site-context.js 的 mountDemoBar() 掛上；正式網站不會載入這一份。
-   z-index 1050：蓋得過開場（.overlay 1000），讓賓客在開場時也能換開場；
+   z-index 1050：蓋得過開場（.overlay 1000），開場演到一半也回得去版型總覽；
    讓得過導覽抽屜（1100）與問名字的底部卡片（.id-sheet 1200）。
    右下角留給網站自己的浮動按鈕（.floating，背景音樂那一顆）。
 ============================================================ */
@@ -15,10 +15,9 @@
 .demo-bar a{color:#fff;text-decoration:none;white-space:nowrap;padding:4px 2px;}
 .demo-bar a:hover{text-decoration:underline;}
 .demo-bar label{display:flex;align-items:center;gap:5px;white-space:nowrap;}
-.demo-bar select,.demo-bar button{font:inherit;padding:5px 7px;border-radius:7px;cursor:pointer;
+.demo-bar select{font:inherit;padding:5px 7px;border-radius:7px;cursor:pointer;
   border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.1);color:#fff;max-width:8.5em;}
 .demo-bar select option{color:#222;}
-.demo-bar button{background:#fff;color:#222;border-color:#fff;}
 @media (max-width:420px){
   .demo-bar{font-size:12px;padding:7px 10px;gap:6px 8px;}
 }
