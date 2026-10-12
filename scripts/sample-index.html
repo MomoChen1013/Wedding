@@ -70,6 +70,24 @@ h2 .cn{font-family:var(--f-cn);font-size:13.5px;letter-spacing:.2em;color:var(--
   .swatches i{width:13px;height:13px;}
 }
 
+/* LINE 選單直接連到 #templates／#faq：落點留一點上緣，標題不要貼著螢幕頂 */
+#templates,#faq{scroll-margin-top:24px;}
+
+/* 常見問題：點題目展開，一次只看一題也不會迷路 */
+.faq{max-width:760px;margin:clamp(56px,8vw,96px) auto 0;}
+.faq-head{text-align:center;margin-bottom:clamp(20px,4vw,32px);}
+.faq-head h2{display:block;font-family:var(--f-cn);font-weight:500;font-size:clamp(20px,3.4vw,26px);letter-spacing:.14em;margin-top:10px;}
+.faq details{border-top:1px solid var(--line);}
+.faq details:last-child{border-bottom:1px solid var(--line);}
+.faq summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;justify-content:space-between;gap:16px;
+  padding:18px 2px;font-family:var(--f-cn);font-weight:400;font-size:15.5px;letter-spacing:.06em;line-height:1.7;}
+.faq summary::-webkit-details-marker{display:none;}
+.faq summary::after{content:'+';display:inline-block;flex:0 0 auto;font-family:var(--f-en);font-size:20px;line-height:1;color:var(--muted);transition:transform .2s ease;}
+.faq details[open] summary::after{transform:rotate(45deg);}
+.faq summary:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
+.faq .a{padding:0 2px 20px;color:#4d4841;font-size:14.5px;}
+.faq .a b{font-weight:500;color:var(--ink);}
+
 footer{margin-top:clamp(40px,6vw,64px);text-align:center;color:var(--muted);font-size:13px;line-height:2;}
 footer a{color:inherit;}
 </style>
@@ -81,8 +99,40 @@ footer a{color:inherit;}
     <h1>網站版型總覽</h1>
     <p>示範頁就是賓客實際會看到的樣子，你可以在裡面盡量嘗試，填的內容不會被送出去。示範的姓名及地點都是虛構的，照片為示範用圖，正式網站會換成你們的照片與內容。</p>
   </header>
-  <main class="grid"><!--CARDS-->
+  <!-- 芯玖介紹：文案定稿後放在 header 與版型之間 -->
+
+  <!-- #templates：LINE 選單「範例網站」連到 /samples/#templates -->
+  <main class="grid" id="templates"><!--CARDS-->
   </main>
+
+  <!-- #faq：LINE 選單「常見問題」連到 /samples/#faq -->
+  <section class="faq" id="faq" aria-labelledby="faqTitle">
+    <div class="faq-head">
+      <div class="kicker">FAQ</div>
+      <h2 id="faqTitle">常見問題</h2>
+    </div>
+    <details>
+      <summary>在示範頁裡填的東西，會被送出去嗎？</summary>
+      <div class="a">不會。出席回覆、祝福、測驗作答都只留在你現在開著的這個分頁，重新整理就回到原本的樣子，不會進到任何人的資料裡。</div>
+    </details>
+    <details>
+      <summary>示範裡的新人、照片是真的嗎？</summary>
+      <div class="a">新人姓名、日期、地點都是虛構的，照片是示範用圖。正式網站會換成你們的名字、婚禮資訊與照片。</div>
+    </details>
+    <details>
+      <summary>想試試「查桌次」和「給你的信」，要輸入什麼？</summary>
+      <div class="a">查桌次輸入 <b>王小安</b>，就會查到他的桌號。<br>給你的信輸入 <b>小安</b>，會拆到專門寫給他的那一封；輸入其他名字，拿到的是給所有賓客的通用信。</div>
+    </details>
+    <details>
+      <summary>示範頁跟正式網站一樣嗎？</summary>
+      <div class="a">是同一套頁面。賓客會看到的大廳、出席回覆、祝福牆、桌次查詢，都跟示範裡點得到的一樣。</div>
+    </details>
+    <details>
+      <summary>經典版型只有一種顏色嗎？</summary>
+      <div class="a">經典有四種配色：香檳金、霧玫瑰、鼠尾草綠、霧霾藍。示範頁放的是香檳金。</div>
+    </details>
+  </section>
+
   <footer>
     示範照片：<a href="https://unsplash.com/@vinomamba24" target="_blank" rel="noopener">Vino Li</a>／Unsplash<br>
     小港製作所 設計製作
