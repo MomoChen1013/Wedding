@@ -84,8 +84,16 @@ function writeFailed(err, retry){
     return;
   }
 
+  /* 進得了後台就代表畫面這一側認得這個帳號 —— 寫入還被擋，
+     多半是登入狀態在別的分頁被換掉、或過期了。給一顆「重新登入」，
+     不要只丟一句話讓新人自己猜。 */
   if(err && err.code === 'permission-denied'){
-    toast('沒有寫入權限：這個 Google 帳號不在新人帳號名單裡', true);
+    showToast('沒有寫入權限：登入狀態可能過期了，重新登入一次再試', {
+      isError: true,
+      duration: 9000,
+      actionLabel: '重新登入',
+      onAction: reloginOwner,
+    });
   }else{
     showToast(`存檔失敗：${(err && err.message) || '請再試一次'}`, {
       isError: true,
@@ -470,7 +478,12 @@ const Drawer = (() => {
 
   function open(opts){
     build();
-    const { title, sub, body, foot, onClose } = opts || {};
+    const { title, sub, body, foot, onClose, mobile } = opts || {};
+    /* 窄螢幕預設不開抽屜（出席回覆在手機上走卡片的「展開更多」）。
+       mobile:true 的抽屜手機上照樣打開、整個鋪滿 —— 收禮明細要就地改金額，
+       卡片上沒有別的地方改得了 */
+    box.classList.toggle('is-mobile', !!mobile);
+    mask.classList.toggle('is-mobile', !!mobile);
     titleEl.textContent = title || '';
     subEl.innerHTML = sub || '';
     subEl.hidden = !sub;
@@ -502,9 +515,10 @@ const Drawer = (() => {
   /* 資料變動時就地更新內容，不要整個重開（重開會把捲動位置與焦點都丟掉） */
   function isOpen(){ return !!box && !box.hidden; }
   function setBody(html){ if(isOpen()) bodyEl.innerHTML = html; }
+  function setSub(html){ if(isOpen()){ subEl.innerHTML = html || ''; subEl.hidden = !html; } }
   function bodyEl_(){ return bodyEl; }
 
-  return { open, close, isOpen, setBody, body: bodyEl_ };
+  return { open, close, isOpen, setBody, setSub, body: bodyEl_ };
 })();
 
 /* ============================================================
@@ -1003,7 +1017,8 @@ function emptyState(opts){
   const act = action
     ? `<div class="ad-empty-act"><button class="btn small ghost" type="button"${
         action.hash ? ` data-empty-hash="${escapeHtml(action.hash)}"` : ''}${
-        action.id ? ` id="${escapeHtml(action.id)}"` : ''}>${escapeHtml(action.label)}</button></div>`
+        action.id ? ` id="${escapeHtml(action.id)}"` : ''}${
+        action.relogin ? ' data-relogin' : ''}>${escapeHtml(action.label)}</button></div>`
     : '';
   return `<div class="ad-empty is-rich">
     ${title ? `<div class="ad-empty-title">${escapeHtml(title)}</div>` : ''}
@@ -1017,6 +1032,8 @@ function emptyState(opts){
 document.addEventListener('click', (e)=>{
   const btn = e.target.closest('[data-empty-hash]');
   if(btn) location.hash = btn.dataset.emptyHash;
+  /* 「讀不到」的空狀態都附一顆重新登入（見 reloginOwner） */
+  if(e.target.closest('[data-relogin]')) reloginOwner();
 });
 
 /* 頁面標題底下那一行說明（「共 12 筆回覆」）。
@@ -1446,13 +1463,68 @@ function openAdmin(){
   offerSiteDraft();
 }
 
+/* ============================================================
+   登入狀態的防呆
+   ------------------------------------------------------------
+   同一個網域底下所有分頁共用同一份登入：新人在另一個分頁登出、
+   或是在賓客頁「用 Google 帶出名字」換成別的帳號，這一頁的身分
+   也跟著被換掉 —— 畫面還開著，但之後的每一次讀寫都會被規則擋下。
+
+   所以後台打開之後還要一直看著：身分不再是新人時把登入門蓋回來，
+   重新登入成功就整頁重新載入（先前被擋下的訂閱不會自己復活）。
+============================================================ */
+let sessionLost = false;
+
+function ownerReady(){
+  if(sessionLost){ location.reload(); return; }
+  openAdmin();
+}
+
+function showGate(msg){
+  /* 抽屜疊得比登入門高，開著的話會蓋在門上面 */
+  if(Drawer.isOpen()) Drawer.close();
+  pwGate.style.display = '';
+  if(msg) pwErr.textContent = msg;
+}
+
+/* 還沒進後台時，目前登入的是誰要講出來：
+   「我明明登入了」最常見的原因就是登入的是另一個 Google 帳號 */
+function gateHint(user){
+  if(!user || user.isAnonymous || !user.email) return;
+  pwErr.textContent = `目前登入的是 ${user.email}，這個帳號不在新人名單裡。請換一個帳號登入。`;
+}
+
+/* 規則擋下讀寫時給的那一顆「重新登入」（toast、空狀態都走這裡）。
+   一定要由按鈕觸發：跳出 Google 視窗需要使用者手勢。 */
+let reloginBusy = false;
+async function reloginOwner(){
+  if(reloginBusy) return;
+  reloginBusy = true;
+  try{
+    const email = await signInAsOwner();
+    if(isSiteOwner()){
+      location.reload();
+    }else{
+      sessionLost = true;
+      showGate('');
+      showError(`${email || '這個帳號'} 不在這場婚禮的新人名單裡`);
+    }
+  }catch(e){
+    if(!(e && e.code === 'auth/popup-closed-by-user')){
+      toast('登入沒有成功，請再試一次', true);
+    }
+  }finally{
+    reloginBusy = false;
+  }
+}
+
 loginBtn.addEventListener('click', async ()=>{
   pwErr.innerHTML = '&nbsp;';
   loginBtn.disabled = true;
   try{
     const email = await signInAsOwner();
     if(isSiteOwner()){
-      openAdmin();
+      ownerReady();
     }else{
       showError(`${email || '這個帳號'} 不在這場婚禮的新人名單裡`);
     }
@@ -1516,8 +1588,17 @@ if(!ownerEmails().length){
   loginBtn.disabled = true;
   pwErr.textContent = '看起來還沒設定新人登入帳號，跟我們說一聲吧！';
 }else{
-  window.fb.onAuthStateChanged(window.fb.auth, ()=>{
-    if(isSiteOwner()) openAdmin();
+  window.fb.onAuthStateChanged(window.fb.auth, (user)=>{
+    if(isSiteOwner()){ ownerReady(); return; }
+    if(opened){
+      /* 已經在後台裡了，身分卻被換掉（別的分頁登出／換帳號） */
+      if(!sessionLost){
+        sessionLost = true;
+        showGate('登入狀態改變了（可能在別的分頁登出或換了帳號），請重新登入。');
+      }
+      return;
+    }
+    gateHint(user);
   });
 }
 
@@ -2028,7 +2109,65 @@ function renderEventStats(){
   evStatsEl.querySelectorAll('.ad-tablewrap').forEach(bindScrollHints);
 }
 
+/* ============================================================
+   環狀圖：多活動時一次看一場
+   ------------------------------------------------------------
+   頂層欄位（attending、葷素…）講的永遠是主要活動，所以原本那五張圖
+   其實只是婚宴那一場。證婚、派對的人數與飲食各自不同，要能切過去看。
+   預設停在主要活動 —— 和只辦一場的站台看到的是同一份數字。
+============================================================ */
+const chartEvRowEl = document.getElementById('adRsvpChartEvRow');
+const chartEvsEl   = document.getElementById('adRsvpChartEvs');
+let chartEventId = '';
+
+function chartEvents(){
+  return rsvpEvents().length > 1 ? rsvpEventsAsked() : [];
+}
+
+function currentChartEvent(evs){
+  return evs.find(ev => ev.id === chartEventId)
+      || evs.find(ev => ev.id === primaryEventId())
+      || evs[0] || null;
+}
+
+function renderChartEventChips(evs, cur){
+  if(!chartEvRowEl) return;
+  if(!evs.length || !cur){ chartEvRowEl.hidden = true; chartEvsEl.innerHTML = ''; return; }
+  chartEvRowEl.hidden = false;
+  chartEvsEl.innerHTML = evs.map(ev => `<button class="ad-chip${ev.id === cur.id ? ' is-on' : ''}"
+      type="button" data-chart-ev="${escapeHtml(ev.id)}"
+      aria-pressed="${ev.id === cur.id ? 'true' : 'false'}">${escapeHtml(ev.name)}</button>`).join('');
+}
+
+if(chartEvsEl){
+  chartEvsEl.addEventListener('click', (e)=>{
+    const chip = e.target.closest('[data-chart-ev]');
+    if(!chip || chip.dataset.chartEv === chartEventId) return;
+    chartEventId = chip.dataset.chartEv;
+    renderRsvpCharts('');
+  });
+}
+
+/* 某一場的圖：出席、飲食、這一場的自訂選擇題；
+   兒童座椅只問主要活動（存在頂層），喜帖喜餅是整場婚禮的事 */
+function eventChartCards(ev, c, cfg){
+  const e = DataStore.getEventCharts(ev);
+  const isPrimary = ev.id === primaryEventId();
+  return [
+    { ...e.attend, title:`出席・${ev.name}`, hint:'依回覆筆數' },
+    ev.askMeal ? { ...e.meal, title:'飲食', hint:'依這一場的出席人數' } : null,
+    ...e.questions.map(x => ({ ...x, title: x.q.label,
+      hint: x.q.kind === 'multi' ? '可複選・依勾選次數' : '依這一場的出席筆數' })),
+    isPrimary && ev.askChildSeat ? { ...c.child, title:'兒童座椅',
+      hint: c.child.seats ? `共需 ${c.child.seats} 張` : '依回覆筆數' } : null,
+    cfg.askCard ? { ...c.card, title:'喜帖', hint:'整場婚禮・依回覆筆數' } : null,
+    cfg.askGift ? { ...c.gift, title:'喜餅', hint:'整場婚禮・依回覆筆數' } : null,
+  ].filter(Boolean);
+}
+
 function renderRsvpCharts(state){
+  /* 切換活動的那一排只在真的有圖的時候出現 */
+  if(state) renderChartEventChips([], null);
   /* 載入中畫 skeleton，不要先畫五個空圓環 —— 那和「真的沒人回覆」長得一模一樣 */
   if(state === 'loading'){
     rsvpChartsEl.classList.remove('ad-donuts');
@@ -2051,6 +2190,15 @@ function renderRsvpCharts(state){
   rsvpChartsEl.classList.add('ad-donuts');
   const c = DataStore.getRsvpCharts();
   const cfg = rsvpConfig();
+
+  const evs = chartEvents();
+  const cur = currentChartEvent(evs);
+  renderChartEventChips(evs, cur);
+  if(cur){
+    rsvpChartsEl.innerHTML = eventChartCards(cur, c, cfg).map(donutCard).join('');
+    return;
+  }
+
   /* 新人關掉的題目就不畫圖 —— 一張全是「未填」的圖沒有任何資訊，
      只會讓人以為賓客都跳過不答。
      餐點與兒童座椅看的是站台那一份（見 common.js 的 eventAsks()）：
@@ -2717,6 +2865,7 @@ rsvpChartsEl.addEventListener('click', async (e)=>{
 });
 
 document.addEventListener('data:rsvps:denied', ()=>{
+  renderChartEventChips([], null);
   rsvpSubEl.innerHTML = '<li class="ad-hero-item is-note">目前讀不到回覆</li>';
   document.getElementById('adRsvpTotal').textContent = '—';
   rsvpMetaEl.hidden = true;
@@ -2726,8 +2875,9 @@ document.addEventListener('data:rsvps:denied', ()=>{
   rsvpListEl.innerHTML =
     emptyState({
       title: '讀不到出席回覆',
-      body: '這個 Google 帳號不在新人帳號名單裡，所以規則擋下了讀取。'
-          + '換一個帳號登入，或告訴我們要加哪一個。',
+      body: '登入狀態可能過期了，或這個 Google 帳號不在新人帳號名單裡。'
+          + '先重新登入一次；還是不行的話，告訴我們要加哪一個帳號。',
+      action: { label:'重新登入', relogin:true },
     });
 });
 
@@ -4372,7 +4522,9 @@ document.addEventListener('data:letters:denied', ()=>{
   inboxListEl.innerHTML =
     emptyState({
       title: '讀不到悄悄話',
-      body: '這個 Google 帳號不在新人帳號名單裡。換一個帳號登入，或告訴我們要加哪一個。',
+      body: '登入狀態可能過期了，或這個 Google 帳號不在新人帳號名單裡。'
+          + '先重新登入一次；還是不行的話，告訴我們要加哪一個帳號。',
+      action: { label:'重新登入', relogin:true },
     });
 });
 
@@ -8786,11 +8938,13 @@ const Butler = (() => {
   const subscribed = new Set();   /* 已經訂閱過的 bookId */
   let filterText = '';
 
-  /* 金額預設遮起來（網路銀行的作法）。婚宴當天這一頁常常就開著擺在
-     收禮台上，或是新人拿在手上給家人看桌次 —— 旁邊經過的人不該
-     一眼看到今天收了多少。刻意「不」記進 localStorage：
-     每次重新打開都回到遮住的狀態才有意義。 */
-  let moneyHidden = true;
+  /* 金額遮不遮，統計與明細各管各的：
+       統計（stats）  預設遮起來（網路銀行的作法）。婚宴當天這一頁常常就開著
+                      擺在收禮台上 —— 旁邊經過的人不該一眼看到今天收了多少。
+       明細（entries）預設打開。會翻到這一頁的人就是要對帳、要改金額，
+                      一筆一筆都是「$ ---」的話等於什麼都做不了。
+     刻意「不」記進 localStorage：每次重新打開都回到預設才有意義。 */
+  const moneyHidden = { stats: true, entries: false };
   /* 遮住時的樣子。字元之間夾 U+2060 word joiner、錢字號後面用不斷行空格 ——
      不然「$ ---」在窄欄位（手機的禮金欄）會被拆成「$ --」＋「-」兩行 */
   const MONEY_MASK = '$\u00A0-\u2060-\u2060-';
@@ -8798,17 +8952,17 @@ const Butler = (() => {
   const fb = () => window.fb;
   const siteId = () => window.SITE.siteId;
 
-  function money(n){
-    if(moneyHidden) return MONEY_MASK;
+  function money(n, scope){
+    if(moneyHidden[scope]) return MONEY_MASK;
     return '$' + (Number(n) || 0).toLocaleString('en-US');
   }
 
-  /* 兩顆眼睛（統計、明細）共用同一個狀態，按哪一顆都一樣 */
+  /* 兩顆眼睛：data-money-eye 的值就是它管的那一頁（stats／entries） */
   function eyeButtons(){ return Array.from(document.querySelectorAll('[data-money-eye]')); }
 
   function syncEyes(){
     eyeButtons().forEach(btn => {
-      const on = !moneyHidden;
+      const on = !moneyHidden[btn.dataset.moneyEye];
       btn.classList.toggle('is-on', on);
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
       btn.setAttribute('aria-label', on ? '遮住金額' : '顯示金額');
@@ -8817,8 +8971,8 @@ const Butler = (() => {
     });
   }
 
-  function toggleMoney(){
-    moneyHidden = !moneyHidden;
+  function toggleMoney(scope){
+    moneyHidden[scope] = !moneyHidden[scope];
     syncEyes();
     renderAll();
   }
@@ -8863,7 +9017,9 @@ const Butler = (() => {
         loaded = true;
         el.links.innerHTML = emptyState({
           title: '讀不到收禮連結',
-          body: '可能只是網路慢了一拍。重新整理一次；還是不行的話，確認這個帳號在新人帳號名單裡。',
+          body: '可能只是網路慢了一拍，或登入狀態過期了。先重新登入一次；'
+              + '還是不行的話，確認這個帳號在新人帳號名單裡。',
+          action: { label:'重新登入', relogin:true },
         });
         renderAll();
       },
@@ -8943,12 +9099,12 @@ const Butler = (() => {
     }, 0);
     const done = new Set(list.filter(e => e.guestId).map(e => e.guestId)).size;
 
-    el.sum.textContent = money(t.amount);
+    el.sum.textContent = money(t.amount, 'stats');
     /* 台灣一場婚禮禮金破百萬很常見，字一多就會被 body{overflow-x:hidden} 切掉。
        超過 8 個字元就自動降一級（見 .ad-hero-num.is-long） */
     el.sum.classList.toggle('is-long', el.sum.textContent.length > 8);
     el.sumSub.textContent = t.count
-      ? `共 ${t.count} 筆・平均 ${money(Math.round(t.amount / t.count))}`
+      ? `共 ${t.count} 筆・平均 ${money(Math.round(t.amount / t.count), 'stats')}`
       : '還沒有任何紀錄';
     setPageSub('adBtPageSub', t.count
       ? `現場已經記下 <b>${t.count}</b> 筆・${links.length} 組連結`
@@ -9036,7 +9192,7 @@ const Butler = (() => {
         <td>${escapeHtml(e.code || '—')}</td>
         <td class="is-name">${escapeHtml(e.name || '')}</td>
         <td>${escapeHtml(e.table || '—')}</td>
-        <td>${money(e.amount)}</td>
+        <td>${money(e.amount, 'entries')}</td>
         <td>${e.gift ? '已發送' : '沒有發'}</td>
         <td>${Number(e.boxes) || 0}</td>
         <td>${Number(e.people) || 0}</td>
@@ -9057,7 +9213,10 @@ const Butler = (() => {
         e.by || '',
         fmtTime(e.createdAt),
       ].filter(Boolean).join('・');
-      return `<li class="ad-btcard">
+      /* 手機上整張卡就是那一顆「修改」：表格那邊是點一列開抽屜，
+         卡片原本什麼都點不了，現場記錯的金額在手機上就改不動 */
+      return `<li class="ad-btcard" data-entry="${escapeHtml(e.id)}" tabindex="0" role="button"
+        aria-label="${escapeHtml(`${e.name || '（沒有名字）'} 的收禮紀錄，點一下看細節與修改`)}">
         <div class="ad-btcard-main">
           <div class="ad-btcard-name">${
             e.code ? `<i class="ad-btcard-code">${escapeHtml(e.code)}</i>` : ''
@@ -9066,8 +9225,9 @@ const Butler = (() => {
           ${e.note ? `<div class="ad-btcard-sub">備註：${escapeHtml(e.note)}</div>` : ''}
         </div>
         <div class="ad-btcard-side">
-          <div class="ad-btcard-amt">${money(e.amount)}</div>
+          <div class="ad-btcard-amt">${money(e.amount, 'entries')}</div>
           <div class="ad-btcard-people">${Number(e.people) || 0} 位</div>
+          <div class="ad-btcard-edit" aria-hidden="true">修改 ›</div>
         </div>
       </li>`;
     }).join('')}</ul>`;
@@ -9098,12 +9258,17 @@ const Butler = (() => {
           <span class="ad-item-title">${escapeHtml(who)}</span>
           <span class="ad-item-sub">${v.count} 筆・禮餅 ${v.boxes} 盒</span>
         </div>
-        <div class="ad-item-actions"><b>${money(v.amount)}</b></div>
+        <div class="ad-item-actions"><b>${money(v.amount, 'stats')}</b></div>
       </div>`).join('');
   }
 
   /* ---------- 連結 ---------- */
   function renderLinks(){
+    /* 一場婚禮只要一組連結：四五個人共用，統計才會加在一起。
+       已經有一組之後就把「產生新連結」收起來 —— 留著的話，
+       新人很容易以為每個幫忙的人都要各自一組，結果統計被拆散。
+       （還在讀的時候也先收著，不要閃一下又消失） */
+    el.newLink.hidden = !loaded || links.length > 0;
     if(!links.length){
       el.links.innerHTML = emptyState({
         title: '還沒有收禮連結',
@@ -9475,7 +9640,7 @@ const Butler = (() => {
 
       <div class="ad-drawer-sec" data-entry-edit="${escapeHtml(e.id)}">
         <div class="ad-drawer-sec-title">就地修改</div>
-        ${editable ? `<p class="ad-hint">現場記錯金額是常態。改完按 Enter 存起來，Escape 放棄這次修改。</p>`
+        ${editable ? `<p class="ad-hint">現場記錯金額是常態。改完點一下別的地方（或按 Enter）就存起來了。</p>`
                    : `<p class="ad-hint">這本收禮簿已經<b>停用</b>了，所以改不動 ——
                         到「連結與名單」把它重新啟用，才改得回來。</p>`}
         ${field('amount')}
@@ -9485,15 +9650,20 @@ const Butler = (() => {
       </div>`;
   }
 
+  function entryDrawerSub(e){
+    return `${escapeHtml(money(e.amount, 'entries'))}${
+      e.gift ? `・禮餅 ${Number(e.boxes) || 0} 盒` : ''}`;
+  }
+
   function openEntryDrawer(id){
     const hit = entryOf(id);
     if(!hit) return;
     drawerEntryId = id;
     Drawer.open({
       title: hit.entry.name || '（沒有名字）',
-      sub: `${escapeHtml(money(hit.entry.amount))}${
-        hit.entry.gift ? `・禮餅 ${Number(hit.entry.boxes) || 0} 盒` : ''}`,
+      sub: entryDrawerSub(hit.entry),
       body: entryDrawerHtml(hit.entry, hit.bookId),
+      mobile: true,
       onClose(){ drawerEntryId = ''; },
     });
   }
@@ -9505,6 +9675,8 @@ const Butler = (() => {
     if(!drawerEntryId || !Drawer.isOpen()) return;
     const hit = entryOf(drawerEntryId);
     if(!hit){ Drawer.close(); return; }
+    /* 標題底下的金額也要跟上（剛在下面改了金額，上面還是舊的會讓人以為沒存到） */
+    Drawer.setSub(entryDrawerSub(hit.entry));
     guardedRender(Drawer.body(), ()=>{
       Drawer.setBody(entryDrawerHtml(hit.entry, hit.bookId));
     });
@@ -9559,6 +9731,7 @@ const Butler = (() => {
       hit.entry.updatedAt = Date.now();
       /* 就地回饋：單一欄位存好了不值得一則橫跨畫面的 toast */
       flashSaved(input);
+      if(drawerEntryId === id) Drawer.setSub(entryDrawerSub(hit.entry));
       renderStats();
       renderRows();
       renderByWho();
@@ -9599,15 +9772,23 @@ const Butler = (() => {
   });
 
   el.tableWrap.addEventListener('click', (e)=>{
+    /* 手機的卡片：rowClickShouldOpen() 在窄螢幕一律說不（那是給表格用的），
+       卡片這邊只要確認不是在選字就好 */
+    const card = e.target.closest('.ad-btcard[data-entry]');
+    if(card){
+      const sel = window.getSelection && window.getSelection();
+      if(!sel || sel.isCollapsed) openEntryDrawer(card.dataset.entry);
+      return;
+    }
     const tr = e.target.closest('tr[data-entry]');
     if(tr && rowClickShouldOpen(e)) openEntryDrawer(tr.dataset.entry);
   });
   el.tableWrap.addEventListener('keydown', (e)=>{
     if(e.key !== 'Enter' && e.key !== ' ') return;
-    const tr = e.target.closest && e.target.closest('tr[data-entry]');
-    if(!tr || e.target !== tr) return;
+    const row = e.target.closest && e.target.closest('[data-entry]');
+    if(!row || e.target !== row) return;
     e.preventDefault();
-    openEntryDrawer(tr.dataset.entry);
+    openEntryDrawer(row.dataset.entry);
   });
 
   /* ---------- 事件 ---------- */
@@ -9626,8 +9807,9 @@ const Butler = (() => {
   el.newLink.addEventListener('click', createLink);
   if(el.bannerNew) el.bannerNew.addEventListener('click', createLink);
   el.exportBtn.addEventListener('click', exportCsv);
-  /* 兩顆眼睛（統計、明細）都是同一個開關 */
-  eyeButtons().forEach(btn => btn.addEventListener('click', toggleMoney));
+  /* 兩顆眼睛各管各的那一頁 */
+  eyeButtons().forEach(btn =>
+    btn.addEventListener('click', () => toggleMoney(btn.dataset.moneyEye)));
   syncEyes();
   el.filter.addEventListener('input', e => { filterText = e.target.value; pager.page = 1; renderRows(); });
   el.filter.addEventListener('search', e => { filterText = e.target.value; pager.page = 1; renderRows(); });

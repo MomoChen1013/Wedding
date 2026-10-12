@@ -3260,6 +3260,15 @@ body[data-stickybar="1"] .ad-main{padding-bottom:calc(174px + env(safe-area-inse
 .ad-btcard-amt{font-size:var(--fs-num-sm);letter-spacing:.02em;color:var(--primary-deep);
   font-variant-numeric:tabular-nums;}
 .ad-btcard-people{margin-top:3px;font-size:var(--fs-pill);color:var(--ink-soft);}
+/* 整張卡點得開（抽屜裡就地修改金額、盒數、人數、備註）。
+   右下角那一句「修改 ›」是給手機看的線索 —— 卡片長得像純文字時，沒人會想到去點它 */
+.ad-btcard[data-entry]{cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:background-color .15s ease;}
+.ad-btcard[data-entry]:active{background:var(--bg-row-hover);}
+.ad-btcard[data-entry]:focus-visible{outline:2px solid var(--primary);outline-offset:-2px;}
+.ad-btcard-edit{margin-top:6px;font-size:var(--fs-pill);letter-spacing:.08em;color:var(--primary-deep);}
+/* 一組收禮連結就夠了：有了之後「產生新連結」收起來（.btn 自己帶 display，壓不過 [hidden]） */
+#adBtNewLink[hidden]{display:none;}
 /* 婚宴當天最常做的事就是「找某個人有沒有收到」 */
 .ad-list-head.is-sticky{position:sticky;
   top:calc(var(--ad-stick-top,63px) + var(--ad-subtabs-h,0px));z-index:6;
@@ -4455,9 +4464,13 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
   color:var(--ink-soft);padding-bottom:7px;border-bottom:1px solid var(--line);}
 .ad-drawer-tags{display:flex;flex-wrap:wrap;gap:5px;padding:12px 0 2px;}
 
-/* 桌機才有抽屜：<900px 走的是卡片上的「展開更多」（見 .ad-rcard-rest） */
+/* 桌機才有抽屜：<900px 走的是卡片上的「展開更多」（見 .ad-rcard-rest）。
+   例外是 .is-mobile（收禮明細的就地修改）：手機上沒有別的地方改得了金額，
+   所以照樣打開，寬度鋪滿整個畫面 */
 @media(max-width:899px){
-  .ad-drawer,.ad-drawer-mask{display:none !important;}
+  .ad-drawer:not(.is-mobile),.ad-drawer-mask:not(.is-mobile){display:none !important;}
+  .ad-drawer.is-mobile{width:100%;border-left:0;}
+  .ad-drawer.is-mobile .ad-drawer-body{padding-bottom:calc(30px + env(safe-area-inset-bottom, 0px));}
 }
 
 /* 整列可點：游標與 hover 底色要先說清楚「這一列點得動」 */
@@ -4943,6 +4956,9 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:var(--f
    放在環狀圖上面。就是一張 .ad-table，後台本來就是這個語言 —— 不另造元件。 */
 .ad-evstats{margin-bottom:26px;}
 .ad-evstats[hidden]{display:none;}
+/* 多活動：分布圖一次看一場。不在篩選框裡，所以拿掉框內的留白，貼齊左邊 */
+.ad-chartev{padding:0 0 14px;}
+.ad-chartev[hidden]{display:none;}
 .ad-evstats-title{font-family:var(--font-display);font-weight:400;font-size:var(--fs-ctl);
   letter-spacing:.14em;color:var(--ink);margin:0 0 6px;}
 .ad-evstats-note{font-size:var(--fs-meta);line-height:1.9;color:var(--ink-soft);margin:0 0 12px;}
