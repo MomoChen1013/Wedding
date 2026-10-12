@@ -15,8 +15,13 @@
 <link rel="apple-touch-icon" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" href="/samples/fonts/genyomin-r.woff2" as="font" type="font/woff2" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400&family=Noto+Serif+TC:wght@400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
+@font-face{font-family:'GenYoMin Samples';font-weight:400;font-display:swap;
+  src:url('/samples/fonts/genyomin-r.woff2') format('woff2');}
+@font-face{font-family:'GenYoMin Samples';font-weight:500;font-display:swap;
+  src:url('/samples/fonts/genyomin-m.woff2') format('woff2');}
 :root{
   --ground:#f5f2ec; --surface:#fcfbf8; --ink:#24221f; --muted:#7d776d;
   --line:#e2ddd2; --line-soft:#ece8df; --chip:#efebe3;
@@ -25,7 +30,9 @@
      iPhone、iPad、Mac 內建，不用載入也不用買授權；
      Android／Windows 沒有這套字，退回 Lato（Google Fonts，同樣是人文主義無襯線） */
   --f-en:Optima,'Zapf Humanist 601','Optima nova','Lato','Helvetica Neue',Arial,sans-serif;
-  --f-cn:'Noto Serif TC',serif;
+  /* 中文：源樣明體（只切了這一頁用到的字，見 scripts/build-sample-font.py）；
+     切出來的檔案沒有的字，退回思源宋體 */
+  --f-cn:'GenYoMin Samples','Noto Serif TC',serif;
   --f-ui:'Noto Sans TC','Noto Sans',system-ui,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -308,6 +315,10 @@ footer a{color:inherit;}
       <details>
         <summary>網站多久可以開好？</summary>
         <div class="a">資料齊全後，一個工作天內給你們預覽，確認沒問題就上線。<br>需要準備：<b>婚宴日期</b>、<b>雙方的中英文名字</b>、<b>主要照片</b>。</div>
+      </details>
+      <details>
+        <summary>表單可以調整題目嗎？</summary>
+        <div class="a">可以，兩個方案都可以。每一場活動要問什麼可以分開決定：出席人數、餐點、兒童座椅、飲食習慣，用不到的就關掉，例如證婚不問餐點、晚宴才問。<br>每一場也能再加最多 3 題自己的問題，單選、多選、簡答都可以，賓客可以選擇不填。聯絡方式要留電話、LINE 還是 Email，喜帖、喜餅要不要問，也都由你們決定。</div>
       </details>
       <details>
         <summary>長輩不太會用手機填表單，怎麼辦？</summary>
