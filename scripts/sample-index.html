@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <!-- ⚙️ 由 scripts/build-samples.js 用 scripts/sample-index.html 產出（public/samples/index.html），不要手改產出的那一份。
      卡片文案在 scripts/sample-catalog.js，縮圖由 scripts/build-sample-thumbs.js 產生。 -->
-<title>網站版型總覽｜芯玖婚禮網站</title>
-<meta name="description" content="{{COUNT}} 種婚禮網站版型，點進去就是一個完整的婚禮網站，可以實際點點看。">
+<title>方案與版型｜芯玖婚禮網站</title>
+<meta name="description" content="兩個方案、{{COUNT}} 種婚禮網站版型。每個版型點進去都是完整的婚禮網站，可以實際點點看。">
 <meta property="og:type" content="website">
-<meta property="og:title" content="網站版型總覽｜芯玖婚禮網站">
-<meta property="og:description" content="{{COUNT}} 種婚禮網站版型，點進去就是一個完整的婚禮網站，可以實際點點看。">
+<meta property="og:title" content="方案與版型｜芯玖婚禮網站">
+<meta property="og:description" content="兩個方案、{{COUNT}} 種婚禮網站版型。每個版型點進去都是完整的婚禮網站，可以實際點點看。">
 <meta property="og:image" content="{{OG_IMAGE}}">
 <link rel="icon" href="/favicon.png">
 <link rel="apple-touch-icon" href="/favicon.png">
@@ -20,6 +20,7 @@
 :root{
   --ground:#f5f2ec; --surface:#fcfbf8; --ink:#24221f; --muted:#7d776d;
   --line:#e2ddd2; --line-soft:#ece8df; --chip:#efebe3;
+  --accent:#c99584; --accent-ink:#9a6a5a; --tint:#f4ebe5;
   --f-en:'Cormorant Garamond',Georgia,serif;
   --f-cn:'Noto Serif TC',serif;
   --f-ui:'Noto Sans TC','Noto Sans',system-ui,sans-serif;
@@ -34,9 +35,9 @@ header{text-align:center;margin-bottom:clamp(32px,6vw,60px);}
 .kicker{font-family:var(--f-en);font-size:13px;letter-spacing:.32em;text-transform:uppercase;color:var(--muted);}
 @media (max-width:420px){.kicker{font-size:11.5px;letter-spacing:.2em;}}
 h1{font-family:var(--f-cn);font-weight:500;font-size:clamp(24px,4.4vw,36px);letter-spacing:.14em;line-height:1.5;margin:14px 0 16px;}
-header p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
+header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
 
-.grid{display:grid;gap:16px;grid-template-columns:1fr;}
+.grid{display:grid;margin-top:clamp(18px,3vw,26px);gap:16px;grid-template-columns:1fr;}
 @media (min-width:600px){.grid{grid-template-columns:repeat(2,1fr);gap:24px;}}
 @media (min-width:1000px){.grid{grid-template-columns:repeat(3,1fr);gap:28px;}}
 
@@ -47,9 +48,9 @@ header p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
 .shot{position:relative;aspect-ratio:4/5;overflow:hidden;border-bottom:1px solid var(--line);}
 .shot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;display:block;}
 .body{display:flex;flex-direction:column;gap:12px;flex:1;padding:18px 18px 20px;}
-h2{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;font-weight:400;}
-h2 .en{font-family:var(--f-en);font-size:24px;letter-spacing:.06em;line-height:1.2;}
-h2 .cn{font-family:var(--f-cn);font-size:13.5px;letter-spacing:.2em;color:var(--muted);}
+.card h2{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;font-weight:400;}
+.card h2 .en{font-family:var(--f-en);font-size:24px;letter-spacing:.06em;line-height:1.2;}
+.card h2 .cn{font-family:var(--f-cn);font-size:13.5px;letter-spacing:.2em;color:var(--muted);}
 .mood{font-size:14px;line-height:1.85;}
 .dress{display:flex;flex-wrap:wrap;align-items:center;gap:6px;}
 .dress .lab{font-size:12px;letter-spacing:.12em;color:var(--muted);margin-right:2px;}
@@ -64,19 +65,82 @@ h2 .cn{font-family:var(--f-cn);font-size:13.5px;letter-spacing:.2em;color:var(--
   .card{flex-direction:row;}
   .shot{flex:0 0 38%;aspect-ratio:auto;min-height:100%;border-bottom:0;border-right:1px solid var(--line);}
   .body{padding:14px 14px 16px;gap:9px;}
-  h2 .en{font-size:21px;}
+  .card h2 .en{font-size:21px;}
   .mood{font-size:13.5px;}
   .chip{font-size:12px;padding:2px 8px;}
   .swatches i{width:13px;height:13px;}
 }
 
+/* ---------- 共用：每一區的標題 ---------- */
+.sec{margin-top:clamp(64px,9vw,112px);}
+.sec-head{text-align:center;margin-bottom:clamp(22px,4vw,36px);}
+.sec-head h2{font-family:var(--f-cn);font-weight:500;font-size:clamp(21px,3.6vw,28px);letter-spacing:.14em;line-height:1.5;margin-top:10px;}
+.sec-head p{max-width:34em;margin:12px auto 0;color:var(--muted);font-size:14.5px;}
+.sec-head .tip{margin-top:14px;font-size:13.5px;line-height:2;}
+.sec-head p b{font-weight:500;color:var(--ink);}
+
+/* ---------- 圖示（芯玖功能圖示系統，48×48 線條） ---------- */
+.ic{display:block;flex:0 0 auto;width:24px;height:24px;color:var(--accent);
+  fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
+
+/* ---------- 芯玖介紹：三件不用再自己處理的事 ---------- */
+.why{display:grid;gap:12px;max-width:980px;margin:clamp(28px,5vw,44px) auto 0;grid-template-columns:1fr;}
+@media (min-width:760px){.why{grid-template-columns:repeat(3,1fr);gap:20px;}}
+.why li{list-style:none;display:flex;gap:14px;align-items:flex-start;text-align:left;
+  padding:18px 18px 20px;background:var(--surface);border:1px solid var(--line);}
+.why .ic{width:32px;height:32px;stroke-width:2;margin-top:2px;}
+.why h3{font-family:var(--f-cn);font-weight:500;font-size:15.5px;letter-spacing:.08em;line-height:1.6;}
+.why p{margin-top:4px;font-size:13.5px;color:#5c574f;line-height:1.8;}
+
+/* ---------- 方案比較 ---------- */
+.plans{max-width:860px;margin:0 auto;background:var(--surface);border:1px solid var(--line);}
+.pt{width:100%;border-collapse:collapse;table-layout:fixed;}
+.pt col.c-feat{width:44%;}
+.pt col.c-plan{width:28%;}
+.pt th,.pt td{padding:13px 12px;border-bottom:1px solid var(--line-soft);vertical-align:middle;font-weight:400;}
+.pt .p2{background:var(--tint);}
+.pt thead th{padding:24px 6px 20px;text-align:center;vertical-align:bottom;border-bottom:1px solid #d9c9bf;}
+.pt thead .ic{width:40px;height:40px;stroke-width:1.6;margin:0 auto 10px;}
+.pt .pname{display:block;font-family:var(--f-cn);font-weight:500;font-size:clamp(16px,3.2vw,20px);letter-spacing:.12em;}
+.pt .pen{display:block;font-family:var(--f-en);font-size:11.5px;letter-spacing:.28em;color:var(--muted);margin-top:2px;}
+.pt .price{display:block;margin-top:14px;line-height:1.3;}
+.pt .price .was{display:block;font-size:12px;color:var(--muted);letter-spacing:.02em;}
+.pt .price .was s{white-space:nowrap;}
+.pt .price em{display:block;font-style:normal;font-size:11.5px;letter-spacing:.14em;color:var(--accent-ink);margin-top:6px;}
+.pt .price strong{display:block;font-family:var(--f-en);font-weight:500;font-size:clamp(24px,5vw,30px);letter-spacing:.02em;color:var(--ink);}
+.pt .price strong small{font-size:.5em;letter-spacing:.08em;margin-right:2px;}
+.pt tbody th{text-align:left;}
+.pt .feat{display:flex;align-items:center;gap:10px;font-size:14.5px;letter-spacing:.04em;line-height:1.5;}
+.pt td{text-align:center;font-size:14px;letter-spacing:.04em;color:#4d4841;}
+.pt td .ok{display:inline-block;width:20px;height:20px;vertical-align:middle;fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.pt td .no{display:inline-block;width:14px;height:1px;background:#cfc6bb;vertical-align:middle;}
+.pt tbody tr:last-child th,.pt tbody tr:last-child td{border-bottom:0;}
+@media (max-width:440px){
+  .pt col.c-feat{width:46%;}.pt col.c-plan{width:27%;}
+  .pt th,.pt td{padding:12px 6px;}
+  .pt tbody th{padding-left:12px;}
+  .pt .feat{font-size:13.5px;gap:8px;}
+  .pt .feat .ic{width:20px;height:20px;}
+  .pt td{font-size:13px;}
+}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+.plan-notes{max-width:860px;margin:14px auto 0;padding:0 2px;color:var(--muted);font-size:13.5px;line-height:1.9;}
+.plan-notes li{list-style:none;padding-left:1.1em;text-indent:-1.1em;}
+.plan-notes li::before{content:'・';}
+
+/* ---------- 版型：依方案分兩區 ---------- */
+.tier{display:flex;align-items:center;gap:10px;margin-top:clamp(40px,6vw,60px);padding-bottom:12px;border-bottom:1px solid var(--line);}
+.sec-head + .tier{margin-top:0;}
+.tier .ic{width:30px;height:30px;stroke-width:1.8;}
+.tier h3{font-family:var(--f-cn);font-weight:500;font-size:17px;letter-spacing:.12em;}
+.tier span{font-family:var(--f-en);font-size:12px;letter-spacing:.24em;color:var(--muted);text-transform:uppercase;}
+.tier .n{margin-left:auto;font-family:var(--f-ui);font-size:13px;letter-spacing:.08em;text-transform:none;}
+
 /* LINE 選單直接連到 #templates／#faq：落點留一點上緣，標題不要貼著螢幕頂 */
-#templates,#faq{scroll-margin-top:24px;}
+#plans,#templates,#faq{scroll-margin-top:24px;}
 
 /* 常見問題：點題目展開，一次只看一題也不會迷路 */
-.faq{max-width:760px;margin:clamp(56px,8vw,96px) auto 0;}
-.faq-head{text-align:center;margin-bottom:clamp(20px,4vw,32px);}
-.faq-head h2{display:block;font-family:var(--f-cn);font-weight:500;font-size:clamp(20px,3.4vw,26px);letter-spacing:.14em;margin-top:10px;}
+.faq-list{max-width:760px;margin:0 auto;}
 .faq details{border-top:1px solid var(--line);}
 .faq details:last-child{border-bottom:1px solid var(--line);}
 .faq summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;justify-content:space-between;gap:16px;
@@ -87,55 +151,175 @@ h2 .cn{font-family:var(--f-cn);font-size:13.5px;letter-spacing:.2em;color:var(--
 .faq summary:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
 .faq .a{padding:0 2px 20px;color:#4d4841;font-size:14.5px;}
 .faq .a b{font-weight:500;color:var(--ink);}
+.faq .a a{color:var(--accent-ink);text-underline-offset:3px;}
 
 footer{margin-top:clamp(40px,6vw,64px);text-align:center;color:var(--muted);font-size:13px;line-height:2;}
 footer a{color:inherit;}
 </style>
 </head>
 <body>
+<!-- 芯玖功能圖示系統（48×48、線條、圓頭），顏色跟著 .ic 的 color 走 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-plan-classic" viewBox="0 0 48 48"><path d="M16.5 6h15l8.5 7 3 5-19 24L5 18l3-5 8.5-7Z"/><path d="M5 18h38"/><path d="M16.5 6 12.8 18M31.5 6 35.2 18"/><path d="M12.8 18 24 42M35.2 18 24 42"/><path d="M8 13 16.5 6M40 13 31.5 6"/></symbol>
+  <symbol id="i-plan-premium" viewBox="0 0 48 48"><path d="M16.5 6h15l8.5 7 3 5-19 24L5 18l3-5 8.5-7Z"/><path d="M5 18h38"/><path d="M16.5 6 12.8 18M31.5 6 35.2 18"/><path d="M12.8 18 24 42M35.2 18 24 42"/><path d="M8 13 16.5 6M40 13 31.5 6"/><path d="M20 6v12M28 6v12"/><path d="M19.4 18 24 42M28.6 18 24 42"/></symbol>
+  <symbol id="i-url" viewBox="0 0 48 48"><rect x="4" y="9" width="40" height="30" rx="3.5"/><path d="M4 17.5h40"/><circle cx="9" cy="13.2" r=".9" fill="currentColor" stroke="none"/><circle cx="13" cy="13.2" r=".9" fill="currentColor" stroke="none"/><circle cx="17" cy="13.2" r=".9" fill="currentColor" stroke="none"/><rect x="22" y="10.7" width="18" height="5" rx="2.5"/><path d="M11 25.5h26M11 32h17"/></symbol>
+  <symbol id="i-rsvp" viewBox="0 0 48 48"><path d="M18 8h-5a3.5 3.5 0 0 0-3.5 3.5v27A3.5 3.5 0 0 0 13 42h22a3.5 3.5 0 0 0 3.5-3.5v-27A3.5 3.5 0 0 0 35 8h-5"/><rect x="18" y="4.5" width="12" height="7.5" rx="2.5"/><path d="M16 25.5 20.5 30 32 18.5"/><path d="M16 36h16"/></symbol>
+  <symbol id="i-rsvp-multi" viewBox="0 0 48 48"><path d="M18 9h16a3 3 0 0 1 3 3v22"/><path d="M16 13h-3a3 3 0 0 0-3 3v22a3 3 0 0 0 3 3h17a3 3 0 0 0 3-3V16a3 3 0 0 0-3-3h-3"/><rect x="16" y="9.5" width="11" height="7" rx="2.2"/><path d="M14.5 27 18 30.5 25.5 22"/><path d="M14.5 36h14"/></symbol>
+  <symbol id="i-storywall" viewBox="0 0 48 48"><rect x="5" y="9" width="18" height="30" rx="2.5"/><rect x="27" y="9" width="16" height="13" rx="2.5"/><rect x="27" y="26" width="16" height="13" rx="2.5"/></symbol>
+  <symbol id="i-message" viewBox="0 0 48 48"><rect x="5" y="9" width="38" height="26" rx="6"/><path d="M16 35v7.5l9.5-7.5"/><path d="M14 18h20M14 26h13"/></symbol>
+  <symbol id="i-findseat" viewBox="0 0 48 48"><circle cx="21" cy="21" r="13"/><circle cx="21" cy="21" r="5"/><path d="M30.6 30.6 41 41"/></symbol>
+  <symbol id="i-seating" viewBox="0 0 48 48"><circle cx="16" cy="16" r="6"/><circle cx="32" cy="16" r="6" fill="currentColor" stroke="none"/><circle cx="16" cy="32" r="6"/><circle cx="32" cy="32" r="6"/></symbol>
+  <symbol id="i-gift-desk" viewBox="0 0 48 48"><rect x="6" y="6" width="22" height="32" rx="3.5"/><path d="M6 14c3.7 2.6 7.3 3.9 11 3.9S24.3 16.6 28 14"/><circle cx="17" cy="25" r="3.6"/><circle cx="37" cy="34" r="7.5"/><path d="M33.8 34 36 36.4 40.2 31.5"/></symbol>
+  <symbol id="i-quiz" viewBox="0 0 48 48"><rect x="6" y="8" width="36" height="32" rx="3.5"/><circle cx="14.5" cy="18" r="2.8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="30" r="2.8"/><path d="M21.5 18h14M21.5 30h10"/></symbol>
+  <symbol id="i-letter" viewBox="0 0 48 48"><rect x="5" y="11" width="38" height="26" rx="3.5"/><path d="M5.6 14.4 24 27l18.4-12.6"/></symbol>
+  <symbol id="i-archive" viewBox="0 0 48 48"><rect x="5" y="9" width="38" height="9" rx="2.5"/><path d="M9 18v18a3 3 0 0 0 3 3h24a3 3 0 0 0 3-3V18"/><path d="M19 26.5h10"/></symbol>
+  <symbol id="i-ok" viewBox="0 0 24 24"><path d="M5 12.5 10 17.5 19.5 7"/></symbol>
+</svg>
+
 <div class="wrap">
+
+  <!-- ===== 芯玖介紹 ===== -->
   <header>
-    <div class="kicker">Minato Studio · Wedding Websites</div>
-    <h1>網站版型總覽</h1>
-    <p>示範頁就是賓客實際會看到的樣子，你可以在裡面盡量嘗試，填的內容不會被送出去。示範的姓名及地點都是虛構的，照片為示範用圖，正式網站會換成你們的照片與內容。</p>
+    <div class="kicker">Xin Jiu · Wedding Experience</div>
+    <h1>讓籌備少一點整理，<br>讓婚禮多一點享受。</h1>
+    <p>婚禮網站不只是一張比較漂亮的電子喜帖。從賓客收到邀請、回覆出席，到婚禮當天找到自己的座位——這一路上的行政，芯玖幫你們接手。</p>
+    <ul class="why">
+      <li>
+        <svg class="ic"><use href="#i-rsvp"/></svg>
+        <div><h3>回覆填完，名單就整理好了</h3><p>人數、素食、兒童椅，賓客自己填，你們不用再對著 Excel 一筆一筆核對。</p></div>
+      </li>
+      <li>
+        <svg class="ic"><use href="#i-findseat"/></svg>
+        <div><h3>婚禮當天，賓客自己查桌次</h3><p>輸入名字就看得到桌號，不用擠在門口找名單。</p></div>
+      </li>
+      <li>
+        <svg class="ic"><use href="#i-storywall"/></svg>
+        <div><h3>等開席的時候，有事可以做</h3><p>故事牆、祝福牆、抽卡，讓早到的賓客也參與你們的故事。</p></div>
+      </li>
+    </ul>
   </header>
-  <!-- 芯玖介紹：文案定稿後放在 header 與版型之間 -->
 
-  <!-- #templates：LINE 選單「範例網站」連到 /samples/#templates -->
-  <main class="grid" id="templates"><!--CARDS-->
-  </main>
+  <!-- ===== 方案比較：/samples/#plans ===== -->
+  <section class="sec" id="plans" aria-labelledby="plansTitle">
+    <div class="sec-head">
+      <div class="kicker">Compare</div>
+      <h2 id="plansTitle">兩個方案怎麼選</h2>
+    </div>
+    <div class="plans">
+      <table class="pt">
+        <colgroup><col class="c-feat"><col class="c-plan"><col class="c-plan"></colgroup>
+        <thead>
+          <tr>
+            <th><span class="vh">功能</span></th>
+            <th scope="col">
+              <svg class="ic"><use href="#i-plan-classic"/></svg>
+              <span class="pname">經典方案</span><span class="pen">CLASSIC</span>
+              <span class="price"><span class="was">定價 <s>NT$2,580</s></span><em>早鳥價</em><strong><small>NT$</small>1,280</strong></span>
+            </th>
+            <th scope="col" class="p2">
+              <svg class="ic"><use href="#i-plan-premium"/></svg>
+              <span class="pname">典藏方案</span><span class="pen">PREMIUM</span>
+              <span class="price"><span class="was">原價 <s>NT$3,290</s></span><em>早鳥價</em><strong><small>NT$</small>1,999</strong></span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-url"/></svg>版型</span></th><td>1 套</td><td class="p2">2–3 套可選</td></tr>
+          <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-rsvp"/></svg>可自訂問題 RSVP</span></th><td><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-rsvp-multi"/></svg>多場活動連動</span></th><td><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-storywall"/></svg>故事牆・祝福牆・抽卡</span></th><td><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-findseat"/></svg>賓客現場查詢</span></th><td><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-seating"/></svg>排桌管理</span></th><td><span class="no" role="img" aria-label="無"></span></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-gift-desk"/></svg>收禮小幫手</span></th><td><span class="no" role="img" aria-label="無"></span></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-quiz"/></svg>自訂互動測驗</span></th><td><span class="no" role="img" aria-label="無"></span></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-letter"/></svg>專屬信件</span></th><td><span class="no" role="img" aria-label="無"></span></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-archive"/></svg>資料保存</span></th><td>1 年</td><td class="p2">1 年</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="plan-notes">
+      <li>經典方案之後想用典藏功能，可以補差額升級。</li>
+      <li>兩個方案都保存一年；想永久保存，可以加購 NT$799。</li>
+    </ul>
+  </section>
 
-  <!-- #faq：LINE 選單「常見問題」連到 /samples/#faq -->
-  <section class="faq" id="faq" aria-labelledby="faqTitle">
-    <div class="faq-head">
+  <!-- ===== 版型：/samples/#templates（LINE 選單「範例網站」） ===== -->
+  <section class="sec" id="templates" aria-labelledby="tplTitle">
+    <div class="sec-head">
+      <div class="kicker">Templates</div>
+      <h2 id="tplTitle">網站版型</h2>
+      <p>點進去就是賓客實際會看到的婚禮網站，可以盡量點點看，填的內容不會被送出去。新人與地點都是虛構的，照片為示範用圖，正式網站會換成你們的照片與內容。</p>
+      <p class="tip">想試查桌次，輸入 <b>王小安</b><br>想拆專屬信件，輸入 <b>小安</b></p>
+    </div>
+
+    <div class="tier">
+      <svg class="ic"><use href="#i-plan-classic"/></svg>
+      <h3>經典方案</h3><span>Classic</span><span class="n">{{N_CLASSIC}} 款</span>
+    </div>
+    <div class="grid"><!--CARDS_CLASSIC-->
+    </div>
+
+    <div class="tier">
+      <svg class="ic"><use href="#i-plan-premium"/></svg>
+      <h3>典藏方案</h3><span>Premium</span><span class="n">{{N_PREMIUM}} 款</span>
+    </div>
+    <div class="grid"><!--CARDS_PREMIUM-->
+    </div>
+  </section>
+
+  <!-- ===== 常見問題：/samples/#faq（LINE 選單「常見問題」） ===== -->
+  <section class="sec faq" id="faq" aria-labelledby="faqTitle">
+    <div class="sec-head">
       <div class="kicker">FAQ</div>
       <h2 id="faqTitle">常見問題</h2>
     </div>
-    <details>
-      <summary>在示範頁裡填的東西，會被送出去嗎？</summary>
-      <div class="a">不會。出席回覆、祝福、測驗作答都只留在你現在開著的這個分頁，重新整理就回到原本的樣子，不會進到任何人的資料裡。</div>
-    </details>
-    <details>
-      <summary>示範裡的新人、照片是真的嗎？</summary>
-      <div class="a">新人姓名、日期、地點都是虛構的，照片是示範用圖。正式網站會換成你們的名字、婚禮資訊與照片。</div>
-    </details>
-    <details>
-      <summary>想試試「查桌次」和「給你的信」，要輸入什麼？</summary>
-      <div class="a">查桌次輸入 <b>王小安</b>，就會查到他的桌號。<br>給你的信輸入 <b>小安</b>，會拆到專門寫給他的那一封；輸入其他名字，拿到的是給所有賓客的通用信。</div>
-    </details>
-    <details>
-      <summary>示範頁跟正式網站一樣嗎？</summary>
-      <div class="a">是同一套頁面。賓客會看到的大廳、出席回覆、祝福牆、桌次查詢，都跟示範裡點得到的一樣。</div>
-    </details>
-    <details>
-      <summary>經典版型只有一種顏色嗎？</summary>
-      <div class="a">經典有四種配色：香檳金、霧玫瑰、鼠尾草綠、霧霾藍。示範頁放的是香檳金。</div>
-    </details>
+    <div class="faq-list">
+      <details>
+        <summary>跟自己用免費工具做喜帖，有什麼不同？</summary>
+        <div class="a">免費工具很方便，很多新人也是從這裡開始的。只是用到後來，常常是表單一份、Excel 一份、LINE 群組再一份，資料要自己來回對。<br>芯玖做的不只是電子喜帖：喜帖網站、出席回覆、排桌都在同一個地方，賓客資料填一次就連在一起，還內建故事牆、祝福牆、抽卡這些賓客玩得到的互動。我們把能想到的細節都先想進去，你們只要專心辦婚禮。</div>
+      </details>
+      <details>
+        <summary>兩個方案差在哪裡？</summary>
+        <div class="a">典藏方案多了排桌管理、收禮小幫手、自訂互動測驗和專屬信件，可選的版型也比較多。完整比較在上面的 <a href="#plans">兩個方案怎麼選</a>。</div>
+      </details>
+      <details>
+        <summary>之後可以升級方案嗎？</summary>
+        <div class="a">可以。選了經典方案，之後想用收禮小幫手這些典藏功能，補差額就能升級，詳情跟我們聯繫。</div>
+      </details>
+      <details>
+        <summary>版型跟開場動畫可以分開挑嗎？</summary>
+        <div class="a">可以，會依你們的情況搭配。想怎麼配，歡迎跟我們討論。</div>
+      </details>
+      <details>
+        <summary>網站會保存多久？</summary>
+        <div class="a">兩個方案都保存一年。想永久保存，可以加購 NT$799。</div>
+      </details>
+      <details>
+        <summary>什麼時候開始準備比較好？</summary>
+        <div class="a">建議在發喜帖前三到四週開始。</div>
+      </details>
+      <details>
+        <summary>網站多久可以開好？</summary>
+        <div class="a">資料齊全後，一個工作天內給你們預覽，確認沒問題就上線。<br>需要準備：<b>婚宴日期</b>、<b>雙方的中英文名字</b>、<b>主要照片</b>。</div>
+      </details>
+      <details>
+        <summary>長輩不太會用手機填表單，怎麼辦？</summary>
+        <div class="a">不用勉強長輩填。新人可以在後台直接幫長輩新增出席與餐飲需求。</div>
+      </details>
+      <details>
+        <summary>賓客的資料安全嗎？</summary>
+        <div class="a">賓客填的資料只有你們的後台帳號看得到。婚禮結束後，也可以申請一鍵刪除。</div>
+      </details>
+      <details>
+        <summary>怎麼付款？</summary>
+        <div class="a">目前使用銀行轉帳。</div>
+      </details>
+    </div>
   </section>
 
   <footer>
     示範照片：<a href="https://unsplash.com/@vinomamba24" target="_blank" rel="noopener">Vino Li</a>／Unsplash<br>
-    小港製作所 設計製作
+    芯玖 SHIN9・小港製作所 設計製作
   </footer>
 </div>
 </body>

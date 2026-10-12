@@ -27,8 +27,10 @@ const missing = expected.filter((k) => !SAMPLE_CATALOG[k]);
 const stale = Object.keys(SAMPLE_CATALOG).filter((k) => !expected.includes(k));
 if (missing.length) throw new Error(`scripts/sample-catalog.js 少了：${missing.join('、')}`);
 if (stale.length) throw new Error(`scripts/sample-catalog.js 多了不存在的版型：${stale.join('、')}`);
+const badPlan = Object.entries(SAMPLE_CATALOG).filter(([, c]) => !['classic', 'premium'].includes(c.plan)).map(([k]) => k);
+if (badPlan.length) throw new Error(`scripts/sample-catalog.js 的 plan 要是 'classic' 或 'premium'：${badPlan.join('、')}`);
 
-const cards = Object.entries(SAMPLE_CATALOG).map(([key, c]) => {
+const card = ([key, c]) => {
   const img = existsSync(new URL(`public/samples/thumbs/${key}.jpg`, root))
     ? `<img src="/samples/thumbs/${key}.jpg" alt="${esc(c.name[1])}版型的首頁" loading="lazy" width="390" height="760">`
     : '';
@@ -45,10 +47,15 @@ const cards = Object.entries(SAMPLE_CATALOG).map(([key, c]) => {
         </div>
       </div>
     </a>`;
-}).join('');
+};
+/* 總覽頁分兩區：經典方案的版型、典藏方案的版型 */
+const cardsOf = (plan) => Object.entries(SAMPLE_CATALOG).filter(([, c]) => c.plan === plan).map(card).join('');
 
 const html = readFileSync(new URL('scripts/sample-index.html', root), 'utf8')
-  .replace('<!--CARDS-->', cards)
+  .replace('<!--CARDS_CLASSIC-->', cardsOf('classic'))
+  .replace('<!--CARDS_PREMIUM-->', cardsOf('premium'))
+  .replace('{{N_CLASSIC}}', String(Object.values(SAMPLE_CATALOG).filter((c) => c.plan === 'classic').length))
+  .replace('{{N_PREMIUM}}', String(Object.values(SAMPLE_CATALOG).filter((c) => c.plan === 'premium').length))
   .replace(/\{\{COUNT\}\}/g, String(Object.keys(SAMPLE_CATALOG).length))
   .replace('{{OG_IMAGE}}', esc(`${resolveBaseUrl()}/samples/thumbs/${Object.keys(SAMPLE_CATALOG)[0]}.jpg`));
 writeFileSync(new URL('public/samples/index.html', root), html);
