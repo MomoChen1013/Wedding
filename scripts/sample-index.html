@@ -15,15 +15,16 @@
 <link rel="apple-touch-icon" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Noto+Serif+TC:wght@400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400&family=Noto+Serif+TC:wght@400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root{
   --ground:#f5f2ec; --surface:#fcfbf8; --ink:#24221f; --muted:#7d776d;
   --line:#e2ddd2; --line-soft:#ece8df; --chip:#efebe3;
   --accent:#c99584; --accent-ink:#9a6a5a; --tint:#f4ebe5;
-  /* 英文：Aesop 用的 Suisse Int'l（Swiss Typefaces，需另購網頁授權並自行託管）；
-     沒裝這套字時退回 Inter（Google Fonts，最接近的免費替代） */
-  --f-en:'Suisse Intl','Suisse Int\'l','Inter','Helvetica Neue',Arial,sans-serif;
+  /* 英文：Optima —— Aesop 用的 Zapf Humanist 601 就是 Optima 的同一套設計。
+     iPhone、iPad、Mac 內建，不用載入也不用買授權；
+     Android／Windows 沒有這套字，退回 Lato（Google Fonts，同樣是人文主義無襯線） */
+  --f-en:Optima,'Zapf Humanist 601','Optima nova','Lato','Helvetica Neue',Arial,sans-serif;
   --f-cn:'Noto Serif TC',serif;
   --f-ui:'Noto Sans TC','Noto Sans',system-ui,sans-serif;
 }
@@ -53,7 +54,7 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
 .shot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;display:block;}
 .body{display:flex;flex-direction:column;gap:12px;flex:1;padding:18px 18px 20px;}
 .card h2{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;font-weight:400;}
-.card h2 .en{font-family:var(--f-en);font-weight:400;font-size:20px;letter-spacing:-.005em;line-height:1.3;}
+.card h2 .en{font-family:var(--f-en);font-weight:400;font-size:20px;letter-spacing:.02em;line-height:1.3;}
 .card h2 .cn{font-family:var(--f-cn);font-size:13.5px;letter-spacing:.2em;color:var(--muted);}
 .mood{font-size:14px;line-height:1.85;}
 .dress{display:flex;flex-wrap:wrap;align-items:center;gap:6px;}
@@ -111,7 +112,7 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
 .pt .price .was{display:block;font-size:12px;color:var(--muted);letter-spacing:.02em;}
 .pt .price .was s{white-space:nowrap;}
 .pt .price em{display:block;font-style:normal;font-size:11.5px;letter-spacing:.14em;color:var(--accent-ink);margin-top:6px;}
-.pt .price strong{display:block;font-family:var(--f-en);font-weight:300;font-size:clamp(22px,4.6vw,28px);letter-spacing:-.01em;color:var(--ink);}
+.pt .price strong{display:block;font-family:var(--f-en);font-weight:400;font-size:clamp(22px,4.6vw,28px);letter-spacing:0;color:var(--ink);}
 .pt .price strong small{font-size:.46em;font-weight:400;letter-spacing:.06em;margin-right:2px;}
 .pt tbody th{text-align:left;}
 .pt .feat{display:flex;align-items:center;gap:10px;font-size:14.5px;letter-spacing:.04em;line-height:1.5;}
@@ -138,6 +139,7 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
 .tier .ic{width:30px;height:30px;stroke-width:1.8;}
 .tier h3{font-family:var(--f-cn);font-weight:500;font-size:17px;letter-spacing:.12em;}
 .tier span{font-family:var(--f-en);font-size:11px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;}
+.tier-note{margin-top:10px;color:var(--muted);font-size:13.5px;}
 .tier .n{margin-left:auto;font-family:var(--f-ui);font-size:13px;letter-spacing:.08em;text-transform:none;}
 
 /* LINE 選單直接連到 #templates／#faq：落點留一點上緣，標題不要貼著螢幕頂 */
@@ -228,7 +230,7 @@ footer a{color:inherit;}
           </tr>
         </thead>
         <tbody>
-          <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-url"/></svg>版型</span></th><td>{{N_CLASSIC}} 款可選</td><td class="p2">{{N_PREMIUM}} 款可選</td></tr>
+          <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-url"/></svg>版型</span></th><td>{{N_CLASSIC}} 款可選</td><td class="p2">{{N_ALL}} 款可選</td></tr>
           <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-rsvp"/></svg>可自訂問題 RSVP</span></th><td><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
           <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-rsvp-multi"/></svg>多場活動連動</span></th><td><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
           <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-storywall"/></svg>故事牆・祝福牆・抽卡</span></th><td><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
@@ -267,6 +269,7 @@ footer a{color:inherit;}
       <svg class="ic"><use href="#i-plan-premium"/></svg>
       <h3>典藏方案</h3><span>Premium</span><span class="n">{{N_PREMIUM}} 款</span>
     </div>
+    <p class="tier-note">選典藏方案，上面經典的 {{N_CLASSIC}} 款也都能用，一共 {{N_ALL}} 款可以挑。</p>
     <div class="grid"><!--CARDS_PREMIUM-->
     </div>
   </section>
@@ -284,7 +287,7 @@ footer a{color:inherit;}
       </details>
       <details>
         <summary>兩個方案差在哪裡？</summary>
-        <div class="a">典藏方案多了排桌管理、收禮小幫手、自訂互動測驗和專屬信件，可選的版型也比較多。完整比較在上面的 <a href="#plans">兩個方案怎麼選</a>。</div>
+        <div class="a">典藏方案多了排桌管理、收禮小幫手、自訂互動測驗和專屬信件；版型除了經典的 {{N_CLASSIC}} 款，還多了 {{N_PREMIUM}} 款可以選。完整比較在上面的 <a href="#plans">兩個方案怎麼選</a>。</div>
       </details>
       <details>
         <summary>之後可以升級方案嗎？</summary>
