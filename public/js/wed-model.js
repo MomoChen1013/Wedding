@@ -116,11 +116,11 @@ export const TEMPLATES = {
                      fonts:['https://fonts.googleapis.com/css2?family=Yellowtail&family=Bebas+Neue&family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@500&display=swap'] },
   /* 晨光房間：真的紗簾與窗光、一張早餐桌（洗出來的照片、去背的咖啡與可頌）；拉開紗簾，早晨照進來 */
   'morning-window': { label:'Morning Window 晨光房間', lobbyFile:'lobby-window.html',
-                     lobbyCss:['/css/lobby-window.css','/css/lobby-trail.css'], lobbyJs:['/js/lobby-motion.js'], opening:'curtain',
+                     lobbyCss:['/css/lobby-window.css'], lobbyJs:['/js/lobby-motion.js'], opening:'curtain',
                      fonts:['https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
   /* 白色教堂：午夜一根一根點亮蠟燭，天一亮是一座純白的教堂 —— 真的照片、厚玻璃相片、毛玻璃 */
   'white-church': { label:'White Church 白色教堂', lobbyFile:'lobby-chapel.html',
-                     lobbyCss:['/css/lobby-chapel.css','/css/lobby-trail.css'], lobbyJs:['/js/lobby-motion.js'], opening:'candle',
+                     lobbyCss:['/css/lobby-chapel.css'], lobbyJs:['/js/lobby-motion.js'], opening:'candle',
                      fonts:['https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=UnifrakturMaguntia&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
 };
 export const DEFAULT_TEMPLATE = 'classic';

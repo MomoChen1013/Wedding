@@ -337,7 +337,6 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > | `chapel/gypsophila.webp` | 頁尾的背景 | [一片滿天星](https://unsplash.com/photos/AWZ3l66_iKw)・Danielle Suijkerbuijk | 縮圖 |
 > | `chapel/tulle.webp` | 整頁兩旁垂下來的白紗 | [垂墜的白紗](https://unsplash.com/photos/hM7P386VIOg)・Kristina Tochilko | 縮圖 |
 > | `chapel/lace-edge.webp` | hero 下緣的一圈蕾絲 | [波浪邊的白色蕾絲](https://unsplash.com/photos/AdX5Qpl7Xy0)・Anna Evans | 依亮度去背、加深花紋，取波浪邊那一段，鏡射接成連續的波浪 |
-> | `chapel/lace-ribbon.webp` | 兩旁跟著捲動縫出來的蕾絲緞帶 | [麻布上的花朵蕾絲](https://unsplash.com/photos/f1GJZNOzk2I)・The HK Photo Company | 取有花朵波浪邊的那一段、依亮度去背；上下鏡射成兩邊都是花邊的緞帶，取一個花樣週期接成可以無縫重複，再轉成直的 |
 
 > **晨光房間的照片素材**（`public/img/window/`，開場的紗簾與 `lobby-window.html` 共用）：一樣是 Unsplash License。
 >
@@ -348,14 +347,15 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > | `window/sun-patch.webp` | 整頁牆上窗格形狀的陽光、「我們的故事」上滑過去的光 | [白牆上的窗光](https://unsplash.com/photos/X8sWlFdQElQ)・H&CO | 轉成灰階、拉開明暗，做成 multiply 用的光影 |
 > | `window/linen.webp` | 「我們的故事」的亞麻布（也是桌巾） | [米色的布紋](https://unsplash.com/photos/QFQ6vsou7XA)・Safwan Thottoli | 縮圖 |
 > | `window/sheer-light.webp` | 倒數（陽光跟著捲動移過來） | [陽光斜斜照在白紗簾上](https://unsplash.com/photos/VUu9rAmb9R0)・Mila Albrecht | 縮圖 |
-> | `window/clay-cup.webp` | 「我們的故事」的桌巾上、婚禮資訊 | [手捏的陶杯](https://unsplash.com/photos/x6XqtHVag7c)・Annie Spratt | 去背 |
+> | `window/dried-rose.webp` | 婚禮資訊、「我們的故事」的桌巾上（躺著） | [一枝乾燥的玫瑰](https://unsplash.com/photos/YwcNYE2DYCI)・Sixteen Miles Out | 去背（連影子一起去掉）、轉成直立 |
+> | `window/croissant.webp` | 「我們的故事」的桌巾上 | [白色檯面上的可頌](https://unsplash.com/photos/lB8t-vLGC2Q)・Olga Petnyunene | 取中間那一個、去背 |
+> | `window/notebook.webp` | 「我們的故事」的筆記本 | [攤開的筆記本與筆](https://unsplash.com/photos/IZj7vckPGiw)・engin akyurt | 去背 |
 > | `window/plant.webp` | 「我們的故事」的桌巾上 | [白色條紋盆裡的一盆草](https://unsplash.com/photos/zbQ3vh9zLwo)・Ceyda Çiftci | 去背 |
 > | `window/cushion.webp` | 「我們的故事」的桌巾上、小提醒 | [一顆白色方枕](https://unsplash.com/photos/zTY9OwAfOrg)・Mediamodifier | 去背、去掉旁邊的毯子，調成米白 |
 > | `window/book.webp` | 交通資訊 | [攤開的書與一枝小草](https://unsplash.com/photos/H1G1fa_UIkA)・Olga Tutunaru | 去背 |
 > | `window/white-vase.webp` | 當日流程 | [一只白色花瓶](https://unsplash.com/photos/aFvxASlms2A)・Sixteen Miles Out | 去背 |
 > | `window/tulip-stem.webp` | R.S.V.P. | [一枝粉白鬱金香](https://unsplash.com/photos/d3C86xPipVs)・Sabina Hassan | 去背 |
-> | `window/seedhead.webp` | 倒數照片旁、捲動軌跡沿路落下的種子花 | [一枝乾燥的種子花](https://unsplash.com/photos/mpt2pljjzf4)・Stacy | 去背 |
-> | `window/grass-plume.webp` | 捲動軌跡末端的乾草穗 | [一枝乾草穗](https://unsplash.com/photos/_88DsHh1F20)・Evie S. | 去背 |
+> | `window/seedhead.webp` | 倒數照片旁 | [一枝乾燥的種子花](https://unsplash.com/photos/mpt2pljjzf4)・Stacy | 去背 |
 > | `window/plaster.webp` | 整頁的灰泥牆 | [米色灰泥牆](https://unsplash.com/photos/hyVwWTaGsxI)・Pawel Czerwinski | 調淡成燕麥白 |
 
 > **莫內花園的素材**（`public/img/monet/`，開場 `painting` 與 `lobby-monet.html` 共用）：一樣是 [Unsplash License](https://unsplash.com/license)。
@@ -401,13 +401,11 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > | `gingham.webp` | 白卡上緣的格紋、拍立得的紙膠帶 | [紅白格紋布](https://unsplash.com/photos/KzJunPli4VA)・Meg | 取中間一塊，鏡射成可以無縫平鋪 |
 
 > **捲動軌跡**（`public/css/lobby-trail.css`）：跟著捲動沿左緣一路畫下去，每個版型用自己的素材，
-> 經過的地方會留下小東西（Korean Modern 維持原本乾淨的版面，沒有放）：
+> 經過的地方會留下小東西（Korean Modern、White Church、Morning Window 維持乾淨的版面，沒有放）：
 >
 > | 版型 | 線 | 領頭 | 沿路留下 |
 > |---|---|---|---|
 > | Forest Botanical | 一根藤蔓（CSS） | `forest/sprig.webp` 新芽 | 葉子、橡實、莓果（森林小物） |
-> | White Church | `chapel/lace-ribbon.webp` 兩旁各一條蕾絲緞帶（兩邊都是花朵波浪邊） | — | — |
-> | Morning Window | 一根細細的、不太直的乾草莖（CSS） | `window/grass-plume.webp` 一束乾草穗 | `window/seedhead.webp` 乾燥的種子花頭 |
 
 > **Forest Botanical 的手繪森林小物**（`public/img/forest/`，`lobby-forest.html`）：全部來自同一張 Unsplash 插畫
 > [森林小物貼紙](https://unsplash.com/illustrations/2EwBPCpvWA4)・Kamara Rahmat（Unsplash License）。
@@ -447,8 +445,8 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | french-manor | ✅ 文藝復興：真的天頂濕壁畫、去背的大理石雕像與雕刻（花神、天使、小天使胸像、玫瑰花飾、女神、丘比特與賽姬）、大理石名牌 ＋ 從真的照片描出來的剪紙（城堡剪出一排排窗、托斯卡尼柏樹）＋ 開場走進的那座花園當倒數的背景 ＋ 新人照片放在剪紙橢圓花邊框（共 7 處）＋ 捲動編排（hero 的剪紙一層一層視差、倒數的花園照片視差），素材見上面〈法式莊園的照片素材〉 | `lobby-manor.html` |
 | monet-garden | ✅ 莫內花園・流動油畫：莫內真跡的掃描（日本橋、塞納河、罌粟花田、柳樹、維特伊的花園小徑、國會大廈日落、阿讓特伊的花園），水面在 canvas 上一直流動；真的金框（照片做成九宮格）、真的亞麻畫布、錦緞壁紙的展牆、美術館說明卡、黃銅名牌、阿讓特伊的明信片；畫裡的東西跑到框外面來（大理花、哈森的蜀葵與罌粟從畫框與卡片邊一筆刷出來，蝴蝶在飛、花瓣在飄，故事展牆的角落一瓶塞尚的花） ＋ 捲動編排（hero 的池水一直流動、往下捲畫慢慢沉下去；每一幅小畫捲到時從釘子上擺進來、再一筆一筆刷上去；故事展牆的投射燈隨捲動滑過；倒數時夕陽的光越捲越暖），素材見上面〈莫內花園的素材〉 | `lobby-monet.html` |
 | outdoor-party | ✅ 美式戶外婚禮派對：開場露出來的那片藍天、綠地、遠山就是 hero，草地上擺著野餐（籐籃、一瓶雛菊、琺瑯杯、一籃蘋果），幾顆漏網的霧面粉彩氣球一直往上飄；三角旗資訊卡（上緣是真的紅白格紋布、後面探出野花）、長桌派對與野花玻璃罐的拍立得、字母板的流程（旁邊老銀餐具與紅琺瑯杯）、綁著三顆粉彩氣球的「Just Married」老福特小貨車、真的戶外婚宴當故事的底、黃昏亮燈的穀倉當倒數的底、入場券、彩色園遊券 ＋ 捲動編排（草原往上退；野花從卡片後面長出來；三角旗一面一面翻下來；小貨車從右邊開進來；拍立得跟著捲動擺；倒數的串燈一顆一顆亮、穀倉越來越亮，全亮了就放煙火），素材見上面〈美式戶外派對的素材〉 | `lobby-party.html` |
-| morning-window | ✅ 侘寂（Wabi-Sabi）：真的照片（窗前的一瓶鬱金香、灰泥牆、牆上窗格形狀的陽光、亞麻布、照著陽光的紗簾），顏色都是褪過的大地色 ＋ 「我們的故事」接著一張桌巾：洗出來的照片散在亞麻布上、去背的手作陶杯／素色抱枕／一盆室內植物 ＋ 區塊標題上是去背的小物（陶杯、白色花瓶、素色抱枕、攤開的書、一枝粉色鬱金香，不放在框裡）＋ 左邊一枝乾草跟著捲動垂下來＋ 新人照片共 7 處 ＋ 捲動編排（照片一張張落到桌上、窗光滑過桌面、倒數時紗簾越捲越暖），素材見上面〈晨光房間的照片素材〉 | `lobby-window.html` |
-| white-church | ✅ 開場在午夜的禮堂點亮三根真的蠟燭 → 燭火熄掉、天亮 → 大廳是同一座純白禮堂；玻璃感：照片壓在厚玻璃裡（反光隨捲動滑過）、毛玻璃的卡；兩旁垂著白紗、hero 下緣一圈蕾絲、兩旁的蕾絲緞帶跟著捲動一路縫下來、頁尾一片滿天星；區塊標題上是去背的實物（戒指、水晶燈、鈴蘭、百合、白色蝴蝶蘭）；新人照片共 7 處（倒數的毛玻璃後面是一片鈴蘭，越捲越清楚），素材見上面〈白色教堂的照片素材〉 | `lobby-chapel.html` |
+| morning-window | ✅ 侘寂（Wabi-Sabi）：真的照片（窗前的一瓶鬱金香、灰泥牆、牆上窗格形狀的陽光、亞麻布、照著陽光的紗簾），顏色都是褪過的大地色 ＋ 「我們的故事」是一本攤開的筆記本，接著一張早餐桌巾：去背的可頌／一枝乾燥的玫瑰／素色抱枕／一盆室內植物（這一帶不放新人照片，免得跟下一區「相遇之間」重複）＋ 區塊標題上是去背的小物（乾燥的玫瑰、白色花瓶、素色抱枕、攤開的書、一枝粉色鬱金香，不放在框裡）＋ 新人照片 1 處（倒數旁）＋ 捲動編排（小物一樣樣落到桌上、窗光滑過桌面、倒數時紗簾越捲越暖），素材見上面〈晨光房間的照片素材〉 | `lobby-window.html` |
+| white-church | ✅ 開場在午夜的禮堂點亮三根真的蠟燭 → 燭火熄掉、天亮 → 大廳是同一座純白禮堂；玻璃感：照片壓在厚玻璃裡（反光隨捲動滑過）、毛玻璃的卡；兩旁垂著白紗、hero 下緣一圈蕾絲、頁尾一片滿天星；區塊標題上是去背的實物（戒指、水晶燈、鈴蘭、百合、白色蝴蝶蘭）；新人照片共 7 處（倒數的毛玻璃後面是一片鈴蘭，越捲越清楚），素材見上面〈白色教堂的照片素材〉 | `lobby-chapel.html` |
 
 只有 Night Sky 的大廳是深色的，子頁暫時還是淺色版（見 common.css）。
 每個版型各有一頁示範（`preview/botanical-letter.html`、`preview/secret-garden.html`、`preview/spring-orangerie.html`、`preview/night-sky.html`、`preview/french-manor.html`、`preview/monet-garden.html`、`preview/outdoor-party.html`、`preview/morning-window.html`、`preview/white-church.html`）。右下角都可以切換開場。

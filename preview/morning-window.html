@@ -15,7 +15,6 @@
 <link rel="stylesheet" href="../public/css/common.css">
 <link rel="stylesheet" href="../public/css/index.css">
 <link rel="stylesheet" href="../public/css/lobby-window.css">
-<link rel="stylesheet" href="../public/css/lobby-trail.css">
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Noto+Serif+TC:wght@400;500;600&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../public/css/openers/envelope.css">
 <link rel="stylesheet" href="../public/css/openers/book.css">
@@ -76,17 +75,11 @@
 <!-- ============ 主畫面：紗簾拉開之後，早晨的窗邊與一張早餐桌 ============
      一張真的照片：白框窗前的一瓶鬱金香（跟開場紗簾後面那扇窗是同一張）。
      侘寂（Wabi-Sabi）：灰泥牆、亞麻、手捏的陶、乾燥的花草，顏色都是褪過的大地色。
-     「我們的故事」那裡是一張鋪著亞麻桌巾的桌子：洗出來的照片散在桌上，旁邊是手作陶杯、素色抱枕、一盆室內植物
-     （全部是去背的真實物件，不放在框裡）。整頁的灰泥牆上落著窗格形狀的陽光，跟著捲動慢慢移動。 -->
+     「我們的故事」那裡是一本攤開的筆記本，下面接著一張鋪著亞麻桌巾的早餐桌：可頌、一枝乾燥的玫瑰、素色抱枕、一盆室內植物
+     （全部是去背的真實物件，不放在框裡）。這一帶不放新人照片 —— 照片都在下一區「相遇之間」，放在這裡會重複。整頁的灰泥牆上落著窗格形狀的陽光，跟著捲動慢慢移動。 -->
 <div id="app">
   <section class="panel lobby mw-lobby" data-panel="lobby" data-scroll>
 
-    <!-- 一枝乾草跟著捲動往下垂，末端是乾草穗，沿路落下幾顆乾燥的種子花頭（--ap 由 lobby-motion.js 算，共用的部分在 lobby-trail.css） -->
-    <div class="lx-trail mw-trail" data-scroll aria-hidden="true">
-      <i class="lx-trail-line"></i>
-      <i class="lx-mark" style="--k:0.12;--mx:16px;--mr:-30deg"></i><i class="lx-mark" style="--k:0.27;--mx:-15px;--mr:40deg"></i><i class="lx-mark" style="--k:0.43;--mx:15px;--mr:-10deg"></i><i class="lx-mark" style="--k:0.58;--mx:-16px;--mr:25deg"></i><i class="lx-mark" style="--k:0.73;--mx:15px;--mr:-40deg"></i><i class="lx-mark" style="--k:0.89;--mx:-15px;--mr:15deg"></i>
-      <i class="lx-trail-tip"></i>
-    </div>
 
     <!-- 整頁的牆上落著窗格形狀的陽光：固定在視窗上，跟著捲動慢慢移（--sp 來自 .mw-lobby） -->
     <div class="mw-sunwall" aria-hidden="true"></div>
@@ -110,10 +103,10 @@
 
     <div class="scene-body mw-body">
 
-      <!-- ===== 婚禮資訊：一只手作陶杯 ===== -->
+      <!-- ===== 婚禮資訊：一枝乾燥的玫瑰 ===== -->
       <section class="info-block mw-sec">
         <div class="mw-head">
-          <figure class="mw-icon" data-reveal="draw"><i class="mw-obj o-cup"></i></figure>
+          <figure class="mw-icon" data-reveal="draw"><i class="mw-obj o-rose"></i></figure>
           <span class="en block-title">Information</span>
           <span class="cn block-sub">婚禮資訊</span>
         </div>
@@ -196,13 +189,13 @@
         </div>
       </section>
 
-      <!-- ===== 兩人的故事：亞麻布上疊著兩張照片（故事照、照片牆第五張），下面接著散著照片的桌巾；窗格的陽光跟著捲動慢慢滑過去 ===== -->
+      <!-- ===== 兩人的故事：亞麻布上一本攤開的筆記本，下面接著擺著早餐的桌巾；窗格的陽光跟著捲動慢慢滑過去。
+           不放新人照片：照片都在下一區「相遇之間」，放在這裡會重複 ===== -->
       <section class="info-block mw-band mw-story" id="storyBlock" hidden data-scroll>
         <div class="mw-band-bg" aria-hidden="true"><i class="mw-sun"></i></div>
         <div class="mw-band-inner">
-          <div class="mw-story-pics" data-reveal="rise">
-            <figure class="mw-print s-back"><div class="mw-print-ph" data-photo="photo5" aria-hidden="true"></div></figure>
-            <figure class="mw-print s-front"><div class="mw-print-ph" data-photo="story" aria-hidden="true"></div></figure>
+          <div class="mw-story-pics" data-reveal="rise" aria-hidden="true">
+            <i class="mw-obj o-notebook"></i>
           </div>
           <div class="mw-story-body" data-reveal="rise">
             <div class="mw-band-title">Our Story</div>
@@ -210,17 +203,13 @@
             <p class="story-text" id="storyText"></p>
           </div>
         </div>
-              <!-- 故事下面接著一張亞麻桌巾：散著四張洗出來的照片（照片牆前四張），
-                   手作陶杯、素色抱枕、一盆室內植物擺在照片之間；窗光跟著捲動滑過桌面 -->
+          <!-- 故事下面接著一張亞麻桌巾（早餐桌）：可頌、一枝乾燥的玫瑰、素色抱枕、一盆室內植物；窗光跟著捲動滑過桌面 -->
           <section class="mw-table" data-scroll aria-hidden="true">
             <i class="mw-table-sun"></i>
-            <figure class="mw-print p1" data-reveal="rise"><div class="mw-print-ph" data-photo="photo1"></div></figure>
-            <figure class="mw-print p2" data-reveal="rise"><div class="mw-print-ph" data-photo="photo2"></div></figure>
-            <figure class="mw-print p3" data-reveal="rise"><div class="mw-print-ph" data-photo="photo3"></div></figure>
-            <figure class="mw-print p4" data-reveal="rise"><div class="mw-print-ph" data-photo="photo4"></div></figure>
-            <i class="mw-obj o-cup t-cup"></i>
-            <i class="mw-obj o-cushion t-cushion"></i>
-            <i class="mw-obj o-plant t-plant"></i>
+            <i class="mw-obj o-croissant t-croissant" data-reveal="rise"></i>
+            <i class="mw-obj o-rose t-rose" data-reveal="rise"></i>
+            <i class="mw-obj o-cushion t-cushion" data-reveal="rise"></i>
+            <i class="mw-obj o-plant t-plant" data-reveal="rise"></i>
           </section>
       </section>
 
