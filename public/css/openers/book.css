@@ -1,0 +1,162 @@
+/* ============================================================
+   openers/book.css — 開場：翻頁・古書（js/openers/book.js）
+   ------------------------------------------------------------
+   一本放在桌上的精裝書。尺寸全部從 --bk-w（單頁寬）推出來：
+   闔著的時候畫面中間是一本書；攤開之後是兩頁寬的跨頁，
+   所以打開的同時整本書往右挪半頁、再縮一點（--bk-s），跨頁才會置中、
+   手機上也放得下。
+
+   書皮的顏色與花紋由 [data-variant]（版型代號）決定，預設是酒紅皮面燙金；
+   頁面（紙、墨）每一版都一樣 —— 書裡面本來就是紙。
+============================================================ */
+.bk-host{
+  --bk-w:min(34vw,340px,calc(62vh * .72));
+  --bk-s:1;                               /* 攤開後的縮放 */
+  --bk-skin:#5a1a22; --bk-skin-2:#3f0f16; --bk-gold:#d6b46a; --bk-gold-d:#9c7a36;
+  --bk-paper:#f5eedd; --bk-ink:#3a2e28; --bk-accent:#7a1f2b;
+  --bk-end:#6e1b26;                       /* 蝴蝶頁（封面內側）的底色 */
+  background:#1c130f;perspective:2000px;
+}
+@media (max-width:640px){
+  .bk-host{--bk-w:min(60vw,calc(58vh * .72));--bk-s:.72;}
+}
+/* 中古刺繡：書皮換成繡花布面 */
+.bk-host[data-variant="tapestry"]{
+  --bk-skin:#6e1b26; --bk-skin-2:#4c0f18; --bk-gold:#e2c47a; --bk-end:#1f2946;
+}
+.bk-host[data-variant="tapestry"] .bk-skin{
+  background:
+    radial-gradient(120% 90% at 30% 20%,rgba(255,255,255,.08),transparent 60%),
+    repeating-linear-gradient(40deg,rgba(0,0,0,.14) 0 1.4px,transparent 1.4px 2.9px),
+    linear-gradient(160deg,var(--bk-skin),var(--bk-skin-2));
+}
+.bk-host[data-variant="tapestry"] .bk-frame{border-style:dashed;}
+
+/* ---- 桌面 ---- */
+.bk-table{position:absolute;inset:0;
+  background:
+    radial-gradient(60% 55% at 50% 48%,rgba(255,214,150,.16),transparent 70%),
+    repeating-linear-gradient(92deg,rgba(0,0,0,.08) 0 2px,transparent 2px 9px),
+    linear-gradient(180deg,#3a2419,#24160f 70%,#170e09);}
+.bk-table::after{content:'';position:absolute;inset:0;
+  background:radial-gradient(90% 80% at 50% 50%,transparent 45%,rgba(0,0,0,.55));}
+
+/* ---- 書 ---- */
+.bk-stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  perspective:2200px;}
+.bk{position:relative;width:var(--bk-w);aspect-ratio:.72;transform-style:preserve-3d;
+  transition:transform 1.45s cubic-bezier(.6,0,.2,1);}
+.bk-host.is-open .bk{transform:translateX(calc(var(--bk-s) * 50%)) scale(var(--bk-s));}
+
+/* 書頁：右邊與下邊露出一疊紙的厚度 */
+.bk-block{position:absolute;inset:0;background:var(--bk-paper);border-radius:1px 3px 3px 1px;
+  box-shadow:1px 1px 0 #e6dcc4,2px 2px 0 #f0e8d6,3px 3px 0 #e1d6bc,4px 4px 0 #ece3cf,
+    6px 7px 18px rgba(0,0,0,.5);}
+.bk-page{position:absolute;inset:0;padding:12% 11%;display:flex;flex-direction:column;align-items:center;
+  text-align:center;color:var(--bk-ink);
+  background:
+    radial-gradient(120% 100% at 0% 50%,rgba(120,90,50,.12),transparent 40%),
+    var(--bk-paper);}
+.bk-text{justify-content:flex-start;gap:12px;}
+.bk-chapter{font-family:'Cormorant Garamond','Noto Serif TC',serif;font-style:italic;
+  font-size:calc(var(--bk-w) * .06);color:var(--bk-accent);margin-top:18%;}
+.bk-rule{width:30%;height:1px;background:var(--bk-gold-d);opacity:.6;}
+.bk-lines{width:100%;display:flex;flex-direction:column;gap:calc(var(--bk-w) * .035);margin-top:6%;}
+.bk-lines i{display:block;height:1px;background:rgba(58,46,40,.18);}
+.bk-lines i:nth-child(3n){width:78%;}
+
+/* 扉頁（翻頁的那一張）與封面：都以書脊（左緣）為軸 */
+.bk-leaf,.bk-cover{position:absolute;inset:0;transform-origin:left center;transform-style:preserve-3d;}
+/* 三層疊在同一個平面上會互相穿透（z-fighting），各墊一點點厚度 */
+.bk-leaf{transform:translateZ(1px);}
+.bk-cover{transform:translateZ(2px);}
+.bk-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;}
+.bk-back{transform:rotateY(180deg);}
+
+.bk-title{justify-content:center;gap:calc(var(--bk-w) * .035);}
+.bk-kicker{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:calc(var(--bk-w) * .055);
+  color:var(--bk-accent);letter-spacing:.04em;}
+.bk-names{display:flex;flex-direction:column;align-items:center;line-height:1.15;
+  font-family:'Cinzel Decorative','Cinzel','Noto Serif TC',serif;font-size:calc(var(--bk-w) * .1);
+  color:var(--bk-ink);letter-spacing:.04em;}
+.bk-names .op-amp{font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--bk-gold-d);
+  font-size:.8em;}
+.bk-orn{width:40%;height:10px;margin:2% 0;
+  background:
+    radial-gradient(circle at 50% 50%,var(--bk-accent) 0 3px,transparent 3.5px),
+    linear-gradient(90deg,transparent,var(--bk-gold-d) 20%,var(--bk-gold-d) 80%,transparent) center/100% 1px no-repeat;}
+.bk-date{font-family:'Cinzel','Noto Serif TC',serif;font-size:calc(var(--bk-w) * .042);letter-spacing:.3em;color:#6f5f4c;}
+.bk-verso{justify-content:center;gap:14px;
+  background:radial-gradient(120% 100% at 100% 50%,rgba(120,90,50,.12),transparent 40%),var(--bk-paper);}
+.bk-verso p{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:calc(var(--bk-w) * .065);
+  line-height:1.5;color:var(--bk-ink);}
+.bk-verso span{font-size:calc(var(--bk-w) * .036);letter-spacing:.4em;color:#8a7a66;}
+
+/* 封面：皮面 ＋ 燙金框 */
+.bk-skin{border-radius:2px 5px 5px 2px;
+  background:
+    radial-gradient(120% 90% at 30% 20%,rgba(255,255,255,.1),transparent 60%),
+    radial-gradient(3px 3px at 20% 30%,rgba(0,0,0,.12),transparent),
+    linear-gradient(160deg,var(--bk-skin),var(--bk-skin-2));
+  box-shadow:inset 6px 0 10px rgba(0,0,0,.35),inset -2px 0 3px rgba(255,255,255,.08),
+    4px 6px 16px rgba(0,0,0,.55);}
+.bk-skin::before{content:'';position:absolute;left:0;top:0;bottom:0;width:7%;border-radius:2px 0 0 2px;
+  background:linear-gradient(90deg,rgba(0,0,0,.35),rgba(255,255,255,.05) 60%,rgba(0,0,0,.15));}
+.bk-frame{position:absolute;inset:8% 9% 8% 12%;border:1.5px solid var(--bk-gold);
+  outline:1px solid color-mix(in srgb,var(--bk-gold) 55%,transparent);outline-offset:-7px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8%;text-align:center;}
+.bk-cover-orn{width:22%;aspect-ratio:1;
+  background:
+    radial-gradient(circle,var(--bk-gold) 0 12%,transparent 13%),
+    conic-gradient(from 0deg,var(--bk-gold) 0 8%,transparent 8% 25%,var(--bk-gold) 25% 33%,transparent 33% 50%,
+      var(--bk-gold) 50% 58%,transparent 58% 75%,var(--bk-gold) 75% 83%,transparent 83%);
+  -webkit-mask:radial-gradient(circle,#000 0 48%,transparent 50%);mask:radial-gradient(circle,#000 0 48%,transparent 50%);
+  opacity:.9;}
+.bk-cover-names{display:flex;flex-direction:column;align-items:center;line-height:1.2;
+  font-family:'Cinzel Decorative','Cinzel','Noto Serif TC',serif;font-size:calc(var(--bk-w) * .085);
+  color:var(--bk-gold);letter-spacing:.06em;
+  text-shadow:0 -1px 0 rgba(0,0,0,.45),0 1px 0 rgba(255,235,180,.2);}
+.bk-cover-names .op-amp{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:.75em;}
+.bk-cover-date{font-family:'Cinzel',serif;font-size:calc(var(--bk-w) * .035);letter-spacing:.34em;
+  color:var(--bk-gold);opacity:.85;}
+.bk-endpaper{border-radius:5px 2px 2px 5px;
+  background:
+    radial-gradient(40% 30% at 30% 30%,rgba(255,255,255,.12),transparent 70%),
+    repeating-radial-gradient(circle at 20% 40%,transparent 0 6px,rgba(255,255,255,.06) 6px 7px),
+    repeating-radial-gradient(circle at 80% 70%,transparent 0 9px,rgba(0,0,0,.08) 9px 10px),
+    var(--bk-end);
+  box-shadow:inset -8px 0 14px rgba(0,0,0,.35);}
+
+/* ---- 提示 ---- */
+.bk-hint{position:absolute;left:0;right:0;bottom:clamp(36px,9vh,90px);display:flex;flex-direction:column;
+  align-items:center;gap:6px;color:rgba(240,226,196,.85);pointer-events:none;
+  animation:bk-hint 2.6s ease-in-out infinite;transition:opacity .3s;}
+.bk-hint .en{font-family:'Cinzel',serif;font-size:12px;letter-spacing:.42em;text-transform:uppercase;color:var(--bk-gold);}
+.bk-hint .cn{font-family:'Noto Serif TC',serif;font-size:13.5px;letter-spacing:.3em;}
+@keyframes bk-hint{50%{opacity:.5;}}
+.bk-host.is-open .bk-hint{opacity:0;animation:none;}
+
+/* ---- 翻書的時間軸（js/openers/book.js） ---- */
+.bk-host.is-open .bk-cover{animation:bk-open 1.45s cubic-bezier(.55,.05,.3,1) forwards;}
+@keyframes bk-open{
+  0%  {transform:translateZ(2px) rotateY(0);}
+  12% {transform:translateZ(2px) rotateY(-8deg);}   /* 先把封面掀起一點點 */
+  100%{transform:translateZ(2px) rotateY(-178deg);}
+}
+.bk-host.is-turned .bk-leaf{animation:bk-turn 1.15s cubic-bezier(.45,.05,.35,1) forwards;}
+@keyframes bk-turn{
+  0%  {transform:translateZ(1px) rotateY(0);}
+  100%{transform:translateZ(3px) rotateY(-176deg);}
+}
+/* 翻到一半時紙面背光 */
+.bk-leaf::after,.bk-cover::after{content:'';position:absolute;inset:0;pointer-events:none;opacity:0;
+  background:linear-gradient(90deg,rgba(0,0,0,.25),transparent 70%);}
+.bk-host.is-turned .bk-leaf::after{animation:bk-shade 1.15s ease forwards;}
+.bk-host.is-open .bk-cover::after{animation:bk-shade 1.45s ease forwards;}
+@keyframes bk-shade{50%{opacity:1;}100%{opacity:0;}}
+
+/* 推進正文：鏡頭朝右頁推過去，整個畫面溶進網站 */
+.bk-host.is-leaving{background:transparent;transition:background .6s ease;}
+.bk-host.is-leaving .bk-table{opacity:0;transition:opacity .9s ease;}
+.bk-host.is-leaving .bk-stage{transform:scale(2.6) translateX(-10%);opacity:0;
+  transition:transform 1.1s cubic-bezier(.6,0,.3,1),opacity .8s ease .25s;}

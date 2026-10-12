@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" data-prerendered="1">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- ⚙️ 由 scripts/build-previews.js 從 public/lobby-botanical.html 產出，不要手改。
+     骨架一模一樣，差別只在資料由 demo-data.js ＋ lobby-demo.js 填（正式版是 js/index.js）。 -->
+<title>Botanical｜大廳模板示範</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- 字體依版型不同，由 build-og（預產）或 site-context.js（執行期）依 TEMPLATES[x].fonts 補上 -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../public/css/common.css">
+<link rel="stylesheet" href="../public/css/index.css">
+<link rel="stylesheet" href="../public/css/lobby-botanical.css">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Courier+Prime&amp;family=Noto+Serif+TC:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../public/css/openers/envelope.css">
+<link rel="stylesheet" href="../public/css/openers/book.css">
+<link rel="stylesheet" href="../public/css/openers/bloom.css">
+<link rel="stylesheet" href="../public/css/openers/curtain.css">
+<link rel="stylesheet" href="../public/css/openers/candle.css">
+<link rel="stylesheet" href="../public/css/openers/stars.css">
+<link rel="stylesheet" href="../public/css/openers/door.css">
+<link rel="stylesheet" href="../public/css/openers/ribbon.css">
+<link rel="stylesheet" href="../public/css/openers/painting.css">
+<link rel="stylesheet" href="../public/css/openers/balloons.css">
+<link rel="stylesheet" href="demo-panel.css">
+</head>
+<body data-template="botanical-letter" data-hero-name="en" class="nav-off" data-page="lobby" data-lobby="botanical-letter">
+<!-- 開場遮罩：只有**沒預產到**的頁面會顯示（見 css/common.css 的 .boot-veil） -->
+<div class="boot-veil" aria-hidden="true"><span class="boot-veil-mark">✦</span></div>
+
+
+<div class="bg-decor"></div>
+<canvas id="fx"></canvas>
+
+<!-- ============ 入場：填名字 + 抽 icon（與 index.html 同一套，js/index.js 操作） ============ -->
+<div class="overlay" id="gate">
+  <div class="gate-card">
+    <div class="ribbon">We're getting married</div>
+    <h1 data-tpl="couple"></h1>
+    <div class="sub"><span data-tpl="date"></span>・在進場前，先報上名來</div>
+    <div class="icon-pick" id="iconPick">✦</div>
+    <div class="icon-hint">這是你的專屬記號・<b id="rerollIcon">換一個</b></div>
+    <div class="field"><input id="nameInput" type="text" maxlength="12" placeholder="輸入你的名字"></div>
+    <button class="btn" id="enterBtn">進場觀禮</button>
+    <div class="gate-sep"><span>或</span></div>
+    <button class="btn btn-google" id="googleBtn" type="button">
+      <svg viewBox="0 0 18 18" aria-hidden="true">
+        <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.17-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.61z"/>
+        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.33A9 9 0 0 0 9 18z"/>
+        <path fill="#FBBC05" d="M3.96 10.71A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.17.28-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.04l3-2.33z"/>
+        <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 9 0 9 9 0 0 0 .96 4.96l3 2.33C4.67 5.16 6.66 3.58 9 3.58z"/>
+      </svg>
+      <span>用 Google 帳號登入</span>
+    </button>
+  </div>
+</div>
+
+<!-- ============ 開場 ============
+     空的容器：用哪一種開場由 sites.opening 決定（沒設就是這個版型的預設開場），
+     畫面由 js/openers/{key}.js 蓋進來。看過開場的賓客由 js/index.js 直接移除。 -->
+<div class="overlay" id="opener" hidden></div>
+
+<!-- 預設開場（字幕 ＋ 開幕簾 ＋ 跳過）：這個版型用信封取代，但 js/index.js 仍會找這幾顆，缺一顆整頁會掛 -->
+<div class="overlay" id="intro"><div class="intro-line" id="introLine"></div></div>
+<div class="overlay" id="curtain">
+  <div class="curtain-panel left"></div>
+  <div class="curtain-panel right"></div>
+</div>
+<button class="intro-skip" id="introSkip" type="button" hidden>跳過</button>
+
+<!-- ============ 主畫面：一本植物標本冊 ============
+     hero 是一張老標本台紙，上面用相角貼著新人的照片，旁邊壓著一枝鬱金香與一片葉子，
+     右下角一張標本標籤寫著名字；往下每一個區塊是一頁「圖版」（Plate I、II…）：
+     台紙上貼一張新人的照片（照片牆的第 1–4 張），一枝壓花斜斜壓在照片的一角，右邊是內容。
+     標本是真的壓花照片（去背）：捲到的時候一張一張壓上台紙（data-reveal="draw"）。 -->
+<div id="app">
+  <section class="panel lobby bt-lobby" data-panel="lobby">
+
+    <!-- 幾片壓花，跟著捲動慢慢飄（--sp 由 lobby-motion.js 算） -->
+    <div class="bt-drift" data-scroll aria-hidden="true">
+      <span class="bt-petal p1" style="--bit:0"></span>
+      <span class="bt-petal p2" style="--bit:1"></span>
+      <span class="bt-petal p3" style="--bit:2"></span>
+      <span class="bt-petal p4" style="--bit:3"></span>
+    </div>
+
+    <!-- ===== Hero：標本台紙 ===== -->
+    <header class="lobby-hero bt-hero" data-scroll>
+      <div class="bt-hero-grid">
+        <div class="bt-sheet" aria-hidden="true">
+          <figure class="bt-bouquet-wrap" data-reveal="draw"><i class="bt-specimen s-sheet"></i><div class="bt-hero-photo" data-photo="hero" aria-hidden="true"><i class="bt-corner c1"></i><i class="bt-corner c2"></i><i class="bt-corner c3"></i><i class="bt-corner c4"></i></div><i class="bt-specimen s-tulip"></i><i class="bt-specimen s-leaf"></i></figure>
+          <i class="bt-tape t1"></i><i class="bt-tape t2"></i>
+          <div class="bt-label">
+            <div class="bt-label-no"><span>HERBARIUM</span><span>No. 0116</span></div>
+            <div class="bt-label-latin">Botanica nuptialis</div>
+            <div class="bt-label-names"><span data-tpl="groomEn"></span> <i>&amp;</i> <span data-tpl="brideEn"></span></div>
+            <div class="bt-label-row"><span>Collected</span><span data-tpl="date"></span></div>
+          </div>
+        </div>
+        <div class="bt-hero-text">
+          <div class="bt-vellum" aria-hidden="true"><span>a letter,<br>pressed with flowers</span></div>
+          <div class="bt-kicker"><span class="en">You are cordially invited</span><span class="cn">誠摯邀請您</span></div>
+          <h1 class="bt-names"><span data-tpl="groomEn"></span><span class="amp">&amp;</span><span data-tpl="brideEn"></span></h1>
+          <div class="bt-date"><span data-tpl="date"></span><i aria-hidden="true"></i><span data-tpl="weekday"></span></div>
+          <div class="hashtags" id="lobbyTags" data-sk="tags"></div>
+          <div class="scroll-cue bt-cue"><span>Scroll</span><span class="arrow"></span></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="scene-body bt-body">
+
+      <!-- ===== Plate I 婚禮資訊：蕨 ===== -->
+      <section class="info-block bt-sec bt-plate" data-scroll>
+        <aside class="bt-plate-art">
+          <div class="bt-mount" data-reveal="draw"><div class="bt-mount-ph" data-photo="photo1" aria-hidden="true"></div><i class="bt-art bt-specimen s-fern"></i>
+            <div class="bt-plate-label"><b>PLATE I</b><i>Polypodium vulgare</i></div>
+          </div>
+        </aside>
+        <div class="bt-plate-body">
+          <div class="bt-head" data-reveal="rise">
+            <span class="bt-no">Plate I</span>
+            <span class="en block-title">Information</span>
+            <span class="cn block-sub">婚禮資訊</span>
+          </div>
+          <div class="bt-card" data-reveal="rise">
+            <div class="info-card">
+              <div class="info-couple" id="infoCouple" data-tpl="couple"></div>
+              <div class="info-couple-cn" id="infoCoupleCn"></div>
+              <div class="info-rows">
+                <div class="info-row"><div class="ir-label">日期</div><div class="ir-body"><div class="ir-val" id="infoDate" data-sk="text">—</div></div></div>
+                <div class="info-row" id="infoTimeRow"><div class="ir-label">時間</div><div class="ir-body"><div class="ir-val" id="infoTime" data-sk="text">—</div>
+                  <a class="ir-jump" id="infoTimeJump" href="#scheduleBlock" hidden>看當日流程 →</a></div></div>
+                <div class="info-row" id="infoVenueRow"><div class="ir-label">地點</div><div class="ir-body"><div class="ir-val" id="infoVenue" data-sk="text">—</div><div class="ir-sub" id="infoAddr"></div>
+                  <a class="ir-jump" id="infoVenueJump" href="#transportBlock" hidden>看交通資訊 →</a></div></div>
+              </div>
+              <div class="info-actions">
+                <a class="btn small ghost" id="mapBtn" href="#" target="_blank" rel="noopener">開啟地圖</a>
+                <a class="btn small ghost" id="calBtn" href="#" target="_blank" rel="noopener">加入行事曆</a>
+              </div>
+            </div>
+            <div class="info-seat" id="infoSeatCta">
+              <a class="btn" href="seating.html">尋找我的座位</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Plate II 當日流程：穗花婆婆納（乾燥） ===== -->
+      <section class="info-block bt-sec bt-plate is-flip" id="scheduleBlock" data-scroll>
+        <aside class="bt-plate-art">
+          <div class="bt-mount" data-reveal="draw"><div class="bt-mount-ph" data-photo="photo2" aria-hidden="true"></div><i class="bt-art bt-specimen s-lavender"></i>
+            <div class="bt-plate-label"><b>PLATE II</b><i>Veronica spicata</i></div>
+          </div>
+        </aside>
+        <div class="bt-plate-body">
+          <div class="bt-head" data-reveal="rise">
+            <span class="bt-no">Plate II</span>
+            <span class="en block-title">Schedule</span>
+            <span class="cn block-sub">當日流程</span>
+          </div>
+          <div class="timeline" id="schedule" data-sk="rows" data-reveal="list"></div>
+        </div>
+      </section>
+
+      <!-- ===== Plate III 出席前的小提醒：雛菊（沒填就整塊收起） ===== -->
+      <section class="info-block bt-sec bt-plate" id="noteBlock" hidden data-scroll>
+        <aside class="bt-plate-art">
+          <div class="bt-mount" data-reveal="draw"><div class="bt-mount-ph" data-photo="photo3" aria-hidden="true"></div><i class="bt-art bt-specimen s-daisy"></i>
+            <div class="bt-plate-label"><b>PLATE III</b><i>Bellis perennis</i></div>
+          </div>
+        </aside>
+        <div class="bt-plate-body">
+          <div class="bt-head" data-reveal="rise">
+            <span class="bt-no">Plate III</span>
+            <span class="en block-title">Notes</span>
+            <span class="cn block-sub">出席前的小提醒</span>
+          </div>
+          <div class="note-grid bt-card" data-reveal="rise">
+            <div class="note-item" id="dressCodeItem" hidden>
+              <div class="note-label">Dress Code</div>
+              <div class="dress-swatches" id="dressSwatches" hidden aria-hidden="true"></div>
+              <p class="info-note" id="dressCode"></p>
+              <div class="dress-refs" id="dressRefs" hidden>
+                <img class="dress-ref-img" id="dressRefFirst" alt="Dress Code 參考圖">
+                <button class="ir-jump" id="dressRefMore" type="button" hidden>查看更多 →</button>
+              </div>
+            </div>
+            <div class="note-item" id="giftNoteItem" hidden>
+              <div class="note-label">關於禮金</div>
+              <p class="info-note" id="giftNote"></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Plate IV 交通資訊：橄欖枝（沒填就整塊收起） ===== -->
+      <section class="info-block bt-sec bt-plate is-flip" id="transportBlock" hidden data-scroll>
+        <aside class="bt-plate-art">
+          <div class="bt-mount" data-reveal="draw"><div class="bt-mount-ph" data-photo="photo4" aria-hidden="true"></div><i class="bt-art bt-specimen s-olive"></i>
+            <div class="bt-plate-label"><b>PLATE IV</b><i>Olea europaea</i></div>
+          </div>
+        </aside>
+        <div class="bt-plate-body">
+          <div class="bt-head" data-reveal="rise">
+            <span class="bt-no">Plate IV</span>
+            <span class="en block-title">Access</span>
+            <span class="cn block-sub">交通資訊</span>
+          </div>
+          <div class="note-grid bt-card" data-reveal="rise">
+            <div class="note-item" id="transportPublicItem" hidden>
+              <div class="note-label">大眾運輸</div>
+              <p class="info-note" id="transportPublic"></p>
+              <button class="ir-jump" id="transportPublicMore" type="button" hidden>展開更多 →</button>
+            </div>
+            <div class="note-item" id="transportParkingItem" hidden>
+              <div class="note-label">停車資訊</div>
+              <p class="info-note" id="transportParking"></p>
+              <button class="ir-jump" id="transportParkingMore" type="button" hidden>展開更多 →</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 兩人的故事：鼠尾草綠的台紙，照片用相角貼著，描圖紙蓋在一角 ===== -->
+      <section class="info-block bt-band bt-story" id="storyBlock" hidden data-scroll>
+        <div class="bt-band-bg" aria-hidden="true"></div>
+        <div class="bt-band-inner">
+          <div class="bt-photo" data-reveal="rise">
+            <div class="bt-photo-ph" data-photo="story" aria-hidden="true"></div>
+            <i class="bt-corner c1"></i><i class="bt-corner c2"></i><i class="bt-corner c3"></i><i class="bt-corner c4"></i>
+            <div class="bt-photo-cap">fig. 1 — the two of us</div>
+          </div>
+          <div class="bt-story-body" data-reveal="rise">
+            <span class="bt-no">Collected together</span>
+            <div class="bt-band-title">Our Story</div>
+            <div class="bt-band-sub">關於我們這一路</div>
+            <p class="story-text" id="storyText"></p>
+          </div>
+          <span class="bt-petal in-band b1" style="--bit:0" aria-hidden="true"></span>
+          <span class="bt-petal in-band b2" style="--bit:1" aria-hidden="true"></span>
+        </div>
+      </section>
+
+      <!-- ===== Moments 相遇之間 ===== -->
+      <section class="info-block bt-sec gallery-block" id="photoGallery" hidden>
+        <div class="bt-head is-center" data-reveal="rise">
+          <span class="bt-no">Specimens</span>
+          <span class="en block-title">Moments</span>
+          <span class="cn block-sub">相遇之間</span>
+        </div>
+        <div class="photo-rail" id="photoRail"></div>
+      </section>
+
+      <!-- ===== 日期倒數：一朵蒲公英，捲下去種子就被吹走 ===== -->
+      <section class="info-block bt-band bt-count" data-scroll>
+        <div class="bt-band-bg" aria-hidden="true"></div>
+        <div class="bt-band-inner">
+          <figure class="bt-dandelion-wrap" data-reveal="draw"><i class="bt-dandelion"></i><i class="bt-seed" style="--k:0"></i><i class="bt-seed" style="--k:1"></i><i class="bt-seed" style="--k:2"></i><i class="bt-seed" style="--k:3"></i><i class="bt-seed" style="--k:4"></i><i class="bt-seed" style="--k:5"></i><i class="bt-seed" style="--k:6"></i><i class="bt-seed" style="--k:7"></i></figure>
+          <div class="bt-count-body">
+            <span class="bt-no">Make a wish</span>
+            <div class="bt-band-title">Countdown</div>
+            <div class="bt-band-sub">距離我們的大日子還有</div>
+            <div class="cd-card">
+              <div class="cd-grid" id="cdGrid" data-sk="grid"></div>
+              <div class="cd-target" id="cdTarget"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== R.S.V.P.：一封回信，貼著壓花郵票、蓋了郵戳 ===== -->
+      <section class="info-block bt-sec">
+        <div class="bt-head is-center" data-reveal="rise">
+          <span class="bt-no">Reply</span>
+          <span class="en block-title">R.S.V.P.</span>
+          <span class="cn block-sub">出席回覆</span>
+        </div>
+        <div class="bt-letter" data-reveal="rise">
+          <div class="bt-stamp-wrap" aria-hidden="true"><svg class="bt-art bt-stamp" viewBox="0 0 120 140" aria-hidden="true" focusable="false"><defs><mask id="bt-perf"><rect width="120" height="140" fill="#fff"/><g fill="#000"><circle cx="6" cy="4" r="3.2"/><circle cx="6" cy="136" r="3.2"/><circle cx="16.8" cy="4" r="3.2"/><circle cx="16.8" cy="136" r="3.2"/><circle cx="27.6" cy="4" r="3.2"/><circle cx="27.6" cy="136" r="3.2"/><circle cx="38.400000000000006" cy="4" r="3.2"/><circle cx="38.400000000000006" cy="136" r="3.2"/><circle cx="49.2" cy="4" r="3.2"/><circle cx="49.2" cy="136" r="3.2"/><circle cx="60" cy="4" r="3.2"/><circle cx="60" cy="136" r="3.2"/><circle cx="70.80000000000001" cy="4" r="3.2"/><circle cx="70.80000000000001" cy="136" r="3.2"/><circle cx="81.60000000000001" cy="4" r="3.2"/><circle cx="81.60000000000001" cy="136" r="3.2"/><circle cx="92.4" cy="4" r="3.2"/><circle cx="92.4" cy="136" r="3.2"/><circle cx="103.2" cy="4" r="3.2"/><circle cx="103.2" cy="136" r="3.2"/><circle cx="114" cy="4" r="3.2"/><circle cx="114" cy="136" r="3.2"/><circle cx="4" cy="6" r="3.2"/><circle cx="116" cy="6" r="3.2"/><circle cx="4" cy="16.7" r="3.2"/><circle cx="116" cy="16.7" r="3.2"/><circle cx="4" cy="27.4" r="3.2"/><circle cx="116" cy="27.4" r="3.2"/><circle cx="4" cy="38.099999999999994" r="3.2"/><circle cx="116" cy="38.099999999999994" r="3.2"/><circle cx="4" cy="48.8" r="3.2"/><circle cx="116" cy="48.8" r="3.2"/><circle cx="4" cy="59.5" r="3.2"/><circle cx="116" cy="59.5" r="3.2"/><circle cx="4" cy="70.19999999999999" r="3.2"/><circle cx="116" cy="70.19999999999999" r="3.2"/><circle cx="4" cy="80.89999999999999" r="3.2"/><circle cx="116" cy="80.89999999999999" r="3.2"/><circle cx="4" cy="91.6" r="3.2"/><circle cx="116" cy="91.6" r="3.2"/><circle cx="4" cy="102.3" r="3.2"/><circle cx="116" cy="102.3" r="3.2"/><circle cx="4" cy="113" r="3.2"/><circle cx="116" cy="113" r="3.2"/><circle cx="4" cy="123.69999999999999" r="3.2"/><circle cx="116" cy="123.69999999999999" r="3.2"/><circle cx="4" cy="134.39999999999998" r="3.2"/><circle cx="116" cy="134.39999999999998" r="3.2"/></g></mask></defs><rect x="4" y="4" width="112" height="132" fill="#fbf8f1" mask="url(#bt-perf)"/><rect x="12" y="12" width="96" height="116" fill="none" stroke="#9a7b5b" stroke-width=".8" stroke-dasharray="2 2"/><text x="60" y="124" text-anchor="middle" class="bt-stamp-t">R.S.V.P.</text></svg><i class="bt-stamp-flower"></i><i class="bt-postmark"><span data-tpl="date"></span></i></div>
+          <div class="rsvp-cta">
+            <h3>能來參加我們的婚禮嗎？</h3>
+            <p>花 30 秒回覆出席，讓我們把最好的位置留給你</p>
+            <a class="btn" href="invitation.html">前往出席回覆</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Explore：一張一張的標本標籤 ===== -->
+      <section class="link-section bt-sec">
+        <div class="bt-head is-center" data-reveal="rise">
+          <span class="bt-no">Index</span>
+          <span class="en block-title">Explore</span>
+          <span class="cn block-sub">其他活動</span>
+        </div>
+        <div class="link-grid" id="linkGrid" data-reveal="list">
+          <a class="link-card" href="wall.html">
+            <span class="lc-index">02</span>
+            <span class="lc-title">新人祝福牆</span>
+            <span class="lc-sub">寫下想對我們說的話，也讀讀大家的祝福</span>
+            <span class="lc-go">前往</span>
+          </a>
+          <a class="link-card" href="letter.html">
+            <span class="lc-index">03</span>
+            <span class="lc-title">給你的一封信</span>
+            <span class="lc-sub">我們寫了信給你，輸入名字就能拆開來看</span>
+            <span class="lc-go">前往</span>
+          </a>
+          <a class="link-card" href="exhibition.html">
+            <span class="lc-index">04</span>
+            <span class="lc-title">我們的故事</span>
+            <span class="lc-sub">沿著時間線，走過我們一路走來的日子</span>
+            <span class="lc-go">前往</span>
+          </a>
+          <a class="link-card" href="quiz.html">
+            <span class="lc-index">05</span>
+            <span class="lc-title">看你多了解我們</span>
+            <span class="lc-sub">一份小測驗，看看你有多了解我們</span>
+            <span class="lc-go">前往</span>
+          </a>
+          <a class="link-card" href="draw.html">
+            <span class="lc-index">06</span>
+            <span class="lc-title">看你會抽到什麼照片</span>
+            <span class="lc-sub">抽一張婚禮限定小卡，收進你的收藏</span>
+            <span class="lc-go">前往</span>
+          </a>
+          <a class="link-card" href="cake.html">
+            <span class="lc-index">07</span>
+            <span class="lc-title">集氣送祝褔</span>
+            <span class="lc-sub">挑一份甜點放上桌，替我們集氣</span>
+            <span class="lc-go">前往</span>
+          </a>
+        </div>
+      </section>
+
+      <footer class="bt-foot">
+        <div class="bt-foot-sprig" data-reveal="draw" aria-hidden="true"><i class="bt-specimen s-sprig"></i></div>
+        <div class="bt-fin">pressed &amp; sealed, with love</div>
+        <span>made for <span data-tpl="couple"></span>・小港製作所 設計製作</span>
+      </footer>
+    </div>
+  </section>
+</div>
+
+<!-- 自訂卡片／交通「展開更多」共用的彈窗 -->
+<div class="lc-modal" id="lcModal">
+  <div class="lc-modal-card" role="dialog" aria-modal="true" aria-labelledby="lcModalTitle">
+    <button class="lc-modal-close" id="lcModalClose" type="button" aria-label="關閉">✕</button>
+    <h3 class="lc-modal-title" id="lcModalTitle"></h3>
+    <div class="lc-modal-sub" id="lcModalSub"></div>
+    <div class="lc-modal-body" id="lcModalBody"></div>
+  </div>
+</div>
+
+<script src="demo-data.js"></script>
+<script>window.DEMO_CFG = {"templates":{"botanical-letter":{"label":"Botanical Letter 植物信箋","opening":"ribbon"}},"openings":{"envelope":"拆信・封蠟","book":"翻頁・古書","bloom":"花朵盛開","curtain":"窗簾拉開","candle":"燭光點亮","stars":"星圖展開","door":"門／拱門","ribbon":"拉開絲帶","painting":"走進油畫","balloons":"氣球升空"}};</script>
+<script src="../public/js/lobby-motion.js"></script>
+<script src="../public/js/openers/envelope.js"></script>
+<script src="../public/js/openers/book.js"></script>
+<script src="../public/js/openers/bloom.js"></script>
+<script src="../public/js/openers/curtain.js"></script>
+<script src="../public/js/openers/candle.js"></script>
+<script src="../public/js/openers/stars.js"></script>
+<script src="../public/js/openers/door.js"></script>
+<script src="../public/js/openers/ribbon.js"></script>
+<script src="../public/js/openers/painting.js"></script>
+<script src="../public/js/openers/balloons.js"></script>
+<script src="lobby-demo.js"></script>
+</body>
+</html>

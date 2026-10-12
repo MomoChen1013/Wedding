@@ -1,0 +1,111 @@
+/* ============================================================
+   openers/door.css — 開場：門（js/openers/door.js）
+   ------------------------------------------------------------
+   一個晴朗的早上站在門口。層次由後往前：
+     .dr-land    門後的風景（滿版 SVG）
+     .dr-world   門這一層：.dr-front（石柱、牆、地面、植物）＋ .dr-opening（兩扇門）
+     .dr-flood   推開之後湧出來的陽光
+   三種門：
+     .dr-manor   黑色鍛鐵大門、石柱頂的花甕、圓弧的鐵拱（法式莊園；預設）
+     .dr-gothic  同樣的鐵門，尖拱、石柱頂是小尖塔（白色教堂、中古刺繡）
+     .dr-garden  常春藤牆上，一扇白框玻璃門（秘密花園）；門後是一張真的花園照片
+   門與 .dr-front 用同一個 600×640 的座標：.dr-portal 固定這個比例，
+   .dr-front 的 SVG 允許畫到框外（兩旁的牆、地面一路延伸到畫面邊）。
+============================================================ */
+.dr-host{
+  --dr-w:min(98vw,72vh,700px);
+  --dr-ink:#2e2a24; --dr-accent:#8a6a3a;
+  background:#cfe6f4;overflow:hidden;cursor:pointer;
+}
+
+/* ---- 門後的風景 ---- */
+.dr-land{position:absolute;inset:0;transition:transform 1.4s cubic-bezier(.55,0,.35,1);}
+.dr-land svg{display:block;width:100%;height:100%;}
+
+/* ---- 門這一層 ---- */
+.dr-world{position:absolute;inset:0;transition:transform 1.4s cubic-bezier(.55,0,.35,1),opacity .9s ease .45s;}
+.dr-portal{position:absolute;left:50%;bottom:clamp(40px,11vh,110px);width:var(--dr-w);aspect-ratio:600/640;transform:translateX(-50%);}
+.dr-front{position:absolute;inset:0;}
+.dr-front svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;display:block;}
+.dr-shadows{transition:opacity 1s ease;}
+.dr-host.is-open .dr-shadows{opacity:0;}
+
+/* 兩扇門：往裡推開（左扇繞左邊的鉸鍊、右扇繞右邊的） */
+.dr-opening{position:absolute;perspective:1200px;}
+.dr-leaf{position:absolute;top:0;bottom:0;width:50%;transition:transform 1.7s cubic-bezier(.45,.05,.25,1);}
+.dr-leaf svg{display:block;width:100%;height:100%;overflow:visible;}
+.dr-l{left:0;transform-origin:left center;}
+.dr-r{right:0;transform-origin:right center;}
+.dr-r svg{transform:scaleX(-1);}
+.dr-host.is-open .dr-l{transform:rotateY(78deg);}
+.dr-host.is-open .dr-r{transform:rotateY(-78deg);}
+/* 剛點下去：鐵門先晃一下（門閂鬆開） */
+.dr-host.is-open .dr-leaf{animation:dr-unlatch .35s ease;}
+@keyframes dr-unlatch{40%{translate:0 -1px;}}
+
+/* ---- 陽光湧出來、往前走 ---- */
+.dr-flood{position:absolute;inset:0;pointer-events:none;opacity:0;
+  background:radial-gradient(circle at 50% 50%,#fffef8 0,rgba(255,250,232,.92) 30%,rgba(255,246,222,0) 65%);
+  transition:opacity 1.2s ease .5s,transform 1.4s ease;}
+.dr-host.is-open .dr-flood{opacity:.55;}
+.dr-host.is-walking .dr-flood{opacity:1;transform:scale(2.6);}
+.dr-host.is-walking .dr-world{transform:scale(3);opacity:0;}
+.dr-host.is-walking .dr-land{transform:scale(1.35);}
+.dr-host.is-walking{background:#fffaf0;}
+
+/* ---- 字：門推開的時候浮在光裡 ---- */
+.dr-text{position:absolute;left:0;right:0;top:47%;transform:translateY(-50%);display:flex;flex-direction:column;
+  align-items:center;gap:6px;text-align:center;color:var(--dr-ink);pointer-events:none;opacity:0;padding:0 20px;
+  text-shadow:0 0 14px rgba(255,252,240,.95),0 0 4px rgba(255,252,240,.9);transition:opacity 1s ease 1.1s;}
+.dr-host.is-open .dr-text{opacity:1;}
+.dr-host.is-walking .dr-text{opacity:0;transition-delay:0s;}
+.dr-kicker{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(16px,2.2vw,21px);color:var(--dr-accent);}
+.dr-names{font-family:var(--font-display,'Cormorant Garamond'),'Noto Serif TC',serif;font-size:clamp(28px,4.6vw,48px);letter-spacing:.06em;}
+.dr-names .op-amp{font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--dr-accent);padding:0 .2em;}
+.dr-date{font-size:12.5px;letter-spacing:.42em;color:rgba(46,42,36,.8);}
+
+/* 提示：地上一顆淡淡的膠囊 */
+.dr-hint{position:absolute;left:50%;bottom:clamp(14px,3.4vh,34px);transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;
+  gap:4px;pointer-events:none;color:var(--dr-ink);padding:10px 22px;border-radius:999px;white-space:nowrap;
+  background:rgba(255,252,242,.72);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  box-shadow:0 6px 18px -8px rgba(60,50,30,.4);animation:dr-hint 2.6s ease-in-out infinite;transition:opacity .3s;}
+.dr-hint .en{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;}
+.dr-hint .cn{font-size:12.5px;letter-spacing:.3em;}
+@keyframes dr-hint{50%{opacity:.6;}}
+.dr-host.is-open .dr-hint{opacity:0;animation:none;}
+
+/* ---- 各版的小差異 ---- */
+.dr-garden{--dr-accent:#6b5a7a;background:#24361d;}
+/* 門後：開滿玫瑰的拱門小徑（Annie Spratt／Unsplash，見 README〈秘密花園的照片素材〉） */
+.dr-garden .dr-land{background:#e8ece4 url(../../img/secret-garden/garden-arch.webp) 50% 42%/cover no-repeat;}
+.dr-gothic{--dr-accent:#7a5a3a;}
+/* ---- 莊園：全部是真的照片（見 README〈法式莊園的照片素材〉） ----
+   門：磚牆圓拱裡的鍛鐵花園門（Bruce Barrow／Unsplash），照片直立，兩旁用同一張模糊後補滿；
+   門後：修剪整齊的綠籬夾著碎石路，盡頭一尊白色雕像（Daniel Welsh／Unsplash），走進門就到了大廳 */
+.dr-manor{--dr-accent:#7a6a46;background:#2d3a26;}
+.dr-manor .dr-land{background:#dfe8e2 url(../../img/manor/garden-path.webp) 50% 62%/cover no-repeat;}
+/* 兩旁：一整面修剪過的綠籬（春日溫室開場那一張），微微失焦、壓暗一點，門那張照片的邊淡進來 */
+.dr-manor .dr-blur{position:absolute;inset:-4%;background:#2d3a26 url(../../img/orangerie/leaf-wall.webp) center/720px auto repeat;
+  filter:blur(1.5px) brightness(.72) saturate(.9);}
+.dr-manor .dr-blur::after{content:'';position:absolute;inset:0;
+  background:radial-gradient(60% 70% at 50% 50%,transparent 40%,rgba(18,24,14,.45));}
+/* 直立的手機：照片撐滿寬度（上下裁一點）；橫的螢幕：整道拱門完整放在中間 */
+.dr-manor .dr-photo{position:absolute;left:50%;top:50%;height:max(100%,calc(100vw * 2052 / 900));aspect-ratio:900/2052;
+  transform:translate(-50%,-50%);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);
+          mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);}
+@media (min-aspect-ratio:3/4){.dr-manor .dr-photo{height:100%;}}
+.dr-manor .dr-scene{position:absolute;inset:0;background:url(../../img/manor/gate-scene.webp) center/100% 100% no-repeat;}
+/* 鐵門：繞著右邊的鉸鍊往花園裡轉開 */
+.dr-manor .dr-opening{perspective:1800px;}
+.dr-manor .dr-iron{position:absolute;inset:0;background:url(../../img/manor/gate-leaf.webp) center/100% 100% no-repeat;
+  transform-origin:97.5% 50%;transition:transform 1.9s cubic-bezier(.45,.05,.25,1);
+  filter:drop-shadow(2px 4px 3px rgba(20,18,10,.35));}
+.dr-host.dr-manor.is-open .dr-iron{transform:rotateY(-84deg);animation:dr-unlatch .35s ease;}
+/* 手機直立：門只佔下半部，字放到上面的天空 */
+@media (max-aspect-ratio:3/4){.dr-text{top:28%;}}
+/* 秘密花園在手機上，字落在門上面那一片深色的常春藤：改成淺色的字、深色的光暈 */
+@media (max-aspect-ratio:3/4){
+  .dr-garden .dr-text{--dr-ink:#fbf8ef;--dr-accent:#f3d9e0;text-shadow:0 0 16px rgba(10,20,8,.95),0 1px 4px rgba(10,20,8,.85);}
+  .dr-garden .dr-date{color:rgba(251,248,239,.85);}
+}

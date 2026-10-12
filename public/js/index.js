@@ -7,6 +7,7 @@
      入場登入關掉（站台文件 entryLoginEnabled: false）
               → 沒有 gate，一進來就播開場字幕（同一個分頁只播一次）
      開場期間右下角有「跳過」，任何時候都能直接進首頁
+     這組新人有設定開場（sites.opening）→ 用那一套取代字幕＋簾幕，見 runOpening()
 
    內容（原本的 info 頁已併進本頁）：
      置中開場 → 婚禮資訊卡（含尋找我的座位）→ 當日流程 → 出席前的小提醒
@@ -163,6 +164,56 @@ function endIntro(){
   skipBtn.hidden = true;
 }
 
+/* ============================================================
+   版型自己的開場（sites.opening：信封、古書、推門、點燭……）
+   ------------------------------------------------------------
+   這組新人有設定開場（或版型有預設的開場），而且那一種已經由
+   site-context.js 載好、向 LobbyMotion 登記了，就用它取代上面的
+   兩句字幕＋簾幕；任何一個條件不成立就照舊。
+   ・骨架裡沒有 #opener 的大廳（classic／korean／forest）自己補一個，
+     所以任何版型都能用任何開場
+   ・要賓客親手做的開場（拆信、推門、解絲帶…），那一下是使用者手勢，
+     背景音樂在那時候開；自己演完的開場（花開、星圖）就不開
+   ・看過開場的賓客不會再看到它（removeOpener），和字幕同一個判斷；
+     但「看過」要等賓客真的動手（或看完）才算 —— 開場出現了還沒點
+     就重新整理，回來應該還是同一個開場，而不是直接跳進內容
+============================================================ */
+function openingKeyForSite(){
+  const key = window.SITE && window.SITE.opening;
+  return key && window.LobbyMotion && window.LobbyMotion.has(key) ? key : null;
+}
+function runOpening(){
+  const key = openingKeyForSite();
+  if(!key){ removeOpener(); runIntro(); return; }
+
+  let host = document.getElementById('opener');
+  if(!host){
+    host = document.createElement('div');
+    host.id = 'opener';
+    host.className = 'overlay';
+    document.body.appendChild(host);
+  }
+  window.LobbyMotion.opening(host, key, {
+    names: { a: W.groomEn || W.groom || '', b: W.brideEn || W.bride || '' },
+    date: W.date || '',
+    variant: document.body.dataset.template || '',
+    onOpen(){
+      markIntroSeen();
+      try { startBGM(); } catch(e){ console.warn('BGM 啟動失敗', e); }
+    },
+    onReveal: enterSite,
+    onDone(){ markIntroSeen(); goldFall(); },
+  });
+}
+function removeOpener(){
+  const host = document.getElementById('opener');
+  if(host) host.remove();
+}
+
+/* 捲動編排（插圖繡出來、金線縫下去…）：版型有宣告才有東西可做，
+   其他版型的骨架裡沒有 [data-reveal]／[data-scroll]，這一行等於沒事 */
+if(window.LobbyMotion) window.LobbyMotion.init(document.getElementById('app') || document);
+
 /* 跳過：直接進首頁。不放金箔 —— 那是簾幕拉開的收尾，沒看到簾幕就沒有收尾 */
 skipBtn.addEventListener('click', ()=>{
   endIntro();
@@ -174,6 +225,7 @@ function setupGate(){
      所以這裡不會閃一下登入畫面，直接進首頁。 */
   if(LS.get('user', null)){
     gate.remove();
+    removeOpener();
     enterSite();
     return;
   }
@@ -208,7 +260,7 @@ function setupGate(){
     try { saveUser({ name:n, icon:currentIcon }); } catch(e){ console.warn('saveUser failed', e); }
     syncNavUser();
     gate.style.display='none';                   // 先把入口畫面收掉
-    runIntro();                                  // 馬上開始開場字幕
+    runOpening();                                // 馬上開始開場（字幕，或版型自己的信封）
     try { startBGM(); } catch(e){ console.warn('BGM 啟動失敗', e); }  // 音樂掛掉也不影響流程
   });
 
@@ -225,8 +277,8 @@ function setupGate(){
      賓客想聽的話按右下角那顆音樂鈕（浮動控制照舊） */
 function skipGate(){
   gate.remove();
-  if(introSeen() || LS.get('user', null)) enterSite();
-  else                                    runIntro();
+  if(introSeen() || LS.get('user', null)){ removeOpener(); enterSite(); }
+  else                                    runOpening();
 }
 
 /* 預設走 skipGate()（先進大廳）；只有明確打開入場登入的站台才擋一道 gate */

@@ -1,0 +1,117 @@
+/* ============================================================
+   story-chapters.css — 敘事模組「章節式故事」（sites.storyLayout='chapters'）
+   ------------------------------------------------------------
+   疊在 common.css ＋ exhibition.css 之後，只在
+   body[data-story-layout="chapters"] 底下生效：exhibition.css 給的是
+   橫向時間軸的樣式，這一份把同一份 exhibits 換成「一本有節奏的短篇」。
+
+   ・和版型是**兩軸**：這裡一個顏色、一個字族都不寫死，
+     全部走 --ink／--line／--font-display，所以 classic／korean／forest
+     套上來各自是自己的樣子，不會三個版型長得一樣。
+   ・章節編號用 CSS counter：序章（第一張分隔卡之前那一段）不計號，
+     所以「CHAPTER 01」永遠是第一個真正的章節，不會從 02 開始。
+   ・節奏靠版面規則決定，不靠隨機：同一份資料重整理一次，
+     每一則故事的位置、大小都和上一次一模一樣。
+============================================================ */
+
+/* 時間軸的骨架整個收掉。JS 也會把節點移除，這裡先用 CSS 擋住，
+   賓客才不會在腳本跑起來之前看到半秒鐘的橫向軌道。 */
+body[data-story-layout="chapters"] .tl-topbar,
+body[data-story-layout="chapters"] #tlSec{display:none;}
+
+/* ---- 整份故事 ---- */
+.sc-wrap{max-width:760px;margin:0 auto;padding:clamp(8px,3vw,32px) 20px 40px;
+  counter-reset:sc-chapter;}
+
+/* ---- 章 ----
+   章與章之間是一條線加大量留白：這一版的分節不用卡片，
+   和 korean／forest 大廳的作法同一個語彙。 */
+.sc-chapter{padding:clamp(56px,10vw,104px) 0 0;}
+.sc-chapter + .sc-chapter{border-top:1px solid var(--line-soft);}
+
+.sc-chap-head{margin-bottom:clamp(32px,6vw,56px);}
+/* 序章沒有章名也沒有編號，只是一段開場白，所以整個抬頭不出現 */
+.sc-chapter.is-lead .sc-chap-head{display:none;}
+
+.sc-chap-no{font-family:var(--font-display);font-size:12px;letter-spacing:.34em;
+  text-transform:uppercase;color:var(--ink-soft);margin-bottom:12px;}
+/* 編號由 counter 產生：章節被刪掉、序章不計號，序號都自動接得上 */
+.sc-chapter:not(.is-lead){counter-increment:sc-chapter;}
+.sc-chap-no::before{content:'CHAPTER ' counter(sc-chapter,decimal-leading-zero);}
+
+.sc-chap-title{font-family:var(--font-display);font-weight:400;
+  font-size:clamp(24px,5vw,38px);line-height:1.3;letter-spacing:.08em;color:var(--ink);}
+.sc-chap-sub{margin-top:10px;font-size:13.5px;letter-spacing:.2em;color:var(--ink-soft);}
+
+/* 章名底下那條短線：長度固定，不跟著字長跑 */
+.sc-chap-rule{width:clamp(40px,8vw,72px);height:1px;background:var(--line);margin-top:20px;}
+
+/* ---- 一則故事（beat）----
+   四種節奏輪流出現，由 js/story-chapters.js 依「這一章的第幾則」指定，
+   不是隨機 —— 每一則在哪個位置、多大，重整理一次還是一樣。 */
+.sc-beat{margin-bottom:clamp(44px,8vw,80px);}
+.sc-beat:last-child{margin-bottom:0;}
+
+.sc-ph{display:block;width:100%;height:auto;border:1px solid var(--line);
+  background:var(--surface);}
+/* 載不到的那一張整格收掉，不要留一個永遠空著的框 */
+.sc-beat.no-img .sc-ph{display:none;}
+
+.sc-when{font-family:var(--font-display);font-size:12px;letter-spacing:.28em;
+  color:var(--ink-soft);margin-bottom:8px;}
+.sc-title{font-family:var(--font-display);font-weight:500;
+  font-size:clamp(17px,3.2vw,21px);letter-spacing:.1em;color:var(--ink);line-height:1.5;}
+.sc-desc{margin-top:10px;font-size:15px;line-height:1.95;color:var(--ink);}
+.sc-beat .sc-desc:empty{display:none;}
+
+/* (1) full —— 滿版照片：每一章的第一張，負責把這一章的調子定下來 */
+.sc-beat.is-full .sc-ph{aspect-ratio:4/3;object-fit:cover;}
+.sc-beat.is-full .sc-cap{margin-top:16px;}
+
+/* (2) split —— 左圖右文。單雙數換邊，靠的是「第幾則」而不是亂數 */
+@media(min-width:760px){
+  .sc-beat.is-split{display:grid;grid-template-columns:1fr 1fr;
+    gap:clamp(24px,4vw,44px);align-items:center;}
+  .sc-beat.is-split.flip .sc-media{order:2;}
+  .sc-beat.is-split .sc-cap{margin-top:0;}
+}
+.sc-beat.is-split .sc-ph{aspect-ratio:3/4;object-fit:cover;}
+.sc-beat.is-split .sc-cap{margin-top:16px;}
+
+/* (3) detail —— 細節照片：小一號、靠邊，讓節奏鬆下來 */
+.sc-beat.is-detail .sc-media{max-width:min(58%,300px);}
+.sc-beat.is-detail.flip .sc-media{margin-left:auto;}
+.sc-beat.is-detail .sc-ph{aspect-ratio:1/1;object-fit:cover;}
+.sc-beat.is-detail .sc-cap{margin-top:16px;max-width:34em;}
+
+/* (4) quiet —— 大量留白＋一句話。沒有照片的那幾則一律走這個，
+   所以「新人只寫了文字、一張照片都沒上傳」不是壞掉的畫面，是這一版的節奏之一。 */
+.sc-beat.is-quiet{padding:clamp(24px,5vw,48px) 0;text-align:center;}
+.sc-beat.is-quiet .sc-title{font-size:clamp(19px,3.8vw,26px);font-weight:400;line-height:1.6;}
+.sc-beat.is-quiet .sc-desc{margin-top:14px;max-width:30em;margin-inline:auto;
+  color:var(--ink-soft);}
+
+/* ---- 章節結尾卡（finale）---- */
+.sc-finale{margin-top:clamp(56px,10vw,104px);padding:clamp(48px,9vw,88px) 20px;
+  border-top:1px solid var(--line);text-align:center;}
+.sc-finale .sc-chap-no::before{content:'THE NEXT CHAPTER';}
+.sc-finale .sc-title{margin-top:12px;}
+
+/* ---- 照片可以點開看大圖（沿用 exhibition.html 的 #lb）---- */
+.sc-media{position:relative;display:block;width:100%;padding:0;border:none;
+  background:none;cursor:zoom-in;font:inherit;color:inherit;text-align:inherit;}
+.sc-beat.no-img .sc-media{cursor:default;}
+
+/* ---- 進場：往上浮一小段 ----
+   只有透明度與 6px 位移，不做視差也不做縮放 —— 這一版的重點是閱讀節奏。
+   prefers-reduced-motion 由 common.css 全站收掉，這裡不必再寫一次。 */
+.sc-beat,.sc-chap-head{opacity:0;transform:translateY(6px);
+  transition:opacity .6s ease,transform .6s ease;}
+.sc-beat.is-in,.sc-chap-head.is-in{opacity:1;transform:none;}
+/* JS 沒跑起來（腳本載入失敗）時，內容不能就這樣留在 opacity:0 */
+.no-js-reveal .sc-beat,.no-js-reveal .sc-chap-head{opacity:1;transform:none;}
+
+@media(max-width:760px){
+  .sc-wrap{padding-left:18px;padding-right:18px;}
+  .sc-beat.is-detail .sc-media{max-width:72%;}
+}

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- ⚙️ 由 scripts/build-samples.js 用 scripts/sample-index.html 產出（public/samples/index.html），不要手改產出的那一份。
+     卡片文案在 scripts/sample-catalog.js，縮圖由 scripts/build-sample-thumbs.js 產生。 -->
+<title>網站版型總覽｜芯玖婚禮網站</title>
+<meta name="description" content="{{COUNT}} 種婚禮網站版型，點進去就是一個完整的婚禮網站，可以實際點點看。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="網站版型總覽｜芯玖婚禮網站">
+<meta property="og:description" content="{{COUNT}} 種婚禮網站版型，點進去就是一個完整的婚禮網站，可以實際點點看。">
+<meta property="og:image" content="{{OG_IMAGE}}">
+<link rel="icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ground:#f5f2ec; --surface:#fcfbf8; --ink:#24221f; --muted:#7d776d;
+  --line:#e2ddd2; --line-soft:#ece8df; --chip:#efebe3;
+  --f-en:'Cormorant Garamond',Georgia,serif;
+  --f-cn:'Noto Serif TC',serif;
+  --f-ui:'Noto Sans TC','Noto Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--ground);color:var(--ink);font-family:var(--f-ui);font-weight:300;
+  font-size:15px;line-height:1.85;letter-spacing:.02em;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1200px;margin:0 auto;padding:clamp(40px,7vw,88px) 16px 72px;}
+@media (min-width:600px){.wrap{padding-left:clamp(20px,5vw,52px);padding-right:clamp(20px,5vw,52px);}}
+
+header{text-align:center;margin-bottom:clamp(32px,6vw,60px);}
+.kicker{font-family:var(--f-en);font-size:13px;letter-spacing:.32em;text-transform:uppercase;color:var(--muted);}
+@media (max-width:420px){.kicker{font-size:11.5px;letter-spacing:.2em;}}
+h1{font-family:var(--f-cn);font-weight:500;font-size:clamp(24px,4.4vw,36px);letter-spacing:.14em;line-height:1.5;margin:14px 0 16px;}
+header p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
+
+.grid{display:grid;gap:16px;grid-template-columns:1fr;}
+@media (min-width:600px){.grid{grid-template-columns:repeat(2,1fr);gap:24px;}}
+@media (min-width:1000px){.grid{grid-template-columns:repeat(3,1fr);gap:28px;}}
+
+.card{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);
+  color:inherit;text-decoration:none;transition:border-color .2s ease,transform .2s ease,box-shadow .2s ease;}
+.card:hover{border-color:#cfc8ba;transform:translateY(-2px);box-shadow:0 14px 30px -22px rgba(36,34,31,.45);}
+.card:focus-visible{outline:2px solid var(--ink);outline-offset:3px;}
+.shot{position:relative;aspect-ratio:4/5;overflow:hidden;border-bottom:1px solid var(--line);}
+.shot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;display:block;}
+.body{display:flex;flex-direction:column;gap:12px;flex:1;padding:18px 18px 20px;}
+h2{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;font-weight:400;}
+h2 .en{font-family:var(--f-en);font-size:24px;letter-spacing:.06em;line-height:1.2;}
+h2 .cn{font-family:var(--f-cn);font-size:13.5px;letter-spacing:.2em;color:var(--muted);}
+.mood{font-size:14px;line-height:1.85;}
+.dress{display:flex;flex-wrap:wrap;align-items:center;gap:6px;}
+.dress .lab{font-size:12px;letter-spacing:.12em;color:var(--muted);margin-right:2px;}
+.chip{font-size:12.5px;line-height:1.5;padding:3px 10px;border-radius:99px;background:var(--chip);color:#4d4841;}
+.foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line-soft);}
+.swatches{display:flex;gap:5px;}
+.swatches i{display:block;width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,0,0,.08);}
+.go{font-size:13px;letter-spacing:.1em;white-space:nowrap;}
+
+/* 手機：縮圖放左邊，一張卡不要高過一個螢幕 */
+@media (max-width:599px){
+  .card{flex-direction:row;}
+  .shot{flex:0 0 38%;aspect-ratio:auto;min-height:100%;border-bottom:0;border-right:1px solid var(--line);}
+  .body{padding:14px 14px 16px;gap:9px;}
+  h2 .en{font-size:21px;}
+  .mood{font-size:13.5px;}
+  .chip{font-size:12px;padding:2px 8px;}
+  .swatches i{width:13px;height:13px;}
+}
+
+footer{margin-top:clamp(40px,6vw,64px);text-align:center;color:var(--muted);font-size:13px;line-height:2;}
+footer a{color:inherit;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">Minato Studio · Wedding Websites</div>
+    <h1>網站版型總覽</h1>
+    <p>示範頁就是賓客實際會看到的樣子，你可以在裡面盡量嘗試，填的內容不會被送出去。示範的姓名及地點都是虛構的，照片為示範用圖，正式網站會換成你們的照片與內容。</p>
+  </header>
+  <main class="grid"><!--CARDS-->
+  </main>
+  <footer>
+    示範照片：<a href="https://unsplash.com/@vinomamba24" target="_blank" rel="noopener">Vino Li</a>／Unsplash<br>
+    小港製作所 設計製作
+  </footer>
+</div>
+</body>
+</html>

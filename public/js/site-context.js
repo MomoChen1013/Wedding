@@ -34,6 +34,8 @@ import {
    否則賓客會看到「名字換成另一個名字」——那只是把閃爍換個地方。 */
 import {
   TEMPLATES, templateKey, buildWed,
+  STORY_LAYOUTS, storyLayoutKey,
+  OPENINGS, openingKey,
   tplValue, swapTokens, hashtagList,
   pagePublishEntry, pageVisible,
 } from './wed-model.js';
@@ -154,6 +156,36 @@ function applyTemplate(name, isLobby) {
   return key;
 }
 
+/* 套上敘事模組：寫 <body data-story-layout>，需要的話再補這個模組的版面 CSS。
+
+   和 applyTemplate() 是**兩軸**（見 js/wed-model.js 的 STORY_LAYOUTS）：
+   版型決定整個站台長什麼樣子，敘事模組只決定「我們的故事」那一頁
+   怎麼說。所以這裡不碰字體、不碰色票，只掛一個屬性和一份版面 CSS。
+
+   ▸ 只有「我們的故事」那一頁要掛：模組的 CSS 每一條都收在自己的前綴底下
+     （.sc-* …），其他頁面載它只是白白多擋一次首次繪製；那些頁面也不寫
+     data-story-layout，因為沒有任何一條規則在讀它。
+     但**回傳值每一頁都算**，window.SITE.storyLayout 要講的是這組新人的
+     設定，不是「這一頁有沒有用到」。
+
+   ▸ 預產過的頁面不會走到這裡做事：build-og 已經把正確的
+     data-story-layout 與版面 CSS 印進 HTML 了（dataset 寫回同一個值、
+     link 被 querySelector 擋掉），賓客不會看到版面換一次。 */
+function applyStoryLayout(name, isStoryPage) {
+  const key = storyLayoutKey(name);
+  if (!isStoryPage) return key;
+
+  document.body.dataset.storyLayout = key;
+  for (const href of STORY_LAYOUTS[key].css || []) {
+    if (document.querySelector(`link[href="${href}"]`)) continue;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
+  }
+  return key;
+}
+
 /* ---------- 大廳骨架：執行期換成版型自己的版面 ----------
    korean／forest 的大廳結構跟 Classic 不一樣（照片被設計進版面／
    照片就是整個畫面），光換 data-template 只會換到顏色與字體。
@@ -170,9 +202,13 @@ function applyTemplate(name, isLobby) {
    ・模板裡的 <script> 用 innerHTML 塞進來不會執行，所以模板不放邏輯，
      照片一律由 common.js 的 applyLobbyPhotos() 依 data-photo 處理 */
 async function swapLobbyLayout(templateKey) {
-  const file = TEMPLATES[templateKey].lobbyFile;
+  const t = TEMPLATES[templateKey];
+  const file = t.lobbyFile;
   if (!file) return;                                   /* Classic 系列不用換 */
-  if (document.body.dataset.lobby === templateKey) return;  /* 已經是對的骨架 */
+  /* 骨架的名字：一個版型一副骨架（名字＝版型代號）；
+     幾個版型共用一副時寫 lobbyKey */
+  const lobbyKey = t.lobbyKey || templateKey;
+  if (document.body.dataset.lobby === lobbyKey) return;  /* 已經是對的骨架 */
 
   try {
     const res = await fetch(`/${file}`);
@@ -180,7 +216,7 @@ async function swapLobbyLayout(templateKey) {
     const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
     if (!doc.body || !doc.body.children.length) return;
     document.body.innerHTML = doc.body.innerHTML;
-    document.body.dataset.lobby = templateKey;
+    document.body.dataset.lobby = lobbyKey;
   } catch {
     /* 維持 Classic 骨架 */
   }
@@ -211,58 +247,68 @@ const FILE_TO_KEY = Object.fromEntries(
   Object.entries(PAGES).map(([key, p]) => [p.file, key])
 );
 
+/* ---------- 版型展示頁（/samples）----------
+   /samples/{版型}/… 跑的是正式網站同一套頁面，只是：
+     ・不連 Firebase：window.fb 換成 demo-firebase.js（資料在記憶體裡，什麼都不會寫進正式資料庫）
+     ・站台資料是 samples/sample-site.js 的虛構新人，版型取自網址
+     ・賓客一律是沒登入的訪客：每次載入都清掉這個示範站台存在瀏覽器裡的名字
+   見 README〈版型展示頁〉。 */
+const DEMO = /^\/samples\/[^/]+/.test(location.pathname);
+
 /* ---------- Firebase ---------- */
-const app  = initializeApp(firebaseConfig);
+let db = null;
+if (!DEMO) {
+  const app  = initializeApp(firebaseConfig);
 
-/* 離線持久化：預設的記憶體快取一關掉分頁就沒了 ——
-   新人在捷運上改的東西「看起來存好了」，回到家卻不見。
-   開了 persistentLocalCache 之後，離線期間的改動會排在 IndexedDB 的佇列裡，
-   連線回來自己送出去，關掉分頁也撐得住。
-   ・multipleTab：賓客常常同時開好幾個分頁
-   ・無痕視窗、瀏覽器擋 site data 時會開不起來，退回記憶體快取就好
+  /* 離線持久化：預設的記憶體快取一關掉分頁就沒了 ——
+     新人在捷運上改的東西「看起來存好了」，回到家卻不見。
+     開了 persistentLocalCache 之後，離線期間的改動會排在 IndexedDB 的佇列裡，
+     連線回來自己送出去，關掉分頁也撐得住。
+     ・multipleTab：賓客常常同時開好幾個分頁
+     ・無痕視窗、瀏覽器擋 site data 時會開不起來，退回記憶體快取就好
 
-   ⚠️ 新人後台例外，一律用記憶體快取。
-   多分頁模式下，**只有「主分頁」真的連線**，其他分頁的讀寫都交給它送 ——
-   用的是主分頁那邊的登入身分。新人常常一邊開著賓客頁（匿名帳號）一邊進後台：
-   後台這一頁剛用 Google 登入，主分頁卻還是匿名（另一個分頁要好一陣子才同步到，
-   被瀏覽器丟到背景的分頁更久），結果每一份名單都被規則擋下、
-   每一次存檔都跳「沒有寫入權限」，畫面上明明已經登入了。
-   後台改用自己的連線，身分就永遠是這一頁自己登入的那一個。 */
-const isAdminPage = document.body && document.body.dataset.page === 'admin';
-let db;
-try{
-  db = isAdminPage
-    ? getFirestore(app)
-    : initializeFirestore(app, {
-        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
-      });
-}catch(err){
-  console.warn('[site] 離線快取開不起來，改用記憶體快取', err);
-  db = getFirestore(app);
+     ⚠️ 新人後台例外，一律用記憶體快取。
+     多分頁模式下，**只有「主分頁」真的連線**，其他分頁的讀寫都交給它送 ——
+     用的是主分頁那邊的登入身分。新人常常一邊開著賓客頁（匿名帳號）一邊進後台：
+     後台這一頁剛用 Google 登入，主分頁卻還是匿名（另一個分頁要好一陣子才同步到，
+     被瀏覽器丟到背景的分頁更久），結果每一份名單都被規則擋下、
+     每一次存檔都跳「沒有寫入權限」，畫面上明明已經登入了。
+     後台改用自己的連線，身分就永遠是這一頁自己登入的那一個。 */
+  const isAdminPage = document.body && document.body.dataset.page === 'admin';
+  try{
+    db = isAdminPage
+      ? getFirestore(app)
+      : initializeFirestore(app, {
+          localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+        });
+  }catch(err){
+    console.warn('[site] 離線快取開不起來，改用記憶體快取', err);
+    db = getFirestore(app);
+  }
+
+  const auth = getAuth(app);
+
+  /* 本機開發時連 emulator；?live=1 可強制讀正式資料庫 */
+  const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  const wantsLive = new URLSearchParams(location.search).get('live') === '1';
+  if (isLocal && !wantsLive) {
+    connectFirestoreEmulator(db, '127.0.0.1', 8080);
+    try { connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings:true }); } catch {}
+  }
+
+  window.fb = {
+    db, auth,
+    collection, addDoc, onSnapshot, query, orderBy, where, doc, getDoc,
+    runTransaction, serverTimestamp, getDocs, deleteDoc, setDoc, updateDoc, writeBatch,
+    signInAnonymously, signInWithPopup, linkWithPopup, signOut,
+    GoogleAuthProvider, onAuthStateChanged,
+  };
+
+  /* 還沒登入才匿名登入；用 Google 登入過的訪客保留原帳號 */
+  onAuthStateChanged(auth, (user) => {
+    if (!user) signInAnonymously(auth).catch(() => { /* 靜默失敗，頁面仍可瀏覽 */ });
+  });
 }
-
-const auth = getAuth(app);
-
-/* 本機開發時連 emulator；?live=1 可強制讀正式資料庫 */
-const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-const wantsLive = new URLSearchParams(location.search).get('live') === '1';
-if (isLocal && !wantsLive) {
-  connectFirestoreEmulator(db, '127.0.0.1', 8080);
-  try { connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings:true }); } catch {}
-}
-
-window.fb = {
-  db, auth,
-  collection, addDoc, onSnapshot, query, orderBy, where, doc, getDoc,
-  runTransaction, serverTimestamp, getDocs, deleteDoc, setDoc, updateDoc, writeBatch,
-  signInAnonymously, signInWithPopup, linkWithPopup, signOut,
-  GoogleAuthProvider, onAuthStateChanged,
-};
-
-/* 還沒登入才匿名登入；用 Google 登入過的訪客保留原帳號 */
-onAuthStateChanged(auth, (user) => {
-  if (!user) signInAnonymously(auth).catch(() => { /* 靜默失敗，頁面仍可瀏覽 */ });
-});
 
 /* ---------- 網址解析 ---------- */
 /* /w/{slug}            → { slug, seg:'',           page:'lobby' }
@@ -270,7 +316,10 @@ onAuthStateChanged(auth, (user) => {
    /w/{slug}/invitation → { slug, seg:'invitation', page:'rsvp'  }
    seg 是網址上的字，page 是 sites.pages 的開關代號，兩者不一定相同 */
 function parseLocation() {
-  const m = location.pathname.match(/^\/w\/([^/?#]+)(?:\/([^/?#]*))?/);
+  /* 示範頁：/samples/{版型}/{頁面}，slug 的位置放的是版型代號 */
+  const m = location.pathname.match(DEMO
+    ? /^\/samples\/([^/?#]+)(?:\/([^/?#]*))?/
+    : /^\/w\/([^/?#]+)(?:\/([^/?#]*))?/);
   if (!m) return null;
 
   const slug = decodeURIComponent(m[1]).toLowerCase();
@@ -315,6 +364,15 @@ async function loadAssets(slug) {
 }
 
 /* ---------- 依序載入 script ---------- */
+/* 掛一份樣式表（已經掛過就跳過：預產頁或前一步可能已經印好了） */
+function addStylesheet(href) {
+  if (document.querySelector(`link[href="${href}"]`)) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = href;
+  document.head.appendChild(link);
+}
+
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     const s = document.createElement('script');
@@ -322,6 +380,51 @@ function loadScript(src) {
     s.onload = resolve;
     s.onerror = () => reject(new Error(`載入失敗：${src}`));
     document.head.appendChild(s);
+  });
+}
+
+/* ---------- 版型展示頁：示範站台 ----------
+   版型取自網址，開場是那個版型的預設開場。
+   回傳 null ＝ 網址上的版型不存在。 */
+async function loadDemoSite(template) {
+  if (!Object.hasOwn(TEMPLATES, template)) return null;
+  /* 兩支都只有示範頁才載入，正式網站一個位元組都不多抓 */
+  const [demo, { createDemoFirebase }] = await Promise.all([
+    import('/samples/sample-site.js'), import('./demo-firebase.js'),
+  ]);
+  const siteId = `demo-${template}`;
+  const site = { ...demo.SAMPLE_SITE, template };
+
+  /* 一律以「沒登入的訪客」進來：清掉上次在示範頁留下的名字、收藏 */
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(`wed.${siteId}.`)) localStorage.removeItem(k);
+    }
+  } catch { /* 瀏覽器擋 storage 也沒關係 */ }
+
+  window.fb = createDemoFirebase(siteId, { collections: demo.SAMPLE_COLLECTIONS, docs: demo.SAMPLE_DOCS });
+  return { site, siteId, assets: demo.SAMPLE_ASSETS };
+}
+
+/* 示範頁左下角的那一條：回到版型總覽；大廳另外有「重播開場動畫」。
+   開場不給賓客挑：每個版型照它自己的預設開場演。
+   開場在同一個分頁只演一次（js/index.js 的 introSeen，正式網站也一樣），
+   重播就是把那個記號清掉再重新載入。
+   只有 /samples 才有，正式網站不會載入 demo-bar.css，也不會走到這裡。 */
+function mountDemoBar({ template, pageKey }) {
+  addStylesheet('/samples/demo-bar.css');
+  const bar = document.createElement('div');
+  bar.className = 'demo-bar';
+  bar.innerHTML = '<a href="/samples/">← 版型總覽</a>' +
+    (pageKey === 'lobby' ? '<button type="button" data-k="replay">重播開場動畫</button>' : '');
+  document.body.appendChild(bar);
+
+  const replay = bar.querySelector('[data-k="replay"]');
+  if (replay) replay.addEventListener('click', () => {
+    try { sessionStorage.removeItem(`wed.demo-${template}.introSeen`); } catch {}
+    window.scrollTo(0, 0);
+    location.reload();
   });
 }
 
@@ -333,9 +436,12 @@ async function boot() {
     return;
   }
 
+  /* 這組新人的網址根目錄：正式站是 /w/{slug}，示範頁是 /samples/{版型} */
+  const root = DEMO ? `/samples/${loc.slug}` : `/w/${loc.slug}`;
+
   /* 搬家的舊網址：先導過去，不用等站台設定讀完 */
   if (MOVED_PATHS[loc.seg]) {
-    location.replace(`/w/${loc.slug}/${MOVED_PATHS[loc.seg]}`);
+    location.replace(`${root}/${MOVED_PATHS[loc.seg]}`);
     return;
   }
 
@@ -346,10 +452,15 @@ async function boot() {
      這裡先發動、下面再 await，讓它跟 Firestore 的查詢平行跑。
      （catch 掛在發動的當下而不是等到 await：先發動的 promise 若在
        await 之前就 reject，會變成 unhandledrejection） */
-  const assetsPromise = loadAssets(loc.slug).catch(() => ({}));
+  let assetsPromise = DEMO ? null : loadAssets(loc.slug).catch(() => ({}));
 
   let site, siteId;
-  try {
+  if (DEMO) {
+    const demo = await loadDemoSite(loc.slug);
+    if (!demo) return notFound();
+    ({ site, siteId } = demo);
+    assetsPromise = Promise.resolve(demo.assets);
+  } else try {
     const slugSnap = await getDoc(doc(db, 'slugs', loc.slug));
     if (!slugSnap.exists()) return notFound();
 
@@ -399,12 +510,22 @@ async function boot() {
 
   /* 這頁沒開放就導回大廳，不要讓賓客卡在空頁面 */
   if (!isEnabled(pageKey)) {
-    location.replace(`/w/${loc.slug}/`);
+    location.replace(`${root}/`);
     return;
   }
 
   /* 版型：越早套上，換色閃一下的時間越短，所以排在讀素材之前 */
   const template = applyTemplate(site.template, pageKey === 'lobby');
+
+  /* 敘事模組：同理，而且版面 CSS 要趕在頁面 JS 之前掛上去 ——
+     story-chapters.css 有一條在擋時間軸的骨架，晚一步就會閃出來 */
+  const storyLayout = applyStoryLayout(site.storyLayout, pageKey === 'exhibition');
+
+  /* 開場：第三軸（見 wed-model.js 的 OPENINGS）。只有大廳演得到，
+     但回傳值每一頁都算 —— window.SITE.opening 講的是這組新人的設定。
+     版面 CSS 越早掛越好：開場要等 index.js 才出現，那之前它得已經載好 */
+  const opening = openingKey(site.opening, template);
+  if (pageKey === 'lobby' && opening) addStylesheet(`/css/openers/${opening}.css`);
 
   /* 大廳再換一次骨架（korean／forest 的版面結構跟 Classic 不同）。
      一定要排在載入 common.js／index.js 之前 —— 那兩支一載入就開始
@@ -426,6 +547,9 @@ async function boot() {
     assets,
     page: pageKey,
     template,
+    storyLayout,
+    opening,
+    openings: OPENINGS,
     data: site,
     pages: PAGES,
     templates: TEMPLATES,
@@ -440,7 +564,7 @@ async function boot() {
     /* 產生站內連結：pathFor('cake') → /w/{slug}/cake
        出席回覆的網址片段是 invitation，不是它的開關代號 rsvp */
     pathFor(key) {
-      return key === 'lobby' ? `/w/${loc.slug}/` : `/w/${loc.slug}/${pathOf(key)}`;
+      return key === 'lobby' ? `${root}/` : `${root}/${pathOf(key)}`;
     },
     fileToKey: FILE_TO_KEY,
   };
@@ -468,13 +592,30 @@ async function boot() {
      順序仍然要維持：頁面 JS 一載入就會讀 common.js 的全域函式。 */
   try {
     await loadScript('/js/common.js');
-    /* 開關代號 → 頁面 JS 檔名（檔名跟著 HTML 走，不是跟著代號） */
-    const pageScript = { lobby:'index', rsvp:'invitation' }[pageKey] || pageKey;
+    /* 大廳的動作腳本：版型宣告的 lobbyJs（捲動編排），加上開場那一支。
+       要排在 index.js 之前 —— index.js 一載入就決定開場怎麼演，
+       那時候 window.LobbyMotion 與這一種開場都必須已經登記好了。
+       載不到不算致命：index.js 看不到它們就退回預設的字幕＋簾幕，內容照樣看得到 */
+    if (pageKey === 'lobby') {
+      const lobbyJs = [...(TEMPLATES[template].lobbyJs || [])];
+      if (opening) lobbyJs.push('/js/lobby-motion.js', `/js/openers/${opening}.js`);
+      for (const src of new Set(lobbyJs)) {
+        try { await loadScript(src); } catch (err) { console.warn('[site]', err.message); }
+      }
+    }
+    /* 開關代號 → 頁面 JS 檔名（檔名跟著 HTML 走，不是跟著代號）。
+       「我們的故事」是唯一由敘事模組決定的一頁：不同的編排是不同的 DOM
+       與不同的捲動行為，不是同一支腳本加一堆 if，所以各載各的。 */
+    const pageScript = pageKey === 'exhibition'
+      ? STORY_LAYOUTS[storyLayout].js
+      : ({ lobby:'index', rsvp:'invitation' }[pageKey] || pageKey);
     await loadScript(`/js/${pageScript}.js`);
   } catch (err) {
     showFatal('頁面載入失敗', '請重新整理一次，如果一直發生請告訴我們');
     return;
   }
+
+  if (DEMO) mountDemoBar({ template, pageKey });
 
   /* 給測試與外部腳本判斷「整站真的可用了」的旗標 */
   document.documentElement.dataset.siteReady = '1';

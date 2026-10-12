@@ -14,7 +14,9 @@
      ginny-one-…      forest 版型，而且 public/assets/ 底下**真的有素材**
                       → 驗大廳的首屏大圖有沒有被預載。
                         前兩組沒有素材資料夾，lobbyPhoto() 會回空字串，
-                        驗不到那條路徑
+                        驗不到那條路徑。
+                        它也**刻意不設 storyLayout** → 驗「沒設定的站台
+                        仍然是 timeline」那條落回路徑
 
    只寫 Admin SDK 改得動的欄位（template、姓名、pages…），
    因為預渲染烤的就是這一批 —— 新人在後台改得動的欄位一律不烤。
@@ -33,6 +35,9 @@ const EVENT_DATE = new Date('2026-09-19T04:30:00Z');   /* 台北時間 12:30 */
 const SITES = {
   'flicker-korean': {
     template: 'korean',
+    /* 敘事模組和版型是兩軸：這一組同時換了兩軸，
+       驗「chapters 只動得到『我們的故事』那一頁，其他頁一條都不受影響」 */
+    storyLayout: 'chapters',
     groomName: '宇辰', brideName: '宜庭',
     groomNameEn: 'Ethan', brideNameEn: 'Ginny',
     pages: {
@@ -44,8 +49,9 @@ const SITES = {
      所以 build-og 的 lobbyPhoto() 挑得出照片、印得出 preload */
   'ginny-one-20260919': {
     template: 'forest',
+    /* 刻意不寫 storyLayout：驗沒設定的站台落回 timeline */
     groomName: '柏翰', brideName: '思妤',
-    pages: { rsvp: true, letter: true, wall: true, admin: true },
+    pages: { rsvp: true, letter: true, wall: true, exhibition: true, admin: true },
   },
   'flicker-classic': {
     template: 'classic',
@@ -72,5 +78,6 @@ for (const [slug, extra] of Object.entries(SITES)) {
     ...extra,
   });
   await db.collection('slugs').doc(slug).set({ siteId: ref.id });
-  console.log(`  seeded ${slug}（${extra.template}）`);
+  console.log(`  seeded ${slug}（${extra.template}${
+    extra.storyLayout ? ' ＋ ' + extra.storyLayout : ''}）`);
 }

@@ -3,7 +3,8 @@
    ------------------------------------------------------------
    疊在 common.css ＋ index.css 之後。結構主張：照片就是整個畫面 ——
    hero 是滿版照片、白字直接壓上去，往下捲照片帶再滿版出現兩次
-   （故事、倒數），把這個主張重講一遍。內容區置中、草枝分隔線。
+   （故事、倒數），把這個主張重講一遍。內容區置中，標題上是一個手繪的森林小東西；
+   整頁散落著手繪的橡實、香菇、葉子（見檔案後半）。
    風格關鍵字：Forest / Organic / Quiet / Earthy。
 ============================================================ */
 
@@ -49,7 +50,7 @@
 .f-hero .scroll-cue{margin-top:14px;color:rgba(255,255,255,.72);}
 .f-hero .scroll-cue .arrow{background:rgba(255,255,255,.5);}
 
-/* ---- 內容：置中、草枝分隔線，收掉 Classic 的白卡 ---- */
+/* ---- 內容：置中、手繪小東西當標題記號，收掉 Classic 的白卡 ---- */
 .f-body{max-width:860px;padding-bottom:0;}
 .f-sec{background:transparent;border:none;border-radius:0;backdrop-filter:none;
   -webkit-backdrop-filter:none;margin-top:0;
@@ -60,9 +61,6 @@
   font-size:clamp(22px,3.6vw,30px);letter-spacing:.14em;text-transform:none;margin:0;color:var(--ink);}
 .f-sec-head .cn.block-sub{font-family:var(--font-hand);font-size:13px;letter-spacing:.26em;
   color:var(--ink-soft);margin:0;}
-.f-sprig{display:flex;align-items:center;gap:10px;margin-top:10px;color:var(--secondary);}
-.f-sprig i{display:block;width:clamp(26px,6vw,52px);height:1px;background:currentColor;}
-.f-sprig b{width:5px;height:5px;border-radius:50%;background:currentColor;}
 
 /* 資訊卡：置中窄欄 */
 .f-sec .info-rows{max-width:440px;}
@@ -121,3 +119,124 @@
   letter-spacing:.22em;text-transform:uppercase;}
 
 .f-body footer{margin-top:clamp(44px,7vw,76px);text-transform:uppercase;letter-spacing:.26em;}
+
+/* ============================================================
+   手繪的森林小東西：橡實、香菇、松果、葉子、莓果
+   ------------------------------------------------------------
+   可愛、簡單的單線塗鴉（不是寫實的植物圖鑑）。原圖是一整張彩色的森林貼紙
+   （Unsplash 的插畫，出處見 README），只留下深色的外框線，切成一個一個，
+   統一成同一種墨水；照片上的那幾個用 filter 換成白墨水（.f-white）。
+   需要 js/lobby-motion.js：[data-reveal] 進場、[data-scroll] 給 --sp。
+============================================================ */
+.f-lobby{position:relative;overflow-x:clip;}      /* 兩旁散落的小東西不撐開手機的頁寬 */
+.f-body{position:relative;}
+.f-dd{display:block;background:center bottom/contain no-repeat;pointer-events:none;}
+.f-white{filter:brightness(0) invert(1);opacity:.85;}
+.fd-acorn{background-image:url(../img/forest/acorn.webp);aspect-ratio:243/320;}
+.fd-acorns{background-image:url(../img/forest/acorns.webp);aspect-ratio:320/248;}
+.fd-pinecone{background-image:url(../img/forest/pinecone.webp);aspect-ratio:232/320;}
+.fd-mushroom-dots{background-image:url(../img/forest/mushroom-dots.webp);aspect-ratio:247/320;}
+.fd-mushroom{background-image:url(../img/forest/mushroom.webp);aspect-ratio:259/320;}
+.fd-mushroom-tall{background-image:url(../img/forest/mushroom-tall.webp);aspect-ratio:219/320;}
+.fd-mushroom-round{background-image:url(../img/forest/mushroom-round.webp);aspect-ratio:249/320;}
+.fd-oak-leaf{background-image:url(../img/forest/oak-leaf.webp);aspect-ratio:217/320;}
+.fd-oak-leaf2{background-image:url(../img/forest/oak-leaf2.webp);aspect-ratio:196/320;}
+.fd-ginkgo{background-image:url(../img/forest/ginkgo.webp);aspect-ratio:284/320;}
+.fd-maple{background-image:url(../img/forest/maple.webp);aspect-ratio:310/320;}
+.fd-leaf{background-image:url(../img/forest/leaf.webp);aspect-ratio:238/320;}
+.fd-fern{background-image:url(../img/forest/fern.webp);aspect-ratio:286/320;}
+.fd-berries{background-image:url(../img/forest/berries.webp);aspect-ratio:191/320;}
+.fd-blueberries{background-image:url(../img/forest/blueberries.webp);aspect-ratio:257/320;}
+.fd-sprig2{background-image:url(../img/forest/sprig2.webp);aspect-ratio:151/320;}
+.fd-sprig3{background-image:url(../img/forest/sprig3.webp);aspect-ratio:185/320;}
+/* 小動物：小熊、小兔子、小鳥、松鼠、白鴿 */
+.fd-bear{background-image:url(../img/forest/bear.webp);aspect-ratio:242/328;}
+.fd-bunny{background-image:url(../img/forest/bunny.webp);aspect-ratio:201/328;}
+.fd-bird{background-image:url(../img/forest/bird.webp);aspect-ratio:304/248;}
+.fd-squirrel{background-image:url(../img/forest/squirrel.webp);aspect-ratio:349/328;}
+.fd-dove{background-image:url(../img/forest/dove.webp);aspect-ratio:279/248;}
+.fd-dove2{background-image:url(../img/forest/dove2.webp);aspect-ratio:323/208;}
+.fd-dove3{background-image:url(../img/forest/dove3.webp);aspect-ratio:269/248;}
+
+/* ---- Hero：照片底下一排森林地面上的小東西，輕輕地晃 ---- */
+.f-floor{position:absolute;left:0;right:0;bottom:clamp(10px,2vh,22px);z-index:1;display:flex;justify-content:space-between;align-items:flex-end;
+  padding:0 clamp(10px,4vw,60px);pointer-events:none;}
+.f-floor .f-dd{height:clamp(34px,6vw,66px);filter:brightness(0) invert(1);opacity:.78;transform-origin:50% 100%;
+  animation:f-bob 4.6s ease-in-out infinite;}
+.f-floor .f-dd:nth-child(2n){animation-delay:-1.4s;animation-duration:5.2s;}
+.f-floor .f-dd:nth-child(3n){animation-delay:-2.6s;}
+.f-floor .fd-acorns,.f-floor .fd-pinecone{height:clamp(30px,5vw,54px);}
+@keyframes f-bob{0%,100%{transform:rotate(-3deg);}50%{transform:rotate(3deg) translateY(-2px);}}
+/* 照片底部再壓暗一點，白色的小東西才看得清楚；中間留給名字與日期 */
+@media (max-width:640px){.f-floor .f-dd:nth-child(n+6){display:none;}}
+/* 小熊站得高一點；小兔子不晃，隔一陣子跳一下 */
+.f-floor .fd-bear{height:clamp(40px,6.6vw,70px);}
+.f-floor .fd-bunny{height:clamp(32px,5.4vw,58px);}
+.f-dd.f-hop{animation:f-hop 3.8s ease-in-out infinite;transform-origin:50% 100%;}
+.f-foot-floor .f-hop{animation-delay:-1.9s;}
+@keyframes f-hop{0%,62%,100%{transform:none;}70%{transform:translateY(-9px) scaleY(1.04);}
+  78%{transform:translateY(0) scaleY(.94);}84%{transform:translateY(-4px);}90%{transform:none;}}
+
+/* ---- Hero 上方：兩隻白鴿慢慢飛 ---- */
+.f-sky{position:absolute;inset:0;z-index:1;pointer-events:none;}
+.f-sky .f-dd{position:absolute;filter:brightness(0) invert(1);opacity:.8;}
+.f-dove1{left:9%;top:11%;height:clamp(26px,4vw,46px);animation:f-glide 11s ease-in-out infinite alternate;}
+.f-dove2{right:11%;top:19%;height:clamp(18px,2.8vw,32px);transform:scaleX(-1);animation:f-glide2 13s ease-in-out infinite alternate;}
+@keyframes f-glide{from{transform:translate(0,0) rotate(-4deg);}to{transform:translate(clamp(30px,6vw,90px),-14px) rotate(3deg);}}
+@keyframes f-glide2{from{transform:scaleX(-1) translate(0,0) rotate(-3deg);}to{transform:scaleX(-1) translate(clamp(24px,5vw,70px),10px) rotate(4deg);}}
+@media (prefers-reduced-motion:reduce){.f-floor .f-dd,.f-sky .f-dd,.f-dd.f-hop{animation:none;}}
+
+/* ---- 區塊標題上的一個小東西：跳出來 ---- */
+.f-head-dd{height:clamp(46px,6vw,60px);margin-bottom:10px;}
+.tp-motion [data-reveal="pop"] .f-head-dd{transition:opacity .6s ease,transform .9s cubic-bezier(.3,1.6,.5,1);}
+.tp-motion [data-reveal="pop"]:not(.is-in) .f-head-dd{opacity:0;transform:translateY(10px) scale(.6) rotate(-14deg);}
+
+/* ---- 整頁散落：沿著兩旁，跟著捲動慢慢往下飄、轉一點點 ---- */
+.f-scatter{position:absolute;inset:0;pointer-events:none;z-index:0;}
+.f-scatter .f-dd{position:absolute;height:clamp(30px,4vw,46px);opacity:.65;
+  transform:translateY(calc(var(--sp,0) * var(--fall,60px))) rotate(calc(var(--r,0deg) + var(--sp,0) * var(--spin,40deg)));}
+.f-scatter .s1{left:-2%;top:3%;--r:-18deg;}
+.f-scatter .s2{right:-1%;top:9%;--r:24deg;--spin:-60deg;}
+.f-scatter .s3{left:3%;top:18%;--r:10deg;height:clamp(22px,3vw,36px);}
+.f-scatter .s4{right:2%;top:26%;--r:-8deg;}
+.f-scatter .s5{left:-1%;top:35%;--r:30deg;--spin:-50deg;}
+.f-scatter .s6{right:-2%;top:44%;--r:6deg;--spin:10deg;}
+.f-scatter .s7{left:2%;top:52%;--r:-30deg;}
+.f-scatter .s8{right:3%;top:60%;--r:16deg;height:clamp(22px,3vw,36px);}
+.f-scatter .s9{left:-2%;top:68%;--r:-12deg;}
+.f-scatter .s10{right:0;top:76%;--r:-20deg;--spin:20deg;}
+.f-scatter .s11{left:1%;top:85%;--r:8deg;}
+.f-scatter .s12{right:-1%;top:93%;--r:-26deg;}
+/* 白鴿不往下飄，跟著捲動往旁邊飛 */
+.f-scatter .f-fly{transform:translate(calc(var(--sp,0) * var(--drift,80px)),calc(var(--sp,0) * -40px)) scaleX(var(--face,1));}
+.f-scatter .s13{left:3%;top:40%;--drift:90px;}
+.f-scatter .s14{right:3%;top:71%;--drift:-90px;--face:-1;}
+.f-sec,.f-band{position:relative;z-index:1;}
+@media (min-width:1100px){
+  .f-scatter{left:-140px;right:-140px;}
+  .f-scatter .f-dd{height:56px;opacity:.6;}
+}
+
+/* ---- 照片帶上的白墨水 ---- */
+.f-band .f-dd{position:absolute;z-index:1;height:clamp(40px,6vw,70px);}
+.f-band .b1{left:6%;top:12%;transform:rotate(-16deg);}
+.f-band .b2{right:8%;bottom:12%;transform:rotate(12deg);}
+.f-band .b3{left:7%;bottom:14%;transform:rotate(-8deg);}
+.f-band .b4{right:7%;top:14%;transform:rotate(8deg);}
+
+/* ---- 頁尾：一小叢森林 ---- */
+.f-foot{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.f-foot-floor{display:flex;align-items:flex-end;gap:clamp(6px,2vw,16px);}
+.f-foot-floor .f-dd{height:clamp(36px,6vw,58px);}
+.f-foot-floor .fd-acorns{height:clamp(30px,5vw,46px);}
+
+/* ---- 捲動軌跡：一根藤蔓往下長，前端是新芽，兩旁長出葉子與橡實（lobby-trail.css） ---- */
+.f-trail{--line:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='64'%3E%3Cpath d='M8 0C13 10 13 22 8 32S3 54 8 64' fill='none' stroke='%236b6450' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center top/16px 64px repeat-y;--line-w:16px;
+  --tip:url(../img/forest/sprig.webp);--tip-w:22px;--tip-ar:189/320;--tip-y:-4%;--tip-r:180deg;--mark-size:20px;}
+.f-trail{--line-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='40'%3E%3Cpath d='M5 0C8.2 6 8.2 14 5 20S1.8 34 5 40' fill='none' stroke='%236b6450' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") center top/10px 40px repeat-y;--line-w-m:10px;}
+.f-trail .lx-trail-tip{transform-origin:50% 50%;}
+.f-trail .lx-mark{opacity:calc(clamp(0,(var(--ap,0) - var(--k)) * 30,1) * .85);}
+.f-trail .m-leaf{--mark:url(../img/forest/leaf.webp);}
+.f-trail .m-oak{--mark:url(../img/forest/oak-leaf2.webp);}
+.f-trail .m-acorn{--mark:url(../img/forest/acorn.webp);--mark-size:17px;}
+.f-trail .m-berries{--mark:url(../img/forest/berries.webp);}

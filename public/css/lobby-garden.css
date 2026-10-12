@@ -1,0 +1,264 @@
+/* ============================================================
+   lobby-garden.css — Secret Garden 秘密花園 的大廳（lobby-garden.html 專用）
+   ------------------------------------------------------------
+   疊在 common.css ＋ index.css 之後。
+
+     世界觀  推開花園門（開場），走進一座開滿玫瑰的秘密花園
+     材質    真的照片（玫瑰拱門的小徑、常春藤、黃昏的草地、蝴蝶）＋ 手繪水彩的花；
+             全部在 public/img/secret-garden/，出處與授權見 README〈秘密花園的照片素材〉
+     圖像    玫瑰拱門、常春藤、水彩的罌粟／藍雛菊／海芋／鬱金香／牡丹、蝴蝶
+
+   捲動：
+     ・hero 三層照片以不同速度移動（遠的拱門小徑、上緣垂下來的藤、鏡頭前糊糊的花）
+     ・進站的那一刻，照片慢慢推近、藤從上面垂下來、前景的花從下面升起來
+     ・每一個標題上的一束水彩花：捲到的時候從底下「彈」起來（data-reveal="pop"）
+     ・左右兩條藤跟著捲動一路長下去
+     ・蝴蝶一直在飛；往下捲時 hero 的蝴蝶往上飛走
+     ・倒數是黃昏的草地，螢火蟲一明一暗
+
+   每一條規則都收在 .sg-* 或 body[data-lobby="secret-garden"] 底下。
+============================================================ */
+
+body[data-lobby="secret-garden"]{
+  --sg-ink:#2f3b2b; --sg-soft:#6f7a66; --sg-leaf:#5f7f48; --sg-deep:#46633a;
+  --sg-lav:#9b8ab8; --sg-rose:#d98a9c; --sg-cream:#fbf8ef; --sg-line:#d8dcc8;
+}
+body[data-lobby="secret-garden"] .bg-decor{
+  background:radial-gradient(120% 70% at 50% 0%,#fbf9f1,#f4f1e6 55%,#ecefdf);}
+.sg-lobby{position:relative;}
+
+/* ============================================================
+   捲動進場
+============================================================ */
+.tp-motion [data-lobby="secret-garden"] [data-reveal]{transition:opacity 1s ease,transform 1.1s cubic-bezier(.2,.7,.2,1);}
+.tp-motion [data-lobby="secret-garden"] [data-reveal="rise"]:not(.is-in){opacity:0;transform:translateY(28px);}
+.tp-motion [data-lobby="secret-garden"] [data-reveal="list"] > *{transition:opacity .8s ease,transform .9s cubic-bezier(.2,.7,.2,1);}
+.tp-motion [data-lobby="secret-garden"] [data-reveal="list"]:not(.is-in) > *{opacity:0;transform:translateY(18px);}
+.tp-motion [data-lobby="secret-garden"] [data-reveal="list"] > :nth-child(2){transition-delay:.12s;}
+.tp-motion [data-lobby="secret-garden"] [data-reveal="list"] > :nth-child(3){transition-delay:.24s;}
+.tp-motion [data-lobby="secret-garden"] [data-reveal="list"] > :nth-child(4){transition-delay:.36s;}
+.tp-motion [data-lobby="secret-garden"] [data-reveal="list"] > :nth-child(n+5){transition-delay:.48s;}
+/* 標題上的水彩花：從底下彈起來，彈到位之後輕輕地晃 */
+.sg-flower{transition:transform 1s cubic-bezier(.3,1.5,.45,1),opacity .6s ease;}
+.tp-motion [data-reveal="pop"]:not(.is-in) .sg-flower{transform:translateY(26px) scale(.55);opacity:0;}
+
+/* ============================================================
+   藤：左右兩條真的常春藤（從 ivy-hang 那張照片取一條藤，接成可以一直往下接的長條），
+   跟著捲動長下去（遮罩的高度＝ --ap）
+============================================================ */
+.sg-vine{position:absolute;z-index:1;pointer-events:none;top:calc(100svh - var(--nav-h));bottom:40px;width:54px;
+  background:url(../img/secret-garden/ivy-strand.webp) 0 0/54px auto repeat-y;filter:drop-shadow(0 4px 4px rgba(31,42,23,.25));
+  -webkit-mask:linear-gradient(#000,#000) top/100% calc(var(--ap,0) * 100%) no-repeat;
+  mask:linear-gradient(#000,#000) top/100% calc(var(--ap,0) * 100%) no-repeat;}
+.sg-vine.l{left:max(0px,calc(50% - 560px));}
+.sg-vine.r{right:max(0px,calc(50% - 560px));transform:scaleX(-1);background-position:0 160px;}
+@media (max-width:640px){.sg-vine{width:30px;background-size:30px auto;opacity:.9;}.sg-vine.r{display:none;}}
+
+/* ============================================================
+   Hero：玫瑰拱門的小徑（照片 ＋ 前後兩層去背）
+============================================================ */
+.sg-hero{position:relative;overflow:hidden;min-height:calc(100svh - var(--nav-h));padding:0;gap:0;justify-content:flex-start;}
+.sg-diorama{position:absolute;inset:0;background:#e9ece2;}
+.sg-layer{position:absolute;pointer-events:none;}
+/* 遠：拱門小徑（Annie Spratt／Unsplash）。往下捲的時候慢慢往下沉、推近 */
+.sg-layer.l-far{inset:-6% 0 -10%;background:url(../img/secret-garden/garden-arch.webp) 50% 30%/cover no-repeat;
+  transform:translateY(calc(var(--lp,0) * 60px)) scale(calc(1.04 + var(--lp,0) * .08));}
+/* 名字底下一層霧白，照片再熱鬧字都讀得到；底部淡進頁面的底色 */
+.sg-veil{position:absolute;inset:0;background:
+  radial-gradient(46% 40% at 50% 50%,rgba(251,249,241,.82),rgba(251,249,241,.5) 55%,rgba(251,249,241,0) 100%),
+  linear-gradient(180deg,rgba(251,249,241,.25),rgba(251,249,241,0) 30%,rgba(251,249,241,0) 78%,#f6f3e9 100%);}
+/* 上：從畫面上緣垂下來的常春藤（去背；Dinah Liu／Unsplash） */
+.sg-layer.l-top{left:-4%;right:-4%;top:-2%;height:clamp(140px,24vw,250px);
+  background:url(../img/secret-garden/ivy-hang.webp) 50% 0/auto 100% repeat-x;
+  filter:drop-shadow(0 8px 10px rgba(20,32,14,.3));
+  transform:translateY(calc(var(--lp,0) * -140px));}
+/* 前：鏡頭前糊糊的花（去背；Marianne Krohn／Unsplash），景深在後面的拱門上 */
+.sg-layer.l-front{left:0;right:0;bottom:-3%;height:clamp(100px,18vw,210px);transform:translateY(calc(var(--lp,0) * 260px));}
+.sg-layer.l-front i{position:absolute;bottom:0;width:min(46%,560px);height:100%;filter:blur(3px) saturate(1.05);opacity:.95;
+  background:url(../img/secret-garden/flowers-row.webp) 0 100%/auto 100% no-repeat;}
+.sg-layer.l-front i.l{left:-6%;}
+.sg-layer.l-front i.r{right:-6%;transform:scaleX(-1);}
+@media (max-width:640px){.sg-layer.l-front i{width:62%;}.sg-layer.l-top{height:150px;}}
+/* 進站：照片從遠一點推近，藤垂下來，前景的花升起來 */
+.app-show .sg-layer.l-far{animation:sg-push 2.4s cubic-bezier(.2,.7,.2,1) both;}
+.app-show .sg-layer.l-top{animation:sg-drop 1.6s cubic-bezier(.25,1.1,.4,1) .3s both;}
+.app-show .sg-layer.l-front{animation:sg-lift 1.5s cubic-bezier(.25,1.1,.4,1) .45s both;}
+@keyframes sg-push{from{opacity:.4;scale:1.12;filter:blur(4px);}}
+@keyframes sg-drop{from{transform:translateY(-70px);opacity:0;}}
+@keyframes sg-lift{from{transform:translateY(80px);opacity:0;}}
+
+/* 名字：在拱門裡面 */
+.sg-hero-body{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;text-align:center;
+  margin-top:clamp(150px,33vh,340px);padding:0 24px;color:var(--sg-ink);
+  transform:translateY(calc(var(--lp,0) * 60px));opacity:calc(1 - var(--lp,0) * 1.3);}
+.sg-kicker{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+/* 手機：拱門撐滿整個寬度，拱頂比較高，字要再往下放才會在拱門裡 */
+@media (max-width:640px){.sg-hero-body{margin-top:41vh;}.sg-hero .hashtags{margin-top:12px;}}
+.sg-kicker .en{font:italic 400 clamp(17px,2.2vw,21px) 'Cormorant Garamond',serif;color:var(--sg-deep);}
+.sg-kicker .cn{font-size:12.5px;letter-spacing:.5em;color:var(--sg-soft);}
+.sg-hero .sg-names{font-family:'Italiana','Cormorant Garamond','Noto Serif TC',serif;font-weight:400;
+  font-size:clamp(40px,6.4vw,76px);line-height:1.1;letter-spacing:.04em;color:var(--sg-ink);
+  text-shadow:0 2px 12px rgba(255,253,242,.9);}
+.sg-hero .sg-names .amp{display:block;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:.55em;color:var(--sg-rose);line-height:1.2;}
+body[data-hero-name="cn"] .sg-hero .sg-names{font-family:'Noto Serif TC',serif;font-weight:500;font-size:clamp(30px,5vw,52px);letter-spacing:.2em;}
+.sg-date{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13px;letter-spacing:.34em;color:var(--sg-soft);}
+.sg-date i{width:6px;height:6px;border-radius:50% 0;background:var(--sg-leaf);transform:rotate(45deg);}
+.sg-hero .hashtags{margin-top:16px;}
+.sg-hero .hashtags .tag{border-color:rgba(95,127,72,.35);color:var(--sg-deep);font-size:12px;background:rgba(255,253,242,.75);}
+.sg-cue{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:3;margin:0;color:var(--sg-deep);font-size:11px;letter-spacing:.4em;}
+.sg-cue .arrow{background:rgba(70,99,58,.6);}
+.app-show .sg-hero-body > *{animation:sg-rise 1.2s cubic-bezier(.2,.7,.2,1) both;}
+.app-show .sg-hero-body > .sg-kicker{animation-delay:.7s;}
+.app-show .sg-hero-body > .sg-names{animation-delay:.85s;}
+.app-show .sg-hero-body > .sg-date{animation-delay:1s;}
+.app-show .sg-hero-body > .hashtags{animation-delay:1.1s;}
+@keyframes sg-rise{from{opacity:0;transform:translateY(14px);}}
+
+/* ---- 蝴蝶：一隻真的蝴蝶（去背），從身體中間切成左右兩半，各自往後翻（翅膀一開一合），
+        身體沿著一條路線慢慢飄 ---- */
+.sg-bf{position:absolute;z-index:4;display:block;width:44px;aspect-ratio:320/236;pointer-events:none;perspective:160px;
+  filter:drop-shadow(0 6px 5px rgba(20,32,14,.28));}
+.sg-bf.k-swallowtail{aspect-ratio:320/302;}
+.sg-wing{position:absolute;top:0;bottom:0;width:50%;background:url(../img/secret-garden/butterfly-queen.webp) 0 0/200% 100% no-repeat;}
+.sg-bf.k-swallowtail .sg-wing{background-image:url(../img/secret-garden/butterfly-swallowtail.webp);}
+.sg-wing.l{left:0;transform-origin:100% 50%;animation:sg-flap .36s ease-in-out infinite alternate;}
+.sg-wing.r{right:0;background-position:100% 0;transform-origin:0 50%;animation:sg-flap-r .36s ease-in-out infinite alternate;}
+@keyframes sg-flap{from{transform:rotateY(0);}to{transform:rotateY(68deg);}}
+@keyframes sg-flap-r{from{transform:rotateY(0);}to{transform:rotateY(-68deg);}}
+.sg-hero .sg-bf{translate:0 calc(var(--lp,0) * -420px);}
+.sg-bf.b1{left:18%;top:30%;animation:sg-drift1 13s ease-in-out infinite;}
+.sg-bf.b2{right:16%;top:22%;width:36px;animation:sg-drift2 11s ease-in-out infinite;}
+.sg-bf.b3{left:62%;top:58%;width:30px;animation:sg-drift1 9s ease-in-out -4s infinite reverse;}
+@keyframes sg-drift1{0%,100%{transform:translate(0,0) rotate(-8deg);}25%{transform:translate(60px,-40px) rotate(6deg);}
+  50%{transform:translate(120px,10px) rotate(-4deg);}75%{transform:translate(50px,40px) rotate(10deg);}}
+@keyframes sg-drift2{0%,100%{transform:translate(0,0) rotate(10deg);}33%{transform:translate(-80px,30px) rotate(-6deg);}
+  66%{transform:translate(-30px,-50px) rotate(4deg);}}
+@media (max-width:640px){.sg-bf.b1{left:6%;}.sg-bf.b2{right:6%;}}
+
+/* ============================================================
+   區塊
+============================================================ */
+.sg-body{max-width:900px;padding:0 22px 40px;position:relative;z-index:2;}
+.sg-sec{background:transparent;border:none;border-radius:0;-webkit-backdrop-filter:none;backdrop-filter:none;
+  margin-top:0;padding:clamp(64px,9vw,110px) 0 0;text-align:center;}
+.sg-sec[hidden]{display:none;}
+.sg-head{display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:clamp(18px,3vw,28px);}
+.sg-pop{margin:0 0 6px;}
+/* 手繪水彩的花（Unsplash 上的免費插畫：罌粟／藍雛菊／海芋／鬱金香 by ibtihel ben salah、牡丹 by Viktoriya Lissachenko） */
+.sg-flower{display:block;height:clamp(120px,15vw,156px);aspect-ratio:3/4;transform-origin:50% 100%;
+  background:center bottom/contain no-repeat;filter:drop-shadow(0 6px 8px rgba(31,42,23,.14));}
+.sg-flower.f-poppy{background-image:url(../img/secret-garden/wc-poppy.webp);}
+.sg-flower.f-daisy{background-image:url(../img/secret-garden/wc-daisy.webp);}
+.sg-flower.f-calla{background-image:url(../img/secret-garden/wc-calla.webp);}
+.sg-flower.f-tulip{background-image:url(../img/secret-garden/wc-tulip.webp);}
+.sg-flower.f-peony{background-image:url(../img/secret-garden/wc-peony.webp);aspect-ratio:634/520;height:clamp(110px,13vw,140px);}
+.sg-head .block-title{margin:0;font:400 clamp(30px,4.4vw,44px)/1.1 'Italiana','Cormorant Garamond',serif;
+  letter-spacing:.06em;text-transform:none;color:var(--sg-ink);}
+.sg-head .block-sub{margin:0;font-size:13.5px;letter-spacing:.36em;color:var(--sg-soft);}
+
+/* 內容卡：兩張紙疊在一起，圓角，底下那一張是淡綠的 */
+.sg-card{position:relative;max-width:600px;margin:0 auto;padding:clamp(28px,5vw,44px) clamp(22px,5vw,44px);
+  background:var(--sg-cream);border-radius:18px;text-align:center;
+  box-shadow:0 1px 0 #fff inset,0 3px 6px rgba(31,42,23,.12),10px 10px 0 -2px #dfe7cf,10px 10px 6px -2px rgba(31,42,23,.18);}
+.note-grid.sg-card{max-width:680px;}
+.sg-card-tl{max-width:560px;}
+.sg-card .info-row,.sg-card .info-seat{border-top:1px dashed var(--sg-line);}
+.sg-card .info-row:first-child{border-top:none;}
+.sg-card .info-couple{font-family:'Italiana','Cormorant Garamond',serif;}
+.sg-sec .ir-label,.sg-sec .note-label{color:var(--sg-leaf);}
+.sg-sec .note-item + .note-item{border-left:1px dashed var(--sg-line);}
+@media (max-width:640px){.sg-sec .note-item + .note-item{border-left:none;border-top:1px dashed var(--sg-line);}}
+.sg-sec .timeline{text-align:left;--tl-line:#c9d6b5;}
+.sg-sec .tl-time{font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--sg-leaf);}
+.sg-sec .tl-dot::before{width:10px;height:10px;background:var(--sg-rose);border-radius:50% 0;transform:translate(-50%,-50%) rotate(45deg);}
+.sg-sec .btn{border-radius:999px;}
+.sg-sec .btn.ghost{border-color:var(--sg-leaf);color:var(--sg-deep);}
+.sg-sec .btn:not(.ghost){background:var(--sg-deep);border-color:var(--sg-deep);}
+.sg-sec .btn:not(.ghost):hover{background:var(--sg-leaf);border-color:var(--sg-leaf);}
+.sg-rsvp .rsvp-cta h3{font-family:'Italiana','Cormorant Garamond','Noto Serif TC',serif;font-size:24px;}
+
+/* ============================================================
+   場景帶
+============================================================ */
+.sg-band{position:relative;overflow:hidden;border:none;border-radius:0;background:transparent;
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+  margin:clamp(70px,10vw,120px) calc(50% - 50vw) 0;padding:clamp(64px,9vw,110px) 24px;}
+.sg-band[hidden]{display:none;}
+.sg-band-bg{position:absolute;left:0;right:0;top:-14%;bottom:-14%;z-index:0;
+  transform:translateY(calc((var(--sp,.5) - .5) * -10%));}
+.sg-band-inner{position:relative;z-index:2;max-width:920px;margin:0 auto;}
+.sg-band-title{font:400 clamp(34px,5vw,50px)/1.1 'Italiana','Cormorant Garamond',serif;letter-spacing:.06em;}
+.sg-band-sub{margin-top:6px;font-size:13px;letter-spacing:.4em;}
+
+/* ---- 故事：綠籬的顏色，照片在一扇開滿玫瑰的拱窗裡 ---- */
+.sg-story{color:#fbf8ef;}
+/* 常春藤牆（Nadiia Shuran／Unsplash），四周壓暗，字放在亮一點的那一側 */
+.sg-story .sg-band-bg{background:
+  radial-gradient(70% 90% at 30% 40%,rgba(10,18,8,.25),rgba(10,18,8,.62)),
+  #2c3d26 url(../img/secret-garden/ivy-dark.webp) center/cover no-repeat;}
+.sg-story .sg-band-sub{color:rgba(251,248,239,.72);}
+.sg-story .sg-band-inner{display:grid;grid-template-columns:1fr;gap:40px;justify-items:center;text-align:center;}
+@media (min-width:780px){.sg-story .sg-band-inner{grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:clamp(40px,6vw,76px);
+  align-items:center;text-align:left;justify-items:stretch;}}
+.sg-window{position:relative;width:min(100%,300px);aspect-ratio:340/480;justify-self:center;}
+.sg-window-ph{position:absolute;left:12%;right:12%;top:8%;bottom:5%;border-radius:999px 999px 10px 10px;
+  background:#9fba82 center/cover;background-position:50% calc(50% + (var(--sp,.5) - .5) * 30%);
+  box-shadow:inset 0 0 0 6px #fbf8ef,0 12px 30px rgba(0,0,0,.35);}
+.sg-window-ivy{position:absolute;left:-8%;right:-8%;top:-5%;height:25%;pointer-events:none;
+  background:url(../img/secret-garden/ivy-hang.webp) 8% 0/auto 100% no-repeat;filter:drop-shadow(0 6px 8px rgba(0,0,0,.4));
+  -webkit-mask:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent),linear-gradient(transparent,#000 22%);
+  -webkit-mask-composite:source-in;
+  mask:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent),linear-gradient(transparent,#000 22%);mask-composite:intersect;}
+.sg-story .story-text{margin:22px 0 0;max-width:32em;color:#fbf8ef;font-size:15px;text-align:left;}
+.sg-bf.in-band{right:6%;top:12%;width:40px;animation:sg-drift2 12s ease-in-out infinite;}
+
+/* ---- 倒數：黃昏的草地（Liana S／Unsplash），螢火蟲一明一暗 ---- */
+.sg-dusk{color:#fbf6e8;padding-bottom:clamp(120px,16vw,180px);}
+.sg-dusk .sg-band-bg{background:
+  linear-gradient(180deg,rgba(18,14,10,.45),rgba(18,14,10,.1) 40%,rgba(18,14,10,.35)),
+  #2b2a1e url(../img/secret-garden/dusk-meadow.webp) 50% 30%/cover no-repeat;}
+.sg-dusk .sg-band-inner{text-align:center;}
+.sg-dusk .sg-band-sub{color:rgba(251,246,232,.8);}
+.sg-dusk .cd-grid{margin:24px auto 0;}
+.sg-dusk .cd-unit{border-left:1px solid rgba(251,246,232,.25);}
+.sg-dusk .cd-num{font-family:'Cormorant Garamond',serif;font-weight:400;color:#fbf6e8;}
+.sg-dusk .cd-lab,.sg-dusk .cd-target{color:rgba(251,246,232,.8);}
+/* 螢火蟲 */
+.sg-fireflies{position:absolute;inset:0;z-index:2;pointer-events:none;}
+.sg-fireflies i{position:absolute;width:5px;height:5px;border-radius:50%;background:#fff6b8;
+  box-shadow:0 0 10px 3px rgba(255,236,140,.75);opacity:0;animation:sg-glow 4s ease-in-out infinite,sg-float 9s ease-in-out infinite;}
+.sg-fireflies i:nth-child(1){left:8%;top:70%;animation-delay:0s,-1s;}
+.sg-fireflies i:nth-child(2){left:18%;top:52%;animation-delay:1.2s,-3s;}
+.sg-fireflies i:nth-child(3){left:28%;top:78%;animation-delay:2.1s,-5s;}
+.sg-fireflies i:nth-child(4){left:40%;top:62%;animation-delay:.6s,-2s;}
+.sg-fireflies i:nth-child(5){left:56%;top:80%;animation-delay:2.8s,-6s;}
+.sg-fireflies i:nth-child(6){left:66%;top:58%;animation-delay:1.7s,-4s;}
+.sg-fireflies i:nth-child(7){left:76%;top:74%;animation-delay:.3s,-7s;}
+.sg-fireflies i:nth-child(8){left:86%;top:54%;animation-delay:3.2s,-1.5s;}
+.sg-fireflies i:nth-child(9){left:92%;top:82%;animation-delay:1s,-3.5s;}
+.sg-fireflies i:nth-child(10){left:48%;top:46%;animation-delay:2.4s,-8s;}
+@keyframes sg-glow{0%,100%{opacity:0;}40%,60%{opacity:1;}}
+@keyframes sg-float{0%,100%{transform:translate(0,0);}33%{transform:translate(14px,-18px);}66%{transform:translate(-10px,-8px);}}
+
+/* ============================================================
+   Explore：掛在花園裡的小吊牌
+============================================================ */
+.sg-sec .link-grid{border:none;gap:16px;}
+.sg-sec .link-card{position:relative;text-align:left;background:var(--sg-cream);border:none;border-radius:4px 20px 20px 20px;
+  padding-top:40px;box-shadow:0 3px 6px rgba(31,42,23,.12),0 14px 24px -18px rgba(31,42,23,.4);
+  transition:transform .35s cubic-bezier(.3,1.4,.5,1),box-shadow .3s;}
+.sg-sec .link-card::before{content:'';position:absolute;left:18px;top:16px;width:10px;height:10px;border-radius:50%;
+  background:#ecefdf;box-shadow:inset 0 1px 2px rgba(31,42,23,.35);}
+.sg-sec .link-card:hover{background:var(--sg-cream);color:var(--sg-ink);transform:rotate(-1.2deg) translateY(-3px);
+  box-shadow:0 4px 8px rgba(31,42,23,.14),0 20px 30px -20px rgba(31,42,23,.45);}
+.sg-sec .link-card:hover .lc-sub{color:var(--sg-soft);}
+.sg-sec .link-card:hover .lc-index{color:var(--sg-rose);}
+.sg-sec .link-card:hover .lc-go{color:var(--sg-leaf);}
+.sg-sec .lc-index{position:absolute;right:20px;top:16px;font-family:'Cormorant Garamond',serif;font-size:14px;color:var(--sg-rose);}
+.sg-sec .lc-title{font-family:var(--font-body);font-weight:500;font-size:17px;}
+.sg-sec .lc-go{color:var(--sg-leaf);}
+
+/* ---- 頁尾 ---- */
+.sg-foot{margin-top:clamp(70px,10vw,110px);display:flex;flex-direction:column;align-items:center;gap:8px;border-top:none;}
+.sg-bf.foot{position:relative;width:40px;animation:none;}
+.sg-fin{font:400 24px 'Italiana','Cormorant Garamond',serif;color:var(--sg-deep);letter-spacing:.06em;text-transform:none;}

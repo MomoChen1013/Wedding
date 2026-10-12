@@ -47,7 +47,13 @@
      —— 「給你的信」載它等於白白多擋一次首次繪製（korean 那份 10KB）。
      所以名字寫成 lobbyCss，作用域直接寫在名字上，兩端才不會各自解讀。
 
-   兩者都由 build-og 直接寫進產出頁面的 <head>（讓瀏覽器的 preload
+   ▸ lobbyJs：**只有大廳要**的動作腳本（例如 tapestry 的信封開場與捲動編排）。
+     版型的 HTML 不能帶 <script>（site-context.js 用 innerHTML 換骨架時不會執行），
+     所以動作寫成一支獨立的腳本，由 site-context.js 排在 index.js 之前載入；
+     index.js 看得到它提供的 window.LobbyMotion 才走那一套，看不到就照舊。
+     這一支 build-og 不必處理：lobbyFile 自己的 <head> 已經 preload 了。
+
+   fonts／lobbyCss 由 build-og 直接寫進產出頁面的 <head>（讓瀏覽器的 preload
    scanner 掃得到），沒預產到的頁面才由 site-context.js 在執行期補上。
 ============================================================ */
 export const TEMPLATES = {
@@ -63,11 +69,111 @@ export const TEMPLATES = {
   'korean':        { label:'Korean Modern', lobbyFile:'lobby-korean.html',
                      lobbyCss:['/css/lobby-korean.css'],
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
+  /* forest：滿版照片 ＋ 整頁可愛的手繪森林小物（橡實、松果、香菇、葉子、小熊、兔子、小鳥） */
   'forest':        { label:'Forest Botanical', lobbyFile:'lobby-forest.html',
-                     lobbyCss:['/css/lobby-forest.css'],
+                     lobbyCss:['/css/lobby-forest.css','/css/lobby-trail.css'], lobbyJs:['/js/lobby-motion.js'],
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap'] },
+  /* 中古刺繡：開場是一封蓋了封蠟的信（取代兩句字幕＋簾幕），
+     內容是刺繡插圖 ＋ 捲動編排（見 css/lobby-tapestry.css 開頭的說明） */
+  'tapestry':      { label:'Tapestry 中古刺繡', lobbyFile:'lobby-tapestry.html',
+                     lobbyCss:['/css/lobby-tapestry.css'],
+                     lobbyJs:['/js/lobby-motion.js'], opening:'envelope',
+                     fonts:['https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
+  /* ---- 場景版型：每一個都有自己的大廳骨架、自己的預設開場，畫面用真的照片。
+     （幾個版型要共用一副骨架時，寫 lobbyKey：那副骨架的名字，寫在 <body data-lobby>） ---- */
+  /* 植物信箋：一本植物標本冊 —— 真的棉紙、描圖紙、壓花標本的照片、標本標籤 */
+  'botanical-letter': { label:'Botanical Letter 植物信箋', lobbyFile:'lobby-botanical.html',
+                     lobbyCss:['/css/lobby-botanical.css'], lobbyJs:['/js/lobby-motion.js'], opening:'ribbon',
+                     fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Courier+Prime&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
+  /* 秘密花園：真的照片與手繪水彩 —— 開滿玫瑰的拱門小徑、常春藤、水彩的花、蝴蝶；
+     推開常春藤牆上的玻璃門（開場）走進拱門。整套做完，有自己的骨架 */
+  'secret-garden':  { label:'Secret Garden 秘密花園', lobbyFile:'lobby-garden.html',
+                     lobbyCss:['/css/lobby-garden.css'], lobbyJs:['/js/lobby-motion.js'], opening:'door',
+                     fonts:['https://fonts.googleapis.com/css2?family=Italiana&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
+  /* 春日溫室：真的玻璃溫室照片、花影、斜射的陽光；開場是一整面綠籬開滿白玫瑰 */
+  'spring-orangerie': { label:'Spring Orangerie 春日溫室', lobbyFile:'lobby-orangerie.html',
+                     lobbyCss:['/css/lobby-orangerie.css'], lobbyJs:['/js/lobby-motion.js'], opening:'bloom',
+                     fonts:['https://fonts.googleapis.com/css2?family=Marcellus&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Sans+TC:wght@300;400;500&family=Noto+Serif+TC:wght@400;500&display=swap'] },
+  /* 現代星空：星塵、月亮、流星；開場的星圖最後縮成首頁的裝飾 */
+  'night-sky':   { label:'Night Sky 現代星空', lobbyFile:'lobby-night.html',
+                     lobbyCss:['/css/lobby-night.css'], lobbyJs:['/js/lobby-motion.js'], opening:'stars',
+                     fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Josefin+Sans:wght@300;400&family=Noto+Sans+TC:wght@300;400;500&family=Noto+Serif+TC:wght@400;500&display=swap'] },
+  /* 法式莊園：文藝復興 —— 從真的照片描出來的剪紙莊園、大理石雕像、天頂濕壁畫；推開一扇鍛鐵大門進去 */
+  'french-manor': { label:'French Manor 法式莊園', lobbyFile:'lobby-manor.html',
+                     lobbyCss:['/css/lobby-manor.css'], lobbyJs:['/js/lobby-motion.js'], opening:'door',
+                     fonts:['https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,500;1,400&family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
+  /* 莫內花園・流動油畫：美術館牆上一幅莫內的日本橋，點一下被吸進畫裡（開場）；
+     hero 就是那一幅畫的裡面，整頁的畫都是程式一筆一筆畫的油畫、水面一直流動。
+     畫畫的那一支（window.MonetPaint）就住在開場 painting.js 裡，所以 lobbyJs 也掛它 ——
+     就算這組新人換成別種開場，大廳的畫照樣畫得出來 */
+  'monet-garden': { label:'Monet Garden 莫內花園流動油畫', lobbyFile:'lobby-monet.html',
+                     lobbyCss:['/css/lobby-monet.css'], lobbyJs:['/js/lobby-motion.js', '/js/openers/painting.js'], opening:'painting',
+                     fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Parisienne&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
+  /* 美式戶外婚禮派對：滿滿一畫面的氣球慢慢升空（開場），露出底下的藍天與草地；
+     白色帳篷、串燈、三角旗、野餐格紋 */
+  'outdoor-party': { label:'Outdoor Party 美式戶外婚禮派對', lobbyFile:'lobby-party.html',
+                     lobbyCss:['/css/lobby-party.css'], lobbyJs:['/js/lobby-motion.js'], opening:'balloons',
+                     fonts:['https://fonts.googleapis.com/css2?family=Yellowtail&family=Bebas+Neue&family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@500&display=swap'] },
+  /* 晨光房間：真的紗簾與窗光、一張早餐桌（洗出來的照片、去背的咖啡與可頌）；拉開紗簾，早晨照進來 */
+  'morning-window': { label:'Morning Window 晨光房間', lobbyFile:'lobby-window.html',
+                     lobbyCss:['/css/lobby-window.css'], lobbyJs:['/js/lobby-motion.js'], opening:'curtain',
+                     fonts:['https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
+  /* 白色教堂：午夜一根一根點亮蠟燭，天一亮是一座純白的教堂 —— 真的照片、厚玻璃相片、毛玻璃 */
+  'white-church': { label:'White Church 白色教堂', lobbyFile:'lobby-chapel.html',
+                     lobbyCss:['/css/lobby-chapel.css'], lobbyJs:['/js/lobby-motion.js'], opening:'candle',
+                     fonts:['https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=UnifrakturMaguntia&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
 };
 export const DEFAULT_TEMPLATE = 'classic';
+
+/* ============================================================
+   開場（sites.opening）
+   ------------------------------------------------------------
+   賓客打開大廳的那幾秒 —— 和版型、敘事模組一樣是**獨立的一軸**：
+
+     template     站台長什麼樣子
+     opening      進站那一刻怎麼演（拆信、翻書、推門、點燭……）
+     storyLayout  「我們的故事」那一頁怎麼說
+
+   ・版型可以宣告自己的預設開場（TEMPLATES[x].opening）；
+     sites.opening 有填而且認得就用它，否則用版型的預設，
+     都沒有就是原本的兩句字幕＋簾幕（null）—— 既有站台一律不變。
+   ・任何版型都能用任何開場：骨架裡沒有開場容器的大廳
+     （classic／korean／forest），index.js 會自己補一個。
+   ・和 template 同一個權限層級：不在 firestore.rules 的可更新白名單裡，
+     新人自己改不動，只有我們用 Admin SDK 改得動。
+
+   每一種開場是一支 js/openers/{key}.js ＋ 一份 css/openers/{key}.css，
+   只有大廳載、只載用到的那一種（見 site-context.js）。
+   auto：自己演完就進站的開場（點畫面可以跳過）；
+         其他的都等賓客親手做那個動作，那一下也順便開背景音樂。
+============================================================ */
+export const OPENINGS = {
+  'envelope': { label:'拆信・封蠟' },
+  'book':     { label:'翻頁・古書' },
+  'bloom':    { label:'花朵盛開', auto:true },
+  'curtain':  { label:'窗簾拉開' },
+  'candle':   { label:'燭光點亮' },
+  'stars':    { label:'星圖展開', auto:true },
+  'door':     { label:'門／拱門' },
+  'ribbon':   { label:'拉開絲帶' },
+  'painting': { label:'走進油畫' },
+  'balloons': { label:'氣球升空', auto:true },
+};
+
+/* 這組新人的開場：sites.opening → 版型預設 → null（原本的字幕＋簾幕）。
+   用 hasOwn 的理由和 templateKey() 一樣 —— 'toString' 不能被當成一種開場，
+   否則會去載一支不存在的 /js/openers/toString.js */
+export function openingKey(name, template) {
+  if (Object.hasOwn(OPENINGS, name)) return name;
+  const t = TEMPLATES[templateKey(template)];
+  return t.opening && Object.hasOwn(OPENINGS, t.opening) ? t.opening : null;
+}
+
+/* 改過名字的版型：舊代號 → 新代號。
+   sites.template 已經寫了舊代號的站台照樣認得，不會落回 classic */
+const RENAMED_TEMPLATES = {
+  'midnight-chapel': 'white-church',   /* 大廳改成白天的純白教堂之後改名 */
+};
 
 /* 認不得的版型一律落回 classic。
    用 hasOwn 而不是 TEMPLATES[name] —— 'toString'、'__proto__' 這些
@@ -75,7 +181,52 @@ export const DEFAULT_TEMPLATE = 'classic';
    CSS 對不上的 data-template，整站只剩 :root 的預設值（沒有 --bg1／
    --primary），畫面會壞掉。 */
 export function templateKey(name) {
+  if (Object.hasOwn(RENAMED_TEMPLATES, name)) name = RENAMED_TEMPLATES[name];
   return Object.hasOwn(TEMPLATES, name) ? name : DEFAULT_TEMPLATE;
+}
+
+/* ============================================================
+   敘事模組（sites.storyLayout）
+   ------------------------------------------------------------
+   和版型（sites.template）**是兩軸**，不是同一件事的兩半：
+
+     template     這組新人的站台長什麼樣子 —— 顏色、字體、線與留白
+     storyLayout  「我們的故事」那一頁怎麼說 —— 照片與文字的編排節奏
+
+   所以 korean ＋ chapters、forest ＋ chapters 都成立，不必為了換一種
+   說故事的方式再寫一整套版型；反過來也一樣，換了敘事模組不會動到
+   站台其他任何一頁的樣子。
+
+   ・**吃的是同一份 exhibits**：後台「新人故事牆」那一份資料不動，
+     每個模組只是把同樣的 kind／title／sub／desc／year／act／img
+     畫成不同的樣子。換模組不會要新人重填任何東西。
+   ・**新開的站台一律是 timeline**（現在的橫向時間軸）：沒有欄位、
+     值不認得、拼錯了都落回它，既有站台不會因為多了這個欄位就改變。
+   ・和 template 同一個權限層級：不在 firestore.rules 的可更新白名單裡，
+     新人自己改不動，只有我們用 Admin SDK 改得動。
+
+   ▸ css：這個模組自己的版面。**只有「我們的故事」那一頁要**，
+     和 TEMPLATES.lobbyCss 是同一個道理 —— 每一條規則都收在模組自己的
+     前綴底下（.sc-* …），其他頁面載它只是白白多擋一次首次繪製。
+   ▸ js ：頁面腳本的檔名。site-context.js 載入頁面 JS 時用它取代預設的
+     exhibition.js —— 不同的編排是不同的 DOM 與不同的捲動行為，
+     不是同一支腳本加一堆 if。
+============================================================ */
+export const STORY_LAYOUTS = {
+  /* 橫向時間軸：現在就在線上的那一版，所以它是預設值 */
+  'timeline': { label:'橫向時間軸', js:'exhibition' },
+  /* 章節式故事：依 kind:'act' 分章，一章一種版面節奏（見 css/story-chapters.css） */
+  'chapters': { label:'章節式故事', js:'story-chapters',
+                css:['/css/story-chapters.css'] },
+};
+export const DEFAULT_STORY_LAYOUT = 'timeline';
+
+/* 認不得的模組一律落回 timeline。
+   用 hasOwn 的理由和 templateKey() 一樣：'toString'、'__proto__'
+   這些原型上的屬性是 truthy，直接判斷會讓它們通過，
+   然後去載一支不存在的 /js/toString.js，整頁停在載入失敗。 */
+export function storyLayoutKey(name) {
+  return Object.hasOwn(STORY_LAYOUTS, name) ? name : DEFAULT_STORY_LAYOUT;
 }
 
 /* ============================================================

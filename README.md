@@ -86,6 +86,12 @@
 - **BGM**：預設播內建的 `public/audio/bgm.mp3`，新人放了自己的音檔就換成他們的。
   想換全站的預設曲目，直接換掉這個檔案（路徑寫在 `js/common.js` 的 `DEFAULT_BGM`）。
   音檔真的載不起來時，最後才退回 Web Audio 合成的〈愛的禮讚 Salut d'Amour〉。
+- **不讓搜尋引擎收錄**：婚禮網站上有新人的姓名、日期、場地地址，只該給拿到連結的人看。
+  `firebase.json` 對**所有**回應都加上 `X-Robots-Tag: noindex, nofollow, noarchive`，
+  Google 等搜尋引擎就不會把任何一頁（包括 `/lobby-*.html` 這些版型原始檔）放進搜尋結果。
+  LINE、Facebook 貼連結時的預覽卡片不受影響（它們不看這個標頭）。
+  刻意**不放** `robots.txt` 擋爬蟲：被擋掉的爬蟲讀不到 noindex，
+  網址反而可能因為別處的連結被收錄成一條沒有內容的搜尋結果。
 - **分頁圖示**：`public/favicon.png`（512×512 正方形）。**所有站台共用同一張** ——
   它是工作室的識別，不是某一組新人的。要換就直接覆蓋這個檔案，
   12 個 HTML 都指到同一個路徑，不用改任何一行標記。
@@ -114,6 +120,11 @@
 ├─ firestore.indexes.json
 ├─ public/
 │   ├─ index.html             # 大廳
+│   ├─ lobby-korean.html  lobby-forest.html  lobby-tapestry.html
+│   │                         # 版型自己的大廳骨架（見 js/wed-model.js 的 TEMPLATES）
+│   ├─ lobby-botanical.html  lobby-garden.html  lobby-orangerie.html  lobby-night.html
+│   │  lobby-manor.html  lobby-window.html  lobby-chapel.html  lobby-monet.html  lobby-party.html
+│   │                         # 場景版型，各有自己的大廳（長相見 css/lobby-*.css）
 │   ├─ wall.html  cake.html
 │   ├─ draw.html  exhibition.html  quiz.html
 │   ├─ seating.html           # 我的桌次（婚禮當天查桌次 + 桌次圖）
@@ -128,11 +139,19 @@
 │   ├─ w/{slug}/              # ⚙️ 每個站台專屬的大廳／邀請函 HTML（只為了 og 標籤）
 │   ├─ s/{code}.html          # ⚙️ 每個短連結專屬的轉址頁（只為了 og 標籤）
 │   ├─ assets/{slug}/         # 每組新人的照片
+│   ├─ samples/               # 版型展示頁 /samples（給客人挑版型，見〈版型展示頁〉）
+│   │   ├─ index.html                # ⚙️ 總覽，由 build-samples 產出
+│   │   ├─ thumbs/{版型}.jpg         # ⚙️ 由 build-sample-thumbs 截圖
+│   │   ├─ sample-site.js  photos/   # 虛構的新人（站台資料＋示範內容）與示範照片
+│   │   └─ demo-bar.css              # 示範頁左下角那一條
 │   ├─ audio/bgm.mp3          # 全站共用的預設背景音樂（新人沒放自己的就播這首）
 │   ├─ css/
 │   └─ js/
 │       ├─ site-context.js    # ★ 每頁唯一進入點：解析 slug、載設定、注入其他 JS
+│       ├─ demo-firebase.js   # /samples 示範模式用的假 Firebase（資料只在記憶體裡）
 │       ├─ common.js          # 資料層 DataStore、導覽、特效、樣板文字
+│       ├─ lobby-motion.js    # 大廳的開場（登記＋播放）與捲動編排
+│       ├─ openers/{key}.js   # 十種開場，各一支（css/openers/{key}.css 是它的樣子）
 │       ├─ cropper.js         # 後台專用的照片裁切器（只有 admin.html 載入）
 │       ├─ seating-plan.js    # 後台專用的排桌工作台（只有 admin.html 載入）
 │       ├─ xlsx-lite.js       # 極小的 Excel 讀寫器（排桌的匯入匯出用，無外部函式庫）
@@ -148,6 +167,9 @@
 │   ├─ set-pages.js           # 改已建站台的開關
 │   ├─ sync-assets.js         # 掃描素材資料夾產生 manifest.json
 │   ├─ build-og.js            # 產生社群分享縮圖與各站專屬的 og 標籤
+│   ├─ build-previews.js      # 從正式的大廳骨架產出 preview/ 底下各版型的示範頁
+│   ├─ build-samples.js       # 產出 /samples 總覽（卡片文案 sample-catalog.js、模板 sample-index.html）
+│   ├─ build-sample-thumbs.js # 幫 /samples 每個版型截一張手機首屏當縮圖
 │   ├─ check-site.js          # 檢查某站台為什麼打不開
 │   ├─ export-rsvps.js        # 匯出某站台的 RSVP 成 CSV
 │   └─ create-short-link.js
@@ -187,12 +209,306 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 `venue`、`address`、`dressCode`、`giftNote`、`story`、`hashtag`。
 
 `groomEn`／`brideEn`／`coupleEn` 讀站台的 `groomNameEn`／`brideNameEn`，
-沒填就退回中文名。目前只有 korean 版型的大廳 hero 用它
-（`public/lobby-korean.html`），頁面其他地方仍然是中文名 —— 想讓某一塊
+沒填就退回中文名。目前只有 korean 與 tapestry 版型的大廳 hero 用它
+（`public/lobby-korean.html`、`public/lobby-tapestry.html`），頁面其他地方仍然是中文名 —— 想讓某一塊
 走英文，就把那一行的 token 換成 `En` 那組，不必再改資料。
 
 `{{hashtag}}` 取新人填的第一個 hashtag；一個都沒填時用預設的 `#我們結婚了`
 （大廳開場那一排則是 `#我們結婚了`、`#Married` 兩個）。
+
+### 版型、開場、敘事模組：三軸
+
+一組新人的站台長什麼樣子，拆成三個互相獨立的設定（都在 `sites/{siteId}`，
+都只有我們用 Admin SDK 改得動，新人改不動）：
+
+| 欄位 | 決定什麼 | 沒設定時 |
+|---|---|---|
+| `template` | 整站的色票、字體、大廳的版面 | `classic` |
+| `opening` | 賓客打開大廳那幾秒怎麼演 | 版型的預設開場；版型也沒有就是兩句字幕＋簾幕 |
+| `storyLayout` | 「我們的故事」那一頁怎麼說 | `timeline` |
+
+清單都在 `public/js/wed-model.js`（`TEMPLATES`／`OPENINGS`／`STORY_LAYOUTS`）。
+
+**開場**（`opening`）有十種，任何版型都能用任何一種：
+
+| 代號 | 開場 | 怎麼動 | 誰的預設 |
+|---|---|---|---|
+| `envelope` | 拆信・封蠟 | 點封蠟 → 封蠟沿著鋸齒裂成兩半、封口掀起 → 信封四散。封蠟是一枚真的香檳金封蠟（[Diana Light／Unsplash](https://unsplash.com/photos/eLEebyVItmk)，去背；保留外圈的蠟、把中間的印面整平，再壓上 `favicon.png` logo 的雙戒指；`img/envelope/wax-seal.webp`）。拆開前蓋著一枚完整的封蠟，看不出裂縫 | tapestry |
+| `book` | 翻頁・古書 | 點封面 → 翻開 → 扉頁 → 翻過扉頁 | （可選） |
+| `bloom` | 花朵盛開 | 自己演：一整面綠籬 → 到處冒出小花苞 → 從中間往外一波波開成白玫瑰 → 名字（綠籬與玫瑰都是真的照片） | spring-orangerie |
+| `curtain` | 窗簾拉開 | 點一下 → 布幕收到兩側 → 光進來（晨光房間：真的白紗簾，後面是窗台上一瓶鬱金香的窗） | morning-window |
+| `candle` | 燭光點亮 | 點一下 → 三根蠟燭一根根亮（蠟燭與火焰都是真的照片）；白色教堂：燭火熄掉、天亮，變成大廳那座純白禮堂 | white-church |
+| `stars` | 星圖展開 | 自己演：星星 → 連線成一顆心 → 名字 | night-sky |
+| `door` | 門／拱門 | 晴朗的早上站在門口，點一下 → 門往內開 → 陽光湧出來、穿過門口。莊園全部是真的照片：綠籬牆上、磚砌圓拱裡的一扇鍛鐵花園門，鐵門從照片分離出來繞著鉸鍊轉開，走進去是一座綠籬夾道的歐式花園（教堂／刺繡用程式畫的尖拱鐵門），秘密花園是常春藤牆上一扇白框玻璃門（牆、垂下來的藤、牆腳的花、門後的玫瑰拱門小徑都是真的照片） | secret-garden、french-manor |
+| `ribbon` | 拉開絲帶 | 拖緞帶尾（或點）→ 蝴蝶結鬆開 → 卡片打開。緞帶的光澤跟著游標滑（手機上自己慢慢飄）；卡片與桌面是真的棉紙、纖維紙，封面貼一枝真的壓花 | botanical-letter |
+| `painting` | 走進油畫 | 鼠尾草綠錦緞壁紙的展間，牆上一幅真的金框（照片做的九宮格）裡掛著莫內的《日本橋》（美國國家藝廊館藏的掃描），畫是活的（池水起伏、水面光點閃）；像首爾的沉浸式美術館，畫裡的東西跑到框外面來：大理花與蜀葵從框邊一筆刷出來、蝴蝶從畫裡飛到牆上、花瓣飄出畫面。點一下 → 牆往外退、畫框往前衝、畫裡的筆觸捲成漩渦，四周的顏料點被吸進畫裡 → 掉進畫裡 | monet-garden |
+| `balloons` | 氣球升空 | 自己演：滿滿一畫面一顆一顆霧面的粉彩氣球（奶油白、腮紅粉、蜜桃、奶油黃、薄荷、薰衣草；遠中近三層，近的帶一點景深的糊）在原地晃 → 每一顆各自被放開、各自的速度與方向慢慢升空 → 露出底下一片藍天、綠地與遠山 → 名字浮在天空上 | outdoor-party |
+
+> **秘密花園的照片素材**（`public/img/secret-garden/`，開場的玻璃門與 `lobby-garden.html` 共用）：
+> 全部來自 [Unsplash](https://unsplash.com)，授權是 [Unsplash License](https://unsplash.com/license)：
+> 可以免費商用、可以修改、不必標示出處（這裡還是記下來，方便日後換圖或查來源）；
+> 不能把原圖原封不動拿去賣，也不能拿去做一個跟 Unsplash 一樣的圖庫服務 —— 當成婚禮網站的版面素材沒有問題。
+>
+> | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
+> |---|---|---|---|
+> | `garden-arch.webp` | 大廳 hero、開場門後的花園 | [玫瑰拱門的小徑](https://unsplash.com/photos/ZYNbJcl4mAo)・Annie Spratt | 縮圖 |
+> | `gravel.webp` | 開場門前的碎石地 | 同上 | 從小徑取一塊，接成可以無縫平鋪 |
+> | `ivy-wall.webp` | 開場的常春藤牆 | [常春藤牆](https://unsplash.com/photos/mKO1pBtEOhQ)・Declan Sun | 接成可以無縫平鋪 |
+> | `ivy-hang.webp` | hero 上緣、門楣、故事的拱窗 | [白牆上垂下來的藤](https://unsplash.com/photos/75SIR7nqvlc)・Dinah Liu | 去背（白牆依顏色扣掉） |
+> | `ivy-strand.webp` | 左右兩條跟著捲動長下去的藤 | 同上 | 取一條藤，接成可以上下一直接下去 |
+> | `ivy-dark.webp` | 「我們的故事」的底 | [常春藤葉](https://unsplash.com/photos/zBuw8hSSpMk)・Nadiia Shuran | 縮圖 |
+> | `dusk-meadow.webp` | 倒數的底 | [黃昏的野花草地](https://unsplash.com/photos/LN_jo4rABWE)・Liana S | 縮圖 |
+> | `flowers-row.webp` | hero 鏡頭前的花、開場牆腳的花 | [一排粉白的花](https://unsplash.com/photos/_SytRmqOjuQ)・Marianne Krohn | 去背 |
+> | `butterfly-queen.webp`、`butterfly-swallowtail.webp` | 飛來飛去的蝴蝶 | [橘色蝴蝶](https://unsplash.com/photos/E3R1aMOpLYc)、[鳳蝶](https://unsplash.com/photos/kUPqTVW5gLY)・James Lee | 去背；畫面上從身體中間切成兩半，各自往後翻 |
+> | `wc-poppy.webp`、`wc-daisy.webp`、`wc-calla.webp`、`wc-tulip.webp` | 區塊標題上的花 | 水彩插畫 [罌粟](https://unsplash.com/illustrations/KKCcFLpo4Gs)、[藍雛菊](https://unsplash.com/illustrations/8YZ4EO547xM)、[海芋](https://unsplash.com/illustrations/yiX-mVR9bOU)、[鬱金香](https://unsplash.com/illustrations/viOZo9iOEkY)・ibtihel ben salah | 原本就是透明底，縮圖 |
+> | `wc-peony.webp` | R.S.V.P. 標題上的花 | 水彩插畫 [牡丹](https://unsplash.com/illustrations/aJuiDXbIp2k)・Viktoriya Lissachenko | 白底轉透明 |
+>
+> 要換圖：檔名不變直接蓋過去就好（去背的那幾張要是透明底的 webp）。
+
+> **春日溫室與植物信箋的照片素材**（`public/img/orangerie/`、`public/img/botanical/`）：
+> 一樣全部來自 [Unsplash](https://unsplash.com)，[Unsplash License](https://unsplash.com/license)（可以免費商用、可以修改、不必標示出處；
+> 不能把原圖原封不動拿去賣）。Europeana、紐約公共圖書館那兩張是館藏老標本、老插畫的掃描，在 Unsplash 上一樣是這個授權。
+>
+> | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
+> |---|---|---|---|
+> | `orangerie/greenhouse.webp` | 溫室大廳 hero | [明亮的玻璃溫室](https://unsplash.com/photos/ywAtdnYPwR4)・Annie Spratt | 裁掉底部、縮圖 |
+> | `orangerie/glass-roof.webp` | 溫室「我們的故事」的底 | [溫室的玻璃屋頂](https://unsplash.com/photos/jihTT_05_tk)・Annie Spratt | 縮圖 |
+> | `orangerie/white-rose.webp` | hero 名字上面那一朵 | [白玫瑰](https://unsplash.com/photos/ZzTFupfsL4I)・Fiona Murray-deGraaff | 去背 |
+> | `orangerie/white-roses.webp` | R.S.V.P. | [一束白玫瑰](https://unsplash.com/photos/NUX8vT_lkWI)・Evie S. | 去背 |
+> | `orangerie/tulip.webp` | 婚禮資訊 | [紅色鬱金香](https://unsplash.com/photos/62saZ_T5AP0)・Ananthu Selvam | 去背、裁掉花瓶 |
+> | `orangerie/lemon.webp` | 當日流程 | [檸檬枝](https://unsplash.com/photos/OvC1Bojh_Fw)・Rafael Albaladejo | 去背 |
+> | `orangerie/fern.webp` | 小提醒 | [蕨葉](https://unsplash.com/photos/lPikxQg6SWQ)・Shovit Chettri | 去背 |
+> | `orangerie/can.webp` | 交通資訊 | [澆水壺](https://unsplash.com/photos/VENhzgCW5eg)・Hitomi Bremmer | 去背 |
+> | `orangerie/prince-rose.webp` | 倒數（像小王子星球上的那一朵，捲到的時候亮起一圈暖光） | [一枝長莖紅玫瑰](https://unsplash.com/illustrations/EkvQiOsNJas)・Ifeolu Kayode | 去背 |
+> | `orangerie/leaf-shadow.webp` | 溫室整頁的底（白牆上的葉影，跟著捲動慢慢移） | [白牆上的楓葉影子](https://unsplash.com/photos/HeLGgUTzIhM)・Akira | 縮圖；multiply 疊在底色上 |
+> | `orangerie/leaf-wall.webp` | 開場（bloom）的綠籬 | [綠籬](https://unsplash.com/photos/rDIo23uIQrY)・Wyxina Tresse | 縮圖 |
+> | `orangerie/bloom-rose1.webp` | 開場開出來的玫瑰 | [帶水珠的白玫瑰](https://unsplash.com/photos/B2oNSGZbUnU)・Wyxina Tresse | 去背 |
+> | `orangerie/bloom-rose3a.webp` | 開場開出來的玫瑰 | [白玫瑰](https://unsplash.com/photos/Xh4TROIQM3A)・Gomezgai Jere | 去背（照片裡完整的那一朵） |
+> | `botanical/herbarium-sheet.webp` | 植物信箋 hero 的標本台紙 | [老標本台紙](https://unsplash.com/photos/qimVDE-EDpg)・Europeana | 縮圖 |
+> | `botanical/fern.webp` | Plate I | [壓過的蕨](https://unsplash.com/photos/t7aBfsmat8Y)・Anton Maksimov | 去背 |
+> | `botanical/veronica.webp`、`bit0.webp`、`bit1.webp` | Plate II、飄的壓花 | [一圈壓花與花瓣](https://unsplash.com/photos/GJULNloj0g4)・Polina Zimenkova | 一朵一朵各自完整地去背（碰到照片邊緣的不用） |
+> | `botanical/daisy.webp` | Plate III | [壓花雛菊](https://unsplash.com/photos/TzlcQPHoZ6g)・Cary Bates | 去背 |
+> | `botanical/bit2.webp` | 飄的壓花 | [乾燥的小花與枝](https://unsplash.com/photos/MiHSjIRlvPg)・Victoria Strukovskaya | 同上 |
+> | `botanical/bit3.webp` | 飄的壓花 | [紫色壓花](https://unsplash.com/photos/3CzmpDADnno)・Ksenia Pixelesse | 同上 |
+> | `botanical/pressed-tulip.webp` | hero 台紙上壓著的鬱金香 | [壓過的鬱金香](https://unsplash.com/photos/vP6xTMH7Uo0)・Birgitte Heiberg | 去背 |
+> | `botanical/pressed-leaf.webp` | hero 台紙上壓著的葉子 | [壓過的天竺葵葉](https://unsplash.com/photos/cd05Lc5N7tE)・Evie S. | 去背 |
+> | `botanical/olive.webp` | Plate IV | [橄欖枝](https://unsplash.com/photos/9viBtYo_gsM)・The New York Public Library | 去背 |
+> | `botanical/globe-amaranth.webp` | 郵票、頁尾、開場（ribbon）封面 | [壓花](https://unsplash.com/photos/aTLMgabd9b8)・Evie S. | 完整的一枝去背 |
+> | `botanical/dandelion.webp`、`seed.webp` | 倒數（種子一撮一撮被吹走） | [蒲公英](https://unsplash.com/photos/uff5ce89Ggs)・Josie Weiss | 黑底轉透明，花莖被照片切到的地方淡出；seed 是剪下來的一撮冠毛 |
+> | `botanical/paper.webp` | 植物信箋整頁的底、開場（ribbon）的卡片 | [棉紙](https://unsplash.com/photos/cqhXfrRHCPo)・Kiwihug | 接成可以無縫平鋪 |
+> | `botanical/fibre-paper.webp` | 「我們的故事」的底、開場（ribbon）的桌面 | [纖維紙](https://unsplash.com/photos/2nKcZGDHpEs)・360floralflaves | 縮圖 |
+
+> **法式莊園的照片素材**（`public/img/manor/`，開場的鐵門與 `lobby-manor.html` 共用）：一樣是 Unsplash License。
+> 剪紙（`paper-*`、`cameo-frame`）是從真的照片描出剪影，填上紙的顏色與真的紙紋（借植物信箋的 `botanical/paper.webp`），影子在 CSS 裡加。
+>
+> | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
+> |---|---|---|---|
+> | `manor/gate-scene.webp`、`manor/gate-leaf.webp` | 開場：磚牆圓拱裡的鍛鐵花園門 | [花園裡的一扇鍛鐵門](https://unsplash.com/photos/s5frADBPUfs)・Bruce Barrow | 鐵門依顏色從照片裡分離成自己的一層（gate-leaf，可以轉開）；門後原本被鐵條擋住的地方補成小徑（gate-scene） |
+> | `manor/garden-path.webp` | 開場走進門之後的花園、倒數的背景 | [綠籬夾著碎石路，盡頭一尊白色雕像](https://unsplash.com/photos/Cx3aQT2LMhI)・Daniel Welsh | 陰天的天空換成晴朗的淡藍、整張調亮 |
+> | `manor/fresco-sky.webp`、`manor/fresco.webp` | 大廳 hero 的天空、「我們的故事」的背景 | [天頂濕壁畫](https://unsplash.com/photos/D5bp0H8iKv8)・Harold Wainwright | 天空取中間一塊；故事用整張 |
+> | `manor/paper-chateau.webp` | 大廳 hero 中間那一層剪紙城堡 | [Château de Sceaux](https://unsplash.com/photos/XKhQ3mvgvmU)・Menfis Gálvez | 去掉天空留下天際線，剪出一排排圓拱窗與大門，做成象牙色的紙 |
+> | `manor/paper-cypress.webp` | 大廳 hero 前後兩層剪紙柏樹、頁尾的一排柏樹 | [托斯卡尼的一叢柏樹](https://unsplash.com/photos/UTUidSQLI8I)・Peter Boccia | 描出柏樹與地面的剪影，做成鼠尾草綠的紙 |
+> | `manor/cameo-frame.webp` | 新人照片的剪紙橢圓花邊框（肖像 ×3、故事、倒數、出席回覆） | — | 波浪外緣 ＋ 一圈打孔的橢圓，用同一張紙紋做成紙 |
+> | `manor/marble.webp` | 名字的大理石牌 | [白色大理石](https://unsplash.com/photos/EIYA7E626Xk)・Rachel Kelli | 縮圖 |
+> | `manor/statue-flora.webp` | 大廳 hero 左邊的雕像 | [披著長袍的大理石像](https://unsplash.com/photos/ZR8WQ5fDbo8)・Clarence E. Hsu | 去背 |
+> | `manor/statue-angel.webp` | 大廳 hero 右邊的天使 | [大理石天使](https://unsplash.com/photos/gT5UghZvSIw)・Morgan Balboni | 去背，底座淡出 |
+> | `manor/cherub-bust.webp` | 婚禮資訊 | [小天使胸像](https://unsplash.com/photos/tsGRDAg51bc)・Nicola Ambrosi | 去背 |
+> | `manor/rosette.webp` | 當日流程 | [大理石的玫瑰花飾](https://unsplash.com/photos/6jW6PJCStgQ)・Rosemary Media | 沿著花飾裁成圓的 |
+> | `manor/statue-maiden.webp` | 小提醒 | [女神像](https://unsplash.com/photos/FcAQd8TCBzE)・Freya Ingva | 去背 |
+> | `manor/cherub-sleeping.webp` | 交通資訊 | [睡在球上的小天使](https://unsplash.com/photos/GEvYKWpmOAI)・Alexander Zvir | 去背，底部淡出 |
+> | `manor/cupid-psyche.webp` | R.S.V.P. | [相擁親吻的兩個小天使（丘比特與賽姬）](https://unsplash.com/photos/xg8CkTqnLAU)・Tammy Perla | 去背，去掉門框 |
+>
+> 開場門旁那一整面綠籬，借用春日溫室開場的 `orangerie/leaf-wall.webp`。
+
+> **白色教堂的照片素材**（`public/img/chapel/`，開場的蠟燭與 `lobby-chapel.html` 共用）：一樣是 Unsplash License。
+>
+> | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
+> |---|---|---|---|
+> | `chapel/hall.webp` | 大廳 hero、開場（candle）的房間（午夜壓暗、天亮變回白天） | [白色圓拱與水晶吊燈的禮堂](https://unsplash.com/photos/pYm7i-sWzVE)・Thay Jesus | 縮圖 |
+> | `chapel/candle-top.webp`、`candle-base.webp`、`candle-body.webp` | 開場的三根蠟燭（不管哪個版型用燭光開場都是這根） | [一根白蠟燭](https://unsplash.com/photos/DfGYqdUl2WY)・KaLisa Veer | 去背，擦掉燭芯以上的火、重畫燒過的燭芯；再切成燭頂、燭身下半、一段燭身，疊起來高矮都不會拉長 |
+> | `chapel/flame.webp` | 開場點亮的火焰 | [黑底裡的一根蠟燭](https://unsplash.com/photos/Fqqrfvq0Zgg)・PhotographyCourse | 只取火焰，依亮度轉成透明度 |
+> | `chapel/aisle.webp` | 「我們的故事」的背景 | [開滿白花的婚禮走道](https://unsplash.com/photos/aRQrz0fclB8)・Soulseeker - Creative Photography | 縮圖 |
+> | `chapel/chandelier.webp` | hero 前景的水晶燈、當日流程 | [水晶吊燈](https://unsplash.com/photos/ayj4F0PC-I8)・CHUTTERSNAP | 去背 |
+> | `chapel/rings.webp` | 婚禮資訊 | [一對戒指](https://unsplash.com/photos/Vyy8tY3D3nk)・Deena Englard | 去背 |
+> | `chapel/lilies.webp` | 交通資訊 | [一瓶百合](https://unsplash.com/photos/JwhaKMTJAD0)・Eddie Hsu | 去背，底部淡出 |
+> | `chapel/lily-valley.webp` | 小提醒（一枝鈴蘭） | [鈴蘭](https://unsplash.com/photos/81NtL7snxoI)・Svetlana Butovskaya | 去背 |
+> | `chapel/lily-field.webp` | 倒數的毛玻璃後面（越捲越清楚） | 同上，整張照片 | 縮圖 |
+> | `chapel/orchid.webp` | hero 右下角、R.S.V.P. | [黑底上的一枝白色蝴蝶蘭](https://unsplash.com/photos/kGckDAbXZA8)・Jocelyn Morales | 依亮度去背 |
+> | `chapel/gypsophila.webp` | 頁尾的背景 | [一片滿天星](https://unsplash.com/photos/AWZ3l66_iKw)・Danielle Suijkerbuijk | 縮圖 |
+> | `chapel/tulle.webp` | 整頁兩旁垂下來的白紗 | [垂墜的白紗](https://unsplash.com/photos/hM7P386VIOg)・Kristina Tochilko | 縮圖 |
+> | `chapel/lace-edge.webp` | hero 下緣的一圈蕾絲 | [波浪邊的白色蕾絲](https://unsplash.com/photos/AdX5Qpl7Xy0)・Anna Evans | 依亮度去背、加深花紋，取波浪邊那一段，鏡射接成連續的波浪 |
+
+> **晨光房間的照片素材**（`public/img/window/`，開場的紗簾與 `lobby-window.html` 共用）：一樣是 Unsplash License。
+>
+> | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
+> |---|---|---|---|
+> | `window/sheer.webp` | 開場（curtain）的紗簾、大廳 hero 左邊被風吹的紗簾 | [垂到地上的白紗簾](https://unsplash.com/photos/don7oK9K6us)・sander traa | 只取上半的布 |
+> | `window/tulips.webp` | 開場紗簾後面的窗、大廳 hero（同一張） | [白框窗前的一瓶鬱金香](https://unsplash.com/photos/YH1h9tN8_ac)・Zoe Richardson | 縮圖 |
+> | `window/sun-patch.webp` | 整頁牆上窗格形狀的陽光、「我們的故事」上滑過去的光 | [白牆上的窗光](https://unsplash.com/photos/X8sWlFdQElQ)・H&CO | 轉成灰階、拉開明暗，做成 multiply 用的光影 |
+> | `window/linen.webp` | 「我們的故事」的亞麻布（也是桌巾） | [米色的布紋](https://unsplash.com/photos/QFQ6vsou7XA)・Safwan Thottoli | 縮圖 |
+> | `window/sheer-light.webp` | 倒數（陽光跟著捲動移過來） | [陽光斜斜照在白紗簾上](https://unsplash.com/photos/VUu9rAmb9R0)・Mila Albrecht | 縮圖 |
+> | `window/dried-rose.webp` | 婚禮資訊、「我們的故事」的桌巾上（躺著） | [一枝乾燥的玫瑰](https://unsplash.com/photos/YwcNYE2DYCI)・Sixteen Miles Out | 去背（連影子一起去掉）、轉成直立 |
+> | `window/croissant.webp` | 「我們的故事」的桌巾上 | [白色檯面上的可頌](https://unsplash.com/photos/lB8t-vLGC2Q)・Olga Petnyunene | 取中間那一個、去背 |
+> | `window/notebook.webp` | 「我們的故事」的筆記本 | [攤開的筆記本與筆](https://unsplash.com/photos/IZj7vckPGiw)・engin akyurt | 去背 |
+> | `window/plant.webp` | 「我們的故事」的桌巾上 | [白色條紋盆裡的一盆草](https://unsplash.com/photos/zbQ3vh9zLwo)・Ceyda Çiftci | 去背 |
+> | `window/cushion.webp` | 「我們的故事」的桌巾上、小提醒 | [一顆白色方枕](https://unsplash.com/photos/zTY9OwAfOrg)・Mediamodifier | 去背、去掉旁邊的毯子，調成米白 |
+> | `window/book.webp` | 交通資訊 | [攤開的書與一枝小草](https://unsplash.com/photos/H1G1fa_UIkA)・Olga Tutunaru | 去背 |
+> | `window/white-vase.webp` | 當日流程 | [一只白色花瓶](https://unsplash.com/photos/aFvxASlms2A)・Sixteen Miles Out | 去背 |
+> | `window/tulip-stem.webp` | R.S.V.P. | [一枝粉白鬱金香](https://unsplash.com/photos/d3C86xPipVs)・Sabina Hassan | 去背 |
+> | `window/seedhead.webp` | 倒數照片旁 | [一枝乾燥的種子花](https://unsplash.com/photos/mpt2pljjzf4)・Stacy | 去背 |
+> | `window/plaster.webp` | 整頁的灰泥牆 | [米色灰泥牆](https://unsplash.com/photos/hyVwWTaGsxI)・Pawel Czerwinski | 調淡成燕麥白 |
+
+> **莫內花園的素材**（`public/img/monet/`，開場 `painting` 與 `lobby-monet.html` 共用）：一樣是 [Unsplash License](https://unsplash.com/license)。
+> 七幅畫是美國國家藝廊（National Gallery of Art）與芝加哥藝術博物館（Art Institute of Chicago）上傳到 Unsplash 的館藏掃描，
+> 莫內（1840–1926）的作品本身也早就是公共領域。
+>
+> | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
+> |---|---|---|---|
+> | `footbridge.webp` | 開場牆上那一幅、大廳 hero | [《日本橋》1899](https://unsplash.com/photos/Z-S0resW6gQ)・National Gallery of Art | 縮圖 |
+> | `seine.webp` | 婚禮資訊 | [《吉維尼的塞納河》1897](https://unsplash.com/photos/SDxGWcz1zLA)・National Gallery of Art | 縮圖 |
+> | `poppies.webp` | 當日流程 | [罌粟花田](https://unsplash.com/photos/dynKVvbZ-5Q)・Art Institute of Chicago | 縮圖 |
+> | `willows.webp` | 小提醒 | [《柳樹》1880](https://unsplash.com/photos/8x00ZK5WxlY)・National Gallery of Art | 縮圖 |
+> | `garden-path.webp` | 交通資訊（直的那一幅） | [《維特伊的畫家花園》1881](https://unsplash.com/photos/OfxgFy2Vo0Q)・National Gallery of Art | 縮圖 |
+> | `parliament.webp` | 倒數的底 | [《國會大廈・日落》1903](https://unsplash.com/photos/UAL6ps2g7I0)・National Gallery of Art | 縮圖 |
+> | `argenteuil.webp` | R.S.V.P. 的明信片 | [《阿讓特伊的畫家花園》1873](https://unsplash.com/photos/E-fUZYaqFRs)・National Gallery of Art | 縮圖 |
+> | `frame.webp` | 開場與大廳每一幅畫的金框 | [金色雕花畫框的一角](https://unsplash.com/photos/WbH2fNjw1UA)・Adam Kring | 拉正；取角落、上緣、左緣，兩端交疊漸變成可以一直接下去的一段，鏡射拼成九宮格（`border-image` 用，角 149px） |
+> | `linen.webp` | 大廳整頁的底 | [米色亞麻布紋](https://unsplash.com/photos/xTaOPMa6wAE)・Annie Spratt | 取中間一塊、縮圖 |
+> | `damask.webp` | 開場的展牆、「我們的故事」的展牆 | [淺灰錦緞壁紙樣本，約 1843](https://unsplash.com/photos/WkKcFljs7g0)・Smithsonian | 縮圖；multiply 疊在牆色上 |
+> | `dahlias.webp` | 開場畫框左下長出來的花、hero 左下、婚禮資訊與 R.S.V.P. 卡片後面、流程那幅小畫旁 | [《阿讓特伊的畫家花園》1873](https://unsplash.com/photos/E-fUZYaqFRs)・National Gallery of Art | 取大理花那一叢；依顏色留下飽和的花與葉、丟掉天空與房子，邊緣用雜訊做成乾筆的破口 |
+> | `hollyhocks.webp`、`poppies-wc.webp` | 開場畫框右下、hero 右下、小畫旁、卡片後面 | [Childe Hassam《盛開的花園》1892（水彩）](https://unsplash.com/photos/2QYSr3RQ3dM)・Smithsonian | 取右邊的蜀葵、左下的罌粟與金盞花；同上的方法去掉紙色 |
+> | `bouquet.webp` | 「我們的故事」展牆角落的一瓶花 | [Paul Cézanne《洛可可花瓶裡的花》約 1876](https://unsplash.com/photos/DRlIvJvY8eA)・National Gallery of Art | 去背 |
+> | `butterfly-*.webp`（blue、rose、lemon、lilac） | 開場從畫裡飛出來、hero 與小畫上的蝴蝶 | [一組彩色蝴蝶](https://unsplash.com/photos/sKDtBiU0vLk)・Slimane-Kadi | 挑四隻去背；稍微化開、降一點彩度、加紙的顆粒，像水彩 |
+> | `petals.webp` | 開場與 hero 飄的花瓣 | 上面三幅畫 | 各取兩小塊紅、粉的顏料，做成 6×1 的小圖 |
+> | `brush-mask.webp` | 花「一筆刷出來」的遮罩 | 程式產生 | 寬是高的三倍：左段不透明、中段一道橫刷的乾筆邊、右段透明（`mask-position` 從右滑到左） |
+
+> **美式戶外派對的素材**（`public/img/party/`，開場 `balloons` 與 `lobby-party.html` 共用）：一樣是 [Unsplash License](https://unsplash.com/license)。
+>
+> | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
+> |---|---|---|---|
+> | `meadow.webp` | 開場氣球飛走後露出來的那片、大廳 hero | [藍天下的綠色草原與遠山](https://unsplash.com/photos/ZAy8srF4rRM)・Angela Loria | 縮圖 |
+> | `balloon-*.webp`（white、blush、peach、butter、mint、lilac） | 開場滿滿的氣球、hero 漏網的氣球、小貨車上綁的三顆 | [一顆霧面白氣球](https://unsplash.com/photos/RczTV4UAkw0)・elnaz asadi | 去背，只取氣球與結（線用 SVG／CSS 另外畫）；補一點很淡的立體（左上亮、右下暗），再淡淡地上六種粉彩；不做模糊，保留乳膠原本的顆粒，對比很低、霧面 |
+> | `truck.webp` | 交通資訊的小貨車 | [米白色的老福特 F-100](https://unsplash.com/photos/YE3vIwURtY8)・Danny Greenberg | 去背（isnet），手動清掉車斗後面的磚牆與鐵窗、車頭旁的樹枝與地上的影子，車窗裡透出去的磚牆換成淡淡的玻璃反光 |
+> | `basket.webp` | hero 草地上的籐籃、R.S.V.P. 旁的野餐籃 | [野餐墊上的籐編野餐籃](https://unsplash.com/photos/5zqM9t-4BLc)・Eugenia Pan'kiv | 去背 |
+> | `apples.webp` | hero 草地上的一籃蘋果 | [一籃紅蘋果](https://unsplash.com/photos/4Bj27zMqNSE)・Vera De | 去背 |
+> | `daisies.webp` | hero 草地上的一瓶雛菊 | [玻璃瓶裡的雛菊](https://unsplash.com/photos/V1s3WECCzM8)・Natalie Kinnear | 去背 |
+> | `mug.webp`、`mug-red.webp` | hero 的白琺瑯杯、流程旁的紅琺瑯杯 | [白琺瑯杯](https://unsplash.com/photos/YkVodmPWi0o)・Cute Mock Ups And Things、[紅琺瑯杯](https://unsplash.com/photos/HVVqiaPDR6g)・Mario Gogh | 去背 |
+> | `cutlery.webp` | 流程字母板旁的老銀餐具 | [亞麻餐巾上的銀餐具](https://unsplash.com/photos/joKme0a_XV8)・Debby Hudson | 去背；CSS 再暖一點 |
+> | `sprig-1~4.webp` | 卡片後面探出來的野花、hero 的黑心金光菊 | [白底上的幾枝野花](https://unsplash.com/photos/wUc2nzHiI1I)・Danielle Suijkerbuijk | 去背後一枝一枝分開 |
+> | `barn.webp` | 倒數的底 | [黃昏亮著串燈的穀倉](https://unsplash.com/photos/hXprYkqi9bs)・Troy Olson | 縮圖 |
+> | `reception.webp` | 「我們的故事」的底 | [草地上掛著白紗的戶外婚宴](https://unsplash.com/photos/Zi_NOBHIk9A)・Vidit Goswami | 縮圖 |
+> | `banquet.webp` | 婚禮資訊的拍立得 | [草地上的長桌派對](https://unsplash.com/photos/7PuxGo267Bw)・Malia Moore | 裁成正方形 |
+> | `wildflowers.webp` | 小提醒的拍立得 | [一罐野花](https://unsplash.com/photos/WyT5NTvNT7k)・Rebecca Winter | 裁成正方形 |
+> | `gingham.webp` | 白卡上緣的格紋、拍立得的紙膠帶 | [紅白格紋布](https://unsplash.com/photos/KzJunPli4VA)・Meg | 取中間一塊，鏡射成可以無縫平鋪 |
+
+> **捲動軌跡**（`public/css/lobby-trail.css`）：跟著捲動沿左緣一路畫下去，每個版型用自己的素材，
+> 經過的地方會留下小東西（Korean Modern、White Church、Morning Window 維持乾淨的版面，沒有放）：
+>
+> | 版型 | 線 | 領頭 | 沿路留下 |
+> |---|---|---|---|
+> | Forest Botanical | 一根藤蔓（CSS） | `forest/sprig.webp` 新芽 | 葉子、橡實、莓果（森林小物） |
+
+> **Forest Botanical 的手繪森林小物**（`public/img/forest/`，`lobby-forest.html`）：全部來自同一張 Unsplash 插畫
+> [森林小物貼紙](https://unsplash.com/illustrations/2EwBPCpvWA4)・Kamara Rahmat（Unsplash License）。
+> 只留下原圖深色的外框線、拿掉上色，換成同一種森林墨水色、透明底，再一個一個切開（照片上的那幾個用 CSS filter 換成白墨水）。
+>
+> | 檔案 | 用在哪裡 |
+> |---|---|
+> | `forest/acorn.webp`、`acorns.webp` | hero 底下一排、婚禮資訊標題、照片帶上的白墨水、頁邊 |
+> | `forest/pinecone.webp` | hero 底下一排、小提醒標題、頁邊 |
+> | `forest/mushroom*.webp`（4 種） | hero 底下一排、頁尾、頁邊 |
+> | `forest/oak-leaf.webp`、`oak-leaf2.webp`、`ginkgo.webp`、`maple.webp`、`leaf.webp` | hero 底下一排、故事照片帶、頁邊飄落的葉子 |
+> | `forest/fern.webp`、`sprig*.webp`（3 種） | hero 底下一排、頁尾、頁邊 |
+> | `forest/berries.webp`、`blueberries.webp`、`flower.webp` | 頁邊 |
+>
+> 小動物來自另外幾張 Unsplash 插畫（一樣是 Unsplash License），處理成同一種墨水色的線稿：
+>
+> | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
+> |---|---|---|---|
+> | `forest/bear.webp` | hero 底下一排、交通資訊標題 | [抱著蜂蜜罐的小熊](https://unsplash.com/illustrations/CA-ggcjOo4I)・Shazia Asif | 只留外框線，換成墨水色 |
+> | `forest/bunny.webp` | hero 底下一排（會跳）、Moments 標題、倒數照片帶、頁尾 | [小動物線稿](https://unsplash.com/illustrations/Dn0GNJk0SyU)・Mila Okta Safitri | 切出兔子，線條加粗一點 |
+> | `forest/bird.webp`、`squirrel.webp` | 當日流程／Explore 標題、故事照片帶、頁尾 | [秋天小物貼紙](https://unsplash.com/illustrations/0UefjX8SdlQ)・godsfavoriteart | 只留外框線 |
+> | `forest/dove.webp`、`dove2.webp`、`dove3.webp` | hero 上方飛的白鴿、R.S.V.P. 標題、頁邊 | [一群飛鳥](https://unsplash.com/illustrations/usjlgy7I5wY)・remapstudio | 一隻一隻切開 |
+
+同一種開場在不同版型可以長得不一樣（門：法式莊園是圓拱裡的鍛鐵花園門、秘密花園是爬滿植物的玻璃門、
+白色教堂與中古刺繡是尖拱的鍛鐵大門）。要賓客親手做的開場，那一下也會開始播背景音樂。
+每一種開場單獨看：`preview/openings.html`。
+
+**場景版型**：`botanical-letter`、`secret-garden`、`spring-orangerie`、`night-sky`、
+`french-manor`、`monet-garden`、`outdoor-party`、`morning-window`、`white-church`。每一個都有自己的色票、字體、預設開場與大廳骨架：
+
+| 版型 | 進度 | 大廳 |
+|---|---|---|
+| botanical-letter | ✅ 真的照片（一整張老標本台紙、壓過的鬱金香／葉子／蕨／穗花／雛菊／橄欖枝、蒲公英、棉紙與纖維紙、郵票裡的千日紅）＋ 新人的照片（hero 是封面，四頁圖版是照片牆的前四張，每張旁邊壓一枝乾燥花）＋ 捲動編排，素材見上面〈春日溫室與植物信箋的照片素材〉 | `lobby-botanical.html` |
+| secret-garden | ✅ 真的照片 ＋ 手繪水彩（玫瑰拱門的小徑、垂下來的常春藤、鏡頭前的花、水彩的罌粟／藍雛菊／海芋／鬱金香／牡丹、去背的蝴蝶、常春藤牆、黃昏草地的螢火蟲）＋ 捲動編排，素材見上面〈秘密花園的照片素材〉 | `lobby-garden.html` |
+| spring-orangerie | ✅ 真的照片（明亮的玻璃溫室、白玫瑰、鬱金香、檸檬枝、蕨葉、澆水壺、溫室屋頂、小王子的那一朵紅玫瑰、白牆上的葉影、一束白玫瑰）＋ 捲動編排（葉影隨捲動移動、斜射的光、倒數區的紅玫瑰捲到時亮起暖光），素材見上面〈春日溫室與植物信箋的照片素材〉 | `lobby-orangerie.html` |
+| night-sky | ✅ 整套插圖（現代星空：開場那張心形星圖停在 hero、寫實的月亮、三層山稜、亮燈的帳篷、坐著看星星的兩個人、細金線星座）＋ 捲動編排（三層星星視差、星圖外環跟著轉、星座一條一條連起來、望遠鏡視野的軌道、倒數的月亮越捲越圓、頁尾天快亮了） | `lobby-night.html` |
+| french-manor | ✅ 文藝復興：真的天頂濕壁畫、去背的大理石雕像與雕刻（花神、天使、小天使胸像、玫瑰花飾、女神、丘比特與賽姬）、大理石名牌 ＋ 從真的照片描出來的剪紙（城堡剪出一排排窗、托斯卡尼柏樹）＋ 開場走進的那座花園當倒數的背景 ＋ 新人照片放在剪紙橢圓花邊框（共 7 處）＋ 捲動編排（hero 的剪紙一層一層視差、倒數的花園照片視差），素材見上面〈法式莊園的照片素材〉 | `lobby-manor.html` |
+| monet-garden | ✅ 莫內花園・流動油畫：莫內真跡的掃描（日本橋、塞納河、罌粟花田、柳樹、維特伊的花園小徑、國會大廈日落、阿讓特伊的花園），水面在 canvas 上一直流動；真的金框（照片做成九宮格）、真的亞麻畫布、錦緞壁紙的展牆、美術館說明卡、黃銅名牌、阿讓特伊的明信片；畫裡的東西跑到框外面來（大理花、哈森的蜀葵與罌粟從畫框與卡片邊一筆刷出來，蝴蝶在飛、花瓣在飄，故事展牆的角落一瓶塞尚的花） ＋ 捲動編排（hero 的池水一直流動、往下捲畫慢慢沉下去；每一幅小畫捲到時從釘子上擺進來、再一筆一筆刷上去；故事展牆的投射燈隨捲動滑過；倒數時夕陽的光越捲越暖），素材見上面〈莫內花園的素材〉 | `lobby-monet.html` |
+| outdoor-party | ✅ 美式戶外婚禮派對：開場露出來的那片藍天、綠地、遠山就是 hero，草地上擺著野餐（籐籃、一瓶雛菊、琺瑯杯、一籃蘋果），幾顆漏網的霧面粉彩氣球一直往上飄；三角旗資訊卡（上緣是真的紅白格紋布、後面探出野花）、長桌派對與野花玻璃罐的拍立得、字母板的流程（旁邊老銀餐具與紅琺瑯杯）、綁著三顆粉彩氣球的「Just Married」老福特小貨車、真的戶外婚宴當故事的底、黃昏亮燈的穀倉當倒數的底、入場券、彩色園遊券 ＋ 捲動編排（草原往上退；野花從卡片後面長出來；三角旗一面一面翻下來；小貨車從右邊開進來；拍立得跟著捲動擺；倒數的串燈一顆一顆亮、穀倉越來越亮，全亮了就放煙火），素材見上面〈美式戶外派對的素材〉 | `lobby-party.html` |
+| morning-window | ✅ 侘寂（Wabi-Sabi）：真的照片（窗前的一瓶鬱金香、灰泥牆、牆上窗格形狀的陽光、亞麻布、照著陽光的紗簾），顏色都是褪過的大地色 ＋ 「我們的故事」是一本攤開的筆記本，接著一張早餐桌巾：去背的可頌／一枝乾燥的玫瑰／素色抱枕／一盆室內植物（這一帶不放新人照片，免得跟下一區「相遇之間」重複）＋ 區塊標題上是去背的小物（乾燥的玫瑰、白色花瓶、素色抱枕、攤開的書、一枝粉色鬱金香，不放在框裡）＋ 新人照片 1 處（倒數旁）＋ 捲動編排（小物一樣樣落到桌上、窗光滑過桌面、倒數時紗簾越捲越暖），素材見上面〈晨光房間的照片素材〉 | `lobby-window.html` |
+| white-church | ✅ 開場在午夜的禮堂點亮三根真的蠟燭 → 燭火熄掉、天亮 → 大廳是同一座純白禮堂；玻璃感：照片壓在厚玻璃裡（反光隨捲動滑過）、毛玻璃的卡；兩旁垂著白紗、hero 下緣一圈蕾絲、頁尾一片滿天星；區塊標題上是去背的實物（戒指、水晶燈、鈴蘭、百合、白色蝴蝶蘭）；新人照片共 7 處（倒數的毛玻璃後面是一片鈴蘭，越捲越清楚），素材見上面〈白色教堂的照片素材〉 | `lobby-chapel.html` |
+
+只有 Night Sky 的大廳是深色的，子頁暫時還是淺色版（見 common.css）。
+每個版型各有一頁示範（`preview/botanical-letter.html`、`preview/secret-garden.html`、`preview/spring-orangerie.html`、`preview/night-sky.html`、`preview/french-manor.html`、`preview/monet-garden.html`、`preview/outdoor-party.html`、`preview/morning-window.html`、`preview/white-church.html`）。右下角都可以切換開場。
+
+`preview/` 底下 tapestry、botanical-letter、secret-garden、spring-orangerie、night-sky、french-manor、monet-garden、outdoor-party、morning-window、white-church 這幾頁是 `npm run build-previews` 從
+`public/lobby-*.html` 產出來的，改了大廳骨架記得重跑。
+
+### 版型展示頁（`/samples`）
+
+給還在挑版型的客人看的公開頁面，用 LINE 傳 `https://<網域>/samples/` 就能開：
+
+- **總覽** `/samples/`：每個版型一張卡片 —— 手機首屏的縮圖、一句氣質、**適合的婚紗**（禮服款式與婚紗照的拍法）、色票。
+  不寫預設開場：開場是獨立的一軸，任何版型都能配。
+- **示範站台** `/samples/{版型}/`（例如 `/samples/white-church/`）：**正式網站同一套頁面**，
+  大廳、出席回覆（`/samples/{版型}/invitation`）、祝福牆、抽卡、故事、測驗、桌次、給你的信都點得進去、填得了。
+  左下角的示範列有「← 版型總覽」，大廳另外有「重播開場動畫」；開場不給客人挑，每個版型照它自己的預設開場演。
+  Classic 示範的是香檳金（其他三種配色的網址 `/samples/classic-blush/` 這些仍然打得開，但沒有入口）。
+  新人後台不開放，集氣送祝福還沒開賣所以不放。
+
+**示範模式怎麼運作**（`js/site-context.js` 的 `DEMO`）：網址是 `/samples/{版型}/…` 時——
+
+- **不連 Firebase**：`window.fb` 換成 `js/demo-firebase.js`，函式簽名跟 Firebase 一樣，所以各頁程式一行都不用改。
+  資料只在這個分頁的記憶體裡：賓客送出的出席回覆、祝福、作答**不會寫進正式資料庫**，重新整理就回到示範資料的原樣。
+- **一律是沒登入的訪客**：每次載入都清掉這個示範站台存在瀏覽器裡的名字與收藏；問名字的卡片上不出現「使用 Google 登入」。
+  要署名的動作（寫祝福）照樣會問名字，那是正式網站的訪客本來就會看到的樣子。
+- **站台資料**是 `public/samples/sample-site.js`：站台文件、素材清單、祝福牆／桌次／給你的信的示範內容。
+  新人是虛構的（Ethan & Claire、2027.05.22、星光花園酒店），這是公開連結，**不要換成任何一位客人的資料**。
+  想讓客人試查桌次，可以輸入「王小安」；給你的信輸入「小安」會拆到專屬的那一封，其他名字拿到通用信。
+- **網址**由 `firebase.json` 的 `/samples/*/{頁面}` 改寫到各頁的 HTML，其餘 `/samples/**` 都到 `index.html`；
+  總覽、照片、縮圖是真的檔案，優先於改寫規則。
+
+**照片**：Unsplash 上 [Vino Li](https://unsplash.com/@vinomamba24) 拍的同一對新人，
+[Unsplash License](https://unsplash.com/license)（可商用、可修改、不必標示；總覽頁尾仍有標示）。
+
+| 檔案 | 照片 |
+|---|---|
+| `photos/cover.webp` | [dSe8sD9Y8vk](https://unsplash.com/photos/dSe8sD9Y8vk) |
+| `photos/01.webp`～`06.webp` | [KiKn-FCXu_o](https://unsplash.com/photos/KiKn-FCXu_o)、[PkWk1kMiTPo](https://unsplash.com/photos/PkWk1kMiTPo)、[cnO9IQzhUbI](https://unsplash.com/photos/cnO9IQzhUbI)、[752QZG5n-PQ](https://unsplash.com/photos/752QZG5n-PQ)、[_m2w7OBAnsc](https://unsplash.com/photos/_m2w7OBAnsc)、[J4JjsFJKhpI](https://unsplash.com/photos/J4JjsFJKhpI) |
+
+**本機預覽**：`npm run samples`（第一次先 `npm install`），瀏覽器開 `http://localhost:5000/samples/`，
+看完在終端機按 Ctrl+C 關掉。
+直接雙擊 HTML 檔、或用 VS Code 的 Live Server 都打不開：圖片與連結的路徑是從網站根目錄開始的，
+點進版型也要靠 `firebase.json` 的改寫規則，這兩件事只有 Firebase 的本機伺服器做得到。
+
+**改了什麼要重跑什麼**
+
+| 改了 | 重跑 |
+|---|---|
+| 卡片文案 `scripts/sample-catalog.js`、總覽模板 `scripts/sample-index.html` | `npm run build-samples` |
+| 大廳的長相（CSS、照片、開場、骨架）——縮圖要跟著換 | `npm run build-sample-thumbs`（截圖後會自己再跑一次 build-samples） |
+| 新增一個版型 | 先在 `scripts/sample-catalog.js` 補一筆（沒補 build 會直接報錯），再跑 `npm run build-sample-thumbs` |
+
+示範站台本身不用重產：它就是正式的頁面，改了就生效。總覽與縮圖是產出的檔案，要 commit，`firebase deploy` 不會幫你產。
+
+> **莫內花園的畫怎麼來的**：`js/openers/painting.js` 同時是開場與一具「油畫繪製器」（`window.MonetPaint`）。
+> 大廳與開場掛的都是莫內真跡的掃描（見上面〈莫內花園的素材〉），掛在 `<canvas data-monet="場景">` 上；
+> 「流動」是把畫切成橫帶、依高度左右錯開（水面錯得多、樹叢錯得少），看不到的畫不動，減少動態時完全不動。
+> 圖載不到的時候，同一個場景會退回程式畫的那一幅（先用色塊打底稿，再取色疊幾萬筆短筆觸，固定種子）。
+> 因為大廳的畫要靠這一支，這個版型的 `lobbyJs` 也掛了 painting.js —— 換成別種開場，大廳的畫照樣在。
+>
+> **派對的氣球**：開場的氣球是一顆一顆的（同一顆霧面白氣球的照片，淡淡上了六種粉彩），`js/openers/balloons.js` 依當下的視窗大小排成遠、中、近三層，每一顆各自的放開時間、速度與飄的方向都不一樣
+> （遠的小、淡，近的大、有一點景深的糊），亂數有固定種子，每一次打開都是同一批。
 
 ---
 
@@ -397,7 +713,7 @@ node scripts/create-site.js \
 | `--slug` | ✅ | 網址代稱，小寫英數與連字號，3–40 字，全域唯一 |
 | `--groom` | ✅ | 新郎姓名 |
 | `--bride` | ✅ | 新娘姓名 |
-| `--groom-en` | | 新郎英文名；korean 版型的 hero 會改用它 |
+| `--groom-en` | | 新郎英文名；korean／tapestry／場景版型的 hero 會改用它 |
 | `--bride-en` | | 新娘英文名；**兩個都填才生效**，只填一邊 hero 整行維持中文 |
 | `--date` | ✅ | 婚禮日期 `YYYY-MM-DD` |
 | `--time` | | 婚禮時間 `HH:mm`，預設 `12:00` |
