@@ -14,10 +14,8 @@
   box-shadow:0 8px 24px rgba(0,0,0,.22);}
 .demo-bar a{color:#fff;text-decoration:none;white-space:nowrap;padding:4px 2px;}
 .demo-bar a:hover{text-decoration:underline;}
-.demo-bar label{display:flex;align-items:center;gap:5px;white-space:nowrap;}
-.demo-bar select{font:inherit;padding:5px 7px;border-radius:7px;cursor:pointer;
-  border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.1);color:#fff;max-width:8.5em;}
-.demo-bar select option{color:#222;}
+.demo-bar button{font:inherit;padding:5px 10px;border-radius:7px;cursor:pointer;
+  border:1px solid #fff;background:#fff;color:#222;white-space:nowrap;}
 @media (max-width:420px){
   .demo-bar{font-size:12px;padding:7px 10px;gap:6px 8px;}
 }

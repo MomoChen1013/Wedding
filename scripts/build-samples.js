@@ -10,7 +10,7 @@
      頁面模板   scripts/sample-index.html
      縮圖       public/samples/thumbs/{版型}.jpg（scripts/build-sample-thumbs.js 截的）
 
-   Classic 四種配色共用一張卡片（示範頁左下角可以換配色），
+   Classic 四種配色共用一張卡片（示範頁只放香檳金），
    其他版型在 sample-catalog.js 沒寫到的，這裡直接報錯。
 ============================================================ */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';

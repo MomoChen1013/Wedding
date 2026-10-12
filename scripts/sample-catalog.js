@@ -3,7 +3,7 @@
    ------------------------------------------------------------
    scripts/build-samples.js 讀這一份產出 public/samples/index.html。
    key 是版型代號（TEMPLATES 的 key），卡片連到 /samples/{key}/；
-   classic 四種配色共用 'classic' 這一張（示範頁左下角可以換配色）。
+   classic 四種配色共用 'classic' 這一張，示範頁只放香檳金。
 
      name    卡片標題（英文 ＋ 中文）
      mood    一句話的氣質，寫給客人看的，不寫技術
@@ -15,9 +15,9 @@
 export const SAMPLE_CATALOG = {
   'classic': {
     name: ['Classic', '經典'],
-    mood: '一張滿版的婚紗照當背景，資訊安靜地疊在上面。最不挑照片，四種配色可以換。',
+    mood: '一張滿版的婚紗照當背景，資訊安靜地疊在上面。最不挑照片。',
     dress: ['簡約緞面', '一字領', '棚拍或戶外都適合'],
-    colors: ['#fbfaf7', '#b39a6d', '#c28794', '#8b9c7c', '#8295ad'],
+    colors: ['#fbfaf7', '#b39a6d', '#c0a87e', '#b3a884'],
   },
   'korean': {
     name: ['Korean Modern', '韓系簡約'],

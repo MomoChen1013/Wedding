@@ -396,30 +396,24 @@ async function loadDemoSite(template) {
   return { site, siteId, assets: demo.SAMPLE_ASSETS };
 }
 
-/* 示範頁左下角的那一條：回到版型總覽（Classic 另外可以換配色）。
+/* 示範頁左下角的那一條：回到版型總覽；大廳另外有「重播開場動畫」。
    開場不給賓客挑：每個版型照它自己的預設開場演。
+   開場在同一個分頁只演一次（js/index.js 的 introSeen，正式網站也一樣），
+   重播就是把那個記號清掉再重新載入。
    只有 /samples 才有，正式網站不會載入 demo-bar.css，也不會走到這裡。 */
-function mountDemoBar({ template }) {
+function mountDemoBar({ template, pageKey }) {
   addStylesheet('/samples/demo-bar.css');
-  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const seg = location.pathname.split('/').slice(3).join('/');
-
-  /* Classic 四種配色是四個版型，同一頁換到另一個版型就是換配色 */
-  const family = template.startsWith('classic')
-    ? Object.entries(TEMPLATES).filter(([k]) => k.startsWith('classic')) : [];
-  const colorSel = family.length > 1
-    ? `<label>配色<select data-k="color">${family.map(([k, t]) =>
-        `<option value="${k}"${k === template ? ' selected' : ''}>${esc(t.label.replace(/^Classic\s*/, ''))}</option>`).join('')}</select></label>`
-    : '';
-
   const bar = document.createElement('div');
   bar.className = 'demo-bar';
-  bar.innerHTML = `<a href="/samples/">← 版型總覽</a>${colorSel}`;
+  bar.innerHTML = '<a href="/samples/">← 版型總覽</a>' +
+    (pageKey === 'lobby' ? '<button type="button" data-k="replay">重播開場動畫</button>' : '');
   document.body.appendChild(bar);
 
-  const color = bar.querySelector('[data-k="color"]');
-  if (color) color.addEventListener('change', (e) => {
-    location.href = `/samples/${e.target.value}/${seg}`;
+  const replay = bar.querySelector('[data-k="replay"]');
+  if (replay) replay.addEventListener('click', () => {
+    try { sessionStorage.removeItem(`wed.demo-${template}.introSeen`); } catch {}
+    window.scrollTo(0, 0);
+    location.reload();
   });
 }
 
@@ -610,7 +604,7 @@ async function boot() {
     return;
   }
 
-  if (DEMO) mountDemoBar({ template });
+  if (DEMO) mountDemoBar({ template, pageKey });
 
   /* 給測試與外部腳本判斷「整站真的可用了」的旗標 */
   document.documentElement.dataset.siteReady = '1';
