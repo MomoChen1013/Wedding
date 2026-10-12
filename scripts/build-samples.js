@@ -54,8 +54,8 @@ const cardsOf = (plan) => Object.entries(SAMPLE_CATALOG).filter(([, c]) => c.pla
 const html = readFileSync(new URL('scripts/sample-index.html', root), 'utf8')
   .replace('<!--CARDS_CLASSIC-->', cardsOf('classic'))
   .replace('<!--CARDS_PREMIUM-->', cardsOf('premium'))
-  .replace('{{N_CLASSIC}}', String(Object.values(SAMPLE_CATALOG).filter((c) => c.plan === 'classic').length))
-  .replace('{{N_PREMIUM}}', String(Object.values(SAMPLE_CATALOG).filter((c) => c.plan === 'premium').length))
+  .replaceAll('{{N_CLASSIC}}', String(Object.values(SAMPLE_CATALOG).filter((c) => c.plan === 'classic').length))
+  .replaceAll('{{N_PREMIUM}}', String(Object.values(SAMPLE_CATALOG).filter((c) => c.plan === 'premium').length))
   .replace(/\{\{COUNT\}\}/g, String(Object.keys(SAMPLE_CATALOG).length))
   .replace('{{OG_IMAGE}}', esc(`${resolveBaseUrl()}/samples/thumbs/${Object.keys(SAMPLE_CATALOG)[0]}.jpg`));
 writeFileSync(new URL('public/samples/index.html', root), html);
