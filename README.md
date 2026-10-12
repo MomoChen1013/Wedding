@@ -140,14 +140,15 @@
 │   ├─ s/{code}.html          # ⚙️ 每個短連結專屬的轉址頁（只為了 og 標籤）
 │   ├─ assets/{slug}/         # 每組新人的照片
 │   ├─ samples/               # 版型展示頁 /samples（給客人挑版型，見〈版型展示頁〉）
-│   │   ├─ index.html  {版型}.html   # ⚙️ 由 build-previews 產出
+│   │   ├─ index.html                # ⚙️ 總覽，由 build-samples 產出
 │   │   ├─ thumbs/{版型}.jpg         # ⚙️ 由 build-sample-thumbs 截圖
-│   │   ├─ demo.js  demo-panel.css   # 示範頁的填空與面板（preview/ 也用這兩支）
-│   │   └─ sample-data.js  photos/   # 虛構的新人與示範照片
+│   │   ├─ sample-site.js  photos/   # 虛構的新人（站台資料＋示範內容）與示範照片
+│   │   └─ demo-bar.css              # 示範頁左下角那一條
 │   ├─ audio/bgm.mp3          # 全站共用的預設背景音樂（新人沒放自己的就播這首）
 │   ├─ css/
 │   └─ js/
 │       ├─ site-context.js    # ★ 每頁唯一進入點：解析 slug、載設定、注入其他 JS
+│       ├─ demo-firebase.js   # /samples 示範模式用的假 Firebase（資料只在記憶體裡）
 │       ├─ common.js          # 資料層 DataStore、導覽、特效、樣板文字
 │       ├─ lobby-motion.js    # 大廳的開場（登記＋播放）與捲動編排
 │       ├─ openers/{key}.js   # 十種開場，各一支（css/openers/{key}.css 是它的樣子）
@@ -166,9 +167,9 @@
 │   ├─ set-pages.js           # 改已建站台的開關
 │   ├─ sync-assets.js         # 掃描素材資料夾產生 manifest.json
 │   ├─ build-og.js            # 產生社群分享縮圖與各站專屬的 og 標籤
-│   ├─ build-previews.js      # 從正式的大廳骨架產出 preview/ 的示範頁與 /samples 版型展示頁
+│   ├─ build-previews.js      # 從正式的大廳骨架產出 preview/ 底下各版型的示範頁
+│   ├─ build-samples.js       # 產出 /samples 總覽（卡片文案 sample-catalog.js、模板 sample-index.html）
 │   ├─ build-sample-thumbs.js # 幫 /samples 每個版型截一張手機首屏當縮圖
-│   ├─ sample-catalog.js  sample-index.html  # /samples 總覽的卡片文案與頁面模板
 │   ├─ check-site.js          # 檢查某站台為什麼打不開
 │   ├─ export-rsvps.js        # 匯出某站台的 RSVP 成 CSV
 │   └─ create-short-link.js
@@ -461,28 +462,43 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 
 - **總覽** `/samples/`：每個版型一張卡片 —— 手機首屏的縮圖、一句氣質、**適合的婚紗**（禮服款式與婚紗照的拍法）、色票。
   不寫預設開場：開場是獨立的一軸，任何版型都能配。
-- **單一版型** `/samples/{版型}`（例如 `/samples/white-church`）：完整的大廳，開場與捲動效果都是正式版同一套程式。
-  下方面板可以回到總覽、換開場、重播開場；Classic 四種配色共用一頁，面板上換配色。
-  只有大廳：點到出席回覆、祝福牆這些連結，會說明「示範只放了首頁」，不會掉進 404。
-- **新人是虛構的**：Ethan & Claire、2027.05.22、星光花園酒店（`public/samples/sample-data.js`）。
-  這是公開連結，**不要換成任何一位客人的資料**。
-- **照片**：Unsplash 上 [Vino Li](https://unsplash.com/@vinomamba24) 拍的同一對新人，
-  [Unsplash License](https://unsplash.com/license)（可商用、可修改、不必標示；頁尾仍有標示）。
+- **示範站台** `/samples/{版型}/`（例如 `/samples/white-church/`）：**正式網站同一套頁面**，
+  大廳、出席回覆（`/samples/{版型}/invitation`）、祝福牆、抽卡、故事、測驗、桌次、給你的信都點得進去、填得了。
+  左下角的示範列可以回到總覽、換開場、重播開場；Classic 的四種配色在示範列上換（就是換到 `/samples/classic-blush/` 這些網址）。
+  新人後台不開放，集氣送祝福還沒開賣所以不放。
+
+**示範模式怎麼運作**（`js/site-context.js` 的 `DEMO`）：網址是 `/samples/{版型}/…` 時——
+
+- **不連 Firebase**：`window.fb` 換成 `js/demo-firebase.js`，函式簽名跟 Firebase 一樣，所以各頁程式一行都不用改。
+  資料只在這個分頁的記憶體裡：賓客送出的出席回覆、祝福、作答**不會寫進正式資料庫**，重新整理就回到示範資料的原樣。
+- **一律是沒登入的訪客**：每次載入都清掉這個示範站台存在瀏覽器裡的名字與收藏；問名字的卡片上不出現「使用 Google 登入」。
+  要署名的動作（寫祝福）照樣會問名字，那是正式網站的訪客本來就會看到的樣子。
+- **站台資料**是 `public/samples/sample-site.js`：站台文件、素材清單、祝福牆／桌次／給你的信的示範內容。
+  新人是虛構的（Ethan & Claire、2027.05.22、星光花園酒店），這是公開連結，**不要換成任何一位客人的資料**。
+  想讓客人試查桌次，可以輸入「王小安」；給你的信輸入「小安」會拆到專屬的那一封，其他名字拿到通用信。
+- **網址**由 `firebase.json` 的 `/samples/*/{頁面}` 改寫到各頁的 HTML，其餘 `/samples/**` 都到 `index.html`；
+  總覽、照片、縮圖是真的檔案，優先於改寫規則。
+
+**照片**：Unsplash 上 [Vino Li](https://unsplash.com/@vinomamba24) 拍的同一對新人，
+[Unsplash License](https://unsplash.com/license)（可商用、可修改、不必標示；總覽頁尾仍有標示）。
 
 | 檔案 | 照片 |
 |---|---|
 | `photos/cover.webp` | [dSe8sD9Y8vk](https://unsplash.com/photos/dSe8sD9Y8vk) |
 | `photos/01.webp`～`06.webp` | [KiKn-FCXu_o](https://unsplash.com/photos/KiKn-FCXu_o)、[PkWk1kMiTPo](https://unsplash.com/photos/PkWk1kMiTPo)、[cnO9IQzhUbI](https://unsplash.com/photos/cnO9IQzhUbI)、[752QZG5n-PQ](https://unsplash.com/photos/752QZG5n-PQ)、[_m2w7OBAnsc](https://unsplash.com/photos/_m2w7OBAnsc)、[J4JjsFJKhpI](https://unsplash.com/photos/J4JjsFJKhpI) |
 
+**本機預覽**：`npx firebase emulators:start --only hosting`，開 `http://localhost:5000/samples/`
+（直接雙擊 HTML 檔打不開：路徑都是從網站根目錄開始的，也需要上面那些改寫規則）。
+
 **改了什麼要重跑什麼**
 
 | 改了 | 重跑 |
 |---|---|
-| 大廳骨架 `public/lobby-*.html`、卡片文案 `scripts/sample-catalog.js`、總覽模板 `scripts/sample-index.html` | `npm run build-previews` |
-| 大廳的長相（CSS、照片、開場）——縮圖要跟著換 | `npm run build-sample-thumbs`（截圖後會自己再跑一次 build-previews） |
+| 卡片文案 `scripts/sample-catalog.js`、總覽模板 `scripts/sample-index.html` | `npm run build-samples` |
+| 大廳的長相（CSS、照片、開場、骨架）——縮圖要跟著換 | `npm run build-sample-thumbs`（截圖後會自己再跑一次 build-samples） |
 | 新增一個版型 | 先在 `scripts/sample-catalog.js` 補一筆（沒補 build 會直接報錯），再跑 `npm run build-sample-thumbs` |
 
-產出的檔案都要 commit，`firebase deploy` 不會幫你產。
+示範站台本身不用重產：它就是正式的頁面，改了就生效。總覽與縮圖是產出的檔案，要 commit，`firebase deploy` 不會幫你產。
 
 > **莫內花園的畫怎麼來的**：`js/openers/painting.js` 同時是開場與一具「油畫繪製器」（`window.MonetPaint`）。
 > 大廳與開場掛的都是莫內真跡的掃描（見上面〈莫內花園的素材〉），掛在 `<canvas data-monet="場景">` 上；

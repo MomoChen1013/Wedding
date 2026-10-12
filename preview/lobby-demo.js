@@ -1,22 +1,15 @@
 /* ============================================================
-   samples/demo.js — 大廳示範頁的填空 ＋ 切換面板
+   lobby-demo.js — 大廳示範頁的填空 ＋ 切換面板
    ------------------------------------------------------------
-   兩種示範頁共用這一支，都是 scripts/build-previews.js 從 public/lobby-*.html
-   產出來的（骨架一模一樣）：
-
-     preview/*.html      內部看的（不部署），資料是 preview/demo-data.js
-     public/samples/*.html  給客人挑版型的（/samples），資料是 samples/sample-data.js，
-                         新人是虛構的、照片是 Unsplash 的免費婚紗照
-
-   正式版由 js/index.js 填資料，這裡做同一件事的最小版本 —— 不起 Firebase、
-   直接用瀏覽器打開就能看。照片的路徑寫在資料檔的 photos 裡。
+   preview/tapestry.html、preview/secret-garden.html… 是 scripts/build-previews.js
+   從 public/lobby-*.html 產出來的：骨架一模一樣。正式版由 js/index.js
+   填資料，這裡用 demo-data.js 做同一件事的最小版本 —— 不起 Firebase、
+   直接用瀏覽器打開就能看。
 
    開場與捲動編排用的是**正式版同一支** public/js/lobby-motion.js
    與 public/js/openers/*.js：示範頁看到的，就是賓客會看到的。
 
-   右下角的面板可以換版型（幾個版型共用一副骨架時才有）、換開場、重播開場。
-   DEMO_CFG.sample 有值的是給客人看的那一版：面板多一顆「所有版型」、
-   文字改成客人看得懂的說法；點到其他頁面的連結會說明示範只有大廳。
+   右下角的面板可以換版型（場景版型才有）、換開場、重播開場。
    網址參數：?t=night-sky 版型　?o=book 開場　?open=1 跳過開場
 ============================================================ */
 (function () {
@@ -69,30 +62,14 @@
   if (tr[1]) { $('transportParking').textContent = tr[1].text; $('transportParkingItem').hidden = false; }
   $('transportBlock').hidden = !tr.length;
   if (D.story) { $('storyText').textContent = D.story; $('storyBlock').hidden = false; }
-  /* 照片：對應規則跟正式版 js/common.js 的 applyLobbyPhotos() 一樣 ——
-     hero／portrait 是封面，story、countdown 是照片牆第 1、2 張，photo1–6 是前六張 */
-  const P = D.photos || {};
-  const wall = P.gallery || [];
-  const slot = (key) => {
-    const n = /^photo(\d)$/.exec(key);
-    if (n) return wall[n[1] - 1] || P.cover;
-    if (key === 'story') return wall[0] || P.cover;
-    if (key === 'countdown') return wall[1] || P.cover;
-    return P.cover;
-  };
+  /* 照片借用 ginny-one 的封面；photo1–6（照片牆的前六張）借用它的抽卡小卡 */
   document.querySelectorAll('[data-photo]').forEach((el) => {
-    const src = slot(el.dataset.photo);
-    if (!src) return;
-    el.style.backgroundImage = `url("${src}")`;
+    const n = /^photo(\d)$/.exec(el.dataset.photo);
+    el.style.backgroundImage = n
+      ? `url("../public/assets/ginny-one-20260919/cards/0${n[1]}.jpg")`
+      : 'url("../public/assets/ginny-one-20260919/cover.jpg")';
     el.classList.add('has-photo');
   });
-  /* Classic 的大廳是整片背景照片（正式版是 js/index.js 的 applyLobbyBackground） */
-  const bgImg = $('siteBgImg');
-  if (bgImg && P.cover) {
-    bgImg.hidden = false;
-    bgImg.src = P.cover;
-    bgImg.addEventListener('load', () => $('siteBg') && $('siteBg').classList.remove('is-empty'), { once: true });
-  }
 
   /* 倒數（markup 對齊 js/common.js 的 startCountdown）。
      示範資料的日期可能已經過了 —— 那就改成從今天往後數 100 天，才有數字可看 */
@@ -140,15 +117,13 @@
   }
 
   /* ---------- 切換面板 ---------- */
-  const S = CFG.sample || null;
   const panel = document.createElement('div');
-  panel.className = 'demo-panel' + (S ? ' is-sample' : '');
-  const tOpts = keys.map((k) => `<option value="${k}">${esc(S && S.colorLabels ? S.colorLabels[k] || CFG.templates[k].label : CFG.templates[k].label)}</option>`).join('');
-  const oOpts = `<option value="">${S ? '原本的' : '跟著版型'}</option>` +
+  panel.className = 'demo-panel';
+  const tOpts = keys.map((k) => `<option value="${k}">${esc(CFG.templates[k].label)}</option>`).join('');
+  const oOpts = `<option value="">跟著版型</option>` +
     Object.entries(CFG.openings).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('');
   panel.innerHTML =
-    (S ? `<a class="demo-back" href="${esc(S.back)}">← 所有版型</a>` : '') +
-    (keys.length > 1 ? `<label>${S ? '配色' : '版型'}<select data-k="t">${tOpts}</select></label>` : '') +
+    (keys.length > 1 ? `<label>版型<select data-k="t">${tOpts}</select></label>` : '') +
     `<label>開場<select data-k="o">${oOpts}</select></label>` +
     `<button type="button" data-k="play">重播開場</button>`;
   document.body.appendChild(panel);
@@ -167,26 +142,6 @@
   if (selT) selT.addEventListener('change', () => { template = selT.value; sync(); play(); });
   selO.addEventListener('change', () => { opening = selO.value || null; sync(); play(); });
   panel.querySelector('[data-k="play"]').addEventListener('click', () => { q.delete('open'); play(); });
-
-  /* 給客人看的示範只有大廳：點到其他頁面（祝福牆、出席回覆……）就說明一下，不要掉進 404 */
-  if (S) {
-    const note = document.createElement('div');
-    note.className = 'demo-note';
-    note.setAttribute('role', 'status');
-    document.body.appendChild(note);
-    let timer = 0;
-    document.addEventListener('click', (e) => {
-      const a = e.target.closest('a[href]');
-      if (!a || a.closest('.demo-panel')) return;
-      const href = a.getAttribute('href');
-      if (!href || href.startsWith('#') || /^(https?:|mailto:|tel:)/.test(href)) return;
-      e.preventDefault();
-      note.textContent = S.pageNote;
-      note.classList.add('is-on');
-      clearTimeout(timer);
-      timer = setTimeout(() => note.classList.remove('is-on'), 3200);
-    });
-  }
 
   window.LobbyMotion.init(app);
   play();

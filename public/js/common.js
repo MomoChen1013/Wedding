@@ -1420,8 +1420,9 @@ function askName(reason){
     /* 右下角那顆 BGM 浮動鈕本來就在同一塊區域，讓它先讓開 */
     document.body.classList.add('id-sheet-on');
     /* 沒有 Firebase（離線預覽、SDK 掛了）就不留一顆按了沒反應的按鈕；
-       只剩一條路的時候，「或」那條分隔線也跟著收掉 */
-    if(!(window.fb && window.fb.auth)){
+       只剩一條路的時候，「或」那條分隔線也跟著收掉。
+       版型展示頁（window.fb.demo）不開放任何登入，同樣收掉 */
+    if(!(window.fb && window.fb.auth) || window.fb.demo){
       gBtn.remove();
       sheet.querySelector('.id-sep').remove();
     }

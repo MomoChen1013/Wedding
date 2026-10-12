@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<!-- ⚙️ 由 scripts/build-previews.js 用 scripts/sample-index.html 產出（public/samples/index.html），不要手改產出的那一份。
+<!-- ⚙️ 由 scripts/build-samples.js 用 scripts/sample-index.html 產出（public/samples/index.html），不要手改產出的那一份。
      卡片文案在 scripts/sample-catalog.js，縮圖由 scripts/build-sample-thumbs.js 產生。 -->
 <title>婚禮網站版型｜小港製作所</title>
-<meta name="description" content="13 種婚禮網站版型，點進去就能看到完整的首頁與開場動畫。">
+<meta name="description" content="13 種婚禮網站版型，點進去就是一個完整的婚禮網站，可以實際點點看。">
 <meta property="og:type" content="website">
 <meta property="og:title" content="婚禮網站版型｜小港製作所">
-<meta property="og:description" content="13 種婚禮網站版型，點進去就能看到完整的首頁與開場動畫。">
+<meta property="og:description" content="13 種婚禮網站版型，點進去就是一個完整的婚禮網站，可以實際點點看。">
 <meta property="og:image" content="https://minato-studio-wedding.web.app/samples/thumbs/classic.jpg">
 <link rel="icon" href="/favicon.png">
 <link rel="apple-touch-icon" href="/favicon.png">
@@ -79,10 +79,10 @@ footer a{color:inherit;}
   <header>
     <div class="kicker">Minato Studio · Wedding Websites</div>
     <h1>挑一種，屬於你們的婚禮樣子</h1>
-    <p>這裡有 13 種版型，點進去就能看到完整的首頁 —— 開場動畫、捲動時的效果都和正式網站一樣。示範裡的新人與婚禮資訊都是虛構的，正式網站會換成你們的照片與內容。</p>
+    <p>這裡有 13 種版型。點進去就是一個完整的婚禮網站 —— 開場動畫、出席回覆、祝福牆、抽卡、小測驗都能實際點點看、填填看。示範裡的新人是虛構的，你在示範頁填的內容不會被送出去；正式網站會換成你們的照片與內容。</p>
   </header>
   <main class="grid">
-    <a class="card" href="/samples/classic">
+    <a class="card" href="/samples/classic/">
       <div class="shot" style="background:#fbfaf7"><img src="/samples/thumbs/classic.jpg" alt="經典版型的首頁" loading="lazy" width="390" height="760"></div>
       <div class="body">
         <h2><span class="en">Classic</span><span class="cn">經典</span></h2>
@@ -94,7 +94,7 @@ footer a{color:inherit;}
         </div>
       </div>
     </a>
-    <a class="card" href="/samples/korean">
+    <a class="card" href="/samples/korean/">
       <div class="shot" style="background:#fbfaf8"><img src="/samples/thumbs/korean.jpg" alt="韓系簡約版型的首頁" loading="lazy" width="390" height="760"></div>
       <div class="body">
         <h2><span class="en">Korean Modern</span><span class="cn">韓系簡約</span></h2>
@@ -106,7 +106,7 @@ footer a{color:inherit;}
         </div>
       </div>
     </a>
-    <a class="card" href="/samples/forest">
+    <a class="card" href="/samples/forest/">
       <div class="shot" style="background:#f2efe5"><img src="/samples/thumbs/forest.jpg" alt="森林系版型的首頁" loading="lazy" width="390" height="760"></div>
       <div class="body">
         <h2><span class="en">Forest Botanical</span><span class="cn">森林系</span></h2>
@@ -118,7 +118,7 @@ footer a{color:inherit;}
         </div>
       </div>
     </a>
-    <a class="card" href="/samples/tapestry">
+    <a class="card" href="/samples/tapestry/">
       <div class="shot" style="background:#f1e8d5"><img src="/samples/thumbs/tapestry.jpg" alt="中古刺繡版型的首頁" loading="lazy" width="390" height="760"></div>
       <div class="body">
         <h2><span class="en">Tapestry</span><span class="cn">中古刺繡</span></h2>
@@ -130,7 +130,7 @@ footer a{color:inherit;}
         </div>
       </div>
     </a>
-    <a class="card" href="/samples/botanical-letter">
+    <a class="card" href="/samples/botanical-letter/">
       <div class="shot" style="background:#f6f2e9"><img src="/samples/thumbs/botanical-letter.jpg" alt="植物信箋版型的首頁" loading="lazy" width="390" height="760"></div>
       <div class="body">
         <h2><span class="en">Botanical Letter</span><span class="cn">植物信箋</span></h2>
@@ -142,7 +142,7 @@ footer a{color:inherit;}
         </div>
       </div>
     </a>
-    <a class="card" href="/samples/secret-garden">
+    <a class="card" href="/samples/secret-garden/">
       <div class="shot" style="background:#f3f1e8"><img src="/samples/thumbs/secret-garden.jpg" alt="秘密花園版型的首頁" loading="lazy" width="390" height="760"></div>
       <div class="body">
         <h2><span class="en">Secret Garden</span><span class="cn">秘密花園</span></h2>
@@ -154,7 +154,7 @@ footer a{color:inherit;}
         </div>
       </div>
     </a>
-    <a class="card" href="/samples/spring-orangerie">
+    <a class="card" href="/samples/spring-orangerie/">
       <div class="shot" style="background:#f7f7f1"><img src="/samples/thumbs/spring-orangerie.jpg" alt="春日溫室版型的首頁" loading="lazy" width="390" height="760"></div>
       <div class="body">
         <h2><span class="en">Spring Orangerie</span><span class="cn">春日溫室</span></h2>
@@ -166,7 +166,7 @@ footer a{color:inherit;}
         </div>
       </div>
     </a>
-    <a class="card" href="/samples/night-sky">
+    <a class="card" href="/samples/night-sky/">
       <div class="shot" style="background:#141a33"><img src="/samples/thumbs/night-sky.jpg" alt="現代星空版型的首頁" loading="lazy" width="390" height="760"></div>
       <div class="body">
         <h2><span class="en">Night Sky</span><span class="cn">現代星空</span></h2>
@@ -178,7 +178,7 @@ footer a{color:inherit;}
         </div>
       </div>
     </a>
-    <a class="card" href="/samples/french-manor">
+    <a class="card" href="/samples/french-manor/">
       <div class="shot" style="background:#f4efe7"><img src="/samples/thumbs/french-manor.jpg" alt="法式莊園版型的首頁" loading="lazy" width="390" height="760"></div>
       <div class="body">
         <h2><span class="en">French Manor</span><span class="cn">法式莊園</span></h2>
@@ -190,7 +190,7 @@ footer a{color:inherit;}
         </div>
       </div>
     </a>
-    <a class="card" href="/samples/monet-garden">
+    <a class="card" href="/samples/monet-garden/">
       <div class="shot" style="background:#f7f3ea"><img src="/samples/thumbs/monet-garden.jpg" alt="莫內花園版型的首頁" loading="lazy" width="390" height="760"></div>
       <div class="body">
         <h2><span class="en">Monet Garden</span><span class="cn">莫內花園</span></h2>
@@ -202,7 +202,7 @@ footer a{color:inherit;}
         </div>
       </div>
     </a>
-    <a class="card" href="/samples/outdoor-party">
+    <a class="card" href="/samples/outdoor-party/">
       <div class="shot" style="background:#f8fbfd"><img src="/samples/thumbs/outdoor-party.jpg" alt="美式戶外派對版型的首頁" loading="lazy" width="390" height="760"></div>
       <div class="body">
         <h2><span class="en">Outdoor Party</span><span class="cn">美式戶外派對</span></h2>
@@ -214,7 +214,7 @@ footer a{color:inherit;}
         </div>
       </div>
     </a>
-    <a class="card" href="/samples/morning-window">
+    <a class="card" href="/samples/morning-window/">
       <div class="shot" style="background:#faf6ef"><img src="/samples/thumbs/morning-window.jpg" alt="晨光房間版型的首頁" loading="lazy" width="390" height="760"></div>
       <div class="body">
         <h2><span class="en">Morning Window</span><span class="cn">晨光房間</span></h2>
@@ -226,7 +226,7 @@ footer a{color:inherit;}
         </div>
       </div>
     </a>
-    <a class="card" href="/samples/white-church">
+    <a class="card" href="/samples/white-church/">
       <div class="shot" style="background:#f8f6f3"><img src="/samples/thumbs/white-church.jpg" alt="白色教堂版型的首頁" loading="lazy" width="390" height="760"></div>
       <div class="body">
         <h2><span class="en">White Church</span><span class="cn">白色教堂</span></h2>
@@ -240,7 +240,7 @@ footer a{color:inherit;}
     </a>
   </main>
   <footer>
-    開場動畫可以在示範頁的下方換著看，每一種開場都能搭配任何版型。<br>
+    開場動畫可以在示範頁左下角換著看，每一種開場都能搭配任何版型。<br>
     示範照片：<a href="https://unsplash.com/@vinomamba24" target="_blank" rel="noopener">Vino Li</a>／Unsplash<br>
     小港製作所 設計製作
   </footer>

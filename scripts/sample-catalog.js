@@ -1,9 +1,9 @@
 /* ============================================================
    sample-catalog.js — 版型展示頁（/samples）每一張卡片上的文案
    ------------------------------------------------------------
-   scripts/build-previews.js 讀這一份產出 public/samples/index.html。
-   key 是大廳骨架的名字（同 TEMPLATES 的 lobbyKey，沒有就是版型代號；
-   classic 四種配色共用一張卡片，key 是 'classic'）。
+   scripts/build-samples.js 讀這一份產出 public/samples/index.html。
+   key 是版型代號（TEMPLATES 的 key），卡片連到 /samples/{key}/；
+   classic 四種配色共用 'classic' 這一張（示範頁左下角可以換配色）。
 
      name    卡片標題（英文 ＋ 中文）
      mood    一句話的氣質，寫給客人看的，不寫技術

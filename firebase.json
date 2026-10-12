@@ -56,6 +56,42 @@
         "destination": "/assets/empty-manifest.json"
       },
       {
+        "source": "/samples/*/wall",
+        "destination": "/wall.html"
+      },
+      {
+        "source": "/samples/*/cake",
+        "destination": "/cake.html"
+      },
+      {
+        "source": "/samples/*/draw",
+        "destination": "/draw.html"
+      },
+      {
+        "source": "/samples/*/exhibition",
+        "destination": "/exhibition.html"
+      },
+      {
+        "source": "/samples/*/quiz",
+        "destination": "/quiz.html"
+      },
+      {
+        "source": "/samples/*/seating",
+        "destination": "/seating.html"
+      },
+      {
+        "source": "/samples/*/letter",
+        "destination": "/letter.html"
+      },
+      {
+        "source": "/samples/*/invitation",
+        "destination": "/invitation.html"
+      },
+      {
+        "source": "/samples/**",
+        "destination": "/index.html"
+      },
+      {
         "source": "/w/*/wall",
         "destination": "/wall.html"
       },

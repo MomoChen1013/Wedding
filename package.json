@@ -21,7 +21,8 @@
     "check-site": "node scripts/check-site.js",
     "set-pages": "node scripts/set-pages.js",
     "build-previews": "node scripts/build-previews.js",
-    "build-sample-thumbs": "node scripts/build-sample-thumbs.js && node scripts/build-previews.js"
+    "build-samples": "node scripts/build-samples.js",
+    "build-sample-thumbs": "node scripts/build-sample-thumbs.js && node scripts/build-samples.js"
   },
   "repository": {
     "type": "git",

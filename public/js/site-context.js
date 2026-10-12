@@ -247,47 +247,57 @@ const FILE_TO_KEY = Object.fromEntries(
   Object.entries(PAGES).map(([key, p]) => [p.file, key])
 );
 
+/* ---------- 版型展示頁（/samples）----------
+   /samples/{版型}/… 跑的是正式網站同一套頁面，只是：
+     ・不連 Firebase：window.fb 換成 demo-firebase.js（資料在記憶體裡，什麼都不會寫進正式資料庫）
+     ・站台資料是 samples/sample-site.js 的虛構新人，版型取自網址
+     ・賓客一律是沒登入的訪客：每次載入都清掉這個示範站台存在瀏覽器裡的名字
+   見 README〈版型展示頁〉。 */
+const DEMO = /^\/samples\/[^/]+/.test(location.pathname);
+
 /* ---------- Firebase ---------- */
-const app  = initializeApp(firebaseConfig);
+let db = null;
+if (!DEMO) {
+  const app  = initializeApp(firebaseConfig);
 
-/* 離線持久化：預設的記憶體快取一關掉分頁就沒了 ——
-   新人在捷運上改的東西「看起來存好了」，回到家卻不見。
-   開了 persistentLocalCache 之後，離線期間的改動會排在 IndexedDB 的佇列裡，
-   連線回來自己送出去，關掉分頁也撐得住。
-   ・multipleTab：後台常常同時開好幾個分頁（一邊排桌一邊看回覆）
-   ・無痕視窗、瀏覽器擋 site data 時會開不起來，退回記憶體快取就好 */
-let db;
-try{
-  db = initializeFirestore(app, {
-    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+  /* 離線持久化：預設的記憶體快取一關掉分頁就沒了 ——
+     新人在捷運上改的東西「看起來存好了」，回到家卻不見。
+     開了 persistentLocalCache 之後，離線期間的改動會排在 IndexedDB 的佇列裡，
+     連線回來自己送出去，關掉分頁也撐得住。
+     ・multipleTab：後台常常同時開好幾個分頁（一邊排桌一邊看回覆）
+     ・無痕視窗、瀏覽器擋 site data 時會開不起來，退回記憶體快取就好 */
+  try{
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+    });
+  }catch(err){
+    console.warn('[site] 離線快取開不起來，改用記憶體快取', err);
+    db = getFirestore(app);
+  }
+
+  const auth = getAuth(app);
+
+  /* 本機開發時連 emulator；?live=1 可強制讀正式資料庫 */
+  const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  const wantsLive = new URLSearchParams(location.search).get('live') === '1';
+  if (isLocal && !wantsLive) {
+    connectFirestoreEmulator(db, '127.0.0.1', 8080);
+    try { connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings:true }); } catch {}
+  }
+
+  window.fb = {
+    db, auth,
+    collection, addDoc, onSnapshot, query, orderBy, where, doc, getDoc,
+    runTransaction, serverTimestamp, getDocs, deleteDoc, setDoc, updateDoc, writeBatch,
+    signInAnonymously, signInWithPopup, linkWithPopup, signOut,
+    GoogleAuthProvider, onAuthStateChanged,
+  };
+
+  /* 還沒登入才匿名登入；用 Google 登入過的訪客保留原帳號 */
+  onAuthStateChanged(auth, (user) => {
+    if (!user) signInAnonymously(auth).catch(() => { /* 靜默失敗，頁面仍可瀏覽 */ });
   });
-}catch(err){
-  console.warn('[site] 離線快取開不起來，改用記憶體快取', err);
-  db = getFirestore(app);
 }
-
-const auth = getAuth(app);
-
-/* 本機開發時連 emulator；?live=1 可強制讀正式資料庫 */
-const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-const wantsLive = new URLSearchParams(location.search).get('live') === '1';
-if (isLocal && !wantsLive) {
-  connectFirestoreEmulator(db, '127.0.0.1', 8080);
-  try { connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings:true }); } catch {}
-}
-
-window.fb = {
-  db, auth,
-  collection, addDoc, onSnapshot, query, orderBy, where, doc, getDoc,
-  runTransaction, serverTimestamp, getDocs, deleteDoc, setDoc, updateDoc, writeBatch,
-  signInAnonymously, signInWithPopup, linkWithPopup, signOut,
-  GoogleAuthProvider, onAuthStateChanged,
-};
-
-/* 還沒登入才匿名登入；用 Google 登入過的訪客保留原帳號 */
-onAuthStateChanged(auth, (user) => {
-  if (!user) signInAnonymously(auth).catch(() => { /* 靜默失敗，頁面仍可瀏覽 */ });
-});
 
 /* ---------- 網址解析 ---------- */
 /* /w/{slug}            → { slug, seg:'',           page:'lobby' }
@@ -295,7 +305,10 @@ onAuthStateChanged(auth, (user) => {
    /w/{slug}/invitation → { slug, seg:'invitation', page:'rsvp'  }
    seg 是網址上的字，page 是 sites.pages 的開關代號，兩者不一定相同 */
 function parseLocation() {
-  const m = location.pathname.match(/^\/w\/([^/?#]+)(?:\/([^/?#]*))?/);
+  /* 示範頁：/samples/{版型}/{頁面}，slug 的位置放的是版型代號 */
+  const m = location.pathname.match(DEMO
+    ? /^\/samples\/([^/?#]+)(?:\/([^/?#]*))?/
+    : /^\/w\/([^/?#]+)(?:\/([^/?#]*))?/);
   if (!m) return null;
 
   const slug = decodeURIComponent(m[1]).toLowerCase();
@@ -359,6 +372,72 @@ function loadScript(src) {
   });
 }
 
+/* ---------- 版型展示頁：示範站台 ----------
+   版型取自網址；?o=開場代號 可以換開場（示範列上的選單用的）。
+   回傳 null ＝ 網址上的版型不存在。 */
+async function loadDemoSite(template) {
+  if (!Object.hasOwn(TEMPLATES, template)) return null;
+  /* 兩支都只有示範頁才載入，正式網站一個位元組都不多抓 */
+  const [demo, { createDemoFirebase }] = await Promise.all([
+    import('/samples/sample-site.js'), import('./demo-firebase.js'),
+  ]);
+  const siteId = `demo-${template}`;
+  const site = { ...demo.SAMPLE_SITE, template };
+  const o = new URLSearchParams(location.search).get('o');
+  if (o && Object.hasOwn(OPENINGS, o)) site.opening = o;
+
+  /* 一律以「沒登入的訪客」進來：清掉上次在示範頁留下的名字、收藏 */
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(`wed.${siteId}.`)) localStorage.removeItem(k);
+    }
+  } catch { /* 瀏覽器擋 storage 也沒關係 */ }
+
+  window.fb = createDemoFirebase(siteId, { collections: demo.SAMPLE_COLLECTIONS, docs: demo.SAMPLE_DOCS });
+  return { site, siteId, assets: demo.SAMPLE_ASSETS };
+}
+
+/* 示範頁下方的那一條：回總覽、換配色（Classic）、換開場、重播開場。
+   只有 /samples 才有，正式網站不會載入 demo-bar.css，也不會走到這裡。 */
+function mountDemoBar({ template, opening, pageKey }) {
+  addStylesheet('/samples/demo-bar.css');
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const seg = location.pathname.split('/').slice(3).join('/');
+  const introKey = `wed.demo-${template}.introSeen`;
+
+  /* Classic 四種配色是四個版型，同一頁換到另一個版型就是換配色 */
+  const family = template.startsWith('classic')
+    ? Object.entries(TEMPLATES).filter(([k]) => k.startsWith('classic')) : [];
+  const colorSel = family.length > 1
+    ? `<label>配色<select data-k="color">${family.map(([k, t]) =>
+        `<option value="${k}"${k === template ? ' selected' : ''}>${esc(t.label.replace(/^Classic\s*/, ''))}</option>`).join('')}</select></label>`
+    : '';
+  const openSel = pageKey === 'lobby'
+    ? `<label>開場<select data-k="open"><option value="">原本的</option>${Object.entries(OPENINGS).map(([k, o]) =>
+        `<option value="${k}"${k === opening && new URLSearchParams(location.search).get('o') === k ? ' selected' : ''}>${esc(o.label)}</option>`).join('')}</select></label>` +
+      `<button type="button" data-k="replay">重播開場</button>`
+    : '';
+
+  const bar = document.createElement('div');
+  bar.className = 'demo-bar';
+  bar.innerHTML = `<a href="/samples/">← 所有版型</a>${colorSel}${openSel}`;
+  document.body.appendChild(bar);
+
+  const replay = (o) => {
+    try { sessionStorage.removeItem(introKey); } catch {}
+    const u = new URL(location.href);
+    if (o) u.searchParams.set('o', o); else if (o === '') u.searchParams.delete('o');
+    location.href = u.toString();
+  };
+  const sel = (k) => bar.querySelector(`[data-k="${k}"]`);
+  if (sel('color')) sel('color').addEventListener('change', (e) => {
+    location.href = `/samples/${e.target.value}/${seg}${location.search}`;
+  });
+  if (sel('open')) sel('open').addEventListener('change', (e) => replay(e.target.value));
+  if (sel('replay')) sel('replay').addEventListener('click', () => replay());
+}
+
 /* ---------- 主流程 ---------- */
 async function boot() {
   const loc = parseLocation();
@@ -367,9 +446,12 @@ async function boot() {
     return;
   }
 
+  /* 這組新人的網址根目錄：正式站是 /w/{slug}，示範頁是 /samples/{版型} */
+  const root = DEMO ? `/samples/${loc.slug}` : `/w/${loc.slug}`;
+
   /* 搬家的舊網址：先導過去，不用等站台設定讀完 */
   if (MOVED_PATHS[loc.seg]) {
-    location.replace(`/w/${loc.slug}/${MOVED_PATHS[loc.seg]}`);
+    location.replace(`${root}/${MOVED_PATHS[loc.seg]}`);
     return;
   }
 
@@ -380,10 +462,15 @@ async function boot() {
      這裡先發動、下面再 await，讓它跟 Firestore 的查詢平行跑。
      （catch 掛在發動的當下而不是等到 await：先發動的 promise 若在
        await 之前就 reject，會變成 unhandledrejection） */
-  const assetsPromise = loadAssets(loc.slug).catch(() => ({}));
+  let assetsPromise = DEMO ? null : loadAssets(loc.slug).catch(() => ({}));
 
   let site, siteId;
-  try {
+  if (DEMO) {
+    const demo = await loadDemoSite(loc.slug);
+    if (!demo) return notFound();
+    ({ site, siteId } = demo);
+    assetsPromise = Promise.resolve(demo.assets);
+  } else try {
     const slugSnap = await getDoc(doc(db, 'slugs', loc.slug));
     if (!slugSnap.exists()) return notFound();
 
@@ -433,7 +520,7 @@ async function boot() {
 
   /* 這頁沒開放就導回大廳，不要讓賓客卡在空頁面 */
   if (!isEnabled(pageKey)) {
-    location.replace(`/w/${loc.slug}/`);
+    location.replace(`${root}/`);
     return;
   }
 
@@ -487,7 +574,7 @@ async function boot() {
     /* 產生站內連結：pathFor('cake') → /w/{slug}/cake
        出席回覆的網址片段是 invitation，不是它的開關代號 rsvp */
     pathFor(key) {
-      return key === 'lobby' ? `/w/${loc.slug}/` : `/w/${loc.slug}/${pathOf(key)}`;
+      return key === 'lobby' ? `${root}/` : `${root}/${pathOf(key)}`;
     },
     fileToKey: FILE_TO_KEY,
   };
@@ -537,6 +624,8 @@ async function boot() {
     showFatal('頁面載入失敗', '請重新整理一次，如果一直發生請告訴我們');
     return;
   }
+
+  if (DEMO) mountDemoBar({ template, opening, pageKey });
 
   /* 給測試與外部腳本判斷「整站真的可用了」的旗標 */
   document.documentElement.dataset.siteReady = '1';
