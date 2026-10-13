@@ -2124,6 +2124,19 @@ function chartEvents(){
   return rsvpEvents().length > 1 ? rsvpEventsAsked() : [];
 }
 
+/* 只有一場要回覆時，表單問的是哪一個活動（和 rsvp-form.js 的 oneEvent() 同一套）。
+   它的自訂題目沒有活動卡可以掛，統計、明細與 CSV 直接接在原本那幾塊後面。
+   多活動時回 null —— 那時題目各自在每一場底下。 */
+function singleRsvpEvent(){
+  if(rsvpEvents().length > 1) return null;
+  return rsvpEventsAsked()[0] || eventAsks(weddingEvents()[0] || {});
+}
+
+function singleQuestions(){
+  const ev = singleRsvpEvent();
+  return ev && Array.isArray(ev.questions) ? ev.questions : [];
+}
+
 function currentChartEvent(evs){
   return evs.find(ev => ev.id === chartEventId)
       || evs.find(ev => ev.id === primaryEventId())
@@ -2211,6 +2224,12 @@ function renderRsvpCharts(state){
     cfg.askCard ? { ...c.card, title:'喜帖', hint:'依回覆筆數' } : null,
     cfg.askGift ? { ...c.gift, title:'喜餅', hint:'依回覆筆數' } : null,
   ].filter(Boolean);
+  /* 自訂的選擇題各一張（簡答題不做統計，只出現在明細與 CSV） */
+  const one = singleQuestions().length ? singleRsvpEvent() : null;
+  if(one){
+    DataStore.getEventCharts(one).questions.forEach(x => cards.push({ ...x, title: x.q.label,
+      hint: x.q.kind === 'multi' ? '可複選・依勾選次數' : '依出席筆數' }));
+  }
   rsvpChartsEl.innerHTML = cards.map(donutCard).join('');
 }
 
@@ -2503,6 +2522,22 @@ function rsvpDrawerRow(label, value, mono){
     `<b${mono ? ' style="font-variant-numeric:tabular-nums"' : ''}>${value}</b></div>`;
 }
 
+/* 只辦一場時的自訂題目作答（多活動時答案在「各活動出席」那一段裡）。
+   一題都沒答就整段不出現，不要留一個只有標題的空區塊 */
+function singleAnswersHtml(r){
+  const qs = singleQuestions();
+  if(!qs.length) return '';
+  const res = eventResponse(r, singleRsvpEvent().id);
+  const answers = (res && res.answers) || {};
+  const rows = qs.map(q =>
+    rsvpDrawerRow(q.label, escapeHtml(questionAnswerText(q, answers[q.id])))).join('');
+  if(!rows) return '';
+  return `<div class="ad-drawer-sec">
+      <div class="ad-drawer-sec-title">自訂題目</div>
+      <div class="ad-drawer-rows">${rows}</div>
+    </div>`;
+}
+
 function rsvpDrawerHtml(r){
   const col = rsvpColumns();
   const st = DataStore.rsvpStatus(r);
@@ -2546,6 +2581,7 @@ function rsvpDrawerHtml(r){
       ${rsvpDrawerRow('其他備註', escapeHtml(r.note || ''))}
       ${rsvpDrawerRow('填表時間', t ? escapeHtml(fmtTime(t)) : '時間未知')}
     </div>
+    ${singleAnswersHtml(r)}
     ${rsvpEvents().length > 1 ? `<div class="ad-drawer-sec">
       <div class="ad-drawer-sec-title">各活動出席</div>
       <div class="ad-drawer-rows">${rsvpEventsAsked().map(ev => {
@@ -2924,7 +2960,14 @@ function rsvpCsvColumns(){
    CSV 的欄位和改版前逐字相同。 */
 function evCsvColumns(){
   const evs = rsvpEventsAsked();
-  if(evs.length <= 1) return [];
+  /* 只有一場：只多出自訂題目那幾欄（沒有自訂題目就和改版前逐字相同） */
+  if(evs.length <= 1){
+    const one = singleRsvpEvent();
+    return singleQuestions().map(q => ({ key:`q_${q.id}`, label:q.label, val:(r)=>{
+      const res = eventResponse(r, one.id);
+      return questionAnswerText(q, res && res.answers ? res.answers[q.id] : '');
+    } }));
+  }
   const out = [];
   evs.forEach(ev => {
     out.push({ key:`ev_${ev.id}`, label:`${ev.name}・出席`, val:(r)=>{
@@ -3052,6 +3095,14 @@ function eventPatchFields(id, patch){
   return eventsPatch(rows);
 }
 
+/* 自訂題目要寫去哪：有 events[] 的寫進那一個活動；
+   合成出來的那一個（只辦一場、站台還沒有 events）存回站台文件的 rsvpQuestions
+   —— 和基本問題的 rsvpAsk* 同一個道理（見 common.js 的 mainEventFromSite()） */
+function questionsPatch(evId, questions){
+  if(evId === MAIN_EVENT_ID) return { rsvpQuestions: questions };
+  return eventPatchFields(evId, { questions });
+}
+
 /* ---------- 這一頁的重畫入口 ----------
    活動卡、預覽膠囊、條件顯示全部跟著同一份資料走，
    所以永遠一起重畫 —— 只更新一半才是畫面和資料說不一樣話的來源。 */
@@ -3126,7 +3177,8 @@ function actQuestionsHtml(ev){
 
       <div class="ad-qlist" data-qlist="${escapeHtml(ev.id)}">${
         qs.map(q => actQuestionRowHtml(ev, q)).join('')
-        || '<div class="ad-qrow-empty">還沒有只問這一場的題目</div>'}</div>
+        || `<div class="ad-qrow-empty">${weddingEvents().length > 1
+              ? '還沒有只問這一場的題目' : '還沒有自訂題目'}</div>`}</div>
       <div class="ad-row">
         ${qs.length < EVENT_QUESTION_MAX
           ? `<button class="btn small ghost" type="button"
@@ -3162,7 +3214,7 @@ function actCardHtml(ev){
 
     ${rsvp ? `<div class="ad-actcard-body">
       <div class="ad-asklist">${actAskRowsHtml(ev)}</div>
-      ${saved ? actQuestionsHtml(ev) : ''}
+      ${actQuestionsHtml(ev)}
     </div>`
     : `<p class="ad-actcard-note">
         這個行程<b>不會出現在出席表單</b>裡，賓客只會在首頁上看到它的時間與地點。</p>`}
@@ -3297,7 +3349,7 @@ async function saveQuestionOrder(evId, order){
     return;
   }
   await runSave(null, async ()=>{
-    const patch = eventPatchFields(evId, { questions: next });
+    const patch = questionsPatch(evId, next);
     if(!patch){ toast('這個活動已經不在了，重新整理看看', true); return; }
     await DataStore.saveSiteFields(patch);
     renderFormSettings();
@@ -3322,7 +3374,7 @@ async function deleteQuestion(evId, qId){
   if(!ok) return;
 
   await runSave(null, async ()=>{
-    const patch = eventPatchFields(evId, { questions: qs.filter(x => x.id !== qId) });
+    const patch = questionsPatch(evId, qs.filter(x => x.id !== qId));
     if(!patch){ toast('這個活動已經不在了，重新整理看看', true); return; }
     await DataStore.saveSiteFields(patch);
     renderFormSettings();
@@ -3550,7 +3602,7 @@ function syncEvqKind(){
 function openEvqModal(evId, qId){
   if(!evqMask) return;
   const ev = weddingEvents().find(x => x.id === evId);
-  if(!ev || !actSaved(ev)) return;
+  if(!ev) return;
   const qs = Array.isArray(ev.questions) ? ev.questions : [];
   const q = qs.find(x => x.id === qId) || null;
   if(!q && qs.length >= EVENT_QUESTION_MAX){
@@ -3653,7 +3705,7 @@ evqForm?.addEventListener('submit', async (e)=>{
     : [...qs, row].slice(0, EVENT_QUESTION_MAX);
 
   await runSave(evqForm.querySelector('button[type="submit"]'), async ()=>{
-    const patch = eventPatchFields(evId, { questions: next });
+    const patch = questionsPatch(evId, next);
     if(!patch){ toast('這個活動已經不在了，重新整理看看', true); return; }
     await DataStore.saveSiteFields(patch);
     closeEvqModal();

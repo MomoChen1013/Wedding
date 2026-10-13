@@ -1185,6 +1185,19 @@ describe('sites 的大廳文案更新', () => {
     }));
   });
 
+  it('只辦一場（還沒有 events[]）也可以存自訂題目（rsvpQuestions，最多 3 題）', async () => {
+    const db = ownerDb();
+    const q = (id) => ({ id, kind:'text', label:`題目 ${id}`, hint:'', opts:[] });
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      rsvpQuestions: [q('q1'), q('q2'), q('q3')],
+      updatedAt: Timestamp.now(),
+    }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      rsvpQuestions: [q('q1'), q('q2'), q('q3'), q('q4')],
+    }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { rsvpQuestions: 'q1' }));
+  });
+
   it('新人可以自己收起／排程某一頁（pagePublish）', async () => {
     const db = ownerDb();
     await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {

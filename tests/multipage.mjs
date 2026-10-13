@@ -2149,6 +2149,28 @@ const TEST_PNG = {
   ok('Esc 關得掉大圖', await page.evaluate(
     () => document.getElementById('cardView').hidden && document.body.style.overflow === ''));
 
+  /* 同一次造訪最多抽三張：第四次按下去只說「抽太多張」，不再收藏 */
+  ok('還沒抽滿之前不出現上限的字', await page.isHidden('#drawLimit'));
+  for(let i = 0; i < 2; i++){
+    await page.click('#drawBtn');
+    await page.waitForTimeout(800);
+  }
+  ok('抽滿三張之前都還抽得到', await page.isHidden('#drawLimit'));
+  await page.click('#drawBtn');
+  await page.waitForTimeout(800);
+  ok('第四次按下去說「你抽太多張啦，不能再抽了」',
+    (await page.isVisible('#drawLimit'))
+      && (await page.textContent('#drawLimit')).trim() === '你抽太多張啦，不能再抽了');
+  const limited = await adb.collection('sites').doc(siteIds[SLUG])
+    .collection('collected').get();
+  ok('抽滿之後不再多收藏一張', limited.size === 3, `${limited.size} 筆`);
+  /* 沒關掉網站（同一個分頁重新整理、站內換頁）次數不歸零 */
+  await page.reload({ waitUntil:'domcontentloaded' });
+  await page.waitForSelector('#drawBtn:not([disabled])', { timeout:10000 });
+  await page.click('#drawBtn');
+  await page.waitForTimeout(800);
+  ok('重新整理之後仍然不能再抽', await page.isVisible('#drawLimit'));
+
   ok('抽卡頁無 console 錯誤', realErrors(errors).length === 0,
     realErrors(errors).slice(0, 2).join(' | '));
   await page.close();
@@ -3280,14 +3302,32 @@ console.log('\n[14c] 後台開關表單題目');
   ok('多一顆「複製表單連結」', await page.isVisible('#adRsvpCopyLink'));
 
   /* 站台還沒有 events：活動卡是「這場婚禮」本身 ——
-     型別、名稱、專屬題目都沒有地方存，所以那幾塊不該出現 */
+     型別、名稱沒有地方存；自訂題目則存回站台文件的 rsvpQuestions */
   ok('沒有 events 的站台也有一張活動卡',
     (await page.locator('#adActList .ad-actcard').count()) === 1,
     String(await page.locator('#adActList .ad-actcard').count()));
   ok('那一張卡上的「需要賓客回覆」改不動（它就是這場婚禮本身）',
     await page.locator('#adActList [data-act-rsvp]').isDisabled());
-  ok('那一張卡沒有「自訂問題」（沒有地方存）',
-    (await page.locator('#adActList [data-q-add]').count()) === 0);
+  ok('只辦一場也加得了自訂問題',
+    (await page.locator('#adActList [data-q-add]').count()) === 1);
+  await page.click('#adActList [data-q-add]');
+  await page.waitForSelector('#adEvqModalMask:not([hidden])', { timeout:5000 });
+  await page.fill('#adEvqLabel', '需要接駁車嗎？');
+  await page.check('#adEvqKind input[value="choice"]');
+  await page.waitForTimeout(150);
+  const oneOpts = page.locator('#adEvqOpts [data-opt-label]');
+  await oneOpts.nth(0).fill('需要');
+  await oneOpts.nth(1).fill('不用');
+  await page.click('#adEvqForm button[type="submit"]');
+  await page.waitForTimeout(1500);
+  const siteQ = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
+  ok('沒有 events 時自訂題目存進 rsvpQuestions',
+    (siteQ.rsvpQuestions || []).length === 1
+      && siteQ.rsvpQuestions[0].label === '需要接駁車嗎？'
+      && siteQ.rsvpQuestions[0].opts.length === 2,
+    JSON.stringify(siteQ.rsvpQuestions || []).slice(0, 120));
+  ok('題目列出現在那一張卡上',
+    (await page.locator('#adActList .ad-qrow').count()) === 1);
 
   /* 稱呼、關係、是哪種關係、聯絡方式 ＋ 卡上的「需要賓客回覆」與
      「能來參加嗎」＝ 6 條（這個站台沒有 events[]，所以連回覆開關也是固定的） */
@@ -3394,7 +3434,7 @@ console.log('\n[14c] 後台開關表單題目');
   await page.waitForTimeout(300);
   const titles = await page.locator('#adRsvpCharts .ad-donut-title').allInnerTexts();
   ok('關掉的題目不出現在儀表板',
-    titles.map((t) => t.split('\n')[0].trim()).join(',') === '出席,飲食,兒童座椅,喜帖',
+    titles.map((t) => t.split('\n')[0].trim()).join(',') === '出席,飲食,兒童座椅,喜帖,需要接駁車嗎？',
     titles.map((t) => t.split('\n')[0].trim()).join(','));
 
   ok('表單設定無 console 錯誤', realErrors(errors).length === 0,
@@ -3441,11 +3481,43 @@ console.log('\n[14c] 後台開關表單題目');
   await page.close();
 }
 {
+  /* 只辦一場的自訂題目：在「熱情出席」那一段出現，作答存進 events.main.answers */
+  const { page } = await visit(`/w/${SLUG}/invitation`);
+  await page.evaluate(() => LS.remove('rsvp.mine'));
+  await page.reload({ waitUntil:'domcontentloaded' });
+  await page.waitForFunction(() => !!document.getElementById('rsvpForm'), null, { timeout:20000 });
+
+  const qRow = page.locator('#detailBox .choice-row[data-ev-q]');
+  ok('只辦一場也看得到自訂題目', (await qRow.count()) === 1);
+  ok('還沒說要出席之前題目收著', await qRow.isHidden());
+  await page.fill('#rName', '接駁測試');
+  await page.click('#attendRow .choice[data-val="yes"]');
+  await page.click('#relationRow .choice[data-val="other"]');
+  await page.fill('#rEmail', 'shuttle@example.com');
+  await page.click('#cardRow .choice[data-val="none"]');
+  ok('選了出席，自訂題目就出現', await qRow.isVisible());
+  const yesOpt = (await adb.collection('sites').doc(siteIds[SLUG]).get())
+    .data().rsvpQuestions[0].opts[0];
+  await qRow.locator(`.choice[data-val="${yesOpt.id}"]`).click();
+  await page.click('#submitBtn');
+  await page.waitForSelector('#thanksCard:visible', { timeout:8000 });
+
+  const snap = await adb.collection('sites').doc(siteIds[SLUG]).collection('rsvps').get();
+  const row = snap.docs.map((d) => d.data()).find((d) => d.name === '接駁測試');
+  const qid = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data().rsvpQuestions[0].id;
+  ok('自訂題目的作答存進 events.main.answers',
+    !!row && row.events && row.events.main && row.events.main.answers[qid] === yesOpt.id,
+    JSON.stringify(row && row.events));
+  ok('單一活動不寫 primaryEventId', !!row && !('primaryEventId' in row));
+  await page.close();
+}
+{
   /* 改回全開，後面的測試才不受影響 */
   await adb.collection('sites').doc(siteIds[SLUG]).update({
     rsvpAskCard: true, rsvpAskGift: true, rsvpAskMessage: true,
     rsvpMailEnabled: true, rsvpShowStory: true, rsvpShowGallery: true,
     rsvpContactMethods: ['phone', 'line', 'email'],
+    rsvpQuestions: [],
   });
 }
 

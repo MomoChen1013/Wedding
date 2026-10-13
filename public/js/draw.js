@@ -107,7 +107,28 @@ const collCount = document.getElementById('collCount');
 const descEl    = document.getElementById('cardDesc');
 const drawBtn   = document.getElementById('drawBtn');
 const drawEmpty = document.getElementById('drawEmpty');
+const drawLimit = document.getElementById('drawLimit');
 let drawing = false;
+
+/* ===== 每次造訪最多抽幾張 =====
+   「沒有關掉網站」就算同一次造訪：存在 sessionStorage，
+   在站內換頁再回來也不會重新計算，關掉分頁才歸零。
+   key 以 siteId 分隔（和 common.js 的 LS 同一套），
+   同一個分頁逛兩組新人的網站時不會共用次數。
+   無痕模式或被擋下時 sessionStorage 會丟例外，退回只記在這一頁的記憶體裡。 */
+const DRAW_MAX = 3;
+const DRAW_KEY = `wed.${(window.SITE && window.SITE.siteId) || 'default'}.draw.count`;
+let drawCountMem = 0;
+function drawCount(){
+  try{
+    const n = Number(sessionStorage.getItem(DRAW_KEY));
+    return Number.isFinite(n) && n > 0 ? Math.max(n, drawCountMem) : drawCountMem;
+  }catch{ return drawCountMem; }
+}
+function bumpDrawCount(){
+  drawCountMem = drawCount() + 1;
+  try{ sessionStorage.setItem(DRAW_KEY, String(drawCountMem)); }catch{}
+}
 
 /* ===== 收藏（mini-card） =====
    點得下去：開放大檢視（見下面的「收藏卡放大看」），
@@ -404,7 +425,15 @@ function updateDrawState(){
 updateDrawState();
 
 drawBtn.addEventListener('click', ()=>{
-  if(drawing || !CARDS.length) return; drawing = true;
+  if(drawing || !CARDS.length) return;
+  /* 抽滿了：按鈕不停用 —— 按下去才說為什麼不能再抽，
+     一顆突然點不動的按鈕會被當成壞掉 */
+  if(drawCount() >= DRAW_MAX){
+    if(drawLimit) drawLimit.hidden = false;
+    return;
+  }
+  drawing = true;
+  bumpDrawCount();
   card.classList.remove('flipped', 'shine');
   if(descEl) descEl.classList.remove('show');
 

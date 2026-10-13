@@ -433,8 +433,17 @@ function mainEventFromSite(){
     desc: '',
     requiresRsvp: true,
     askCount: true, askMeal: true, askChildSeat: true, askDiet: true,
-    questions: [],
+    /* 合成出來的活動存不進 events[]，它的自訂題目就存在站台文件的
+       rsvpQuestions（和 rsvpAsk* 同一個道理）。之後落成真的 events[] 時，
+       materializedEvents() 會連題目一起帶過去。 */
+    questions: siteQuestions(),
   };
+}
+
+function siteQuestions(){
+  const raw = window.SITE && window.SITE.data && window.SITE.data.rsvpQuestions;
+  return (Array.isArray(raw) ? raw : [])
+    .map(normalizeQuestion).filter(Boolean).slice(0, EVENT_QUESTION_MAX);
 }
 
 /* ---------- 活動的日期時間 ----------
@@ -587,7 +596,9 @@ function eventResponse(r, eventId){
       veg:    Math.max(0, Number(hit.veg) || 0),
       note:   typeof hit.note === 'string' ? hit.note : '',
       answers: hit.answers && typeof hit.answers === 'object' ? hit.answers : {},
-      tentative: false,
+      /* 多活動的卡片沒有「視情況而定」，送出時頂層 tentative 一律是 false；
+         單一活動的表單為了存自訂題目也會寫這一格，那時頂層的 tentative 才是真的 */
+      tentative: hit.going !== true && r.tentative === true,
       legacy: false,
     };
   }
@@ -604,7 +615,11 @@ function eventResponse(r, eventId){
     count: going ? Math.max(1, Number(r.guestCount) || 1) : 0,
     veg:   going ? Math.max(0, Number(r.mealVeg) || 0) : 0,
     note:  '',
-    answers: {},
+    /* 只辦一場時，自訂題目的作答存在 events.main（那時還沒有真的活動 id）。
+       之後新人開了多活動、婚宴落成真的一筆，題目 id 沒變，作答照樣對得回來 */
+    answers: (map && map[MAIN_EVENT_ID] && map[MAIN_EVENT_ID].answers
+              && typeof map[MAIN_EVENT_ID].answers === 'object')
+      ? map[MAIN_EVENT_ID].answers : {},
     /* 「視情況而定」在多活動的卡片上沒有這個選項，只有舊回覆會帶 */
     tentative: r.tentative === true,
     legacy: true,
