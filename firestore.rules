@@ -74,6 +74,9 @@ service cloud.firestore {
                 eventAsks()）。其他備註不分活動，只有這一份。 */
              'rsvpAskCount', 'rsvpAskMeal', 'rsvpAskChildSeat', 'rsvpAskDiet',
              'rsvpAskNote',
+             /* 自訂題目（最多 3 題）：和上面四題同一個道理 —— 原則上存在
+                events[].questions，站台還沒有 events[] 時沒地方放，就存這裡。 */
+             'rsvpQuestions',
              /* 賓客標籤庫（VIP、長輩、大學同學…）：新人自己維護，
                 但「這個站台要不要用標籤」的總開關 guestTagsEnabled
                 不在名單內 —— 和 pages 一樣，只能由我們用 Admin SDK／
@@ -145,6 +148,10 @@ service cloud.firestore {
         && (!('rsvpAskChildSeat' in d) || d.rsvpAskChildSeat is bool)
         && (!('rsvpAskDiet'      in d) || d.rsvpAskDiet is bool)
         && (!('rsvpAskNote'      in d) || d.rsvpAskNote is bool)
+        /* 每一題是 map（id／kind／label／hint／opts），規則語言逐筆檢查不了，
+           和 events、guestTags 同一套做法：只擋筆數與型別，內容在後台送出前先切好 */
+        && (!('rsvpQuestions' in d)
+            || (d.rsvpQuestions is list && d.rsvpQuestions.size() <= 3))
         /* 有沒有「郵寄」這個選項（喜帖怎麼給、喜餅怎麼領） */
         && (!('rsvpMailEnabled' in d) || d.rsvpMailEnabled is bool)
         && (!('rsvpShowStory'   in d) || d.rsvpShowStory is bool)

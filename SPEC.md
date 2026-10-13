@@ -129,6 +129,8 @@ sites/{siteId}
   rsvpAskMeal     : boolean  # 要不要問餐點分配（葷／素）
   rsvpAskChildSeat: boolean  # 要不要問兒童座椅
   rsvpAskDiet     : boolean  # 要不要問飲食習慣補充
+  rsvpQuestions   : map[] ≤3 # 自訂題目；同上，站台還沒有 events[] 時才存這裡
+                             # （格式同 events[].questions）
   rsvpMailEnabled : boolean  # 要不要提供「郵寄」這個選項（喜帖怎麼給、喜餅怎麼領）；
                              # 沒有這個欄位＝提供。關掉時兩題各少一個「郵寄」，
                              # 也就不會問地址 —— 不寄送的新人不該讓賓客
@@ -380,6 +382,14 @@ short/{code}                # 短連結
 > 活動本身（時間、地點、說明）—— 同一件事給兩個入口，一改就會對不起來。
 > 題目名稱的 placeholder 寫成「例如：需要接駁車嗎？」而不是「需要接駁車嗎？」——
 > 後者會被當成建議題目直接照抄。
+> **只辦一場（站台還沒有 `events[]`）也可以加自訂題目**：合成出來的活動卡存不回
+> `events[]`，題目就存在站台文件的 `rsvpQuestions`（和 `rsvpAsk*` 同一個道理，
+> 規則只擋 list ≤3）。賓客的作答借用回覆的 `events.main.answers`
+> （不寫 `primaryEventId`）；之後開了多活動、婚宴落成真的一筆時，
+> `materializedEvents()` 會把題目一起帶過去，`eventResponse()` 也會從
+> `events.main` 把舊作答對回主要活動。
+> 有 `events[]` 但只有一場要回覆時，題目照樣存在那一場的 `events[].questions`，
+> 賓客看到的是單一活動的表單、題目接在「熱情出席」那一段裡。
 > **多選題存的是「用逗號串起來的選項 id」**（`answers` 仍然是
 > `題目 id → 字串`，規則與既有資料都不必改型別）；顯示走
 > `common.js` 的 `questionAnswerText()`，單選就是一個元素的清單。
@@ -481,7 +491,7 @@ coupleTitle venueName venueAddress venueMapUrl transportPublic transportParking
 dressCode dressCodeColors giftNote story schedule hashtags updatedAt
 seatingSearchEnabled seatingFeatureEnabled
 rsvpAskCard rsvpAskGift rsvpAskMessage rsvpMailEnabled rsvpContactMethods
-rsvpAskCount rsvpAskMeal rsvpAskChildSeat rsvpAskDiet rsvpAskNote
+rsvpAskCount rsvpAskMeal rsvpAskChildSeat rsvpAskDiet rsvpAskNote rsvpQuestions
 rsvpShowStory rsvpShowGallery guestTags events eventDate pagePublish
 ```
 

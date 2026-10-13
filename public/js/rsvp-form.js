@@ -175,30 +175,35 @@
     }
 
     /* 這個活動自己的專屬問題（後台每個活動最多 3 題，一律選填） */
-    ev.questions.forEach(q => {
+    bits.push(...questionBits(ev, p));
+
+    if(!bits.length) return '';
+    return `<div class="ev-detail" id="${p}detail" hidden>${bits.join('\n')}</div>`;
+  }
+
+  /* 自訂題目：多活動掛在各張活動卡上，單一活動掛在「熱情出席」那一段。
+     元素 id 是 `${前綴}q_${題目 id}`，送出與回訪時用同一個規則找回來。 */
+  function questionBits(ev, p){
+    return (ev.questions || []).map(q => {
       const qid = `${p}q_${q.id}`;
       if(q.kind === 'text'){
-        bits.push(`<label class="rf-label" for="${qid}">${esc(q.label)} <small>（選填）</small></label>
+        return `<label class="rf-label" for="${qid}">${esc(q.label)} <small>（選填）</small></label>
         <div class="field">
           <input type="text" id="${qid}" maxlength="${MAX.note}"
                  placeholder="${esc(q.hint || '')}">
-        </div>`);
-        return;
+        </div>`;
       }
       /* 多選題和單選題長得一樣，差別只在「可以同時選幾個」——
          所以用同一個 .choice-row，多一個 data-ev-multi 給點擊那一段判斷 */
       const many = q.kind === 'multi';
-      bits.push(`<label class="rf-label">${esc(q.label)} <small>（${
+      return `<label class="rf-label">${esc(q.label)} <small>（${
         many ? '可複選，選填' : '選填'}）</small></label>
       <div class="choice-row" id="${qid}" data-ev-q="${esc(q.id)}"${
         many ? ' data-ev-multi="1"' : ''}>${
         q.opts.map(o =>
           `<button type="button" class="choice sm" data-val="${esc(o.id)}">${esc(o.label)}</button>`
-        ).join('')}</div>`);
+        ).join('')}</div>`;
     });
-
-    if(!bits.length) return '';
-    return `<div class="ev-detail" id="${p}detail" hidden>${bits.join('\n')}</div>`;
   }
 
   function evCardHtml(ev){
@@ -247,6 +252,16 @@
     </div>` : ''}
     <section class="rsvp-events" id="rsvpEvents">${evs.map(evCardHtml).join('')}</section>
     <div class="ev-sep"><span>你的資料</span></div>`;
+  }
+
+  /* 單一活動的自訂題目元素 id 前綴（多活動用的是 `ev_${id}_`） */
+  const ONE_PREFIX = 'one_';
+
+  /* 單一活動的表單問的是哪一個活動 ——
+     一個要回覆的活動都沒有時（所有活動都關了「需要賓客回覆」），
+     退回這場婚禮本身那一個活動 */
+  function oneEvent(evs){
+    return evs[0] || eventAsks(weddingEvents()[0] || {});
   }
 
   function formHtml(cfg, evs) {
@@ -316,7 +331,7 @@
     /* 一個要回覆的活動都沒有時（所有活動都關了「需要賓客回覆」），
        退回這場婚禮本身那一個活動 —— 表單仍然照全域的四個開關畫，
        和改版前一樣，不會突然少掉人數與餐點 */
-    const one = evs[0] || eventAsks(weddingEvents()[0] || {});
+    const one = oneEvent(evs);
     const detailBits = !multi ? [
       one.askCount ? `
       <label class="rf-label">包含你，共幾位出席？</label>
@@ -349,6 +364,8 @@
         <input type="text" id="rDiet" maxlength="${MAX.diet}"
                placeholder="例：不吃牛、海鮮過敏、孕婦餐">
       </div>` : '',
+      /* 自訂題目（最多 3 題，一律選填）：和多活動的活動卡同一套 */
+      ...questionBits(one, ONE_PREFIX),
     ].filter(Boolean) : [];
     const detailBlock = (multi || !detailBits.length) ? '' : `
     <!-- 以下只有「熱情出席」才要填 -->
@@ -433,6 +450,9 @@ ${memoBlock}
        每一張活動卡上都要跟著不見（見 common.js 的 eventAsks()） */
     const evs = rsvpEventsAsked();
     const multi = evs.length > 1;
+    /* 單一活動時表單問的那一個（自訂題目跟著它走） */
+    const one = multi ? null : oneEvent(evs);
+    const oneQs = one && Array.isArray(one.questions) ? one.questions : [];
     host.innerHTML = formHtml(cfg, evs);
     if (typeof fillTemplates === 'function') fillTemplates(host);
 
@@ -462,6 +482,7 @@ ${memoBlock}
       card: null,           // paper | digital | none
       cardDelivery: null,   // pickup | mail
       gift: null,           // pickup | mail
+      answers: {},          // 單一活動的自訂選擇題：題目 id → 選項 id（多選用逗號串起來）
     };
 
     /* ---------- 選項 chip ---------- */
@@ -610,6 +631,26 @@ ${memoBlock}
     wireRow('cardRow', (v) => { state.card = v; syncCard(); });
     wireRow('cardDeliveryRow', (v) => { state.cardDelivery = v; syncCard(); });
     wireRow('giftRow', (v) => { state.gift = v; syncGift(); });
+
+    /* 單一活動的自訂選擇題：再點一次可以取消，多選題可以同時選好幾個
+       （和多活動活動卡上的那一段同一套規則） */
+    if (!multi && oneQs.length) {
+      $('rsvpForm').addEventListener('click', (e) => {
+        const opt = e.target.closest('.choice-row[data-ev-q] .choice');
+        if (!opt) return;
+        const row = opt.closest('[data-ev-q]');
+        const qid = row.dataset.evQ;
+        const v = opt.dataset.val;
+        if (row.dataset.evMulti) {
+          const picked = answerList(state.answers[qid]);
+          const next = picked.includes(v) ? picked.filter(x => x !== v) : [...picked, v];
+          state.answers[qid] = next.join(',');
+        } else {
+          state.answers[qid] = state.answers[qid] === v ? '' : v;
+        }
+        markAnswerRow(row, state.answers[qid]);
+      });
+    }
 
     /* 選填的題目：再點一次選好的那顆就取消，不然賓客手滑選了就拿不掉 */
     (function wireTagRow() {
@@ -1007,7 +1048,7 @@ ${memoBlock}
         ? val(CONTACT_FIELDS[key].id).slice(0, CONTACT_FIELDS[key].max)
         : '');
 
-      return {
+      const out = {
         name: val('rName').slice(0, MAX.name),
         icon: user.icon || (typeof DEFAULT_ICON !== 'undefined' ? DEFAULT_ICON : '✦'),
         attending: going,
@@ -1036,6 +1077,27 @@ ${memoBlock}
         note: val('rMemo').slice(0, MAX.note),
         createdAt: window.fb.serverTimestamp(),
       };
+
+      /* 自訂題目的作答沒有頂層欄位可以放，借用多活動那一格：
+         events[活動 id].answers（規則、後台統計、CSV 讀的都是這一份）。
+         這一場沒有自訂題目時一個欄位都不多寫，回覆和以前逐字相同。 */
+      if (oneQs.length) {
+        const answers = {};
+        oneQs.forEach(q => {
+          const v = q.kind === 'text' ? val(`${ONE_PREFIX}q_${q.id}`) : (state.answers[q.id] || '');
+          if (going && v) answers[q.id] = String(v).slice(0, MAX.note);
+        });
+        out.events = {
+          [one.id]: {
+            going,
+            count: going ? out.guestCount : 0,
+            veg: out.mealVeg,
+            note: out.dietaryNote,
+            answers,
+          },
+        };
+      }
+      return out;
     }
 
     const submitBtn = $('submitBtn');
@@ -1102,6 +1164,13 @@ ${memoBlock}
         }, {}) : null,
       };
       if(multi) mine.attending = payload.attending ? 'yes' : 'no';
+      /* 單一活動的自訂題目，回訪時帶回畫面 */
+      if(!multi && oneQs.length){
+        mine.answers = { ...state.answers };
+        mine.texts = oneQs.filter(q => q.kind === 'text').reduce((a, q) => {
+          a[q.id] = val(`${ONE_PREFIX}q_${q.id}`); return a;
+        }, {});
+      }
       try { LS.set('rsvp.mine', mine); } catch { /* 無痕模式寫不進去，不影響送出 */ }
       try { if (typeof saveUser === 'function') saveUser({ name: payload.name, icon: payload.icon }); } catch { }
 
@@ -1245,6 +1314,20 @@ ${memoBlock}
       pick('cardRow', state.card);
       pick('cardDeliveryRow', state.cardDelivery);
       pick('giftRow', state.gift);
+      /* 單一活動的自訂題目：題目被新人刪掉的話，找不到元素就略過 */
+      if(!multi && oneQs.length){
+        state.answers = (mine.answers && typeof mine.answers === 'object')
+          ? { ...mine.answers } : {};
+        oneQs.forEach(q => {
+          const id = `${ONE_PREFIX}q_${q.id}`;
+          if(q.kind === 'text') setVal(id, (mine.texts || {})[q.id]);
+          else {
+            const row = $(id);
+            if(row) markAnswerRow(row, state.answers[q.id]);
+          }
+        });
+      }
+
       /* 這兩個只有單一活動的表單才有；多活動的兒童椅在各張活動卡上（前面已還原） */
       if(!multi){
         $('childSeatOn').checked = state.childSeat > 0;

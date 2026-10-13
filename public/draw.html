@@ -88,6 +88,8 @@
         <div class="draw-act">
           <button class="btn small" id="drawBtn" disabled>抽一張婚禮小卡</button>
           <p class="draw-empty" id="drawEmpty" hidden>等待新人上傳照片</p>
+          <!-- 抽滿上限之後再按，才出現這一行（draw.js 的 DRAW_MAX） -->
+          <p class="draw-empty" id="drawLimit" role="status" aria-live="polite" hidden>你抽太多張啦，不能再抽了</p>
         </div>
         <div class="draw-info">你的收藏（<span id="collCount">0</span> 張）<small class="draw-info-hint">點卡片看大圖・可以存下來</small></div>
         <div class="collection" id="collection"></div>
