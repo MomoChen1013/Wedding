@@ -83,7 +83,7 @@ export const TEMPLATES = {
      （幾個版型要共用一副骨架時，寫 lobbyKey：那副骨架的名字，寫在 <body data-lobby>） ---- */
   /* 植物信箋：一本植物標本冊 —— 真的棉紙、描圖紙、壓花標本的照片、標本標籤 */
   'botanical-letter': { label:'Botanical Letter 植物信箋', lobbyFile:'lobby-botanical.html',
-                     lobbyCss:['/css/lobby-botanical.css'], lobbyJs:['/js/lobby-motion.js'], opening:'ribbon',
+                     lobbyCss:['/css/lobby-botanical.css'], lobbyJs:['/js/lobby-motion.js'], opening:'pressed',
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Courier+Prime&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
   /* 秘密花園：真的照片與手繪水彩 —— 開滿玫瑰的拱門小徑、常春藤、水彩的花、蝴蝶；
      推開常春藤牆上的玻璃門（開場）走進拱門。整套做完，有自己的骨架 */
@@ -155,15 +155,22 @@ export const OPENINGS = {
   'candle':   { label:'燭光點亮' },
   'stars':    { label:'星圖展開', auto:true },
   'door':     { label:'門／拱門' },
-  'ribbon':   { label:'拉開絲帶' },
+  'pressed':  { label:'摘下壓花' },
   'painting': { label:'走進油畫' },
   'balloons': { label:'氣球升空', auto:true },
+};
+
+/* 改過名字的開場：舊代號 → 新代號。
+   sites.opening 已經寫了舊代號的站台照樣認得，不會落回版型預設 */
+const RENAMED_OPENINGS = {
+  'ribbon': 'pressed',   /* 緞帶蝴蝶結換成紙膠帶貼住的壓花之後改名 */
 };
 
 /* 這組新人的開場：sites.opening → 版型預設 → null（原本的字幕＋簾幕）。
    用 hasOwn 的理由和 templateKey() 一樣 —— 'toString' 不能被當成一種開場，
    否則會去載一支不存在的 /js/openers/toString.js */
 export function openingKey(name, template) {
+  if (Object.hasOwn(RENAMED_OPENINGS, name)) name = RENAMED_OPENINGS[name];
   if (Object.hasOwn(OPENINGS, name)) return name;
   const t = TEMPLATES[templateKey(template)];
   return t.opening && Object.hasOwn(OPENINGS, t.opening) ? t.opening : null;

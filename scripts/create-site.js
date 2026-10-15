@@ -27,7 +27,7 @@
                       / outdoor-party / morning-window / white-church
                       （見 js/wed-model.js 的 TEMPLATES）
      --opening        選填，開場；不填就用版型的預設開場
-                      envelope / book / bloom / curtain / candle / stars / door / ribbon
+                      envelope / book / bloom / curtain / candle / stars / door / pressed
                       / painting / balloons
                       （見 js/wed-model.js 的 OPENINGS）
      --cover          選填，封面圖片網址
