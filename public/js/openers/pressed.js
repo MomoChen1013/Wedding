@@ -1,5 +1,5 @@
 /* ============================================================
-   openers/ribbon.js — 開場：摘下壓花（代號沿用 ribbon，存好的網站不用改）
+   openers/pressed.js — 開場：摘下壓花（舊代號 ribbon 照樣認得，見 wed-model.js 的 RENAMED_OPENINGS）
    ------------------------------------------------------------
    畫面中央是一張對開的邀請卡，左右兩扇在中間合起來，
    一小束壓花橫跨中縫，用兩段紙膠帶貼住 —— 卡片就是被它「封」起來的：
@@ -31,30 +31,30 @@
   }
   /* 一段膠帶 = 兩半：右半 (a) 一直貼著，左半 (b) 以中間為軸撕起來往回折 */
   const tape = (cls) =>
-    `<div class="rb-tape ${cls}"><i class="rb-tape-a" style="clip-path:${torn('r')}"></i><i class="rb-tape-b" style="clip-path:${torn('l')}"></i></div>`;
+    `<div class="pf-tape ${cls}"><i class="pf-tape-a" style="clip-path:${torn('r')}"></i><i class="pf-tape-b" style="clip-path:${torn('l')}"></i></div>`;
 
-  function ribbon(host, ctx) {
-    host.classList.add('rb-host');
+  function pressed(host, ctx) {
+    host.classList.add('pf-host');
     host.innerHTML = `
-      <div class="rb-table" aria-hidden="true"></div>
-      <div class="rb-stage" aria-hidden="true">
-        <div class="rb-card">
-          <div class="rb-inside">
-            <div class="rb-kicker">Together with their families</div>
-            <div class="rb-names">${LM.namesHtml(ctx)}</div>
-            <div class="rb-rule"></div>
-            <div class="rb-date">${LM.esc(ctx.date)}</div>
-            <div class="rb-note">request the pleasure of your company</div>
+      <div class="pf-table" aria-hidden="true"></div>
+      <div class="pf-stage" aria-hidden="true">
+        <div class="pf-card">
+          <div class="pf-inside">
+            <div class="pf-kicker">Together with their families</div>
+            <div class="pf-names">${LM.namesHtml(ctx)}</div>
+            <div class="pf-rule"></div>
+            <div class="pf-date">${LM.esc(ctx.date)}</div>
+            <div class="pf-note">request the pleasure of your company</div>
           </div>
-          <div class="rb-panel rb-pl"><div class="rb-face"></div><div class="rb-face rb-back"></div></div>
-          <div class="rb-panel rb-pr"><div class="rb-face"><div class="rb-label"><b>No. 01</b><span>For our dearest guest</span></div></div><div class="rb-face rb-back"></div></div>
-          <i class="rb-posy"></i>
-          ${tape('rb-tape-1')}
-          ${tape('rb-tape-2')}
+          <div class="pf-panel pf-pl"><div class="pf-face"></div><div class="pf-face pf-back"></div></div>
+          <div class="pf-panel pf-pr"><div class="pf-face"><div class="pf-label"><b>No. 01</b><span>For our dearest guest</span></div></div><div class="pf-face pf-back"></div></div>
+          <i class="pf-posy"></i>
+          ${tape('pf-tape-1')}
+          ${tape('pf-tape-2')}
         </div>
       </div>
-      <div class="rb-handle" role="presentation"></div>
-      <div class="rb-hint"><span class="en">Peel off the flowers</span><span class="cn">摘下壓花・或輕觸畫面</span></div>`;
+      <div class="pf-handle" role="presentation"></div>
+      <div class="pf-hint"><span class="en">Peel off the flowers</span><span class="cn">摘下壓花・或輕觸畫面</span></div>`;
 
     let started = false;
     function peel() {
@@ -74,14 +74,14 @@
     }
     LM.hitButton(host, '摘下壓花，打開邀請函', peel);
 
-    /* 按住壓花拉：膠帶跟著翹（--rb-pull 0→1）、花跟著手走一點（--rb-dx／--rb-dy） */
-    const handle = host.querySelector('.rb-handle');
+    /* 按住壓花拉：膠帶跟著翹（--pf-pull 0→1）、花跟著手走一點（--pf-dx／--pf-dy） */
+    const handle = host.querySelector('.pf-handle');
     let p0 = null;
     const setPull = (dx, dy) => {
       const d = Math.hypot(dx, dy);
-      host.style.setProperty('--rb-pull', Math.min(d / PULL, 1).toFixed(3));
-      host.style.setProperty('--rb-dx', (dx * .28).toFixed(1));
-      host.style.setProperty('--rb-dy', (dy * .28).toFixed(1));
+      host.style.setProperty('--pf-pull', Math.min(d / PULL, 1).toFixed(3));
+      host.style.setProperty('--pf-dx', (dx * .28).toFixed(1));
+      host.style.setProperty('--pf-dy', (dy * .28).toFixed(1));
       return d;
     };
     handle.addEventListener('pointerdown', (e) => {
@@ -106,5 +106,5 @@
     });
   }
 
-  LM.register('ribbon', ribbon);
+  LM.register('pressed', pressed);
 })();
