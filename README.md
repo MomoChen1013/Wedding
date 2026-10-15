@@ -386,8 +386,8 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 >
 > | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
 > |---|---|---|---|
-> | `meadow.webp` | 開場氣球飛走後露出來的那片、大廳 hero | [藍天下的綠色草原與遠山](https://unsplash.com/photos/ZAy8srF4rRM)・Angela Loria | 縮圖 |
-> | `balloon-*.webp`（white、blush、peach、butter、mint、lilac） | 開場滿滿的氣球、hero 漏網的氣球、小貨車上綁的三顆 | AI 生成（不是 Unsplash）：同一顆 12 吋霧面乳膠氣球、同一個角度與光線，一個顏色一張 | 原圖是把棋盤格畫進去的 JPG，依顏色飽和度扣出氣球；氣球本體取凸包、五張投票出同一個外框（亮面不會被當成背景咬掉），結另外保留；邊往內收 2px 去掉棋盤格殘邊。放在 480×622（＝300:389）的透明底上，結貼著底邊正中（線用 SVG／CSS 另外畫）。lilac 還沒有生成，暫時是 blush 轉色相做的 |
+> | `tent.webp` | 開場氣球飛走後露出來的那片、大廳 hero | AI 生成（不是 Unsplash）：美式後院婚宴，草坪上一頂白色尖頂帳篷、長桌與白色折疊椅、三角旗、串燈，後面是紅色穀倉與白色農舍，上半部留天空給名字 | 原尺寸 1264×848 轉 webp |
+> | `balloon-*.webp`（white、blush、peach、butter、mint、lilac、sky） | 開場滿滿的氣球、hero 漏網的氣球、小貨車上綁的三顆 | AI 生成（不是 Unsplash）：同一顆 12 吋霧面乳膠氣球、同一個角度與光線，一個顏色一張 | white～mint 原圖是把棋盤格畫進去的 JPG，依顏色飽和度扣出氣球；lilac、sky 是黑底，依亮度扣，邊多收 2px 去掉黑邊、暗面提亮一點跟其他顆一致。氣球本體取凸包、五張投票出同一個外框（亮面不會被當成背景咬掉），結各自保留；邊往內收 2px 去掉殘邊。放在 480×622（＝300:389）的透明底上，結貼著底邊正中（線用 SVG／CSS 另外畫） |
 > | `truck.webp` | 交通資訊的小貨車 | [米白色的老福特 F-100](https://unsplash.com/photos/YE3vIwURtY8)・Danny Greenberg | 去背（isnet），手動清掉車斗後面的磚牆與鐵窗、車頭旁的樹枝與地上的影子，車窗裡透出去的磚牆換成淡淡的玻璃反光 |
 > | `basket.webp` | hero 草地上的籐籃、R.S.V.P. 旁的野餐籃 | [野餐墊上的籐編野餐籃](https://unsplash.com/photos/5zqM9t-4BLc)・Eugenia Pan'kiv | 去背 |
 > | `apples.webp` | hero 草地上的一籃蘋果 | [一籃紅蘋果](https://unsplash.com/photos/4Bj27zMqNSE)・Vera De | 去背 |
@@ -509,7 +509,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > 圖載不到的時候，同一個場景會退回程式畫的那一幅（先用色塊打底稿，再取色疊幾萬筆短筆觸，固定種子）。
 > 因為大廳的畫要靠這一支，這個版型的 `lobbyJs` 也掛了 painting.js —— 換成別種開場，大廳的畫照樣在。
 >
-> **派對的氣球**：開場的氣球是一顆一顆的（AI 生成的霧面乳膠氣球，六種粉彩各一張、外框一模一樣），`js/openers/balloons.js` 依當下的視窗大小排成遠、中、近三層，每一顆各自的放開時間、速度與飄的方向都不一樣
+> **派對的氣球**：開場的氣球是一顆一顆的（AI 生成的霧面乳膠氣球，粉彩各一張、外框一模一樣），`js/openers/balloons.js` 依當下的視窗大小排成遠、中、近三層，每一顆各自的放開時間、速度與飄的方向都不一樣
 > （遠的小、淡，近的大、有一點景深的糊），亂數有固定種子，每一次打開都是同一批。
 
 ---
