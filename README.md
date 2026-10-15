@@ -236,7 +236,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | `envelope` | 拆信・封蠟 | 點封蠟 → 封蠟沿著鋸齒裂成兩半、封口掀起 → 信封四散。封蠟是一枚真的香檳金封蠟（[Diana Light／Unsplash](https://unsplash.com/photos/eLEebyVItmk)，去背；保留外圈的蠟、把中間的印面整平，再壓上 `favicon.png` logo 的雙戒指；`img/envelope/wax-seal.webp`）。拆開前蓋著一枚完整的封蠟，看不出裂縫 | tapestry |
 | `envelope-emboss` | 拆信・壓紋金邊 | **圖片版**：象牙白厚紙上的白色浮雕花束（AI 生成的整封照片）、金封蠟；點下去封口掀起、縫裡透出暖光與光芒；有金光版照片時壓紋從封蠟往外泛金 | （可選） |
 | `envelope-feather` | 拆信・鵝毛絨 | **圖片版**：整封信封是一張 AI 生成的照片（封口滾一圈白色羽毛），沿著照片裡的摺線切成四片；粉紅封蠟；點下去羽毛（也是生成的照片，黑底去背）從封蠟那裡飛散、飄落 | （可選） |
-| `envelope-silk` | 拆信・緞帶絲綢 | 絲光白信封、一條白緞帶橫過紅封蠟底下；點下去緞帶先被抽走，才裂封蠟、掀封口 | （可選） |
+| `envelope-silk` | 拆信・緞帶絲綢 | **圖片版**：象牙白緞面信封（AI 生成的照片）、一條緞帶（照片，黑底去背）橫過紅封蠟底下；點下去緞帶先被抽走，才裂封蠟、掀封口，裡面是酒紅絲緞內襯 | （可選） |
 | `envelope-regal` | 拆信・華麗紅封蠟 | 白信封壓燙金雙線框、四角燙金花飾（`regal-corner.svg`）、紅底金花內襯、紅封蠟 | （可選） |
 | `envelope-pure` | 拆信・端莊金封蠟 | 純白信封、一條細金線、金封蠟 | （可選） |
 | `book` | 翻頁・古書 | 點封面 → 翻開 → 扉頁 → 翻過扉頁 | （可選） |
@@ -253,9 +253,9 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > 差別都在 `css/openers/envelope.css` 的 `.env[data-env="…"]`。金、粉紅、紅三色封蠟是從原本那一枚
 > 染出來的：`node scripts/build-envelope-seals.js`（亮度對應色帶，蠟的起伏與印面原樣保留）。
 >
-> **圖片版信封**（目前是 `envelope-emboss`、`envelope-feather`）：素材在 `public/img/envelope/{款}/`，用 AI 生成
+> **圖片版信封**（目前是 `envelope-emboss`、`envelope-feather`、`envelope-silk`）：素材在 `public/img/envelope/{款}/`，用 AI 生成
 > （規格與提示詞見 `docs/envelope-art-brief.md`）——`portrait.webp`（手機）、`landscape.webp`（桌機）、
-> `liner.webp`（內襯）、`plume-*.webp`（飛散的羽毛）。
+> `liner.webp`（內襯）、`plume-*.webp`（飛散的羽毛）、`ribbon.webp`（緞帶）。
 > 每張照片的摺線位置不同，裁切的多邊形寫在 `js/openers/envelope.js` 的 `ART`（照片的 %）；換照片要重量一次。
 > 封蠟三色共用（`img/envelope/seal-{red,pink,gold}.webp`）：AI 生成的空白蠟，再用
 > `node scripts/build-envelope-seals-rings.js <紅> <粉紅> <金>` 把 `favicon.png` 的雙戒指壓成浮雕（光從左上來）。

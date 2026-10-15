@@ -37,7 +37,7 @@
     'envelope':         { env: 'vintage' },                 /* 復古舊紙・古銅封蠟 */
     'envelope-emboss':  { env: 'emboss', art: 'emboss', light: true }, /* 壓紋白信封・金封蠟，拆開時透光、壓紋浮出金邊 */
     'envelope-feather': { env: 'feather', art: 'feather', plumes: 34 }, /* 鵝毛絨白信封・粉紅封蠟 */
-    'envelope-silk':    { env: 'silk', ribbon: true, pull: 760 },    /* 緞帶絲綢白信封・紅封蠟 */
+    'envelope-silk':    { env: 'silk', art: 'silk', ribbon: true, pull: 760 }, /* 緞帶絲綢白信封・紅封蠟 */
     'envelope-regal':   { env: 'regal', frame: true },      /* 華麗白信封・紅封蠟 */
     'envelope-pure':    { env: 'pure' },                    /* 端莊白信封・金封蠟 */
   };
@@ -54,8 +54,26 @@
        hint    （選填）提示那一行字的高度（照片的 %）；照片底下有花樣時用它避開，沒寫就貼著畫面下緣
        glow    （選填）同一張照片、壓紋泛金的版本：拆開時從封蠟往外一圈一圈亮開
      seal：壓了雙戒指的封蠟（img/envelope/seal-*.webp，幾款共用）；liner：（選填）封口掀開後看到的內襯；
-     plumes：飛散用的羽毛（黑底去背） */
+     plumes：飛散用的羽毛（黑底去背）；ribbon：橫過封蠟底下、會被抽走的緞帶（黑底去背）
+     （緞帶絲綢的直式：最上層那片封口的尖端在 37%，比其他摺痕會合的那一點高 —— 封蠟和緞帶跟著封口尖端走） */
   const ART = {
+    silk: {
+      portrait: {
+        img: 'portrait.webp', w: 768, h: 1376, tip: [49.4, 37.4],
+        flap: [[0, 0], [100, 0], [100, 4.6], [97.6, 5.2], [49.4, 37.6], [2, 5], [0, 4]],
+        left: [[0, 4], [2, 5], [49.4, 37.6], [49.4, 100], [0, 100]],
+        right: [[100, 4.6], [97.6, 5.2], [49.4, 37.6], [49.4, 100], [100, 100]],
+        bottom: [[0, 80], [50, 50], [100, 78.5], [100, 100], [0, 100]],
+      },
+      landscape: {
+        img: 'landscape.webp', w: 1376, h: 768, tip: [50, 49.8],
+        flap: [[19.6, 0], [80, 0], [50, 50.2]],
+        left: [[0, 0], [19.6, 0], [50, 50.2], [50, 100], [0, 100]],
+        right: [[80, 0], [100, 0], [100, 100], [50, 100], [50, 50.2]],
+        bottom: [[0, 100], [3, 98.5], [50, 50.6], [97, 98.5], [100, 100]],
+      },
+      seal: 'seal-red.webp', liner: 'liner.webp', ribbon: 'ribbon.webp',
+    },
     emboss: {
       portrait: {
         img: 'portrait.webp', w: 768, h: 1376, tip: [50.3, 48], hint: 64,
@@ -203,6 +221,7 @@
       host.dataset.art = st.art;
       host.style.setProperty('--art-seal', `url("${ROOT}${art.seal}")`);
       if (art.liner) host.style.setProperty('--art-liner', `url("${art.dir}${art.liner}")`);
+      if (art.ribbon) host.style.setProperty('--art-ribbon', `url("${art.dir}${art.ribbon}")`);
       loadScriptFont();
       layoutArt(host, art);
       /* 轉手機、拉視窗：重新挑直式／橫式、重新對位；開場收掉以後就不必再算 */

@@ -264,24 +264,15 @@
 }
 @keyframes env-sway{from{transform:rotate(-16deg);}to{transform:rotate(16deg);}}
 
-/* ---- 3. 緞帶絲綢：絲光白紙，一條白緞帶橫過封蠟底下；
+/* ---- 3. 緞帶絲綢：圖片版（js 的 ART.silk）—— 象牙白緞面信封，一條緞帶（照片）橫過封蠟底下；
       點下去先把緞帶從封蠟底下抽走（.is-pulling），再裂封蠟、掀封口 ---- */
 .env[data-env="silk"]{
-  --env-pattern:linear-gradient(118deg,transparent 22%,rgba(255,255,255,.75) 38%,transparent 52%,rgba(255,255,255,.45) 66%,transparent 78%);
-  --env-l-left:linear-gradient(100deg,#f6f4f1,#fffefc 42%,#ece8e2);
-  --env-l-right:linear-gradient(260deg,#efebe5,#fbf9f6 46%,#e7e2db);
-  --env-l-bottom:linear-gradient(0deg,#ece8e2,#fbfaf7 55%,#f2efea);
-  --env-l-top:linear-gradient(170deg,#fffefd,#f3f0eb 60%,#faf8f5);
-  --env-edge:rgba(168,27,37,.45);--env-edge-dash:none;--env-edge-w:.9;
-  --env-seal-img:url(../../img/envelope/wax-seal-red.webp);
+  --env-shade:84,72,58;
   --env-glow:rgba(220,90,90,.45);
-  --env-ink-en:#8e1d27;--env-ink-date:#a8823e;--env-hint-en:#a3343b;
+  --env-ink-en:#8e1d27;--env-ink-date:#a8823e;--env-hint-en:#8e5c58;--env-hint-cn:#7d6e62;
   --env-card-line:rgba(184,148,76,.5);--env-card-accent:rgba(168,27,37,.32);
   --env-kicker:#8e1d27;--env-amp:#b8944c;
 }
-.env[data-env="silk"] .env-inside{
-  background:linear-gradient(115deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.45) 45%,rgba(255,255,255,0) 60%),
-    linear-gradient(180deg,#b5232d,#8e1520 60%,#7a111b);}
 .env-ribbon{position:absolute;left:-40px;right:-40px;top:var(--tip);
   height:calc(var(--seal) * .5);margin-top:calc(var(--seal) * -.25);
   filter:drop-shadow(0 2px 2px rgba(84,70,60,.24)) drop-shadow(0 5px 7px rgba(84,70,60,.14));}
@@ -424,3 +415,19 @@
 @keyframes env-light-in{0%{opacity:0;}55%{opacity:1;}100%{opacity:.9;}}
 .env.is-leaving .env-light{animation:env-light-out 1s ease forwards;}
 @keyframes env-light-out{from{opacity:.9;}to{opacity:0;}}
+
+/* 緞帶（--art-ribbon，緞帶絲綢）：換成照片，拉長鋪滿整條；反光改成一層疊在上面的光（照片本身不動） */
+.env[data-art] .env-ribbon{height:calc(var(--seal) * .56);margin-top:calc(var(--seal) * -.28);}
+.env[data-art] .env-ribbon-band{background:var(--art-ribbon) 0 0/100% 100% no-repeat;box-shadow:none;animation:none;}
+.env[data-art] .env-ribbon-band::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 44%,transparent 56%) -160% 0/60% 100% no-repeat;
+  animation:env-sheen-art 4.5s ease-in-out 1.2s infinite;}
+@keyframes env-sheen-art{0%,55%{background-position:-160% 0;}100%{background-position:260% 0;}}
+.env[data-art].is-pulling .env-ribbon-band{animation:env-pull-art .78s cubic-bezier(.55,0,.75,.35) forwards;}
+@keyframes env-pull-art{
+  0%  {transform:none;}
+  16% {transform:translateX(-1.2%) scaleY(.94) skewX(4deg);}
+  45% {transform:translateX(26%) scaleY(1.04) skewX(-8deg);}
+  70% {transform:translateX(62%) scaleY(.9) skewX(6deg);}
+  100%{transform:translateX(118%) scaleY(.82) skewX(-4deg);}
+}
