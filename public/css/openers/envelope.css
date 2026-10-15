@@ -327,7 +327,9 @@
 .env-to-orn{display:none;width:150px;height:20px;margin-top:8px;
   background:url(../../img/envelope/regal-orn.svg) center/contain no-repeat;}
 .env[data-env="regal"] .env-to-orn{display:block;}
-/* 內襯沿用復古那一款的紅底金花 */
+/* 內襯：酒紅底燙金大馬士革花紋（AI 生成的照片） */
+.env[data-env="regal"] .env-inside{
+  background:linear-gradient(180deg,rgba(20,4,8,.5),rgba(20,4,8,0) 38%),url(../../img/envelope/regal/liner.webp) center/cover no-repeat;}
 
 /* ---- 5. 端莊：純白、一條細金線、金封蠟，什麼都不多 ---- */
 .env[data-env="pure"]{
