@@ -2,7 +2,7 @@
    openers/balloons.css — 開場：氣球升空（js/openers/balloons.js）
    ------------------------------------------------------------
    三層：
-     .bp-scene  底下：一片藍天、綠色草原與遠山（img/party/meadow.webp），和派對大廳的 hero 同一張
+     .bp-scene  底下：美式後院婚宴：草坪上一頂白色尖頂帳篷、長桌、串燈，後面是穀倉和白色農舍（img/party/tent.webp），和派對大廳的 hero 同一張
      .bp-text   名字，浮在天空上（氣球飛走之後才出來）
      .bp-crowd  滿滿的氣球；每一顆三層 div：
                   .bp-b     位置與大小（JS 排的）；.is-far / .is-mid / .is-near 是遠中近三層
@@ -11,9 +11,9 @@
    只動 transform 與 opacity，一次一百多顆也順。
 ============================================================ */
 .bp-host{background:#8fc0e8;cursor:pointer;}
-/* 藍天、綠地、遠山（img/party/meadow.webp） */
-.bp-scene{position:absolute;inset:0;background:url(../../img/party/meadow.webp) 50% 62%/cover;}
-/* 草原在氣球後面慢慢拉遠一點 */
+/* 藍天、草坪、白色帳篷（img/party/tent.webp） */
+.bp-scene{position:absolute;inset:0;background:url(../../img/party/tent.webp) 50% 62%/cover;}
+/* 背景在氣球後面慢慢拉遠一點 */
 .bp-scene{transform:scale(1.1);transition:transform 6.5s cubic-bezier(.2,.7,.2,1);}
 .bp-host.is-up .bp-scene{transform:none;}
 
@@ -58,10 +58,10 @@
 .bp-skip{position:absolute;right:18px;bottom:16px;z-index:100000;font-size:12px;letter-spacing:.24em;color:rgba(31,48,73,.6);
   padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.7);pointer-events:none;}
 
-/* 收尾：整片淡掉（大廳的 hero 是同一片草原） */
+/* 收尾：整片淡掉（大廳的 hero 是同一張） */
 .bp-host.is-leaving{opacity:0;transition:opacity 1s ease;}
 
-/* 減少動態：沒有氣球，直接是草原與名字 */
+/* 減少動態：沒有氣球，直接是帳篷草坪與名字 */
 .bp-host.is-still .bp-crowd{display:none;}
 .bp-host.is-still .bp-scene{transform:none;}
 .bp-host.is-still .bp-text > *{opacity:1;transform:none;}

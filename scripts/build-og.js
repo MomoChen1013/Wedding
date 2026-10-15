@@ -63,7 +63,7 @@ import { resolveBaseUrl } from './site-url.js';
    不然賓客會看到「名字換成另一個名字」——只是把閃爍換個地方發作。 */
 import {
   TEMPLATES, templateKey, buildWed, tplValue, BAKEABLE_TPL_KEYS,
-  STORY_LAYOUTS, storyLayoutKey,
+  STORY_LAYOUTS, storyLayoutKey, balloonPaletteKey,
 } from '../public/js/wed-model.js';
 
 const ROOT         = fileURLToPath(new URL('../', import.meta.url));
@@ -628,10 +628,13 @@ function hydrateHtml(html, info, { isLobby = false, isStoryPage = false, photo =
   html = html.replace(/<body([^>]*)>/i, (m, attrs) => {
     let a = attrs.replace(/\s*data-template="[^"]*"/i, '')
                  .replace(/\s*data-hero-name="[^"]*"/i, '')
-                 .replace(/\s*data-story-layout="[^"]*"/i, '');
+                 .replace(/\s*data-story-layout="[^"]*"/i, '')
+                 .replace(/\s*data-balloons="[^"]*"/i, '');
     /* 敘事模組只有「我們的故事」那一頁在讀，其他頁面不留這個屬性 */
     const sl = isStoryPage ? ` data-story-layout="${storyKey}"` : '';
-    return `<body data-template="${key}" data-hero-name="${wed.heroNameLang}"${sl}${a}>`;
+    /* 氣球配色只有大廳在讀（開場與派對大廳飄上去的氣球）：先烤好，氣球才不會先彩色再換色 */
+    const bp = isLobby ? ` data-balloons="${balloonPaletteKey(info.balloonPalette)}"` : '';
+    return `<body data-template="${key}" data-hero-name="${wed.heroNameLang}"${sl}${bp}${a}>`;
   });
 
   /* ---- 版型專屬的字體與版面 CSS 直接寫進 <head> ----
@@ -795,7 +798,7 @@ function siteInfo(site) {
   if (!site) {
     return {
       couple: '', dateText: '', dateNumeric: '', venueName: '',
-      pages: null, template: '', storyLayout: '', wed: buildWed({}), hydrate: false,
+      pages: null, template: '', storyLayout: '', balloonPalette: '', wed: buildWed({}), hydrate: false,
     };
   }
   const groom = (site.groomName || '').trim();
@@ -815,6 +818,8 @@ function siteInfo(site) {
     /* 敘事模組：決定「我們的故事」那一頁烤進 <body> 的 data-story-layout，
        以及要先印進 <head> 的版面 CSS 與該預載哪一支頁面 JS */
     storyLayout: typeof site.storyLayout === 'string' ? site.storyLayout : '',
+    /* 氣球配色：烤進大廳 <body> 的 data-balloons */
+    balloonPalette: typeof site.balloonPalette === 'string' ? site.balloonPalette : '',
     /* 預渲染要填的值。和瀏覽器端 site-context.js 用的是同一個 buildWed() */
     wed: buildWed(site),
     /* 原始文件：目前只有 lobbyPhoto() 要看 coverImageUrl */

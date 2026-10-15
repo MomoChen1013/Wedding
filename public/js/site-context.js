@@ -36,6 +36,7 @@ import {
   TEMPLATES, templateKey, buildWed,
   STORY_LAYOUTS, storyLayoutKey,
   OPENINGS, openingKey, openingFile,
+  BALLOON_PALETTES, balloonPaletteKey,
   tplValue, swapTokens, hashtagList,
   pagePublishEntry, pageVisible,
 } from './wed-model.js';
@@ -527,6 +528,11 @@ async function boot() {
   const opening = openingKey(site.opening, template);
   if (pageKey === 'lobby' && opening) addStylesheet(`/css/openers/${openingFile(opening)}.css`);
 
+  /* 氣球配色（見 wed-model.js 的 BALLOON_PALETTES）：開場與派對大廳的氣球都讀
+     <body data-balloons>，只有大廳用得到。預產的大廳 build-og 已經烤好了，這裡再寫一次是給沒預產到的 */
+  const balloonPalette = balloonPaletteKey(site.balloonPalette);
+  if (pageKey === 'lobby') document.body.dataset.balloons = balloonPalette;
+
   /* 大廳再換一次骨架（korean／forest 的版面結構跟 Classic 不同）。
      一定要排在載入 common.js／index.js 之前 —— 那兩支一載入就開始
      抓 DOM，骨架換晚了它們會綁到舊節點上。 */
@@ -550,6 +556,8 @@ async function boot() {
     storyLayout,
     opening,
     openings: OPENINGS,
+    balloonPalette,
+    balloonPalettes: BALLOON_PALETTES,
     data: site,
     pages: PAGES,
     templates: TEMPLATES,
