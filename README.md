@@ -151,7 +151,7 @@
 │       ├─ demo-firebase.js   # /samples 示範模式用的假 Firebase（資料只在記憶體裡）
 │       ├─ common.js          # 資料層 DataStore、導覽、特效、樣板文字
 │       ├─ lobby-motion.js    # 大廳的開場（登記＋播放）與捲動編排
-│       ├─ openers/{key}.js   # 十種開場，各一支（css/openers/{key}.css 是它的樣子）
+│       ├─ openers/{key}.js   # 十種開場，各一支（css/openers/{key}.css 是它的樣子；信封的六款共用 envelope.js）
 │       ├─ cropper.js         # 後台專用的照片裁切器（只有 admin.html 載入）
 │       ├─ seating-plan.js    # 後台專用的排桌工作台（只有 admin.html 載入）
 │       ├─ xlsx-lite.js       # 極小的 Excel 讀寫器（排桌的匯入匯出用，無外部函式庫）
@@ -229,11 +229,16 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 
 清單都在 `public/js/wed-model.js`（`TEMPLATES`／`OPENINGS`／`STORY_LAYOUTS`）。
 
-**開場**（`opening`）有十種，任何版型都能用任何一種：
+**開場**（`opening`）有十種（拆信另有五款白色信封，一共十五個代號），任何版型都能用任何一種：
 
 | 代號 | 開場 | 怎麼動 | 誰的預設 |
 |---|---|---|---|
 | `envelope` | 拆信・封蠟 | 點封蠟 → 封蠟沿著鋸齒裂成兩半、封口掀起 → 信封四散。封蠟是一枚真的香檳金封蠟（[Diana Light／Unsplash](https://unsplash.com/photos/eLEebyVItmk)，去背；保留外圈的蠟、把中間的印面整平，再壓上 `favicon.png` logo 的雙戒指；`img/envelope/wax-seal.webp`）。拆開前蓋著一枚完整的封蠟，看不出裂縫 | tapestry |
+| `envelope-emboss` | 拆信・壓紋金邊 | 白信封壓一整面菱格花紋（`img/envelope/emboss.svg`）、金封蠟；點下去壓紋從封蠟往外浮出金邊（`emboss-gold.svg`） | （可選） |
+| `envelope-feather` | 拆信・鵝毛絨 | 軟白信封、封口一圈羽毛、粉紅封蠟；點下去羽毛從封蠟那裡飛散、飄落 | （可選） |
+| `envelope-silk` | 拆信・緞帶絲綢 | 絲光白信封、一條白緞帶橫過紅封蠟底下；點下去緞帶先被抽走，才裂封蠟、掀封口 | （可選） |
+| `envelope-regal` | 拆信・華麗紅封蠟 | 白信封壓燙金雙線框、四角燙金花飾（`regal-corner.svg`）、紅底金花內襯、紅封蠟 | （可選） |
+| `envelope-pure` | 拆信・端莊金封蠟 | 純白信封、一條細金線、金封蠟 | （可選） |
 | `book` | 翻頁・古書 | 點封面 → 翻開 → 扉頁 → 翻過扉頁 | （可選） |
 | `bloom` | 花朵盛開 | 自己演：一整面綠籬 → 到處冒出小花苞 → 從中間往外一波波開成白玫瑰 → 名字（綠籬與玫瑰都是真的照片） | spring-orangerie |
 | `curtain` | 窗簾拉開 | 點一下 → 布幕收到兩側 → 光進來（晨光房間：真的白紗簾，後面是窗台上一瓶鬱金香的窗） | morning-window |
@@ -243,6 +248,10 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | `ribbon` | 拉開絲帶 | 拖緞帶尾（或點）→ 蝴蝶結鬆開 → 卡片打開。緞帶的光澤跟著游標滑（手機上自己慢慢飄）；卡片與桌面是真的棉紙、纖維紙，封面貼一枝真的壓花 | botanical-letter |
 | `painting` | 走進油畫 | 鼠尾草綠錦緞壁紙的展間，牆上一幅真的金框（照片做的九宮格）裡掛著莫內的《日本橋》（美國國家藝廊館藏的掃描），畫是活的（池水起伏、水面光點閃）；像首爾的沉浸式美術館，畫裡的東西跑到框外面來：大理花與蜀葵從框邊一筆刷出來、蝴蝶從畫裡飛到牆上、花瓣飄出畫面。點一下 → 牆往外退、畫框往前衝、畫裡的筆觸捲成漩渦，四周的顏料點被吸進畫裡 → 掉進畫裡 | monet-garden |
 | `balloons` | 氣球升空 | 自己演：滿滿一畫面一顆一顆霧面的粉彩氣球（奶油白、腮紅粉、蜜桃、奶油黃、薄荷、薰衣草；遠中近三層，近的帶一點景深的糊）在原地晃 → 每一顆各自被放開、各自的速度與方向慢慢升空 → 露出底下一片藍天、綠地與遠山 → 名字浮在天空上 | outdoor-party |
+
+> 五款白色信封和 `envelope` 是同一支 `js/openers/envelope.js`（`OPENINGS` 裡寫 `file:'envelope'`），
+> 差別都在 `css/openers/envelope.css` 的 `.env[data-env="…"]`。金、粉紅、紅三色封蠟是從原本那一枚
+> 染出來的：`node scripts/build-envelope-seals.js`（亮度對應色帶，蠟的起伏與印面原樣保留）。
 
 > **秘密花園的照片素材**（`public/img/secret-garden/`，開場的玻璃門與 `lobby-garden.html` 共用）：
 > 全部來自 [Unsplash](https://unsplash.com)，授權是 [Unsplash License](https://unsplash.com/license)：

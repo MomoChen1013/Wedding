@@ -22,7 +22,7 @@
      ・資料由 demo-data.js ＋ lobby-demo.js 填
 ============================================================ */
 import { readFileSync, writeFileSync } from 'node:fs';
-import { TEMPLATES, OPENINGS } from '../public/js/wed-model.js';
+import { TEMPLATES, OPENINGS, openingFile } from '../public/js/wed-model.js';
 
 const root = new URL('../', import.meta.url);
 const read = (p) => readFileSync(new URL(p, root), 'utf8');
@@ -51,8 +51,10 @@ for (const page of PAGES) {
     templates: Object.fromEntries(templates.map(([k, t]) => [k, { label: t.label, opening: t.opening || null }])),
     openings: Object.fromEntries(Object.entries(OPENINGS).map(([k, o]) => [k, o.label])),
   };
-  const openerCss = Object.keys(OPENINGS).map((k) => `<link rel="stylesheet" href="../public/css/openers/${k}.css">`).join('\n');
-  const openerJs = Object.keys(OPENINGS).map((k) => `<script src="../public/js/openers/${k}.js"></script>`).join('\n');
+  /* 幾種開場共用同一支（信封的六款）：檔案只掛一次 */
+  const openerFiles = [...new Set(Object.keys(OPENINGS).map(openingFile))];
+  const openerCss = openerFiles.map((k) => `<link rel="stylesheet" href="../public/css/openers/${k}.css">`).join('\n');
+  const openerJs = openerFiles.map((k) => `<script src="../public/js/openers/${k}.js"></script>`).join('\n');
 
   let html = read(page.src)
     .replace('<html lang="zh-Hant">', '<html lang="zh-Hant" data-prerendered="1">')
