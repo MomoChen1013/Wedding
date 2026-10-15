@@ -37,7 +37,7 @@
   --env-seal-img:url(../../img/envelope/wax-seal.webp);
   --env-glow:rgba(226,196,122,.55);
   --env-ink-en:#5b2a2a;--env-ink-cn:#6f5f4c;--env-ink-date:#8a6a2a;
-  --env-hint-en:#8a6a2a;--env-hint-cn:#5e4e3c;
+  
   --env-card:#f3ead8;--env-card-line:rgba(176,138,62,.6);--env-card-accent:rgba(110,27,38,.35);
   --env-kicker:#6e1b26;--env-names:#2c242e;--env-amp:#b08a3e;
   z-index:1001;display:block;overflow:hidden;cursor:pointer;
@@ -143,34 +143,9 @@
 .env.is-ready:not(.is-opening):not(.is-pulling) .op-hit:hover ~ .env-flap .env-seal-whole{transform:scale(1.04);}
 @keyframes env-seal-breathe{50%{filter:drop-shadow(0 3px 3px rgba(60,40,18,.32)) drop-shadow(0 0 14px var(--env-glow));}}
 
-/* ---- 提示 ----
-   直接掛在 .env 底下，不在 .env-paper 裡 —— 紙會被裁成三角形，
-   提示放在紙裡面，三角形窄的地方字就被切掉（手機直拿、畫面又長的時候最明顯）。
-   疊在下片之上（DOM 排在下片後面）、封口之下。 */
-.env-hint{position:absolute;left:0;right:0;bottom:auto;z-index:2;pointer-events:none;top:calc(var(--tip) + var(--seal) / 2 + 26px);
-  display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--env-hint-cn);
-  animation:env-hint 2.6s ease-in-out infinite;transition:opacity .3s ease;}
-.env-hint .en{font-family:'Cinzel',serif;font-size:13px;font-weight:600;letter-spacing:.42em;text-transform:uppercase;color:var(--env-hint-en);
-  padding-left:.42em;}          /* 字距會多墊在最後一個字後面，左邊補回同一格，整行才是真的置中 */
-.env-hint .cn{font-family:'Noto Serif TC',serif;font-size:14px;letter-spacing:.3em;color:var(--env-hint-cn);padding-left:.3em;}
-@keyframes env-hint{50%{opacity:.55;}}
-/* 畫面越窄越長，下片的三角形在封蠟正下方就越窄（寬度跟著畫面寬，高度跟著畫面高）：
-   提示往下挪到三角形夠寬、放得下一整行字的地方 */
-@media (max-aspect-ratio:4/5){
-  .env-hint{top:max(calc(var(--tip) + var(--seal) / 2 + 26px),70%);}
-}
-@media (max-aspect-ratio:5/8){
-  .env-hint{top:max(calc(var(--tip) + var(--seal) / 2 + 26px),calc(89% - 50px - env(safe-area-inset-bottom,0px)));}
-}
-@media (max-width:360px){
-  .env-hint .en{letter-spacing:.3em;padding-left:.3em;}
-  .env-hint .cn{letter-spacing:.2em;padding-left:.2em;}
-}
-
 /* ---- 拆信的時間軸（js/openers/envelope.js：點下去 1.75 秒後進入 .is-leaving） ---- */
 .env.is-opening,.env.is-pulling{cursor:default;}
 .env.is-opening .op-hit,.env.is-pulling .op-hit{pointer-events:none;}
-.env.is-opening .env-hint,.env.is-pulling .env-hint{opacity:0;animation:none;}
 /* 1. 封蠟從中間裂開：上半顆被封口帶著往上、下半顆往下沉一點 */
 .env.is-opening .env-seal-t{animation:env-crack-t .32s ease-out forwards;}
 .env.is-opening .env-seal-b{animation:env-crack-b .32s ease-out forwards;}
@@ -225,7 +200,7 @@
   --env-shade:84,74,64;
   --env-card:#fdfcf9;
   --env-names:#2e2a2c;
-  --env-ink-cn:#7a7068;--env-hint-cn:#7a7068;
+  --env-ink-cn:#7a7068;
 }
 
 /* ---- 1. 壓紋：圖片版（js 的 ART.emboss）—— 象牙白厚紙上的白色浮雕花束、金封蠟；
@@ -233,7 +208,7 @@
 .env[data-env="emboss"]{
   --env-shade:96,76,48;
   --env-glow:rgba(236,205,120,.6);
-  --env-ink-en:#7a6236;--env-ink-date:#a7823a;--env-hint-en:#a08a63;--env-hint-cn:#a39680;
+  --env-ink-en:#7a6236;--env-ink-date:#a7823a;
   --env-card-line:rgba(184,148,76,.55);--env-card-accent:rgba(184,148,76,.55);
   --env-kicker:#8a6a2a;--env-amp:#b8944c;
 }
@@ -244,7 +219,7 @@
 .env[data-env="feather"]{
   --env-shade:110,84,92;
   --env-glow:rgba(242,170,190,.65);
-  --env-ink-en:#a2566a;--env-ink-date:#c07a8c;--env-hint-en:#a5808a;--env-hint-cn:#a28d92;
+  --env-ink-en:#a2566a;--env-ink-date:#c07a8c;
   --env-card-line:rgba(217,131,153,.5);--env-card-accent:rgba(217,131,153,.4);
   --env-kicker:#a2566a;--env-amp:#d98399;
 }
@@ -269,7 +244,7 @@
 .env[data-env="silk"]{
   --env-shade:84,72,58;
   --env-glow:rgba(220,90,90,.45);
-  --env-ink-en:#8e1d27;--env-ink-date:#a8823e;--env-hint-en:#8e5c58;--env-hint-cn:#7d6e62;
+  --env-ink-en:#8e1d27;--env-ink-date:#a8823e;
   --env-card-line:rgba(184,148,76,.5);--env-card-accent:rgba(168,27,37,.32);
   --env-kicker:#8e1d27;--env-amp:#b8944c;
 }
@@ -306,7 +281,7 @@
   --env-edge:#c49a45;--env-edge-dash:none;--env-edge-w:1.6;
   --env-seal-img:url(../../img/envelope/wax-seal-red.webp);
   --env-glow:rgba(230,190,110,.6);
-  --env-ink-en:#8e1d27;--env-ink-date:#a7823a;--env-hint-en:#a7823a;--env-hint-cn:#6e5c50;
+  --env-ink-en:#8e1d27;--env-ink-date:#a7823a;
   --env-card-line:rgba(184,148,76,.7);--env-card-accent:rgba(142,29,39,.4);
   --env-kicker:#8e1d27;--env-amp:#b8944c;
 }
@@ -342,7 +317,7 @@
   --env-edge:#c2a25a;--env-edge-dash:none;--env-edge-w:1;
   --env-seal-img:url(../../img/envelope/wax-seal-gold.webp);
   --env-glow:rgba(236,205,120,.55);
-  --env-ink-en:#4a4540;--env-ink-cn:#857d74;--env-ink-date:#a8884a;--env-hint-en:#a8884a;--env-hint-cn:#857d74;
+  --env-ink-en:#4a4540;--env-ink-cn:#857d74;--env-ink-date:#a8884a;
   --env-card-line:rgba(194,162,90,.6);--env-card-accent:rgba(194,162,90,.35);
   --env-kicker:#8a7444;--env-amp:#c2a25a;
 }
@@ -377,23 +352,6 @@
 .env[data-art] .env-inside{
   background:linear-gradient(180deg,rgba(60,30,36,.35),rgba(60,30,36,0) 40%),var(--art-liner) center/cover no-repeat;}
 .env[data-art] .env-plume{left:var(--tip-vx);top:var(--tip-vy);}
-/* 提示：一行壓在紙上的手寫字，同色、只靠一道亮一道暗看出來（不是浮在上面的介面文字） */
-.env[data-art] .env-hint{top:auto;bottom:calc(max(7vh,34px) + env(safe-area-inset-bottom,0px));gap:4px;}
-.env[data-art]:not(.is-opening):not(.is-pulling) .env-hint{animation:env-hint-soft 3.2s ease-in-out infinite;}
-.env[data-art] .env-hint .en{font-family:'Pinyon Script',cursive;font-size:clamp(30px,4.4vh,42px);font-weight:400;
-  letter-spacing:0;text-transform:none;padding-left:0;
-  text-shadow:0 1px 0 rgba(255,255,255,.9),0 -1px 0 rgba(90,50,60,.16);}
-.env[data-art] .env-hint .cn{font-size:12px;letter-spacing:.42em;padding-left:.42em;
-  text-shadow:0 1px 0 rgba(255,255,255,.9);}
-@keyframes env-hint-soft{50%{opacity:.7;}}
-/* 照片底下有花樣（壓紋的花束）：提示改放在 js 指定的高度（--hint-y 是那一行的中線） */
-.env[data-art][data-hint] .env-hint{top:var(--hint-y);bottom:auto;transform:translateY(-50%);}
-.env[data-art][data-hint][data-orient="landscape"] .env-hint{transform:translateY(-100%);}
-/* 橫式的花束一路長到照片下緣，字只好壓在花上：墊一圈紙色的光暈讓它讀得出來 */
-.env[data-art][data-hint][data-orient="landscape"] .env-hint > *{
-  text-shadow:0 0 4px var(--env-halo,#f6f2e8),0 0 8px var(--env-halo,#f6f2e8),0 0 14px var(--env-halo,#f6f2e8),
-    0 0 22px var(--env-halo,#f6f2e8),0 0 32px var(--env-halo,#f6f2e8),0 1px 0 #fff;}
-.env[data-art][data-hint][data-orient="landscape"] .env-hint .en{color:#8a7350;}
 
 /* 金光版照片（--art-glow，選填）：疊在每一片紙上、先藏著；
    點下去以後從封蠟那一點往外一圈一圈亮開（--env-gild 由 0 長到 160%） */

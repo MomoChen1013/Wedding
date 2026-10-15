@@ -51,7 +51,6 @@
        flap    封口：照片上緣 → 沿著羽毛滾邊的外緣 → 尖端（滾邊整條都算封口的，掀起來會一起走）
        left／right  封口外側、一路到底的兩片（被下片蓋住的部分也算它們的，退場時才不會露洞）
        bottom  下片：沿著照片裡那兩條摺痕
-       hint    （選填）提示那一行字的高度（照片的 %）；照片底下有花樣時用它避開，沒寫就貼著畫面下緣
        glow    （選填）同一張照片、壓紋泛金的版本：拆開時從封蠟往外一圈一圈亮開
      seal：壓了雙戒指的封蠟（img/envelope/seal-*.webp，幾款共用）；liner：（選填）封口掀開後看到的內襯；
      plumes：飛散用的羽毛（黑底去背）；ribbon：橫過封蠟底下、會被抽走的緞帶（黑底去背）
@@ -76,14 +75,14 @@
     },
     emboss: {
       portrait: {
-        img: 'portrait.webp', glow: 'glow-portrait.webp', w: 768, h: 1376, tip: [50.3, 48], hint: 64,
+        img: 'portrait.webp', glow: 'glow-portrait.webp', w: 768, h: 1376, tip: [50.3, 48],
         flap: [[0, 0], [100, 0], [100, 5.5], [50.3, 48], [0, 3]],
         left: [[0, 3], [50.3, 48], [50.3, 100], [0, 100]],
         right: [[100, 5.5], [50.3, 48], [50.3, 100], [100, 100]],
         bottom: [[0, 97], [50.3, 49.5], [97.5, 95.5], [100, 96], [100, 100], [0, 100]],
       },
       landscape: {
-        img: 'landscape.webp', glow: 'glow-landscape.webp', w: 1408, h: 768, tip: [50, 55], hint: 97.5,
+        img: 'landscape.webp', glow: 'glow-landscape.webp', w: 1408, h: 768, tip: [50, 55],
         flap: [[0, 0], [100, 0], [100, 3], [98.3, 6], [50, 57.4], [1.7, 6], [0, 3]],
         left: [[0, 3], [1.7, 6], [50, 57.4], [50, 100], [0, 100]],
         right: [[100, 3], [98.3, 6], [50, 57.4], [50, 100], [100, 100]],
@@ -125,27 +124,15 @@
     const sy = (vh - sh) / 2;
     const seal = Math.max(92, Math.min(170, 0.25 * sw, 0.18 * sh));
     host.dataset.orient = orient;
-    if (a.hint) host.dataset.hint = '1'; else delete host.dataset.hint;
     const v = {
       '--sx': `${sx}px`, '--sy': `${sy}px`, '--sw': `${sw}px`, '--sh': `${sh}px`,
       '--tip-x': `${a.tip[0]}%`, '--tip': `${a.tip[1]}%`, '--seal': `${seal}px`,
       '--tip-vx': `${sx + (a.tip[0] / 100) * sw}px`, '--tip-vy': `${sy + (a.tip[1] / 100) * sh}px`,
       '--art-img': `url("${art.dir}${a.img}")`,
-      '--hint-y': a.hint ? `${sy + (a.hint / 100) * sh}px` : 'auto',
       '--art-glow': a.glow ? `url("${art.dir}${a.glow}")` : 'none',
       '--clip-flap': poly(a.flap), '--clip-left': poly(a.left), '--clip-right': poly(a.right), '--clip-bottom': poly(a.bottom),
     };
     for (const [n, val] of Object.entries(v)) host.style.setProperty(n, val);
-  }
-
-  /* 手寫體（Pinyon Script）：提示那一行用。整站只有圖片版信封用得到，所以要用時才載 */
-  function loadScriptFont() {
-    if (document.getElementById('env-font')) return;
-    const l = document.createElement('link');
-    l.id = 'env-font';
-    l.rel = 'stylesheet';
-    l.href = 'https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap';
-    document.head.appendChild(l);
   }
 
   /* 點下去的那一刻：羽毛從封蠟那裡往四面八方散開，飄一陣子再落下（羽毛是真的照片，黑底去背） */
@@ -197,7 +184,6 @@
     ${sealHtml('env-seal-b')}
   </div>
   ${st.light ? '<div class="env-light" aria-hidden="true"><i></i></div>' : ''}
-  <div class="env-hint" aria-hidden="true"><span class="en">${art ? 'Tap to open' : 'Break the seal'}</span><span class="cn">輕觸封蠟・拆開這封信</span></div>
   <div class="env-flap" aria-hidden="true">
     <div class="env-piece env-top">
       <div class="env-paper">
@@ -222,7 +208,6 @@
       host.style.setProperty('--art-seal', `url("${ROOT}${art.seal}")`);
       if (art.liner) host.style.setProperty('--art-liner', `url("${art.dir}${art.liner}")`);
       if (art.ribbon) host.style.setProperty('--art-ribbon', `url("${art.dir}${art.ribbon}")`);
-      loadScriptFont();
       layoutArt(host, art);
       /* 轉手機、拉視窗：重新挑直式／橫式、重新對位；開場收掉以後就不必再算 */
       const onResize = () => {
