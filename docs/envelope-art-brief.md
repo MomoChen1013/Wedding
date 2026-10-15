@@ -213,6 +213,125 @@ a thin faded gold stitched line along the edge of the top flap, warm candlelit t
 
 ---
 
+## 第二批：華麗、端莊、復古（完整提示詞，直接複製）
+
+這三段已經把基底提示詞併進去了，複製整段就能用，不必再自己組合。
+寫法參考了前三款生出來的結果，特別加強了兩件事：
+
+- **四片紙要會合在畫面正中間。** 緞帶絲綢的直式，最上層封口的尖端跑到 37% 的高度，
+  比其他摺痕會合的點高，封蠟只好跟著往上放。所以這次寫明「最上層的封口尖端就在正中央」。
+- **裝飾要成團、正中央留白。** 壓紋那款「上一束、左右各一條藤、下一束、中間空著」的構圖最好看，
+  封蠟也最好放，這次三款都照這個方式寫。
+
+封蠟三款都**不用生**：華麗用紅蠟、端莊用金蠟，復古沿用原本那枚古銅封蠟（都已經壓了雙戒指）。
+
+### 第 4 款：華麗（白信封・燙金・紅封蠟）
+
+**4-A 直式（手機用）**
+
+```
+Photorealistic top-down product photograph of the back of a closed luxury wedding
+envelope, shot perfectly overhead with no perspective. The envelope fills the entire
+frame edge to edge, no table or background visible. Classic diamond-flap construction:
+the top flap is the outermost layer, a large V whose point sits exactly at the center
+of the image (50% across, 50% down); the left, right and bottom flaps fold in beneath
+it and meet at that same center point, with crisp visible fold lines.
+Bright white heavyweight cotton paper decorated with flat, shiny gold-foil baroque
+ornament: a thin double gold-foil border running just inside all four outer edges of the
+envelope, with ornate gold filigree flourishes in each of the four corners; an elaborate
+symmetrical gold damask medallion on the top flap, halfway between the top edge and the
+point; a smaller matching gold medallion on the bottom flap, halfway between the point
+and the bottom edge; a fine gold-foil line tracing the edge of the top flap.
+All gold ornament stays inside its own flap and never crosses a fold line.
+The area around the center point is left clean and empty: no wax seal, no sticker, no
+monogram. White and gold only. Soft diffused daylight from the upper left, gentle natural
+shadows, the gold foil catching small highlights, subtle vignette toward the edges,
+extremely fine paper texture, luxurious editorial wedding stationery, 8k detail.
+No text, no letters, no hands, no props. Portrait 9:16.
+```
+
+**4-B 橫式（桌機用）**：把 4-A 生出來的直式當參考圖丟回去，提示詞寫
+
+```
+Same envelope design, same paper and the same gold-foil ornament, recomposed as a
+landscape 16:9 image: the envelope is wider than it is tall and fills the entire frame,
+the top flap's point sits exactly at the center of the image, and the four flaps meet at
+that center point. The center is left clean and empty, no wax seal, no text.
+```
+
+（內襯已經有了，不用再生。）
+
+### 第 5 款：端莊（純白・細金線・金封蠟）
+
+**5-A 直式（手機用）**
+
+```
+Photorealistic top-down product photograph of the back of a closed wedding envelope,
+shot perfectly overhead with no perspective. The envelope fills the entire frame edge to
+edge, no table or background visible. Classic diamond-flap construction: the top flap is
+the outermost layer, a large V whose point sits exactly at the center of the image
+(50% across, 50% down); the left, right and bottom flaps fold in beneath it and meet at
+that same center point, with crisp visible fold lines.
+Plain heavyweight bright-white cotton paper with a soft hand-torn deckled edge along the
+top flap, and a single very fine gold-foil line running just inside that deckled edge.
+Nothing else at all: no pattern, no embossing, no ornament. Minimal, calm, lots of empty
+space. The area around the center point is left clean and empty: no wax seal, no sticker,
+no monogram. Soft diffused daylight from the upper left, gentle natural shadows under the
+flap edges, subtle vignette toward the edges, extremely fine cotton paper texture,
+luxurious editorial wedding stationery, 8k detail.
+No text, no letters, no hands, no props. Portrait 9:16.
+```
+
+**5-B 橫式（桌機用）**：把 5-A 當參考圖，用跟 4-B 一樣的那段（把 “gold-foil ornament” 換成 “deckled edge and fine gold line”）。
+
+**5-C 內襯（選做）**
+
+```
+Flat lay of ivory cotton paper filling the entire frame with very fine vertical gold-foil
+pinstripes, evenly lit, no shadows, no text. Portrait 9:16.
+```
+
+### 第 0 款：復古（舊羊皮紙・古銅封蠟）
+
+**0-A 直式（手機用）**
+
+```
+Photorealistic top-down product photograph of the back of a closed antique letter
+envelope, shot perfectly overhead with no perspective. The envelope fills the entire
+frame edge to edge, no table or background visible. Classic diamond-flap construction:
+the top flap is the outermost layer, a large V whose point sits exactly at the center of
+the image (50% across, 50% down); the left, right and bottom flaps fold in beneath it and
+meet at that same center point, with crisp visible fold lines.
+Aged warm cream parchment paper with soft foxing, faint tea stains, gently softened and
+slightly worn edges; a thin faded gold hand-stitched running stitch follows the edge of
+the top flap. Warm, golden candlelit tone, romantic and old-world, but clean and elegant,
+not dirty. The area around the center point is left clean and empty: no wax seal, no
+sticker, no monogram. Soft warm light from the upper left, gentle natural shadows under
+the flap edges, subtle vignette toward the edges, rich paper fibre texture,
+editorial wedding stationery, 8k detail.
+No text, no letters, no stamps, no postmarks, no hands, no props. Portrait 9:16.
+```
+
+**0-B 橫式（桌機用）**：把 0-A 當參考圖，用跟 4-B 一樣的那段（把 “gold-foil ornament” 換成 “parchment and stitched line”）。
+
+**0-C 內襯（選做；不給就沿用現在的酒紅底金花）**
+
+```
+Flat lay of deep burgundy antique paper filling the entire frame, with a small repeating
+pattern of faded gold fleur-de-lis, slightly worn, evenly lit, no shadows, no text.
+Portrait 9:16.
+```
+
+### 生出來之後先檢查
+
+- 四片紙是不是在**畫面正中間**會合（偏一點沒關係，差太多就重生）
+- 正中間那一圈是不是**空的**
+- 有沒有冒出**任何字**、郵票、郵戳
+- 尺寸能多大就多大（至少 1152×2048／2048×1152）
+- **傳圖時，等我回完上一則訊息再傳**：我還在處理時收到的圖不會存成檔案，我只看得到、拿不到原圖
+
+---
+
 ## 總數與檔名
 
 | 款式 | 必做 | 選做 |
