@@ -151,7 +151,7 @@
 │       ├─ demo-firebase.js   # /samples 示範模式用的假 Firebase（資料只在記憶體裡）
 │       ├─ common.js          # 資料層 DataStore、導覽、特效、樣板文字
 │       ├─ lobby-motion.js    # 大廳的開場（登記＋播放）與捲動編排
-│       ├─ openers/{key}.js   # 十種開場，各一支（css/openers/{key}.css 是它的樣子）
+│       ├─ openers/{key}.js   # 十種開場，各一支（css/openers/{key}.css 是它的樣子；信封的六款共用 envelope.js）
 │       ├─ cropper.js         # 後台專用的照片裁切器（只有 admin.html 載入）
 │       ├─ seating-plan.js    # 後台專用的排桌工作台（只有 admin.html 載入）
 │       ├─ xlsx-lite.js       # 極小的 Excel 讀寫器（排桌的匯入匯出用，無外部函式庫）
@@ -232,11 +232,16 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 
 **氣球配色**（`balloonPalette`）有六種：`rainbow` 彩色派對（七色混搭）、`lavender` 薰衣草（紫＋白，點綴粉藍）、`blush` 腮紅（粉＋白，點綴蜜桃）、`sky` 晴空（粉藍＋白，點綴薄荷）、`sage` 鼠尾草（薄荷＋白，點綴奶油黃）、`peach` 蜜桃暖陽（蜜桃＋白，點綴奶油黃）。除了 rainbow，比例都是主色 6、白 3、點綴 1。開站時用 `create-site.js --balloons lavender`，之後到 Firestore 改 `sites/{siteId}.balloonPalette`。寫在大廳的 `<body data-balloons>`（預產時就烤好），開場（`js/openers/balloons.js` 的 `PALETTES`）與派對大廳（`css/lobby-party.css`）都只讀這個屬性；示範頁的面板可以切換。
 
-**開場**（`opening`）有十種，任何版型都能用任何一種：
+**開場**（`opening`）有十種（拆信另有五款白色信封，一共十五個代號），任何版型都能用任何一種：
 
 | 代號 | 開場 | 怎麼動 | 誰的預設 |
 |---|---|---|---|
 | `envelope` | 拆信・封蠟 | 點封蠟 → 封蠟沿著鋸齒裂成兩半、封口掀起 → 信封四散。封蠟是一枚真的香檳金封蠟（[Diana Light／Unsplash](https://unsplash.com/photos/eLEebyVItmk)，去背；保留外圈的蠟、把中間的印面整平，再壓上 `favicon.png` logo 的雙戒指；`img/envelope/wax-seal.webp`）。拆開前蓋著一枚完整的封蠟，看不出裂縫 | tapestry |
+| `envelope-emboss` | 拆信・壓紋金邊 | **圖片版**：象牙白厚紙上的白色浮雕花束（AI 生成的整封照片）、金封蠟；點下去封口掀起、縫裡透出暖光與光芒，壓紋從封蠟往外一圈一圈泛金（同一張照片的金光版 `glow-*.webp`，疊在上面慢慢露出來） | （可選） |
+| `envelope-feather` | 拆信・鵝毛絨 | **圖片版**：整封信封是一張 AI 生成的照片（封口滾一圈白色羽毛），沿著照片裡的摺線切成四片；粉紅封蠟；點下去羽毛（也是生成的照片，黑底去背）從封蠟那裡飛散、飄落 | （可選） |
+| `envelope-silk` | 拆信・緞帶絲綢 | **圖片版**：象牙白緞面信封（AI 生成的照片）、一條緞帶（照片，黑底去背）橫過紅封蠟底下；點下去緞帶先被抽走，才裂封蠟、掀封口，裡面是酒紅絲緞內襯 | （可選） |
+| `envelope-regal` | 拆信・華麗紅封蠟 | **圖片版**：白紙燙金雙線框、四角花飾、上下兩枚大馬士革徽章（AI 生成的照片）、紅封蠟；封口掀開是酒紅底燙金大馬士革內襯 | （可選） |
+| `envelope-pure` | 拆信・端莊金封蠟 | **圖片版**：純白棉紙、手撕毛邊的封口與一條細金線（AI 生成的照片）、金封蠟；裁切線沿著毛邊外緣，撕邊整片跟著封口掀起 | （可選） |
 | `book` | 翻頁・古書 | 點封面 → 翻開 → 扉頁 → 翻過扉頁 | （可選） |
 | `bloom` | 花朵盛開 | 自己演：一整面綠籬 → 到處冒出小花苞 → 從中間往外一波波開成白玫瑰 → 名字（綠籬與玫瑰都是真的照片） | spring-orangerie |
 | `curtain` | 窗簾拉開 | 點一下 → 布幕收到兩側 → 光進來（晨光房間：真的白紗簾，後面是窗台上一瓶鬱金香的窗） | morning-window |
@@ -246,6 +251,17 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | `pressed` | 摘下壓花 | 一小束真的壓花橫跨卡片中縫、用兩段紙膠帶貼住（卡片就是被它封起來的）。點一下（或按住壓花往外拉，膠帶會跟著翹起來）→ 兩段紙膠帶從一端撕起、往回折、被拿走 → 那束壓花被拿起來（離開紙面、影子變大）、拿走 → 卡片打開。紙膠帶半透明、看得到纖維與細點點、兩端手撕的鋸齒，顏色跟版型走（植物信箋鼠尾草綠、法式莊園灰藍、其他霧玫瑰）；卡片與桌面是真的棉紙、纖維紙。舊代號 `ribbon`（拉開絲帶）照樣認得，已經存好的網站不用改 | botanical-letter |
 | `painting` | 走進油畫 | 鼠尾草綠錦緞壁紙的展間，牆上一幅真的金框（照片做的九宮格）裡掛著莫內的《日本橋》（美國國家藝廊館藏的掃描），畫是活的（池水起伏、水面光點閃）；像首爾的沉浸式美術館，畫裡的東西跑到框外面來：大理花與蜀葵從框邊一筆刷出來、蝴蝶從畫裡飛到牆上、花瓣飄出畫面。點一下 → 牆往外退、畫框往前衝、畫裡的筆觸捲成漩渦，四周的顏料點被吸進畫裡 → 掉進畫裡 | monet-garden |
 | `balloons` | 氣球升空 | 自己演：滿滿一畫面一顆一顆霧面的乳膠氣球（顏色看 `balloonPalette`；遠中近三層，近的帶一點景深的糊）在原地晃 → 每一顆各自被放開、各自的速度與方向慢慢升空 → 露出底下藍天下的後院婚宴（白色尖頂帳篷、長桌、串燈） → 名字浮在天空上 | outdoor-party |
+
+> 五款白色信封和 `envelope` 是同一支 `js/openers/envelope.js`（`OPENINGS` 裡寫 `file:'envelope'`），
+> 差別都在 `css/openers/envelope.css` 的 `.env[data-env="…"]` 與 `js/openers/envelope.js` 的 `ART`。
+>
+> **圖片版信封**（五款白色信封都是；`envelope` 復古那一款還是 CSS 畫的）：素材在 `public/img/envelope/{款}/`，用 AI 生成
+> （規格與提示詞見 `docs/envelope-art-brief.md`）——`portrait.webp`（手機）、`landscape.webp`（桌機）、
+> `liner.webp`（內襯）、`plume-*.webp`（飛散的羽毛）、`ribbon.webp`（緞帶）。
+> 每張照片的摺線位置不同，裁切的多邊形寫在 `js/openers/envelope.js` 的 `ART`（照片的 %）；換照片要重量一次。
+> 封蠟三色共用（`img/envelope/seal-{red,pink,gold}.webp`）：AI 生成的空白蠟，再用
+> `node scripts/build-envelope-seals-rings.js <紅> <粉紅> <金>` 把 `favicon.png` 的雙戒指壓成浮雕（光從左上來）。
+> 鵝毛絨目前的內襯是從第一批拼圖裡切出來的（約 470px），之後換成單張大圖。
 
 > **秘密花園的照片素材**（`public/img/secret-garden/`，開場的玻璃門與 `lobby-garden.html` 共用）：
 > 全部來自 [Unsplash](https://unsplash.com)，授權是 [Unsplash License](https://unsplash.com/license)：

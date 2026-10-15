@@ -142,13 +142,20 @@ export const DEFAULT_TEMPLATE = 'classic';
    ・和 template 同一個權限層級：不在 firestore.rules 的可更新白名單裡，
      新人自己改不動，只有我們用 Admin SDK 改得動。
 
-   每一種開場是一支 js/openers/{key}.js ＋ 一份 css/openers/{key}.css，
+   每一種開場是一支 js/openers/{file}.js ＋ 一份 css/openers/{file}.css，
    只有大廳載、只載用到的那一種（見 site-context.js）。
+   file：幾種開場共用同一支腳本（同一封信的不同款式）時寫它，沒寫就是代號本身。
    auto：自己演完就進站的開場（點畫面可以跳過）；
          其他的都等賓客親手做那個動作，那一下也順便開背景音樂。
 ============================================================ */
 export const OPENINGS = {
   'envelope': { label:'拆信・封蠟' },
+  /* 同一封信的另外五款（js/openers/envelope.js 的 STYLES）：白色信封，各自的封蠟與拆開的小動作 */
+  'envelope-emboss':  { label:'拆信・壓紋金邊', file:'envelope' },
+  'envelope-feather': { label:'拆信・鵝毛絨', file:'envelope' },
+  'envelope-silk':    { label:'拆信・緞帶絲綢', file:'envelope' },
+  'envelope-regal':   { label:'拆信・華麗紅封蠟', file:'envelope' },
+  'envelope-pure':    { label:'拆信・端莊金封蠟', file:'envelope' },
   'book':     { label:'翻頁・古書' },
   'bloom':    { label:'花朵盛開', auto:true },
   'curtain':  { label:'窗簾拉開' },
@@ -174,6 +181,11 @@ export function openingKey(name, template) {
   if (Object.hasOwn(OPENINGS, name)) return name;
   const t = TEMPLATES[templateKey(template)];
   return t.opening && Object.hasOwn(OPENINGS, t.opening) ? t.opening : null;
+}
+
+/* 這一種開場要載哪一支 js／css（js/openers/{file}.js、css/openers/{file}.css） */
+export function openingFile(key) {
+  return OPENINGS[key].file || key;
 }
 
 /* ============================================================

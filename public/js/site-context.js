@@ -35,7 +35,7 @@ import {
 import {
   TEMPLATES, templateKey, buildWed,
   STORY_LAYOUTS, storyLayoutKey,
-  OPENINGS, openingKey,
+  OPENINGS, openingKey, openingFile,
   BALLOON_PALETTES, balloonPaletteKey,
   tplValue, swapTokens, hashtagList,
   pagePublishEntry, pageVisible,
@@ -526,7 +526,7 @@ async function boot() {
      但回傳值每一頁都算 —— window.SITE.opening 講的是這組新人的設定。
      版面 CSS 越早掛越好：開場要等 index.js 才出現，那之前它得已經載好 */
   const opening = openingKey(site.opening, template);
-  if (pageKey === 'lobby' && opening) addStylesheet(`/css/openers/${opening}.css`);
+  if (pageKey === 'lobby' && opening) addStylesheet(`/css/openers/${openingFile(opening)}.css`);
 
   /* 氣球配色（見 wed-model.js 的 BALLOON_PALETTES）：開場與派對大廳的氣球都讀
      <body data-balloons>，只有大廳用得到。預產的大廳 build-og 已經烤好了，這裡再寫一次是給沒預產到的 */
@@ -606,7 +606,7 @@ async function boot() {
        載不到不算致命：index.js 看不到它們就退回預設的字幕＋簾幕，內容照樣看得到 */
     if (pageKey === 'lobby') {
       const lobbyJs = [...(TEMPLATES[template].lobbyJs || [])];
-      if (opening) lobbyJs.push('/js/lobby-motion.js', `/js/openers/${opening}.js`);
+      if (opening) lobbyJs.push('/js/lobby-motion.js', `/js/openers/${openingFile(opening)}.js`);
       for (const src of new Set(lobbyJs)) {
         try { await loadScript(src); } catch (err) { console.warn('[site]', err.message); }
       }

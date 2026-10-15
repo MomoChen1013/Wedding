@@ -5,14 +5,43 @@
    任何版型都可以用這封信開場（sites.opening = 'envelope'）。
    信封的紙、封蠟、內襯是這封信自己的顏色，不跟版型的色票走 ——
    它是一個「物件」，不是版面的一部分。
+
+   同一封信有六款（.env[data-env]，見 js/openers/envelope.js 的 STYLES）：
+     vintage  復古舊紙・古銅封蠟（sites.opening = 'envelope'，原本那一款）
+     emboss   壓紋白信封・金封蠟 —— 拆開時壓紋浮出金邊
+     feather  鵝毛絨白信封・粉紅封蠟 —— 封口一圈羽毛，拆開時羽毛飛散
+     silk     緞帶絲綢白信封・紅封蠟 —— 先把緞帶抽掉，再裂封蠟
+     regal    華麗白信封・紅封蠟 —— 燙金框、燙金花飾
+     pure     端莊白信封・金封蠟 —— 一條細金線，什麼都不多
+   骨架與拆信的時間軸六款共用；每一款只換下面那一組 --env-* 變數，
+   再加上自己的那一兩樣東西（寫在檔尾，各自一段）。
 ============================================================ */
-.env{--env-noise:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22220%22%20height%3D%22220%22%3E%3Cfilter%20id%3D%22n%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.85%22%20numOctaves%3D%222%22%20stitchTiles%3D%22stitch%22%2F%3E%3CfeColorMatrix%20values%3D%220%200%200%200%20.32%200%200%200%200%20.24%200%200%200%200%20.14%200%200%200%200.12%200%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url(%23n)%22%2F%3E%3C%2Fsvg%3E");}
+.env{--env-noise:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22220%22%20height%3D%22220%22%3E%3Cfilter%20id%3D%22n%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.85%22%20numOctaves%3D%222%22%20stitchTiles%3D%22stitch%22%2F%3E%3CfeColorMatrix%20values%3D%220%200%200%200%20.32%200%200%200%200%20.24%200%200%200%200%20.14%200%200%200%200.12%200%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url(%23n)%22%2F%3E%3C%2Fsvg%3E");
+  --env-noise-white:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22220%22%20height%3D%22220%22%3E%3Cfilter%20id%3D%22n%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.9%22%20numOctaves%3D%222%22%20stitchTiles%3D%22stitch%22%2F%3E%3CfeColorMatrix%20values%3D%220%200%200%200%20.44%200%200%200%200%20.42%200%200%200%200%20.40%200%200%200%200.06%200%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url%28%23n%29%22%2F%3E%3C%2Fsvg%3E");}
 
 .env{
   --tip:52%;          /* 封口尖端（＝封蠟中心）的高度；四片紙的多邊形與封口金線都照這個值畫，要改一起改 */
   --seal:clamp(104px,17vmin,150px);
+  /* ---- 這一款信封的顏色（預設＝復古舊紙，其他款在檔尾覆寫） ---- */
+  --env-desk:#2a1a12;                         /* 信封底下那張桌子，只有退場時的縫隙看得到 */
+  --env-paper:#ece1c9;
+  --env-tex:var(--env-noise);                 /* 紙的纖維 */
+  --env-grain:repeating-linear-gradient(0deg,rgba(130,100,60,.035) 0 1px,transparent 1px 4px);
+  --env-pattern:none;                         /* 紙面上的花紋（壓紋、絲光……） */
+  --env-l-left:linear-gradient(90deg,#f1e8d4,#e6d9bd);
+  --env-l-right:linear-gradient(270deg,#e9ddc2,#dfd0b1);
+  --env-l-bottom:linear-gradient(0deg,#e8dcc1,#efe5cf);
+  --env-l-top:linear-gradient(180deg,#f4ecda,#eadfc6);
+  --env-shade:70,46,22;                       /* 摺邊投下的影子（r,g,b） */
+  --env-edge:#b8944c;--env-edge-dash:7 5;--env-edge-w:1.4;
+  --env-seal-img:url(../../img/envelope/wax-seal.webp);
+  --env-glow:rgba(226,196,122,.55);
+  --env-ink-en:#5b2a2a;--env-ink-cn:#6f5f4c;--env-ink-date:#8a6a2a;
+  
+  --env-card:#f3ead8;--env-card-line:rgba(176,138,62,.6);--env-card-accent:rgba(110,27,38,.35);
+  --env-kicker:#6e1b26;--env-names:#2c242e;--env-amp:#b08a3e;
   z-index:1001;display:block;overflow:hidden;cursor:pointer;
-  background:#2a1a12;                         /* 信封底下那張桌子，只有退場時的縫隙看得到 */
+  background:var(--env-desk);
   perspective:1200px;perspective-origin:50% -20%;
   opacity:0;transition:opacity .7s ease;
 }
@@ -43,20 +72,20 @@
 .env-letter-card{
   width:min(84vw,600px);height:78vh;display:flex;flex-direction:column;align-items:center;gap:10px;
   padding-top:clamp(26px,5vh,48px);text-align:center;
-  background:var(--env-noise),
+  background:var(--env-tex),
     repeating-linear-gradient(0deg,rgba(120,92,52,.05) 0 1px,transparent 1px 3px),
     repeating-linear-gradient(90deg,rgba(120,92,52,.05) 0 1px,transparent 1px 3px),
-    #f3ead8;
-  border:1px solid rgba(176,138,62,.6);
-  box-shadow:inset 0 0 0 6px #f3ead8,inset 0 0 0 7px rgba(110,27,38,.35),0 -6px 18px rgba(20,8,4,.35);
+    var(--env-card);
+  border:1px solid var(--env-card-line);
+  box-shadow:inset 0 0 0 6px var(--env-card),inset 0 0 0 7px var(--env-card-accent),0 -6px 18px rgba(20,8,4,.35);
 }
 .env-letter-fleur{width:30px;}
 .env-letter-fleur svg{width:100%;height:auto;display:block;}
 .env-letter-kicker{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(16px,2.4vw,20px);
-  color:#6e1b26;letter-spacing:.06em;}
+  color:var(--env-kicker);letter-spacing:.06em;}
 .env-letter-names{font-family:'Cinzel Decorative','Noto Serif TC',serif;font-size:clamp(20px,4vw,34px);
-  color:#2c242e;letter-spacing:.06em;}
-.env-letter-names i{font-family:'Cormorant Garamond',serif;color:#b08a3e;padding:0 .25em;}
+  color:var(--env-names);letter-spacing:.06em;}
+.env-letter-names i{font-family:'Cormorant Garamond',serif;color:var(--env-amp);padding:0 .25em;}
 
 /* ---- 紙：三片摺進來的 ＋ 封口 ----
    clip-path 會連 filter 一起裁掉，所以陰影掛在外層（.env-piece），
@@ -64,38 +93,36 @@
    一張紙摺出來的四個面本來就不會一樣亮。 */
 .env-piece{position:absolute;inset:0;pointer-events:none;}
 .env-paper{position:absolute;inset:0;
-  background:var(--env-noise),
-    repeating-linear-gradient(0deg,rgba(130,100,60,.035) 0 1px,transparent 1px 4px),
-    var(--env-light),#ece1c9;}
-.env-left{z-index:1;filter:drop-shadow(3px 0 3px rgba(70,46,22,.2));
+  background:var(--env-tex),var(--env-pattern),var(--env-grain),var(--env-light),var(--env-paper);}
+.env-left{z-index:1;filter:drop-shadow(3px 0 3px rgba(var(--env-shade),.2));
   transition:transform 1.15s cubic-bezier(.7,0,.25,1);}
-.env-left .env-paper{--env-light:linear-gradient(90deg,#f1e8d4,#e6d9bd);
+.env-left .env-paper{--env-light:var(--env-l-left);
   clip-path:polygon(0 0,49% 46.5%,52% 52%,49% 57.5%,0 100%);}
-.env-right{z-index:1;filter:drop-shadow(-3px 0 3px rgba(70,46,22,.2));
+.env-right{z-index:1;filter:drop-shadow(-3px 0 3px rgba(var(--env-shade),.2));
   transition:transform 1.15s cubic-bezier(.7,0,.25,1);}
-.env-right .env-paper{--env-light:linear-gradient(270deg,#e9ddc2,#dfd0b1);
+.env-right .env-paper{--env-light:var(--env-l-right);
   clip-path:polygon(100% 0,51% 46.5%,48% 52%,51% 57.5%,100% 100%);}
-.env-bottom{z-index:2;filter:drop-shadow(0 -3px 4px rgba(70,46,22,.24));
+.env-bottom{z-index:2;filter:drop-shadow(0 -3px 4px rgba(var(--env-shade),.24));
   transition:transform 1.15s cubic-bezier(.7,0,.25,1) .04s;}
-.env-bottom .env-paper{--env-light:linear-gradient(0deg,#e8dcc1,#efe5cf);
+.env-bottom .env-paper{--env-light:var(--env-l-bottom);
   clip-path:polygon(0 100%,0 97%,46% 45.6%,50% 43.6%,54% 45.6%,100% 97%,100% 100%);}
 
 /* 封口：以上緣為軸往賓客這一側掀起來（rotateX 正值＝下緣朝向觀者） */
 .env-flap{z-index:3;transform-origin:50% 0;transform-style:preserve-3d;}
-.env-top{filter:drop-shadow(0 5px 6px rgba(58,36,16,.3));}
-.env-top .env-paper{--env-light:linear-gradient(180deg,#f4ecda,#eadfc6);
+.env-top{filter:drop-shadow(0 5px 6px rgba(var(--env-shade),.3));}
+.env-top .env-paper{--env-light:var(--env-l-top);
   clip-path:polygon(0 0,100% 0,100% 1%,54% 49.4%,52% 51.5%,50% var(--tip),48% 51.5%,46% 49.4%,0 1%);}
 /* 封口邊緣的一圈金線（回針縫） */
 .env-edge{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
-.env-edge polyline{fill:none;stroke:#b8944c;stroke-width:1.4;stroke-dasharray:7 5;
-  stroke-linecap:round;vector-effect:non-scaling-stroke;}
+.env-edge polyline{fill:none;stroke:var(--env-edge);stroke-width:var(--env-edge-w);stroke-dasharray:var(--env-edge-dash);
+  stroke-linecap:round;vector-effect:non-scaling-stroke;transition:stroke .8s ease;}
 
 .env-to{position:absolute;left:0;right:0;top:clamp(64px,17%,190px);display:flex;flex-direction:column;
-  align-items:center;gap:6px;text-align:center;color:#4a3a2c;}
+  align-items:center;gap:6px;text-align:center;color:var(--env-ink-cn);}
 .env-to .en{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(20px,3vw,28px);
-  letter-spacing:.04em;color:#5b2a2a;}
-.env-to .cn{font-family:'Noto Serif TC',serif;font-size:14px;letter-spacing:.5em;color:#6f5f4c;}
-.env-to-date{margin-top:6px;font-family:'Cinzel',serif;font-size:12px;letter-spacing:.34em;color:#8a6a2a;}
+  letter-spacing:.04em;color:var(--env-ink-en);}
+.env-to .cn{font-family:'Noto Serif TC',serif;font-size:14px;letter-spacing:.5em;color:var(--env-ink-cn);}
+.env-to-date{margin-top:6px;font-family:'Cinzel',serif;font-size:12px;letter-spacing:.34em;color:var(--env-ink-date);}
 
 /* ---- 封蠟 ---- */
 .env-seal{position:absolute;left:50%;top:var(--tip);width:var(--seal);height:var(--seal);
@@ -103,7 +130,7 @@
   filter:drop-shadow(0 3px 3px rgba(60,40,18,.32)) drop-shadow(0 1px 1px rgba(60,40,18,.38));
   transition:transform .35s cubic-bezier(.3,1.4,.5,1);}
 .env-seal-art{position:absolute;inset:0;width:100%;height:100%;display:block;
-  background:url(../../img/envelope/wax-seal.webp) center/contain no-repeat;}
+  background:var(--env-seal-img) center/contain no-repeat;}
 /* 同一枚封蠟沿著鋸齒切成兩半：上半黏在封口、下半黏在下片（兩條鋸齒錯開一點點，裂開時才有縫） */
 .env-seal-t .env-seal-art{clip-path:polygon(0% 0%,100% 0%,100.00% 49.25%,91.67% 52.67%,83.33% 48.00%,75.00% 53.92%,66.67% 48.00%,58.33% 52.67%,50.00% 49.25%,41.67% 52.67%,33.33% 48.00%,25.00% 53.92%,16.67% 48.00%,8.33% 52.67%,0.00% 49.25%);}
 .env-seal-b .env-seal-art{clip-path:polygon(0% 100%,100% 100%,100.00% 48.25%,91.67% 51.67%,83.33% 47.00%,75.00% 52.92%,66.67% 47.00%,58.33% 51.67%,50.00% 48.25%,41.67% 51.67%,33.33% 47.00%,25.00% 52.92%,16.67% 47.00%,8.33% 51.67%,0.00% 48.25%);}
@@ -111,22 +138,13 @@
 .env-seal-whole .env-seal-art{clip-path:none;}
 .env:not(.is-opening) .env-seal-t,.env:not(.is-opening) .env-seal-b{opacity:0;}
 .env.is-opening .env-seal-whole{opacity:0;}
-.env.is-ready:not(.is-opening) .env-seal-whole{animation:env-seal-breathe 3.2s ease-in-out 1s infinite;}
-.env.is-ready:not(.is-opening) .op-hit:hover ~ .env-flap .env-seal-whole{transform:scale(1.04);}
-@keyframes env-seal-breathe{50%{filter:drop-shadow(0 3px 3px rgba(60,40,18,.32)) drop-shadow(0 0 14px rgba(226,196,122,.55));}}
+.env.is-ready:not(.is-opening):not(.is-pulling) .env-seal-whole{animation:env-seal-breathe 3.2s ease-in-out 1s infinite;}
+.env.is-ready:not(.is-opening):not(.is-pulling) .op-hit:hover ~ .env-flap .env-seal-whole{transform:scale(1.04);}
+@keyframes env-seal-breathe{50%{filter:drop-shadow(0 3px 3px rgba(60,40,18,.32)) drop-shadow(0 0 14px var(--env-glow));}}
 
-/* ---- 提示 ---- */
-.env-hint{position:absolute;left:0;right:0;top:calc(var(--tip) + var(--seal) / 2 + 26px);
-  display:flex;flex-direction:column;align-items:center;gap:6px;color:#6f5f4c;
-  animation:env-hint 2.6s ease-in-out infinite;transition:opacity .3s ease;}
-.env-hint .en{font-family:'Cinzel',serif;font-size:13px;font-weight:600;letter-spacing:.42em;text-transform:uppercase;color:#8a6a2a;}
-.env-hint .cn{font-family:'Noto Serif TC',serif;font-size:14px;letter-spacing:.3em;color:#5e4e3c;}
-@keyframes env-hint{50%{opacity:.55;}}
-
-/* ---- 拆信的時間軸（js/lobby-motion.js：點下去 1.75 秒後進入 .is-leaving） ---- */
-.env.is-opening{cursor:default;}
-.env.is-opening .op-hit{pointer-events:none;}
-.env.is-opening .env-hint{opacity:0;animation:none;}
+/* ---- 拆信的時間軸（js/openers/envelope.js：點下去 1.75 秒後進入 .is-leaving） ---- */
+.env.is-opening,.env.is-pulling{cursor:default;}
+.env.is-opening .op-hit,.env.is-pulling .op-hit{pointer-events:none;}
 /* 1. 封蠟從中間裂開：上半顆被封口帶著往上、下半顆往下沉一點 */
 .env.is-opening .env-seal-t{animation:env-crack-t .32s ease-out forwards;}
 .env.is-opening .env-seal-b{animation:env-crack-b .32s ease-out forwards;}
@@ -146,12 +164,12 @@
 }
 /* 掀起來的那一面越翻越背光 */
 .env-top .env-paper::after{content:'';position:absolute;inset:0;pointer-events:none;opacity:0;
-  background:linear-gradient(180deg,rgba(60,38,16,.05),rgba(60,38,16,.32));}
+  background:linear-gradient(180deg,rgba(var(--env-shade),.05),rgba(var(--env-shade),.32));}
 .env.is-opening .env-top .env-paper::after{animation:env-flap-shade 1.2s ease-in .4s forwards;}
 @keyframes env-flap-shade{to{opacity:1;}}
 /* 封口掀起來時，投在下面三片上的影子跟著淡掉 */
 .env.is-opening .env-top{animation:env-shadow-off 1s ease .3s forwards;}
-@keyframes env-shadow-off{to{filter:drop-shadow(0 18px 18px rgba(58,36,16,0));}}
+@keyframes env-shadow-off{to{filter:drop-shadow(0 18px 18px rgba(var(--env-shade),0));}}
 /* 3. 信紙從袋口往上抽出一段 */
 .env.is-opening .env-letter-card{animation:env-letter-rise .9s cubic-bezier(.3,.7,.3,1) 1.05s both;}
 @keyframes env-letter-rise{from{transform:none;}to{transform:translateY(-8vh);}}
@@ -166,3 +184,177 @@
   .env-to{top:15%;}
 }
 
+/* ============================================================
+   白色的五款共用：白紙、冷一點的影子、白色的信紙
+============================================================ */
+.env:not([data-env="vintage"]){
+  --env-desk:#d9d4cc;
+  --env-paper:#f7f5f1;
+  --env-tex:var(--env-noise-white);
+  --env-grain:linear-gradient(transparent,transparent);
+  --env-l-left:linear-gradient(90deg,#fbfaf7,#f1eee8);
+  --env-l-right:linear-gradient(270deg,#f2efe9,#ebe7e0);
+  --env-l-bottom:linear-gradient(0deg,#f0ede7,#f9f7f3);
+  --env-l-top:linear-gradient(180deg,#fdfcfa,#f4f1ec);
+  --env-shade:84,74,64;
+  --env-card:#fdfcf9;
+  --env-names:#2e2a2c;
+  --env-ink-cn:#7a7068;
+}
+
+/* ---- 1. 壓紋：圖片版（js 的 ART.emboss）—— 象牙白厚紙上的白色浮雕花束、金封蠟；
+      拆開時信封裡透出暖光（.env-light），有金光版照片的話壓紋從封蠟往外泛金（見檔尾的圖片版） ---- */
+.env[data-env="emboss"]{
+  --env-shade:96,76,48;
+  --env-glow:rgba(236,205,120,.6);
+  --env-ink-en:#7a6236;--env-ink-date:#a7823a;
+  --env-card-line:rgba(184,148,76,.55);--env-card-accent:rgba(184,148,76,.55);
+  --env-kicker:#8a6a2a;--env-amp:#b8944c;
+}
+/* 內襯（還沒有照片）：香檳金 */
+.env[data-env="emboss"]{--art-liner:linear-gradient(180deg,#e7d3a1,#d4b877);}
+
+/* ---- 2. 鵝毛絨：圖片版（js 的 ART.feather）—— 封口滾一圈白色羽毛，拆開時羽毛整片飛散 ---- */
+.env[data-env="feather"]{
+  --env-shade:110,84,92;
+  --env-glow:rgba(242,170,190,.65);
+  --env-ink-en:#a2566a;--env-ink-date:#c07a8c;
+  --env-card-line:rgba(217,131,153,.5);--env-card-accent:rgba(217,131,153,.4);
+  --env-kicker:#a2566a;--env-amp:#d98399;
+}
+/* 飛散的羽毛：從封蠟那一點往四面八方散開，再慢慢飄落 */
+.env-plumes{z-index:7;pointer-events:none;}
+.env-plume{position:absolute;left:50%;top:var(--tip);width:var(--s);opacity:0;
+  filter:drop-shadow(0 1px 1.5px rgba(120,80,92,.22));
+  animation:env-plume var(--t) var(--d) forwards;}
+.env-plume > *{display:block;width:100%;height:auto;transform-origin:50% 0;user-select:none;
+  animation:env-sway calc(var(--t) / 3) ease-in-out var(--d) infinite alternate;}
+@keyframes env-plume{
+  0%  {opacity:0;transform:translate(-50%,-50%) rotate(var(--r0)) scale(.35);animation-timing-function:cubic-bezier(.15,.7,.3,1);}
+  8%  {opacity:1;}
+  38% {transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) rotate(var(--r1)) scale(1);animation-timing-function:cubic-bezier(.4,0,.6,1);}
+  80% {opacity:.95;}
+  100%{opacity:0;transform:translate(calc(-50% + var(--x) * 1.25),calc(-50% + var(--y) + var(--fall))) rotate(var(--r2)) scale(.95);}
+}
+@keyframes env-sway{from{transform:rotate(-16deg);}to{transform:rotate(16deg);}}
+
+/* ---- 3. 緞帶絲綢：圖片版（js 的 ART.silk）—— 象牙白緞面信封，一條緞帶（照片）橫過封蠟底下；
+      點下去先把緞帶從封蠟底下抽走（.is-pulling），再裂封蠟、掀封口 ---- */
+.env[data-env="silk"]{
+  --env-shade:84,72,58;
+  --env-glow:rgba(220,90,90,.45);
+  --env-ink-en:#8e1d27;--env-ink-date:#a8823e;
+  --env-card-line:rgba(184,148,76,.5);--env-card-accent:rgba(168,27,37,.32);
+  --env-kicker:#8e1d27;--env-amp:#b8944c;
+}
+.env-ribbon{position:absolute;left:-40px;right:-40px;top:var(--tip);
+  height:calc(var(--seal) * .5);margin-top:calc(var(--seal) * -.25);
+  filter:drop-shadow(0 2px 2px rgba(84,70,60,.24)) drop-shadow(0 5px 7px rgba(84,70,60,.14));}
+.env-ribbon-band{position:absolute;inset:0;
+  /* 緞面：橫向的幾道光（布料的弧度）＋ 一道斜斜走過去的反光 */
+  background:
+    linear-gradient(100deg,transparent 30%,rgba(255,255,255,.85) 44%,transparent 56%) -160% 0/60% 100% no-repeat,
+    linear-gradient(180deg,#d8d0c4 0%,#efe9e0 10%,#fffdfa 28%,#f2ece4 48%,#e0d8cc 66%,#f9f6f1 84%,#d3cabd 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8),inset 0 -1px 0 rgba(120,104,88,.2);
+  /* 兩端剪成燕尾（平常在畫面外，抽的時候才看得到左端） */
+  clip-path:polygon(0 0,100% 0,calc(100% - 18px) 50%,100% 100%,0 100%,18px 50%);
+  animation:env-sheen 4.5s ease-in-out 1.2s infinite;}
+@keyframes env-sheen{0%,55%{background-position:-160% 0,0 0;}100%{background-position:260% 0,0 0;}}
+.env.is-pulling .env-ribbon-band{animation:env-pull .78s cubic-bezier(.55,0,.75,.35) forwards;}
+@keyframes env-pull{
+  0%  {transform:none;background-position:-160% 0,0 0;}
+  16% {transform:translateX(-1.2%) scaleY(.94) skewX(4deg);}
+  45% {transform:translateX(26%) scaleY(1.04) skewX(-8deg);background-position:260% 0,0 0;}
+  70% {transform:translateX(62%) scaleY(.9) skewX(6deg);}
+  100%{transform:translateX(118%) scaleY(.82) skewX(-4deg);background-position:260% 0,0 0;}
+}
+/* 緞帶從底下抽走的時候，封蠟被帶得晃一下 */
+.env.is-pulling .env-seal-whole{animation:env-tug .5s ease-in-out .08s;}
+@keyframes env-tug{30%{transform:translateX(3px) rotate(4deg);}65%{transform:translateX(-1px) rotate(-1.5deg);}}
+.env.is-opening .env-ribbon{display:none;}
+
+/* ---- 4. 華麗：圖片版（js 的 ART.regal）—— 白紙燙金框、四角花飾、上下兩枚大馬士革徽章；
+      紅封蠟，封口掀開是酒紅底燙金大馬士革內襯 ---- */
+.env[data-env="regal"]{
+  --env-shade:70,60,48;
+  --env-glow:rgba(230,190,110,.6);
+  --env-card-line:rgba(184,148,76,.7);--env-card-accent:rgba(142,29,39,.4);
+  --env-kicker:#8e1d27;--env-amp:#b8944c;
+}
+
+/* ---- 5. 端莊：圖片版（js 的 ART.pure）—— 純白棉紙、手撕毛邊的封口、一條細金線、金封蠟 ---- */
+.env[data-env="pure"]{
+  --env-shade:70,66,60;
+  --env-glow:rgba(236,205,120,.55);
+  --env-card-line:rgba(194,162,90,.6);--env-card-accent:rgba(194,162,90,.35);
+  --env-kicker:#8a7444;--env-amp:#c2a25a;
+  /* 內襯（沒有照片）：象牙白，極細的金色直紋 */
+  --art-liner:repeating-linear-gradient(90deg,rgba(194,162,90,.28) 0 1px,transparent 1px 9px),linear-gradient(180deg,#efe9dc,#f7f3ea);
+}
+
+/* ============================================================
+   圖片版（.env[data-art]，見 js 的 ART）
+   ------------------------------------------------------------
+   整封信封是一張照片：四片紙都貼同一張圖、各自用照片裡的摺線裁開。
+   照片的位置與大小（cover）、尖端、裁切的多邊形都由 js 算好寫進變數：
+     --sx --sy --sw --sh   照片在畫面上的位置與大小
+     --tip-x --tip         尖端（＝封蠟中心）在照片裡的位置
+     --tip-vx --tip-vy     同一點在畫面上的位置（飛散的羽毛從這裡出發）
+     --clip-*              四片紙的多邊形
+   CSS 版那些用漸層畫出來的東西（金線、封口上的字）在這裡都不要。
+============================================================ */
+@property --env-gild{syntax:'<percentage>';inherits:true;initial-value:0%;}
+.env[data-art]{--env-seal-img:var(--art-seal);}
+.env[data-art] > .env-piece,.env[data-art] > .env-flap{inset:auto;left:var(--sx);top:var(--sy);width:var(--sw);height:var(--sh);}
+.env[data-art] .env-paper{background:var(--art-img) 0 0/100% 100% no-repeat;}
+.env[data-art] .env-top .env-paper{clip-path:var(--clip-flap);}
+.env[data-art] .env-left .env-paper{clip-path:var(--clip-left);}
+.env[data-art] .env-right .env-paper{clip-path:var(--clip-right);}
+.env[data-art] .env-bottom .env-paper{clip-path:var(--clip-bottom);}
+.env[data-art] .env-left,.env[data-art] .env-right{filter:none;}       /* 被封口與下片蓋住，照片裡的陰影已經夠了 */
+.env[data-art] .env-bottom{filter:drop-shadow(0 -2px 3px rgba(var(--env-shade),.12));}
+.env[data-art] .env-top{filter:drop-shadow(0 3px 5px rgba(var(--env-shade),.18));}
+.env[data-art] .env-edge,.env[data-art] .env-to{display:none;}
+.env[data-art] .env-seal{left:var(--tip-x);}
+.env[data-art] .env-inside{
+  background:linear-gradient(180deg,rgba(60,30,36,.35),rgba(60,30,36,0) 40%),var(--art-liner) center/cover no-repeat;}
+.env[data-art] .env-plume{left:var(--tip-vx);top:var(--tip-vy);}
+
+/* 金光版照片（--art-glow，選填）：疊在每一片紙上、先藏著；
+   點下去以後從封蠟那一點往外一圈一圈亮開（--env-gild 由 0 長到 160%） */
+.env[data-art] .env-paper::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:var(--art-glow) 0 0/100% 100% no-repeat;
+  -webkit-mask:radial-gradient(circle at var(--tip-x) var(--tip),#000 calc(var(--env-gild) - 25%),transparent var(--env-gild));
+          mask:radial-gradient(circle at var(--tip-x) var(--tip),#000 calc(var(--env-gild) - 25%),transparent var(--env-gild));}
+.env[data-art].is-opening{animation:env-gild 1.6s cubic-bezier(.3,.2,.4,1) .15s forwards;}
+@keyframes env-gild{to{--env-gild:160%;}}
+
+/* 信封裡透出來的光：封口一掀，縫裡先亮起一團暖白，光芒從尖端往外放射、灑在紙上 */
+.env-light{z-index:4;pointer-events:none;opacity:0;mix-blend-mode:screen;
+  background:radial-gradient(circle at var(--tip-vx) var(--tip-vy),rgba(255,240,205,.95) 0,rgba(255,218,150,.6) 7%,rgba(255,200,120,.2) 24%,transparent 52%);}
+.env-light > i{position:absolute;inset:0;transform-origin:var(--tip-vx) var(--tip-vy);
+  background:repeating-conic-gradient(from 0deg at var(--tip-vx) var(--tip-vy),rgba(255,228,170,.28) 0 1.6deg,transparent 2.4deg 8deg);
+  -webkit-mask:radial-gradient(circle at var(--tip-vx) var(--tip-vy),#000 0,rgba(0,0,0,.55) 20%,transparent 55%);
+          mask:radial-gradient(circle at var(--tip-vx) var(--tip-vy),#000 0,rgba(0,0,0,.55) 20%,transparent 55%);
+  animation:env-rays 9s linear infinite;}
+@keyframes env-rays{to{transform:rotate(30deg);}}
+.env.is-opening .env-light{animation:env-light-in 1.3s ease .3s forwards;}
+@keyframes env-light-in{0%{opacity:0;}55%{opacity:1;}100%{opacity:.9;}}
+.env.is-leaving .env-light{animation:env-light-out 1s ease forwards;}
+@keyframes env-light-out{from{opacity:.9;}to{opacity:0;}}
+
+/* 緞帶（--art-ribbon，緞帶絲綢）：換成照片，拉長鋪滿整條；反光改成一層疊在上面的光（照片本身不動） */
+.env[data-art] .env-ribbon{height:calc(var(--seal) * .56);margin-top:calc(var(--seal) * -.28);}
+.env[data-art] .env-ribbon-band{background:var(--art-ribbon) 0 0/100% 100% no-repeat;box-shadow:none;animation:none;}
+.env[data-art] .env-ribbon-band::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 44%,transparent 56%) -160% 0/60% 100% no-repeat;
+  animation:env-sheen-art 4.5s ease-in-out 1.2s infinite;}
+@keyframes env-sheen-art{0%,55%{background-position:-160% 0;}100%{background-position:260% 0;}}
+.env[data-art].is-pulling .env-ribbon-band{animation:env-pull-art .78s cubic-bezier(.55,0,.75,.35) forwards;}
+@keyframes env-pull-art{
+  0%  {transform:none;}
+  16% {transform:translateX(-1.2%) scaleY(.94) skewX(4deg);}
+  45% {transform:translateX(26%) scaleY(1.04) skewX(-8deg);}
+  70% {transform:translateX(62%) scaleY(.9) skewX(6deg);}
+  100%{transform:translateX(118%) scaleY(.82) skewX(-4deg);}
+}
