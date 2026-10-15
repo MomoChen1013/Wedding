@@ -116,7 +116,6 @@
 .env-edge{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
 .env-edge polyline{fill:none;stroke:var(--env-edge);stroke-width:var(--env-edge-w);stroke-dasharray:var(--env-edge-dash);
   stroke-linecap:round;vector-effect:non-scaling-stroke;transition:stroke .8s ease;}
-.env-edge .env-edge-in{display:none;}
 
 .env-to{position:absolute;left:0;right:0;top:clamp(64px,17%,190px);display:flex;flex-direction:column;
   align-items:center;gap:6px;text-align:center;color:var(--env-ink-cn);}
@@ -274,56 +273,24 @@
 @keyframes env-tug{30%{transform:translateX(3px) rotate(4deg);}65%{transform:translateX(-1px) rotate(-1.5deg);}}
 .env.is-opening .env-ribbon{display:none;}
 
-/* ---- 4. 華麗：白紙壓一圈燙金框、四角燙金花飾、紅底金花的內襯 ----
-   框是一整張紙那麼大（inset），各片紙用自己的形狀去裁它 ——
-   合起來是一個完整的框，拆開時每一片帶著自己那一段走。 */
+/* ---- 4. 華麗：圖片版（js 的 ART.regal）—— 白紙燙金框、四角花飾、上下兩枚大馬士革徽章；
+      紅封蠟，封口掀開是酒紅底燙金大馬士革內襯 ---- */
 .env[data-env="regal"]{
-  --env-edge:#c49a45;--env-edge-dash:none;--env-edge-w:1.6;
-  --env-seal-img:url(../../img/envelope/wax-seal-red.webp);
+  --env-shade:70,60,48;
   --env-glow:rgba(230,190,110,.6);
-  --env-ink-en:#8e1d27;--env-ink-date:#a7823a;
   --env-card-line:rgba(184,148,76,.7);--env-card-accent:rgba(142,29,39,.4);
   --env-kicker:#8e1d27;--env-amp:#b8944c;
 }
-.env[data-env="regal"] .env-edge .env-edge-in{display:inline;}
-.env[data-env="regal"] .env-edge .env-edge-in{stroke-width:.8;}
-.env-frame{position:absolute;inset:clamp(12px,3vmin,22px);pointer-events:none;display:none;
-  border:1.5px solid transparent;
-  border-image:linear-gradient(135deg,#ecd391,#b78b36 30%,#f1dc9e 55%,#a7802f 80%,#e2c47a) 1;}
-.env-frame::before{content:'';position:absolute;inset:5px;border:.8px solid transparent;
-  border-image:linear-gradient(135deg,#e2c47a,#b78b36 40%,#ecd391 70%,#a7802f) 1;}
-.env-frame > b{position:absolute;width:clamp(64px,13vmin,96px);aspect-ratio:1;
-  background:url(../../img/envelope/regal-corner.svg) 0 0/100% 100% no-repeat;}
-.env-frame > b:nth-child(1){left:-3px;top:-3px;}
-.env-frame > b:nth-child(2){right:-3px;top:-3px;transform:scaleX(-1);}
-.env-frame > b:nth-child(3){left:-3px;bottom:-3px;transform:scaleY(-1);}
-.env-frame > b:nth-child(4){right:-3px;bottom:-3px;transform:scale(-1);}
-.env[data-env="regal"] .env-frame{display:block;}
-.env-to-orn{display:none;width:150px;height:20px;margin-top:8px;
-  background:url(../../img/envelope/regal-orn.svg) center/contain no-repeat;}
-.env[data-env="regal"] .env-to-orn{display:block;}
-/* 內襯：酒紅底燙金大馬士革花紋（AI 生成的照片） */
-.env[data-env="regal"] .env-inside{
-  background:linear-gradient(180deg,rgba(20,4,8,.5),rgba(20,4,8,0) 38%),url(../../img/envelope/regal/liner.webp) center/cover no-repeat;}
 
-/* ---- 5. 端莊：純白、一條細金線、金封蠟，什麼都不多 ---- */
+/* ---- 5. 端莊：圖片版（js 的 ART.pure）—— 純白棉紙、手撕毛邊的封口、一條細金線、金封蠟 ---- */
 .env[data-env="pure"]{
-  --env-paper:#fafaf8;
-  --env-l-left:linear-gradient(90deg,#fdfdfc,#f3f2ef);
-  --env-l-right:linear-gradient(270deg,#f3f2ef,#ecebe7);
-  --env-l-bottom:linear-gradient(0deg,#f1f0ec,#fbfbf9);
-  --env-l-top:linear-gradient(180deg,#ffffff,#f6f5f2);
   --env-shade:70,66,60;
-  --env-edge:#c2a25a;--env-edge-dash:none;--env-edge-w:1;
-  --env-seal-img:url(../../img/envelope/wax-seal-gold.webp);
   --env-glow:rgba(236,205,120,.55);
-  --env-ink-en:#4a4540;--env-ink-cn:#857d74;--env-ink-date:#a8884a;
   --env-card-line:rgba(194,162,90,.6);--env-card-accent:rgba(194,162,90,.35);
   --env-kicker:#8a7444;--env-amp:#c2a25a;
+  /* 內襯（沒有照片）：象牙白，極細的金色直紋 */
+  --art-liner:repeating-linear-gradient(90deg,rgba(194,162,90,.28) 0 1px,transparent 1px 9px),linear-gradient(180deg,#efe9dc,#f7f3ea);
 }
-.env[data-env="pure"] .env-inside{
-  background:repeating-linear-gradient(90deg,rgba(194,162,90,.28) 0 1px,transparent 1px 9px),
-    linear-gradient(180deg,#efe9dc,#f7f3ea);}
 
 /* ============================================================
    圖片版（.env[data-art]，見 js 的 ART）

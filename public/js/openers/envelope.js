@@ -19,7 +19,6 @@
      染出來的（scripts/build-envelope-seals.js）。幾款多了自己的一兩樣東西：
        feather  整封信是一張圖（art，見下面 ART）；點下去羽毛從封蠟那裡飛散（plumes）
        silk     一條緞帶橫過封蠟底下；點下去先抽走緞帶（pull 毫秒），才開始拆
-       regal    每一片紙上的燙金框（frame）
 
    ▸ 圖片版（art）：信封不是用 CSS 畫的，而是一張 AI 生成的整封信封照片
      （手機用直式、桌機用橫式各一張，img/envelope/{款}/）。照片照 object-fit:cover 鋪滿畫面，
@@ -38,8 +37,8 @@
     'envelope-emboss':  { env: 'emboss', art: 'emboss', light: true }, /* 壓紋白信封・金封蠟，拆開時透光、壓紋浮出金邊 */
     'envelope-feather': { env: 'feather', art: 'feather', plumes: 34 }, /* 鵝毛絨白信封・粉紅封蠟 */
     'envelope-silk':    { env: 'silk', art: 'silk', ribbon: true, pull: 760 }, /* 緞帶絲綢白信封・紅封蠟 */
-    'envelope-regal':   { env: 'regal', frame: true },      /* 華麗白信封・紅封蠟 */
-    'envelope-pure':    { env: 'pure' },                    /* 端莊白信封・金封蠟 */
+    'envelope-regal':   { env: 'regal', art: 'regal' },     /* 華麗白信封（燙金框與花飾）・紅封蠟 */
+    'envelope-pure':    { env: 'pure', art: 'pure' },       /* 端莊白信封（手撕毛邊、一條細金線）・金封蠟 */
   };
 
   const SCRIPT = document.currentScript && document.currentScript.src;
@@ -56,6 +55,44 @@
      plumes：飛散用的羽毛（黑底去背）；ribbon：橫過封蠟底下、會被抽走的緞帶（黑底去背）
      （緞帶絲綢的直式：最上層那片封口的尖端在 37%，比其他摺痕會合的那一點高 —— 封蠟和緞帶跟著封口尖端走） */
   const ART = {
+    regal: {
+      portrait: {
+        img: 'portrait.webp', w: 768, h: 1376, tip: [50, 46.6],
+        flap: [[0, 0], [100, 0], [100, 4.5], [50, 48.2], [0, 5]],
+        left: [[0, 5], [50, 48.2], [50, 100], [0, 100]],
+        right: [[100, 4.5], [50, 48.2], [50, 100], [100, 100]],
+        bottom: [[0, 98], [50, 49.6], [100, 98], [100, 100], [0, 100]],
+      },
+      /* 原圖四周露出大理石桌面，已經裁到只剩信封（1376×768 → 1090×695） */
+      landscape: {
+        img: 'landscape.webp', w: 1090, h: 695, tip: [49.8, 57.5],
+        flap: [[0, 0], [100, 0], [100, 7], [49.8, 61], [0, 9.5]],
+        left: [[0, 9.5], [49.8, 61], [49.8, 100], [0, 100]],
+        right: [[100, 7], [49.8, 61], [49.8, 100], [100, 100]],
+        bottom: [[0, 94], [49.8, 30.5], [100, 94], [100, 100], [0, 100]],
+      },
+      seal: 'seal-red.webp', liner: 'liner.webp',
+    },
+    /* 端莊：封口是手撕的毛邊，裁切線沿著毛邊的外緣走一圈（比毛邊再寬一點），撕邊才會整片跟著封口掀起來 */
+    pure: {
+      portrait: {
+        img: 'portrait.webp', w: 768, h: 1376, tip: [50, 46.4],
+        flap: [[0, 0], [100, 0], [100, 3], [95, 8], [90, 13], [85, 18], [80, 22.5], [75, 27], [70, 33], [65, 38], [60, 42], [55, 46.5], [50, 50.5],
+          [45, 45.5], [40, 41], [35, 36.5], [30, 32.5], [25, 28.5], [20, 24.5], [15, 20], [10, 15], [5, 11], [0, 5]],
+        left: [[0, 5], [5, 11], [10, 15], [15, 20], [20, 24.5], [25, 28.5], [30, 32.5], [35, 36.5], [40, 41], [45, 45.5], [50, 50.5], [50, 100], [0, 100]],
+        right: [[100, 3], [95, 8], [90, 13], [85, 18], [80, 22.5], [75, 27], [70, 33], [65, 38], [60, 42], [55, 46.5], [50, 50.5], [50, 100], [100, 100]],
+        bottom: [[0, 92.5], [50, 49.5], [100, 92], [100, 100], [0, 100]],
+      },
+      landscape: {
+        img: 'landscape.webp', w: 1376, h: 768, tip: [50, 56.5],
+        flap: [[0, 0], [100, 0], [100, 4], [95, 12], [90, 18], [85, 23.5], [80, 29], [75, 34], [70, 39.5], [65, 45.5], [60, 51], [55, 56.5], [50, 61.8],
+          [45, 54.5], [40, 47.5], [35, 42.5], [30, 37.5], [25, 31.5], [20, 25.5], [15, 20.5], [10, 17], [5, 10.5], [0, 3]],
+        left: [[0, 3], [5, 10.5], [10, 17], [15, 20.5], [20, 25.5], [25, 31.5], [30, 37.5], [35, 42.5], [40, 47.5], [45, 54.5], [50, 61.8], [50, 100], [0, 100]],
+        right: [[100, 4], [95, 12], [90, 18], [85, 23.5], [80, 29], [75, 34], [70, 39.5], [65, 45.5], [60, 51], [55, 56.5], [50, 61.8], [50, 100], [100, 100]],
+        bottom: [[0, 93], [50, 28], [100, 93], [100, 100], [0, 100]],
+      },
+      seal: 'seal-gold.webp',
+    },
     silk: {
       portrait: {
         img: 'portrait.webp', w: 768, h: 1376, tip: [49.4, 37.4],
@@ -164,7 +201,6 @@
     host.dataset.env = st.env;
     const names = LM.namesHtml(ctx);
     const date = LM.esc(ctx.date);
-    const frame = st.frame ? '<i class="env-frame"><b></b><b></b><b></b><b></b></i>' : '';
     const art = st.art ? { ...ART[st.art], dir: `${ROOT}${st.art}/` } : null;
     const sealHtml = (cls) => `<div class="env-seal ${cls}"><i class="env-seal-art"></i></div>`;
     host.innerHTML = `
@@ -177,23 +213,22 @@
       <span class="env-letter-names">${names}</span>
     </div>
   </div>
-  <div class="env-piece env-left" aria-hidden="true"><div class="env-paper">${frame}</div></div>
-  <div class="env-piece env-right" aria-hidden="true"><div class="env-paper">${frame}</div></div>
+  <div class="env-piece env-left" aria-hidden="true"><div class="env-paper"></div></div>
+  <div class="env-piece env-right" aria-hidden="true"><div class="env-paper"></div></div>
   <div class="env-piece env-bottom" aria-hidden="true">
-    <div class="env-paper">${frame}</div>
+    <div class="env-paper"></div>
     ${sealHtml('env-seal-b')}
   </div>
   ${st.light ? '<div class="env-light" aria-hidden="true"><i></i></div>' : ''}
   <div class="env-flap" aria-hidden="true">
     <div class="env-piece env-top">
       <div class="env-paper">
-        ${frame}
-        <svg class="env-edge" viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="2.6,2.2 49.2,47.6 50,48.2 50.8,47.6 97.4,2.2"/><polyline class="env-edge-in" points="4.25,2.2 49.2,46 50,46.6 50.8,46 95.75,2.2"/></svg>
+        
+        <svg class="env-edge" viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="2.6,2.2 49.2,47.6 50,48.2 50.8,47.6 97.4,2.2"/></svg>
         <div class="env-to">
           <span class="en">To our dearest guest</span>
           <span class="cn">致　親愛的你</span>
           <span class="env-to-date">${date}</span>
-          <i class="env-to-orn"></i>
         </div>
       </div>
     </div>

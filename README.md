@@ -237,8 +237,8 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | `envelope-emboss` | 拆信・壓紋金邊 | **圖片版**：象牙白厚紙上的白色浮雕花束（AI 生成的整封照片）、金封蠟；點下去封口掀起、縫裡透出暖光與光芒，壓紋從封蠟往外一圈一圈泛金（同一張照片的金光版 `glow-*.webp`，疊在上面慢慢露出來） | （可選） |
 | `envelope-feather` | 拆信・鵝毛絨 | **圖片版**：整封信封是一張 AI 生成的照片（封口滾一圈白色羽毛），沿著照片裡的摺線切成四片；粉紅封蠟；點下去羽毛（也是生成的照片，黑底去背）從封蠟那裡飛散、飄落 | （可選） |
 | `envelope-silk` | 拆信・緞帶絲綢 | **圖片版**：象牙白緞面信封（AI 生成的照片）、一條緞帶（照片，黑底去背）橫過紅封蠟底下；點下去緞帶先被抽走，才裂封蠟、掀封口，裡面是酒紅絲緞內襯 | （可選） |
-| `envelope-regal` | 拆信・華麗紅封蠟 | 白信封壓燙金雙線框、四角燙金花飾（`regal-corner.svg`）、紅封蠟；內襯是酒紅底燙金大馬士革花紋（AI 生成，`img/envelope/regal/liner.webp`） | （可選） |
-| `envelope-pure` | 拆信・端莊金封蠟 | 純白信封、一條細金線、金封蠟 | （可選） |
+| `envelope-regal` | 拆信・華麗紅封蠟 | **圖片版**：白紙燙金雙線框、四角花飾、上下兩枚大馬士革徽章（AI 生成的照片）、紅封蠟；封口掀開是酒紅底燙金大馬士革內襯 | （可選） |
+| `envelope-pure` | 拆信・端莊金封蠟 | **圖片版**：純白棉紙、手撕毛邊的封口與一條細金線（AI 生成的照片）、金封蠟；裁切線沿著毛邊外緣，撕邊整片跟著封口掀起 | （可選） |
 | `book` | 翻頁・古書 | 點封面 → 翻開 → 扉頁 → 翻過扉頁 | （可選） |
 | `bloom` | 花朵盛開 | 自己演：一整面綠籬 → 到處冒出小花苞 → 從中間往外一波波開成白玫瑰 → 名字（綠籬與玫瑰都是真的照片） | spring-orangerie |
 | `curtain` | 窗簾拉開 | 點一下 → 布幕收到兩側 → 光進來（晨光房間：真的白紗簾，後面是窗台上一瓶鬱金香的窗） | morning-window |
@@ -250,10 +250,9 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | `balloons` | 氣球升空 | 自己演：滿滿一畫面一顆一顆霧面的粉彩氣球（奶油白、腮紅粉、蜜桃、奶油黃、薄荷、薰衣草；遠中近三層，近的帶一點景深的糊）在原地晃 → 每一顆各自被放開、各自的速度與方向慢慢升空 → 露出底下一片藍天、綠地與遠山 → 名字浮在天空上 | outdoor-party |
 
 > 五款白色信封和 `envelope` 是同一支 `js/openers/envelope.js`（`OPENINGS` 裡寫 `file:'envelope'`），
-> 差別都在 `css/openers/envelope.css` 的 `.env[data-env="…"]`。金、粉紅、紅三色封蠟是從原本那一枚
-> 染出來的：`node scripts/build-envelope-seals.js`（亮度對應色帶，蠟的起伏與印面原樣保留）。
+> 差別都在 `css/openers/envelope.css` 的 `.env[data-env="…"]` 與 `js/openers/envelope.js` 的 `ART`。
 >
-> **圖片版信封**（目前是 `envelope-emboss`、`envelope-feather`、`envelope-silk`）：素材在 `public/img/envelope/{款}/`，用 AI 生成
+> **圖片版信封**（五款白色信封都是；`envelope` 復古那一款還是 CSS 畫的）：素材在 `public/img/envelope/{款}/`，用 AI 生成
 > （規格與提示詞見 `docs/envelope-art-brief.md`）——`portrait.webp`（手機）、`landscape.webp`（桌機）、
 > `liner.webp`（內襯）、`plume-*.webp`（飛散的羽毛）、`ribbon.webp`（緞帶）。
 > 每張照片的摺線位置不同，裁切的多邊形寫在 `js/openers/envelope.js` 的 `ART`（照片的 %）；換照片要重量一次。
