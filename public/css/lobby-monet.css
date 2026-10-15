@@ -99,14 +99,7 @@ canvas[data-monet].is-painted,canvas[data-monet][data-monet-reveal]{opacity:1;}
 body[data-hero-name="cn"] .mg-hero .mg-names{font-family:'Noto Serif TC',serif;font-weight:500;font-size:clamp(30px,5vw,54px);letter-spacing:.2em;}
 .mg-date{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px;font-size:15px;font-weight:500;letter-spacing:.26em;color:#3a4843;text-shadow:var(--mg-halo);}
 .mg-date i{width:22px;height:1px;background:var(--mg-rose);}
-.mg-hero .hashtags{margin-top:10px;}
-.mg-hero .hashtags .tag{border-color:rgba(250,246,236,.9);color:var(--mg-green);background:rgba(250,246,236,.9);font-size:12.5px;font-weight:500;}
-.mg-cue{margin-top:16px;color:var(--mg-cream);font-size:11.5px;font-weight:500;letter-spacing:.4em;text-shadow:0 1px 3px rgba(20,34,28,.75),0 0 12px rgba(20,34,28,.55);}
-.mg-cue .arrow{background:var(--mg-cream);}
-.app-show .mg-swash,.app-show .mg-hero .hashtags,.app-show .mg-cue{animation:mg-rise 1.4s cubic-bezier(.2,.7,.2,1) both;}
-.app-show .mg-swash{animation-delay:.5s;}
-.app-show .mg-hero .hashtags{animation-delay:.75s;}
-.app-show .mg-cue{animation-delay:.9s;}
+.app-show .mg-swash{animation:mg-rise 1.4s cubic-bezier(.2,.7,.2,1) .5s both;}
 @keyframes mg-rise{from{opacity:0;transform:translateY(14px);}}
 
 /* ============================================================

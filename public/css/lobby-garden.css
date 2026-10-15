@@ -93,7 +93,7 @@ body[data-lobby="secret-garden"] .bg-decor{
   transform:translateY(calc(var(--lp,0) * 60px));opacity:calc(1 - var(--lp,0) * 1.3);}
 .sg-kicker{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
 /* 手機：拱門撐滿整個寬度，拱頂比較高，字要再往下放才會在拱門裡 */
-@media (max-width:640px){.sg-hero-body{margin-top:41vh;}.sg-hero .hashtags{margin-top:12px;}}
+@media (max-width:640px){.sg-hero-body{margin-top:41vh;}}
 /* 小字：照片再熱鬧也要讀得到 —— 字色壓深、字重加一級，再墊一圈米白的光暈 */
 .sg-hero-body{--sg-halo:0 0 2px rgba(255,253,242,.95),0 0 10px rgba(255,253,242,.9),0 0 22px rgba(255,253,242,.75);}
 .sg-kicker .en{font:italic 400 clamp(19px,2.4vw,23px) 'Cormorant Garamond',serif;color:var(--sg-deep);text-shadow:var(--sg-halo);}
@@ -105,16 +105,10 @@ body[data-lobby="secret-garden"] .bg-decor{
 body[data-hero-name="cn"] .sg-hero .sg-names{font-family:'Noto Serif TC',serif;font-weight:500;font-size:clamp(30px,5vw,52px);letter-spacing:.2em;}
 .sg-date{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:15px;font-weight:500;letter-spacing:.26em;color:#3d4a37;text-shadow:var(--sg-halo);}
 .sg-date i{width:6px;height:6px;border-radius:50% 0;background:var(--sg-leaf);transform:rotate(45deg);}
-.sg-hero .hashtags{margin-top:16px;}
-.sg-hero .hashtags .tag{border-color:rgba(95,127,72,.4);color:var(--sg-deep);font-size:12.5px;font-weight:500;background:rgba(255,253,242,.88);}
-.sg-cue{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:3;margin:0;color:var(--sg-deep);font-size:11.5px;font-weight:500;letter-spacing:.4em;
-  text-shadow:0 0 2px rgba(255,253,242,.95),0 0 10px rgba(255,253,242,.9);}
-.sg-cue .arrow{background:rgba(70,99,58,.6);}
 .app-show .sg-hero-body > *{animation:sg-rise 1.2s cubic-bezier(.2,.7,.2,1) both;}
 .app-show .sg-hero-body > .sg-kicker{animation-delay:.7s;}
 .app-show .sg-hero-body > .sg-names{animation-delay:.85s;}
 .app-show .sg-hero-body > .sg-date{animation-delay:1s;}
-.app-show .sg-hero-body > .hashtags{animation-delay:1.1s;}
 @keyframes sg-rise{from{opacity:0;transform:translateY(14px);}}
 
 /* ---- 蝴蝶：一隻真的蝴蝶（去背），從身體中間切成左右兩半，各自往後翻（翅膀一開一合），

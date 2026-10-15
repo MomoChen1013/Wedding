@@ -36,7 +36,7 @@
     const v = W[el.dataset.tpl];
     if (v != null) el.textContent = v;
   });
-  $('lobbyTags').innerHTML = (D.hashtags || []).map((t) => `<span class="tag">${esc(t)}</span>`).join('');
+  if ($('lobbyTags')) $('lobbyTags').innerHTML = (D.hashtags || []).map((t) => `<span class="tag">${esc(t)}</span>`).join('');
   $('infoDate').textContent = `${D.date}・${D.weekday}`;
   $('infoTime').textContent = D.time;
   $('infoVenue').textContent = D.venue;
