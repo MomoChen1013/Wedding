@@ -25,7 +25,7 @@
      （手機用直式、桌機用橫式各一張，img/envelope/{款}/）。照片照 object-fit:cover 鋪滿畫面，
      再沿著照片裡的摺線切成封口、左、右、下四片 —— 每一張照片的摺線位置不一樣，
      所以多邊形寫在 ART 裡（照片的 %）。掀封口、四散的動畫和 CSS 版一模一樣。
-     封蠟是一枚中間空白的蠟，執行時壓上新人姓名的縮寫（G&O）。
+     封蠟是 AI 生成的空白蠟，壓上芯玖 logo 的雙戒指（scripts/build-envelope-seals-rings.js）。
 ============================================================ */
 (function () {
   const LM = window.LobbyMotion;
@@ -35,7 +35,7 @@
   /* 開場代號 → 這一款的設定 */
   const STYLES = {
     'envelope':         { env: 'vintage' },                 /* 復古舊紙・古銅封蠟 */
-    'envelope-emboss':  { env: 'emboss' },                  /* 壓紋白信封・金封蠟，拆開時壓紋浮出金邊 */
+    'envelope-emboss':  { env: 'emboss', art: 'emboss', light: true }, /* 壓紋白信封・金封蠟，拆開時透光、壓紋浮出金邊 */
     'envelope-feather': { env: 'feather', art: 'feather', plumes: 34 }, /* 鵝毛絨白信封・粉紅封蠟 */
     'envelope-silk':    { env: 'silk', ribbon: true, pull: 760 },    /* 緞帶絲綢白信封・紅封蠟 */
     'envelope-regal':   { env: 'regal', frame: true },      /* 華麗白信封・紅封蠟 */
@@ -51,9 +51,28 @@
        flap    封口：照片上緣 → 沿著羽毛滾邊的外緣 → 尖端（滾邊整條都算封口的，掀起來會一起走）
        left／right  封口外側、一路到底的兩片（被下片蓋住的部分也算它們的，退場時才不會露洞）
        bottom  下片：沿著照片裡那兩條摺痕
-     seal：中間空白的封蠟；liner：封口掀開後看到的內襯；plumes：飛散用的羽毛（黑底去背）；
-     mono：壓在封蠟上的縮寫的顏色 */
+       hint    （選填）提示那一行字的高度（照片的 %）；照片底下有花樣時用它避開，沒寫就貼著畫面下緣
+       glow    （選填）同一張照片、壓紋泛金的版本：拆開時從封蠟往外一圈一圈亮開
+     seal：壓了雙戒指的封蠟（img/envelope/seal-*.webp，幾款共用）；liner：（選填）封口掀開後看到的內襯；
+     plumes：飛散用的羽毛（黑底去背） */
   const ART = {
+    emboss: {
+      portrait: {
+        img: 'portrait.webp', w: 768, h: 1376, tip: [50.3, 48], hint: 64,
+        flap: [[0, 0], [100, 0], [100, 5.5], [50.3, 48], [0, 3]],
+        left: [[0, 3], [50.3, 48], [50.3, 100], [0, 100]],
+        right: [[100, 5.5], [50.3, 48], [50.3, 100], [100, 100]],
+        bottom: [[0, 97], [50.3, 49.5], [97.5, 95.5], [100, 96], [100, 100], [0, 100]],
+      },
+      landscape: {
+        img: 'landscape.webp', w: 1408, h: 768, tip: [50, 55], hint: 97.5,
+        flap: [[0, 0], [100, 0], [100, 3], [98.3, 6], [50, 57.4], [1.7, 6], [0, 3]],
+        left: [[0, 3], [1.7, 6], [50, 57.4], [50, 100], [0, 100]],
+        right: [[100, 3], [98.3, 6], [50, 57.4], [50, 100], [100, 100]],
+        bottom: [[0, 92], [50, 46], [100, 92], [100, 100], [0, 100]],
+      },
+      seal: 'seal-gold.webp',
+    },
     feather: {
       portrait: {
         img: 'portrait.webp', w: 941, h: 1672, tip: [49, 43.6],
@@ -69,24 +88,12 @@
         right: [[100, 3], [90, 15], [80, 27], [70, 40], [60, 52], [54, 57.5], [49.5, 59.5], [49.5, 100], [100, 100]],
         bottom: [[0, 98.2], [40, 50], [49.5, 38.6], [60, 51], [100, 98.4], [100, 100], [0, 100]],
       },
-      seal: 'seal.webp', liner: 'liner.webp', mono: '#9c5a68',
+      seal: 'seal-pink.webp', liner: 'liner.webp',
       plumes: ['plume-1.webp', 'plume-2.webp', 'plume-3.webp'],
     },
   };
   const rand = (a, b) => a + Math.random() * (b - a);
   const poly = (pts) => `polygon(${pts.map(([x, y]) => `${x}% ${y}%`).join(',')})`;
-
-  /* 封蠟上的縮寫：兩個人名字的第一個字。字是壓進蠟裡的 ——
-     上緣一道暗、下緣一道亮（光從左上來），中間一層比蠟深一點的顏色 */
-  function monogram(ctx, color) {
-    const ini = [ctx.names.a, ctx.names.b].map((n) => String(n || '').trim().charAt(0).toUpperCase()).filter(Boolean);
-    if (!ini.length) return '';
-    const t = LM.esc(ini.join('&'));
-    const size = ini.length > 1 ? 34 : 44;
-    const text = (dy, fill, op) => `<text x="50" y="${52 + dy}" fill="${fill}" fill-opacity="${op}" font-size="${size}">${t}</text>`;
-    return `<svg class="env-mono" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><g text-anchor="middle" dominant-baseline="middle">` +
-      text(1, '#fff', 0.6) + text(-0.8, '#3a1820', 0.4) + text(0, color, 0.9) + '</g></svg>';
-  }
 
   /* 圖片版：照畫面比例挑直式／橫式那張，cover 鋪滿，尖端盡量對在畫面正中間。
      算好的位置全部寫成 host 上的 CSS 變數（--sx、--sy、--sw、--sh、--tip、--tip-x、--seal…） */
@@ -100,17 +107,20 @@
     const sy = (vh - sh) / 2;
     const seal = Math.max(92, Math.min(170, 0.25 * sw, 0.18 * sh));
     host.dataset.orient = orient;
+    if (a.hint) host.dataset.hint = '1'; else delete host.dataset.hint;
     const v = {
       '--sx': `${sx}px`, '--sy': `${sy}px`, '--sw': `${sw}px`, '--sh': `${sh}px`,
       '--tip-x': `${a.tip[0]}%`, '--tip': `${a.tip[1]}%`, '--seal': `${seal}px`,
       '--tip-vx': `${sx + (a.tip[0] / 100) * sw}px`, '--tip-vy': `${sy + (a.tip[1] / 100) * sh}px`,
       '--art-img': `url("${art.dir}${a.img}")`,
+      '--hint-y': a.hint ? `${sy + (a.hint / 100) * sh}px` : 'auto',
+      '--art-glow': a.glow ? `url("${art.dir}${a.glow}")` : 'none',
       '--clip-flap': poly(a.flap), '--clip-left': poly(a.left), '--clip-right': poly(a.right), '--clip-bottom': poly(a.bottom),
     };
     for (const [n, val] of Object.entries(v)) host.style.setProperty(n, val);
   }
 
-  /* 手寫體（Pinyon Script）：縮寫與提示用。整站只有圖片版信封用得到，所以要用時才載 */
+  /* 手寫體（Pinyon Script）：提示那一行用。整站只有圖片版信封用得到，所以要用時才載 */
   function loadScriptFont() {
     if (document.getElementById('env-font')) return;
     const l = document.createElement('link');
@@ -151,8 +161,7 @@
     const date = LM.esc(ctx.date);
     const frame = st.frame ? '<i class="env-frame"><b></b><b></b><b></b><b></b></i>' : '';
     const art = st.art ? { ...ART[st.art], dir: `${ROOT}${st.art}/` } : null;
-    const mono = art ? monogram(ctx, art.mono) : '';
-    const sealHtml = (cls) => `<div class="env-seal ${cls}"><i class="env-seal-art">${mono}</i></div>`;
+    const sealHtml = (cls) => `<div class="env-seal ${cls}"><i class="env-seal-art"></i></div>`;
     host.innerHTML = `
   <svg class="env-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs><pattern id="env-g" width="2.6" height="2.6" patternUnits="userSpaceOnUse" patternTransform="rotate(38)"><rect width="2.6" height="2.6" fill="#9c7630"/><rect y=".35" width="2.6" height="1.45" fill="#dcbd6e"/></pattern><filter id="env-emb" x="-8%" y="-8%" width="116%" height="116%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="1" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.3" xChannelSelector="R" yChannelSelector="G" result="d"/><feDropShadow in="d" dx=".5" dy=".9" stdDeviation=".45" flood-color="#2e1f10" flood-opacity=".45"/></filter></defs></svg>
   <div class="env-inside" aria-hidden="true"></div>
@@ -169,6 +178,7 @@
     <div class="env-paper">${frame}</div>
     ${sealHtml('env-seal-b')}
   </div>
+  ${st.light ? '<div class="env-light" aria-hidden="true"><i></i></div>' : ''}
   <div class="env-hint" aria-hidden="true"><span class="en">${art ? 'Tap to open' : 'Break the seal'}</span><span class="cn">輕觸封蠟・拆開這封信</span></div>
   <div class="env-flap" aria-hidden="true">
     <div class="env-piece env-top">
@@ -191,8 +201,8 @@
 
     if (art) {
       host.dataset.art = st.art;
-      host.style.setProperty('--art-seal', `url("${art.dir}${art.seal}")`);
-      host.style.setProperty('--art-liner', `url("${art.dir}${art.liner}")`);
+      host.style.setProperty('--art-seal', `url("${ROOT}${art.seal}")`);
+      if (art.liner) host.style.setProperty('--art-liner', `url("${art.dir}${art.liner}")`);
       loadScriptFont();
       layoutArt(host, art);
       /* 轉手機、拉視窗：重新挑直式／橫式、重新對位；開場收掉以後就不必再算 */

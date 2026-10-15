@@ -228,32 +228,17 @@
   --env-ink-cn:#7a7068;--env-hint-cn:#7a7068;
 }
 
-/* ---- 1. 壓紋：白紙上壓了一整面菱格花紋，拆開的那一刻壓紋浮出金邊 ----
-   金邊是同一組花紋描成金色（img/envelope/emboss-gold.svg），疊在紙上、先藏著；
-   點下去以後從封蠟那一點往外一圈一圈亮開（--env-gild 由 0 長到 150%）。 */
-@property --env-gild{syntax:'<percentage>';inherits:true;initial-value:0%;}
+/* ---- 1. 壓紋：圖片版（js 的 ART.emboss）—— 象牙白厚紙上的白色浮雕花束、金封蠟；
+      拆開時信封裡透出暖光（.env-light），有金光版照片的話壓紋從封蠟往外泛金（見檔尾的圖片版） ---- */
 .env[data-env="emboss"]{
-  --env-pattern:url(../../img/envelope/emboss.svg);
-  --env-edge:rgba(120,108,92,.4);--env-edge-dash:none;--env-edge-w:1;
-  --env-seal-img:url(../../img/envelope/wax-seal-gold.webp);
+  --env-shade:96,76,48;
   --env-glow:rgba(236,205,120,.6);
-  --env-ink-en:#7a6236;--env-ink-date:#a7823a;--env-hint-en:#a7823a;
+  --env-ink-en:#7a6236;--env-ink-date:#a7823a;--env-hint-en:#a08a63;--env-hint-cn:#a39680;
   --env-card-line:rgba(184,148,76,.55);--env-card-accent:rgba(184,148,76,.55);
   --env-kicker:#8a6a2a;--env-amp:#b8944c;
 }
-.env[data-env="emboss"] .env-paper::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.8;
-  background:url(../../img/envelope/emboss-gold.svg);
-  -webkit-mask:radial-gradient(circle at 50% var(--tip),#000 calc(var(--env-gild) - 22%),transparent var(--env-gild));
-          mask:radial-gradient(circle at 50% var(--tip),#000 calc(var(--env-gild) - 22%),transparent var(--env-gild));}
-.env[data-env="emboss"] .env-edge polyline{stroke-width:1;}
-.env[data-env="emboss"].is-opening{--env-edge:#c9a24c;animation:env-gild 1.1s cubic-bezier(.3,.2,.4,1) forwards;}
-@keyframes env-gild{to{--env-gild:150%;}}
-/* 內襯：香檳金的紙，壓一樣的花紋 */
-.env[data-env="emboss"] .env-inside{
-  background:linear-gradient(180deg,rgba(60,40,10,.4),rgba(60,40,10,0) 38%),
-    url(../../img/envelope/emboss-gold.svg),
-    linear-gradient(180deg,#e7d3a1,#d4b877);
-  background-size:auto,80px 80px,auto;}
+/* 內襯（還沒有照片）：香檳金 */
+.env[data-env="emboss"]{--art-liner:linear-gradient(180deg,#e7d3a1,#d4b877);}
 
 /* ---- 2. 鵝毛絨：圖片版（js 的 ART.feather）—— 封口滾一圈白色羽毛，拆開時羽毛整片飛散 ---- */
 .env[data-env="feather"]{
@@ -383,6 +368,7 @@
      --clip-*              四片紙的多邊形
    CSS 版那些用漸層畫出來的東西（金線、封口上的字）在這裡都不要。
 ============================================================ */
+@property --env-gild{syntax:'<percentage>';inherits:true;initial-value:0%;}
 .env[data-art]{--env-seal-img:var(--art-seal);}
 .env[data-art] > .env-piece,.env[data-art] > .env-flap{inset:auto;left:var(--sx);top:var(--sy);width:var(--sw);height:var(--sh);}
 .env[data-art] .env-paper{background:var(--art-img) 0 0/100% 100% no-repeat;}
@@ -398,9 +384,6 @@
 .env[data-art] .env-inside{
   background:linear-gradient(180deg,rgba(60,30,36,.35),rgba(60,30,36,0) 40%),var(--art-liner) center/cover no-repeat;}
 .env[data-art] .env-plume{left:var(--tip-vx);top:var(--tip-vy);}
-/* 封蠟上壓的縮寫（js 的 monogram()） */
-.env-mono{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
-.env-mono text{font-family:'Pinyon Script','Noto Serif TC',serif;}
 /* 提示：一行壓在紙上的手寫字，同色、只靠一道亮一道暗看出來（不是浮在上面的介面文字） */
 .env[data-art] .env-hint{top:auto;bottom:calc(max(7vh,34px) + env(safe-area-inset-bottom,0px));gap:4px;}
 .env[data-art]:not(.is-opening):not(.is-pulling) .env-hint{animation:env-hint-soft 3.2s ease-in-out infinite;}
@@ -410,3 +393,34 @@
 .env[data-art] .env-hint .cn{font-size:12px;letter-spacing:.42em;padding-left:.42em;
   text-shadow:0 1px 0 rgba(255,255,255,.9);}
 @keyframes env-hint-soft{50%{opacity:.7;}}
+/* 照片底下有花樣（壓紋的花束）：提示改放在 js 指定的高度（--hint-y 是那一行的中線） */
+.env[data-art][data-hint] .env-hint{top:var(--hint-y);bottom:auto;transform:translateY(-50%);}
+.env[data-art][data-hint][data-orient="landscape"] .env-hint{transform:translateY(-100%);}
+/* 橫式的花束一路長到照片下緣，字只好壓在花上：墊一圈紙色的光暈讓它讀得出來 */
+.env[data-art][data-hint][data-orient="landscape"] .env-hint > *{
+  text-shadow:0 0 4px var(--env-halo,#f6f2e8),0 0 8px var(--env-halo,#f6f2e8),0 0 14px var(--env-halo,#f6f2e8),
+    0 0 22px var(--env-halo,#f6f2e8),0 0 32px var(--env-halo,#f6f2e8),0 1px 0 #fff;}
+.env[data-art][data-hint][data-orient="landscape"] .env-hint .en{color:#8a7350;}
+
+/* 金光版照片（--art-glow，選填）：疊在每一片紙上、先藏著；
+   點下去以後從封蠟那一點往外一圈一圈亮開（--env-gild 由 0 長到 160%） */
+.env[data-art] .env-paper::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:var(--art-glow) 0 0/100% 100% no-repeat;
+  -webkit-mask:radial-gradient(circle at var(--tip-x) var(--tip),#000 calc(var(--env-gild) - 25%),transparent var(--env-gild));
+          mask:radial-gradient(circle at var(--tip-x) var(--tip),#000 calc(var(--env-gild) - 25%),transparent var(--env-gild));}
+.env[data-art].is-opening{animation:env-gild 1.6s cubic-bezier(.3,.2,.4,1) .15s forwards;}
+@keyframes env-gild{to{--env-gild:160%;}}
+
+/* 信封裡透出來的光：封口一掀，縫裡先亮起一團暖白，光芒從尖端往外放射、灑在紙上 */
+.env-light{z-index:4;pointer-events:none;opacity:0;mix-blend-mode:screen;
+  background:radial-gradient(circle at var(--tip-vx) var(--tip-vy),rgba(255,240,205,.95) 0,rgba(255,218,150,.6) 7%,rgba(255,200,120,.2) 24%,transparent 52%);}
+.env-light > i{position:absolute;inset:0;transform-origin:var(--tip-vx) var(--tip-vy);
+  background:repeating-conic-gradient(from 0deg at var(--tip-vx) var(--tip-vy),rgba(255,228,170,.28) 0 1.6deg,transparent 2.4deg 8deg);
+  -webkit-mask:radial-gradient(circle at var(--tip-vx) var(--tip-vy),#000 0,rgba(0,0,0,.55) 20%,transparent 55%);
+          mask:radial-gradient(circle at var(--tip-vx) var(--tip-vy),#000 0,rgba(0,0,0,.55) 20%,transparent 55%);
+  animation:env-rays 9s linear infinite;}
+@keyframes env-rays{to{transform:rotate(30deg);}}
+.env.is-opening .env-light{animation:env-light-in 1.3s ease .3s forwards;}
+@keyframes env-light-in{0%{opacity:0;}55%{opacity:1;}100%{opacity:.9;}}
+.env.is-leaving .env-light{animation:env-light-out 1s ease forwards;}
+@keyframes env-light-out{from{opacity:.9;}to{opacity:0;}}
