@@ -89,6 +89,19 @@ body[data-lobby="outdoor-party"] .bg-decor{
 .yp-bn.is-peach{--img:url(../img/party/balloon-peach.webp);}
 .yp-bn.is-butter{--img:url(../img/party/balloon-butter.webp);}
 
+/* 氣球配色（sites.balloonPalette → <body data-balloons>，見 wed-model.js 的 BALLOON_PALETTES）：
+   rainbow 就是上面每一顆原本的顏色；其他配色只有三種 —— 主色、白色當底、一點點綴色，
+   每一顆氣球（包括小貨車上綁的三顆）在 HTML 裡標好自己是哪一種（data-role）。
+   和開場（js/openers/balloons.js 的 PALETTES）是同一組配色 */
+body[data-balloons="lavender"]{--yp-bn-main:url(../img/party/balloon-lilac.webp);--yp-bn-accent:url(../img/party/balloon-sky.webp);}
+body[data-balloons="blush"]{--yp-bn-main:url(../img/party/balloon-blush.webp);--yp-bn-accent:url(../img/party/balloon-peach.webp);}
+body[data-balloons="sky"]{--yp-bn-main:url(../img/party/balloon-sky.webp);--yp-bn-accent:url(../img/party/balloon-mint.webp);}
+body[data-balloons="sage"]{--yp-bn-main:url(../img/party/balloon-mint.webp);--yp-bn-accent:url(../img/party/balloon-butter.webp);}
+body[data-balloons="peach"]{--yp-bn-main:url(../img/party/balloon-peach.webp);--yp-bn-accent:url(../img/party/balloon-butter.webp);}
+body[data-balloons]:not([data-balloons="rainbow"]) :is(.yp-bn,.yp-truck-bl)[data-role="main"]{--img:var(--yp-bn-main);}
+body[data-balloons]:not([data-balloons="rainbow"]) :is(.yp-bn,.yp-truck-bl)[data-role="base"]{--img:url(../img/party/balloon-white.webp);}
+body[data-balloons]:not([data-balloons="rainbow"]) :is(.yp-bn,.yp-truck-bl)[data-role="accent"]{--img:var(--yp-bn-accent);}
+
 /* 草地上的野餐：照片去背，底下一圈淡淡的影子壓在草上 */
 .yp-picnic{position:absolute;left:0;right:0;bottom:0;height:0;z-index:2;pointer-events:none;}
 .yp-picnic-l,.yp-picnic-r{position:absolute;bottom:clamp(6px,2.4vh,26px);}

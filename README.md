@@ -226,8 +226,11 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | `template` | 整站的色票、字體、大廳的版面 | `classic` |
 | `opening` | 賓客打開大廳那幾秒怎麼演 | 版型的預設開場；版型也沒有就是兩句字幕＋簾幕 |
 | `storyLayout` | 「我們的故事」那一頁怎麼說 | `timeline` |
+| `balloonPalette` | 氣球的配色（氣球升空開場、美式戶外派對大廳飄上去的氣球、小貨車上的氣球） | `rainbow` |
 
-清單都在 `public/js/wed-model.js`（`TEMPLATES`／`OPENINGS`／`STORY_LAYOUTS`）。
+清單都在 `public/js/wed-model.js`（`TEMPLATES`／`OPENINGS`／`STORY_LAYOUTS`／`BALLOON_PALETTES`）。
+
+**氣球配色**（`balloonPalette`）有六種：`rainbow` 彩色派對（七色混搭）、`lavender` 薰衣草（紫＋白，點綴粉藍）、`blush` 腮紅（粉＋白，點綴蜜桃）、`sky` 晴空（粉藍＋白，點綴薄荷）、`sage` 鼠尾草（薄荷＋白，點綴奶油黃）、`peach` 蜜桃暖陽（蜜桃＋白，點綴奶油黃）。除了 rainbow，比例都是主色 6、白 3、點綴 1。開站時用 `create-site.js --balloons lavender`，之後到 Firestore 改 `sites/{siteId}.balloonPalette`。寫在大廳的 `<body data-balloons>`（預產時就烤好），開場（`js/openers/balloons.js` 的 `PALETTES`）與派對大廳（`css/lobby-party.css`）都只讀這個屬性；示範頁的面板可以切換。
 
 **開場**（`opening`）有十種，任何版型都能用任何一種：
 
@@ -242,7 +245,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | `door` | 門／拱門 | 晴朗的早上站在門口，點一下 → 門往內開 → 陽光湧出來、穿過門口。莊園全部是真的照片：綠籬牆上、磚砌圓拱裡的一扇鍛鐵花園門，鐵門從照片分離出來繞著鉸鍊轉開，走進去是一座綠籬夾道的歐式花園（教堂／刺繡用程式畫的尖拱鐵門），秘密花園是常春藤牆上一扇白框玻璃門（牆、垂下來的藤、牆腳的花、門後的玫瑰拱門小徑都是真的照片） | secret-garden、french-manor |
 | `pressed` | 摘下壓花 | 一小束真的壓花橫跨卡片中縫、用兩段紙膠帶貼住（卡片就是被它封起來的）。點一下（或按住壓花往外拉，膠帶會跟著翹起來）→ 兩段紙膠帶從一端撕起、往回折、被拿走 → 那束壓花被拿起來（離開紙面、影子變大）、拿走 → 卡片打開。紙膠帶半透明、看得到纖維與細點點、兩端手撕的鋸齒，顏色跟版型走（植物信箋鼠尾草綠、法式莊園灰藍、其他霧玫瑰）；卡片與桌面是真的棉紙、纖維紙。舊代號 `ribbon`（拉開絲帶）照樣認得，已經存好的網站不用改 | botanical-letter |
 | `painting` | 走進油畫 | 鼠尾草綠錦緞壁紙的展間，牆上一幅真的金框（照片做的九宮格）裡掛著莫內的《日本橋》（美國國家藝廊館藏的掃描），畫是活的（池水起伏、水面光點閃）；像首爾的沉浸式美術館，畫裡的東西跑到框外面來：大理花與蜀葵從框邊一筆刷出來、蝴蝶從畫裡飛到牆上、花瓣飄出畫面。點一下 → 牆往外退、畫框往前衝、畫裡的筆觸捲成漩渦，四周的顏料點被吸進畫裡 → 掉進畫裡 | monet-garden |
-| `balloons` | 氣球升空 | 自己演：滿滿一畫面一顆一顆霧面的粉彩氣球（奶油白、腮紅粉、蜜桃、奶油黃、薄荷、薰衣草；遠中近三層，近的帶一點景深的糊）在原地晃 → 每一顆各自被放開、各自的速度與方向慢慢升空 → 露出底下一片藍天、綠地與遠山 → 名字浮在天空上 | outdoor-party |
+| `balloons` | 氣球升空 | 自己演：滿滿一畫面一顆一顆霧面的乳膠氣球（顏色看 `balloonPalette`；遠中近三層，近的帶一點景深的糊）在原地晃 → 每一顆各自被放開、各自的速度與方向慢慢升空 → 露出底下藍天下的後院婚宴（白色尖頂帳篷、長桌、串燈） → 名字浮在天空上 | outdoor-party |
 
 > **秘密花園的照片素材**（`public/img/secret-garden/`，開場的玻璃門與 `lobby-garden.html` 共用）：
 > 全部來自 [Unsplash](https://unsplash.com)，授權是 [Unsplash License](https://unsplash.com/license)：
