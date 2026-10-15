@@ -65,7 +65,7 @@ body[data-lobby="secret-garden"] .bg-decor{
   transform:translateY(calc(var(--lp,0) * 60px)) scale(calc(1.04 + var(--lp,0) * .08));}
 /* 名字底下一層霧白，照片再熱鬧字都讀得到；底部淡進頁面的底色 */
 .sg-veil{position:absolute;inset:0;background:
-  radial-gradient(46% 40% at 50% 50%,rgba(251,249,241,.82),rgba(251,249,241,.5) 55%,rgba(251,249,241,0) 100%),
+  radial-gradient(54% 44% at 50% 56%,rgba(251,249,241,.9),rgba(251,249,241,.68) 50%,rgba(251,249,241,0) 100%),
   linear-gradient(180deg,rgba(251,249,241,.25),rgba(251,249,241,0) 30%,rgba(251,249,241,0) 78%,#f6f3e9 100%);}
 /* 上：從畫面上緣垂下來的常春藤（去背；Dinah Liu／Unsplash） */
 .sg-layer.l-top{left:-4%;right:-4%;top:-2%;height:clamp(140px,24vw,250px);
@@ -94,18 +94,21 @@ body[data-lobby="secret-garden"] .bg-decor{
 .sg-kicker{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
 /* 手機：拱門撐滿整個寬度，拱頂比較高，字要再往下放才會在拱門裡 */
 @media (max-width:640px){.sg-hero-body{margin-top:41vh;}.sg-hero .hashtags{margin-top:12px;}}
-.sg-kicker .en{font:italic 400 clamp(17px,2.2vw,21px) 'Cormorant Garamond',serif;color:var(--sg-deep);}
-.sg-kicker .cn{font-size:12.5px;letter-spacing:.5em;color:var(--sg-soft);}
+/* 小字：照片再熱鬧也要讀得到 —— 字色壓深、字重加一級，再墊一圈米白的光暈 */
+.sg-hero-body{--sg-halo:0 0 2px rgba(255,253,242,.95),0 0 10px rgba(255,253,242,.9),0 0 22px rgba(255,253,242,.75);}
+.sg-kicker .en{font:italic 400 clamp(19px,2.4vw,23px) 'Cormorant Garamond',serif;color:var(--sg-deep);text-shadow:var(--sg-halo);}
+.sg-kicker .cn{font-size:13.5px;font-weight:500;letter-spacing:.42em;color:#4a5843;text-shadow:var(--sg-halo);}
 .sg-hero .sg-names{font-family:'Italiana','Cormorant Garamond','Noto Serif TC',serif;font-weight:400;
   font-size:clamp(40px,6.4vw,76px);line-height:1.1;letter-spacing:.04em;color:var(--sg-ink);
   text-shadow:0 2px 12px rgba(255,253,242,.9);}
-.sg-hero .sg-names .amp{display:block;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:.55em;color:var(--sg-rose);line-height:1.2;}
+.sg-hero .sg-names .amp{display:block;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:.6em;color:#c26a80;line-height:1.2;}
 body[data-hero-name="cn"] .sg-hero .sg-names{font-family:'Noto Serif TC',serif;font-weight:500;font-size:clamp(30px,5vw,52px);letter-spacing:.2em;}
-.sg-date{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13px;letter-spacing:.34em;color:var(--sg-soft);}
+.sg-date{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:15px;font-weight:500;letter-spacing:.26em;color:#3d4a37;text-shadow:var(--sg-halo);}
 .sg-date i{width:6px;height:6px;border-radius:50% 0;background:var(--sg-leaf);transform:rotate(45deg);}
 .sg-hero .hashtags{margin-top:16px;}
-.sg-hero .hashtags .tag{border-color:rgba(95,127,72,.35);color:var(--sg-deep);font-size:12px;background:rgba(255,253,242,.75);}
-.sg-cue{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:3;margin:0;color:var(--sg-deep);font-size:11px;letter-spacing:.4em;}
+.sg-hero .hashtags .tag{border-color:rgba(95,127,72,.4);color:var(--sg-deep);font-size:12.5px;font-weight:500;background:rgba(255,253,242,.88);}
+.sg-cue{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:3;margin:0;color:var(--sg-deep);font-size:11.5px;font-weight:500;letter-spacing:.4em;
+  text-shadow:0 0 2px rgba(255,253,242,.95),0 0 10px rgba(255,253,242,.9);}
 .sg-cue .arrow{background:rgba(70,99,58,.6);}
 .app-show .sg-hero-body > *{animation:sg-rise 1.2s cubic-bezier(.2,.7,.2,1) both;}
 .app-show .sg-hero-body > .sg-kicker{animation-delay:.7s;}
