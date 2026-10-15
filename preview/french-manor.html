@@ -74,7 +74,8 @@
 
 <!-- ============ 主畫面：推開鐵門之後，一座剪紙的莊園 ============
      hero 是一層一層的剪紙：最後面是一片真的天頂濕壁畫的天空，前面是從真的照片描出來的
-     柏樹、城堡（剪出一排一排的窗）、再一排柏樹；兩旁站著兩尊真的大理石雕像。
+     柏樹、城堡（剪出一排一排的窗）、再一排柏樹；兩旁站著兩尊真的大理石雕像；
+     正中間掛著新人的照片（剪紙的橢圓花邊框），名字刻在下面那塊大理石上。
      往下捲，每一層剪紙走得快慢不一樣（像立體卡片）。
      區塊標題上是一件一件去背的大理石雕刻；兩個人的照片放在剪紙的橢圓花邊框裡。 -->
 <div id="app">
@@ -91,6 +92,8 @@
         <i class="fm-statue st-right"></i>
       </div>
       <div class="fm-hero-body">
+        <!-- 新人的照片：掛在名牌上方的橢圓花邊框（封面照；沒有照片就整個收起來，見 lobby-manor.css） -->
+        <figure class="fm-cameo fm-hero-cameo" aria-hidden="true"><div class="fm-cameo-ph" data-photo="hero"></div><i class="fm-cameo-frame"></i></figure>
         <div class="fm-cartouche">
           <div class="fm-kicker"><span class="en">Please join us at the manor</span><span class="cn">誠摯邀請您</span></div>
           <h1 class="fm-names"><span data-tpl="groomEn"></span><span class="amp">&amp;</span><span data-tpl="brideEn"></span></h1>

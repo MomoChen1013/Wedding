@@ -126,10 +126,22 @@ body[data-lobby="tapestry"] .bg-decor{
   transform:translateY(calc(var(--lp,0) * -30px));opacity:calc(1 - var(--lp,0) * 1.15);}
 .tp-crest{width:clamp(176px,24vw,250px);margin-bottom:clamp(8px,2vh,18px);
   transform:translateY(calc(var(--lp,0) * -40px)) scale(calc(1 - var(--lp,0) * .12));}
+/* 新人的照片：一扇拱窗（跟「我們的故事」那扇同一個形狀、同一圈緞金邊）。
+   照片是封面（applyLobbyPhotos 的 hero）；有照片的時候紋章縮小、壓在拱頂上當徽記，
+   沒有照片就整個收起來，hero 回到原本那枚大紋章。
+   拱窗的高度跟著視窗高度走：名字、日期、hashtag 都還要留在第一個畫面裡 */
+/* 選擇器多帶一個 .tp-arch：後面「我們的故事」那條 .tp-arch 的 width 才蓋不過來 */
+.tp-arch.tp-hero-arch{flex:none;width:auto;height:clamp(190px,31svh,300px);margin-bottom:clamp(14px,2.4vh,22px);}
+.tp-hero-arch:not(:has(.has-photo)){display:none;}
+.tp-hero-arch .tp-arch-ph{background-position:50% calc(35% + var(--lp,0) * 20%);}
+.tp-hero:has(.tp-hero-arch .has-photo){padding-top:clamp(44px,7svh,90px);}
+.tp-hero-body:has(.tp-hero-arch .has-photo) .tp-crest{width:clamp(100px,14svh,140px);}
+.tp-hero-body:has(.tp-hero-arch .has-photo) > .tp-crest{position:relative;z-index:2;margin-bottom:clamp(-30px,-3svh,-22px);}
 /* 信封退場、這一頁出現的那一刻：紋章一排一排繡出來 */
 .app-show .tp-crest .tp-art{animation:tp-stitch-in 2.2s cubic-bezier(.45,0,.2,1) .25s both;}
 @keyframes tp-stitch-in{from{clip-path:inset(100% 0 0 0);}to{clip-path:inset(-10% -10% -10% -10%);}}
 .app-show .tp-hero-body > :not(.tp-crest){animation:tp-rise-in 1.3s cubic-bezier(.2,.7,.2,1) both;}
+.app-show .tp-hero-body > .tp-hero-arch{animation-delay:.3s;}
 .app-show .tp-hero-body > .tp-kicker{animation-delay:.5s;}
 .app-show .tp-hero-body > .tp-names{animation-delay:.7s;}
 .app-show .tp-hero-body > .tp-date{animation-delay:.9s;}

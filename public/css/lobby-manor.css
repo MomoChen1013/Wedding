@@ -9,7 +9,7 @@
      素材    真的照片：天頂濕壁畫、大理石雕像與雕刻（去背）、大理石紋；
              剪紙是從真的照片描出來的：柏樹（托斯卡尼）、城堡（Château de Sceaux，剪出一排排窗）、
              法式花園的空拍（分成三層紙）；全部在 public/img/manor/，出處見 README
-     新人照片  剪紙的橢圓花邊框：肖像 ×3（照片牆前三張）、故事兩張、倒數一張、出席回覆一張
+     新人照片  剪紙的橢圓花邊框：hero 名牌上方一張（封面）、肖像 ×3（照片牆前三張）、故事兩張、倒數一張、出席回覆一張
 
    捲動：
      ・hero：每一層剪紙走得快慢不一樣（像打開一張立體卡片），越前面的走越快
@@ -74,8 +74,15 @@ body[data-lobby="french-manor"] .bg-decor::after{content:'';position:absolute;in
 
 .fm-hero-body{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;text-align:center;
   padding:clamp(26px,6vh,64px) 20px 0;transform:translateY(calc(var(--lp,0) * -40px));opacity:calc(1 - var(--lp,0) * 1.4);}
+/* 新人的照片：掛在名牌上方的剪紙橢圓花邊框，名牌壓住框的下緣一點（像肖像底下的銘牌）。
+   照片是封面（applyLobbyPhotos 的 hero）；沒有照片就整個收起來，hero 回到只有名牌的樣子。
+   框的大小跟著視窗高度走：hero 只有一個畫面高，城堡與雕像還要露出來 */
+/* 選擇器多帶一個 .fm-cameo：後面通用的 .fm-cameo{margin:0} 才蓋不過來 */
+.fm-cameo.fm-hero-cameo{flex:none;height:clamp(150px,30svh,270px);margin:0 0 clamp(-40px,-4.6svh,-24px);}
+.fm-hero-cameo:not(:has(.has-photo)){display:none;}
+.fm-hero-cameo .fm-cameo-ph{background-position:50% 30%;}
 /* 名字刻在一塊真的大理石上（Rachel Kelli／Unsplash）：金色的雙線框，字是刻進去的 */
-.fm-cartouche{position:relative;padding:clamp(18px,2.6vh,26px) clamp(30px,5vw,60px) clamp(14px,2vh,20px);
+.fm-cartouche{position:relative;z-index:1;padding:clamp(18px,2.6vh,26px) clamp(30px,5vw,60px) clamp(14px,2vh,20px);
   background:#f1efec url(../img/manor/marble.webp) center/cover no-repeat;border-radius:3px;
   box-shadow:inset 0 0 0 6px rgba(255,255,255,.35),inset 0 0 0 7px rgba(168,135,74,.65),inset 0 0 0 10px rgba(255,255,255,.25),inset 0 0 0 11px rgba(168,135,74,.4),
     0 2px 3px rgba(40,34,28,.2),0 26px 40px -24px rgba(40,34,28,.55);}
@@ -95,6 +102,7 @@ body[data-hero-name="cn"] .fm-hero .fm-names{font-family:'Noto Serif TC',serif;f
 .fm-cue .arrow{background:#fbf8f1;}
 .app-show .fm-cartouche,.app-show .fm-hero .hashtags{animation:fm-rise 1.2s cubic-bezier(.2,.7,.2,1) both;}
 .app-show .fm-cartouche{animation-delay:.5s;}
+.app-show .fm-hero-cameo{animation:fm-rise 1.2s cubic-bezier(.2,.7,.2,1) .3s both;}
 .app-show .fm-hero .hashtags{animation-delay:.7s;}
 /* 進站：剪紙一層一層立起來（像打開立體卡片） */
 .app-show .fm-paper,.app-show .fm-statue{animation:fm-pop 1.2s cubic-bezier(.2,.8,.25,1) both;}
