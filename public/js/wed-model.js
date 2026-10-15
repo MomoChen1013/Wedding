@@ -155,7 +155,7 @@ export const OPENINGS = {
   'candle':   { label:'燭光點亮' },
   'stars':    { label:'星圖展開', auto:true },
   'door':     { label:'門／拱門' },
-  'ribbon':   { label:'拉開絲帶' },
+  'ribbon':   { label:'摘下壓花' },
   'painting': { label:'走進油畫' },
   'balloons': { label:'氣球升空', auto:true },
 };

@@ -240,7 +240,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | `candle` | 燭光點亮 | 點一下 → 三根蠟燭一根根亮（蠟燭與火焰都是真的照片）；白色教堂：燭火熄掉、天亮，變成大廳那座純白禮堂 | white-church |
 | `stars` | 星圖展開 | 自己演：星星 → 連線成一顆心 → 名字 | night-sky |
 | `door` | 門／拱門 | 晴朗的早上站在門口，點一下 → 門往內開 → 陽光湧出來、穿過門口。莊園全部是真的照片：綠籬牆上、磚砌圓拱裡的一扇鍛鐵花園門，鐵門從照片分離出來繞著鉸鍊轉開，走進去是一座綠籬夾道的歐式花園（教堂／刺繡用程式畫的尖拱鐵門），秘密花園是常春藤牆上一扇白框玻璃門（牆、垂下來的藤、牆腳的花、門後的玫瑰拱門小徑都是真的照片） | secret-garden、french-manor |
-| `ribbon` | 拉開絲帶 | 拖緞帶尾（或點）→ 蝴蝶結鬆開 → 卡片打開。緞帶的光澤跟著游標滑（手機上自己慢慢飄）；卡片與桌面是真的棉紙、纖維紙，封面貼一枝真的壓花 | botanical-letter |
+| `ribbon` | 摘下壓花 | 一小束真的壓花橫跨卡片中縫、用兩段紙膠帶貼住（卡片就是被它封起來的）。點一下（或按住壓花往外拉，膠帶會跟著翹起來）→ 兩段紙膠帶從一端撕起、往回折、被拿走 → 那束壓花被拿起來（離開紙面、影子變大）、拿走 → 卡片打開。紙膠帶半透明、看得到纖維與細點點、兩端手撕的鋸齒，顏色跟版型走（植物信箋鼠尾草綠、法式莊園灰藍、其他霧玫瑰）；卡片與桌面是真的棉紙、纖維紙。代號沿用 `ribbon`，已經存好的網站不用改 | botanical-letter |
 | `painting` | 走進油畫 | 鼠尾草綠錦緞壁紙的展間，牆上一幅真的金框（照片做的九宮格）裡掛著莫內的《日本橋》（美國國家藝廊館藏的掃描），畫是活的（池水起伏、水面光點閃）；像首爾的沉浸式美術館，畫裡的東西跑到框外面來：大理花與蜀葵從框邊一筆刷出來、蝴蝶從畫裡飛到牆上、花瓣飄出畫面。點一下 → 牆往外退、畫框往前衝、畫裡的筆觸捲成漩渦，四周的顏料點被吸進畫裡 → 掉進畫裡 | monet-garden |
 | `balloons` | 氣球升空 | 自己演：滿滿一畫面一顆一顆霧面的粉彩氣球（奶油白、腮紅粉、蜜桃、奶油黃、薄荷、薰衣草；遠中近三層，近的帶一點景深的糊）在原地晃 → 每一顆各自被放開、各自的速度與方向慢慢升空 → 露出底下一片藍天、綠地與遠山 → 名字浮在天空上 | outdoor-party |
 
@@ -293,10 +293,11 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > | `botanical/pressed-tulip.webp` | hero 台紙上壓著的鬱金香 | [壓過的鬱金香](https://unsplash.com/photos/vP6xTMH7Uo0)・Birgitte Heiberg | 去背 |
 > | `botanical/pressed-leaf.webp` | hero 台紙上壓著的葉子 | [壓過的天竺葵葉](https://unsplash.com/photos/cd05Lc5N7tE)・Evie S. | 去背 |
 > | `botanical/olive.webp` | Plate IV | [橄欖枝](https://unsplash.com/photos/9viBtYo_gsM)・The New York Public Library | 去背 |
-> | `botanical/globe-amaranth.webp` | 郵票、頁尾、開場（ribbon）封面 | [壓花](https://unsplash.com/photos/aTLMgabd9b8)・Evie S. | 完整的一枝去背 |
+> | `botanical/globe-amaranth.webp` | 郵票、頁尾 | [壓花](https://unsplash.com/photos/aTLMgabd9b8)・Evie S. | 完整的一枝去背 |
 > | `botanical/dandelion.webp`、`seed.webp` | 倒數（種子一撮一撮被吹走） | [蒲公英](https://unsplash.com/photos/uff5ce89Ggs)・Josie Weiss | 黑底轉透明，花莖被照片切到的地方淡出；seed 是剪下來的一撮冠毛 |
 > | `botanical/paper.webp` | 植物信箋整頁的底、開場（ribbon）的卡片 | [棉紙](https://unsplash.com/photos/cqhXfrRHCPo)・Kiwihug | 接成可以無縫平鋪 |
 > | `botanical/fibre-paper.webp` | 「我們的故事」的底、開場（ribbon）的桌面 | [纖維紙](https://unsplash.com/photos/2nKcZGDHpEs)・360floralflaves | 縮圖 |
+> | `botanical/pressed-posy.webp` | 開場（ribbon）貼在卡片中縫的那一束壓花 | 用上面的 `fern`、`pressed-leaf`、`veronica`、`daisy`、`pressed-tulip` 拼成一束 | 各自轉一個角度、花莖收在同一點，疊成一張透明底的圖 |
 
 > **法式莊園的照片素材**（`public/img/manor/`，開場的鐵門與 `lobby-manor.html` 共用）：一樣是 Unsplash License。
 > 剪紙（`paper-*`、`cameo-frame`）是從真的照片描出剪影，填上紙的顏色與真的紙紋（借植物信箋的 `botanical/paper.webp`），影子在 CSS 裡加。
