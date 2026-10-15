@@ -144,9 +144,10 @@
 @keyframes env-seal-breathe{50%{filter:drop-shadow(0 3px 3px rgba(60,40,18,.32)) drop-shadow(0 0 14px var(--env-glow));}}
 
 /* ---- 提示 ----
-   掛在下片外層（.env-bottom），不在 .env-paper 裡 —— 紙會被裁成三角形，
-   提示放在紙裡面，三角形窄的地方字就被切掉（手機直拿、畫面又長的時候最明顯）。 */
-.env-hint{position:absolute;left:0;right:0;top:calc(var(--tip) + var(--seal) / 2 + 26px);
+   直接掛在 .env 底下，不在 .env-paper 裡 —— 紙會被裁成三角形，
+   提示放在紙裡面，三角形窄的地方字就被切掉（手機直拿、畫面又長的時候最明顯）。
+   疊在下片之上（DOM 排在下片後面）、封口之下。 */
+.env-hint{position:absolute;left:0;right:0;bottom:auto;z-index:2;pointer-events:none;top:calc(var(--tip) + var(--seal) / 2 + 26px);
   display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--env-hint-cn);
   animation:env-hint 2.6s ease-in-out infinite;transition:opacity .3s ease;}
 .env-hint .en{font-family:'Cinzel',serif;font-size:13px;font-weight:600;letter-spacing:.42em;text-transform:uppercase;color:var(--env-hint-en);
@@ -254,36 +255,20 @@
     linear-gradient(180deg,#e7d3a1,#d4b877);
   background-size:auto,80px 80px,auto;}
 
-/* ---- 2. 鵝毛絨：軟軟的白、封口一圈羽毛，拆開時羽毛整片飛散 ---- */
+/* ---- 2. 鵝毛絨：圖片版（js 的 ART.feather）—— 封口滾一圈白色羽毛，拆開時羽毛整片飛散 ---- */
 .env[data-env="feather"]{
-  --env-tex:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22220%22%20height%3D%22220%22%3E%3Cfilter%20id%3D%22n%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.55%22%20numOctaves%3D%223%22%20stitchTiles%3D%22stitch%22%2F%3E%3CfeColorMatrix%20values%3D%220%200%200%200%20.52%200%200%200%200%20.44%200%200%200%200%20.47%200%200%200%200.09%200%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url%28%23n%29%22%2F%3E%3C%2Fsvg%3E");
-  --env-paper:#fbf9f8;
-  --env-l-left:linear-gradient(90deg,#fffefd,#f5f1f0);
-  --env-l-right:linear-gradient(270deg,#f6f2f1,#efeae9);
-  --env-l-bottom:linear-gradient(0deg,#f3eeed,#fdfbfa);
-  --env-l-top:radial-gradient(120% 80% at 50% 0%,#fffefe,#f6f2f1);
   --env-shade:110,84,92;
-  --env-edge:transparent;
-  --env-seal-img:url(../../img/envelope/wax-seal-pink.webp);
   --env-glow:rgba(242,170,190,.65);
-  --env-ink-en:#a2566a;--env-ink-date:#c07a8c;--env-hint-en:#c07a8c;--env-hint-cn:#8a7178;
+  --env-ink-en:#a2566a;--env-ink-date:#c07a8c;--env-hint-en:#a5808a;--env-hint-cn:#a28d92;
   --env-card-line:rgba(217,131,153,.5);--env-card-accent:rgba(217,131,153,.4);
   --env-kicker:#a2566a;--env-amp:#d98399;
 }
-.env[data-env="feather"] .env-inside{
-  background:radial-gradient(circle,rgba(255,255,255,.55) 0 1.4px,transparent 2px) 0 0/22px 22px,
-    linear-gradient(180deg,#e9b9c5,#f3d3db 45%,#f8e3e8);}
-/* 封口邊上的一圈羽毛（boa）：一團一團軟毛沿著封口排過去，由 envelope.js 依畫面大小排好 */
-.env-trim{position:absolute;inset:0;pointer-events:none;
-  filter:drop-shadow(0 1px 1px rgba(150,104,118,.22)) drop-shadow(0 3px 5px rgba(150,104,118,.12));}
-.env-tuft{position:absolute;width:var(--s);height:var(--s);margin:calc(var(--s) / -2) 0 0 calc(var(--s) / -2);}
-.env-down{display:block;width:100%;height:100%;overflow:visible;transform:rotate(var(--a));}
 /* 飛散的羽毛：從封蠟那一點往四面八方散開，再慢慢飄落 */
 .env-plumes{z-index:7;pointer-events:none;}
 .env-plume{position:absolute;left:50%;top:var(--tip);width:var(--s);opacity:0;
-  filter:drop-shadow(0 1px 1px rgba(150,104,118,.35)) drop-shadow(0 4px 6px rgba(150,104,118,.2));
+  filter:drop-shadow(0 1px 1.5px rgba(120,80,92,.22));
   animation:env-plume var(--t) var(--d) forwards;}
-.env-plume > *{display:block;width:100%;height:auto;transform-origin:50% 0;
+.env-plume > *{display:block;width:100%;height:auto;transform-origin:50% 0;user-select:none;
   animation:env-sway calc(var(--t) / 3) ease-in-out var(--d) infinite alternate;}
 @keyframes env-plume{
   0%  {opacity:0;transform:translate(-50%,-50%) rotate(var(--r0)) scale(.35);animation-timing-function:cubic-bezier(.15,.7,.3,1);}
@@ -386,3 +371,42 @@
 .env[data-env="pure"] .env-inside{
   background:repeating-linear-gradient(90deg,rgba(194,162,90,.28) 0 1px,transparent 1px 9px),
     linear-gradient(180deg,#efe9dc,#f7f3ea);}
+
+/* ============================================================
+   圖片版（.env[data-art]，見 js 的 ART）
+   ------------------------------------------------------------
+   整封信封是一張照片：四片紙都貼同一張圖、各自用照片裡的摺線裁開。
+   照片的位置與大小（cover）、尖端、裁切的多邊形都由 js 算好寫進變數：
+     --sx --sy --sw --sh   照片在畫面上的位置與大小
+     --tip-x --tip         尖端（＝封蠟中心）在照片裡的位置
+     --tip-vx --tip-vy     同一點在畫面上的位置（飛散的羽毛從這裡出發）
+     --clip-*              四片紙的多邊形
+   CSS 版那些用漸層畫出來的東西（金線、封口上的字）在這裡都不要。
+============================================================ */
+.env[data-art]{--env-seal-img:var(--art-seal);}
+.env[data-art] > .env-piece,.env[data-art] > .env-flap{inset:auto;left:var(--sx);top:var(--sy);width:var(--sw);height:var(--sh);}
+.env[data-art] .env-paper{background:var(--art-img) 0 0/100% 100% no-repeat;}
+.env[data-art] .env-top .env-paper{clip-path:var(--clip-flap);}
+.env[data-art] .env-left .env-paper{clip-path:var(--clip-left);}
+.env[data-art] .env-right .env-paper{clip-path:var(--clip-right);}
+.env[data-art] .env-bottom .env-paper{clip-path:var(--clip-bottom);}
+.env[data-art] .env-left,.env[data-art] .env-right{filter:none;}       /* 被封口與下片蓋住，照片裡的陰影已經夠了 */
+.env[data-art] .env-bottom{filter:drop-shadow(0 -2px 3px rgba(var(--env-shade),.12));}
+.env[data-art] .env-top{filter:drop-shadow(0 3px 5px rgba(var(--env-shade),.18));}
+.env[data-art] .env-edge,.env[data-art] .env-to{display:none;}
+.env[data-art] .env-seal{left:var(--tip-x);}
+.env[data-art] .env-inside{
+  background:linear-gradient(180deg,rgba(60,30,36,.35),rgba(60,30,36,0) 40%),var(--art-liner) center/cover no-repeat;}
+.env[data-art] .env-plume{left:var(--tip-vx);top:var(--tip-vy);}
+/* 封蠟上壓的縮寫（js 的 monogram()） */
+.env-mono{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
+.env-mono text{font-family:'Pinyon Script','Noto Serif TC',serif;}
+/* 提示：一行壓在紙上的手寫字，同色、只靠一道亮一道暗看出來（不是浮在上面的介面文字） */
+.env[data-art] .env-hint{top:auto;bottom:calc(max(7vh,34px) + env(safe-area-inset-bottom,0px));gap:4px;}
+.env[data-art]:not(.is-opening):not(.is-pulling) .env-hint{animation:env-hint-soft 3.2s ease-in-out infinite;}
+.env[data-art] .env-hint .en{font-family:'Pinyon Script',cursive;font-size:clamp(30px,4.4vh,42px);font-weight:400;
+  letter-spacing:0;text-transform:none;padding-left:0;
+  text-shadow:0 1px 0 rgba(255,255,255,.9),0 -1px 0 rgba(90,50,60,.16);}
+.env[data-art] .env-hint .cn{font-size:12px;letter-spacing:.42em;padding-left:.42em;
+  text-shadow:0 1px 0 rgba(255,255,255,.9);}
+@keyframes env-hint-soft{50%{opacity:.7;}}

@@ -17,9 +17,15 @@
      （sites.opening = 'envelope'、'envelope-emboss'……，見 wed-model.js 的 OPENINGS），
      賓客看到的差別寫在 css 的 .env[data-env="…"]。封蠟的顏色是從原本那一枚
      染出來的（scripts/build-envelope-seals.js）。幾款多了自己的一兩樣東西：
-       feather  封口邊上一圈羽毛（trim）；點下去羽毛從封蠟那裡飛散（plumes）
+       feather  整封信是一張圖（art，見下面 ART）；點下去羽毛從封蠟那裡飛散（plumes）
        silk     一條緞帶橫過封蠟底下；點下去先抽走緞帶（pull 毫秒），才開始拆
        regal    每一片紙上的燙金框（frame）
+
+   ▸ 圖片版（art）：信封不是用 CSS 畫的，而是一張 AI 生成的整封信封照片
+     （手機用直式、桌機用橫式各一張，img/envelope/{款}/）。照片照 object-fit:cover 鋪滿畫面，
+     再沿著照片裡的摺線切成封口、左、右、下四片 —— 每一張照片的摺線位置不一樣，
+     所以多邊形寫在 ART 裡（照片的 %）。掀封口、四散的動畫和 CSS 版一模一樣。
+     封蠟是一枚中間空白的蠟，執行時壓上新人姓名的縮寫（G&O）。
 ============================================================ */
 (function () {
   const LM = window.LobbyMotion;
@@ -30,64 +36,92 @@
   const STYLES = {
     'envelope':         { env: 'vintage' },                 /* 復古舊紙・古銅封蠟 */
     'envelope-emboss':  { env: 'emboss' },                  /* 壓紋白信封・金封蠟，拆開時壓紋浮出金邊 */
-    'envelope-feather': { env: 'feather', trim: true, plumes: 30 },  /* 鵝毛絨白信封・粉紅封蠟 */
+    'envelope-feather': { env: 'feather', art: 'feather', plumes: 34 }, /* 鵝毛絨白信封・粉紅封蠟 */
     'envelope-silk':    { env: 'silk', ribbon: true, pull: 760 },    /* 緞帶絲綢白信封・紅封蠟 */
     'envelope-regal':   { env: 'regal', frame: true },      /* 華麗白信封・紅封蠟 */
     'envelope-pure':    { env: 'pure' },                    /* 端莊白信封・金封蠟 */
   };
 
-  /* 一根羽毛：彎彎的羽軸 ＋ 兩側的羽片（白色、帶一點點灰的羽枝） */
-  const FEATHER = '<symbol id="env-feather" viewBox="0 0 24 64"><defs><linearGradient id="env-fv" x1="0" x2="1"><stop offset="0" stop-color="#f3eeee"/><stop offset=".45" stop-color="#fff"/><stop offset="1" stop-color="#ece5e6"/></linearGradient></defs><path fill="url(#env-fv)" d="M12 2C18 8 21 20 19 34C18 42 15 49 12.6 56C11 49 6.5 43 5 34C3 21 6 8 12 2Z"/><g fill="none" stroke="#d9cfd1" stroke-width=".5" stroke-linecap="round" opacity=".9"><path d="M12.4 14L17 10M12.6 20L19 15M12.8 27L19.6 22M12.8 34L19 30M12.6 41L17.5 38M12 14L7.5 10.5M11.8 21L5.6 16.5M11.6 28L4.8 24M11.6 35L5.4 32M11.8 42L7 40"/></g><path fill="none" stroke="#cfc3c5" stroke-width=".8" stroke-linecap="round" d="M12 4C13 18 13.4 34 12.6 50C12.4 55 12.6 59 13.4 63"/><path fill="#fff" opacity=".9" d="M12.4 50C14 52 15.5 55 14 58C13 56 12.5 53 12.4 50ZM12.4 50C10.5 52 9.5 55 11 58C11.8 56 12.2 53 12.4 50Z"/></symbol>';
+  const SCRIPT = document.currentScript && document.currentScript.src;
+  const ROOT = SCRIPT ? SCRIPT.replace(/js\/openers\/envelope\.js.*$/, 'img/envelope/') : '/img/envelope/';
 
+  /* 圖片版的信封。portrait／landscape 各一張整封照片：
+       w, h    照片的像素（算 cover 用）
+       tip     封口尖端＝封蠟中心（照片的 %）
+       flap    封口：照片上緣 → 沿著羽毛滾邊的外緣 → 尖端（滾邊整條都算封口的，掀起來會一起走）
+       left／right  封口外側、一路到底的兩片（被下片蓋住的部分也算它們的，退場時才不會露洞）
+       bottom  下片：沿著照片裡那兩條摺痕
+     seal：中間空白的封蠟；liner：封口掀開後看到的內襯；plumes：飛散用的羽毛（黑底去背）；
+     mono：壓在封蠟上的縮寫的顏色 */
+  const ART = {
+    feather: {
+      portrait: {
+        img: 'portrait.webp', w: 941, h: 1672, tip: [49, 43.6],
+        flap: [[0, 0], [100, 0], [100, 7], [90, 15.5], [80, 24.5], [70, 33.5], [60, 41.5], [54, 45], [49, 46.6], [44, 45], [40, 42.5], [30, 34.5], [20, 26.5], [10, 18.5], [0, 12]],
+        left: [[0, 12], [10, 18.5], [20, 26.5], [30, 34.5], [40, 42.5], [44, 45], [49, 46.6], [49, 100], [0, 100]],
+        right: [[100, 7], [90, 15.5], [80, 24.5], [70, 33.5], [60, 41.5], [54, 45], [49, 46.6], [49, 100], [100, 100]],
+        bottom: [[0, 74.6], [49, 45], [100, 75.2], [100, 100], [0, 100]],
+      },
+      landscape: {
+        img: 'landscape.webp', w: 1672, h: 941, tip: [49.5, 54],
+        flap: [[0, 0], [100, 0], [100, 3], [90, 15], [80, 27], [70, 40], [60, 52], [54, 57.5], [49.5, 59.5], [45, 57.5], [40, 52], [30, 40.5], [20, 28], [10, 16], [0, 4]],
+        left: [[0, 4], [10, 16], [20, 28], [30, 40.5], [40, 52], [45, 57.5], [49.5, 59.5], [49.5, 100], [0, 100]],
+        right: [[100, 3], [90, 15], [80, 27], [70, 40], [60, 52], [54, 57.5], [49.5, 59.5], [49.5, 100], [100, 100]],
+        bottom: [[0, 98.2], [40, 50], [49.5, 38.6], [60, 51], [100, 98.4], [100, 100], [0, 100]],
+      },
+      seal: 'seal.webp', liner: 'liner.webp', mono: '#9c5a68',
+      plumes: ['plume-1.webp', 'plume-2.webp', 'plume-3.webp'],
+    },
+  };
   const rand = (a, b) => a + Math.random() * (b - a);
+  const poly = (pts) => `polygon(${pts.map(([x, y]) => `${x}% ${y}%`).join(',')})`;
 
-  /* 一團絨毛：從中心往外捲出去的幾十根細絲（每次開場隨機長一次，大家共用這一團）。
-     底下先描一層淡淡的灰粉色，白紙上才看得出一根一根的毛 */
-  function downSymbol() {
-    let under = '', over = '';
-    const n = 64;
-    for (let i = 0; i < n; i++) {
-      const a = (i / n) * Math.PI * 2 + rand(-0.12, 0.12);
-      const len = rand(6, 19);
-      const curl = rand(-0.9, 0.9);
-      const cx = Math.cos(a + curl) * len * 0.6, cy = Math.sin(a + curl) * len * 0.6;
-      const ex = Math.cos(a + curl * 0.3) * len, ey = Math.sin(a + curl * 0.3) * len;
-      const d = `M0 0Q${cx.toFixed(1)} ${cy.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}`;
-      under += d; over += d;
-    }
-    /* 中間一團霧霧的白（絨毛的根部擠在一起），外面才是一根一根的細絲 */
-    return '<symbol id="env-down" viewBox="-20 -20 40 40">' +
-      '<radialGradient id="env-dc"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#fff" stop-opacity=".85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>' +
-      `<path d="${under}" fill="none" stroke="#c7a9b2" stroke-opacity=".28" stroke-width="1.2" stroke-linecap="round"/>` +
-      '<circle r="11" fill="url(#env-dc)"/>' +
-      `<path d="${over}" fill="none" stroke="#fff" stroke-width=".6" stroke-linecap="round"/></symbol>`;
-  }
-  const DOWN = (a) => `<svg class="env-down" style="--a:${a}deg" viewBox="-20 -20 40 40" focusable="false"><use href="#env-down"/></svg>`;
-
-  /* 封口邊上的羽毛：沿著兩條斜邊（左上角 → 封蠟、右上角 → 封蠟）排一團一團的軟毛。
-     位置用 %，畫面怎麼縮放都黏在邊上；數量照這一刻的畫面大小算，排得夠密 */
-  function trimHtml() {
-    const w = window.innerWidth || 390, h = window.innerHeight || 844;
-    const tipY = 0.52, topY = 0.012;
-    const arm = Math.hypot(w / 2, (tipY - topY) * h);
-    const n = Math.max(24, Math.round(arm / 9));
-    let out = '';
-    for (const side of [0, 1]) {
-      for (let i = 0; i <= n; i++) {
-        const k = i / n;
-        /* 不排成一直線：每一團往邊的兩側隨機偏幾 px，大小也不一樣，才不會像一串珍珠 */
-        const x = side ? 100 - k * 50 : k * 50;
-        const y = (topY + (tipY - topY) * k) * 100;
-        const s = rand(32, 52) * (0.85 + 0.15 * Math.min(1, w / 700));
-        out += `<span class="env-tuft" style="left:calc(${x.toFixed(2)}% + ${rand(-4, 4).toFixed(1)}px);` +
-          `top:calc(${y.toFixed(2)}% + ${rand(-4, 4).toFixed(1)}px);--s:${s.toFixed(1)}px">${DOWN(rand(0, 360).toFixed(0))}</span>`;
-      }
-    }
-    return `<div class="env-trim">${out}</div>`;
+  /* 封蠟上的縮寫：兩個人名字的第一個字。字是壓進蠟裡的 ——
+     上緣一道暗、下緣一道亮（光從左上來），中間一層比蠟深一點的顏色 */
+  function monogram(ctx, color) {
+    const ini = [ctx.names.a, ctx.names.b].map((n) => String(n || '').trim().charAt(0).toUpperCase()).filter(Boolean);
+    if (!ini.length) return '';
+    const t = LM.esc(ini.join('&'));
+    const size = ini.length > 1 ? 34 : 44;
+    const text = (dy, fill, op) => `<text x="50" y="${52 + dy}" fill="${fill}" fill-opacity="${op}" font-size="${size}">${t}</text>`;
+    return `<svg class="env-mono" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><g text-anchor="middle" dominant-baseline="middle">` +
+      text(1, '#fff', 0.6) + text(-0.8, '#3a1820', 0.4) + text(0, color, 0.9) + '</g></svg>';
   }
 
-  /* 點下去的那一刻：羽毛從封蠟那裡往四面八方散開，飄一陣子再落下 */
-  function scatterPlumes(host, count) {
+  /* 圖片版：照畫面比例挑直式／橫式那張，cover 鋪滿，尖端盡量對在畫面正中間。
+     算好的位置全部寫成 host 上的 CSS 變數（--sx、--sy、--sw、--sh、--tip、--tip-x、--seal…） */
+  function layoutArt(host, art) {
+    const vw = window.innerWidth || 390, vh = window.innerHeight || 844;
+    const orient = vw / vh >= 0.9 ? 'landscape' : 'portrait';
+    const a = art[orient];
+    const k = Math.max(vw / a.w, vh / a.h);
+    const sw = a.w * k, sh = a.h * k;
+    const sx = Math.min(0, Math.max(vw - sw, vw / 2 - (a.tip[0] / 100) * sw));
+    const sy = (vh - sh) / 2;
+    const seal = Math.max(92, Math.min(170, 0.25 * sw, 0.18 * sh));
+    host.dataset.orient = orient;
+    const v = {
+      '--sx': `${sx}px`, '--sy': `${sy}px`, '--sw': `${sw}px`, '--sh': `${sh}px`,
+      '--tip-x': `${a.tip[0]}%`, '--tip': `${a.tip[1]}%`, '--seal': `${seal}px`,
+      '--tip-vx': `${sx + (a.tip[0] / 100) * sw}px`, '--tip-vy': `${sy + (a.tip[1] / 100) * sh}px`,
+      '--art-img': `url("${art.dir}${a.img}")`,
+      '--clip-flap': poly(a.flap), '--clip-left': poly(a.left), '--clip-right': poly(a.right), '--clip-bottom': poly(a.bottom),
+    };
+    for (const [n, val] of Object.entries(v)) host.style.setProperty(n, val);
+  }
+
+  /* 手寫體（Pinyon Script）：縮寫與提示用。整站只有圖片版信封用得到，所以要用時才載 */
+  function loadScriptFont() {
+    if (document.getElementById('env-font')) return;
+    const l = document.createElement('link');
+    l.id = 'env-font';
+    l.rel = 'stylesheet';
+    l.href = 'https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap';
+    document.head.appendChild(l);
+  }
+
+  /* 點下去的那一刻：羽毛從封蠟那裡往四面八方散開，飄一陣子再落下（羽毛是真的照片，黑底去背） */
+  function scatterPlumes(host, count, art) {
     const layer = document.createElement('div');
     layer.className = 'env-plumes';
     layer.setAttribute('aria-hidden', 'true');
@@ -96,18 +130,15 @@
     for (let i = 0; i < count; i++) {
       /* 往上、往兩側多一點（封口正往上掀），往下少一點 */
       const ang = rand(-Math.PI, Math.PI) * 0.9 - Math.PI / 2 * 0.25;
-      const dist = rand(22, 58) * vmin;
-      const quill = i % 3 !== 2;                       /* 三根裡有一根是一團絨毛 */
-      const s = quill ? rand(16, 30) : rand(18, 30);
+      const dist = rand(20, 56) * vmin;
+      const src = art.dir + art.plumes[i % art.plumes.length];
+      const s = rand(28, 60) * (i % art.plumes.length === 2 ? 0.75 : 1);   /* 第三種是一團絨毛，小一點 */
       const r0 = rand(-90, 90);
       out += `<span class="env-plume" style="--s:${s.toFixed(1)}px;` +
         `--x:${(Math.cos(ang) * dist).toFixed(1)}px;--y:${(Math.sin(ang) * dist * 0.85).toFixed(1)}px;` +
         `--fall:${rand(14, 30).toFixed(1)}vh;--r0:${r0.toFixed(0)}deg;--r1:${(r0 + rand(-140, 140)).toFixed(0)}deg;` +
         `--r2:${(r0 + rand(-260, 260)).toFixed(0)}deg;--t:${rand(2.1, 2.8).toFixed(2)}s;--d:${rand(0, 0.22).toFixed(2)}s">` +
-        (quill
-          ? '<svg viewBox="0 0 24 64" focusable="false"><use href="#env-feather"/></svg>'
-          : DOWN(rand(0, 360).toFixed(0))) +
-        '</span>';
+        `<img src="${src}" alt="" draggable="false"></span>`;
     }
     layer.innerHTML = out;
     host.appendChild(layer);
@@ -119,8 +150,11 @@
     const names = LM.namesHtml(ctx);
     const date = LM.esc(ctx.date);
     const frame = st.frame ? '<i class="env-frame"><b></b><b></b><b></b><b></b></i>' : '';
+    const art = st.art ? { ...ART[st.art], dir: `${ROOT}${st.art}/` } : null;
+    const mono = art ? monogram(ctx, art.mono) : '';
+    const sealHtml = (cls) => `<div class="env-seal ${cls}"><i class="env-seal-art">${mono}</i></div>`;
     host.innerHTML = `
-  <svg class="env-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs><pattern id="env-g" width="2.6" height="2.6" patternUnits="userSpaceOnUse" patternTransform="rotate(38)"><rect width="2.6" height="2.6" fill="#9c7630"/><rect y=".35" width="2.6" height="1.45" fill="#dcbd6e"/></pattern><filter id="env-emb" x="-8%" y="-8%" width="116%" height="116%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="1" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.3" xChannelSelector="R" yChannelSelector="G" result="d"/><feDropShadow in="d" dx=".5" dy=".9" stdDeviation=".45" flood-color="#2e1f10" flood-opacity=".45"/></filter>${st.plumes ? FEATHER : ''}${st.trim || st.plumes ? downSymbol() : ''}</defs></svg>
+  <svg class="env-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs><pattern id="env-g" width="2.6" height="2.6" patternUnits="userSpaceOnUse" patternTransform="rotate(38)"><rect width="2.6" height="2.6" fill="#9c7630"/><rect y=".35" width="2.6" height="1.45" fill="#dcbd6e"/></pattern><filter id="env-emb" x="-8%" y="-8%" width="116%" height="116%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="1" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.3" xChannelSelector="R" yChannelSelector="G" result="d"/><feDropShadow in="d" dx=".5" dy=".9" stdDeviation=".45" flood-color="#2e1f10" flood-opacity=".45"/></filter></defs></svg>
   <div class="env-inside" aria-hidden="true"></div>
   <div class="env-letter" aria-hidden="true">
     <div class="env-letter-card">
@@ -133,9 +167,9 @@
   <div class="env-piece env-right" aria-hidden="true"><div class="env-paper">${frame}</div></div>
   <div class="env-piece env-bottom" aria-hidden="true">
     <div class="env-paper">${frame}</div>
-    <div class="env-hint"><span class="en">Break the seal</span><span class="cn">輕觸封蠟・拆開這封信</span></div>
-    <div class="env-seal env-seal-b"><i class="env-seal-art"></i></div>
+    ${sealHtml('env-seal-b')}
   </div>
+  <div class="env-hint" aria-hidden="true"><span class="en">${art ? 'Tap to open' : 'Break the seal'}</span><span class="cn">輕觸封蠟・拆開這封信</span></div>
   <div class="env-flap" aria-hidden="true">
     <div class="env-piece env-top">
       <div class="env-paper">
@@ -149,16 +183,29 @@
         </div>
       </div>
     </div>
-    ${st.trim ? trimHtml() : ''}
     ${st.ribbon ? '<div class="env-ribbon"><i class="env-ribbon-band"></i></div>' : ''}
-    <div class="env-seal env-seal-t"><i class="env-seal-art"></i></div>
-    <div class="env-seal env-seal-whole"><i class="env-seal-art"></i></div>
+    ${sealHtml('env-seal-t')}
+    ${sealHtml('env-seal-whole')}
   </div>
 `;
 
+    if (art) {
+      host.dataset.art = st.art;
+      host.style.setProperty('--art-seal', `url("${art.dir}${art.seal}")`);
+      host.style.setProperty('--art-liner', `url("${art.dir}${art.liner}")`);
+      loadScriptFont();
+      layoutArt(host, art);
+      /* 轉手機、拉視窗：重新挑直式／橫式、重新對位；開場收掉以後就不必再算 */
+      const onResize = () => {
+        if (!host.isConnected) { window.removeEventListener('resize', onResize); return; }
+        layoutArt(host, art);
+      };
+      window.addEventListener('resize', onResize);
+    }
+
     const open = () => {
       host.classList.add('is-opening');
-      if (st.plumes) scatterPlumes(host, st.plumes);
+      if (st.plumes && art) scatterPlumes(host, st.plumes, art);
       ctx.later(() => { ctx.reveal(); host.classList.add('is-leaving'); }, T_LIFT);
       ctx.later(ctx.done, T_LIFT + T_LEAVE);
     };

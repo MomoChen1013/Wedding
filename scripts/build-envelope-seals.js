@@ -6,7 +6,6 @@
    來源：public/img/envelope/wax-seal.webp（復古信封的香檳古銅色封蠟）
    產出（⚙️ 不要手改，改這支再重跑）：
      public/img/envelope/wax-seal-gold.webp   金色（壓紋、端莊）
-     public/img/envelope/wax-seal-pink.webp   粉紅（鵝毛絨）
      public/img/envelope/wax-seal-red.webp    紅色（緞帶絲綢、華麗）
 
    做法是「漸層對應」：每一個像素先算亮度，把原圖的亮度範圍拉滿 0 → 1，
@@ -21,7 +20,6 @@ const out = (name) => new URL(`../public/img/envelope/wax-seal-${name}.webp`, im
 /* 每一條色帶：[亮度, '#rrggbb']，亮度由暗到亮 */
 const RAMPS = {
   gold: [[0, '#3a2608'], [0.32, '#86601f'], [0.6, '#c49b45'], [0.82, '#e8cd85'], [1, '#fff6d8']],
-  pink: [[0, '#5a1e2f'], [0.3, '#a8546b'], [0.6, '#d98399'], [0.84, '#f2b4c3'], [1, '#fff0f4']],
   red:  [[0, '#2a0306'], [0.32, '#6e0d16'], [0.6, '#a81b25'], [0.84, '#d24a4c'], [1, '#ffb3a8']],
 };
 
