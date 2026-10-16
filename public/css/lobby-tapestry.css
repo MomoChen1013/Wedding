@@ -130,21 +130,26 @@ body[data-lobby="tapestry"] .bg-decor{
    照片是封面（applyLobbyPhotos 的 hero）；有照片的時候紋章縮小、壓在拱頂上當徽記，
    hashtag 收起來把空間讓給照片。沒有照片就整排收起來，hero 回到原本那枚大紋章。
    拱窗的高度跟著視窗高度走：名字、日期都還要留在第一個畫面裡 */
-.tp-gate{display:flex;align-items:flex-end;justify-content:center;gap:clamp(2px,1.6vw,26px);
-  margin-bottom:clamp(14px,2.4vh,22px);}
+.tp-gate{--arch-h:clamp(220px,46svh,440px);display:flex;align-items:flex-end;justify-content:center;
+  gap:clamp(2px,1.6vw,26px);margin-bottom:clamp(14px,2.4vh,22px);}
 .tp-gate:not(:has(.has-photo)){display:none;}
 /* 選擇器多帶一個 .tp-arch：後面「我們的故事」那條 .tp-arch 的 width 才蓋不過來 */
-.tp-arch.tp-hero-arch{flex:none;width:auto;height:clamp(220px,46svh,440px);}
+.tp-arch.tp-hero-arch{flex:none;width:auto;height:var(--arch-h);}
 .tp-hero-arch .tp-arch-ph{background-position:50% calc(35% + var(--lp,0) * 20%);}
-/* 衛兵：寬度取「視窗高度」與「視窗寬度」比較緊的那一邊 —— 手機上兩側只剩一點點空間 */
-.tp-guard{flex:none;width:min(13.6svh,13vw);}
-.tp-guard svg{display:block;width:100%;height:auto;}
+/* 衛兵：高度跟著拱窗走（約 3/4，手機 2/3），寬度由圖的比例決定 */
+.tp-guard{flex:none;height:calc(var(--arch-h) * .74);}
+.tp-guard svg{display:block;width:auto;height:100%;}
 .tp-hero:has(.tp-hero-arch .has-photo){padding-top:clamp(44px,7svh,90px);}
 .tp-hero:has(.tp-hero-arch .has-photo) .hashtags{display:none;}
 .tp-hero-body:has(.tp-hero-arch .has-photo) .tp-crest{width:clamp(100px,14svh,140px);}
 .tp-hero-body:has(.tp-hero-arch .has-photo) > .tp-crest{position:relative;z-index:2;margin-bottom:clamp(-30px,-3svh,-22px);}
 @media (max-width:640px){
-  .tp-arch.tp-hero-arch{height:clamp(220px,40svh,360px);}
+  /* 手機兩側很窄：hero 的左右留白收一點，衛兵的矛稍微壓到拱窗的金邊上（像站在門口） */
+  .tp-gate{--arch-h:clamp(200px,40svh,360px);gap:0;margin-inline:-8px;}
+  .tp-guard{height:calc(var(--arch-h) * .667);}
+  .tp-guard.l{margin-right:-6px;}
+  .tp-guard.r{margin-left:-6px;}
+  .tp-guard{position:relative;z-index:1;}
 }
 /* 信封退場、這一頁出現的那一刻：紋章一排一排繡出來 */
 .app-show .tp-crest .tp-art{animation:tp-stitch-in 2.2s cubic-bezier(.45,0,.2,1) .25s both;}
