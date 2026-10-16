@@ -19,7 +19,7 @@
    ▸ 什麼可以烤、什麼不行（firestore.rules 的 isValidSiteContentUpdate）
      新人在後台**改不動**的欄位才可以烤進靜態檔：
        groomName／brideName／groomNameEn／brideNameEn／template／
-       pages／status／eventDate 的年月日
+       balloonPalette／pages／status／eventDate 的年月日
      這些只有我們用 Admin SDK 改得動，所以靜態檔不可能過期。
      反過來，新人改得動的（hashtags／schedule／dressCode／story／
      giftNote／transportPublic／coupleTitle…）一律留在執行期填，
@@ -186,6 +186,38 @@ export function openingKey(name, template) {
 /* 這一種開場要載哪一支 js／css（js/openers/{file}.js、css/openers/{file}.css） */
 export function openingFile(key) {
   return OPENINGS[key].file || key;
+}
+
+/* ============================================================
+   氣球配色（sites.balloonPalette）
+   ------------------------------------------------------------
+   氣球升空開場（balloons）滿滿一畫面的氣球、美式戶外派對大廳裡
+   飄上去的那幾顆、小貨車上綁的三顆，用的是同一組配色：
+
+     rainbow   彩色派對：七種粉彩平均混在一起（預設）
+     其他       主色＋白色當底＋一點點綴色（大約 6：3：1）
+
+   ・和 template、opening 同一個權限層級：不在 firestore.rules 的可更新
+     白名單裡，新人自己改不動，只有我們用 Admin SDK 改得動。
+   ・沒填、值不認得 → rainbow，既有站台一律不變。
+   ・寫在大廳的 <body data-balloons>（site-context.js 執行期寫、
+     build-og 預產時就先烤好），開場（js/openers/balloons.js）與
+     大廳（css/lobby-party.css）都只讀這個屬性 —— 各種顏色怎麼配、
+     比例多少，寫在那兩支裡，這裡只放代號與名字。
+============================================================ */
+export const BALLOON_PALETTES = {
+  'rainbow':  { label:'彩色派對（七色混搭）' },
+  'lavender': { label:'薰衣草（紫＋白，點綴粉藍）' },
+  'blush':    { label:'腮紅（粉＋白，點綴蜜桃）' },
+  'sky':      { label:'晴空（粉藍＋白，點綴薄荷）' },
+  'sage':     { label:'鼠尾草（薄荷＋白，點綴奶油黃）' },
+  'peach':    { label:'蜜桃暖陽（蜜桃＋白，點綴奶油黃）' },
+};
+export const DEFAULT_BALLOON_PALETTE = 'rainbow';
+
+/* 用 hasOwn 的理由和 templateKey() 一樣 */
+export function balloonPaletteKey(name) {
+  return Object.hasOwn(BALLOON_PALETTES, name) ? name : DEFAULT_BALLOON_PALETTE;
 }
 
 /* 改過名字的版型：舊代號 → 新代號。
