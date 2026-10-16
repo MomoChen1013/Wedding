@@ -24,6 +24,10 @@
   const keys = Object.keys(CFG.templates);
   let template = keys.includes(q.get('t')) ? q.get('t') : keys[0];
   let opening = CFG.openings[q.get('o')] ? q.get('o') : null;   /* null＝跟著版型的預設 */
+  /* 氣球配色（sites.balloonPalette）：開場與派對大廳的氣球都讀 <body data-balloons> */
+  const BALLOONS = CFG.balloons || {};
+  let balloons = BALLOONS[q.get('b')] ? q.get('b') : 'rainbow';
+  document.body.dataset.balloons = balloons;
   const openingFor = () => opening || CFG.templates[template].opening;
 
   /* ---------- 填資料（markup 對齊 js/index.js） ---------- */
@@ -125,22 +129,27 @@
   panel.innerHTML =
     (keys.length > 1 ? `<label>版型<select data-k="t">${tOpts}</select></label>` : '') +
     `<label>開場<select data-k="o">${oOpts}</select></label>` +
+    (Object.keys(BALLOONS).length ? `<label>氣球<select data-k="b">${Object.entries(BALLOONS).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select></label>` : '') +
     `<button type="button" data-k="play">重播開場</button>`;
   document.body.appendChild(panel);
   const selT = panel.querySelector('[data-k="t"]');
   const selO = panel.querySelector('[data-k="o"]');
+  const selB = panel.querySelector('[data-k="b"]');
+  if (selB) selB.value = balloons;
   if (selT) selT.value = template;
   selO.value = opening || '';
   const sync = () => {
     const u = new URL(location.href);
     u.searchParams.set('t', template);
     if (opening) u.searchParams.set('o', opening); else u.searchParams.delete('o');
+    if (balloons !== 'rainbow') u.searchParams.set('b', balloons); else u.searchParams.delete('b');
     u.searchParams.delete('open');
     q.delete('open');
     history.replaceState(null, '', u);
   };
   if (selT) selT.addEventListener('change', () => { template = selT.value; sync(); play(); });
   selO.addEventListener('change', () => { opening = selO.value || null; sync(); play(); });
+  if (selB) selB.addEventListener('change', () => { balloons = selB.value; document.body.dataset.balloons = balloons; sync(); play(); });
   panel.querySelector('[data-k="play"]').addEventListener('click', () => { q.delete('open'); play(); });
 
   window.LobbyMotion.init(app);

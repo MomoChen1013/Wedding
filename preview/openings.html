@@ -55,6 +55,7 @@ body{padding-top:0;}
   <div class="sub">開場結束後會回到這裡（示意的首頁）</div>
   <div class="pv-ctl">
     <label>版型 <select id="pvVariant"></select></label>
+    <label>氣球 <select id="pvBalloons"></select></label>
     <button id="pvPlay" type="button">再播一次</button>
   </div>
   <div class="pv-list" id="pvList"></div>
@@ -94,6 +95,10 @@ const DEFAULT_OPENING = {
   'night-sky':'stars', 'french-manor':'door', 'morning-window':'curtain', 'white-church':'candle',
   'monet-garden':'painting', 'outdoor-party':'balloons',
 };
+/* 與 wed-model.js 的 BALLOON_PALETTES 對應（氣球升空開場的配色） */
+const BALLOONS = {
+  rainbow:'彩色派對', lavender:'薰衣草', blush:'腮紅', sky:'晴空', sage:'鼠尾草', peach:'蜜桃暖陽',
+};
 const D = window.DEMO || {};
 const title = (s) => String(s || '').charAt(0) + String(s || '').slice(1).toLowerCase();
 const names = { a: title(D.nameA) || 'Ginny', b: title(D.nameB) || 'One' };
@@ -101,9 +106,12 @@ const q = new URLSearchParams(location.search);
 const sel = document.getElementById('pvVariant');
 for (const [k, v] of Object.entries(VARIANTS)) sel.add(new Option(v, k));
 sel.value = VARIANTS[q.get('v')] ? q.get('v') : 'tapestry';
+const selB = document.getElementById('pvBalloons');
+for (const [k, v] of Object.entries(BALLOONS)) selB.add(new Option(v, k));
+selB.value = BALLOONS[q.get('b')] ? q.get('b') : 'rainbow';
 let current = OPENINGS[q.get('o')] ? q.get('o') : null;
 
-function applyVariant(){ document.body.dataset.template = sel.value; }
+function applyVariant(){ document.body.dataset.template = sel.value; document.body.dataset.balloons = selB.value; }
 function play(key){
   current = key;
   applyVariant();
@@ -130,6 +138,7 @@ for (const [k, v] of Object.entries(OPENINGS)) {
   list.appendChild(b);
 }
 document.getElementById('pvPlay').addEventListener('click', () => play(current || DEFAULT_OPENING[sel.value]));
+selB.addEventListener('change', () => play(current || DEFAULT_OPENING[sel.value]));
 sel.addEventListener('change', () => { applyVariant(); play(DEFAULT_OPENING[sel.value]); });
 document.getElementById('pvNames').textContent = `${names.a} & ${names.b}`;
 applyVariant();

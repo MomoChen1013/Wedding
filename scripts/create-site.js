@@ -30,6 +30,9 @@
                       envelope / book / bloom / curtain / candle / stars / door / pressed
                       / painting / balloons
                       （見 js/wed-model.js 的 OPENINGS）
+     --balloons       選填，氣球配色（氣球升空開場與美式戶外派對大廳）；不填就是 rainbow
+                      rainbow / lavender / blush / sky / sage / peach
+                      （見 js/wed-model.js 的 BALLOON_PALETTES）
      --cover          選填，封面圖片網址
      --story          選填，兩人的故事
      --photo          選填，照片牆的圖片網址；可重複給多次，順序即顯示順序
@@ -72,12 +75,13 @@ import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { resolveBaseUrl } from './site-url.js';
 import { OPTIONAL_PAGES, ADMIN_PAGES, DEFAULT_PAGES, PAGE_LABELS, resolvePages } from './site-pages.js';
-import { TEMPLATES as TEMPLATE_DEFS, OPENINGS } from '../public/js/wed-model.js';
+import { TEMPLATES as TEMPLATE_DEFS, OPENINGS, BALLOON_PALETTES } from '../public/js/wed-model.js';
 
 /* ---------- 保留字黑名單 ---------- */
 /* 認得的版型與開場：直接讀 wed-model.js，不再手抄一份（build-og 也是讀它） */
 const TEMPLATES = Object.keys(TEMPLATE_DEFS);
 const OPENING_KEYS = Object.keys(OPENINGS);
+const BALLOON_KEYS = Object.keys(BALLOON_PALETTES);
 
 const RESERVED_SLUGS = new Set(['admin', 'api', 'www', 'app', 'w', 's', 'assets', 'static']);
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -100,6 +104,7 @@ function parseCliArgs(argv) {
       'map-url':     { type: 'string', default: '' },
       'template':    { type: 'string', default: 'classic' },
       'opening':     { type: 'string', default: '' },
+      'balloons':    { type: 'string', default: '' },
       cover:         { type: 'string', default: '' },
       story:         { type: 'string', default: '' },
       'owner-email': { type: 'string', multiple: true },
@@ -235,6 +240,8 @@ async function createSite(values) {
     template: TEMPLATES.includes(values.template) ? values.template : 'classic',
     /* 開場。沒指定就不寫這一欄 —— 讀的時候落回版型的預設開場 */
     ...(OPENING_KEYS.includes(values.opening) ? { opening: values.opening } : {}),
+    /* 氣球配色。沒指定就不寫這一欄 —— 讀的時候落回 rainbow */
+    ...(BALLOON_KEYS.includes(values.balloons) ? { balloonPalette: values.balloons } : {}),
     coverImageUrl: values.cover || '',
     story: values.story || '',
     photos: values.photo || [],

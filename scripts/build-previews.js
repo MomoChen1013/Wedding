@@ -22,7 +22,7 @@
      ・資料由 demo-data.js ＋ lobby-demo.js 填
 ============================================================ */
 import { readFileSync, writeFileSync } from 'node:fs';
-import { TEMPLATES, OPENINGS, openingFile } from '../public/js/wed-model.js';
+import { TEMPLATES, OPENINGS, openingFile, BALLOON_PALETTES } from '../public/js/wed-model.js';
 
 const root = new URL('../', import.meta.url);
 const read = (p) => readFileSync(new URL(p, root), 'utf8');
@@ -50,6 +50,7 @@ for (const page of PAGES) {
   const cfg = {
     templates: Object.fromEntries(templates.map(([k, t]) => [k, { label: t.label, opening: t.opening || null }])),
     openings: Object.fromEntries(Object.entries(OPENINGS).map(([k, o]) => [k, o.label])),
+    balloons: Object.fromEntries(Object.entries(BALLOON_PALETTES).map(([k, b]) => [k, b.label])),
   };
   /* 幾種開場共用同一支（信封的六款）：檔案只掛一次 */
   const openerFiles = [...new Set(Object.keys(OPENINGS).map(openingFile))];

@@ -4,14 +4,14 @@
    疊在 common.css ＋ index.css 之後。結構主張：**一場在草地上的婚禮派對**。
 
      世界觀  開場是滿滿一畫面的氣球，放開之後升空，露出底下的藍天、綠地與遠山；
-             hero 就是那片草原（草地上擺著野餐），往下捲是派對現場的各個角落
+             hero 就是那片帳篷草坪（草地上擺著野餐），往下捲是派對現場的各個角落
      材質    陽光下的白帆布、野餐格紋、牛皮紙、字母板的黑絨布與木框、
              拍立得、入場券、彩色紙屑
      圖像    一顆一顆霧面的粉彩氣球、野餐籃、雛菊、琺瑯杯、老銀餐具、野花、三角旗、
              綁著一束氣球的「Just Married」小貨車、串燈、煙火（照片都是去背的真實素材）
 
    捲動：
-     ・hero：草原往下捲時慢慢往上退，幾束氣球一直往上飄
+     ・hero：背景往下捲時慢慢往上退，幾束氣球一直往上飄
      ・三角旗捲到時一面一面翻下來（data-reveal="flags"）
      ・野花那一瓶彈出來（pop）；卡片後面的野花長出來、在風裡輕輕擺（grow）；
        小貨車從右邊開進來（drive）
@@ -66,8 +66,8 @@ body[data-lobby="outdoor-party"] .bg-decor{
 ============================================================ */
 .yp-hero{position:relative;overflow:hidden;min-height:calc(100svh - var(--nav-h));padding:0;gap:0;justify-content:flex-start;
   background:#7fb6e3;}
-/* 藍天、綠地、遠山（img/party/meadow.webp，和開場同一張），往下捲時慢慢往上退 */
-.yp-sky{position:absolute;inset:0;background:url(../img/party/meadow.webp) 50% calc(62% + var(--lp,0) * 18%)/cover;}
+/* 藍天、草坪、白色帳篷（img/party/tent.webp，和開場同一張），往下捲時慢慢往上退 */
+.yp-sky{position:absolute;inset:0;background:url(../img/party/tent.webp) 50% calc(62% + var(--lp,0) * 18%)/cover;}
 
 /* 漏網的氣球：幾顆霧面粉彩的氣球（和開場同一組），各自慢慢往上飄，下面拖著一條線 */
 .yp-float{position:absolute;inset:0;pointer-events:none;z-index:2;}
@@ -88,6 +88,19 @@ body[data-lobby="outdoor-party"] .bg-decor{
 .yp-bn.is-lilac{--img:url(../img/party/balloon-lilac.webp);}
 .yp-bn.is-peach{--img:url(../img/party/balloon-peach.webp);}
 .yp-bn.is-butter{--img:url(../img/party/balloon-butter.webp);}
+
+/* 氣球配色（sites.balloonPalette → <body data-balloons>，見 wed-model.js 的 BALLOON_PALETTES）：
+   rainbow 就是上面每一顆原本的顏色；其他配色只有三種 —— 主色、白色當底、一點點綴色，
+   每一顆氣球（包括小貨車上綁的三顆）在 HTML 裡標好自己是哪一種（data-role）。
+   和開場（js/openers/balloons.js 的 PALETTES）是同一組配色 */
+body[data-balloons="lavender"]{--yp-bn-main:url(../img/party/balloon-lilac.webp);--yp-bn-accent:url(../img/party/balloon-sky.webp);}
+body[data-balloons="blush"]{--yp-bn-main:url(../img/party/balloon-blush.webp);--yp-bn-accent:url(../img/party/balloon-peach.webp);}
+body[data-balloons="sky"]{--yp-bn-main:url(../img/party/balloon-sky.webp);--yp-bn-accent:url(../img/party/balloon-mint.webp);}
+body[data-balloons="sage"]{--yp-bn-main:url(../img/party/balloon-mint.webp);--yp-bn-accent:url(../img/party/balloon-butter.webp);}
+body[data-balloons="peach"]{--yp-bn-main:url(../img/party/balloon-peach.webp);--yp-bn-accent:url(../img/party/balloon-butter.webp);}
+body[data-balloons]:not([data-balloons="rainbow"]) :is(.yp-bn,.yp-truck-bl)[data-role="main"]{--img:var(--yp-bn-main);}
+body[data-balloons]:not([data-balloons="rainbow"]) :is(.yp-bn,.yp-truck-bl)[data-role="base"]{--img:url(../img/party/balloon-white.webp);}
+body[data-balloons]:not([data-balloons="rainbow"]) :is(.yp-bn,.yp-truck-bl)[data-role="accent"]{--img:var(--yp-bn-accent);}
 
 /* 草地上的野餐：照片去背，底下一圈淡淡的影子壓在草上 */
 .yp-picnic{position:absolute;left:0;right:0;bottom:0;height:0;z-index:2;pointer-events:none;}

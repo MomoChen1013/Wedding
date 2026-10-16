@@ -1,13 +1,14 @@
 /* ============================================================
    openers/balloons.js — 開場：氣球升空（美式戶外婚禮派對）
    ------------------------------------------------------------
-   一開始整個畫面塞滿了一顆一顆霧面的粉彩氣球（奶油白、腮紅粉、蜜桃、奶油黃、薄荷、薰衣草 ——
-   一顆真的霧面白氣球照片去背，再淡淡地上色，public/img/party/balloon-*.webp；線是 SVG 畫的），
+   一開始整個畫面塞滿了一顆一顆霧面的粉彩氣球（奶油白、腮紅粉、蜜桃、奶油黃、薄荷、薰衣草、粉藍 ——
+   AI 生成的霧面乳膠氣球，一個顏色一張、同一個外框，去背後放在 300:389 的透明底上、結貼著底邊正中，
+   public/img/party/balloon-*.webp；線是 SVG 畫的；用哪幾種顏色看 <body data-balloons>，見下面的 PALETTES），
    分成遠、中、近三層：遠的小、淡一點；近的大、有一點景深的糊。每一顆都在原地輕輕晃：
 
      氣球一顆一顆各自被放開（每一顆的時間、速度、往哪邊飄都不一樣）→ 慢慢升空、越飛越快
-     → 底下露出一片藍天、綠色草原與遠山（img/party/meadow.webp）
-     → 名字浮在天空上 → 溶進網站（美式戶外派對的首頁 hero 就是同一片草原）
+     → 底下露出藍天下的後院婚宴：草坪、白色尖頂帳篷、長桌與串燈（img/party/tent.webp）
+     → 名字浮在天空上 → 溶進網站（美式戶外派對的首頁 hero 就是同一張）
 
    自己演完就進站（fn.auto），點畫面任何地方可以跳過。
    氣球是依照當下視窗大小排出來的（手機直立、桌機橫向都塞得滿），
@@ -15,7 +16,7 @@
 ============================================================ */
 (function () {
   const T_RELEASE = 1200;   /* 開始放氣球 */
-  const T_REVEAL = 6200;    /* 草原露出來、名字也出來了，開始溶進網站 */
+  const T_REVEAL = 6200;    /* 帳篷草坪露出來、名字也出來了，開始溶進網站 */
   const T_DONE = 7200;
 
   const LM = window.LobbyMotion;
@@ -31,7 +32,32 @@
 
   /* 一顆氣球的照片：寬 / 高（結也在照片裡，線另外畫） */
   const AR = 300 / 389;
-  const COLORS = ['white', 'blush', 'peach', 'butter', 'mint', 'lilac'];
+
+  /* 氣球配色（sites.balloonPalette → <body data-balloons>，代號與名字在 wed-model.js 的 BALLOON_PALETTES）。
+     每一組是一副牌：rainbow 七色各一張；其他是主色 6、白 3、點綴 1。
+     排氣球時一副洗好、照順序發完再洗下一副 —— 每連續十顆的比例都剛好，
+     不會因為排列的方式讓某一層整片偏白。洗牌用另一條亂數，所以不管哪一組配色，氣球的位置都一樣 */
+  const PALETTES = {
+    rainbow:  { white: 1, blush: 1, peach: 1, butter: 1, mint: 1, lilac: 1, sky: 1 },
+    lavender: { lilac: 6, white: 3, sky: 1 },
+    blush:    { blush: 6, white: 3, peach: 1 },
+    sky:      { sky: 6, white: 3, mint: 1 },
+    sage:     { mint: 6, white: 3, butter: 1 },
+    peach:    { peach: 6, white: 3, butter: 1 },
+  };
+  function dealer(seed) {
+    const mix = PALETTES[document.body.dataset.balloons] || PALETTES.rainbow;
+    const deck = Object.entries(mix).flatMap(([c, n]) => Array(n).fill(c));
+    const r = rng(seed);
+    let hand = [];
+    return () => {
+      if (!hand.length) {
+        hand = deck.slice();
+        for (let i = hand.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [hand[i], hand[j]] = [hand[j], hand[i]]; }
+      }
+      return hand.pop();
+    };
+  }
 
   /* 三層：遠、中、近。k = 相對大小、gap = 間距（相對於氣球的寬）、sp = 飛得多慢（越近越快）、cls = 景深 */
   const LAYERS = [
@@ -42,10 +68,10 @@
 
   function crowd(W, H) {
     const r = rng(20260704);
+    const color = dealer(20261015);
     /* 中景一顆氣球的寬 */
     const base = Math.max(76, Math.min(128, Math.min(W, H) * .17));
     const out = [];
-    let n = 0;
     LAYERS.forEach((L, li) => {
       const w0 = base * L.k, step = w0 * L.gap;
       let row = 0;
@@ -56,7 +82,7 @@
           const cx = x + (r() - .5) * step * .4, cy = y + (r() - .5) * step * .35;   /* 氣球的中心 */
           const sx = (r() - .5) * 16, len = 1.15 + r() * .4;   /* 線：擺多少、多長（氣球高的幾倍） */
           out.push({
-            color: COLORS[(n++ * 7 + row * 3 + Math.floor(r() * 3)) % COLORS.length], cls: L.cls, w, h,
+            color: color(), cls: L.cls, w, h,
             left: cx - w / 2, top: cy - h / 2,
             z: li * 100 + Math.round(r() * 60),
             flip: r() < .5,
