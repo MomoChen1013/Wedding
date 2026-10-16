@@ -324,6 +324,8 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > |---|---|---|---|
 > | `manor/door-scene.webp`、`manor/door-leaf.webp` | 開場：南法小鎮街角，石灰岩牆上一扇灰藍的木門 | [石屋上一扇質樸的藍色木門](https://unsplash.com/photos/VJBz5nvw0j0)・eliza cemme | 裁掉上緣的三角旗；門板依顏色量出範圍，切成自己的一層（door-leaf，可以推開），門洞在 door-scene 裡挖成透明 |
 > | `manor/manor.webp` | 開場：木門推開後，門後看到的那一座莊園 | [前庭有修剪整齊樹木的莊園](https://unsplash.com/photos/aYA0TKXxcyw)・Shalev Cohen | 縮圖 |
+> | `manor/planter.webp` | 每扇窗台下掛的赤陶花箱 | [石窗台上種著紅花的赤陶花箱](https://unsplash.com/photos/jS6GarvvITw)・atelierbyvineeth | 只取花箱本體：沿著箱子的外形去背，箱口垂下來的那片金蓮花葉用旁邊的陶面補掉 |
+> | `manor/rose-clump.webp`、`manor/hydrangea-clump.webp`、`manor/shrub.webp` | hero 牆腳的一大叢玫瑰、一大叢繡球花、兩側的黃楊綠籬 | 用下面新人提供的 `rose-bush`、`hydrangea-bush`、`hydrangea-stem`、`boxwood` 拼成 | 幾株疊在一起（左右翻、大小不同），底下墊黃楊的葉子，比單獨一株濃密 |
 > | `manor/arch-door.webp` | 「我們的故事」的背景 | [灰泥牆上的石拱門與壁燈](https://unsplash.com/photos/UpfOIuFOelI)・Lea Gindorf | 縮圖 |
 > | `manor/cottage.webp` | 倒數的背景 | [開滿玫瑰、有百葉窗的石屋](https://unsplash.com/photos/qs6RGMBaetQ)・Erwan Hesry | 縮圖、調亮、降一點彩度 |
 > | `manor/wall.webp` | 整頁的底：蜂蜜色的小石塊石灰岩牆、灰泥面板與窗的石框 | [小石塊砌成的石牆](https://unsplash.com/photos/ntNwMS0fWGk)・Angelo Casto | 顏色對齊 mood board 的石牆（每個色板的平均與對比）；錯位半張再淡淡混合，做成可以無縫平鋪的一塊 |

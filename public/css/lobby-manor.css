@@ -92,9 +92,14 @@ body[data-lobby="french-manor"] .bg-decor::after{content:'';position:absolute;in
 /* 牆腳的花（去背的真花），捲動時走得比牆快 */
 .fm-near{position:absolute;bottom:0;background:center bottom/contain no-repeat;
   filter:drop-shadow(0 10px 14px rgba(60,46,30,.28));transform:translateY(calc(var(--lp,0) * -36%));}
-.fm-near.n-hydrangea{right:-3%;height:36%;aspect-ratio:311/281;bottom:-3%;background-image:url(../img/manor/hydrangea-bush.webp);}
-.fm-near.n-rose{left:-3%;height:42%;aspect-ratio:365/396;bottom:-3%;background-image:url(../img/manor/rose-bush.webp);}
-.fm-near.n-lavender{left:clamp(90px,15vw,240px);height:18%;filter:saturate(.8) drop-shadow(0 10px 14px rgba(60,46,30,.28));aspect-ratio:398/281;bottom:-2%;background-image:url(../img/manor/lavender-bush.webp);}
+/* 玫瑰、繡球花：幾叢真花疊成一大片（rose-clump、hydrangea-clump，底下墊著黃楊的綠葉），比單獨一株濃密 */
+.fm-near.n-hydrangea{right:-4%;height:32%;aspect-ratio:838/388;bottom:-3%;background-image:url(../img/manor/hydrangea-clump.webp);}
+.fm-near.n-rose{left:-5%;height:40%;aspect-ratio:813/510;bottom:-4%;background-image:url(../img/manor/rose-clump.webp);}
+/* 牆腳的綠籬（黃楊），在花的後面，讓兩側多一點綠 */
+.fm-near.n-shrub{height:54%;aspect-ratio:763/413;bottom:-3%;background-image:url(../img/manor/shrub.webp);filter:brightness(.92) drop-shadow(0 10px 14px rgba(60,46,30,.28));}
+.fm-near.n-shrub.l{left:-12%;}
+.fm-near.n-shrub.r{right:-12%;scale:-1 1;}
+.fm-near.n-lavender{left:clamp(110px,19vw,300px);height:18%;filter:saturate(.8) drop-shadow(0 10px 14px rgba(60,46,30,.28));aspect-ratio:398/281;bottom:-2%;background-image:url(../img/manor/lavender-bush.webp);}
 
 .fm-hero-body{position:relative;z-index:5;display:flex;flex-direction:column;align-items:center;text-align:center;
   padding:clamp(20px,5vh,56px) 20px clamp(56px,9vh,90px);transform:translateY(calc(var(--lp,0) * -40px));opacity:calc(1 - var(--lp,0) * 1.4);}
@@ -138,8 +143,11 @@ body[data-hero-name="cn"] .fm-hero .fm-names{font-family:'Noto Serif TC',serif;f
 @keyframes fm-rise{from{opacity:0;transform:translateY(14px);}}
 @keyframes fm-rise-far{from{opacity:0;transform:translateY(40px);}}
 @media (max-width:640px){
-  .fm-near.n-hydrangea{height:18%;right:-12%;}
-  .fm-near.n-rose{height:20%;left:-12%;}
+  .fm-near.n-hydrangea{height:15%;right:-22%;}
+  .fm-near.n-rose{height:18%;left:-24%;}
+  .fm-near.n-shrub{height:24%;}
+  .fm-near.n-shrub.l{left:-40%;}
+  .fm-near.n-shrub.r{right:-40%;}
   .fm-near.n-lavender{display:none;}
   /* 手機：新人那扇窗已經佔滿寬度，別人家的窗放不下（只露一條邊反而怪），收起來 */
   .fm-window.fm-side-window{display:none;}
@@ -191,10 +199,10 @@ body[data-hero-name="cn"] .fm-hero .fm-names{font-family:'Noto Serif TC',serif;f
 .fm-box,.fm-climb{position:absolute;z-index:3;pointer-events:none;background:center bottom/contain no-repeat;
   filter:drop-shadow(0 6px 6px rgba(40,30,15,.35));}
 .fm-box{left:-14%;right:-14%;bottom:-30%;height:30%;z-index:1;}
-/* 赤陶花箱：掛在窗台下，花種在裡面（蓋住花的根部） */
-.fm-box::after{content:'';position:absolute;left:20%;right:20%;bottom:8%;height:30%;border-radius:2px 2px 6px 6px;
-  background:linear-gradient(180deg,#c98663,#a8603f 55%,#8d4e33),#b26a48;
-  box-shadow:inset 0 2px 0 rgba(255,220,190,.35),inset 0 -3px 6px rgba(60,25,10,.35),0 8px 10px -4px rgba(40,25,10,.45);}
+/* 赤陶花箱（真的花箱照片，去背）：掛在窗台下，花種在裡面，箱口蓋住花的根部 */
+.fm-box::after{content:'';position:absolute;left:28%;right:28%;top:50%;aspect-ratio:754/278;
+  background:url(../img/manor/planter.webp) center/100% 100% no-repeat;
+  filter:drop-shadow(0 8px 8px rgba(40,25,10,.35));}
 .fm-box.b-lavender{background-image:url(../img/manor/lavender-bush.webp);}
 .fm-box.b-hydrangea{background-image:url(../img/manor/hydrangea-bush.webp);height:34%;bottom:-34%;}
 .fm-climb{bottom:-34%;width:74%;height:72%;}
