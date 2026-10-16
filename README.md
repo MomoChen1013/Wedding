@@ -346,10 +346,12 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > |---|---|---|---|
 > | `chapel/nave.webp` | 大廳 hero、開場（candle）的房間（午夜壓暗、天亮變回白天） | 純白的哥德式教堂（尖拱、肋拱、走道通到祭壇的尖頂窗），新人提供 | 轉成 webp |
 > | `chapel/plaster.webp` | 整頁的牆：有抹刀痕的乳白灰泥（上面再平鋪一層 SVG 雜訊當細顆粒，寫在 lobby-chapel.css） | — | 程式畫的：低頻的深淺 ＋ 一道道彎弧的抹刀痕（一側是比較利的刀口），720px 可無縫平鋪 |
-> | `chapel/olive-line.svg`、`eucalyptus-line.svg`、`reed-line.svg` | 卡片角落伸出來的橄欖／尤加利、頁尾兩旁的蘆葦（霧面香檳金線描） | — | 程式畫的向量線條 |
+> | `chapel/olive-line.svg`、`eucalyptus-line.svg` | 卡片角落伸出來的橄欖／尤加利（霧面香檳金線描） | — | 程式畫的向量線條 |
+> | `chapel/bloom-arch.webp`、`bloom-shoulder.webp`、`bloom-garland.webp` | hero 窗框左下腳邊的一大簇、窗框右上肩膀與倒數卡角上的一小簇、頁尾的一長排鮮花 | 拼起來的花藝，用到：[黑底上的白芍藥](https://unsplash.com/photos/-2gyq6wt-3I)・Maria Nikolova、[黑底上的滿天星](https://unsplash.com/photos/FolJQXGJ7FE)・After Exposure Studio、[黑底上的白繡球](https://unsplash.com/photos/aDl_GZ-ETec)・valentin hintikka、[暗底上的三朵淡粉白玫瑰](https://unsplash.com/photos/Xh4TROIQM3A)・Gomezgai Jere、[白底上的尤加利](https://unsplash.com/photos/hX_hf2lPpUU)・Annie Spratt，再加上春日溫室的白玫瑰（`orangerie/white-roses`、`white-rose`、`bloom-rose1`）、秘密花園的粉色洋桔梗（`secret-garden/flowers-row` 拆成一枝一枝）、植物信箋的橄欖枝 | 黑底的依亮度去背（芍藥補洞、底部被畫框切平的地方淡掉、偏黃綠的白拉回暖白；滿天星只留清楚的小花、顏色拉回乳白；繡球補暖、提亮）、白底的依「離背景多遠」去背；每一枝加一層很淡的影子再疊起來 |
+> | `chapel/peony.webp` | 當日流程的標題 | 同上，白芍藥 | 同上 |
 > | `chapel/divider.svg` | 每個區塊標題底下：兩條細線、中間一顆菱形、兩邊各一小枝橄欖葉 | — | 程式畫的向量線條 |
-> | `chapel/candle-top.webp`、`candle-base.webp`、`candle-body.webp` | 開場的三根蠟燭（不管哪個版型用燭光開場都是這根）；大廳當日流程的標題、頁尾的燭火 | [一根白蠟燭](https://unsplash.com/photos/DfGYqdUl2WY)・KaLisa Veer | 去背，擦掉燭芯以上的火、重畫燒過的燭芯；再切成燭頂、燭身下半、一段燭身，疊起來高矮都不會拉長 |
-> | `chapel/flame.webp` | 開場點亮的火焰；大廳的燭火 | [黑底裡的一根蠟燭](https://unsplash.com/photos/Fqqrfvq0Zgg)・PhotographyCourse | 只取火焰，依亮度轉成透明度 |
+> | `chapel/candle-top.webp`、`candle-base.webp`、`candle-body.webp` | 開場的三根蠟燭（不管哪個版型用燭光開場都是這根） | [一根白蠟燭](https://unsplash.com/photos/DfGYqdUl2WY)・KaLisa Veer | 去背，擦掉燭芯以上的火、重畫燒過的燭芯；再切成燭頂、燭身下半、一段燭身，疊起來高矮都不會拉長 |
+> | `chapel/flame.webp` | 開場點亮的火焰 | [黑底裡的一根蠟燭](https://unsplash.com/photos/Fqqrfvq0Zgg)・PhotographyCourse | 只取火焰，依亮度轉成透明度 |
 > | `chapel/aisle.webp` | 「我們的故事」的背景 | [開滿白花的婚禮走道](https://unsplash.com/photos/aRQrz0fclB8)・Soulseeker - Creative Photography | 縮圖 |
 > | `chapel/rings.webp` | 婚禮資訊 | [一對戒指](https://unsplash.com/photos/Vyy8tY3D3nk)・Deena Englard | 去背 |
 > | `chapel/lilies.webp` | 交通資訊 | [一瓶百合](https://unsplash.com/photos/JwhaKMTJAD0)・Eddie Hsu | 去背，底部淡出 |
@@ -468,7 +470,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | monet-garden | ✅ 莫內花園・流動油畫：莫內真跡的掃描（日本橋、塞納河、罌粟花田、柳樹、維特伊的花園小徑、國會大廈日落、阿讓特伊的花園），水面在 canvas 上一直流動；真的金框（照片做成九宮格）、真的亞麻畫布、錦緞壁紙的展牆、美術館說明卡、黃銅名牌、阿讓特伊的明信片；畫裡的東西跑到框外面來（大理花、哈森的蜀葵與罌粟從畫框與卡片邊一筆刷出來，蝴蝶在飛、花瓣在飄，故事展牆的角落一瓶塞尚的花） ＋ 捲動編排（hero 的池水一直流動、往下捲畫慢慢沉下去；每一幅小畫捲到時從釘子上擺進來、再一筆一筆刷上去；故事展牆的投射燈隨捲動滑過；倒數時夕陽的光越捲越暖），素材見上面〈莫內花園的素材〉 | `lobby-monet.html` |
 | outdoor-party | ✅ 美式戶外婚禮派對：開場露出來的那片藍天、綠地、遠山就是 hero，草地上擺著野餐（籐籃、一瓶雛菊、琺瑯杯、一籃蘋果），幾顆漏網的霧面粉彩氣球一直往上飄；三角旗資訊卡（上緣是真的紅白格紋布、後面探出野花）、長桌派對與野花玻璃罐的拍立得、字母板的流程（旁邊老銀餐具與紅琺瑯杯）、綁著三顆粉彩氣球的「Just Married」老福特小貨車、真的戶外婚宴當故事的底、黃昏亮燈的穀倉當倒數的底、入場券、彩色園遊券 ＋ 捲動編排（草原往上退；野花從卡片後面長出來；三角旗一面一面翻下來；小貨車從右邊開進來；拍立得跟著捲動擺；倒數的串燈一顆一顆亮、穀倉越來越亮，全亮了就放煙火），素材見上面〈美式戶外派對的素材〉 | `lobby-party.html` |
 | morning-window | ✅ 侘寂（Wabi-Sabi）：真的照片（窗前的一瓶鬱金香、灰泥牆、牆上窗格形狀的陽光、亞麻布、照著陽光的紗簾），顏色都是褪過的大地色 ＋ 「我們的故事」是一本攤開的筆記本，接著一張早餐桌巾：去背的可頌／一枝乾燥的玫瑰／素色抱枕／一盆室內植物（這一帶不放新人照片，免得跟下一區「相遇之間」重複）＋ 區塊標題上是去背的小物（乾燥的玫瑰、白色花瓶、素色抱枕、攤開的書、一枝粉色鬱金香，不放在框裡）＋ 新人照片 1 處（倒數旁）＋ 捲動編排（小物一樣樣落到桌上、窗光滑過桌面、倒數時紗簾越捲越暖），素材見上面〈晨光房間的照片素材〉 | `lobby-window.html` |
-| white-church | ✅ 神聖、純淨、通透：開場在午夜的教堂點亮三根真的蠟燭 → 燭火熄掉、天亮 → 大廳是同一座純白的哥德式教堂，新人的封面照放進一扇尖拱窗框，站在走道盡頭；側窗的光束、光裡飄的微塵、彩繪玻璃落在長椅上的幾彩光暈（整頁也有，越往下捲越往午後的暖色偏）；牆是有抹刀痕與細顆粒的乳白灰泥、兩旁被風吹動的白紗、牆上晃動的橄欖枝影子、鏡頭前失焦的橄欖枝；霧面香檳金的細線（窗框、卡片內框、標題下的橄欖葉分隔、卡片角落的尤加利與橄欖線描）；燭光：當日流程的標題是三根會閃的燭火，頁尾三根燭火立在會反光的檯面上、兩旁是蘆葦；玻璃感：照片壓在厚玻璃裡（反光隨捲動滑過）、毛玻璃的卡；區塊標題上是去背的實物（戒指、燭火、鈴蘭、百合、白色蝴蝶蘭）；新人照片共 7 處（倒數的毛玻璃後面是一片鈴蘭，越捲越清楚），素材見上面〈白色教堂的照片素材〉 | `lobby-chapel.html` |
+| white-church | ✅ 神聖、純淨、通透：開場在午夜的教堂點亮三根真的蠟燭 → 燭火熄掉、天亮 → 大廳是同一座純白的哥德式教堂，新人的封面照放進一扇尖拱窗框，站在走道盡頭；側窗的光束、光裡飄的微塵、彩繪玻璃落在長椅上的幾彩光暈（整頁也有，越往下捲越往午後的暖色偏）；牆是有抹刀痕與細顆粒的乳白灰泥、兩旁被風吹動的白紗、牆上晃動的橄欖枝影子、鏡頭前失焦的橄欖枝；霧面香檳金的細線（窗框、卡片內框、標題下的橄欖葉分隔、卡片角落的尤加利與橄欖線描）；鮮花：窗框左下腳邊一大簇、右上肩膀一小簇、倒數卡角上一小簇、頁尾一長排（芍藥、玫瑰、洋桔梗、繡球、滿天星、尤加利拼成的花藝），一路飄著白色與淡粉的花瓣；玻璃感：照片壓在厚玻璃裡（反光隨捲動滑過）、毛玻璃的卡；區塊標題上是去背的實物（戒指、白芍藥、鈴蘭、百合、白色蝴蝶蘭）；新人照片共 7 處（倒數的毛玻璃後面是一片鈴蘭，越捲越清楚），素材見上面〈白色教堂的素材〉 | `lobby-chapel.html` |
 
 只有 Night Sky 的大廳是深色的，子頁暫時還是淺色版（見 common.css）。
 每個版型各有一頁示範（`preview/botanical-letter.html`、`preview/secret-garden.html`、`preview/spring-orangerie.html`、`preview/night-sky.html`、`preview/french-manor.html`、`preview/monet-garden.html`、`preview/outdoor-party.html`、`preview/morning-window.html`、`preview/white-church.html`）。右下角都可以切換開場。
