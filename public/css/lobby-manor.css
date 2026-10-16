@@ -78,7 +78,7 @@ body[data-lobby="french-manor"] .bg-decor::after{content:'';position:absolute;in
    照片是封面（applyLobbyPhotos 的 hero）；沒有照片就整個收起來，hero 回到只有名牌的樣子。
    框的大小跟著視窗高度走：hero 只有一個畫面高，城堡與雕像還要露出來 */
 /* 選擇器多帶一個 .fm-cameo：後面通用的 .fm-cameo{margin:0} 才蓋不過來 */
-.fm-cameo.fm-hero-cameo{flex:none;height:clamp(150px,30svh,270px);margin:0 0 clamp(-40px,-4.6svh,-24px);}
+.fm-cameo.fm-hero-cameo{flex:none;height:clamp(200px,42svh,400px);margin:0 0 clamp(-40px,-4.6svh,-24px);}
 .fm-hero-cameo:not(:has(.has-photo)){display:none;}
 .fm-hero-cameo .fm-cameo-ph{background-position:50% 30%;}
 /* 名字刻在一塊真的大理石上（Rachel Kelli／Unsplash）：金色的雙線框，字是刻進去的 */

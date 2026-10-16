@@ -138,12 +138,17 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
   background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.6) 47%,rgba(255,255,255,.1) 52%,transparent 60%) 0 0/260% 100% no-repeat;
   background-position:calc(110% - var(--sp,.5) * 110%) 0;}
 
-.mc-slabs{position:relative;z-index:3;display:flex;justify-content:center;align-items:flex-start;gap:clamp(14px,3vw,34px);
-  margin:clamp(-60px,-5vw,-30px) auto 0;padding:0 8px;max-width:820px;}
-.mc-slabs .mc-slab{width:clamp(96px,22vw,220px);--r:0deg;transform:rotate(calc(var(--r) + (var(--sp,.5) - .5) * 8deg));}
-.mc-slabs .s1{--r:-5deg;margin-top:26px;}
-.mc-slabs .s2{--r:2deg;}
-.mc-slabs .s3{--r:6deg;margin-top:40px;}
+/* 三塊玻璃攤成一把扇子：中間那塊最大、壓在最上面，兩旁的塞到它底下一截，
+   照片才放得大 —— 手機上三塊並排各只剩三分之一寬，不疊起來就只能很小 */
+.mc-slabs{position:relative;z-index:3;display:flex;justify-content:center;align-items:flex-start;
+  margin:clamp(-60px,-5vw,-30px) auto 0;padding:0 8px;max-width:1100px;}
+.mc-slabs .mc-slab{width:clamp(140px,38vw,320px);--r:0deg;transform:rotate(calc(var(--r) + (var(--sp,.5) - .5) * 8deg));}
+.mc-slabs .s1{--r:-6deg;margin-top:30px;margin-right:clamp(-64px,-11vw,-30px);}
+.mc-slabs .s2{--r:2deg;z-index:2;width:clamp(164px,44vw,370px);}
+.mc-slabs .s3{--r:7deg;margin-top:46px;margin-left:clamp(-64px,-11vw,-30px);}
+@media (max-width:640px){
+  .mc-slab{padding:8px;border-radius:12px;}
+}
 
 /* ============================================================
    區塊：毛玻璃的卡 ＋ 標題上一件去背的實物
