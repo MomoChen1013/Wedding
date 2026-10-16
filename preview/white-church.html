@@ -73,29 +73,47 @@
 <button class="intro-skip" id="introSkip" type="button" hidden>跳過</button>
 
 <!-- ============ 主畫面：蠟燭點完，天亮了 ============
-     一張真的照片：一整排白色圓拱、格子天花板、水晶吊燈的純白禮堂。
-     玻璃感：兩個人的照片壓在一塊一塊厚玻璃裡、毛玻璃的卡片；兩旁垂著白紗，hero 下緣一圈蕾絲。
-     區塊標題上不是框，是一件一件去背的實物（戒指、水晶燈、鈴蘭、百合、白色蝴蝶蘭），底下一條蕾絲。 -->
+     一張真的照片：一整排尖拱與肋拱、通到盡頭祭壇那扇尖頂窗的純白哥德式教堂。
+     新人的照片放進一扇同樣是尖拱的窗框裡，站在走道盡頭 —— 那扇窗就是他們。
+     光：側窗斜斜照進來的光束、彩繪玻璃落在地上的幾彩光暈、光裡慢慢飄的微塵；
+     整頁的牆是有抹刀痕與細顆粒的乳白灰泥，兩旁垂著被風吹動的白紗，牆上有橄欖枝的影子在晃。
+     區塊標題上是去背的實物（戒指、燭火、鈴蘭、百合、白色蝴蝶蘭），底下一枝香檳金的線描橄欖葉。 -->
 <div id="app">
   <section class="panel lobby mc-lobby" data-panel="lobby" data-scroll>
 
 
-    <!-- 兩旁垂下來的白紗：固定在視窗兩側，輕輕地飄，跟著捲動慢慢移（--sp 來自 .mc-lobby） -->
+    <!-- 兩旁垂下來的白紗：固定在視窗兩側，被風吹得輕輕飄，跟著捲動慢慢移（--sp 來自 .mc-lobby） -->
     <div class="mc-veils" aria-hidden="true"><i></i><i></i></div>
+    <!-- 彩繪玻璃的光暈：固定在視窗裡，越往下捲，光的位置與顏色越往午後偏（時間在走） -->
+    <div class="mc-prism" aria-hidden="true"><i></i><i></i><i></i></div>
 
     <!-- ===== Hero ===== -->
     <header class="lobby-hero mc-hero" data-scroll>
       <div class="mc-scene" aria-hidden="true">
+        <!-- 純白的哥德式教堂（照片），慢慢往祭壇推近 -->
         <div class="mc-photo"></div>
-        <i class="mc-chandelier"></i>
-        <!-- 右下角一枝白色蝴蝶蘭 -->
-        <i class="mc-orchid"></i>
+        <!-- 側窗斜斜照進來的光束 -->
+        <i class="mc-rays"></i>
+        <!-- 彩繪玻璃透進來，落在走道與長椅上的幾彩光暈（尖拱窗的形狀，被地板壓扁） -->
+        <div class="mc-stain"><i></i><i></i><i></i></div>
+        <!-- 光裡慢慢飄的微塵 -->
+        <div class="mc-motes"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <!-- 鏡頭前失焦的橄欖枝：左上、右下各一枝 -->
+        <i class="mc-olive-fg"></i><i class="mc-olive-fg is-b"></i>
       </div>
-      <!-- hero 下緣垂著一圈蕾絲 -->
-      <i class="mc-lace-hem" aria-hidden="true"></i>
       <div class="mc-hero-body">
-        <!-- 新人的照片：一塊厚玻璃壓著（封面照），名字的毛玻璃牌壓住它的下緣；沒有照片就整塊收起來，見 lobby-chapel.css -->
-        <figure class="mc-slab mc-hero-slab" aria-hidden="true"><div class="mc-slab-ph" data-photo="hero"></div></figure>
+        <!-- 新人的照片（封面照）：放進一扇尖拱窗框裡，站在走道盡頭；名字的毛玻璃牌壓住它的下緣。
+             沒有照片就整扇收起來，見 lobby-chapel.css -->
+        <figure class="mc-arch mc-hero-arch" aria-hidden="true">
+          <i class="mc-arch-halo"></i>
+          <div class="mc-arch-glass"></div>
+          <div class="mc-arch-ph" data-photo="hero"></div>
+          <svg class="mc-arch-line" viewBox="0 0 100 140" preserveAspectRatio="none">
+            <path d="M.6 139.4V50C.6 24 20 6 50 .6C80 6 99.4 24 99.4 50V139.4Z"/>
+            <path d="M5.4 135V51.6C5.4 27.4 23 10.6 50 5.5C77 10.6 94.6 27.4 94.6 51.6V135Z"/>
+          </svg>
+          <i class="mc-arch-gleam"></i>
+        </figure>
         <div class="mc-cartouche">
           <div class="mc-kicker"><span class="en">In the light of day, we gather</span><span class="cn">誠摯邀請您</span></div>
           <h1 class="mc-names"><span data-tpl="groomEn"></span><span class="amp">&amp;</span><span data-tpl="brideEn"></span></h1>
@@ -107,6 +125,8 @@
     </header>
 
     <div class="scene-body mc-body">
+      <!-- 牆上橄欖枝的影子：窗外的光把一枝橄欖照在灰泥牆上，風一吹就晃 -->
+      <i class="mc-shade s1" aria-hidden="true"></i><i class="mc-shade s2" aria-hidden="true"></i><i class="mc-shade s3" aria-hidden="true"></i>
 
       <!-- ===== 婚禮資訊：一對戒指 ===== -->
       <section class="info-block mc-sec">
@@ -137,10 +157,14 @@
         </div>
       </section>
 
-      <!-- ===== 當日流程：水晶吊燈 ===== -->
+      <!-- ===== 當日流程：三根燭火（時間一點一點燒過去） ===== -->
       <section class="info-block mc-sec" id="scheduleBlock">
         <div class="mc-head">
-          <figure class="mc-icon" data-reveal="draw"><i class="mc-obj o-chandelier"></i></figure>
+          <figure class="mc-icon" data-reveal="draw" aria-hidden="true"><span class="mc-obj o-candles">
+            <span class="mc-candle" style="--h:58%"><i class="mc-wax"></i><i class="mc-flame"><b></b></i></span>
+            <span class="mc-candle" style="--h:92%"><i class="mc-wax"></i><i class="mc-flame"><b></b></i></span>
+            <span class="mc-candle" style="--h:74%"><i class="mc-wax"></i><i class="mc-flame"><b></b></i></span>
+          </span></figure>
           <span class="en block-title">Schedule</span>
           <span class="cn block-sub">當日流程</span>
         </div>
@@ -297,9 +321,16 @@
         </div>
       </section>
 
-      <!-- 頁尾：一片柔焦的滿天星 -->
+      <!-- 頁尾：三根燭火立在一塊會反光的白石上，兩旁是被風吹彎的蘆葦 -->
       <footer class="mc-foot">
-        <div class="mc-foot-bg" aria-hidden="true"></div>
+        <div class="mc-foot-scene" aria-hidden="true">
+          <i class="mc-reed is-l"></i><i class="mc-reed is-r"></i>
+          <div class="mc-candles">
+            <span class="mc-candle" style="--h:62%"><i class="mc-wax"></i><i class="mc-flame"><b></b></i></span>
+            <span class="mc-candle" style="--h:100%"><i class="mc-wax"></i><i class="mc-flame"><b></b></i></span>
+            <span class="mc-candle" style="--h:80%"><i class="mc-wax"></i><i class="mc-flame"><b></b></i></span>
+          </div>
+        </div>
         <div class="mc-fin">in the light, together</div>
         <span>made for <span data-tpl="couple"></span>・小港製作所 設計製作</span>
       </footer>

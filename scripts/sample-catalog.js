@@ -101,8 +101,8 @@ export const SAMPLE_CATALOG = {
   'white-church': {
     plan: 'premium',
     name: ['White Church', '白色教堂'],
-    mood: '午夜點亮三根蠟燭，天一亮，是一座純白的教堂。白紗、蕾絲與珍珠。',
+    mood: '午夜點亮三根蠟燭，天一亮，是一座純白的哥德式教堂。透光白紗、彩繪玻璃的光暈、橄欖枝與燭光。',
     dress: ['教堂證婚', '長頭紗', '蕾絲拖尾'],
-    colors: ['#f8f6f3', '#b09460', '#857e8c', '#3d3743'],
+    colors: ['#f6f2ea', '#a88d5f', '#837b86', '#3b3540'],
   },
 };
