@@ -73,11 +73,9 @@
 <button class="intro-skip" id="introSkip" type="button" hidden>跳過</button>
 
 <!-- ============ 主畫面：推開那扇灰藍的木門之後，一座靜謐的莊園 ============
-     法國南方小鎮的街角（開場）→ 推開門 → 莊園的中庭。整頁照著一張 mood board 走：
-     石灰岩與亞麻、赤陶、鼠尾草綠、灰藍的百葉窗、薰衣草與繡球花；
-     卡片是剪過鋸齒邊的亞麻布樣，上緣一條法式寢具的條紋，用一顆黃銅圖釘釘著；
-     每個區塊的標題上是一件去背的小物（油漆色票、水晶燈、薰衣草、古董鑰匙、繡球花），
-     旁邊一張手寫法文的小標籤。新人的照片：hero 是蕾絲橢圓框，其他是夾在麻繩上的照片。 -->
+     法國南方小鎮的街角（開場）→ 推開門 → 莊園的中庭。整頁是莊園真的建築材質：
+     蜂蜜色的石灰岩牆、牆上嵌著溫白的灰泥面板、石框的窗與灰藍的百葉窗、赤陶的地磚；
+     牆上爬著常春藤，角落有白玫瑰、繡球花、薰衣草（全部是真的照片，去背）。 -->
 <div id="app">
   <section class="panel lobby fm-lobby" data-panel="lobby" data-scroll>
 
@@ -86,14 +84,14 @@
       <div class="fm-scene" aria-hidden="true">
         <div class="fm-court"></div>
         <i class="fm-veil"></i>
-        <!-- 鏡頭前的花：左下一把薰衣草、右下一球繡球花（去背的真花），捲動時走得比中庭快 -->
+        <!-- 鏡頭前：左下一把薰衣草、右下一球繡球花（去背的真花），捲動時走得比中庭快 -->
         <i class="fm-near n-lavender"></i>
         <i class="fm-near n-hydrangea"></i>
       </div>
       <div class="fm-hero-body">
         <!-- 新人的照片：掛在名牌上方的蕾絲橢圓框（封面照；沒有照片就整個收起來，見 lobby-manor.css） -->
         <figure class="fm-cameo fm-hero-cameo" aria-hidden="true"><div class="fm-cameo-ph" data-photo="hero"></div><i class="fm-cameo-frame"></i></figure>
-        <!-- 名字：一張亞麻布樣的名牌，上緣兩顆黃銅圖釘 -->
+        <!-- 名字：刻在一塊嵌進牆裡的灰泥牌上（石框、兩道刻線） -->
         <div class="fm-cartouche">
           <div class="fm-kicker"><span class="en">Bienvenue au domaine</span><span class="cn">誠摯邀請您</span></div>
           <h1 class="fm-names"><span data-tpl="groomEn"></span><span class="amp">&amp;</span><span data-tpl="brideEn"></span></h1>
@@ -106,19 +104,20 @@
 
     <div class="scene-body fm-body">
 
-      <!-- ===== 三張照片：用黃銅夾子夾在一條麻繩上（照片牆的前三張），中間掛一張手寫的小標籤 ===== -->
-      <section class="fm-line" data-scroll aria-hidden="true">
-        <svg class="fm-twine" viewBox="0 0 1000 120" preserveAspectRatio="none"><path d="M-10 18C250 92 750 92 1010 18"/></svg>
-        <figure class="fm-print p1" data-reveal="rise"><div class="fm-print-ph" data-photo="photo1"></div><i class="fm-clip"></i></figure>
-        <figure class="fm-print p2" data-reveal="rise"><div class="fm-print-ph" data-photo="photo2"></div><i class="fm-clip"></i></figure>
-        <figure class="fm-print p3" data-reveal="rise"><div class="fm-print-ph" data-photo="photo3"></div><i class="fm-clip"></i></figure>
+      <!-- ===== 三張照片：石牆上三扇石框的窗，灰藍的百葉窗往兩邊打開，窗裡是照片牆的前三張；
+           左邊一束常春藤沿著牆爬上來，右邊一枝從上面垂下 ===== -->
+      <section class="fm-windows" data-scroll aria-hidden="true">
+        <i class="fm-ivy fm-ivy-climb"></i>
+        <i class="fm-ivy fm-ivy-trail"></i>
+        <figure class="fm-window w1" data-reveal="rise"><i class="fm-shutter l"></i><div class="fm-window-ph" data-photo="photo1"></div><i class="fm-shutter r"></i><i class="fm-sill"></i></figure>
+        <figure class="fm-window w2" data-reveal="rise"><i class="fm-shutter l"></i><div class="fm-window-ph" data-photo="photo2"></div><i class="fm-shutter r"></i><i class="fm-sill"></i></figure>
+        <figure class="fm-window w3" data-reveal="rise"><i class="fm-shutter l"></i><div class="fm-window-ph" data-photo="photo3"></div><i class="fm-shutter r"></i><i class="fm-sill"></i></figure>
       </section>
 
-      <!-- ===== 婚禮資訊：一疊油漆色票（赤陶、鼠尾草、亞麻、灰藍的百葉窗） ===== -->
+      <!-- ===== 婚禮資訊：三支古銅色的燭台 ===== -->
       <section class="info-block fm-sec">
         <div class="fm-head">
-          <figure class="fm-icon" data-reveal="draw"><i class="fm-obj o-chips"><i></i><i></i><i></i><i></i></i></figure>
-          <span class="fm-tag">Bienvenue</span>
+          <figure class="fm-icon" data-reveal="draw"><i class="fm-obj o-candles"></i></figure>
           <span class="en block-title">Information</span>
           <span class="cn block-sub">婚禮資訊</span>
         </div>
@@ -144,11 +143,10 @@
         </div>
       </section>
 
-      <!-- ===== 當日流程：一盞水晶燈 ===== -->
+      <!-- ===== 當日流程：一張披著亞麻巾的小酒館椅 ===== -->
       <section class="info-block fm-sec" id="scheduleBlock">
         <div class="fm-head">
-          <figure class="fm-icon" data-reveal="draw"><i class="fm-obj o-chandelier"></i></figure>
-          <span class="fm-tag">Le programme</span>
+          <figure class="fm-icon" data-reveal="draw"><i class="fm-obj o-chair"></i></figure>
           <span class="en block-title">Schedule</span>
           <span class="cn block-sub">當日流程</span>
         </div>
@@ -161,7 +159,6 @@
       <section class="info-block fm-sec" id="noteBlock" hidden>
         <div class="fm-head">
           <figure class="fm-icon" data-reveal="draw"><i class="fm-obj o-lavender"></i></figure>
-          <span class="fm-tag">À noter</span>
           <span class="en block-title">Notes</span>
           <span class="cn block-sub">出席前的小提醒</span>
         </div>
@@ -186,7 +183,6 @@
       <section class="info-block fm-sec" id="transportBlock" hidden>
         <div class="fm-head">
           <figure class="fm-icon" data-reveal="draw"><i class="fm-obj o-key"></i></figure>
-          <span class="fm-tag">Le chemin</span>
           <span class="en block-title">Access</span>
           <span class="cn block-sub">交通資訊</span>
         </div>
@@ -204,16 +200,15 @@
         </div>
       </section>
 
-      <!-- ===== 兩人的故事：灰泥牆上的石拱門，木門敞開、門外是花園；兩張照片（故事照、第四張）＋ 一張亞麻卡 ===== -->
+      <!-- ===== 兩人的故事：灰泥牆上的石拱門，木門敞開、門外是花園；兩張石框的照片（故事照、第四張）＋ 一塊灰泥面板 ===== -->
       <section class="info-block fm-band fm-story" id="storyBlock" hidden data-scroll>
         <div class="fm-band-bg" aria-hidden="true"></div>
         <div class="fm-band-inner">
           <div class="fm-story-pics" data-reveal="rise">
-            <figure class="fm-print s-big"><div class="fm-print-ph" data-photo="story" aria-hidden="true"></div><i class="fm-pin"></i></figure>
-            <figure class="fm-print s-small"><div class="fm-print-ph" data-photo="photo4" aria-hidden="true"></div><i class="fm-pin"></i></figure>
+            <figure class="fm-frame s-big"><div class="fm-frame-ph" data-photo="story" aria-hidden="true"></div></figure>
+            <figure class="fm-frame s-small"><div class="fm-frame-ph" data-photo="photo4" aria-hidden="true"></div></figure>
           </div>
           <div class="fm-story-body fm-paper-card" data-reveal="rise">
-            <span class="fm-tag">Notre histoire</span>
             <div class="fm-band-title">Our Story</div>
             <div class="fm-band-sub">關於我們這一路</div>
             <p class="story-text" id="storyText"></p>
@@ -230,13 +225,12 @@
         <div class="photo-rail" id="photoRail"></div>
       </section>
 
-      <!-- ===== 日期倒數：開滿玫瑰的石屋、碎石鋪的院子（真照片滿版鋪在後面）；上面一張亞麻卡，夾著照片牆第五張 ===== -->
+      <!-- ===== 日期倒數：開滿玫瑰的石屋、碎石鋪的院子（真照片滿版鋪在後面）；上面一塊灰泥面板，嵌著照片牆第五張 ===== -->
       <section class="info-block fm-band fm-count" data-scroll>
         <div class="fm-band-bg" aria-hidden="true"></div>
         <div class="fm-band-inner">
           <div class="fm-count-body fm-paper-card">
-            <figure class="fm-print c-count"><div class="fm-print-ph" data-photo="photo5" aria-hidden="true"></div><i class="fm-pin"></i></figure>
-            <span class="fm-tag">À très bientôt</span>
+            <figure class="fm-frame c-count"><div class="fm-frame-ph" data-photo="photo5" aria-hidden="true"></div></figure>
             <div class="fm-band-title">The garden awaits</div>
             <div class="fm-band-sub">距離我們的大日子還有</div>
             <div class="cd-card">
@@ -247,16 +241,15 @@
         </div>
       </section>
 
-      <!-- ===== R.S.V.P.：一球繡球花 ＋ 一張夾著的照片（第六張） ===== -->
+      <!-- ===== R.S.V.P.：一球繡球花 ＋ 一張石框的照片（第六張） ===== -->
       <section class="info-block fm-sec">
         <div class="fm-head">
           <figure class="fm-icon" data-reveal="draw"><i class="fm-obj o-hydrangea"></i></figure>
-          <span class="fm-tag">Répondez</span>
           <span class="en block-title">R.S.V.P.</span>
           <span class="cn block-sub">出席回覆</span>
         </div>
         <div class="fm-card fm-rsvp" data-reveal="rise" data-scroll>
-          <figure class="fm-print fm-rsvp-pic" aria-hidden="true"><div class="fm-print-ph" data-photo="photo6"></div><i class="fm-pin"></i></figure>
+          <figure class="fm-frame fm-rsvp-pic" aria-hidden="true"><div class="fm-frame-ph" data-photo="photo6"></div></figure>
           <div class="rsvp-cta">
             <h3>能來參加我們的婚禮嗎？</h3>
             <p>花 30 秒回覆出席，讓我們把最好的位置留給你</p>
@@ -265,7 +258,7 @@
         </div>
       </section>
 
-      <!-- ===== Explore：一張一張的亞麻布樣 ===== -->
+      <!-- ===== Explore：一塊一塊嵌在牆上的灰泥面板 ===== -->
       <section class="link-section fm-sec">
         <div class="fm-head">
           <span class="en block-title">Explore</span>
@@ -312,10 +305,9 @@
       </section>
 
       <footer class="fm-foot">
-        <!-- 這一頁用到的顏色，排成一排油漆色票（跟 mood board 上釘著的那幾張一樣） -->
-        <div class="fm-chips" aria-hidden="true">
-          <i style="--c:#b4694c"><b>Terre cuite</b></i><i style="--c:#8b9a7e"><b>Sauge</b></i><i style="--c:#e3d9c6"><b>Lin</b></i><i style="--c:#8fa2a6"><b>Volet</b></i><i style="--c:#968cb4"><b>Lavande</b></i>
-        </div>
+        <!-- 牆腳：一張藤編的椅子靠著牆、旁邊一枝常春藤爬上來，最下面是一條赤陶地磚 -->
+        <i class="fm-ivy fm-ivy-foot"></i>
+        <i class="fm-foot-chair"></i>
         <div class="fm-fin">à bientôt, au domaine</div>
         <span>made for <span data-tpl="couple"></span>・小港製作所 設計製作</span>
       </footer>
