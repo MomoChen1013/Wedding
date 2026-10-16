@@ -7,9 +7,9 @@
      → 鏡頭穿過門口往前走 → 溶進網站
 
    每個版型有自己的門（[data-variant]，見 css/openers/door.css）：
-     french-manor（預設）  一張真的照片：爬滿藤的磚牆圓拱裡，一扇鍛鐵花園門，門後是開滿薰衣草的小徑。
-                           鐵門從照片裡分離成自己的一層，點一下繞著鉸鍊往裡轉開；
-                           走進去是一座歐式花園（修剪整齊的綠籬、碎石路、盡頭一尊白色雕像）
+     french-manor（預設）  一張真的照片：法國南方小鎮的街角，石灰岩牆上一扇灰藍的木門。
+                           木門從照片裡分離成自己的一層，點一下繞著右邊的鉸鍊往裡推開；
+                           門後是一座靜謐的莊園中庭（灰藍的百葉窗、開花的樹）—— 也就是大廳的第一個畫面
      white-church／tapestry  同一種鍛鐵大門，但是中古的尖拱、石柱頂是小尖塔，
                            門後遠遠是一座有圓塔的城堡
      secret-garden         一整面常春藤牆上，一扇白框的玻璃門：上面一扇半圓的氣窗，
@@ -336,14 +336,15 @@
     const garden = kind === 'garden', manor = kind === 'manor';
     let world;
     if (manor) {
-      /* 莊園：整個畫面是一張真的照片 —— 磚牆圓拱裡的一扇鍛鐵花園門。
-         門從照片裡分離成自己的一層（gate-leaf，門後補成小徑：gate-scene），
-         點一下門繞著右邊的鉸鍊往花園裡轉開；兩旁用同一張照片模糊後補滿 */
+      /* 莊園：整個畫面是一張真的照片 —— 南法小鎮街角，石灰岩牆上一扇灰藍的木門。
+         門從照片裡分離成自己的一層（door-leaf；door-scene 的門洞是透明的，看得到後面的中庭），
+         點一下門繞著右邊的鉸鍊往裡推開；兩旁用同一張照片模糊後補滿 */
       world = `
         <div class="dr-blur"></div>
         <div class="dr-photo">
+          <div class="dr-behind" style="left:33.85%;top:28.86%;width:26.92%;height:55.97%"></div>
           <div class="dr-scene"></div>
-          <div class="dr-opening" style="left:7.82%;top:13.48%;width:86.55%;height:81.54%"><div class="dr-iron"></div></div>
+          <div class="dr-opening" style="left:33.85%;top:28.86%;width:26.92%;height:55.97%"><div class="dr-iron"></div></div>
         </div>`;
     } else {
       const box = garden ? GLASS : GATE;
@@ -368,9 +369,9 @@
         <div class="dr-names">${LM.namesHtml(ctx)}</div>
         <div class="dr-date">${LM.esc(ctx.date)}</div>
       </div>
-      <div class="dr-hint"><span class="en">${garden ? 'Open the garden door' : 'Push the gate'}</span><span class="cn">輕觸畫面・${garden ? '推開這扇玻璃門' : '推開這扇鐵門'}</span></div>`;
+      <div class="dr-hint"><span class="en">${garden ? 'Open the garden door' : manor ? 'Push the door open' : 'Push the gate'}</span><span class="cn">輕觸畫面・${garden ? '推開這扇玻璃門' : manor ? '推開這扇木門' : '推開這扇鐵門'}</span></div>`;
 
-    LM.hitButton(host, garden ? '推開玻璃門，進入邀請函' : '推開鐵門，進入邀請函', () => {
+    LM.hitButton(host, garden ? '推開玻璃門，進入邀請函' : manor ? '推開木門，進入邀請函' : '推開鐵門，進入邀請函', () => {
       if (host.classList.contains('is-open')) { ctx.finish(); return; }
       ctx.gesture();
       if (ctx.reduce) { ctx.finish(); return; }

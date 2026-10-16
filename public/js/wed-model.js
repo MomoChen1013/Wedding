@@ -98,10 +98,11 @@ export const TEMPLATES = {
   'night-sky':   { label:'Night Sky 現代星空', lobbyFile:'lobby-night.html',
                      lobbyCss:['/css/lobby-night.css'], lobbyJs:['/js/lobby-motion.js'], opening:'stars',
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Josefin+Sans:wght@300;400&family=Noto+Sans+TC:wght@300;400;500&family=Noto+Serif+TC:wght@400;500&display=swap'] },
-  /* 法式莊園：文藝復興 —— 從真的照片描出來的剪紙莊園、大理石雕像、天頂濕壁畫；推開一扇鍛鐵大門進去 */
+  /* 法式莊園：法國南方小鎮的街角，推開一扇灰藍的木門，走進一座靜謐的莊園 ——
+     石灰岩與亞麻、赤陶、鼠尾草綠、灰藍的百葉窗、薰衣草與繡球花（真的照片） */
   'french-manor': { label:'French Manor 法式莊園', lobbyFile:'lobby-manor.html',
                      lobbyCss:['/css/lobby-manor.css'], lobbyJs:['/js/lobby-motion.js'], opening:'door',
-                     fonts:['https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,500;1,400&family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
+                     fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Pinyon+Script&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
   /* 莫內花園・流動油畫：美術館牆上一幅莫內的日本橋，點一下被吸進畫裡（開場）；
      hero 就是那一幅畫的裡面，整頁的畫都是程式一筆一筆畫的油畫、水面一直流動。
      畫畫的那一支（window.MonetPaint）就住在開場 painting.js 裡，所以 lobbyJs 也掛它 ——
