@@ -116,6 +116,10 @@
 .dr-host.dr-manor.is-walking .dr-text{transition:opacity .5s ease 0s;}
 .dr-manor .dr-kicker{font-size:clamp(13px,1.4vw,15px);}
 .dr-manor .dr-names{font-size:clamp(20px,2.4vw,28px);}
+/* 莊園換成 Playfair Display ＋ Pinyon Script（跟大廳同一組字） */
+.dr-manor .dr-kicker{font-family:'Pinyon Script','Playfair Display',serif;font-style:normal;font-size:clamp(17px,1.8vw,20px);}
+.dr-manor .dr-names .op-amp{font-family:'Playfair Display',serif;font-style:italic;}
+.dr-manor .dr-hint .en{font-family:'Playfair Display',serif;}
 .dr-manor .dr-date{font-size:10.5px;letter-spacing:.36em;color:rgba(46,42,36,.72);}
 /* 秘密花園在手機上，字落在門上面那一片深色的常春藤：改成淺色的字、深色的光暈 */
 @media (max-aspect-ratio:3/4){

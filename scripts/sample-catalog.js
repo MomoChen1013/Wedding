@@ -73,9 +73,9 @@ export const SAMPLE_CATALOG = {
   'french-manor': {
     plan: 'premium',
     name: ['French Manor', '法式莊園'],
-    mood: '南法小鎮的街角，推開一扇灰藍的木門，走進開滿繡球花與薰衣草的靜謐莊園。',
-    dress: ['法式鄉村', '亞麻與蕾絲', '莊園或花園'],
-    colors: ['#f3eee5', '#b4694c', '#8b9a7e', '#8fa2a6'],
+    mood: '南法金色的午後，山坡上的莊園露台、灑滿樹影的牆，一張鋪好亞麻的長桌等著你。',
+    dress: ['法式鄉村', '亞麻與蕾絲', '暖米白與橄欖綠'],
+    colors: ['#f6efe4', '#b07a4c', '#7a8f6b', '#8fafcb'],
   },
   'monet-garden': {
     plan: 'premium',

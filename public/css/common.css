@@ -228,16 +228,16 @@ body[data-template="night-sky"]{
   --font-display:'Cormorant Garamond','Noto Serif TC',serif;
   --font-body:'Noto Sans TC','Noto Sans',sans-serif; --font-hand:'Cormorant Garamond','Noto Serif TC',serif; --font-ui:'Noto Sans TC','Noto Sans',sans-serif;
 }
-/* 法式莊園 —— 南法小鎮的莊園：石灰岩與亞麻、赤陶、鼠尾草綠、灰藍的百葉窗、薰衣草 */
+/* 法式莊園 —— 南法金色午後的莊園：暖米白、亞麻、蜂蜜色的陶土、橄欖綠、一點天空藍 */
 body[data-template="french-manor"]{
-  --ink-rgb:63,58,51; --surface-rgb:251,248,242;
-  --ink:#3f3a33; --ink-soft:#857a6c; --line:#ddd2c1; --line-soft:#ebe4d8;
-  --surface:#fbf8f2; --ink-hover:#524b42; --ink-active:#2d2924;
-  --primary:#b4694c; --primary-deep:#7e4a36; --primary-soft:#f3e7df;
-  --secondary:#8b9a7e; --accent:#6b7a5f; --sun:#e8d9b8;
-  --bg1:#f3eee5; --bg2:#e7dfd1; --card:#fbf8f2;
-  --font-display:'Cormorant Garamond','Noto Serif TC',serif;
-  --font-body:'Noto Serif TC',serif; --font-hand:'Cormorant Garamond','Noto Serif TC',serif; --font-ui:'Noto Serif TC',serif;
+  --ink-rgb:61,52,43; --surface-rgb:252,248,241;
+  --ink:#3d342b; --ink-soft:#867664; --line:#e3d7c5; --line-soft:#efe7da;
+  --surface:#fcf8f1; --ink-hover:#51463a; --ink-active:#2c251e;
+  --primary:#b07a4c; --primary-deep:#7c5233; --primary-soft:#f5ebdf;
+  --secondary:#7a8f6b; --accent:#8fafcb; --sun:#f0d9a8;
+  --bg1:#f6efe4; --bg2:#ece2d2; --card:#fcf8f1;
+  --font-display:'Playfair Display','Noto Serif TC',serif;
+  --font-body:'Noto Serif TC',serif; --font-hand:'Pinyon Script','Playfair Display','Noto Serif TC',serif; --font-ui:'Noto Serif TC',serif;
 }
 /* 莫內花園 —— 畫布的米白、池水的藍綠、睡蓮的粉、紫藤的淡紫 */
 body[data-template="monet-garden"]{

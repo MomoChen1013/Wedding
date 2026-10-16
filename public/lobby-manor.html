@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- 社群預覽文案：與 index.html 同一套備援，build-og 會針對站台換成專屬內容。
-     這一份是 French Manor（法式莊園）版型的大廳：文藝復興 —— 剪紙的莊園、大理石雕像、天頂濕壁畫。
+     這一份是 French Manor（法式莊園）版型的大廳：南法金色午後的莊園露台、灑滿樹影的灰泥牆、黃昏的長桌。
      由 build-og 依 TEMPLATES.lobbyFile 選用；沒跑過 build-og 的站台
      由 site-context.js 在執行期換成這一份骨架。畫面用的是真的照片（public/img/manor/，出處見 README）。 -->
 <title>我們結婚了｜婚禮邀請函</title>
@@ -27,7 +27,7 @@
 <link rel="preload" as="script" href="/js/common.js">
 <link rel="preload" as="script" href="/js/lobby-motion.js">
 <link rel="preload" as="script" href="/js/index.js">
-<link rel="preload" as="image" href="/img/manor/wall.webp" type="image/webp">
+<link rel="preload" as="image" href="/img/manor/terrace.webp" type="image/webp">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- 字體依版型不同，由 build-og（預產）或 site-context.js（執行期）依 TEMPLATES[x].fonts 補上 -->
@@ -81,149 +81,155 @@
 </div>
 <button class="intro-skip" id="introSkip" type="button" hidden>跳過</button>
 
-<!-- ============ 主畫面：推開那扇灰藍的木門之後，一座靜謐的莊園 ============
-     法國南方小鎮的街角（開場）→ 推開門 → 莊園的中庭。整頁是莊園真的建築材質：
-     蜂蜜色的石灰岩牆、牆上嵌著溫白的灰泥面板、石框的窗與灰藍的百葉窗、赤陶的地磚；
-     牆上爬著常春藤，角落有白玫瑰、繡球花、薰衣草（全部是真的照片，去背）。 -->
+<!-- ============ 主畫面：南法的金色午後，一座山坡上的莊園 ============
+     第一個畫面是莊園的露台：遠處的山谷、柏樹、石屋與一張鋪好亞麻桌布的長桌（新人提供的圖）；
+     往下是一面被樹影灑滿的灰泥牆（午後的光影），每一段都有一張新人的照片，
+     旁邊擺著普羅旺斯的小東西：燭台與餐盤、座鐘、香草、鑰匙、橄欖枝、紅酒、薰衣草（去背的真東西）；
+     頁尾是黃昏時那張長長的禮桌。 -->
 <div id="app">
   <section class="panel lobby fm-lobby" data-panel="lobby" data-scroll>
 
-    <!-- ===== Hero：莊園的石牆 ===== -->
+    <!-- ===== Hero：莊園的露台 ===== -->
     <header class="lobby-hero fm-hero" data-scroll>
-      <div class="fm-scene" aria-hidden="true">
-        <!-- 跟整頁同一面石灰岩牆：兩個上角各垂下一片常春藤，牆上左右各一扇別人家的窗
-             （百葉窗都關著），窗台下掛著赤陶花箱；牆腳兩側是一片黃楊綠籬，
-             前面左邊一大叢玫瑰和薰衣草、右邊一大叢繡球花，捲動時走得比牆快 -->
-        <i class="fm-ivy fm-ivy-corner l"></i>
-        <i class="fm-ivy fm-ivy-corner r"></i>
-        <figure class="fm-window fm-side-window l"><div class="fm-window-ph fm-glass"></div><i class="fm-shutter l is-shut"></i><i class="fm-shutter r is-shut"></i><i class="fm-sill"></i><i class="fm-box b-hydrangea"></i></figure>
-        <figure class="fm-window fm-side-window r"><div class="fm-window-ph fm-glass"></div><i class="fm-shutter l is-shut"></i><i class="fm-shutter r is-shut"></i><i class="fm-sill"></i><i class="fm-box b-sage"></i></figure>
-        <i class="fm-near n-shrub l"></i>
-        <i class="fm-near n-shrub r"></i>
-        <i class="fm-near n-rose"></i>
-        <i class="fm-near n-lavender"></i>
-        <i class="fm-near n-hydrangea"></i>
-      </div>
-      <div class="fm-hero-body">
-        <!-- 新人的照片：一扇石框的窗、灰藍的百葉窗打開，窗台上一排薰衣草、旁邊一叢玫瑰
-             （封面照；沒有照片就整扇收起來，見 lobby-manor.css） -->
-        <figure class="fm-window fm-hero-window" aria-hidden="true"><i class="fm-shutter l"></i><div class="fm-window-ph" data-photo="hero"></div><i class="fm-shutter r"></i><i class="fm-sill"></i><i class="fm-box b-lavender"></i><i class="fm-climb c-rose l"></i></figure>
-        <!-- 名字：刻在一塊嵌進牆裡的灰泥牌上（石框、兩道刻線） -->
-        <div class="fm-cartouche">
-          <div class="fm-kicker"><span class="en">Bienvenue au domaine</span><span class="cn">誠摯邀請您</span></div>
+      <div class="fm-hero-bg" aria-hidden="true"></div>
+      <div class="fm-hero-grid">
+        <!-- 新人的照片：一張白邊的相片，後面插著一枝橄欖、前面躺著一束薰衣草
+             （封面照；沒有照片就整張收起來，見 lobby-manor.css） -->
+        <figure class="fm-print fm-hero-print" aria-hidden="true" data-reveal="draw">
+          <i class="fm-thing t-olive"></i>
+          <div class="fm-print-ph" data-photo="hero"></div>
+          <i class="fm-thing t-lavender"></i>
+        </figure>
+        <div class="fm-hero-text">
+          <div class="fm-kicker"><span class="en">A day in Provence</span><span class="cn">誠摯邀請您</span></div>
           <h1 class="fm-names"><span data-tpl="groomEn"></span><span class="amp">&amp;</span><span data-tpl="brideEn"></span></h1>
           <div class="fm-date"><span data-tpl="date"></span><i aria-hidden="true"></i><span data-tpl="weekday"></span></div>
+          <div class="hashtags" id="lobbyTags" data-sk="tags"></div>
         </div>
-        <div class="hashtags" id="lobbyTags" data-sk="tags"></div>
       </div>
       <div class="scroll-cue fm-cue"><span>Scroll</span><span class="arrow"></span></div>
     </header>
 
     <div class="scene-body fm-body">
 
-      <!-- ===== 兩張照片：石牆上兩扇石框的窗，灰藍的百葉窗往兩邊打開，窗裡是照片牆的前兩張；
-           上面一整排常春藤從牆頭垂下來，每扇窗的窗台上、旁邊都有花 ===== -->
-      <section class="fm-windows" data-scroll aria-hidden="true">
-        <i class="fm-ivy fm-ivy-hang"></i>
-        <figure class="fm-window w1" data-reveal="rise"><i class="fm-shutter l"></i><div class="fm-window-ph" data-photo="photo1"></div><i class="fm-shutter r"></i><i class="fm-sill"></i><i class="fm-box b-hydrangea"></i><i class="fm-climb c-rose l"></i></figure>
-        <figure class="fm-window w2" data-reveal="rise"><i class="fm-shutter l"></i><div class="fm-window-ph" data-photo="photo2"></div><i class="fm-shutter r"></i><i class="fm-sill"></i><i class="fm-box b-lavender"></i><i class="fm-climb c-sage r"></i></figure>
-      </section>
-
-      <!-- ===== 婚禮資訊：一支古銅色的燭台 ===== -->
-      <section class="info-block fm-sec">
-        <div class="fm-head">
-          <figure class="fm-icon" data-reveal="draw"><i class="fm-obj o-candle"></i></figure>
-          <span class="en block-title">Information</span>
-          <span class="cn block-sub">婚禮資訊</span>
-        </div>
-        <div class="fm-card" data-reveal="rise" data-scroll>
-          <div class="info-card">
-            <div class="info-couple" id="infoCouple" data-tpl="couple"></div>
-            <div class="info-couple-cn" id="infoCoupleCn"></div>
-            <div class="info-rows">
-              <div class="info-row"><div class="ir-label">日期</div><div class="ir-body"><div class="ir-val" id="infoDate" data-sk="text">—</div></div></div>
-              <div class="info-row" id="infoTimeRow"><div class="ir-label">時間</div><div class="ir-body"><div class="ir-val" id="infoTime" data-sk="text">—</div>
-                <a class="ir-jump" id="infoTimeJump" href="#scheduleBlock" hidden>看當日流程 →</a></div></div>
-              <div class="info-row" id="infoVenueRow"><div class="ir-label">地點</div><div class="ir-body"><div class="ir-val" id="infoVenue" data-sk="text">—</div><div class="ir-sub" id="infoAddr"></div>
-                <a class="ir-jump" id="infoVenueJump" href="#transportBlock" hidden>看交通資訊 →</a></div></div>
-            </div>
-            <div class="info-actions">
-              <a class="btn small ghost" id="mapBtn" href="#" target="_blank" rel="noopener">開啟地圖</a>
-              <a class="btn small ghost" id="calBtn" href="#" target="_blank" rel="noopener">加入行事曆</a>
-            </div>
+      <!-- ===== 婚禮資訊：照片＋ 一支古銅燭台、一組餐盤 ===== -->
+      <section class="info-block fm-sec fm-pair" data-scroll>
+        <aside class="fm-art">
+          <figure class="fm-print" data-reveal="draw"><div class="fm-print-ph" data-photo="photo1" aria-hidden="true"></div>
+            <i class="fm-thing t-candle"></i><i class="fm-thing t-plates"></i></figure>
+        </aside>
+        <div class="fm-pair-body">
+          <div class="fm-head" data-reveal="rise">
+            <span class="fm-fr">Les détails</span>
+            <span class="en block-title">Information</span>
+            <span class="cn block-sub">婚禮資訊</span>
           </div>
-          <div class="info-seat" id="infoSeatCta">
-            <a class="btn" href="seating.html">尋找我的座位</a>
-          </div>
-        </div>
-      </section>
-
-      <!-- ===== 當日流程：一座鍍金的座鐘 ===== -->
-      <section class="info-block fm-sec" id="scheduleBlock">
-        <div class="fm-head">
-          <figure class="fm-icon" data-reveal="draw"><i class="fm-obj o-clock"></i></figure>
-          <span class="en block-title">Schedule</span>
-          <span class="cn block-sub">當日流程</span>
-        </div>
-        <div class="fm-card fm-card-tl" data-reveal="rise" data-scroll>
-          <div class="timeline" id="schedule" data-sk="rows" data-reveal="list"></div>
-        </div>
-      </section>
-
-      <!-- ===== 出席前的小提醒：一叢鼠尾草（沒填就整塊收起） ===== -->
-      <section class="info-block fm-sec" id="noteBlock" hidden>
-        <div class="fm-head">
-          <figure class="fm-icon" data-reveal="draw"><i class="fm-obj o-sage"></i></figure>
-          <span class="en block-title">Notes</span>
-          <span class="cn block-sub">出席前的小提醒</span>
-        </div>
-        <div class="note-grid fm-card" data-reveal="rise" data-scroll>
-          <div class="note-item" id="dressCodeItem" hidden>
-            <div class="note-label">Dress Code</div>
-            <div class="dress-swatches" id="dressSwatches" hidden aria-hidden="true"></div>
-            <p class="info-note" id="dressCode"></p>
-            <div class="dress-refs" id="dressRefs" hidden>
-              <img class="dress-ref-img" id="dressRefFirst" alt="Dress Code 參考圖">
-              <button class="ir-jump" id="dressRefMore" type="button" hidden>查看更多 →</button>
+          <div class="fm-card" data-reveal="rise">
+            <div class="info-card">
+              <div class="info-couple" id="infoCouple" data-tpl="couple"></div>
+              <div class="info-couple-cn" id="infoCoupleCn"></div>
+              <div class="info-rows">
+                <div class="info-row"><div class="ir-label">日期</div><div class="ir-body"><div class="ir-val" id="infoDate" data-sk="text">—</div></div></div>
+                <div class="info-row" id="infoTimeRow"><div class="ir-label">時間</div><div class="ir-body"><div class="ir-val" id="infoTime" data-sk="text">—</div>
+                  <a class="ir-jump" id="infoTimeJump" href="#scheduleBlock" hidden>看當日流程 →</a></div></div>
+                <div class="info-row" id="infoVenueRow"><div class="ir-label">地點</div><div class="ir-body"><div class="ir-val" id="infoVenue" data-sk="text">—</div><div class="ir-sub" id="infoAddr"></div>
+                  <a class="ir-jump" id="infoVenueJump" href="#transportBlock" hidden>看交通資訊 →</a></div></div>
+              </div>
+              <div class="info-actions">
+                <a class="btn small ghost" id="mapBtn" href="#" target="_blank" rel="noopener">開啟地圖</a>
+                <a class="btn small ghost" id="calBtn" href="#" target="_blank" rel="noopener">加入行事曆</a>
+              </div>
+            </div>
+            <div class="info-seat" id="infoSeatCta">
+              <a class="btn" href="seating.html">尋找我的座位</a>
             </div>
           </div>
-          <div class="note-item" id="giftNoteItem" hidden>
-            <div class="note-label">關於禮金</div>
-            <p class="info-note" id="giftNote"></p>
+        </div>
+      </section>
+
+      <!-- ===== 當日流程：照片＋ 一座鍍金的座鐘 ===== -->
+      <section class="info-block fm-sec fm-pair is-flip" id="scheduleBlock" data-scroll>
+        <aside class="fm-art">
+          <figure class="fm-print" data-reveal="draw"><div class="fm-print-ph" data-photo="photo2" aria-hidden="true"></div>
+            <i class="fm-thing t-clock"></i></figure>
+        </aside>
+        <div class="fm-pair-body">
+          <div class="fm-head" data-reveal="rise">
+            <span class="fm-fr">Le programme</span>
+            <span class="en block-title">Schedule</span>
+            <span class="cn block-sub">當日流程</span>
+          </div>
+          <div class="fm-card fm-card-tl" data-reveal="rise">
+            <div class="timeline" id="schedule" data-sk="rows" data-reveal="list"></div>
           </div>
         </div>
       </section>
 
-      <!-- ===== 交通資訊：一把古董鑰匙（沒填就整塊收起） ===== -->
-      <section class="info-block fm-sec" id="transportBlock" hidden>
-        <div class="fm-head">
-          <figure class="fm-icon" data-reveal="draw"><i class="fm-obj o-key"></i></figure>
-          <span class="en block-title">Access</span>
-          <span class="cn block-sub">交通資訊</span>
-        </div>
-        <div class="note-grid fm-card" data-reveal="rise" data-scroll>
-          <div class="note-item" id="transportPublicItem" hidden>
-            <div class="note-label">大眾運輸</div>
-            <p class="info-note" id="transportPublic"></p>
-            <button class="ir-jump" id="transportPublicMore" type="button" hidden>展開更多 →</button>
+      <!-- ===== 出席前的小提醒：照片＋ 一束香草（沒填就整塊收起） ===== -->
+      <section class="info-block fm-sec fm-pair" id="noteBlock" hidden data-scroll>
+        <aside class="fm-art">
+          <figure class="fm-print" data-reveal="draw"><div class="fm-print-ph" data-photo="photo3" aria-hidden="true"></div>
+            <i class="fm-thing t-herbs"></i></figure>
+        </aside>
+        <div class="fm-pair-body">
+          <div class="fm-head" data-reveal="rise">
+            <span class="fm-fr">Petits mots</span>
+            <span class="en block-title">Notes</span>
+            <span class="cn block-sub">出席前的小提醒</span>
           </div>
-          <div class="note-item" id="transportParkingItem" hidden>
-            <div class="note-label">停車資訊</div>
-            <p class="info-note" id="transportParking"></p>
-            <button class="ir-jump" id="transportParkingMore" type="button" hidden>展開更多 →</button>
+          <div class="note-grid fm-card" data-reveal="rise">
+            <div class="note-item" id="dressCodeItem" hidden>
+              <div class="note-label">Dress Code</div>
+              <div class="dress-swatches" id="dressSwatches" hidden aria-hidden="true"></div>
+              <p class="info-note" id="dressCode"></p>
+              <div class="dress-refs" id="dressRefs" hidden>
+                <img class="dress-ref-img" id="dressRefFirst" alt="Dress Code 參考圖">
+                <button class="ir-jump" id="dressRefMore" type="button" hidden>查看更多 →</button>
+              </div>
+            </div>
+            <div class="note-item" id="giftNoteItem" hidden>
+              <div class="note-label">關於禮金</div>
+              <p class="info-note" id="giftNote"></p>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- ===== 兩人的故事：灰泥牆上的石拱門，木門敞開、門外是花園；兩張石框的照片（故事照、第四張）＋ 一塊灰泥面板 ===== -->
+      <!-- ===== 交通資訊：照片＋ 一把古董鑰匙（沒填就整塊收起） ===== -->
+      <section class="info-block fm-sec fm-pair is-flip" id="transportBlock" hidden data-scroll>
+        <aside class="fm-art">
+          <figure class="fm-print" data-reveal="draw"><div class="fm-print-ph" data-photo="photo4" aria-hidden="true"></div>
+            <i class="fm-thing t-key"></i></figure>
+        </aside>
+        <div class="fm-pair-body">
+          <div class="fm-head" data-reveal="rise">
+            <span class="fm-fr">Le chemin</span>
+            <span class="en block-title">Access</span>
+            <span class="cn block-sub">交通資訊</span>
+          </div>
+          <div class="note-grid fm-card" data-reveal="rise">
+            <div class="note-item" id="transportPublicItem" hidden>
+              <div class="note-label">大眾運輸</div>
+              <p class="info-note" id="transportPublic"></p>
+              <button class="ir-jump" id="transportPublicMore" type="button" hidden>展開更多 →</button>
+            </div>
+            <div class="note-item" id="transportParkingItem" hidden>
+              <div class="note-label">停車資訊</div>
+              <p class="info-note" id="transportParking"></p>
+              <button class="ir-jump" id="transportParkingMore" type="button" hidden>展開更多 →</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 兩人的故事：另一面灑著樹影的牆；故事照＋ 一枝橄欖 ===== -->
       <section class="info-block fm-band fm-story" id="storyBlock" hidden data-scroll>
         <div class="fm-band-bg" aria-hidden="true"></div>
         <div class="fm-band-inner">
-          <div class="fm-story-pics" data-reveal="rise">
-            <figure class="fm-frame s-big"><div class="fm-frame-ph" data-photo="story" aria-hidden="true"></div></figure>
-            <figure class="fm-frame s-small"><div class="fm-frame-ph" data-photo="photo4" aria-hidden="true"></div></figure>
-          </div>
-          <div class="fm-story-body fm-paper-card" data-reveal="rise">
+          <figure class="fm-print fm-story-print" data-reveal="draw"><div class="fm-print-ph" data-photo="story" aria-hidden="true"></div>
+            <i class="fm-thing t-olive"></i></figure>
+          <div class="fm-story-body" data-reveal="rise">
+            <span class="fm-fr">Notre histoire</span>
             <div class="fm-band-title">Our Story</div>
             <div class="fm-band-sub">關於我們這一路</div>
             <p class="story-text" id="storyText"></p>
@@ -233,49 +239,59 @@
 
       <!-- ===== Moments 相遇之間 ===== -->
       <section class="info-block fm-sec gallery-block" id="photoGallery" hidden>
-        <div class="fm-head">
+        <div class="fm-head fm-head-c">
+          <span class="fm-fr">Nos moments</span>
           <span class="en block-title">Moments</span>
           <span class="cn block-sub">相遇之間</span>
         </div>
         <div class="photo-rail" id="photoRail"></div>
       </section>
 
-      <!-- ===== 日期倒數：開滿玫瑰的石屋、碎石鋪的院子（真照片滿版鋪在後面）；上面一塊灰泥面板，嵌著照片牆第五張 ===== -->
-      <section class="info-block fm-band fm-count" data-scroll>
-        <div class="fm-band-bg" aria-hidden="true"></div>
-        <div class="fm-band-inner">
-          <div class="fm-count-body fm-paper-card">
-            <figure class="fm-frame c-count"><div class="fm-frame-ph" data-photo="photo5" aria-hidden="true"></div></figure>
-            <div class="fm-band-title">The garden awaits</div>
-            <div class="fm-band-sub">距離我們的大日子還有</div>
-            <div class="cd-card">
-              <div class="cd-grid" id="cdGrid" data-sk="grid"></div>
-              <div class="cd-target" id="cdTarget"></div>
+      <!-- ===== 日期倒數：照片＋ 一瓶紅酒、一杯斟好的酒 ===== -->
+      <section class="info-block fm-sec fm-pair fm-count" data-scroll>
+        <aside class="fm-art">
+          <figure class="fm-print" data-reveal="draw"><div class="fm-print-ph" data-photo="photo5" aria-hidden="true"></div>
+            <i class="fm-thing t-wine"></i></figure>
+        </aside>
+        <div class="fm-pair-body">
+          <div class="fm-head" data-reveal="rise">
+            <span class="fm-fr">À bientôt</span>
+            <span class="en block-title">Countdown</span>
+            <span class="cn block-sub">距離我們的大日子還有</span>
+          </div>
+          <div class="fm-card cd-card" data-reveal="rise">
+            <div class="cd-grid" id="cdGrid" data-sk="grid"></div>
+            <div class="cd-target" id="cdTarget"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== R.S.V.P.：照片＋ 一束薰衣草 ===== -->
+      <section class="info-block fm-sec fm-pair is-flip" data-scroll>
+        <aside class="fm-art">
+          <figure class="fm-print" data-reveal="draw"><div class="fm-print-ph" data-photo="photo6" aria-hidden="true"></div>
+            <i class="fm-thing t-lavender"></i></figure>
+        </aside>
+        <div class="fm-pair-body">
+          <div class="fm-head" data-reveal="rise">
+            <span class="fm-fr">Répondez, s'il vous plaît</span>
+            <span class="en block-title">R.S.V.P.</span>
+            <span class="cn block-sub">出席回覆</span>
+          </div>
+          <div class="fm-card fm-rsvp" data-reveal="rise">
+            <div class="rsvp-cta">
+              <h3>能來參加我們的婚禮嗎？</h3>
+              <p>花 30 秒回覆出席，讓我們把最好的位置留給你</p>
+              <a class="btn" href="invitation.html">前往出席回覆</a>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- ===== R.S.V.P.：一枝繡球花 ＋ 一張石框的照片（第六張） ===== -->
-      <section class="info-block fm-sec">
-        <div class="fm-head">
-          <figure class="fm-icon" data-reveal="draw"><i class="fm-obj o-hydrangea"></i></figure>
-          <span class="en block-title">R.S.V.P.</span>
-          <span class="cn block-sub">出席回覆</span>
-        </div>
-        <div class="fm-card fm-rsvp" data-reveal="rise" data-scroll>
-          <figure class="fm-frame fm-rsvp-pic" aria-hidden="true"><div class="fm-frame-ph" data-photo="photo6"></div></figure>
-          <div class="rsvp-cta">
-            <h3>能來參加我們的婚禮嗎？</h3>
-            <p>花 30 秒回覆出席，讓我們把最好的位置留給你</p>
-            <a class="btn" href="invitation.html">前往出席回覆</a>
-          </div>
-        </div>
-      </section>
-
-      <!-- ===== Explore：一塊一塊嵌在牆上的灰泥面板 ===== -->
+      <!-- ===== Explore：一張一張亞麻色的小卡 ===== -->
       <section class="link-section fm-sec">
-        <div class="fm-head">
+        <div class="fm-head fm-head-c">
+          <span class="fm-fr">Et encore</span>
           <span class="en block-title">Explore</span>
           <span class="cn block-sub">其他活動</span>
         </div>
@@ -319,17 +335,11 @@
         </div>
       </section>
 
+      <!-- ===== 頁尾：黃昏時那張長長的禮桌（新人提供的圖），上緣淡進牆裡 ===== -->
       <footer class="fm-foot">
-        <!-- 牆腳：赤陶與石灰岩的方磚上，兩側長滿了花（玫瑰、繡球、薰衣草、鼠尾草、黃楊球）；
-             中間的字刻在一塊灰泥牌上 -->
-        <div class="fm-garden" aria-hidden="true">
-          <i class="g-rose l"></i><i class="g-lavender l"></i><i class="g-boxwood l"></i><i class="g-sage l"></i>
-          <i class="g-hydrangea r"></i><i class="g-sage r"></i><i class="g-lavender r"></i><i class="g-rose r"></i>
-        </div>
-        <div class="fm-plaque">
-        <div class="fm-fin">à bientôt, au domaine</div>
+        <div class="fm-foot-bg" aria-hidden="true"></div>
+        <div class="fm-fin">à bientôt en Provence</div>
         <span>made for <span data-tpl="couple"></span>・小港製作所 設計製作</span>
-        </div>
       </footer>
     </div>
   </section>
