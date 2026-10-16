@@ -31,9 +31,9 @@ body[data-lobby="french-manor"]{
     linear-gradient(rgba(240,228,204,.55),rgba(240,228,204,.55)) border-box,
     url(../img/manor/wall.webp) 40% 30%/520px auto border-box;
 }
-/* 頁面：一整面蜂蜜色的小石塊砌成的石灰岩牆（真的照片，左右上下鏡射成可以無縫平鋪的一塊），淡淡壓一層溫白 */
-body[data-lobby="french-manor"] .bg-decor{background:#d9c6a2 url(../img/manor/wall.webp) center/1500px auto repeat;}
-@media (max-width:640px){body[data-lobby="french-manor"] .bg-decor{background-size:1000px auto;}}
+/* 頁面：一整面蜂蜜色的小石塊砌成的石灰岩牆（真的照片，錯位半張再淡淡混合，做成可以無縫平鋪的一塊），淡淡壓一層溫白 */
+body[data-lobby="french-manor"] .bg-decor{background:#d9c6a2 url(../img/manor/wall.webp) center/780px auto repeat;}
+@media (max-width:640px){body[data-lobby="french-manor"] .bg-decor{background-size:520px auto;}}
 body[data-lobby="french-manor"] .bg-decor::after{content:'';position:absolute;inset:0;background:rgba(246,240,228,.28);}
 .fm-lobby{position:relative;}
 

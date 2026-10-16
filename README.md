@@ -326,7 +326,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > | `manor/courtyard.webp` | 大廳 hero 的中庭、開場門後看到的那一片 | [灰藍百葉窗與一棵開花的樹](https://unsplash.com/photos/QAFgjcZz-fI)・Camille La Brequa | 縮圖、稍微調亮、降一點彩度 |
 > | `manor/arch-door.webp` | 「我們的故事」的背景 | [灰泥牆上的石拱門與壁燈](https://unsplash.com/photos/UpfOIuFOelI)・Lea Gindorf | 縮圖 |
 > | `manor/cottage.webp` | 倒數的背景 | [開滿玫瑰、有百葉窗的石屋](https://unsplash.com/photos/qs6RGMBaetQ)・Erwan Hesry | 縮圖、調亮、降一點彩度 |
-> | `manor/wall.webp` | 整頁的底：蜂蜜色的小石塊石灰岩牆、灰泥面板與窗的石框 | [小石塊砌成的石牆](https://unsplash.com/photos/ntNwMS0fWGk)・Angelo Casto | 顏色對齊 mood board 的石牆（每個色板的平均與對比）；縮小後左右上下鏡射成可以無縫平鋪的一塊 |
+> | `manor/wall.webp` | 整頁的底：蜂蜜色的小石塊石灰岩牆、灰泥面板與窗的石框 | [小石塊砌成的石牆](https://unsplash.com/photos/ntNwMS0fWGk)・Angelo Casto | 顏色對齊 mood board 的石牆（每個色板的平均與對比）；錯位半張再淡淡混合，做成可以無縫平鋪的一塊 |
 > | `manor/floor.webp` | 頁尾牆腳的地磚 | [手工赤陶與米白的方磚](https://unsplash.com/photos/Tuh5a17HHrI)・Philippa Lowe | 縮圖 |
 > | `manor/candles.webp` | 「婚禮資訊」的標題 | [白底上的三支黃銅燭台](https://unsplash.com/photos/mwrMvNJYic8)・Noyo creatif | 依彩度去背 |
 > | `manor/chair-bistro.webp` | 「當日流程」的標題 | [披著亞麻巾、放著書的小酒館椅](https://unsplash.com/photos/RNsbwiIy8h4)・Debby Hudson | 依彩度與深淺去背 |
