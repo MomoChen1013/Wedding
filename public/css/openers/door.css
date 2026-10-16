@@ -6,7 +6,7 @@
      .dr-world   門這一層：.dr-front（石柱、牆、地面、植物）＋ .dr-opening（兩扇門）
      .dr-flood   推開之後湧出來的陽光
    三種門：
-     .dr-manor   黑色鍛鐵大門、石柱頂的花甕、圓弧的鐵拱（法式莊園；預設）
+     .dr-manor   南法小鎮的街角，石灰岩牆上一扇灰藍的木門（法式莊園；預設，真的照片）
      .dr-gothic  同樣的鐵門，尖拱、石柱頂是小尖塔（白色教堂、中古刺繡）
      .dr-garden  常春藤牆上，一扇白框玻璃門（秘密花園）；門後是一張真的花園照片
    門與 .dr-front 用同一個 600×640 的座標：.dr-portal 固定這個比例，
@@ -80,30 +80,33 @@
 .dr-garden .dr-land{background:#e8ece4 url(../../img/secret-garden/garden-arch.webp) 50% 42%/cover no-repeat;}
 .dr-gothic{--dr-accent:#7a5a3a;}
 /* ---- 莊園：全部是真的照片（見 README〈法式莊園的照片素材〉） ----
-   門：磚牆圓拱裡的鍛鐵花園門（Bruce Barrow／Unsplash），照片直立，兩旁用同一張模糊後補滿；
-   門後：修剪整齊的綠籬夾著碎石路，盡頭一尊白色雕像（Daniel Welsh／Unsplash），走進門就到了大廳 */
-.dr-manor{--dr-accent:#7a6a46;background:#2d3a26;}
-.dr-manor .dr-land{background:#dfe8e2 url(../../img/manor/garden-path.webp) 50% 62%/cover no-repeat;}
-/* 兩旁：一整面修剪過的綠籬（春日溫室開場那一張），微微失焦、壓暗一點，門那張照片的邊淡進來 */
-.dr-manor .dr-blur{position:absolute;inset:-4%;background:#2d3a26 url(../../img/orangerie/leaf-wall.webp) center/720px auto repeat;
-  filter:blur(1.5px) brightness(.72) saturate(.9);}
-.dr-manor .dr-blur::after{content:'';position:absolute;inset:0;
-  background:radial-gradient(60% 70% at 50% 50%,transparent 40%,rgba(18,24,14,.45));}
-/* 直立的手機：照片撐滿寬度（上下裁一點）；橫的螢幕：整道拱門完整放在中間 */
-.dr-manor .dr-photo{position:absolute;left:50%;top:50%;height:max(100%,calc(100vw * 2052 / 900));aspect-ratio:900/2052;
+   法國南方小鎮的街角：石灰岩牆上一扇灰藍的木門、旁邊一扇百葉窗（eliza cemme／Unsplash）；
+   門從照片裡分離成自己的一層，推開之後門後就是大廳那座莊園的中庭（Camille La Brequa／Unsplash） */
+.dr-manor{--dr-accent:#9a5a40;background:#cdbb9c;}
+.dr-manor .dr-land{background:#e8e2d4 url(../../img/manor/courtyard.webp) 50% 45%/cover no-repeat;}
+/* 兩旁：石灰岩的顏色，邊上暗一點；門那張照片的邊淡進來 */
+.dr-manor .dr-blur{position:absolute;inset:0;background:radial-gradient(70% 90% at 50% 45%,#e4d7be,#cdbb9a 70%,#b3a07f);}
+/* 推開門：陽光只輕輕亮一下，看得到門後的中庭 */
+.dr-host.dr-manor.is-open .dr-flood{opacity:.18;}
+/* 直立的手機：照片撐滿高度（左右裁掉一點，門在正中間）；橫的螢幕：整面牆完整放在中間 */
+.dr-manor .dr-photo{position:absolute;left:50%;top:50%;height:max(100%,calc(100vw * 1549 / 1300));aspect-ratio:1300/1549;
   transform:translate(-50%,-50%);
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);
           mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);}
 @media (min-aspect-ratio:3/4){.dr-manor .dr-photo{height:100%;}}
-.dr-manor .dr-scene{position:absolute;inset:0;background:url(../../img/manor/gate-scene.webp) center/100% 100% no-repeat;}
-/* 鐵門：繞著右邊的鉸鍊往花園裡轉開 */
-.dr-manor .dr-opening{perspective:1800px;}
-.dr-manor .dr-iron{position:absolute;inset:0;background:url(../../img/manor/gate-leaf.webp) center/100% 100% no-repeat;
-  transform-origin:97.5% 50%;transition:transform 1.9s cubic-bezier(.45,.05,.25,1);
-  filter:drop-shadow(2px 4px 3px rgba(20,18,10,.35));}
-.dr-host.dr-manor.is-open .dr-iron{transform:rotateY(-84deg);animation:dr-unlatch .35s ease;}
+/* 門洞後面：莊園的中庭（跟 .dr-land 同一張，門推開就看得到） */
+.dr-manor .dr-behind{position:absolute;background:#e8e2d4 url(../../img/manor/courtyard.webp) 50% 60%/auto 120% no-repeat;}
+.dr-manor .dr-scene{position:absolute;inset:0;background:url(../../img/manor/door-scene.webp) center/100% 100% no-repeat;}
+/* 木門：把手在左邊，繞著右邊的鉸鍊往裡推開 */
+.dr-manor .dr-opening{perspective:1600px;}
+.dr-manor .dr-iron{position:absolute;inset:0;background:url(../../img/manor/door-leaf.webp) center/100% 100% no-repeat;
+  transform-origin:100% 50%;transition:transform 1.9s cubic-bezier(.45,.05,.25,1);
+  box-shadow:inset 0 0 0 1px rgba(40,50,60,.25);}
+.dr-host.dr-manor.is-open .dr-iron{transform:rotateY(-82deg);filter:brightness(.82);animation:dr-unlatch .35s ease;}
 /* 手機直立：門只佔下半部，字放到上面的天空 */
 @media (max-aspect-ratio:3/4){.dr-text{top:28%;}}
+/* 莊園的門在手機上從畫面 29% 開到 85%：字放進門洞的光裡，不要壓到門楣 */
+@media (max-aspect-ratio:3/4){.dr-manor .dr-text{top:40%;}}
 /* 秘密花園在手機上，字落在門上面那一片深色的常春藤：改成淺色的字、深色的光暈 */
 @media (max-aspect-ratio:3/4){
   .dr-garden .dr-text{--dr-ink:#fbf8ef;--dr-accent:#f3d9e0;text-shadow:0 0 16px rgba(10,20,8,.95),0 1px 4px rgba(10,20,8,.85);}
