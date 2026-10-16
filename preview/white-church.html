@@ -78,7 +78,9 @@
      花：窗框的腳下與肩上各一簇鮮花（芍藥、玫瑰、洋桔梗、繡球、滿天星、尤加利），一路飄著花瓣；
      光：側窗斜斜照進來的光束、彩繪玻璃落在地上的幾彩光暈、光裡慢慢飄的微塵；
      整頁的牆是有抹刀痕與細顆粒的乳白灰泥，兩旁垂著被風吹動的白紗，牆上有橄欖枝的影子在晃。
-     區塊標題上是去背的實物（戒指、芍藥、鈴蘭、百合、白色蝴蝶蘭），底下一枝香檳金的線描橄欖葉。 -->
+     整頁的牆從頭到尾都是同一片灰泥，偶爾有窗外的光打進來（窗格形狀的光斑、斜斜的光束）；
+     最底下回到同一座教堂，看見那一排一排的長椅。
+     區塊標題上是一束一束鮮花（洋牡丹、洋桔梗、白玫瑰、滿天星、尤加利），婚禮資訊是一對戒指；底下一枝香檳金的線描橄欖葉。 -->
 <div id="app">
   <section class="panel lobby mc-lobby" data-panel="lobby" data-scroll>
 
@@ -87,6 +89,8 @@
     <div class="mc-veils" aria-hidden="true"><i></i><i></i></div>
     <!-- 彩繪玻璃的光暈：固定在視窗裡，越往下捲，光的位置與顏色越往午後偏（時間在走） -->
     <div class="mc-prism" aria-hidden="true"><i></i><i></i><i></i></div>
+    <!-- 偶爾打進來的光：牆上兩片窗格形狀的光斑、一道斜斜的光束，四周跟著暗一點（光影才看得出來） -->
+    <div class="mc-sun" aria-hidden="true"><i class="mc-pane is-a"></i><i class="mc-pane is-b"></i><i class="mc-beam"></i></div>
     <!-- 一路飄下來的花瓣（白、淡粉） -->
     <div class="mc-petals" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
 
@@ -162,10 +166,10 @@
         </div>
       </section>
 
-      <!-- ===== 當日流程：一朵白芍藥 ===== -->
+      <!-- ===== 當日流程：一束花 ===== -->
       <section class="info-block mc-sec" id="scheduleBlock">
         <div class="mc-head">
-          <figure class="mc-icon" data-reveal="draw"><i class="mc-obj o-peony"></i></figure>
+          <figure class="mc-icon" data-reveal="draw"><i class="mc-obj o-posy p1"></i></figure>
           <span class="en block-title">Schedule</span>
           <span class="cn block-sub">當日流程</span>
         </div>
@@ -174,10 +178,10 @@
         </div>
       </section>
 
-      <!-- ===== 出席前的小提醒：一枝鈴蘭（沒填就整塊收起） ===== -->
+      <!-- ===== 出席前的小提醒：一束花（沒填就整塊收起） ===== -->
       <section class="info-block mc-sec" id="noteBlock" hidden>
         <div class="mc-head">
-          <figure class="mc-icon" data-reveal="draw"><i class="mc-obj o-lily-valley"></i></figure>
+          <figure class="mc-icon" data-reveal="draw"><i class="mc-obj o-posy p2"></i></figure>
           <span class="en block-title">Notes</span>
           <span class="cn block-sub">出席前的小提醒</span>
         </div>
@@ -198,10 +202,10 @@
         </div>
       </section>
 
-      <!-- ===== 交通資訊：一瓶百合（沒填就整塊收起） ===== -->
+      <!-- ===== 交通資訊：一束花（沒填就整塊收起） ===== -->
       <section class="info-block mc-sec" id="transportBlock" hidden>
         <div class="mc-head">
-          <figure class="mc-icon" data-reveal="draw"><i class="mc-obj o-lilies"></i></figure>
+          <figure class="mc-icon" data-reveal="draw"><i class="mc-obj o-posy p3"></i></figure>
           <span class="en block-title">Access</span>
           <span class="cn block-sub">交通資訊</span>
         </div>
@@ -219,9 +223,8 @@
         </div>
       </section>
 
-      <!-- ===== 兩人的故事：白花的走道上，兩塊玻璃相片（故事照、照片牆第四張）＋ 一張毛玻璃卡 ===== -->
+      <!-- ===== 兩人的故事：兩塊玻璃相片（故事照、照片牆第四張）＋ 一張毛玻璃卡，背景就是同一片牆 ===== -->
       <section class="info-block mc-band mc-story" id="storyBlock" hidden data-scroll>
-        <div class="mc-band-bg" aria-hidden="true"></div>
         <div class="mc-band-inner">
           <div class="mc-story-pics" data-reveal="rise">
             <figure class="mc-slab s-big"><div class="mc-slab-ph" data-photo="story" aria-hidden="true"></div></figure>
@@ -244,9 +247,8 @@
         <div class="photo-rail" id="photoRail"></div>
       </section>
 
-      <!-- ===== 日期倒數：一整片毛玻璃，後面是一片柔白的鈴蘭 —— 越捲越清楚 ===== -->
+      <!-- ===== 日期倒數：一塊毛玻璃，角上別著一小簇花，背景就是同一片牆 ===== -->
       <section class="info-block mc-band mc-count" data-scroll>
-        <div class="mc-band-bg" aria-hidden="true"><div class="mc-frost-ph"></div><i class="mc-frost"></i></div>
         <div class="mc-band-inner">
           <div class="mc-count-body mc-glass">
             <div class="mc-band-title">Until the bells ring</div>
@@ -259,10 +261,10 @@
         </div>
       </section>
 
-      <!-- ===== R.S.V.P.：一枝白色蝴蝶蘭 ＋ 一塊玻璃相片（第六張） ===== -->
+      <!-- ===== R.S.V.P.：最熱鬧的一束花 ＋ 一塊玻璃相片（第六張） ===== -->
       <section class="info-block mc-sec">
         <div class="mc-head">
-          <figure class="mc-icon" data-reveal="draw"><i class="mc-obj o-orchid"></i></figure>
+          <figure class="mc-icon" data-reveal="draw"><i class="mc-obj o-posy p4"></i></figure>
           <span class="en block-title">R.S.V.P.</span>
           <span class="cn block-sub">出席回覆</span>
         </div>
@@ -322,8 +324,9 @@
         </div>
       </section>
 
-      <!-- 頁尾：一長排鮮花，像祭壇前擺的那一排 -->
+      <!-- 頁尾：回到同一座教堂 —— 照片的下半，一排一排的長椅；上面擺一長排鮮花 -->
       <footer class="mc-foot">
+        <div class="mc-foot-church" aria-hidden="true"></div>
         <div class="mc-foot-scene" aria-hidden="true"></div>
         <div class="mc-fin">in the light, together</div>
         <span>made for <span data-tpl="couple"></span>・小港製作所 設計製作</span>

@@ -8,8 +8,11 @@
              整座教堂變成白天的樣子 —— 大廳就是那個白天
      材質    有抹刀痕與細顆粒的乳白灰泥牆（不是純白）、被風吹動的透光白紗、
              彩繪玻璃落下的幾彩光暈、毛玻璃、霧面香檳金的細線
-     鮮花    窗框的腳下與肩上各一簇、倒數卡的角上一小簇、頁尾一長排（芍藥、玫瑰、洋桔梗、繡球、
-             滿天星、尤加利，真的照片去背後拼成的花藝），一路飄著白色與淡粉的花瓣
+     鮮花    窗框的腳下與肩上各一簇、區塊標題上一束一束、倒數卡的角上一小簇、頁尾一長排
+             （洋牡丹、洋桔梗、玫瑰、芍藥、繡球、滿天星、尤加利，真的照片去背後拼成的花藝），
+             一路飄著白色與淡粉的花瓣
+     背景    從頭到尾同一片灰泥牆，中間不穿插別的背景照片；偶爾有窗外的光打進來；
+             最底下回到同一座教堂（照片的下半，一排一排的長椅）
      植物    鏡頭前失焦的橄欖枝（照片）、牆上晃動的橄欖枝影子、香檳金線描的橄欖／尤加利
      新人照片  hero 一扇尖拱窗框（封面）、故事兩張、出席回覆旁一張
      素材    public/img/chapel/，出處見 README
@@ -23,7 +26,7 @@
      ・牆上的橄欖枝影子：風一吹就晃
      ・玻璃相片：玻璃上的反光跟著捲動從左滑到右
      ・區塊標題上的實物：捲到的時候從下面浮上來
-     ・倒數：毛玻璃後面是一片鈴蘭，越捲越清楚
+     ・偶爾：窗格形狀的光斑落在牆上、一道斜斜的光束掃過，四周跟著暗一點，牆上的橄欖枝影子也跟著變清楚
 
    每一條規則都收在 .mc-* 或 body[data-lobby="white-church"] 底下。
 ============================================================ */
@@ -133,6 +136,35 @@ body[data-lobby="white-church"] .bg-decor{
   100%{transform:translate3d(16px,110vh,0) rotateX(640deg) rotateZ(320deg);opacity:0;}
 }
 @media (max-width:640px){.mc-petals i:nth-child(n+7){display:none;}}
+
+/* ============================================================
+   整頁：偶爾打進來的光
+   一陣一陣的（26 秒一輪，大約一半的時間有光）：牆上落下窗格形狀的光斑（兩扇尖頂窗、中間一條橫框），
+   一道斜斜的光束掃過；光來的時候四周跟著暗一點 —— 有暗，亮才看得出來。
+   兩片光斑錯開半輪，所以光不會每次都落在同一個地方
+============================================================ */
+body[data-lobby="white-church"]{
+  --mc-window:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120' preserveAspectRatio='none'%3E%3Cpath d='M6 56V30C6 15 15 5 26 1C37 5 46 15 46 30V56ZM6 60H46V118H6ZM54 56V30C54 15 63 5 74 1C85 5 94 15 94 30V56ZM54 60H94V118H54Z'/%3E%3C/svg%3E");}
+.mc-sun{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden;}
+.mc-sun::before{content:'';position:absolute;inset:0;mix-blend-mode:multiply;opacity:0;
+  background:radial-gradient(75% 65% at 35% 45%,transparent 40%,rgba(160,138,110,.14));
+  animation:mc-sun 26s ease-in-out infinite;}
+.mc-pane{position:absolute;width:clamp(170px,22vw,330px);aspect-ratio:100/120;opacity:0;
+  background:radial-gradient(closest-side,rgba(255,252,242,.95),rgba(255,248,230,.7) 65%,rgba(255,248,230,.25));
+  -webkit-mask:var(--mc-window) center/100% 100% no-repeat;mask:var(--mc-window) center/100% 100% no-repeat;
+  filter:blur(7px);animation:mc-pane-sun 26s ease-in-out infinite,mc-pane-drift 26s linear infinite;}
+.mc-pane.is-a{left:4%;top:16%;transform:skewX(-20deg) rotate(-8deg) scaleY(1.15);}
+.mc-pane.is-b{right:6%;top:50%;transform:skewX(18deg) rotate(6deg) scaleY(1.1);animation-delay:-13s,-13s;}
+.mc-beam{position:absolute;inset:-25% -35%;opacity:0;mix-blend-mode:screen;
+  background:linear-gradient(118deg,transparent 40%,rgba(255,248,230,.5) 44%,rgba(255,248,230,.12) 47%,transparent 50%,
+    transparent 56%,rgba(255,248,230,.32) 58%,transparent 61%);
+  filter:blur(16px);animation:mc-beam-sun 26s ease-in-out infinite,mc-beam-drift 26s linear infinite;animation-delay:-4s,-4s;}
+@keyframes mc-sun{0%,16%{opacity:0;}34%,60%{opacity:1;}80%,100%{opacity:0;}}
+@keyframes mc-pane-sun{0%,16%{opacity:0;}34%,60%{opacity:.7;}80%,100%{opacity:0;}}
+@keyframes mc-beam-sun{0%,20%{opacity:0;}38%,56%{opacity:.6;}76%,100%{opacity:0;}}
+@keyframes mc-pane-drift{from{translate:-24px -10px;}to{translate:36px 14px;}}
+@keyframes mc-beam-drift{from{translate:-6% 0;}to{translate:6% 0;}}
+@media (max-width:640px){.mc-pane{width:150px;}.mc-pane.is-a{left:-6%;}.mc-pane.is-b{right:-8%;}}
 
 /* ============================================================
    Hero：純白的哥德式教堂
@@ -342,17 +374,15 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
   border-radius:50%;background:radial-gradient(closest-side,rgba(90,76,60,.2),transparent);}
 .mc-obj{display:block;height:100%;background:center bottom/contain no-repeat;
   filter:drop-shadow(0 16px 14px rgba(90,76,60,.18));}
-/* 真的照片，去背：戒指（Deena Englard）、鈴蘭（Svetlana Butovskaya）、百合（Eddie Hsu）、
-   白色蝴蝶蘭（Jocelyn Morales）、白芍藥（Maria Nikolova）／Unsplash */
+/* 婚禮資訊是一對戒指（Deena Englard／Unsplash，去背）；其他區塊是一束一束的鮮花（拼成的花藝，出處見 README）。
+   花束比較寬，放在中間、底部對齊 */
 .mc-obj.o-rings{width:clamp(150px,18vw,200px);height:auto;aspect-ratio:640/219;align-self:center;}
-.mc-obj.o-lily-valley{aspect-ratio:651/420;width:clamp(170px,20vw,230px);height:auto;align-self:center;}
-.mc-obj.o-lilies{aspect-ratio:542/720;}
-.mc-obj.o-orchid{aspect-ratio:620/322;width:clamp(190px,22vw,250px);height:auto;align-self:center;}
 .mc-obj.o-rings{background-image:url(../img/chapel/rings.webp);}
-.mc-obj.o-lily-valley{background-image:url(../img/chapel/lily-valley.webp);}
-.mc-obj.o-lilies{background-image:url(../img/chapel/lilies.webp);}
-.mc-obj.o-orchid{background-image:url(../img/chapel/orchid.webp);}
-.mc-obj.o-peony{aspect-ratio:520/382;width:clamp(150px,17vw,200px);height:auto;align-self:center;background-image:url(../img/chapel/peony.webp);}
+.mc-obj.o-posy{width:clamp(220px,28vw,320px);height:auto;align-self:flex-end;filter:drop-shadow(0 12px 12px rgba(90,76,60,.14));}
+.mc-obj.o-posy.p1{aspect-ratio:640/262;background-image:url(../img/chapel/posy-1.webp);}
+.mc-obj.o-posy.p2{aspect-ratio:640/326;background-image:url(../img/chapel/posy-2.webp);}
+.mc-obj.o-posy.p3{aspect-ratio:640/308;background-image:url(../img/chapel/posy-3.webp);}
+.mc-obj.o-posy.p4{aspect-ratio:640/286;background-image:url(../img/chapel/posy-4.webp);}
 .mc-head .block-title{margin:0;font:400 clamp(26px,3.6vw,38px)/1.15 'Cinzel','Noto Serif TC',serif;letter-spacing:.12em;
   text-transform:none;color:var(--mc-ink);}
 .mc-head .block-sub{margin:0;font-size:13px;letter-spacing:.4em;color:var(--mc-soft);}
@@ -403,32 +433,27 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
 .mc-shade{position:absolute;z-index:0;width:clamp(260px,36vw,480px);aspect-ratio:1;pointer-events:none;
   background:url(../img/botanical/olive.webp) center/contain no-repeat;
   filter:brightness(0) blur(5px);opacity:.075;mix-blend-mode:multiply;
-  transform-origin:10% 10%;animation:mc-shade 10s ease-in-out infinite alternate;}
+  transform-origin:10% 10%;animation:mc-shade 10s ease-in-out infinite alternate,mc-shade-sun 26s ease-in-out infinite;}
 .mc-shade.s1{right:calc(50% - 50vw - 60px);top:1%;rotate:160deg;}
 .mc-shade.s2{left:calc(50% - 50vw - 80px);top:44%;rotate:-20deg;animation-delay:-4s;width:clamp(220px,30vw,400px);}
 .mc-shade.s3{right:calc(50% - 50vw - 40px);top:78%;rotate:200deg;animation-delay:-7s;opacity:.06;}
 @keyframes mc-shade{0%{transform:rotate(0) skewX(0);}60%{transform:rotate(3deg) skewX(2deg);}100%{transform:rotate(-1.5deg) skewX(-1deg);}}
+/* 光來的時候，影子跟著清楚一點 */
+@keyframes mc-shade-sun{0%,16%{opacity:.05;filter:brightness(0) blur(7px);}34%,60%{opacity:.12;filter:brightness(0) blur(4px);}80%,100%{opacity:.05;filter:brightness(0) blur(7px);}}
 @media (max-width:640px){.mc-shade{width:240px;opacity:.06;}}
 
 /* ============================================================
    場景帶
 ============================================================ */
-.mc-band{position:relative;z-index:2;overflow:hidden;border:none;border-radius:0;background:transparent;
+.mc-band{position:relative;z-index:2;overflow:visible;border:none;border-radius:0;background:transparent;
   -webkit-backdrop-filter:none;backdrop-filter:none;
   margin:clamp(70px,10vw,120px) calc(50% - 50vw) 0;padding:clamp(64px,9vw,110px) 24px;}
 .mc-band[hidden]{display:none;}
-.mc-band-bg{position:absolute;left:0;right:0;top:-14%;bottom:-14%;z-index:0;transform:translateY(calc((var(--sp,.5) - .5) * -10%));}
 .mc-band-inner{position:relative;z-index:2;max-width:920px;margin:0 auto;}
 .mc-band-title{font:400 clamp(28px,4vw,42px)/1.15 'Cinzel','Noto Serif TC',serif;letter-spacing:.1em;color:var(--mc-ink);}
 .mc-band-sub{margin-top:8px;font-size:13px;letter-spacing:.42em;color:var(--mc-soft);}
-/* 場景帶上下緣淡進灰泥牆，不切一刀 */
-.mc-band-bg{-webkit-mask-image:linear-gradient(180deg,transparent 4%,#000 22%,#000 78%,transparent 96%);
-  mask-image:linear-gradient(180deg,transparent 4%,#000 22%,#000 78%,transparent 96%);}
 
-/* ---- 故事：白花的走道 ＋ 兩塊玻璃相片 ＋ 毛玻璃卡 ---- */
-/* 一張真的照片（Soulseeker - Creative Photography／Unsplash）：兩旁開滿白花的走道；蓋一層乳白，留一點透 */
-.mc-story .mc-band-bg{background:linear-gradient(180deg,rgba(246,242,234,.55),rgba(246,242,234,.3) 50%,rgba(246,242,234,.6)),
-  #eeece8 url(../img/chapel/aisle.webp) 50% 45%/cover no-repeat;}
+/* ---- 故事：兩塊玻璃相片 ＋ 毛玻璃卡（背景就是同一片牆） ---- */
 .mc-story .mc-band-inner{display:grid;grid-template-columns:1fr;gap:44px;justify-items:center;}
 @media (min-width:780px){.mc-story .mc-band-inner{grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:clamp(40px,6vw,80px);align-items:center;justify-items:stretch;}}
 .mc-story-pics{position:relative;width:min(72vw,330px);height:calc(min(72vw,330px) * 1.25);justify-self:center;}
@@ -437,13 +462,7 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
 .mc-story-body{padding:clamp(26px,4vw,40px);text-align:left;}
 .mc-story .story-text{margin:18px 0 0;max-width:32em;color:var(--mc-ink);font-size:15px;text-align:left;}
 
-/* ---- 倒數：毛玻璃後面是一片鈴蘭，越捲越清楚 ---- */
-.mc-count{--clear:clamp(0,calc((var(--sp,0) - .12) * 2.4),1);}
-/* 毛玻璃後面：一片柔白的鈴蘭（Svetlana Butovskaya／Unsplash），捲到這裡慢慢清楚 */
-.mc-frost-ph{position:absolute;inset:-30px;background:#f3f2ee url(../img/chapel/lily-field.webp) 50% 45%/cover no-repeat;
-  filter:blur(calc((1 - var(--clear)) * 18px)) saturate(calc(.6 + var(--clear) * .4)) brightness(1.05);}
-.mc-frost{position:absolute;inset:0;background:linear-gradient(180deg,rgba(246,242,234,.7),rgba(246,242,234,.35) 50%,rgba(246,242,234,.7));
-  opacity:calc(1 - var(--clear) * .55);}
+/* ---- 倒數：一塊毛玻璃（背景就是同一片牆） ---- */
 .mc-count .mc-band-inner{display:flex;justify-content:center;}
 .mc-count-body{padding:clamp(28px,4vw,44px) clamp(22px,5vw,56px);text-align:center;}
 /* 倒數卡的左上角別著一小簇花 */
@@ -472,12 +491,20 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
 .mc-sec .lc-go{color:var(--mc-gold);}
 
 /* ============================================================
-   頁尾：一長排鮮花（芍藥在中間，玫瑰、繡球、滿天星往兩邊，尤加利與橄欖伸出去）
+   頁尾：回到同一座教堂 —— hero 那張照片的下半，一排一排的長椅，從牆上慢慢淡出來；
+   上面擺一長排鮮花（洋牡丹、白玫瑰、洋桔梗在中間，尤加利與橄欖往兩邊伸）
 ============================================================ */
 .mc-foot{position:relative;z-index:2;isolation:isolate;margin:clamp(70px,10vw,120px) 0 0;
-  padding:clamp(30px,5vw,60px) 24px clamp(50px,7vw,90px);
+  min-height:clamp(560px,86svh,860px);padding:clamp(20px,4vw,50px) 24px 0;
   display:flex;flex-direction:column;align-items:center;gap:8px;border-top:none;color:var(--mc-soft);}
-.mc-foot-scene{position:relative;width:min(100%,720px);aspect-ratio:1400/550;margin-bottom:clamp(14px,2vw,24px);
+/* 照片寬度至少撐滿視窗（手機上放大，只看中間的走道與長椅），底部對齊；上緣淡進灰泥牆 */
+.mc-foot-church{position:absolute;z-index:-1;top:0;bottom:0;left:calc(50% - 50vw);width:100vw;
+  background:var(--mc-ivory) url(../img/chapel/nave.webp) 50% 100%/max(100vw,940px) auto no-repeat;
+  -webkit-mask-image:linear-gradient(180deg,transparent 18%,rgba(0,0,0,.55) 46%,#000 70%);
+  mask-image:linear-gradient(180deg,transparent 18%,rgba(0,0,0,.55) 46%,#000 70%);}
+/* 照片偏冷白：跟 hero 一樣蓋一層很淡的暖 */
+.mc-foot-church::after{content:'';position:absolute;inset:0;background:rgba(250,238,218,.16);}
+.mc-foot-scene{position:relative;width:min(100%,720px);aspect-ratio:1400/522;margin-bottom:clamp(14px,2vw,24px);
   background:url(../img/chapel/bloom-garland.webp) center bottom/contain no-repeat;
   filter:drop-shadow(0 16px 18px rgba(90,76,60,.14));}
 /* 花的後面一團柔柔的亮 */
@@ -489,5 +516,5 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
 @media (prefers-reduced-motion:reduce){
   .mc-veils i,.mc-prism i,.mc-rays,.mc-stain i,.mc-olive-fg,.mc-arch-halo,.mc-arch-gleam,
   .mc-shade,.mc-bloom,.app-show .mc-bloom{animation:none;}
-  .mc-motes,.mc-petals{display:none;}
+  .mc-motes,.mc-petals,.mc-sun{display:none;}
 }
