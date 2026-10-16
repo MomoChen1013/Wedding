@@ -8,9 +8,9 @@
              整座教堂變成白天的樣子 —— 大廳就是那個白天
      材質    有抹刀痕與細顆粒的乳白灰泥牆（不是純白）、被風吹動的透光白紗、
              彩繪玻璃落下的幾彩光暈、毛玻璃、霧面香檳金的細線
-     鮮花    窗框的腳下與肩上各一簇、區塊標題上一束一束、倒數卡的角上一小簇、頁尾一長排
-             （白色小雛菊為主、淡粉波斯菊次之，點綴香豌豆、洋桔梗，綠葉是尤加利、橄欖、滿天星；
-             真的照片去背後拼成的花藝，莖是畫的，鬆鬆地束在一起），一路飄著花瓣與小雛菊
+     鮮花    窗框的腳下與肩上各一簇（洋牡丹、洋桔梗、玫瑰、芍藥、繡球、滿天星、尤加利，真的照片去背後拼成的花藝）；
+             往下捲看到的花都是小雛菊與淡粉波斯菊：區塊標題上一束一束（整束真的照片去背）、倒數卡的角上一朵，
+             一路飄著雛菊瓣、淡粉波斯菊瓣與一整朵小雛菊
      背景    從頭到尾同一片灰泥牆，中間不穿插別的背景照片；偶爾有窗外的光打進來；
              最底下回到同一座教堂（照片的下半，一排一排的長椅）
      植物    鏡頭前失焦的橄欖枝（照片）、牆上晃動的橄欖枝影子、香檳金線描的橄欖／尤加利
@@ -294,15 +294,15 @@ body[data-lobby="white-church"]{
 /* ---- 窗框旁的鮮花 ----
    放在名牌裡（名牌疊在窗框上面，花才壓得住窗框與名牌的角），位置用窗框的高度算：
    窗框寬 = 高 / 1.4，名牌頂端在窗框下緣往上 --ov 的地方。
-   一大簇在窗框左下的腳邊（小雛菊為主，兩三枝淡粉波斯菊斜斜伸出去，尤加利、橄欖、滿天星），一小簇在右上的肩膀 */
+   一大簇在窗框左下的腳邊（芍藥、玫瑰、繡球、滿天星，尤加利往兩邊伸），一小簇在右上的肩膀 */
 .mc-bloom{position:absolute;z-index:2;pointer-events:none;background:center/contain no-repeat;
   filter:drop-shadow(0 12px 14px rgba(90,76,60,.16));animation:mc-bloom 9s ease-in-out infinite alternate;}
-.mc-bloom.is-base{width:calc(var(--arch-h) * .92);aspect-ratio:1100/760;
-  left:calc(50% - var(--arch-h) / 2.8);top:calc(var(--ov) + 4px);translate:-67% -90%;
+.mc-bloom.is-base{width:calc(var(--arch-h) * .92);aspect-ratio:1100/715;
+  left:calc(50% - var(--arch-h) / 2.8);top:calc(var(--ov) + 4px);translate:-60% -90%;
   background-image:url(../img/chapel/bloom-arch.webp);transform-origin:50% 90%;}
-.mc-bloom.is-shoulder{width:calc(var(--arch-h) * .4);aspect-ratio:541/729;
-  left:calc(50% + var(--arch-h) / 2.8);top:calc(var(--ov) - var(--arch-h) * .62);translate:-22% -78%;
-  background-image:url(../img/chapel/bloom-shoulder.webp);transform-origin:8% 96%;animation-delay:-4s;}
+.mc-bloom.is-shoulder{width:calc(var(--arch-h) * .5);aspect-ratio:560/481;
+  left:calc(50% + var(--arch-h) / 2.8);top:calc(var(--ov) - var(--arch-h) * .7);translate:-38% -50%;
+  background-image:url(../img/chapel/bloom-shoulder.webp);transform-origin:20% 70%;animation-delay:-4s;}
 @keyframes mc-bloom{to{rotate:1.6deg;scale:1.015;}}
 /* 沒有新人照片（沒有窗框）：肩上那簇收起來，腳邊那簇改放在名牌的左上角 */
 .mc-hero:not(:has(.mc-hero-arch .has-photo)) .mc-bloom.is-shoulder{display:none;}
@@ -336,8 +336,8 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
 @keyframes mc-daylight{from{filter:brightness(1.7) saturate(.4);}}
 @media (max-width:640px){
   .mc-hero .hashtags{display:none;}
-  .mc-bloom.is-base{width:calc(var(--arch-h) * .7);translate:-50% -98%;}
-  .mc-bloom.is-shoulder{width:calc(var(--arch-h) * .32);translate:-26% -78%;}
+  .mc-bloom.is-base{width:calc(var(--arch-h) * .72);translate:-42% -98%;}
+  .mc-bloom.is-shoulder{width:calc(var(--arch-h) * .38);translate:-52% -50%;}
   .mc-olive-fg{width:180px;left:-10%;top:-3%;}
   .mc-olive-fg.is-b{width:150px;right:-14%;bottom:-3%;}
   .mc-stain i:nth-child(3){display:none;}
@@ -381,15 +381,15 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
   border-radius:50%;background:radial-gradient(closest-side,rgba(90,76,60,.2),transparent);}
 .mc-obj{display:block;height:100%;background:center bottom/contain no-repeat;
   filter:drop-shadow(0 16px 14px rgba(90,76,60,.18));}
-/* 婚禮資訊是一對戒指（Deena Englard／Unsplash，去背）；其他區塊是一束一束的小雛菊、波斯菊，每區各不相同（拼成的花藝，出處見 README）。
+/* 婚禮資訊是一對戒指（Deena Englard／Unsplash，去背）；其他區塊是一束一束的小雛菊、波斯菊（整束真的照片去背，出處見 README）。
    花束比較寬，放在中間、底部對齊 */
 .mc-obj.o-rings{width:clamp(150px,18vw,200px);height:auto;aspect-ratio:640/219;align-self:center;}
 .mc-obj.o-rings{background-image:url(../img/chapel/rings.webp);}
 .mc-obj.o-posy{width:clamp(200px,24vw,280px);height:auto;align-self:flex-end;filter:drop-shadow(0 12px 12px rgba(90,76,60,.14));}
-.mc-obj.o-posy.p1{aspect-ratio:640/413;background-image:url(../img/chapel/posy-1.webp);}
-.mc-obj.o-posy.p2{aspect-ratio:640/512;background-image:url(../img/chapel/posy-2.webp);}
-.mc-obj.o-posy.p3{aspect-ratio:640/468;background-image:url(../img/chapel/posy-3.webp);}
-.mc-obj.o-posy.p4{aspect-ratio:640/375;background-image:url(../img/chapel/posy-4.webp);}
+.mc-obj.o-posy.p1{width:clamp(170px,19vw,230px);aspect-ratio:640/544;background-image:url(../img/chapel/posy-1.webp);}
+.mc-obj.o-posy.p2{width:clamp(160px,17vw,210px);aspect-ratio:560/489;background-image:url(../img/chapel/posy-2.webp);}
+.mc-obj.o-posy.p3{width:clamp(210px,24vw,280px);aspect-ratio:680/377;background-image:url(../img/chapel/posy-3.webp);}
+.mc-obj.o-posy.p4{width:clamp(230px,27vw,320px);aspect-ratio:680/229;background-image:url(../img/chapel/posy-4.webp);}
 .mc-head .block-title{margin:0;font:400 clamp(26px,3.6vw,38px)/1.15 'Cinzel','Noto Serif TC',serif;letter-spacing:.12em;
   text-transform:none;color:var(--mc-ink);}
 .mc-head .block-sub{margin:0;font-size:13px;letter-spacing:.4em;color:var(--mc-soft);}
@@ -472,11 +472,11 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
 /* ---- 倒數：一塊毛玻璃（背景就是同一片牆） ---- */
 .mc-count .mc-band-inner{display:flex;justify-content:center;}
 .mc-count-body{padding:clamp(28px,4vw,44px) clamp(22px,5vw,56px);text-align:center;}
-/* 倒數卡的左上角斜插兩枝波斯菊、一朵小雛菊，莖收在卡片後面 */
-.mc-count-body::after{content:'';position:absolute;left:clamp(-110px,-8vw,-40px);top:clamp(-120px,-9vw,-70px);width:clamp(100px,12vw,150px);aspect-ratio:420/473;
+/* 倒數卡的左上角別著一朵淡粉波斯菊、旁邊一朵小雛菊 */
+.mc-count-body::after{content:'';position:absolute;left:clamp(-86px,-6vw,-30px);top:clamp(-84px,-6vw,-50px);width:clamp(96px,11vw,140px);aspect-ratio:420/381;
   background:url(../img/chapel/bloom-corner.webp) center/contain no-repeat;transform:rotate(-6deg);
   filter:drop-shadow(0 10px 12px rgba(90,76,60,.16));pointer-events:none;}
-@media (max-width:640px){.mc-count-body::after{left:-22px;top:-96px;width:92px;}}
+@media (max-width:640px){.mc-count-body::after{left:-18px;top:-70px;width:84px;}}
 .mc-count .cd-grid{margin:22px auto 0;}
 .mc-count .cd-unit{border-left:1px solid var(--mc-line);}
 .mc-count .cd-num{font-family:'Cinzel',serif;font-weight:400;color:var(--mc-ink);}
@@ -499,8 +499,7 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
 .mc-sec .lc-go{color:var(--mc-gold);}
 
 /* ============================================================
-   頁尾：回到同一座教堂 —— hero 那張照片的下半，一排一排的長椅，從牆上慢慢淡出來；
-   長椅前、頁面最底下長著一排低低的小雛菊和波斯菊，像田邊長出來的（左右無縫接續）
+   頁尾：回到同一座教堂 —— hero 那張照片的下半，一排一排的長椅，從牆上慢慢淡出來
 ============================================================ */
 .mc-foot{position:relative;z-index:2;isolation:isolate;margin:clamp(70px,10vw,120px) 0 0;
   min-height:clamp(560px,86svh,860px);padding:clamp(20px,4vw,50px) 24px 0;
@@ -512,12 +511,6 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
   mask-image:linear-gradient(180deg,transparent 18%,rgba(0,0,0,.55) 46%,#000 70%);}
 /* 照片偏冷白：跟 hero 一樣蓋一層很淡的暖 */
 .mc-foot-church::after{content:'';position:absolute;inset:0;background:rgba(250,238,218,.16);}
-.mc-foot-scene{position:absolute;z-index:-1;left:calc(50% - 50vw);width:100vw;bottom:0;height:clamp(120px,14vw,210px);
-  background:url(../img/chapel/bloom-meadow.webp) 50% 100%/auto 100% repeat-x;
-  filter:drop-shadow(0 8px 10px rgba(90,76,60,.12));}
-/* 花腳下一抹柔柔的亮，像光落在地上 */
-.mc-foot-scene::before{content:'';position:absolute;left:0;right:0;bottom:0;height:60%;z-index:-1;
-  background:linear-gradient(180deg,transparent,rgba(255,250,240,.55));}
 .mc-fin{font:italic 400 24px 'Cormorant Garamond',serif;color:var(--mc-gold);text-transform:none;letter-spacing:.02em;}
 
 /* 不要動畫的人：光、塵、紗、影子、植物、花都停下來，花瓣不飄 */
