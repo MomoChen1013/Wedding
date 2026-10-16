@@ -88,12 +88,13 @@
 .dr-manor .dr-blur{position:absolute;inset:0;background:radial-gradient(70% 90% at 50% 45%,#e4d7be,#cdbb9a 70%,#b3a07f);}
 /* 推開門：陽光只輕輕亮一下，看得到門後的中庭 */
 .dr-host.dr-manor.is-open .dr-flood{opacity:.18;}
-/* 直立的手機：照片撐滿高度（左右裁掉一點，門在正中間）；橫的螢幕：整面牆完整放在中間 */
-.dr-manor .dr-photo{position:absolute;left:50%;top:50%;height:max(100%,calc(100vw * 1549 / 1300));aspect-ratio:1300/1549;
-  transform:translate(-50%,-50%);
+/* 照片放大到比畫面高一點，對準門洞的正中間（門洞中心在照片的 47.3%、56.8%），
+   門佔畫面約三分之二高；上面的壁燈、下面的石階剛好留在畫面邊上 */
+.dr-manor .dr-photo{position:absolute;left:50%;top:54%;height:max(120%,calc(100vw * 1549 / 1300));aspect-ratio:1300/1549;
+  transform:translate(-47.3%,-56.8%);
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);
           mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);}
-@media (min-aspect-ratio:3/4){.dr-manor .dr-photo{height:100%;}}
+@media (min-aspect-ratio:3/4){.dr-manor .dr-photo{height:120%;}}
 /* 門洞後面：莊園的前庭與立面（跟 .dr-land 同一張，門推開就看得到正中間那一棟） */
 .dr-manor .dr-behind{position:absolute;background:#e8e2d4 url(../../img/manor/manor.webp) 50% 70%/auto 125% no-repeat;}
 .dr-manor .dr-scene{position:absolute;inset:0;background:url(../../img/manor/door-scene.webp) center/100% 100% no-repeat;}
@@ -107,14 +108,15 @@
 @media (max-aspect-ratio:3/4){.dr-text{top:28%;}}
 /* 莊園的字：石牆和門框的紋路太花，細的字浮在上面讀不清楚 ——
    改成刻在一塊灰泥牌上（跟大廳的名牌同一個樣子），放在門洞下半段的草地前，上半段留給門後的莊園 */
-.dr-manor .dr-text{left:50%;right:auto;top:66%;transform:translate(-50%,-50%);width:max-content;max-width:calc(100vw - 32px);
-  gap:4px;padding:16px clamp(26px,4vw,44px) 14px;border:8px solid transparent;background:#f5efe3;
-  outline:1px solid rgba(150,120,80,.45);outline-offset:-6px;text-shadow:none;
+.dr-manor .dr-text{left:50%;right:auto;top:71%;transform:translate(-50%,-50%);width:max-content;max-width:calc(100vw - 32px);
+  gap:2px;padding:10px clamp(18px,2.4vw,28px) 9px;border:6px solid transparent;background:#f5efe3;
+  outline:1px solid rgba(150,120,80,.45);outline-offset:-5px;text-shadow:none;
   box-shadow:inset 0 2px 6px rgba(80,60,30,.18),0 14px 34px rgba(50,36,20,.38),0 2px 6px rgba(50,36,20,.25);}
 .dr-host.dr-manor.is-open .dr-text{transition:opacity .8s ease .55s;}
 .dr-host.dr-manor.is-walking .dr-text{transition:opacity .5s ease 0s;}
-.dr-manor .dr-kicker{font-size:clamp(17px,2.2vw,21px);}
-.dr-manor .dr-date{color:rgba(46,42,36,.72);}
+.dr-manor .dr-kicker{font-size:clamp(13px,1.4vw,15px);}
+.dr-manor .dr-names{font-size:clamp(20px,2.4vw,28px);}
+.dr-manor .dr-date{font-size:10.5px;letter-spacing:.36em;color:rgba(46,42,36,.72);}
 /* 秘密花園在手機上，字落在門上面那一片深色的常春藤：改成淺色的字、深色的光暈 */
 @media (max-aspect-ratio:3/4){
   .dr-garden .dr-text{--dr-ink:#fbf8ef;--dr-accent:#f3d9e0;text-shadow:0 0 16px rgba(10,20,8,.95),0 1px 4px rgba(10,20,8,.85);}

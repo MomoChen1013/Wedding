@@ -79,14 +79,18 @@
 <div id="app">
   <section class="panel lobby fm-lobby" data-panel="lobby" data-scroll>
 
-    <!-- ===== Hero：莊園的中庭 ===== -->
+    <!-- ===== Hero：莊園的石牆 ===== -->
     <header class="lobby-hero fm-hero" data-scroll>
       <div class="fm-scene" aria-hidden="true">
-        <div class="fm-court"></div>
-        <i class="fm-veil"></i>
-        <!-- 鏡頭前：兩側高聳的柏樹、右下一叢繡球花（都是去背的真植物），捲動時走得比遠景快 -->
-        <i class="fm-near n-cypress l"></i>
-        <i class="fm-near n-cypress r"></i>
+        <!-- 跟整頁同一面石灰岩牆：兩個上角各垂下一片常春藤，牆上左右各一扇別人家的窗
+             （左邊百葉窗關著、右邊開著，看得到玻璃裡的蕾絲窗簾），窗台下掛著花箱；
+             牆腳左邊一叢玫瑰和薰衣草、右邊一叢繡球花，捲動時走得比牆快 -->
+        <i class="fm-ivy fm-ivy-corner l"></i>
+        <i class="fm-ivy fm-ivy-corner r"></i>
+        <figure class="fm-window fm-side-window l"><div class="fm-window-ph fm-glass"></div><i class="fm-shutter l is-shut"></i><i class="fm-shutter r is-shut"></i><i class="fm-sill"></i><i class="fm-box b-hydrangea"></i></figure>
+        <figure class="fm-window fm-side-window r"><i class="fm-shutter l"></i><div class="fm-window-ph fm-glass"></div><i class="fm-shutter r"></i><i class="fm-sill"></i><i class="fm-box b-sage"></i></figure>
+        <i class="fm-near n-rose"></i>
+        <i class="fm-near n-lavender"></i>
         <i class="fm-near n-hydrangea"></i>
       </div>
       <div class="fm-hero-body">

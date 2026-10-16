@@ -60,28 +60,41 @@ body[data-lobby="french-manor"] .bg-decor::after{content:'';position:absolute;in
   filter:drop-shadow(0 6px 6px rgba(30,40,20,.3));}
 
 /* ============================================================
-   Hero：莊園的中庭
+   Hero：莊園的石牆（跟整頁同一面牆，只是多了常春藤、別人家的窗、牆腳的花）
 ============================================================ */
 .fm-hero{position:relative;overflow:hidden;min-height:calc(100svh - var(--nav-h));padding:0;gap:0;justify-content:center;background:transparent;}
 .fm-scene{position:absolute;inset:0;pointer-events:none;}
-/* 中庭與那層光：下緣淡掉，露出後面的石牆（鏡頭前的花不淡，壓在牆上） */
-.fm-court,.fm-veil{-webkit-mask-image:linear-gradient(#000 74%,transparent);mask-image:linear-gradient(#000 74%,transparent);}
-/* 遠景（Shalev Cohen／Unsplash）：站在碎石前庭的另一頭看整座莊園 —— 對稱的石灰岩立面、石板屋頂，
-   前庭一排種在木箱裡的柑橘樹，退得夠遠才看得到整面牆的氣派 */
-.fm-court{position:absolute;inset:0;background:#e8e2d4 url(../img/manor/manor.webp) 50% 42%/cover no-repeat;
-  transform-origin:50% 40%;transform:scale(calc(1.03 + var(--lp,0) * .1));}
-.fm-veil{position:absolute;inset:0;
-  background:linear-gradient(180deg,rgba(243,238,229,.3),rgba(243,238,229,.12) 34%,rgba(243,238,229,.26) 70%);}
-/* 鏡頭前的花（去背的真花），走得比中庭快 */
+/* 牆頭：一道突出來的石簷（跟下面兩扇窗上面那道一樣），常春藤從兩個角垂下來 */
+.fm-scene::before{content:'';position:absolute;z-index:2;left:0;right:0;top:0;height:clamp(14px,1.6vw,20px);
+  background:linear-gradient(rgba(250,242,222,.6),rgba(150,120,80,.3)),url(../img/manor/wall.webp) 60% 20%/520px auto;
+  box-shadow:0 8px 12px -4px rgba(40,30,15,.45),inset 0 -1px 0 rgba(90,70,40,.4);}
+.fm-ivy.fm-ivy-corner{z-index:1;top:clamp(6px,1vw,12px);width:clamp(200px,36vw,560px);height:clamp(170px,34vh,340px);
+  background:url(../img/manor/ivy-hang.webp) 0 0/auto 100% repeat-x;
+  -webkit-mask-image:linear-gradient(90deg,#000 40%,transparent);mask-image:linear-gradient(90deg,#000 40%,transparent);}
+.fm-ivy.fm-ivy-corner.l{left:0;}
+.fm-ivy.fm-ivy-corner.r{right:0;scale:-1 1;}
+/* 牆上別人家的兩扇窗（沒有照片）：比新人那扇小、掛得高一點。
+   左邊百葉窗關著；右邊開著，玻璃裡兩片蕾絲窗簾往兩邊收 */
+.fm-window.fm-side-window{position:absolute;z-index:1;top:clamp(70px,15vh,150px);width:clamp(96px,11vw,160px);}
+.fm-side-window.l{left:clamp(24px,9vw,150px);}
+.fm-side-window.r{right:clamp(48px,10vw,170px);}
+.fm-window-ph.fm-glass{background:
+  linear-gradient(155deg,rgba(255,255,255,.24),rgba(255,255,255,0) 34%,rgba(255,255,255,.07) 58%,rgba(255,255,255,0) 68%),
+  linear-gradient(90deg,#efe7d8,#f8f3ea 5%,#e3d9c6 10%,#f6f0e5 15%,#e9e0cf 20%,rgba(240,232,218,0) 27%),
+  linear-gradient(270deg,#efe7d8,#f8f3ea 5%,#e3d9c6 10%,#f6f0e5 15%,#e9e0cf 20%,rgba(240,232,218,0) 27%),
+  linear-gradient(#5b6563,#323a3b);}
+/* 關起來的百葉窗：兩片在中間合起來 */
+.fm-shutter.is-shut{top:0;bottom:0;width:50%;box-shadow:inset 0 0 0 1px rgba(40,50,55,.25);}
+.fm-shutter.is-shut.l{left:0;right:auto;transform:none;}
+.fm-shutter.is-shut.r{right:0;left:auto;transform:none;}
+.fm-window.fm-side-window .fm-box{z-index:2;height:44%;bottom:-44%;}
+.fm-box.b-sage{background-image:url(../img/manor/sage-bush.webp);}
+/* 牆腳的花（去背的真花），捲動時走得比牆快 */
 .fm-near{position:absolute;bottom:0;background:center bottom/contain no-repeat;
   filter:drop-shadow(0 10px 14px rgba(60,46,30,.28));transform:translateY(calc(var(--lp,0) * -36%));}
 .fm-near.n-hydrangea{right:-3%;height:36%;aspect-ratio:311/281;bottom:-3%;background-image:url(../img/manor/hydrangea-bush.webp);}
-/* 兩側高聳的地中海柏樹（從 Rich Martello 那張南法小鎮的照片裡去背），像站在前庭邊上、從兩棵柏樹中間望過去；
-   樹頂超出畫面，下緣在照片裡就淡掉了。右邊那棵是同一張左右翻過來 */
-.fm-near.n-cypress{top:-4%;bottom:auto;height:96%;aspect-ratio:420/800;background:url(../img/manor/cypress.webp) left top/100% 100% no-repeat;
-  filter:saturate(.82) brightness(1.03) drop-shadow(0 0 18px rgba(30,40,20,.18));}
-.fm-near.n-cypress.l{left:-3%;}
-.fm-near.n-cypress.r{right:-3%;scale:-1 1;}
+.fm-near.n-rose{left:-3%;height:42%;aspect-ratio:365/396;bottom:-3%;background-image:url(../img/manor/rose-bush.webp);}
+.fm-near.n-lavender{left:clamp(90px,15vw,240px);height:18%;filter:saturate(.8) drop-shadow(0 10px 14px rgba(60,46,30,.28));aspect-ratio:398/281;bottom:-2%;background-image:url(../img/manor/lavender-bush.webp);}
 
 .fm-hero-body{position:relative;z-index:5;display:flex;flex-direction:column;align-items:center;text-align:center;
   padding:clamp(20px,5vh,56px) 20px clamp(56px,9vh,90px);transform:translateY(calc(var(--lp,0) * -40px));opacity:calc(1 - var(--lp,0) * 1.4);}
@@ -121,18 +134,16 @@ body[data-hero-name="cn"] .fm-hero .fm-names{font-family:'Noto Serif TC',serif;f
 .app-show .fm-cartouche{animation-delay:.5s;}
 .app-show .fm-hero-window{animation:fm-rise 1.2s cubic-bezier(.2,.7,.2,1) .3s both;}
 .app-show .fm-hero .hashtags{animation-delay:.7s;}
-/* 推開門走進來：中庭從門口的那一點光裡慢慢定下來 */
-.app-show .fm-court{animation:fm-arrive 2s ease both;}
 .app-show .fm-near{animation:fm-rise-far 1.4s cubic-bezier(.2,.8,.25,1) .2s both;}
 @keyframes fm-rise{from{opacity:0;transform:translateY(14px);}}
 @keyframes fm-rise-far{from{opacity:0;transform:translateY(40px);}}
-@keyframes fm-arrive{from{filter:brightness(1.25) saturate(.7);transform:scale(1.12);}}
 @media (max-width:640px){
-  .fm-court{background-position:50% 42%;}
   .fm-near.n-hydrangea{height:18%;right:-12%;}
-  .fm-near.n-cypress{height:66%;}
-  .fm-near.n-cypress.l{left:-26%;}
-  .fm-near.n-cypress.r{right:-26%;}
+  .fm-near.n-rose{height:20%;left:-12%;}
+  .fm-near.n-lavender{display:none;}
+  /* 手機：新人那扇窗已經佔滿寬度，別人家的窗放不下（只露一條邊反而怪），收起來 */
+  .fm-window.fm-side-window{display:none;}
+  .fm-ivy.fm-ivy-corner{width:62vw;height:150px;}
   .fm-hero .hashtags{display:none;}
 }
 
