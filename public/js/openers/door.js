@@ -381,9 +381,11 @@
       host.querySelector('.dr-world').style.transformOrigin =
         `${f(o.left - h.left + o.width / 2)}px ${f(o.top - h.top + o.height * .45)}px`;
       host.classList.add('is-open');
-      ctx.later(() => host.classList.add('is-walking'), T.open);
-      ctx.later(ctx.reveal, T.open + T.walk * .45);
-      ctx.later(ctx.done, T.open + T.walk + 500);
+      /* 莊園：門推開之後多停一下，讓灰泥牌上的名字讀得完再往裡走 */
+      const open = manor ? T.open + 1100 : T.open;
+      ctx.later(() => host.classList.add('is-walking'), open);
+      ctx.later(ctx.reveal, open + T.walk * .45);
+      ctx.later(ctx.done, open + T.walk + 500);
     });
   }
 

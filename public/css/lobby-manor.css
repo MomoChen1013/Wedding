@@ -66,8 +66,9 @@ body[data-lobby="french-manor"] .bg-decor::after{content:'';position:absolute;in
 .fm-scene{position:absolute;inset:0;pointer-events:none;}
 /* 中庭與那層光：下緣淡掉，露出後面的石牆（鏡頭前的花不淡，壓在牆上） */
 .fm-court,.fm-veil{-webkit-mask-image:linear-gradient(#000 74%,transparent);mask-image:linear-gradient(#000 74%,transparent);}
-/* 遠景（Rich Martello／Unsplash）：南法小鎮的石頭廣場，碎石路一路往裡延伸到石屋與柏樹，前景一片薰衣草 */
-.fm-court{position:absolute;inset:0;background:#e8e2d4 url(../img/manor/village.webp) 50% 55%/cover no-repeat;
+/* 遠景（Shalev Cohen／Unsplash）：站在碎石前庭的另一頭看整座莊園 —— 對稱的石灰岩立面、石板屋頂，
+   前庭一排種在木箱裡的柑橘樹，退得夠遠才看得到整面牆的氣派 */
+.fm-court{position:absolute;inset:0;background:#e8e2d4 url(../img/manor/manor.webp) 50% 42%/cover no-repeat;
   transform-origin:50% 40%;transform:scale(calc(1.03 + var(--lp,0) * .1));}
 .fm-veil{position:absolute;inset:0;
   background:linear-gradient(180deg,rgba(243,238,229,.3),rgba(243,238,229,.12) 34%,rgba(243,238,229,.26) 70%);}
@@ -75,6 +76,12 @@ body[data-lobby="french-manor"] .bg-decor::after{content:'';position:absolute;in
 .fm-near{position:absolute;bottom:0;background:center bottom/contain no-repeat;
   filter:drop-shadow(0 10px 14px rgba(60,46,30,.28));transform:translateY(calc(var(--lp,0) * -36%));}
 .fm-near.n-hydrangea{right:-3%;height:36%;aspect-ratio:311/281;bottom:-3%;background-image:url(../img/manor/hydrangea-bush.webp);}
+/* 兩側高聳的地中海柏樹（從 Rich Martello 那張南法小鎮的照片裡去背），像站在前庭邊上、從兩棵柏樹中間望過去；
+   樹頂超出畫面，下緣在照片裡就淡掉了。右邊那棵是同一張左右翻過來 */
+.fm-near.n-cypress{top:-4%;bottom:auto;height:96%;aspect-ratio:420/800;background:url(../img/manor/cypress.webp) left top/100% 100% no-repeat;
+  filter:saturate(.82) brightness(1.03) drop-shadow(0 0 18px rgba(30,40,20,.18));}
+.fm-near.n-cypress.l{left:-3%;}
+.fm-near.n-cypress.r{right:-3%;scale:-1 1;}
 
 .fm-hero-body{position:relative;z-index:5;display:flex;flex-direction:column;align-items:center;text-align:center;
   padding:clamp(20px,5vh,56px) 20px clamp(56px,9vh,90px);transform:translateY(calc(var(--lp,0) * -40px));opacity:calc(1 - var(--lp,0) * 1.4);}
@@ -121,8 +128,11 @@ body[data-hero-name="cn"] .fm-hero .fm-names{font-family:'Noto Serif TC',serif;f
 @keyframes fm-rise-far{from{opacity:0;transform:translateY(40px);}}
 @keyframes fm-arrive{from{filter:brightness(1.25) saturate(.7);transform:scale(1.12);}}
 @media (max-width:640px){
-  .fm-court{background-position:40% 55%;}
+  .fm-court{background-position:50% 42%;}
   .fm-near.n-hydrangea{height:18%;right:-12%;}
+  .fm-near.n-cypress{height:66%;}
+  .fm-near.n-cypress.l{left:-26%;}
+  .fm-near.n-cypress.r{right:-26%;}
   .fm-hero .hashtags{display:none;}
 }
 
