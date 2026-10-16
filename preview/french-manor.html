@@ -84,13 +84,13 @@
       <div class="fm-scene" aria-hidden="true">
         <div class="fm-court"></div>
         <i class="fm-veil"></i>
-        <!-- 鏡頭前：左下一叢薰衣草、右下一叢繡球花（去背），捲動時走得比中庭快 -->
-        <i class="fm-near n-lavender"></i>
+        <!-- 鏡頭前：右下一叢繡球花（去背），捲動時走得比遠景快（照片的前景本來就有一片薰衣草） -->
         <i class="fm-near n-hydrangea"></i>
       </div>
       <div class="fm-hero-body">
-        <!-- 新人的照片：掛在名牌上方的蕾絲橢圓框（封面照；沒有照片就整個收起來，見 lobby-manor.css） -->
-        <figure class="fm-cameo fm-hero-cameo" aria-hidden="true"><div class="fm-cameo-ph" data-photo="hero"></div><i class="fm-cameo-frame"></i></figure>
+        <!-- 新人的照片：一扇石框的窗、灰藍的百葉窗打開，窗台上一排薰衣草、旁邊一叢玫瑰
+             （封面照；沒有照片就整扇收起來，見 lobby-manor.css） -->
+        <figure class="fm-window fm-hero-window" aria-hidden="true"><i class="fm-shutter l"></i><div class="fm-window-ph" data-photo="hero"></div><i class="fm-shutter r"></i><i class="fm-sill"></i><i class="fm-box b-lavender"></i><i class="fm-climb c-rose l"></i></figure>
         <!-- 名字：刻在一塊嵌進牆裡的灰泥牌上（石框、兩道刻線） -->
         <div class="fm-cartouche">
           <div class="fm-kicker"><span class="en">Bienvenue au domaine</span><span class="cn">誠摯邀請您</span></div>
@@ -104,19 +104,18 @@
 
     <div class="scene-body fm-body">
 
-      <!-- ===== 三張照片：石牆上三扇石框的窗，灰藍的百葉窗往兩邊打開，窗裡是照片牆的前三張；
-           上面一整排常春藤從牆頭垂下來 ===== -->
+      <!-- ===== 兩張照片：石牆上兩扇石框的窗，灰藍的百葉窗往兩邊打開，窗裡是照片牆的前兩張；
+           上面一整排常春藤從牆頭垂下來，每扇窗的窗台上、旁邊都有花 ===== -->
       <section class="fm-windows" data-scroll aria-hidden="true">
         <i class="fm-ivy fm-ivy-hang"></i>
-        <figure class="fm-window w1" data-reveal="rise"><i class="fm-shutter l"></i><div class="fm-window-ph" data-photo="photo1"></div><i class="fm-shutter r"></i><i class="fm-sill"></i></figure>
-        <figure class="fm-window w2" data-reveal="rise"><i class="fm-shutter l"></i><div class="fm-window-ph" data-photo="photo2"></div><i class="fm-shutter r"></i><i class="fm-sill"></i></figure>
-        <figure class="fm-window w3" data-reveal="rise"><i class="fm-shutter l"></i><div class="fm-window-ph" data-photo="photo3"></div><i class="fm-shutter r"></i><i class="fm-sill"></i></figure>
+        <figure class="fm-window w1" data-reveal="rise"><i class="fm-shutter l"></i><div class="fm-window-ph" data-photo="photo1"></div><i class="fm-shutter r"></i><i class="fm-sill"></i><i class="fm-box b-hydrangea"></i><i class="fm-climb c-rose l"></i></figure>
+        <figure class="fm-window w2" data-reveal="rise"><i class="fm-shutter l"></i><div class="fm-window-ph" data-photo="photo2"></div><i class="fm-shutter r"></i><i class="fm-sill"></i><i class="fm-box b-lavender"></i><i class="fm-climb c-sage r"></i></figure>
       </section>
 
-      <!-- ===== 婚禮資訊：一對古銅色的燭台 ===== -->
+      <!-- ===== 婚禮資訊：一支古銅色的燭台 ===== -->
       <section class="info-block fm-sec">
         <div class="fm-head">
-          <figure class="fm-icon" data-reveal="draw"><i class="fm-obj o-candle"></i><i class="fm-obj o-candle"></i></figure>
+          <figure class="fm-icon" data-reveal="draw"><i class="fm-obj o-candle"></i></figure>
           <span class="en block-title">Information</span>
           <span class="cn block-sub">婚禮資訊</span>
         </div>
@@ -304,15 +303,16 @@
       </section>
 
       <footer class="fm-foot">
-        <!-- 牆腳：站在往裡延伸的赤陶與石灰岩地磚上 —— 左邊一排花（玫瑰、黃楊球、薰衣草），
-             右邊一張雕花藤背椅、一張腳凳、一張鍍金小圓桌上放著燭台 -->
+        <!-- 牆腳：赤陶與石灰岩的方磚上，兩側長滿了花（玫瑰、繡球、薰衣草、鼠尾草、黃楊球）；
+             中間的字刻在一塊灰泥牌上 -->
         <div class="fm-garden" aria-hidden="true">
-          <i class="g-rose"></i><i class="g-boxwood"></i><i class="g-lavender"></i>
-          <i class="g-sage"></i>
-          <i class="g-chair"></i><i class="g-stool"></i><i class="g-table"><i class="g-candle"></i></i>
+          <i class="g-rose l"></i><i class="g-lavender l"></i><i class="g-boxwood l"></i><i class="g-sage l"></i>
+          <i class="g-hydrangea r"></i><i class="g-sage r"></i><i class="g-lavender r"></i><i class="g-rose r"></i>
         </div>
+        <div class="fm-plaque">
         <div class="fm-fin">à bientôt, au domaine</div>
         <span>made for <span data-tpl="couple"></span>・小港製作所 設計製作</span>
+        </div>
       </footer>
     </div>
   </section>
