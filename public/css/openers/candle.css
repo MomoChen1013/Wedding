@@ -5,7 +5,7 @@
    --lit 用 @property 註冊成數字，才能「慢慢」變亮，而不是一格一格跳。
    蠟燭是一張真的白蠟燭照片（去背，燭芯以上的火擦掉）；火焰是另一張真的照片
    （黑底，依亮度轉成透明度，只留下火），自己會晃；光暈用 screen 疊在房間上。
-   白色教堂的房間是大廳 hero 那座純白禮堂的照片（img/chapel/，出處見 README）：
+   白色教堂的房間是大廳 hero 那座純白哥德式教堂的照片（img/chapel/nave.webp，出處見 README）：
    三根都亮了之後燭火熄掉、天亮，變成白天的禮堂（.is-dawn）。
 ============================================================ */
 @property --lit{syntax:'<number>';inherits:true;initial-value:0;}
@@ -24,18 +24,18 @@
     repeating-linear-gradient(0deg,transparent 0 58px,rgba(0,0,0,.25) 58px 60px),
     repeating-linear-gradient(90deg,transparent 0 118px,rgba(0,0,0,.18) 118px 120px),
     radial-gradient(90% 80% at 50% 60%,var(--cd-wall),#0c0a10 80%);}
-/* 白色教堂：房間是大廳那座純白禮堂（Thay Jesus／Unsplash）在午夜的樣子 ——
-   照片壓暗、蓋一層夜裡的藍；燭光越亮，圓拱與吊燈越看得見 */
+/* 白色教堂：房間是大廳那座純白的哥德式教堂在午夜的樣子 ——
+   照片壓暗、蓋一層夜裡的藍；燭光越亮，尖拱、肋拱與長椅越看得見 */
 .cd-host[data-variant="white-church"] .cd-room{opacity:1;
   background:
     radial-gradient(50% 45% at 50% 82%,rgba(255,176,96,calc(var(--cd-l) * .5)),transparent 70%),
     linear-gradient(rgba(16,20,44,.62),rgba(10,10,24,.78)),
-    #07060a url(../../img/chapel/hall.webp) 50% 55%/cover no-repeat;
+    #07060a url(../../img/chapel/nave.webp) 50% 50%/cover no-repeat;
   filter:brightness(calc(.3 + var(--cd-l) * .55));}
-/* 天亮：同一座禮堂的白天，從一片白光裡定下來 */
+/* 天亮：同一座教堂的白天，從一片白光裡定下來 */
 .cd-day{display:none;}
 .cd-host[data-variant="white-church"] .cd-day{display:block;position:absolute;inset:0;opacity:0;pointer-events:none;
-  background:#f6f4f0 url(../../img/chapel/hall.webp) 50% 55%/cover no-repeat;transition:opacity 1.6s ease;}
+  background:#f6f4f0 url(../../img/chapel/nave.webp) 50% 50%/cover no-repeat;transition:opacity 1.6s ease;}
 .cd-host[data-variant="white-church"] .cd-day::after{content:'';position:absolute;inset:0;
   background:radial-gradient(50% 40% at 50% 50%,rgba(255,255,255,.6),transparent 75%);}
 .cd-host.is-dawn .cd-day{opacity:1;animation:cd-dawn 2.4s ease both;}

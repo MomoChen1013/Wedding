@@ -245,7 +245,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | `book` | 翻頁・古書 | 點封面 → 翻開 → 扉頁 → 翻過扉頁 | （可選） |
 | `bloom` | 花朵盛開 | 自己演：一整面綠籬 → 到處冒出小花苞 → 從中間往外一波波開成白玫瑰 → 名字（綠籬與玫瑰都是真的照片） | spring-orangerie |
 | `curtain` | 窗簾拉開 | 點一下 → 布幕收到兩側 → 光進來（晨光房間：真的白紗簾，後面是窗台上一瓶鬱金香的窗） | morning-window |
-| `candle` | 燭光點亮 | 點一下 → 三根蠟燭一根根亮（蠟燭與火焰都是真的照片）；白色教堂：燭火熄掉、天亮，變成大廳那座純白禮堂 | white-church |
+| `candle` | 燭光點亮 | 點一下 → 三根蠟燭一根根亮（蠟燭與火焰都是真的照片）；白色教堂：燭火熄掉、天亮，變成大廳那座純白的哥德式教堂 | white-church |
 | `stars` | 星圖展開 | 自己演：星星 → 連線成一顆心 → 名字 | night-sky |
 | `door` | 門／拱門 | 晴朗的早上站在門口，點一下 → 門往內開 → 陽光湧出來、穿過門口。莊園全部是真的照片：南法小鎮的街角，石灰岩牆上一扇灰藍的木門，木門從照片分離出來繞著右邊的鉸鍊往裡推開，門後就是大廳那座莊園的中庭（教堂／刺繡用程式畫的尖拱鐵門），秘密花園是常春藤牆上一扇白框玻璃門（牆、垂下來的藤、牆腳的花、門後的玫瑰拱門小徑都是真的照片） | secret-garden、french-manor |
 | `pressed` | 摘下壓花 | 一小束真的壓花橫跨卡片中縫、用兩段紙膠帶貼住（卡片就是被它封起來的）。點一下（或按住壓花往外拉，膠帶會跟著翹起來）→ 兩段紙膠帶從一端撕起、往回折、被拿走 → 那束壓花被拿起來（離開紙面、影子變大）、拿走 → 卡片打開。紙膠帶半透明、看得到纖維與細點點、兩端手撕的鋸齒，顏色跟版型走（植物信箋鼠尾草綠、法式莊園灰藍、其他霧玫瑰）；卡片與桌面是真的棉紙、纖維紙。舊代號 `ribbon`（拉開絲帶）照樣認得，已經存好的網站不用改 | botanical-letter |
@@ -340,23 +340,22 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 >
 > 灰泥面板的灰泥借用晨光房間的 `window/plaster.webp`；三扇窗的百葉窗與窗台是 CSS 畫的。
 
-> **白色教堂的照片素材**（`public/img/chapel/`，開場的蠟燭與 `lobby-chapel.html` 共用）：一樣是 Unsplash License。
+> **白色教堂的素材**（`public/img/chapel/`，開場的蠟燭與 `lobby-chapel.html` 共用）：除了 hero 的教堂（新人提供）與程式畫的紋理、線描，一樣是 Unsplash License。
 >
 > | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
 > |---|---|---|---|
-> | `chapel/hall.webp` | 大廳 hero、開場（candle）的房間（午夜壓暗、天亮變回白天） | [白色圓拱與水晶吊燈的禮堂](https://unsplash.com/photos/pYm7i-sWzVE)・Thay Jesus | 縮圖 |
+> | `chapel/nave.webp` | 大廳 hero、頁尾（照片的下半，一排一排的長椅）、開場（candle）的房間（午夜壓暗、天亮變回白天） | 純白的哥德式教堂（尖拱、肋拱、走道通到祭壇的尖頂窗），新人提供 | 轉成 webp |
+> | `chapel/plaster.webp` | 整頁的牆：有抹刀痕的乳白灰泥（上面再平鋪一層 SVG 雜訊當細顆粒，寫在 lobby-chapel.css） | — | 程式畫的：低頻的深淺 ＋ 一道道彎弧的抹刀痕（一側是比較利的刀口），720px 可無縫平鋪 |
+> | `chapel/olive-line.svg`、`eucalyptus-line.svg` | 卡片角落伸出來的橄欖／尤加利（霧面香檳金線描） | — | 程式畫的向量線條 |
+> | `chapel/bloom-arch.webp`、`bloom-shoulder.webp` | hero 窗框左下腳邊的一大簇、窗框右上肩膀的一小簇 | 拼起來的花藝，用到：[黑底上的白芍藥](https://unsplash.com/photos/-2gyq6wt-3I)・Maria Nikolova、[黑底上的滿天星](https://unsplash.com/photos/FolJQXGJ7FE)・After Exposure Studio、[黑底上的白繡球](https://unsplash.com/photos/aDl_GZ-ETec)・valentin hintikka、[暗底上的三朵淡粉白玫瑰](https://unsplash.com/photos/Xh4TROIQM3A)・Gomezgai Jere、[白底上的尤加利](https://unsplash.com/photos/hX_hf2lPpUU)・Annie Spratt，再加上春日溫室的白玫瑰（`orangerie/white-roses`、`white-rose`、`bloom-rose1`）、秘密花園的粉色洋桔梗（`secret-garden/flowers-row` 拆成一枝一枝）、植物信箋的橄欖枝 | 黑底的依亮度去背（芍藥補洞、底部被畫框切平的地方淡掉、偏黃綠的白拉回暖白；滿天星只留清楚的小花、顏色拉回乳白；繡球補暖、提亮）、白底的依「離背景多遠」去背；洋牡丹與洋桔梗切掉花梗只留花頭；每一枝加一層很淡的影子再疊起來 |
+> | `chapel/posy-1`～`posy-4.webp`、`bloom-corner.webp`、`fall-daisy.webp`、`fall-daisy-2.webp` | 往下捲看到的花：當日流程（一束小雛菊）、小提醒（小玻璃瓶裡的三朵淡粉波斯菊）、交通資訊（一把白色波斯菊）、出席回覆（一大團白色滿天星）標題上的花，倒數卡角上的一朵波斯菊和一朵小雛菊，一路飄下來的小雛菊 | [藍灰底上的一束雛菊](https://unsplash.com/photos/Njk60oi4m0M)・Mustafa akın、[白底上玻璃瓶裡的粉色波斯菊](https://unsplash.com/photos/6tpYmwa0Mh8)・Natalie Kinnear、[暗綠底上的一把白色波斯菊](https://unsplash.com/photos/jmGT6YV7lLw)・Anita Austvika、[黑底上的滿天星](https://unsplash.com/photos/pjt40oGp2mk)・After Exposure Studio、[白底上的淡粉波斯菊](https://unsplash.com/photos/l7B7VjYL7pk)・Katriona McCarthy、[一片小雛菊](https://unsplash.com/photos/CoG1AXUsylg)・Wyxina Tresse | 每一束都是整張照片直接去背，不另外拼花、不畫莖：先依「離背景多遠」標出一定是花／一定是背景的地方，中間那圈交給 closed-form matting（pymatting）算透明度並把背景色從邊緣扣掉，花瓣邊緣不會被咬掉；雛菊的綠莖一律算花；花莖被畫框切到的底部、滿天星底下的木桌淡掉；玻璃瓶留著，透明的地方自然透出牆；暗綠底反到白花瓣上的綠扣掉；偏冷的白拉回暖白、波斯菊的粉調淡一點。飄落的小雛菊是那片小雛菊拆出來的一朵一朵 |
+> | `chapel/divider.svg` | 每個區塊標題底下：兩條細線、中間一顆菱形、兩邊各一小枝橄欖葉 | — | 程式畫的向量線條 |
 > | `chapel/candle-top.webp`、`candle-base.webp`、`candle-body.webp` | 開場的三根蠟燭（不管哪個版型用燭光開場都是這根） | [一根白蠟燭](https://unsplash.com/photos/DfGYqdUl2WY)・KaLisa Veer | 去背，擦掉燭芯以上的火、重畫燒過的燭芯；再切成燭頂、燭身下半、一段燭身，疊起來高矮都不會拉長 |
 > | `chapel/flame.webp` | 開場點亮的火焰 | [黑底裡的一根蠟燭](https://unsplash.com/photos/Fqqrfvq0Zgg)・PhotographyCourse | 只取火焰，依亮度轉成透明度 |
-> | `chapel/aisle.webp` | 「我們的故事」的背景 | [開滿白花的婚禮走道](https://unsplash.com/photos/aRQrz0fclB8)・Soulseeker - Creative Photography | 縮圖 |
-> | `chapel/chandelier.webp` | hero 前景的水晶燈、當日流程 | [水晶吊燈](https://unsplash.com/photos/ayj4F0PC-I8)・CHUTTERSNAP | 去背 |
-> | `chapel/rings.webp` | 婚禮資訊 | [一對戒指](https://unsplash.com/photos/Vyy8tY3D3nk)・Deena Englard | 去背 |
-> | `chapel/lilies.webp` | 交通資訊 | [一瓶百合](https://unsplash.com/photos/JwhaKMTJAD0)・Eddie Hsu | 去背，底部淡出 |
-> | `chapel/lily-valley.webp` | 小提醒（一枝鈴蘭） | [鈴蘭](https://unsplash.com/photos/81NtL7snxoI)・Svetlana Butovskaya | 去背 |
-> | `chapel/lily-field.webp` | 倒數的毛玻璃後面（越捲越清楚） | 同上，整張照片 | 縮圖 |
-> | `chapel/orchid.webp` | hero 右下角、R.S.V.P. | [黑底上的一枝白色蝴蝶蘭](https://unsplash.com/photos/kGckDAbXZA8)・Jocelyn Morales | 依亮度去背 |
-> | `chapel/gypsophila.webp` | 頁尾的背景 | [一片滿天星](https://unsplash.com/photos/AWZ3l66_iKw)・Danielle Suijkerbuijk | 縮圖 |
-> | `chapel/tulle.webp` | 整頁兩旁垂下來的白紗 | [垂墜的白紗](https://unsplash.com/photos/hM7P386VIOg)・Kristina Tochilko | 縮圖 |
-> | `chapel/lace-edge.webp` | hero 下緣的一圈蕾絲 | [波浪邊的白色蕾絲](https://unsplash.com/photos/AdX5Qpl7Xy0)・Anna Evans | 依亮度去背、加深花紋，取波浪邊那一段，鏡射接成連續的波浪 |
+> | `chapel/rings.webp` | 婚禮資訊的標題 | [一對戒指](https://unsplash.com/photos/Vyy8tY3D3nk)・Deena Englard | 去背 |
+> | `chapel/tulle.webp` | 整頁兩旁垂下來、被風吹動的白紗 | [垂墜的白紗](https://unsplash.com/photos/hM7P386VIOg)・Kristina Tochilko | 縮圖 |
+>
+> hero 鏡頭前失焦的橄欖枝、牆上晃動的橄欖枝影子借用植物信箋的 `botanical/olive.webp`（壓成全黑、柔焦、很淡的 multiply 就是影子）。
 
 > **晨光房間的照片素材**（`public/img/window/`，開場的紗簾與 `lobby-window.html` 共用）：一樣是 Unsplash License。
 >
@@ -466,7 +465,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | monet-garden | ✅ 莫內花園・流動油畫：莫內真跡的掃描（日本橋、塞納河、罌粟花田、柳樹、維特伊的花園小徑、國會大廈日落、阿讓特伊的花園），水面在 canvas 上一直流動；真的金框（照片做成九宮格）、真的亞麻畫布、錦緞壁紙的展牆、美術館說明卡、黃銅名牌、阿讓特伊的明信片；畫裡的東西跑到框外面來（大理花、哈森的蜀葵與罌粟從畫框與卡片邊一筆刷出來，蝴蝶在飛、花瓣在飄，故事展牆的角落一瓶塞尚的花） ＋ 捲動編排（hero 的池水一直流動、往下捲畫慢慢沉下去；每一幅小畫捲到時從釘子上擺進來、再一筆一筆刷上去；故事展牆的投射燈隨捲動滑過；倒數時夕陽的光越捲越暖），素材見上面〈莫內花園的素材〉 | `lobby-monet.html` |
 | outdoor-party | ✅ 美式戶外婚禮派對：開場露出來的那片藍天、綠地、遠山就是 hero，草地上擺著野餐（籐籃、一瓶雛菊、琺瑯杯、一籃蘋果），幾顆漏網的霧面粉彩氣球一直往上飄；三角旗資訊卡（上緣是真的紅白格紋布、後面探出野花）、長桌派對與野花玻璃罐的拍立得、字母板的流程（旁邊老銀餐具與紅琺瑯杯）、綁著三顆粉彩氣球的「Just Married」老福特小貨車、真的戶外婚宴當故事的底、黃昏亮燈的穀倉當倒數的底、入場券、彩色園遊券 ＋ 捲動編排（草原往上退；野花從卡片後面長出來；三角旗一面一面翻下來；小貨車從右邊開進來；拍立得跟著捲動擺；倒數的串燈一顆一顆亮、穀倉越來越亮，全亮了就放煙火），素材見上面〈美式戶外派對的素材〉 | `lobby-party.html` |
 | morning-window | ✅ 侘寂（Wabi-Sabi）：真的照片（窗前的一瓶鬱金香、灰泥牆、牆上窗格形狀的陽光、亞麻布、照著陽光的紗簾），顏色都是褪過的大地色 ＋ 「我們的故事」是一本攤開的筆記本，接著一張早餐桌巾：去背的可頌／一枝乾燥的玫瑰／素色抱枕／一盆室內植物（這一帶不放新人照片，免得跟下一區「相遇之間」重複）＋ 區塊標題上是去背的小物（乾燥的玫瑰、白色花瓶、素色抱枕、攤開的書、一枝粉色鬱金香，不放在框裡）＋ 新人照片 1 處（倒數旁）＋ 捲動編排（小物一樣樣落到桌上、窗光滑過桌面、倒數時紗簾越捲越暖），素材見上面〈晨光房間的照片素材〉 | `lobby-window.html` |
-| white-church | ✅ 開場在午夜的禮堂點亮三根真的蠟燭 → 燭火熄掉、天亮 → 大廳是同一座純白禮堂；玻璃感：照片壓在厚玻璃裡（反光隨捲動滑過）、毛玻璃的卡；兩旁垂著白紗、hero 下緣一圈蕾絲、頁尾一片滿天星；區塊標題上是去背的實物（戒指、水晶燈、鈴蘭、百合、白色蝴蝶蘭）；新人照片共 7 處（倒數的毛玻璃後面是一片鈴蘭，越捲越清楚），素材見上面〈白色教堂的照片素材〉 | `lobby-chapel.html` |
+| white-church | ✅ 神聖、純淨、通透：開場在午夜的教堂點亮三根真的蠟燭 → 燭火熄掉、天亮 → 大廳是同一座純白的哥德式教堂，新人的封面照放進一扇尖拱窗框，站在走道盡頭；側窗的光束、光裡飄的微塵、彩繪玻璃落在長椅上的幾彩光暈；整頁從頭到尾同一片有抹刀痕與細顆粒的乳白灰泥牆（中間不穿插別的背景照片），偶爾有窗外的光打進來（窗格形狀的光斑、斜斜的光束，牆上橄欖枝的影子跟著變清楚），最底下回到同一座教堂、看見一排一排的長椅；兩旁被風吹動的白紗、鏡頭前失焦的橄欖枝；霧面香檳金的細線（窗框、卡片內框、標題下的橄欖葉分隔、卡片角落的尤加利與橄欖線描）；鮮花：窗框左下腳邊一大簇、右上肩膀一小簇（洋牡丹、洋桔梗、白玫瑰、滿天星、尤加利）；往下捲看到的都是小雛菊與淡粉波斯菊（區塊標題上一束一束，出席回覆是一大團白色滿天星；倒數卡角上一朵），一路飄著雛菊瓣、淡粉波斯菊瓣與一整朵小雛菊；玻璃感：照片壓在厚玻璃裡（反光隨捲動滑過）、毛玻璃的卡；婚禮資訊的標題是一對去背的戒指；新人照片共 7 處，素材見上面〈白色教堂的素材〉 | `lobby-chapel.html` |
 
 只有 Night Sky 的大廳是深色的，子頁暫時還是淺色版（見 common.css）。
 每個版型各有一頁示範（`preview/botanical-letter.html`、`preview/secret-garden.html`、`preview/spring-orangerie.html`、`preview/night-sky.html`、`preview/french-manor.html`、`preview/monet-garden.html`、`preview/outdoor-party.html`、`preview/morning-window.html`、`preview/white-church.html`）。右下角都可以切換開場。
