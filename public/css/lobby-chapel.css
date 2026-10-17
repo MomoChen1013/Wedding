@@ -387,9 +387,9 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
 .mc-obj.o-rings{background-image:url(../img/chapel/rings.webp);}
 .mc-obj.o-posy{width:clamp(200px,24vw,280px);height:auto;align-self:flex-end;filter:drop-shadow(0 12px 12px rgba(90,76,60,.14));}
 .mc-obj.o-posy.p1{width:clamp(190px,21vw,250px);aspect-ratio:680/423;background-image:url(../img/chapel/posy-1.webp);}
-.mc-obj.o-posy.p2{width:clamp(160px,17vw,210px);aspect-ratio:560/489;background-image:url(../img/chapel/posy-2.webp);}
-.mc-obj.o-posy.p3{width:clamp(160px,17vw,210px);aspect-ratio:560/535;background-image:url(../img/chapel/posy-3.webp);}
-.mc-obj.o-posy.p4{width:clamp(190px,21vw,250px);aspect-ratio:680/452;background-image:url(../img/chapel/posy-4.webp);}
+.mc-obj.o-posy.p2{width:clamp(118px,12vw,148px);aspect-ratio:360/569;background-image:url(../img/chapel/posy-2.webp);}
+.mc-obj.o-posy.p3{width:clamp(190px,21vw,250px);aspect-ratio:600/433;background-image:url(../img/chapel/posy-3.webp);}
+.mc-obj.o-posy.p4{width:clamp(220px,25vw,300px);aspect-ratio:720/354;background-image:url(../img/chapel/posy-4.webp);}
 .mc-head .block-title{margin:0;font:400 clamp(26px,3.6vw,38px)/1.15 'Cinzel','Noto Serif TC',serif;letter-spacing:.12em;
   text-transform:none;color:var(--mc-ink);}
 .mc-head .block-sub{margin:0;font-size:13px;letter-spacing:.4em;color:var(--mc-soft);}
@@ -473,7 +473,7 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
 .mc-count .mc-band-inner{display:flex;justify-content:center;}
 .mc-count-body{padding:clamp(28px,4vw,44px) clamp(22px,5vw,56px);text-align:center;}
 /* 倒數卡的左上角別著一朵淡粉波斯菊、旁邊一朵小雛菊 */
-.mc-count-body::after{content:'';position:absolute;left:clamp(-86px,-6vw,-30px);top:clamp(-84px,-6vw,-50px);width:clamp(96px,11vw,140px);aspect-ratio:420/381;
+.mc-count-body::after{content:'';position:absolute;left:clamp(-86px,-6vw,-30px);top:clamp(-84px,-6vw,-50px);width:clamp(96px,11vw,140px);aspect-ratio:527/480;
   background:url(../img/chapel/bloom-corner.webp) center/contain no-repeat;transform:rotate(-6deg);
   filter:drop-shadow(0 10px 12px rgba(90,76,60,.16));pointer-events:none;}
 @media (max-width:640px){.mc-count-body::after{left:-18px;top:-70px;width:84px;}}
