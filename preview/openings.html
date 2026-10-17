@@ -27,6 +27,7 @@
 <link rel="stylesheet" href="../public/css/openers/candle.css">
 <link rel="stylesheet" href="../public/css/openers/stars.css">
 <link rel="stylesheet" href="../public/css/openers/door.css">
+<link rel="stylesheet" href="../public/css/openers/shutters.css">
 <link rel="stylesheet" href="../public/css/openers/pressed.css">
 <link rel="stylesheet" href="../public/css/openers/painting.css">
 <link rel="stylesheet" href="../public/css/openers/balloons.css">
@@ -70,6 +71,7 @@ body{padding-top:0;}
 <script src="../public/js/openers/candle.js"></script>
 <script src="../public/js/openers/stars.js"></script>
 <script src="../public/js/openers/door.js"></script>
+<script src="../public/js/openers/shutters.js"></script>
 <script src="../public/js/openers/pressed.js"></script>
 <script src="../public/js/openers/painting.js"></script>
 <script src="../public/js/openers/balloons.js"></script>
@@ -79,7 +81,7 @@ const OPENINGS = {
   envelope:'拆信・封蠟', 'envelope-emboss':'拆信・壓紋金邊', 'envelope-feather':'拆信・鵝毛絨',
   'envelope-silk':'拆信・緞帶絲綢', 'envelope-regal':'拆信・華麗紅封蠟', 'envelope-pure':'拆信・端莊金封蠟',
   book:'翻頁・古書', bloom:'花朵盛開', curtain:'窗簾拉開',
-  candle:'燭光點亮', stars:'星圖展開', door:'門／拱門', pressed:'摘下壓花',
+  candle:'燭光點亮', stars:'星圖展開', door:'門／拱門', shutters:'推開百葉窗', pressed:'摘下壓花',
   painting:'走進油畫', balloons:'氣球升空',
 };
 const VARIANTS = {
@@ -92,7 +94,7 @@ const VARIANTS = {
 /* 每個版型的預設開場（對應 TEMPLATES[x].opening） */
 const DEFAULT_OPENING = {
   'tapestry':'envelope', 'botanical-letter':'pressed', 'secret-garden':'door', 'spring-orangerie':'bloom',
-  'night-sky':'stars', 'french-manor':'door', 'morning-window':'curtain', 'white-church':'candle',
+  'night-sky':'stars', 'french-manor':'shutters', 'morning-window':'curtain', 'white-church':'candle',
   'monet-garden':'painting', 'outdoor-party':'balloons',
 };
 /* 與 wed-model.js 的 BALLOON_PALETTES 對應（氣球升空開場的配色） */

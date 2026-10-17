@@ -98,11 +98,11 @@ export const TEMPLATES = {
   'night-sky':   { label:'Night Sky 現代星空', lobbyFile:'lobby-night.html',
                      lobbyCss:['/css/lobby-night.css'], lobbyJs:['/js/lobby-motion.js'], opening:'stars',
                      fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Josefin+Sans:wght@300;400&family=Noto+Sans+TC:wght@300;400;500&family=Noto+Serif+TC:wght@400;500&display=swap'] },
-  /* 法式莊園：法國南方小鎮的街角，推開一扇灰藍的木門，走進一座靜謐的莊園 ——
-     石灰岩與亞麻、赤陶、鼠尾草綠、灰藍的百葉窗、薰衣草與繡球花（真的照片） */
+  /* 法式莊園：南法金色午後的莊園 —— 在莊園裡推開一扇灰藍的百葉窗，窗外就是山坡上的露台；
+     灑滿樹影的灰泥牌、燭台與餐盤、紅酒、薰衣草、橄欖枝（真的照片） */
   'french-manor': { label:'French Manor 法式莊園', lobbyFile:'lobby-manor.html',
-                     lobbyCss:['/css/lobby-manor.css'], lobbyJs:['/js/lobby-motion.js'], opening:'door',
-                     fonts:['https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Pinyon+Script&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
+                     lobbyCss:['/css/lobby-manor.css'], lobbyJs:['/js/lobby-motion.js'], opening:'shutters',
+                     fonts:['https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Pinyon+Script&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
   /* 莫內花園・流動油畫：美術館牆上一幅莫內的日本橋，點一下被吸進畫裡（開場）；
      hero 就是那一幅畫的裡面，整頁的畫都是程式一筆一筆畫的油畫、水面一直流動。
      畫畫的那一支（window.MonetPaint）就住在開場 painting.js 裡，所以 lobbyJs 也掛它 ——
@@ -163,6 +163,7 @@ export const OPENINGS = {
   'candle':   { label:'燭光點亮' },
   'stars':    { label:'星圖展開', auto:true },
   'door':     { label:'門／拱門' },
+  'shutters': { label:'推開百葉窗' },
   'pressed':  { label:'摘下壓花' },
   'painting': { label:'走進油畫' },
   'balloons': { label:'氣球升空', auto:true },

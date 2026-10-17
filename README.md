@@ -247,7 +247,8 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | `curtain` | 窗簾拉開 | 點一下 → 布幕收到兩側 → 光進來（晨光房間：真的白紗簾，後面是窗台上一瓶鬱金香的窗） | morning-window |
 | `candle` | 燭光點亮 | 點一下 → 三根蠟燭一根根亮（蠟燭與火焰都是真的照片）；白色教堂：燭火熄掉、天亮，變成大廳那座純白的哥德式教堂 | white-church |
 | `stars` | 星圖展開 | 自己演：星星 → 連線成一顆心 → 名字 | night-sky |
-| `door` | 門／拱門 | 晴朗的早上站在門口，點一下 → 門往內開 → 陽光湧出來、穿過門口。莊園全部是真的照片：南法小鎮的街角，石灰岩牆上一扇灰藍的木門，木門從照片分離出來繞著右邊的鉸鍊往裡推開，門後就是大廳那座莊園的中庭（教堂／刺繡用程式畫的尖拱鐵門），秘密花園是常春藤牆上一扇白框玻璃門（牆、垂下來的藤、牆腳的花、門後的玫瑰拱門小徑都是真的照片） | secret-garden、french-manor |
+| `door` | 門／拱門 | 晴朗的早上站在門口，點一下 → 門往內開 → 陽光湧出來、穿過門口。莊園全部是真的照片：南法小鎮的街角，石灰岩牆上一扇灰藍的木門，木門從照片分離出來繞著右邊的鉸鍊往裡推開，門後就是大廳那座莊園的中庭（教堂／刺繡用程式畫的尖拱鐵門），秘密花園是常春藤牆上一扇白框玻璃門（牆、垂下來的藤、牆腳的花、門後的玫瑰拱門小徑都是真的照片） | secret-garden |
+| `shutters` | 推開百葉窗 | 南法莊園裡的一扇窗（新人提供的 AI 圖）：厚厚的石灰岩窗台上一罐薰衣草、一枝橄欖、一封綁藍緞帶的信，灰藍的百葉窗關著，光從葉片縫透進來一明一暗、光裡飄著灰塵。點一下 → 兩扇百葉窗（從照片切出來的兩層，擋在前面的薰衣草、陶罐、橄欖枝留在房間那一層）繞外側的鉸鍊往外推開、紗簾被風吹進來 → 窗外就是大廳第一個畫面那張莊園露台 → 低頭看窗台上那封信（第二張新人提供的圖），兩個人的名字用 Pinyon Script 一筆一筆寫在信封上 → 一片暖光進到大廳 | french-manor |
 | `pressed` | 摘下壓花 | 一小束真的壓花橫跨卡片中縫、用兩段紙膠帶貼住（卡片就是被它封起來的）。點一下（或按住壓花往外拉，膠帶會跟著翹起來）→ 兩段紙膠帶從一端撕起、往回折、被拿走 → 那束壓花被拿起來（離開紙面、影子變大）、拿走 → 卡片打開。紙膠帶半透明、看得到纖維與細點點、兩端手撕的鋸齒，顏色跟版型走（植物信箋鼠尾草綠、法式莊園灰藍、其他霧玫瑰）；卡片與桌面是真的棉紙、纖維紙。舊代號 `ribbon`（拉開絲帶）照樣認得，已經存好的網站不用改 | botanical-letter |
 | `painting` | 走進油畫 | 鼠尾草綠錦緞壁紙的展間，牆上一幅真的金框（照片做的九宮格）裡掛著莫內的《日本橋》（美國國家藝廊館藏的掃描），畫是活的（池水起伏、水面光點閃）；像首爾的沉浸式美術館，畫裡的東西跑到框外面來：大理花與蜀葵從框邊一筆刷出來、蝴蝶從畫裡飛到牆上、花瓣飄出畫面。點一下 → 牆往外退、畫框往前衝、畫裡的筆觸捲成漩渦，四周的顏料點被吸進畫裡 → 掉進畫裡 | monet-garden |
 | `balloons` | 氣球升空 | 自己演：滿滿一畫面一顆一顆霧面的乳膠氣球（顏色看 `balloonPalette`；遠中近三層，近的帶一點景深的糊）在原地晃 → 每一顆各自被放開、各自的速度與方向慢慢升空 → 露出底下藍天下的後院婚宴（白色尖頂帳篷、長桌、串燈） → 名字浮在天空上 | outdoor-party |
@@ -318,27 +319,25 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 > | `botanical/fibre-paper.webp` | 「我們的故事」的底、開場（pressed）的桌面 | [纖維紙](https://unsplash.com/photos/2nKcZGDHpEs)・360floralflaves | 縮圖 |
 > | `botanical/pressed-posy.webp` | 開場（pressed）貼在卡片中縫的那一束壓花 | 用上面的 `fern`、`pressed-leaf`、`veronica`、`daisy`、`pressed-tulip` 拼成一束 | 各自轉一個角度、花莖收在同一點，疊成一張透明底的圖 |
 
-> **法式莊園的照片素材**（`public/img/manor/`，開場的木門與 `lobby-manor.html` 共用）：一樣是 Unsplash License。
+> **法式莊園的照片素材**（`public/img/manor/`，開場的木門與 `lobby-manor.html` 共用）：Unsplash 的照片一樣是 Unsplash License；標「新人提供」的是新人給的圖。
 >
 > | 檔案 | 用在哪裡 | 原圖 | 怎麼處理的 |
 > |---|---|---|---|
+> | `manor/opener/room.webp`、`leaf-l.webp`、`leaf-r.webp` | 開場（推開百葉窗）：莊園裡的一扇窗 | 新人提供（AI 生成） | 兩扇百葉窗沿著窗洞（上緣是一道弧）切成各自一層；擋在左扇前面的薰衣草、陶罐、橄欖枝只在它們所在的範圍裡依顏色找出來，留在房間那一層；左扇被擋住的那一塊用右扇左右翻過來補（邊緣淡淡混合） |
+> | `manor/opener/letter.webp` | 開場：窗台上那封信的特寫，名字寫在信封上 | 新人提供（AI 生成） | 轉成 webp |
 > | `manor/door-scene.webp`、`manor/door-leaf.webp` | 開場：南法小鎮街角，石灰岩牆上一扇灰藍的木門 | [石屋上一扇質樸的藍色木門](https://unsplash.com/photos/VJBz5nvw0j0)・eliza cemme | 裁掉上緣的三角旗；門板依顏色量出範圍，切成自己的一層（door-leaf，可以推開），門洞在 door-scene 裡挖成透明 |
-> | `manor/courtyard.webp` | 大廳 hero 的中庭、開場門後看到的那一片 | [灰藍百葉窗與一棵開花的樹](https://unsplash.com/photos/QAFgjcZz-fI)・Camille La Brequa | 縮圖、稍微調亮、降一點彩度 |
-> | `manor/arch-door.webp` | 「我們的故事」的背景 | [灰泥牆上的石拱門與壁燈](https://unsplash.com/photos/UpfOIuFOelI)・Lea Gindorf | 縮圖 |
-> | `manor/cottage.webp` | 倒數的背景 | [開滿玫瑰、有百葉窗的石屋](https://unsplash.com/photos/qs6RGMBaetQ)・Erwan Hesry | 縮圖、調亮、降一點彩度 |
-> | `manor/wall.webp` | 整頁的底：蜂蜜色的小石塊石灰岩牆、灰泥面板與窗的石框 | [小石塊砌成的石牆](https://unsplash.com/photos/ntNwMS0fWGk)・Angelo Casto | 顏色對齊 mood board 的石牆（每個色板的平均與對比）；錯位半張再淡淡混合，做成可以無縫平鋪的一塊 |
-> | `manor/floor.webp` | 頁尾牆腳的地磚 | [手工赤陶與米白的方磚](https://unsplash.com/photos/Tuh5a17HHrI)・Philippa Lowe | 縮圖 |
-> | `manor/candles.webp` | 「婚禮資訊」的標題 | [白底上的三支黃銅燭台](https://unsplash.com/photos/mwrMvNJYic8)・Noyo creatif | 依彩度去背 |
-> | `manor/chair-bistro.webp` | 「當日流程」的標題 | [披著亞麻巾、放著書的小酒館椅](https://unsplash.com/photos/RNsbwiIy8h4)・Debby Hudson | 依彩度與深淺去背 |
-> | `manor/chair-cane.webp` | 頁尾牆腳的藤椅 | [藤編的木椅](https://unsplash.com/photos/3eohcSTafAo)・Marina Podrez | 依彩度與深淺去背 |
-> | `manor/ivy-cluster.webp` | 三扇窗左邊、頁尾左邊爬上來的常春藤 | [白牆上的常春藤](https://unsplash.com/photos/OAlYImdG1IQ)・Victoria Strukovskaya | 依彩度去背 |
-> | `manor/ivy-strand.webp` | 三扇窗右邊垂下來的一枝藤 | [白牆上的一枝常春藤](https://unsplash.com/photos/7GkXlYawAxU)・Michał Bińkiewicz | 依彩度去背、上下翻轉成往下垂 |
-> | `manor/lavender.webp` | hero 鏡頭前左下、「小提醒」的標題 | [白底上的一把乾燥薰衣草](https://unsplash.com/photos/ldVUBY-XMTU)・Iain Robertson | 依彩度去背，花莖往下淡掉 |
-> | `manor/hydrangea.webp` | hero 鏡頭前右下、R.S.V.P. 的標題 | [白底上的藍紫色繡球花](https://unsplash.com/photos/H6B7TxTvBew)・Sharon Pittaway | 依彩度去背，花球外圍的影子淡掉 |
-> | `manor/key.webp` | 「交通資訊」的標題 | [一把古董鑰匙](https://unsplash.com/photos/GJY1eAw6tn8)・Everyday basics | 依「比周圍暗多少」去背 |
-> | `manor/cameo-frame.webp` | hero 新人照片的蕾絲橢圓框 | — | 波浪外緣 ＋ 一圈打孔的橢圓（沿用舊版） |
->
-> 灰泥面板的灰泥借用晨光房間的 `window/plaster.webp`；三扇窗的百葉窗與窗台是 CSS 畫的。
+> | `manor/manor.webp` | 開場：木門推開後，門後看到的那一座莊園 | [前庭有修剪整齊樹木的莊園](https://unsplash.com/photos/aYA0TKXxcyw)・Shalev Cohen | 縮圖 |
+> | `manor/terrace.webp` | 大廳 hero：山坡上的莊園露台、柏樹、一張鋪好亞麻的長桌 | 新人提供 | 轉成 webp |
+> | `manor/shadow-wall.webp` | 整頁的底：灑滿樹影的灰泥牆（慢慢晃） | 新人提供 | 轉成 webp；頁面上再疊一層暖色（soft-light） |
+> | `manor/long-table.webp` | 頁尾：黃昏時的長禮桌 | 新人提供 | 轉成 webp |
+> | `manor/shadow-band.webp` | 「我們的故事」那一條的底 | [米白牆上的樹影](https://unsplash.com/photos/tgcWzSKauUY)・Suhyeon Choi | 縮圖 |
+> | `manor/plates.webp` | 婚禮資訊：一組餐盤（金邊的米白盤、亞麻餐巾、麻繩餐巾環） | [金邊餐盤與亞麻餐巾](https://unsplash.com/photos/pzm3zne5Hes)・Mel Poole | 盤子是正圓、餐巾露出來的上下兩段照著輪廓描，沿著這個形狀去背 |
+> | `manor/wine.webp` | 倒數：一瓶紅酒、一杯斟好的酒 | [紅酒與酒杯](https://unsplash.com/photos/UzMCaINvNAo)・Brett Jordan | 裁掉桌面；酒標的字用酒標本身的底色蓋掉（只留上下兩道金線）；依「比窗光暗多少、彩度多高」去背，玻璃杯留半透明 |
+> | `manor/lavender.webp` | hero、R.S.V.P.：一束乾燥薰衣草 | [兩枝乾燥薰衣草](https://unsplash.com/photos/GIeXiksXs6E)・Susan Wilkinson | 去背後轉不同角度疊五次，花莖收在同一點，成一束 |
+> | `manor/olive.webp` | hero、「我們的故事」：插在照片後面的一枝橄欖 | [開花的橄欖枝](https://unsplash.com/photos/ylonQpiecVg)・Sixteen Miles Out | 只認「比牆綠、比牆黃」的顏色去背（藍灰色的影子不算），再去掉零星的雜點 |
+> | `manor/herbs.webp` | 出席前的小提醒：一把香草 | [迷迭香](https://unsplash.com/photos/9AOZGBEqyOs)・Jocelyn Morales、[百里香](https://unsplash.com/photos/BSq321oDVoM)・Jiawen Liu、[鼠尾草](https://unsplash.com/photos/fPyE0Xl-C2g)・Paulina S. | 各自去背，疊成一把 |
+> | `manor/candle.webp`、`manor/clock.webp` | 婚禮資訊的燭台、當日流程的座鐘 | 新人提供（黑底） | 依亮度去背、去掉台座的灰邊 |
+> | `manor/key.webp` | 交通資訊 | [一把古董鑰匙](https://unsplash.com/photos/GJY1eAw6tn8)・Everyday basics | 依「比周圍暗多少」去背 |
 
 > **白色教堂的素材**（`public/img/chapel/`，開場的蠟燭與 `lobby-chapel.html` 共用）：除了 hero 的教堂（新人提供）與程式畫的紋理、線描，一樣是 Unsplash License。
 >
@@ -461,7 +460,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 | secret-garden | ✅ 真的照片 ＋ 手繪水彩（玫瑰拱門的小徑、垂下來的常春藤、鏡頭前的花、水彩的罌粟／藍雛菊／海芋／鬱金香／牡丹、去背的蝴蝶、常春藤牆、黃昏草地的螢火蟲）＋ 捲動編排，素材見上面〈秘密花園的照片素材〉 | `lobby-garden.html` |
 | spring-orangerie | ✅ 真的照片（明亮的玻璃溫室、白玫瑰、鬱金香、檸檬枝、蕨葉、澆水壺、溫室屋頂、小王子的那一朵紅玫瑰、白牆上的葉影、一束白玫瑰）＋ 捲動編排（葉影隨捲動移動、斜射的光、倒數區的紅玫瑰捲到時亮起暖光），素材見上面〈春日溫室與植物信箋的照片素材〉 | `lobby-orangerie.html` |
 | night-sky | ✅ 整套插圖（現代星空：開場那張心形星圖停在 hero、寫實的月亮、三層山稜、亮燈的帳篷、坐著看星星的兩個人、細金線星座）＋ 捲動編排（三層星星視差、星圖外環跟著轉、星座一條一條連起來、望遠鏡視野的軌道、倒數的月亮越捲越圓、頁尾天快亮了） | `lobby-night.html` |
-| french-manor | ✅ 法國南方小鎮的街角，推開門走進去的靜謐莊園：整頁是莊園真的建築材質 —— 蜂蜜色的小石塊石灰岩牆、嵌在牆上的溫白灰泥面板（石框、刻線）、石框的窗配灰藍的百葉窗（照片牆前三張就在窗裡）、赤陶的地磚；沿著牆爬的常春藤、繡球花、薰衣草；古銅色的燭台、小酒館椅、藤椅（全部是真照片去背）。hero 是莊園的中庭 ＋ 蕾絲橢圓框裡的新人照片；故事是石拱門、倒數是開滿玫瑰的石屋（捲動視差），素材見上面〈法式莊園的照片素材〉 | `lobby-manor.html` |
+| french-manor | ✅ 南法金色的午後，山坡上的莊園：開場推開一扇灰藍的木門；hero 是莊園的露台（遠處的山谷、柏樹、石屋、一張鋪好亞麻的長桌）＋ 白邊相片裡的新人照片（後面插一枝橄欖、前面一束薰衣草）；整頁是一面灑滿樹影的灰泥牆（慢慢晃）；跟植物信一樣每一段一張新人照片（白邊、細金線，左右交錯），旁邊擺普羅旺斯的真東西（燭台與餐盤、座鐘、香草、古董鑰匙、橄欖枝、紅酒、薰衣草，去背）；亞麻色的卡片、膠囊按鈕；Playfair Display ＋ Pinyon Script；頁尾是黃昏的長禮桌，素材見上面〈法式莊園的照片素材〉 | `lobby-manor.html` |
 | monet-garden | ✅ 莫內花園・流動油畫：莫內真跡的掃描（日本橋、塞納河、罌粟花田、柳樹、維特伊的花園小徑、國會大廈日落、阿讓特伊的花園），水面在 canvas 上一直流動；真的金框（照片做成九宮格）、真的亞麻畫布、錦緞壁紙的展牆、美術館說明卡、黃銅名牌、阿讓特伊的明信片；畫裡的東西跑到框外面來（大理花、哈森的蜀葵與罌粟從畫框與卡片邊一筆刷出來，蝴蝶在飛、花瓣在飄，故事展牆的角落一瓶塞尚的花） ＋ 捲動編排（hero 的池水一直流動、往下捲畫慢慢沉下去；每一幅小畫捲到時從釘子上擺進來、再一筆一筆刷上去；故事展牆的投射燈隨捲動滑過；倒數時夕陽的光越捲越暖），素材見上面〈莫內花園的素材〉 | `lobby-monet.html` |
 | outdoor-party | ✅ 美式戶外婚禮派對：開場露出來的那片藍天、綠地、遠山就是 hero，草地上擺著野餐（籐籃、一瓶雛菊、琺瑯杯、一籃蘋果），幾顆漏網的霧面粉彩氣球一直往上飄；三角旗資訊卡（上緣是真的紅白格紋布、後面探出野花）、長桌派對與野花玻璃罐的拍立得、字母板的流程（旁邊老銀餐具與紅琺瑯杯）、綁著三顆粉彩氣球的「Just Married」老福特小貨車、真的戶外婚宴當故事的底、黃昏亮燈的穀倉當倒數的底、入場券、彩色園遊券 ＋ 捲動編排（草原往上退；野花從卡片後面長出來；三角旗一面一面翻下來；小貨車從右邊開進來；拍立得跟著捲動擺；倒數的串燈一顆一顆亮、穀倉越來越亮，全亮了就放煙火），素材見上面〈美式戶外派對的素材〉 | `lobby-party.html` |
 | morning-window | ✅ 侘寂（Wabi-Sabi）：真的照片（窗前的一瓶鬱金香、灰泥牆、牆上窗格形狀的陽光、亞麻布、照著陽光的紗簾），顏色都是褪過的大地色 ＋ 「我們的故事」是一本攤開的筆記本，接著一張早餐桌巾：去背的可頌／一枝乾燥的玫瑰／素色抱枕／一盆室內植物（這一帶不放新人照片，免得跟下一區「相遇之間」重複）＋ 區塊標題上是去背的小物（乾燥的玫瑰、白色花瓶、素色抱枕、攤開的書、一枝粉色鬱金香，不放在框裡）＋ 新人照片 1 處（倒數旁）＋ 捲動編排（小物一樣樣落到桌上、窗光滑過桌面、倒數時紗簾越捲越暖），素材見上面〈晨光房間的照片素材〉 | `lobby-window.html` |

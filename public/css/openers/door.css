@@ -81,21 +81,22 @@
 .dr-gothic{--dr-accent:#7a5a3a;}
 /* ---- 莊園：全部是真的照片（見 README〈法式莊園的照片素材〉） ----
    法國南方小鎮的街角：石灰岩牆上一扇灰藍的木門、旁邊一扇百葉窗（eliza cemme／Unsplash）；
-   門從照片裡分離成自己的一層，推開之後門後就是大廳那座莊園的中庭（Camille La Brequa／Unsplash） */
+   門從照片裡分離成自己的一層，推開之後門後就是大廳那一座莊園的前庭（Shalev Cohen／Unsplash） */
 .dr-manor{--dr-accent:#9a5a40;background:#cdbb9c;}
-.dr-manor .dr-land{background:#e8e2d4 url(../../img/manor/courtyard.webp) 50% 45%/cover no-repeat;}
+.dr-manor .dr-land{background:#e8e2d4 url(../../img/manor/manor.webp) 50% 42%/cover no-repeat;}
 /* 兩旁：石灰岩的顏色，邊上暗一點；門那張照片的邊淡進來 */
 .dr-manor .dr-blur{position:absolute;inset:0;background:radial-gradient(70% 90% at 50% 45%,#e4d7be,#cdbb9a 70%,#b3a07f);}
 /* 推開門：陽光只輕輕亮一下，看得到門後的中庭 */
 .dr-host.dr-manor.is-open .dr-flood{opacity:.18;}
-/* 直立的手機：照片撐滿高度（左右裁掉一點，門在正中間）；橫的螢幕：整面牆完整放在中間 */
-.dr-manor .dr-photo{position:absolute;left:50%;top:50%;height:max(100%,calc(100vw * 1549 / 1300));aspect-ratio:1300/1549;
-  transform:translate(-50%,-50%);
+/* 照片放大到比畫面高一點，對準門洞的正中間（門洞中心在照片的 47.3%、56.8%），
+   門佔畫面約三分之二高；上面的壁燈、下面的石階剛好留在畫面邊上 */
+.dr-manor .dr-photo{position:absolute;left:50%;top:54%;height:max(120%,calc(100vw * 1549 / 1300));aspect-ratio:1300/1549;
+  transform:translate(-47.3%,-56.8%);
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);
           mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);}
-@media (min-aspect-ratio:3/4){.dr-manor .dr-photo{height:100%;}}
-/* 門洞後面：莊園的中庭（跟 .dr-land 同一張，門推開就看得到） */
-.dr-manor .dr-behind{position:absolute;background:#e8e2d4 url(../../img/manor/courtyard.webp) 50% 60%/auto 120% no-repeat;}
+@media (min-aspect-ratio:3/4){.dr-manor .dr-photo{height:120%;}}
+/* 門洞後面：莊園的前庭與立面（跟 .dr-land 同一張，門推開就看得到正中間那一棟） */
+.dr-manor .dr-behind{position:absolute;background:#e8e2d4 url(../../img/manor/manor.webp) 50% 70%/auto 125% no-repeat;}
 .dr-manor .dr-scene{position:absolute;inset:0;background:url(../../img/manor/door-scene.webp) center/100% 100% no-repeat;}
 /* 木門：把手在左邊，繞著右邊的鉸鍊往裡推開 */
 .dr-manor .dr-opening{perspective:1600px;}
@@ -105,8 +106,21 @@
 .dr-host.dr-manor.is-open .dr-iron{transform:rotateY(-82deg);filter:brightness(.82);animation:dr-unlatch .35s ease;}
 /* 手機直立：門只佔下半部，字放到上面的天空 */
 @media (max-aspect-ratio:3/4){.dr-text{top:28%;}}
-/* 莊園的門在手機上從畫面 29% 開到 85%：字放進門洞的光裡，不要壓到門楣 */
-@media (max-aspect-ratio:3/4){.dr-manor .dr-text{top:40%;}}
+/* 莊園的字：石牆和門框的紋路太花，細的字浮在上面讀不清楚 ——
+   改成刻在一塊灰泥牌上（跟大廳的名牌同一個樣子），放在門洞下半段的草地前，上半段留給門後的莊園 */
+.dr-manor .dr-text{left:50%;right:auto;top:71%;transform:translate(-50%,-50%);width:max-content;max-width:calc(100vw - 32px);
+  gap:2px;padding:10px clamp(18px,2.4vw,28px) 9px;border:6px solid transparent;background:#f5efe3;
+  outline:1px solid rgba(150,120,80,.45);outline-offset:-5px;text-shadow:none;
+  box-shadow:inset 0 2px 6px rgba(80,60,30,.18),0 14px 34px rgba(50,36,20,.38),0 2px 6px rgba(50,36,20,.25);}
+.dr-host.dr-manor.is-open .dr-text{transition:opacity .8s ease .55s;}
+.dr-host.dr-manor.is-walking .dr-text{transition:opacity .5s ease 0s;}
+.dr-manor .dr-kicker{font-size:clamp(13px,1.4vw,15px);}
+.dr-manor .dr-names{font-size:clamp(20px,2.4vw,28px);}
+/* 莊園換成 Playfair Display ＋ Pinyon Script（跟大廳同一組字） */
+.dr-manor .dr-kicker{font-family:'Pinyon Script','Playfair Display',serif;font-style:normal;font-size:clamp(17px,1.8vw,20px);}
+.dr-manor .dr-names .op-amp{font-family:'Playfair Display',serif;font-style:italic;}
+.dr-manor .dr-hint .en{font-family:'Playfair Display',serif;}
+.dr-manor .dr-date{font-size:10.5px;letter-spacing:.36em;color:rgba(46,42,36,.72);}
 /* 秘密花園在手機上，字落在門上面那一片深色的常春藤：改成淺色的字、深色的光暈 */
 @media (max-aspect-ratio:3/4){
   .dr-garden .dr-text{--dr-ink:#fbf8ef;--dr-accent:#f3d9e0;text-shadow:0 0 16px rgba(10,20,8,.95),0 1px 4px rgba(10,20,8,.85);}
