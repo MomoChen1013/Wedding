@@ -6,7 +6,7 @@
      .dr-world   門這一層：.dr-front（石柱、牆、地面、植物）＋ .dr-opening（兩扇門）
      .dr-flood   推開之後湧出來的陽光
    三種門：
-     .dr-manor   南法小鎮的街角，石灰岩牆上一扇灰藍的木門（法式莊園；預設，真的照片）
+     .dr-manor   南法小鎮的街角，石灰岩牆上一扇灰藍的木門（南法莊園；預設，真的照片）
      .dr-gothic  同樣的鐵門，尖拱、石柱頂是小尖塔（白色教堂、中古刺繡）
      .dr-garden  常春藤牆上，一扇白框玻璃門（秘密花園）；門後是一張真的花園照片
    門與 .dr-front 用同一個 600×640 的座標：.dr-portal 固定這個比例，
@@ -79,7 +79,7 @@
 /* 門後：開滿玫瑰的拱門小徑（Annie Spratt／Unsplash，見 README〈秘密花園的照片素材〉） */
 .dr-garden .dr-land{background:#e8ece4 url(../../img/secret-garden/garden-arch.webp) 50% 42%/cover no-repeat;}
 .dr-gothic{--dr-accent:#7a5a3a;}
-/* ---- 莊園：全部是真的照片（見 README〈法式莊園的照片素材〉） ----
+/* ---- 莊園：全部是真的照片（見 README〈南法莊園的照片素材〉） ----
    法國南方小鎮的街角：石灰岩牆上一扇灰藍的木門、旁邊一扇百葉窗（eliza cemme／Unsplash）；
    門從照片裡分離成自己的一層，推開之後門後就是大廳那一座莊園的前庭（Shalev Cohen／Unsplash） */
 .dr-manor{--dr-accent:#9a5a40;background:#cdbb9c;}
