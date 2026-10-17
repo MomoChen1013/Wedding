@@ -386,10 +386,10 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
 .mc-obj.o-rings{width:clamp(150px,18vw,200px);height:auto;aspect-ratio:640/219;align-self:center;}
 .mc-obj.o-rings{background-image:url(../img/chapel/rings.webp);}
 .mc-obj.o-posy{width:clamp(200px,24vw,280px);height:auto;align-self:flex-end;filter:drop-shadow(0 12px 12px rgba(90,76,60,.14));}
-.mc-obj.o-posy.p1{width:clamp(170px,19vw,230px);aspect-ratio:640/544;background-image:url(../img/chapel/posy-1.webp);}
+.mc-obj.o-posy.p1{width:clamp(190px,21vw,250px);aspect-ratio:680/423;background-image:url(../img/chapel/posy-1.webp);}
 .mc-obj.o-posy.p2{width:clamp(160px,17vw,210px);aspect-ratio:560/489;background-image:url(../img/chapel/posy-2.webp);}
-.mc-obj.o-posy.p3{width:clamp(210px,24vw,280px);aspect-ratio:680/377;background-image:url(../img/chapel/posy-3.webp);}
-.mc-obj.o-posy.p4{width:clamp(230px,27vw,320px);aspect-ratio:680/229;background-image:url(../img/chapel/posy-4.webp);}
+.mc-obj.o-posy.p3{width:clamp(160px,17vw,210px);aspect-ratio:560/535;background-image:url(../img/chapel/posy-3.webp);}
+.mc-obj.o-posy.p4{width:clamp(190px,21vw,250px);aspect-ratio:680/452;background-image:url(../img/chapel/posy-4.webp);}
 .mc-head .block-title{margin:0;font:400 clamp(26px,3.6vw,38px)/1.15 'Cinzel','Noto Serif TC',serif;letter-spacing:.12em;
   text-transform:none;color:var(--mc-ink);}
 .mc-head .block-sub{margin:0;font-size:13px;letter-spacing:.4em;color:var(--mc-soft);}
