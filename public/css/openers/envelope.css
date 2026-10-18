@@ -8,7 +8,7 @@
 
    同一封信有六款（.env[data-env]，見 js/openers/envelope.js 的 STYLES）：
      vintage  復古舊紙・古銅封蠟（sites.opening = 'envelope'，原本那一款）
-     emboss   壓紋白信封・金封蠟 —— 拆開時壓紋浮出金邊
+     emboss   壓紋白信封・金封蠟 —— 天鵝與玫瑰的白色浮雕，單純拆開
      feather  鵝毛絨白信封・粉紅封蠟 —— 封口一圈羽毛，拆開時羽毛飛散
      silk     緞帶絲綢白信封・紅封蠟 —— 先把緞帶抽掉，再裂封蠟
      regal    華麗白信封・紅封蠟 —— 燙金框、燙金花飾
@@ -202,8 +202,8 @@
   --env-ink-cn:#7a7068;
 }
 
-/* ---- 1. 壓紋：圖片版（js 的 ART.emboss）—— 象牙白厚紙上的白色浮雕花束、金封蠟；
-      拆開時信封裡透出暖光（.env-light），有金光版照片的話壓紋從封蠟往外泛金（見檔尾的圖片版） ---- */
+/* ---- 1. 壓紋：圖片版（js 的 ART.emboss）—— 象牙白厚紙上的白色浮雕（一對天鵝、玫瑰與卷草）、金封蠟；
+      不加光效，和其他圖片版一樣單純拆開 ---- */
 .env[data-env="emboss"]{
   --env-shade:96,76,48;
   --env-glow:rgba(236,205,120,.6);
@@ -303,7 +303,6 @@
      --clip-*              四片紙的多邊形
    CSS 版那些用漸層畫出來的東西（金線、封口上的字）在這裡都不要。
 ============================================================ */
-@property --env-gild{syntax:'<percentage>';inherits:true;initial-value:0%;}
 .env[data-art]{--env-seal-img:var(--art-seal);}
 .env[data-art] > .env-piece,.env[data-art] > .env-flap{inset:auto;left:var(--sx);top:var(--sy);width:var(--sw);height:var(--sh);}
 .env[data-art] .env-paper{background:var(--art-img) 0 0/100% 100% no-repeat;}
@@ -319,29 +318,6 @@
 .env[data-art] .env-inside{
   background:linear-gradient(180deg,rgba(60,30,36,.35),rgba(60,30,36,0) 40%),var(--art-liner) center/cover no-repeat;}
 .env[data-art] .env-plume{left:var(--tip-vx);top:var(--tip-vy);}
-
-/* 金光版照片（--art-glow，選填）：疊在每一片紙上、先藏著；
-   點下去以後從封蠟那一點往外一圈一圈亮開（--env-gild 由 0 長到 160%） */
-.env[data-art] .env-paper::before{content:'';position:absolute;inset:0;pointer-events:none;
-  background:var(--art-glow) 0 0/100% 100% no-repeat;
-  -webkit-mask:radial-gradient(circle at var(--tip-x) var(--tip),#000 calc(var(--env-gild) - 25%),transparent var(--env-gild));
-          mask:radial-gradient(circle at var(--tip-x) var(--tip),#000 calc(var(--env-gild) - 25%),transparent var(--env-gild));}
-.env[data-art].is-opening{animation:env-gild 1.6s cubic-bezier(.3,.2,.4,1) .15s forwards;}
-@keyframes env-gild{to{--env-gild:160%;}}
-
-/* 信封裡透出來的光：封口一掀，縫裡先亮起一團暖白，光芒從尖端往外放射、灑在紙上 */
-.env-light{z-index:4;pointer-events:none;opacity:0;mix-blend-mode:screen;
-  background:radial-gradient(circle at var(--tip-vx) var(--tip-vy),rgba(255,240,205,.95) 0,rgba(255,218,150,.6) 7%,rgba(255,200,120,.2) 24%,transparent 52%);}
-.env-light > i{position:absolute;inset:0;transform-origin:var(--tip-vx) var(--tip-vy);
-  background:repeating-conic-gradient(from 0deg at var(--tip-vx) var(--tip-vy),rgba(255,228,170,.28) 0 1.6deg,transparent 2.4deg 8deg);
-  -webkit-mask:radial-gradient(circle at var(--tip-vx) var(--tip-vy),#000 0,rgba(0,0,0,.55) 20%,transparent 55%);
-          mask:radial-gradient(circle at var(--tip-vx) var(--tip-vy),#000 0,rgba(0,0,0,.55) 20%,transparent 55%);
-  animation:env-rays 9s linear infinite;}
-@keyframes env-rays{to{transform:rotate(30deg);}}
-.env.is-opening .env-light{animation:env-light-in 1.3s ease .3s forwards;}
-@keyframes env-light-in{0%{opacity:0;}55%{opacity:1;}100%{opacity:.9;}}
-.env.is-leaving .env-light{animation:env-light-out 1s ease forwards;}
-@keyframes env-light-out{from{opacity:.9;}to{opacity:0;}}
 
 /* 緞帶（--art-ribbon，緞帶絲綢）：換成照片，拉長鋪滿整條；反光改成一層疊在上面的光（照片本身不動） */
 .env[data-art] .env-ribbon{height:calc(var(--seal) * .56);margin-top:calc(var(--seal) * -.28);}

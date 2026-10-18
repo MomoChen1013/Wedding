@@ -34,7 +34,7 @@
   /* 開場代號 → 這一款的設定 */
   const STYLES = {
     'envelope':         { env: 'vintage' },                 /* 復古舊紙・古銅封蠟 */
-    'envelope-emboss':  { env: 'emboss', art: 'emboss', light: true }, /* 壓紋白信封・金封蠟，拆開時透光、壓紋浮出金邊 */
+    'envelope-emboss':  { env: 'emboss', art: 'emboss' },   /* 壓紋白信封（天鵝與玫瑰）・金封蠟 */
     'envelope-feather': { env: 'feather', art: 'feather', plumes: 34 }, /* 鵝毛絨白信封・粉紅封蠟 */
     'envelope-silk':    { env: 'silk', art: 'silk', ribbon: true, pull: 760 }, /* 緞帶絲綢白信封・紅封蠟 */
     'envelope-regal':   { env: 'regal', art: 'regal' },     /* 華麗白信封（燙金框與花飾）・紅封蠟 */
@@ -50,7 +50,6 @@
        flap    封口：照片上緣 → 沿著羽毛滾邊的外緣 → 尖端（滾邊整條都算封口的，掀起來會一起走）
        left／right  封口外側、一路到底的兩片（被下片蓋住的部分也算它們的，退場時才不會露洞）
        bottom  下片：沿著照片裡那兩條摺痕
-       glow    （選填）同一張照片、壓紋泛金的版本：拆開時從封蠟往外一圈一圈亮開
      seal：壓了雙戒指的封蠟（img/envelope/seal-*.webp，幾款共用）；liner：（選填）封口掀開後看到的內襯；
      plumes：飛散用的羽毛（黑底去背）；ribbon：橫過封蠟底下、會被抽走的緞帶（黑底去背）
      （緞帶絲綢的直式：最上層那片封口的尖端在 37%，比其他摺痕會合的那一點高 —— 封蠟和緞帶跟著封口尖端走） */
@@ -112,18 +111,19 @@
     },
     emboss: {
       portrait: {
-        img: 'portrait.webp', glow: 'glow-portrait.webp', w: 768, h: 1376, tip: [50.3, 48],
-        flap: [[0, 0], [100, 0], [100, 5.5], [50.3, 48], [0, 3]],
-        left: [[0, 3], [50.3, 48], [50.3, 100], [0, 100]],
-        right: [[100, 5.5], [50.3, 48], [50.3, 100], [100, 100]],
-        bottom: [[0, 97], [50.3, 49.5], [97.5, 95.5], [100, 96], [100, 100], [0, 100]],
+        img: 'portrait.webp', w: 768, h: 1376, tip: [49.9, 49.6],
+        flap: [[0, 0], [100, 0], [100, 5.8], [49.9, 49.6], [0, 6.4]],
+        left: [[0, 6.4], [49.9, 49.6], [49.9, 100], [0, 100]],
+        right: [[100, 5.8], [49.9, 49.6], [49.9, 100], [100, 100]],
+        bottom: [[0, 88.6], [50.3, 50.3], [100, 88.6], [100, 100], [0, 100]],
       },
       landscape: {
-        img: 'landscape.webp', glow: 'glow-landscape.webp', w: 1408, h: 768, tip: [50, 55],
-        flap: [[0, 0], [100, 0], [100, 3], [98.3, 6], [50, 57.4], [1.7, 6], [0, 3]],
-        left: [[0, 3], [1.7, 6], [50, 57.4], [50, 100], [0, 100]],
-        right: [[100, 3], [98.3, 6], [50, 57.4], [50, 100], [100, 100]],
-        bottom: [[0, 92], [50, 46], [100, 92], [100, 100], [0, 100]],
+        img: 'landscape.webp', w: 1376, h: 768, tip: [50, 49.7],
+        flap: [[0, 0], [100, 0], [100, 3], [97.5, 5], [50, 49.7], [2, 5], [0, 3]],
+        left: [[0, 3], [2, 5], [50, 49.7], [50, 100], [0, 100]],
+        right: [[100, 3], [97.5, 5], [50, 49.7], [50, 100], [100, 100]],
+        /* 照片裡下片的尖端在 35.5%，藏在封口底下（那一塊其實是封口的花紋）—— 切到封蠟那一點為止，掀開才不會露出半截天鵝 */
+        bottom: [[0, 92.4], [50, 50], [100, 92.4], [100, 100], [0, 100]],
       },
       seal: 'seal-gold.webp',
     },
@@ -166,7 +166,6 @@
       '--tip-x': `${a.tip[0]}%`, '--tip': `${a.tip[1]}%`, '--seal': `${seal}px`,
       '--tip-vx': `${sx + (a.tip[0] / 100) * sw}px`, '--tip-vy': `${sy + (a.tip[1] / 100) * sh}px`,
       '--art-img': `url("${art.dir}${a.img}")`,
-      '--art-glow': a.glow ? `url("${art.dir}${a.glow}")` : 'none',
       '--clip-flap': poly(a.flap), '--clip-left': poly(a.left), '--clip-right': poly(a.right), '--clip-bottom': poly(a.bottom),
     };
     for (const [n, val] of Object.entries(v)) host.style.setProperty(n, val);
@@ -219,7 +218,6 @@
     <div class="env-paper"></div>
     ${sealHtml('env-seal-b')}
   </div>
-  ${st.light ? '<div class="env-light" aria-hidden="true"><i></i></div>' : ''}
   <div class="env-flap" aria-hidden="true">
     <div class="env-piece env-top">
       <div class="env-paper">

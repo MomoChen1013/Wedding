@@ -77,7 +77,7 @@ export const TEMPLATES = {
      內容是刺繡插圖 ＋ 捲動編排（見 css/lobby-tapestry.css 開頭的說明） */
   'tapestry':      { label:'Tapestry 中古刺繡', lobbyFile:'lobby-tapestry.html',
                      lobbyCss:['/css/lobby-tapestry.css'],
-                     lobbyJs:['/js/lobby-motion.js'], opening:'envelope',
+                     lobbyJs:['/js/lobby-motion.js'], opening:'envelope-emboss',
                      fonts:['https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500;600&display=swap'] },
   /* ---- 場景版型：每一個都有自己的大廳骨架、自己的預設開場，畫面用真的照片。
      （幾個版型要共用一副骨架時，寫 lobbyKey：那副骨架的名字，寫在 <body data-lobby>） ---- */
