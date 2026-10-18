@@ -142,8 +142,16 @@
 │   ├─ samples/               # 版型展示頁 /samples（給客人挑版型，見〈版型展示頁〉）
 │   │   ├─ index.html                # ⚙️ 總覽，由 build-samples 產出
 │   │   ├─ thumbs/{版型}.jpg         # ⚙️ 由 build-sample-thumbs 截圖
+│   │   ├─ videos/{版型}.webm／.mp4  # ⚙️ 卡片上的開場循環影片，由 build-sample-videos 錄
+│   │   ├─ features/*.jpg            # ⚙️ 方案說明的示意圖，由 build-sample-features 截圖
+│   │   ├─ samples.js                # 總覽頁的互動：預覽 popup、影片、底部 LINE 按鈕、PostHog 事件
+│   │   ├─ config.js                 # LINE 連結、PostHog 的設定常數
+│   │   ├─ analytics.js              # PostHog 載入器（沒填 key 就不載入）
 │   │   ├─ sample-site.js  photos/   # 虛構的新人（站台資料＋示範內容）與示範照片
-│   │   └─ demo-bar.css              # 示範頁左下角那一條
+│   │   ├─ demo-extras.js            # 示範模式才載入：示範列、預覽模式、PostHog
+│   │   ├─ demo-bar.css              # 示範頁左下角那一條
+│   │   └─ _r/  {版型}/              # ⚙️ 示範網站的壓縮／混淆副本（build-sample-shield，不進版控）
+│   ├─ robots.txt             # 擋 AI 爬蟲；一般搜尋引擎照常
 │   ├─ audio/bgm.mp3          # 全站共用的預設背景音樂（新人沒放自己的就播這首）
 │   ├─ css/
 │   └─ js/
@@ -170,6 +178,10 @@
 │   ├─ build-previews.js      # 從正式的大廳骨架產出 preview/ 底下各版型的示範頁
 │   ├─ build-samples.js       # 產出 /samples 總覽（卡片文案 sample-catalog.js、模板 sample-index.html）
 │   ├─ build-sample-thumbs.js # 幫 /samples 每個版型截一張手機首屏當縮圖
+│   ├─ build-sample-videos.js # 幫 /samples 每個版型錄一支開場循環影片（WebM＋MP4）
+│   ├─ build-sample-features.js # 方案說明的示意圖（截示範網站的畫面）
+│   ├─ build-sample-shield.js # 示範網站專用的壓縮／混淆副本（predeploy 會跑）
+│   ├─ sample-server.js       # 截圖、錄影用的小型靜態伺服器
 │   ├─ check-site.js          # 檢查某站台為什麼打不開
 │   ├─ export-rsvps.js        # 匯出某站台的 RSVP 成 CSV
 │   └─ create-short-link.js
@@ -236,8 +248,8 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 
 | 代號 | 開場 | 怎麼動 | 誰的預設 |
 |---|---|---|---|
-| `envelope` | 拆信・封蠟 | 點封蠟 → 封蠟沿著鋸齒裂成兩半、封口掀起 → 信封四散。封蠟是一枚真的香檳金封蠟（[Diana Light／Unsplash](https://unsplash.com/photos/eLEebyVItmk)，去背；保留外圈的蠟、把中間的印面整平，再壓上 `favicon.png` logo 的雙戒指；`img/envelope/wax-seal.webp`）。拆開前蓋著一枚完整的封蠟，看不出裂縫 | tapestry |
-| `envelope-emboss` | 拆信・壓紋金邊 | **圖片版**：象牙白厚紙上的白色浮雕花束（AI 生成的整封照片）、金封蠟；點下去封口掀起、縫裡透出暖光與光芒，壓紋從封蠟往外一圈一圈泛金（同一張照片的金光版 `glow-*.webp`，疊在上面慢慢露出來） | （可選） |
+| `envelope` | 拆信・封蠟 | 點封蠟 → 封蠟沿著鋸齒裂成兩半、封口掀起 → 信封四散。封蠟是一枚真的香檳金封蠟（[Diana Light／Unsplash](https://unsplash.com/photos/eLEebyVItmk)，去背；保留外圈的蠟、把中間的印面整平，再壓上 `favicon.png` logo 的雙戒指；`img/envelope/wax-seal.webp`）。拆開前蓋著一枚完整的封蠟，看不出裂縫 | （可選） |
+| `envelope-emboss` | 拆信・壓紋金邊 | **圖片版**：象牙白厚紙上的白色浮雕（一對天鵝、玫瑰與卷草，AI 生成的整封照片）、金封蠟；沒有光效，點下去封蠟裂開、封口掀起、信封四散 | tapestry |
 | `envelope-feather` | 拆信・鵝毛絨 | **圖片版**：整封信封是一張 AI 生成的照片（封口滾一圈白色羽毛），沿著照片裡的摺線切成四片；粉紅封蠟；點下去羽毛（也是生成的照片，黑底去背）從封蠟那裡飛散、飄落 | （可選） |
 | `envelope-silk` | 拆信・緞帶絲綢 | **圖片版**：象牙白緞面信封（AI 生成的照片）、一條緞帶（照片，黑底去背）橫過紅封蠟底下；點下去緞帶先被抽走，才裂封蠟、掀封口，裡面是酒紅絲緞內襯 | （可選） |
 | `envelope-regal` | 拆信・華麗紅封蠟 | **圖片版**：白紙燙金雙線框、四角花飾、上下兩枚大馬士革徽章（AI 生成的照片）、紅封蠟；封口掀開是酒紅底燙金大馬士革內襯 | （可選） |
@@ -476,11 +488,22 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 
 給還在挑版型的客人看的公開頁面，用 LINE 傳 `https://<網域>/samples/` 就能開：
 
-- **總覽** `/samples/`：每個版型一張卡片 —— 手機首屏的縮圖、一句氣質、**適合的婚紗**（禮服款式與婚紗照的拍法）、色票。
-  不寫預設開場：開場是獨立的一軸，任何版型都能配。
+- **總覽** `/samples/`：由上到下是首屏（標語＋「LINE 詢問」）→ 三大特色（電腦三張橫排、手機由上到下；第一張是「回覆 — 排桌 — 入座」的流程圖）
+  → 新人後台：高度彈性（三支手機的後台畫面，假資料重建，不是真實帳號）→ 網站版型 → 方案比較 → 開站流程 → 常見問題；
+  手機版底部另有固定的「LINE 詢問」。整頁用白色教堂的灰泥牆、兩旁被風吹動的白紗、牆上偶爾清楚起來的橄欖枝影子、
+  分隔線與毛玻璃卡，按鈕是白色教堂的深色按鈕；減少動態時白紗與影子都不動。
+  每個版型一張卡片 —— 典藏方案是開場的循環影片、經典方案是首屏縮圖（開場太短，按預覽再看）、一句氣質、「X 人喜歡這個版型」、色票、右上角一顆愛心，
+  以及三顆按鈕：**預覽**、**看完整範例 ↗**（另開分頁）、**♡ 我想用這款 ↗**（開 LINE、預填「我想詢問『版型名』版型」）。
+  **預覽**在同一頁打開：白色手機外框（9:16）裡是真的示範網站在演開場（預覽不放背景音樂），演完蓋上一層遮罩，
+  上面是「看完整範例 ↗」「開始製作 ↗」（和我想用這款同一個 LINE 連結）與「再看一次開場」；
+  旁邊（手機上是下面）是這一款的介紹、同樣兩顆按鈕，以及一張分段切換的說明卡：
+  網站內容（標籤）／包含項目（你們的故事、相片集、即時的資訊更新、背景音樂）／合作方式（一次付清、真人設計師、照自己的步調）。
+  方案比較的功能名稱（多場活動連動、故事牆・祝福牆・抽卡、賓客現場查詢、排桌管理、收禮小幫手、自訂互動測驗、專屬信件）
+  點了會跳出說明與示意圖；示意圖的內容放在 `scripts/sample-index.html` 的 `<template id="fx-…">`。
 - **示範站台** `/samples/{版型}/`（例如 `/samples/white-church/`）：**正式網站同一套頁面**，
   大廳、出席回覆（`/samples/{版型}/invitation`）、祝福牆、抽卡、故事、測驗、桌次、給你的信都點得進去、填得了。
   左下角的示範列有「← 版型總覽」，大廳另外有「重播開場動畫」；開場不給客人挑，每個版型照它自己的預設開場演。
+  示範列、預覽模式、PostHog 都在 `public/samples/demo-extras.js`，只有示範模式才載入，正式網站一個位元組都不會抓。
   Classic 示範的是香檳金（其他三種配色的網址 `/samples/classic-blush/` 這些仍然打得開，但沒有入口）。
   新人後台不開放，集氣送祝福還沒開賣所以不放。
 
@@ -494,7 +517,46 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
   新人是虛構的（Ethan & Claire、2027.05.22、星光花園酒店），這是公開連結，**不要換成任何一位客人的資料**。
   想讓客人試查桌次，可以輸入「王小安」；給你的信輸入「小安」會拆到專屬的那一封，其他名字拿到通用信。
 - **網址**由 `firebase.json` 的 `/samples/*/{頁面}` 改寫到各頁的 HTML，其餘 `/samples/**` 都到 `index.html`；
-  總覽、照片、縮圖是真的檔案，優先於改寫規則。
+  總覽、照片、縮圖是真的檔案，優先於改寫規則。部署前跑過 `build-sample-shield` 的話，
+  `/samples/{版型}/` 也有實體檔案（保護過的副本，見下面），一樣優先於改寫規則。
+
+**預覽模式**（`?preview=1`，給總覽頁的「預覽」popup 用）：只有網址帶 `?preview=1`、是大廳、**而且被同網域的 `/samples/` 用 iframe 嵌著**時才生效，
+直接開網址加參數沒有任何作用。生效時跳過「在進場前，先報上名來」、開場每次從頭演（要動手的開場自動按下去）、
+畫面停在第一屏不能捲、連結不跟、示範列與音樂鈕不出現、不載入 PostHog；開場演完用 `postMessage`（只送給同網域）通知外層，
+外層也會檢查 `origin` 與來源 iframe，才顯示「關閉／查看完整示範網站」。
+
+**LINE 與 PostHog 的設定**都在 `public/samples/config.js`：
+`LINE_URL`（一般的 LINE 按鈕）、`LINE_OA_ID`（`@381tboky`，「我想用這款」與預覽裡的「開始製作」用 `line.me/R/oaMessage/` 預填訊息，ID 與訊息都用 `encodeURIComponent`）、
+`POSTHOG_KEY`、`POSTHOG_HOST`（**兩個都填了才會載入 PostHog**，空字串就完全不載入）。
+PostHog 只在總覽頁與示範模式載入（autocapture、heatmaps 開著），預覽 iframe 裡不載入，不會重複算 pageview。自訂事件：
+
+| 事件 | 屬性 | 在哪裡觸發 |
+|---|---|---|
+| `template_preview_open` | `template` | 總覽頁按卡片的「預覽」（`samples.js` 的 `openPreview`） |
+| `template_preview_complete` | `template` | 預覽裡的開場演完，收到示範網站的 `postMessage` |
+| `template_demo_open` | `template`, `position`（`card`／`popup`） | 卡片與預覽裡的「看完整範例」 |
+| `line_click` | `position`（`hero`／`template_card`／`preview`／`flow`／`sticky`）、`template`（卡片與預覽裡才有） | 任何 `a[data-line]`，以及預覽裡的「開始製作」 |
+| `feature_info_open` | `feature` | 方案比較點開功能說明 |
+
+漏斗：`$pageview`（`/samples/`）→ `template_preview_open` → `template_demo_open` → `line_click`。
+另外還有 `template_like`（`template`、`source`：`heart`／`want`／`start`），是這個瀏覽器第一次喜歡這一款的時候。
+
+**「X 人喜歡這個版型」**：卡片右上的愛心、「我想用這款」、預覽裡的「開始製作」都算一次，
+同一個瀏覽器、同一款只算一次（記在瀏覽器的 localStorage）。數字存在 Firestore 的 `sampleLikes/{版型}`（`{ count }`），
+規則只准沒登入的人每次 +1、不能刪、不能多帶欄位（見〈安全性設計〉）。總覽頁用 Firestore 的 REST API 讀寫，不載入 Firebase SDK。
+沒登入就能按，有心人寫程式還是灌得了票 —— 這個數字是氣氛，不是可以對帳的資料。
+本機 `npm run samples` 只開 Hosting 模擬器，讀不到數字，那一行就不顯示（愛心照樣按得下去）；
+要在本機試，改開 `npx firebase emulators:start --only hosting,firestore`（需要 Java）。
+想歸零某一款，到 Firebase Console 刪掉 `sampleLikes` 裡那一份文件。
+
+**示範網站的保護**（`scripts/build-sample-shield.js`，`firebase.json` 的 predeploy 會跑）：
+前端程式碼只要瀏覽器執行得了就一定看得到，這裡做的是提高抄的成本。示範網站用的是正式網站同一套檔案，
+直接壓縮那一套會連正式網站一起改到，所以另外產一份副本到 `public/samples/_r/`（不進版控）：
+JS 用 terser 壓縮與混淆變數名，開場（`js/openers/`）與 `lobby-motion.js` 再用 javascript-obfuscator 輕度混淆
+（只做字串陣列與改名，不做控制流程攤平 —— 量過開場的幀率，和原始檔在誤差範圍內）；CSS、HTML 壓縮並拿掉註解；
+`public/img/` 的圖檔全部改成雜湊檔名；不輸出 source map。執行期組出來的路徑（開場的圖檔、版面 CSS）用路徑的雜湊查表換成新檔名。
+開場的寫法改了、副本改不到的時候，這支會直接報錯，不會默默壞掉。
+不擋右鍵、不偵測開發者工具、不擋選取 —— 那些對同行沒用，只會讓長輩和讀螢幕軟體不好用。
 
 **照片**：Unsplash 上 [Vino Li](https://unsplash.com/@vinomamba24) 拍的同一對新人，
 [Unsplash License](https://unsplash.com/license)（可商用、可修改、不必標示；總覽頁尾仍有標示）。
@@ -515,10 +577,13 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 |---|---|
 | 卡片文案 `scripts/sample-catalog.js`、總覽模板 `scripts/sample-index.html` | `npm run build-samples` |
 | 大廳的長相（CSS、照片、開場、骨架）——縮圖要跟著換 | `npm run build-sample-thumbs`（截圖後會自己再跑一次 build-samples） |
-| 新增一個版型 | 先在 `scripts/sample-catalog.js` 補一筆（沒補 build 會直接報錯），再跑 `npm run build-sample-thumbs` |
+| 開場的長相——卡片上的循環影片要跟著換 | `npm run build-sample-videos`（用預覽模式錄、ffmpeg 轉 WebM＋MP4，每支 300KB 以內，印出大小表，最後會自己再跑一次 build-samples；需要 ffmpeg） |
+| 方案說明的示意圖（示範網站的故事、桌次、測驗、信的畫面改了） | `npm run build-sample-features`（截白色教堂示範網站的畫面，存到 `public/samples/features/`；排桌、收禮、多場活動那三張是 HTML 畫的示意，不用重跑） |
+| 新增一個版型 | 先在 `scripts/sample-catalog.js` 補一筆（沒補 build 會直接報錯），再跑 `npm run build-sample-thumbs` 與 `npm run build-sample-videos` |
 | 總覽頁的中文字（任何文案改動之後） | `npm run build-samples` 之後再跑 `python3 scripts/build-sample-font.py <源樣明體 otf 資料夾>`：總覽頁的中文是源樣明體，只切了頁面用到的字（`public/samples/fonts/`）；漏跑的話新字會退回思源宋體 |
 
-示範站台本身不用重產：它就是正式的頁面，改了就生效。總覽與縮圖是產出的檔案，要 commit，`firebase deploy` 不會幫你產。
+示範站台本身不用重產：它就是正式的頁面，改了就生效（保護過的副本由 predeploy 在部署前重產）。
+總覽、縮圖與循環影片是產出的檔案，要 commit，`firebase deploy` 不會幫你產。
 
 > **莫內花園的畫怎麼來的**：`js/openers/painting.js` 同時是開場與一具「油畫繪製器」（`window.MonetPaint`）。
 > 大廳與開場掛的都是莫內真跡的掃描（見上面〈莫內花園的素材〉），掛在 `<canvas data-monet="場景">` 上；
@@ -691,6 +756,10 @@ short/{code}                # 6 碼短連結
 > 改過 `public/*.html`、換過照片、或新增站台之後，
 > deploy 之前要先重跑 **`npm run build-og`**（見〈社群分享縮圖〉），
 > 否則分享出去的縮圖與標題會停在舊的那一版。
+
+> **搜尋引擎**：全站送 `X-Robots-Tag: noindex`，唯一的例外是版型總覽 `/samples/`（`firebase.json` 的 headers 用正規表示式排除它）；
+> `public/robots.txt` 擋 GPTBot、ClaudeBot、CCBot、Google-Extended 這些 AI 爬蟲，一般搜尋引擎照常。
+> 每一頁的 `<head>` 都有版權宣告與 `tdm-reservation`，Hosting 也送 `tdm-reservation: 1` 標頭。
 
 ```bash
 # 部署安全規則（改完 firestore.rules 一定要跑）
@@ -2689,6 +2758,7 @@ http://127.0.0.1:5000/w/你的slug/cake?live=1
 | `butlers/{bookId}` | ✅ 單筆讀取・**不准列出集合** | 只有新人 | 只有新人 | 只有新人 |
 | `butlers/{bookId}/entries` | ✅ | 拿著連結與通行碼的小幫手 | 同左 | 同左／新人 |
 | `slugs/{slug}` | ✅ | ❌ | ❌ | ❌ |
+| `sampleLikes/{版型}` | ✅ | 任何人，只能是 1 | 任何人，每次只能 +1 | ❌ |
 | `short/{code}` | ✅ | ❌ | ❌ | ❌ |
 
 所有寫入都會再檢查：**站台必須是 `published`**，且**該頁面必須是開啟的**。

@@ -746,6 +746,21 @@ service cloud.firestore {
       }
     }
 
+    /* 版型展示頁（/samples/）的「X 人喜歡這個版型」：sampleLikes/{版型} = { count }
+       沒登入也能按，所以規則只管兩件事：每次只能 +1、欄位只有 count。
+       同一個瀏覽器只算一次是前端（samples.js）擋的 —— 有心人寫程式還是灌得了票，
+       這個數字是氣氛，不是可以拿來對帳的資料。
+       文件 id 只收版型代號的樣子（小寫英數與 -），擋掉亂塞的長字串。 */
+    match /sampleLikes/{template} {
+      allow get, list: if true;
+      allow create: if template.matches('^[a-z0-9]+(-[a-z0-9]+)*$') && template.size() <= 40
+        && request.resource.data.keys().hasOnly(['count'])
+        && request.resource.data.count == 1;
+      allow update: if request.resource.data.keys().hasOnly(['count'])
+        && request.resource.data.count == resource.data.count + 1;
+      allow delete: if false;
+    }
+
     /* slugs：前端要查 slug → siteId，寫入走 Admin SDK */
     match /slugs/{slug} {
       allow read: if true;

@@ -97,6 +97,34 @@ describe('sites/{siteId}', () => {
   });
 });
 
+describe('sampleLikes/{template}：版型展示頁的喜歡數', () => {
+  const guest = () => testEnv.unauthenticatedContext().firestore();
+
+  it('任何人都讀得到、列得出來', async () => {
+    await assertSucceeds(getDoc(doc(guest(), 'sampleLikes/white-church')));
+    await assertSucceeds(getDocs(collection(guest(), 'sampleLikes')));
+  });
+
+  it('沒登入也能按：第一個人建立成 1，之後每次只能 +1', async () => {
+    await assertSucceeds(setDoc(doc(guest(), 'sampleLikes/white-church'), { count: 1 }));
+    await assertSucceeds(setDoc(doc(guest(), 'sampleLikes/white-church'), { count: 2 }));
+    await assertFails(setDoc(doc(guest(), 'sampleLikes/white-church'), { count: 10 }));
+    await assertFails(setDoc(doc(guest(), 'sampleLikes/white-church'), { count: 1 }));
+  });
+
+  it('不能一開始就塞大數字、不能多帶欄位、不能刪', async () => {
+    await assertFails(setDoc(doc(guest(), 'sampleLikes/classic'), { count: 999 }));
+    await assertFails(setDoc(doc(guest(), 'sampleLikes/classic'), { count: 1, note: 'x' }));
+    await assertSucceeds(setDoc(doc(guest(), 'sampleLikes/classic'), { count: 1 }));
+    await assertFails(deleteDoc(doc(guest(), 'sampleLikes/classic')));
+  });
+
+  it('文件 id 只收版型代號的樣子', async () => {
+    await assertFails(setDoc(doc(guest(), 'sampleLikes/Not A Template'), { count: 1 }));
+    await assertFails(setDoc(doc(guest(), `sampleLikes/${'a'.repeat(41)}`), { count: 1 }));
+  });
+});
+
 describe('slugs/{slug}', () => {
   it('允許讀取，拒絕未登入使用者寫入', async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {

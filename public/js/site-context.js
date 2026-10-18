@@ -79,7 +79,7 @@ const PAGES = {
   letter:     { file:'letter.html',     label:'給你的信',   optional:true  },
   /* 新人後台：不放進導覽列、不對外連結，但永遠開著，
      這樣新人不必先「打開某一頁」才能進去設定內容。
-     真正的門檻在 Security Rules（ownerEmails 白名單），不是這個開關。 */
+     真正的門檻在 Security Rules（新人白名單），不是這個開關。 */
   admin:      { file:'admin.html',      label:'新人後台',   optional:false },
 };
 
@@ -389,12 +389,14 @@ function loadScript(src) {
    回傳 null ＝ 網址上的版型不存在。 */
 async function loadDemoSite(template) {
   if (!Object.hasOwn(TEMPLATES, template)) return null;
-  /* 兩支都只有示範頁才載入，正式網站一個位元組都不多抓 */
-  const [demo, { createDemoFirebase }] = await Promise.all([
-    import('/samples/sample-site.js'), import('./demo-firebase.js'),
+  /* 這三支都只有示範頁才載入，正式網站一個位元組都不多抓
+     （demo-extras：示範列、預覽模式、分析，見 samples/demo-extras.js） */
+  const [demo, { createDemoFirebase }, extras] = await Promise.all([
+    import('/samples/sample-site.js'), import('./demo-firebase.js'), import('/samples/demo-extras.js'),
   ]);
+  demoExtras = extras;
   const siteId = `demo-${template}`;
-  const site = { ...demo.SAMPLE_SITE, template };
+  const site = extras.prepareSite({ ...demo.SAMPLE_SITE, template });
 
   /* 一律以「沒登入的訪客」進來：清掉上次在示範頁留下的名字、收藏 */
   try {
@@ -408,26 +410,8 @@ async function loadDemoSite(template) {
   return { site, siteId, assets: demo.SAMPLE_ASSETS };
 }
 
-/* 示範頁左下角的那一條：回到版型總覽；大廳另外有「重播開場動畫」。
-   開場不給賓客挑：每個版型照它自己的預設開場演。
-   開場在同一個分頁只演一次（js/index.js 的 introSeen，正式網站也一樣），
-   重播就是把那個記號清掉再重新載入。
-   只有 /samples 才有，正式網站不會載入 demo-bar.css，也不會走到這裡。 */
-function mountDemoBar({ template, pageKey }) {
-  addStylesheet('/samples/demo-bar.css');
-  const bar = document.createElement('div');
-  bar.className = 'demo-bar';
-  bar.innerHTML = '<a href="/samples/">← 版型總覽</a>' +
-    (pageKey === 'lobby' ? '<button type="button" data-k="replay">重播開場動畫</button>' : '');
-  document.body.appendChild(bar);
-
-  const replay = bar.querySelector('[data-k="replay"]');
-  if (replay) replay.addEventListener('click', () => {
-    try { sessionStorage.removeItem(`wed.demo-${template}.introSeen`); } catch {}
-    window.scrollTo(0, 0);
-    location.reload();
-  });
-}
+/* 示範頁的附加功能（samples/demo-extras.js），loadDemoSite() 載入；正式網站一直是 null */
+let demoExtras = null;
 
 /* ---------- 主流程 ---------- */
 async function boot() {
@@ -623,7 +607,7 @@ async function boot() {
     return;
   }
 
-  if (DEMO) mountDemoBar({ template, pageKey });
+  if (demoExtras) demoExtras.mountDemo({ pageKey });
 
   /* 給測試與外部腳本判斷「整站真的可用了」的旗標 */
   document.documentElement.dataset.siteReady = '1';
