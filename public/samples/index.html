@@ -51,14 +51,14 @@ body{position:relative;color:var(--ink);font-family:var(--f-ui);font-weight:300;
 @media (max-width:640px){body{background-size:180px 180px,auto,auto,480px 480px;}}
 
 .veils{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
-.veils i{position:absolute;top:-10%;bottom:-10%;width:clamp(70px,13vw,200px);opacity:.5;
+.veils i{position:absolute;top:-10%;bottom:-10%;width:clamp(90px,17vw,240px);opacity:.5;
   background:url(/img/chapel/tulle.webp) 40% 0/auto 100% no-repeat;filter:brightness(1.12) sepia(.12);
   -webkit-mask-image:linear-gradient(90deg,#000 15%,rgba(0,0,0,.5) 55%,transparent);mask-image:linear-gradient(90deg,#000 15%,rgba(0,0,0,.5) 55%,transparent);
   transform-origin:50% 0;animation:veil 11s ease-in-out infinite;}
 .veils i:nth-child(1){left:0;}
 .veils i:nth-child(2){right:0;scale:-1 1;animation-delay:-5s;animation-duration:13s;}
 @keyframes veil{0%,100%{transform:skewX(-1deg) scaleX(1);}30%{transform:skewX(2.4deg) scaleX(1.07);}45%{transform:skewX(1.6deg) scaleX(1.04);}70%{transform:skewX(-.4deg) scaleX(1.01);}}
-@media (max-width:640px){.veils i{width:46px;opacity:.5;}}
+@media (max-width:640px){.veils i{width:60px;opacity:.55;}}
 .shades{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
 .shades i{position:absolute;width:clamp(240px,34vw,460px);aspect-ratio:1;
   background:url(/img/botanical/olive.webp) center/contain no-repeat;
