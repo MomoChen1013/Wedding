@@ -41,7 +41,8 @@ const MAX_SEC = 5;               /* 影片最長 5 秒 */
 const MAX_SPEED = 1.6;           /* 太長的開場最多加速到 1.6 倍 */
 const BUDGET = 300 * 1024;       /* 每支 300KB */
 
-const all = Object.keys(SAMPLE_CATALOG);
+/* 經典方案的版型不錄：卡片上只放縮圖（開場太短，見 scripts/build-samples.js） */
+const all = Object.keys(SAMPLE_CATALOG).filter((k) => SAMPLE_CATALOG[k].plan !== 'classic');
 const only = process.argv.slice(2);
 const keys = only.length ? all.filter((k) => only.includes(k)) : all;
 if (!keys.length) throw new Error(`沒有這個版型：${only.join('、')}`);

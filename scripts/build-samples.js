@@ -34,10 +34,12 @@ const badPlan = Object.entries(SAMPLE_CATALOG).filter(([, c]) => !['classic', 'p
 if (badPlan.length) throw new Error(`scripts/sample-catalog.js 的 plan 要是 'classic' 或 'premium'：${badPlan.join('、')}`);
 
 /* 卡片頂端：縮圖（lazy）＋循環影片（src 與 poster 先不給，samples.js 等卡片進到畫面才掛上去）。
-   沒有影片就只放縮圖 */
+   經典方案的版型只放縮圖：它們用的是兩句字幕＋簾幕的預設開場，只有幾秒，循環播沒有意思 ——
+   想看開場就按「預覽」。沒有影片的版型也只放縮圖 */
 const shot = (key, c) => {
   const thumb = existsSync(new URL(`public/samples/thumbs/${key}.jpg`, root)) ? `/samples/thumbs/${key}.jpg` : '';
-  const hasVideo = ['webm', 'mp4'].every((ext) => existsSync(new URL(`public/samples/videos/${key}.${ext}`, root)));
+  const hasVideo = c.plan !== 'classic'
+    && ['webm', 'mp4'].every((ext) => existsSync(new URL(`public/samples/videos/${key}.${ext}`, root)));
   const img = thumb ? `<img src="${thumb}" alt="${esc(c.name[1])}版型的首頁" loading="lazy" width="390" height="760">` : '';
   if (hasVideo) {
     /* poster 也等卡片接近畫面才掛（13 張一起抓會拖慢首屏）；底下那張 lazy 的縮圖是沒 JS、減少動態時看到的 */
