@@ -47,18 +47,20 @@ const shot = (key, c) => {
   return thumb ? `<img src="${thumb}" alt="${esc(c.name[1])}版型的首頁" loading="lazy" width="390" height="760">` : '';
 };
 
+/* 另開分頁／外連的按鈕：文字右上角一個小箭頭 */
+const EXT = '<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg>';
+
 const card = ([key, c]) => `
     <article class="card glass" data-template="${esc(key)}">
       <div class="shot" style="background:${esc(c.colors[0])}">${shot(key, c)}</div>
       <div class="body">
         <h3><span class="en">${esc(c.name[0])}</span><span class="cn">${esc(c.name[1])}</span></h3>
         <p class="mood">${esc(c.mood)}</p>
-        <div class="dress"><span class="lab">適合的婚紗</span>${c.dress.map((d) => `<span class="chip">${esc(d)}</span>`).join('')}</div>
         <span class="swatches" aria-hidden="true">${c.colors.map((col) => `<i style="background:${esc(col)}"></i>`).join('')}</span>
         <div class="acts">
           <button type="button" class="btn btn-pv" data-preview="${esc(key)}" data-name="${esc(c.name[1])}" aria-label="預覽${esc(c.name[1])}的開場">預覽</button>
-          <a class="btn ghost" href="/samples/${esc(key)}/" target="_blank" rel="noopener" data-demo="card">看完整範例</a>
-          <a class="btn ghost btn-like" href="${esc(lineMessageUrl(likeMessage(c.name[1])))}" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我喜歡這款</a>
+          <a class="btn ghost" href="/samples/${esc(key)}/" target="_blank" rel="noopener" data-demo="card">看完整範例${EXT}</a>
+          <a class="btn ghost btn-like" href="${esc(lineMessageUrl(likeMessage(c.name[1])))}" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我想用這款${EXT}</a>
         </div>
       </div>
     </article>`;

@@ -28,7 +28,7 @@
 :root{
   --ink:#3b3540; --muted:#7d7480; --surface:#fffdf9;
   --line:rgba(59,53,64,.12); --line-soft:rgba(59,53,64,.08); --chip:rgba(168,141,95,.1);
-    --accent:#c99584; --accent-ink:#9a6a5a; --tint:#f7ede7;
+  --accent:#c99584; --accent-ink:#9a6a5a; --tint:#f7ede7;
     --mc-ivory:#f6f2ea; --mc-gold:#a88d5f; --mc-gold-soft:rgba(168,141,95,.38);
   --mc-glass:rgba(255,253,249,.7); --mc-glass-edge:rgba(255,255,255,.92);
   --mc-shadow:0 30px 50px -32px rgba(90,76,60,.36);
@@ -41,7 +41,7 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;}}
-body{color:var(--ink);font-family:var(--f-ui);font-weight:300;
+body{position:relative;color:var(--ink);font-family:var(--f-ui);font-weight:300;
   font-size:15px;line-height:1.85;letter-spacing:.02em;-webkit-font-smoothing:antialiased;
   background:
     var(--mc-grain) 0 0/180px 180px,
@@ -49,7 +49,31 @@ body{color:var(--ink);font-family:var(--f-ui);font-weight:300;
     radial-gradient(48% 40% at 88% 64%,rgba(255,250,240,.6),transparent 70%),
     var(--mc-ivory) url(/img/chapel/plaster.webp) 0 0/720px 720px repeat;}
 @media (max-width:640px){body{background-size:180px 180px,auto,auto,480px 480px;}}
-.wrap{max-width:1200px;margin:0 auto;padding:clamp(40px,7vw,88px) 16px 40px;}
+
+.veils{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.veils i{position:absolute;top:-10%;bottom:-10%;width:clamp(70px,13vw,200px);opacity:.5;
+  background:url(/img/chapel/tulle.webp) 40% 0/auto 100% no-repeat;filter:brightness(1.12) sepia(.12);
+  -webkit-mask-image:linear-gradient(90deg,#000 15%,rgba(0,0,0,.5) 55%,transparent);mask-image:linear-gradient(90deg,#000 15%,rgba(0,0,0,.5) 55%,transparent);
+  transform-origin:50% 0;animation:veil 11s ease-in-out infinite;}
+.veils i:nth-child(1){left:0;}
+.veils i:nth-child(2){right:0;scale:-1 1;animation-delay:-5s;animation-duration:13s;}
+@keyframes veil{0%,100%{transform:skewX(-1deg) scaleX(1);}30%{transform:skewX(2.4deg) scaleX(1.07);}45%{transform:skewX(1.6deg) scaleX(1.04);}70%{transform:skewX(-.4deg) scaleX(1.01);}}
+@media (max-width:640px){.veils i{width:46px;opacity:.5;}}
+.shades{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.shades i{position:absolute;width:clamp(240px,34vw,460px);aspect-ratio:1;
+  background:url(/img/botanical/olive.webp) center/contain no-repeat;
+  filter:brightness(0) blur(5px);opacity:.06;mix-blend-mode:multiply;
+  transform-origin:10% 10%;animation:shade 10s ease-in-out infinite alternate,shade-sun 26s ease-in-out infinite;}
+.shades i:nth-child(1){right:-90px;top:2%;rotate:160deg;}
+.shades i:nth-child(2){left:-110px;top:24%;rotate:-20deg;animation-delay:-4s,-9s;}
+.shades i:nth-child(3){right:-80px;top:48%;rotate:200deg;animation-delay:-7s,-17s;}
+.shades i:nth-child(4){left:-100px;top:74%;rotate:-10deg;animation-delay:-2s,-4s;}
+@keyframes shade{0%{transform:rotate(0) skewX(0);}60%{transform:rotate(3deg) skewX(2deg);}100%{transform:rotate(-1.5deg) skewX(-1deg);}}
+@keyframes shade-sun{0%,16%{opacity:.04;filter:brightness(0) blur(7px);}34%,60%{opacity:.11;filter:brightness(0) blur(4px);}80%,100%{opacity:.04;filter:brightness(0) blur(7px);}}
+@media (max-width:640px){.shades i{width:220px;}}
+@media (prefers-reduced-motion:reduce){.veils i,.shades i{animation:none;}}
+
+.wrap{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:clamp(40px,7vw,88px) 16px 40px;}
 @media (min-width:600px){.wrap{padding-left:clamp(20px,5vw,52px);padding-right:clamp(20px,5vw,52px);}}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
 
@@ -58,17 +82,19 @@ body{color:var(--ink);font-family:var(--f-ui);font-weight:300;
 .glass::before{content:'';position:absolute;inset:7px;border-radius:14px;border:1px solid var(--mc-gold-soft);
   opacity:.65;pointer-events:none;}
 
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 22px;
-  border-radius:999px;border:1px solid var(--accent);background:var(--accent);color:#fff;
-  font:500 14.5px/1.3 var(--f-ui);letter-spacing:.12em;text-decoration:none;cursor:pointer;
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:10px 22px;
+  border-radius:999px;border:1px solid var(--ink);background:var(--ink);color:#fff;
+  font:500 14.5px/1.3 var(--f-ui);letter-spacing:.14em;text-decoration:none;cursor:pointer;
   transition:background .2s ease,border-color .2s ease,color .2s ease;}
-.btn:hover{background:var(--accent-ink);border-color:var(--accent-ink);}
+.btn:hover{background:var(--mc-gold);border-color:var(--mc-gold);}
 .btn:focus-visible{outline:2px solid var(--ink);outline-offset:3px;}
-.btn.ghost{background:rgba(255,255,255,.55);color:var(--accent-ink);}
-.btn.ghost:hover{background:#fff;}
+.btn.ghost{background:rgba(255,255,255,.55);border-color:var(--mc-gold-soft);color:var(--ink);}
+.btn.ghost:hover{background:rgba(255,255,255,.85);border-color:var(--mc-gold);color:var(--mc-gold);}
 .btn .ic-line{width:20px;height:20px;flex:0 0 auto;}
+.ext{width:.78em;height:.78em;flex:0 0 auto;align-self:flex-start;margin:-.05em 0 0 -1px;
+  fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
 
-header{text-align:center;margin-bottom:clamp(32px,6vw,60px);}
+header{text-align:center;}
 .kicker{font-family:var(--f-en);font-size:11.5px;font-weight:400;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);}
 .kicker.brand{display:flex;flex-wrap:wrap;justify-content:center;gap:2px 1.2em;}
 .kicker.brand span:first-child{font-family:var(--f-cn);letter-spacing:.24em;}
@@ -81,85 +107,88 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
 .sec{margin-top:clamp(72px,10vw,120px);}
 .sec-head{display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:clamp(24px,4vw,40px);}
 .sec-head h2{font-family:var(--f-cn);font-weight:500;font-size:clamp(21px,3.6vw,28px);letter-spacing:.14em;line-height:1.5;margin-top:10px;}
-.sec-head h2::after{content:'';display:block;width:clamp(170px,22vw,220px);aspect-ratio:6;margin:10px auto 0;
+.sec-head h2::after,.divider{content:'';display:block;width:clamp(170px,22vw,220px);aspect-ratio:6;margin:10px auto 0;
   background:url(/img/chapel/divider.svg) center/contain no-repeat;opacity:.9;}
 .sec-head p{max-width:34em;margin:12px auto 0;color:var(--muted);font-size:14.5px;}
 .sec-head .tip{margin-top:14px;font-size:13.5px;line-height:2;}
 .sec-head p b{font-weight:500;color:var(--ink);}
 
-.ic{display:block;flex:0 0 auto;width:24px;height:24px;color:var(--accent);
+.ic{display:block;flex:0 0 auto;width:24px;height:24px;color:var(--mc-gold);
   fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
 
-.why{display:grid;gap:12px;max-width:980px;margin:clamp(28px,5vw,44px) auto 0;grid-template-columns:1fr;}
-@media (min-width:760px){.why{grid-template-columns:repeat(3,1fr);gap:20px;}}
-.why li{list-style:none;display:flex;gap:14px;align-items:flex-start;text-align:left;padding:20px 20px 22px;}
+.why{display:grid;gap:14px;max-width:980px;margin:clamp(32px,5vw,48px) auto 0;grid-template-columns:1fr;}
+@media (min-width:760px){.why{grid-template-columns:repeat(2,1fr);gap:20px;}.why .why-flow{grid-column:1/-1;}}
+.why > li{list-style:none;display:flex;gap:14px;align-items:flex-start;text-align:left;padding:20px 20px 22px;}
 .why .ic{width:32px;height:32px;stroke-width:2;margin-top:2px;}
 .why h3{font-family:var(--f-cn);font-weight:500;font-size:15.5px;letter-spacing:.08em;line-height:1.6;}
 .why p{margin-top:4px;font-size:13.5px;color:#5c5560;line-height:1.8;}
+.why .why-flow{flex-direction:column;gap:14px;padding:22px 20px 24px;}
+.why-flow > h3{display:flex;align-items:center;gap:12px;}
+.flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:stretch;gap:8px;width:100%;list-style:none;}
+.flow li{position:relative;display:block;padding:14px 12px 15px;text-align:center;border-radius:14px;
+  background:rgba(255,255,255,.6);border:1px solid var(--line);box-shadow:none;}
+.flow .no{display:block;font:400 11px/1 var(--f-en);letter-spacing:.2em;color:var(--mc-gold);}
+.flow b{display:block;margin-top:6px;font-family:var(--f-cn);font-weight:500;font-size:15px;letter-spacing:.1em;}
+.flow span:not(.no):not(.badge){display:block;margin-top:4px;font-size:12.5px;line-height:1.7;color:#5c5560;}
+.flow .badge{display:inline-block;margin-top:8px;padding:1px 9px;border-radius:99px;border:1px solid var(--mc-gold-soft);
+  font-size:11px;letter-spacing:.1em;color:var(--mc-gold);background:#fff;}
+.flow .arr{align-self:center;width:22px;height:22px;fill:none;stroke:var(--mc-gold);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+@media (max-width:599px){
+  .flow{grid-template-columns:1fr;gap:6px;}
+  .flow li{display:grid;grid-template-columns:auto 1fr;column-gap:14px;text-align:left;align-items:center;padding:12px 14px;}
+  .flow .no{grid-column:1;grid-row:1/span 3;}
+  .flow b{grid-column:2;margin-top:0;}
+  .flow span:not(.no):not(.badge){grid-column:2;margin-top:2px;}
+  .flow .badge{grid-column:2;justify-self:start;margin-top:6px;}
+  .flow .arr{justify-self:center;rotate:90deg;width:18px;height:18px;}
+}
 
-.gflow{position:relative;max-width:560px;margin:0 auto;list-style:none;counter-reset:g;}
-.gflow::before{content:'';position:absolute;left:17px;top:24px;bottom:24px;width:1px;
-  background:linear-gradient(var(--mc-gold-soft),var(--mc-gold-soft)) center/1px 100% no-repeat;}
-.gflow li{position:relative;padding-left:52px;counter-increment:g;}
-.gflow li + li{margin-top:14px;}
-.gflow li::before{content:counter(g);position:absolute;left:0;top:14px;width:35px;height:35px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;background:var(--surface);border:1px solid var(--mc-gold-soft);
-  font:400 13px/1 var(--f-en);color:var(--mc-gold);box-shadow:0 0 0 5px var(--mc-ivory);}
-.gcard{padding:16px 20px 17px;}
-.gcard h3{font-family:var(--f-cn);font-weight:500;font-size:16px;letter-spacing:.08em;line-height:1.6;}
-.gcard p{margin-top:2px;font-size:13.5px;color:#5c5560;line-height:1.75;}
-.gcard-line{margin-top:12px;max-width:300px;border-radius:14px;overflow:hidden;background:#fff;
-  border:1px solid var(--line);box-shadow:0 10px 24px -18px rgba(59,53,64,.5);}
-.gcard-line img{display:block;width:100%;height:auto;aspect-ratio:1.91/1;object-fit:cover;object-position:50% 30%;}
-.gcard-line div{padding:9px 12px 11px;}
-.gcard-line b{display:block;font-weight:500;font-size:13.5px;line-height:1.5;}
-.gcard-line span{display:block;font-size:11.5px;color:var(--muted);letter-spacing:.04em;}
-
-.flex-rail{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(260px,300px);gap:18px;justify-content:center;
+.flex-rail{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(220px,250px);gap:22px;justify-content:center;
   overflow-x:auto;scroll-snap-type:x mandatory;padding:6px 16px 18px;margin:0 -16px;
   -webkit-overflow-scrolling:touch;scrollbar-width:thin;}
-@media (max-width:999px){.flex-rail{justify-content:start;grid-auto-columns:min(78vw,290px);}}
+@media (max-width:899px){.flex-rail{justify-content:start;grid-auto-columns:min(66vw,240px);}}
 .flex-item{scroll-snap-align:center;display:flex;flex-direction:column;align-items:center;}
-.flex-cap{margin-top:16px;text-align:center;padding:0 6px;}
+.flex-cap{margin-bottom:14px;text-align:center;padding:0 4px;min-height:5.4em;}
 .flex-cap h3{font-family:var(--f-cn);font-weight:500;font-size:16px;letter-spacing:.1em;}
-.flex-cap p{margin-top:4px;font-size:13.5px;color:#5c5560;line-height:1.8;}
+.flex-cap p{margin-top:4px;font-size:13px;color:#5c5560;line-height:1.75;}
 .flex-hint{text-align:center;color:var(--muted);font-size:12.5px;letter-spacing:.1em;margin-top:2px;}
-@media (min-width:1000px){.flex-hint{display:none;}}
+@media (min-width:900px){.flex-hint{display:none;}}
 
 .phone{position:relative;width:100%;max-width:280px;aspect-ratio:9/18.5;border-radius:38px;padding:10px;
   background:#2b272e;box-shadow:0 30px 60px -30px rgba(40,30,30,.55),inset 0 0 0 1.5px #4a4450;}
 .phone::before{content:'';position:absolute;top:16px;left:50%;width:76px;height:20px;margin-left:-38px;border-radius:12px;background:#151316;z-index:3;}
 .phone-screen{position:relative;width:100%;height:100%;border-radius:29px;overflow:hidden;background:#fbfaf8;}
+.flex-item .phone{max-width:230px;aspect-ratio:9/15.5;border-radius:32px;padding:8px;}
+.flex-item .phone::before{top:13px;width:62px;height:17px;margin-left:-31px;}
+.flex-item .phone-screen{border-radius:25px;}
 
-.adm{height:100%;overflow:hidden;font-size:11.5px;line-height:1.6;color:#2b2a2e;}
-.adm-bar{display:flex;align-items:center;gap:8px;padding:42px 14px 9px;border-bottom:1px solid #ece8e2;background:#fff;}
-.adm-bar i{width:16px;height:2px;background:#2b2a2e;box-shadow:0 5px 0 #2b2a2e,0 -5px 0 #2b2a2e;}
-.adm-bar b{font-family:var(--f-cn);font-weight:500;font-size:12.5px;letter-spacing:.12em;}
-.adm-bar span{margin-left:auto;font-size:10px;color:#8a8590;}
-.adm-body{padding:14px 12px;}
-.adm-title{font-family:var(--f-cn);font-weight:500;font-size:14px;letter-spacing:.14em;}
-.adm-note{margin-top:2px;font-size:10.5px;color:#8a8590;line-height:1.7;}
-.adm-group{margin-top:10px;padding:10px 11px 6px;border:1px solid #e6e1d9;border-radius:10px;background:#fff;}
-.adm-group h4{display:flex;align-items:baseline;gap:6px;font-weight:500;font-size:12px;letter-spacing:.1em;}
-.adm-group h4 small{font-weight:300;font-size:10px;color:#8a8590;letter-spacing:.04em;}
-.adm-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid #f1ede7;}
-.adm-group h4 + .adm-row{margin-top:6px;}
-.adm-row.off span{color:#a9a3ab;}
+.adm{height:100%;overflow:hidden;font-size:10.5px;line-height:1.55;color:#2b2a2e;}
+.adm-bar{display:flex;align-items:center;gap:7px;padding:34px 12px 8px;border-bottom:1px solid #ece8e2;background:#fff;}
+.adm-bar i{width:14px;height:2px;background:#2b2a2e;box-shadow:0 4px 0 #2b2a2e,0 -4px 0 #2b2a2e;}
+.adm-bar b{font-family:var(--f-cn);font-weight:500;font-size:11.5px;letter-spacing:.12em;}
+.adm-bar span{margin-left:auto;font-size:9px;color:#8a8590;}
+.adm-body{padding:10px 10px;}
+.adm-note{font-size:9.5px;color:#8a8590;line-height:1.6;}
+.adm-group{margin-top:8px;padding:8px 9px 4px;border:1px solid #e6e1d9;border-radius:9px;background:#fff;}
+.adm-group h4{display:flex;align-items:baseline;gap:6px;font-weight:500;font-size:11px;letter-spacing:.1em;}
+.adm-group h4 small{font-weight:300;font-size:9px;color:#8a8590;letter-spacing:.04em;}
+.adm-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 0;border-top:1px solid #f1ede7;}
+.adm-group h4 + .adm-row{margin-top:5px;}
 .tg{position:relative;flex:0 0 auto;display:inline-flex;cursor:pointer;}
 .tg input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer;}
-.tg i{display:block;width:32px;height:18px;border-radius:999px;border:1px solid #d9d4cc;background:#f6f4f0;transition:.2s;}
-.tg i::after{content:'';display:block;width:12px;height:12px;border-radius:50%;background:#8a8590;margin:2px;transition:transform .2s,background .2s;}
+.tg i{display:block;width:28px;height:16px;border-radius:999px;border:1px solid #d9d4cc;background:#f6f4f0;transition:.2s;}
+.tg i::after{content:'';display:block;width:10px;height:10px;border-radius:50%;background:#8a8590;margin:2px;transition:transform .2s,background .2s;}
 .tg input:checked + i{border-color:#2b2a2e;background:#2b2a2e;}
-.tg input:checked + i::after{background:#fff;transform:translateX(14px);}
+.tg input:checked + i::after{background:#fff;transform:translateX(12px);}
 .tg input:focus-visible + i{outline:1px solid var(--ink);outline-offset:2px;}
 @media (prefers-reduced-motion:reduce){.tg i,.tg i::after{transition:none;}}
-.adm-item{display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-top:1px solid #f1ede7;}
+.adm-item{display:flex;gap:8px;align-items:flex-start;padding:7px 0;border-top:1px solid #f1ede7;}
 .adm-item:first-child{border-top:0;}
-.adm-kind{flex:0 0 auto;padding:1px 7px;border-radius:99px;border:1px solid #e0d6cc;font-size:9.5px;color:var(--accent-ink);letter-spacing:.06em;}
-.adm-item b{display:block;font-weight:500;font-size:11.5px;}
-.adm-item span{display:block;font-size:10px;color:#8a8590;line-height:1.6;}
-.adm-add{display:block;width:100%;margin-top:10px;padding:7px;border:1px dashed #d4c5b8;border-radius:8px;background:none;
-  font:inherit;font-size:11px;color:var(--accent-ink);letter-spacing:.08em;text-align:center;}
+.adm-kind{flex:0 0 auto;padding:1px 6px;border-radius:99px;border:1px solid #e0d6cc;font-size:8.5px;color:var(--accent-ink);letter-spacing:.06em;}
+.adm-item b{display:block;font-weight:500;font-size:10.5px;}
+.adm-item span{display:block;font-size:9px;color:#8a8590;line-height:1.55;}
+.adm-add{display:block;width:100%;margin-top:8px;padding:6px;border:1px dashed #d4c5b8;border-radius:8px;
+  font-size:10px;color:var(--accent-ink);letter-spacing:.08em;text-align:center;}
 
 .plans{max-width:860px;margin:0 auto;overflow:hidden;}
 .pt{position:relative;width:100%;border-collapse:collapse;table-layout:fixed;}
@@ -178,9 +207,14 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
 .pt .price strong{display:block;font-family:var(--f-en);font-weight:400;font-size:clamp(22px,4.6vw,28px);letter-spacing:0;color:var(--ink);}
 .pt .price strong small{font-size:.46em;font-weight:400;letter-spacing:.06em;margin-right:2px;}
 .pt tbody th{text-align:left;}
-.pt .feat{display:flex;align-items:center;gap:10px;font-size:14.5px;letter-spacing:.04em;line-height:1.5;}
+.pt .feat{display:flex;align-items:center;gap:10px;font:inherit;font-size:14.5px;letter-spacing:.04em;line-height:1.5;color:inherit;text-align:left;}
+.pt button.feat{width:100%;padding:0;border:0;background:none;cursor:pointer;}
+.pt button.feat .lab{border-bottom:1px dashed var(--mc-gold-soft);transition:border-color .2s,color .2s;}
+.pt button.feat:hover .lab{border-bottom-color:var(--mc-gold);color:var(--mc-gold);}
+.pt button.feat:focus-visible{outline:2px solid var(--ink);outline-offset:3px;border-radius:4px;}
+.pt .more{width:15px;height:15px;flex:0 0 auto;margin-left:-4px;fill:none;stroke:var(--mc-gold);stroke-width:1.8;stroke-linecap:round;}
 .pt td{text-align:center;font-size:14px;letter-spacing:.04em;color:#4d4650;}
-.pt td .ok{display:inline-block;width:20px;height:20px;vertical-align:middle;fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.pt td .ok{display:inline-block;width:20px;height:20px;vertical-align:middle;fill:none;stroke:var(--mc-gold);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
 .pt td .no{display:inline-block;width:14px;height:1px;background:#cfc6bb;vertical-align:middle;}
 .pt tbody tr:last-child th,.pt tbody tr:last-child td{border-bottom:0;}
 @media (max-width:440px){
@@ -194,6 +228,7 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
 .plan-notes{max-width:860px;margin:14px auto 0;padding:0 2px;color:var(--muted);font-size:13.5px;line-height:1.9;}
 .plan-notes li{list-style:none;padding-left:1.1em;text-indent:-1.1em;}
 .plan-notes li::before{content:'・';}
+.plan-tip{max-width:860px;margin:0 auto 12px;text-align:right;color:var(--muted);font-size:12.5px;letter-spacing:.06em;}
 
 .tier{display:flex;align-items:center;gap:10px;margin-top:clamp(40px,6vw,60px);padding-bottom:12px;border-bottom:1px solid var(--line);}
 .sec-head + .tier{margin-top:0;}
@@ -216,15 +251,12 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
 .card h3 .en{font-family:var(--f-en);font-weight:400;font-size:20px;letter-spacing:.02em;line-height:1.3;}
 .card h3 .cn{font-family:var(--f-cn);font-size:13.5px;letter-spacing:.2em;color:var(--muted);}
 .mood{font-size:14px;line-height:1.85;}
-.dress{display:flex;flex-wrap:wrap;align-items:center;gap:6px;}
-.dress .lab{font-size:12px;letter-spacing:.12em;color:var(--muted);margin-right:2px;}
-.chip{font-size:12.5px;line-height:1.5;padding:3px 10px;border-radius:99px;background:var(--chip);color:#4d4650;}
 .swatches{display:flex;gap:5px;}
 .swatches i{display:block;width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,0,0,.08);}
 .acts{position:relative;z-index:3;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line-soft);}
 .acts .btn{min-height:42px;padding:8px 10px;font-size:13.5px;letter-spacing:.08em;}
 .acts .btn-pv{grid-column:1/-1;}
-.ic-heart{width:17px;height:17px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;}
+.ic-heart{width:16px;height:16px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;}
 .btn-like:hover .ic-heart{fill:currentColor;}
 
 @media (max-width:599px){
@@ -233,8 +265,6 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
   .body{padding:14px 14px 15px;gap:8px;min-width:0;}
   .card h3 .en{font-size:17px;}
   .mood{font-size:13px;line-height:1.75;}
-  .chip{font-size:11.5px;padding:2px 8px;}
-  .dress .lab{display:none;}
   .swatches i{width:13px;height:13px;}
   .acts{grid-template-columns:1fr;gap:6px;padding-top:10px;}
   .acts .btn{min-height:40px;font-size:13px;}
@@ -252,7 +282,7 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
 .flow-need b{font-weight:500;color:var(--ink);}
 .flow-cta{display:flex;justify-content:center;margin-top:22px;}
 
-#guest,#flex,#plans,#templates,#flow,#faq{scroll-margin-top:24px;}
+#flex,#plans,#templates,#flow,#faq{scroll-margin-top:24px;}
 
 .faq-list{max-width:760px;margin:0 auto;padding:6px 22px;}
 .faq details{border-top:1px solid var(--line);}
@@ -275,7 +305,7 @@ footer .copy{display:block;margin-top:6px;font-size:12px;letter-spacing:.04em;}
   padding:10px 16px calc(10px + env(safe-area-inset-bottom));
   background:linear-gradient(rgba(246,242,234,0),rgba(246,242,234,.94) 30%);
   transform:translateY(110%);visibility:hidden;transition:transform .25s ease,visibility 0s linear .25s;}
-.sticky .btn{width:100%;box-shadow:0 10px 24px -12px rgba(120,80,60,.55);}
+.sticky .btn{width:100%;box-shadow:0 10px 24px -12px rgba(40,30,40,.55);}
 .sticky.is-on{transform:none;visibility:visible;transition:transform .25s ease;}
 @media (max-width:759px){
   .sticky{display:block;}
@@ -283,28 +313,80 @@ footer .copy{display:block;margin-top:6px;font-size:12px;letter-spacing:.04em;}
 }
 @media (prefers-reduced-motion:reduce){.sticky{transition:none;}}
 
-.pv{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;}
-.pv[hidden]{display:none;}
-.pv-scrim{position:absolute;inset:0;background:rgba(35,32,32,.72);}
-.pv-box{position:relative;display:flex;flex-direction:column;align-items:center;gap:12px;max-height:100%;outline:none;}
-.pv-head{display:flex;align-items:center;gap:10px;color:#fff;width:100%;min-height:36px;padding:0 44px;justify-content:center;}
-.pv-head h2{font-family:var(--f-cn);font-weight:500;font-size:16px;letter-spacing:.14em;}
-.pv-x{position:absolute;right:-6px;top:-4px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.14);
-  color:#fff;font-size:22px;line-height:1;cursor:pointer;}
-.pv-x:focus-visible,.pv-replay:focus-visible{outline:2px solid #fff;outline-offset:2px;}
-.pv .phone{width:min(330px,calc((100svh - 190px) * 9 / 18.5),calc(100vw - 32px));max-width:none;}
+.dlg{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;}
+.dlg[hidden]{display:none;}
+.dlg-scrim{position:absolute;inset:0;background:rgba(35,32,32,.66);}
+.dlg-box{position:relative;width:100%;max-height:100%;overflow:auto;overscroll-behavior:contain;outline:none;
+  background:var(--mc-ivory) var(--mc-grain) 0 0/180px 180px;border-radius:22px;box-shadow:0 30px 80px -30px rgba(20,15,20,.6);}
+.dlg-top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;min-height:56px;padding:8px 10px;
+  background:rgba(246,242,234,.94);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-bottom:1px solid var(--line-soft);}
+.dlg-top h2{flex:1;text-align:center;font-family:var(--f-cn);font-weight:500;font-size:16px;letter-spacing:.14em;line-height:1.4;}
+.dlg-top h2 small{display:block;font-family:var(--f-en);font-size:10.5px;letter-spacing:.2em;color:var(--muted);font-weight:400;}
+.dlg-x,.pv-replay{flex:0 0 auto;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--ink);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;}
+.dlg-x:focus-visible,.pv-replay:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
+.pv-replay svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.dlg-spacer{flex:0 0 40px;}
+body.dlg-open{overflow:hidden;}
+
+.pv .dlg-box{max-width:940px;}
+.pv-grid{display:grid;grid-template-columns:auto 1fr;gap:clamp(20px,4vw,40px);align-items:start;padding:22px clamp(18px,3vw,32px) 28px;}
+.pv-stage{display:flex;flex-direction:column;align-items:center;gap:10px;}
+.pv .phone{width:min(320px,calc((100svh - 170px) * 9 / 18.5));max-width:none;}
 .pv iframe{position:absolute;left:0;top:0;border:0;width:390px;transform-origin:0 0;background:#fbfaf8;}
-.pv-replay{position:absolute;left:-6px;top:-4px;width:40px;height:40px;border-radius:50%;border:0;
-  background:rgba(255,255,255,.14);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-.pv-replay svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
-.pv-acts{display:flex;gap:10px;min-height:44px;}
-.pv-acts[hidden]{display:flex;visibility:hidden;}
-.pv-acts .btn.ghost{background:rgba(255,255,255,.9);}
-.pv-wait{color:rgba(255,255,255,.75);font-size:12.5px;letter-spacing:.1em;}
-body.pv-open{overflow:hidden;}
+.pv-wait{min-height:1.6em;color:var(--muted);font-size:12.5px;letter-spacing:.1em;}
+.pv-info{display:flex;flex-direction:column;gap:16px;min-width:0;}
+.pv-mood{font-size:14.5px;line-height:1.9;color:#4d4650;}
+.pv-acts{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.pv-acts .btn{padding:10px 12px;}
+.pv-card{padding:20px 20px 22px;}
+.pv-card h3{font-family:var(--f-cn);font-weight:500;font-size:15.5px;letter-spacing:.12em;}
+.pv-card > p{margin-top:4px;font-size:13px;color:#5c5560;line-height:1.75;}
+.tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px;list-style:none;}
+.tags li{padding:5px 12px;border-radius:99px;border:1px solid var(--line);background:rgba(255,255,255,.7);font-size:13px;line-height:1.5;color:#4d4650;}
+.tags li.plus{border-style:dashed;border-color:var(--mc-gold-soft);color:var(--mc-gold);}
+.tags li.first{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;}
+.tags li.first img{width:44px;height:23px;border-radius:99px;object-fit:cover;object-position:50% 30%;}
+@media (max-width:719px){
+  .dlg{padding:0;align-items:flex-end;}
+  .dlg-box{max-height:100%;height:100%;border-radius:0;}
+  .pv-grid{grid-template-columns:1fr;padding:16px 16px calc(28px + env(safe-area-inset-bottom));}
+  .pv .phone{width:min(300px,78vw,calc((100svh - 150px) * 9 / 18.5));}
+}
+
+.fx .dlg-box{max-width:560px;}
+.fx-body{padding:20px clamp(18px,4vw,28px) 26px;}
+.fx-body > p{font-size:14.5px;line-height:1.95;color:#4d4650;}
+.fx-body > p + p{margin-top:8px;}
+.fx-pic{margin-top:18px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#fff;}
+.fx-pic img{display:block;width:100%;height:auto;max-height:52vh;object-fit:cover;object-position:top center;}
+.fx-plan{display:inline-block;margin-bottom:10px;padding:2px 10px;border-radius:99px;border:1px solid var(--mc-gold-soft);font-size:12px;letter-spacing:.1em;color:var(--mc-gold);background:#fff;}
+.mock{padding:14px;font-size:12.5px;line-height:1.6;color:#2b2a2e;background:#fbfaf8;}
+.mock-cols{display:grid;grid-template-columns:1fr 1.3fr;gap:10px;}
+.mock-box{border:1px solid #e6e1d9;border-radius:10px;background:#fff;padding:9px 10px;}
+.mock-box h4{font-size:11.5px;font-weight:500;letter-spacing:.1em;color:#8a8590;margin-bottom:6px;}
+.mock-chip{display:inline-block;margin:0 4px 5px 0;padding:2px 8px;border-radius:99px;border:1px solid #e0d6cc;background:#fffaf6;font-size:11.5px;}
+.mock-table{margin-bottom:6px;padding:6px 8px;border:1px solid #efeae3;border-radius:8px;}
+.mock-table b{font-weight:500;font-size:12px;}
+.mock-table small{float:right;color:#8a8590;}
+.mock-stat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;text-align:center;}
+.mock-stat div{border:1px solid #e6e1d9;border-radius:10px;background:#fff;padding:8px 4px;}
+.mock-stat b{display:block;font-family:var(--f-en);font-weight:400;font-size:18px;}
+.mock-stat span{font-size:11px;color:#8a8590;}
+.mock-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 2px;border-top:1px solid #f1ede7;}
+.mock-row span{color:#8a8590;font-size:11.5px;}
+.mock-tag{padding:1px 8px;border-radius:99px;background:#2b2a2e;color:#fff;font-size:11px;}
+.mock-ev{border:1px solid #e6e1d9;border-radius:10px;background:#fff;padding:10px;margin-bottom:8px;}
+.mock-ev b{font-weight:500;}
+.mock-ev small{color:#8a8590;margin-left:6px;}
+.mock-pick{display:flex;gap:6px;margin-top:7px;}
+.mock-pick span{flex:1;text-align:center;padding:5px;border:1px solid #e0d6cc;border-radius:8px;font-size:11.5px;}
+.mock-pick span.on{background:#2b2a2e;border-color:#2b2a2e;color:#fff;}
 </style>
 </head>
 <body>
+<div class="veils" aria-hidden="true"><i></i><i></i></div>
+<div class="shades" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-plan-classic" viewBox="0 0 48 48"><path d="M16.5 6h15l8.5 7 3 5-19 24L5 18l3-5 8.5-7Z"/><path d="M5 18h38"/><path d="M16.5 6 12.8 18M31.5 6 35.2 18"/><path d="M12.8 18 24 42M35.2 18 24 42"/><path d="M8 13 16.5 6M40 13 31.5 6"/></symbol>
   <symbol id="i-plan-premium" viewBox="0 0 48 48"><path d="M16.5 6h15l8.5 7 3 5-19 24L5 18l3-5 8.5-7Z"/><path d="M5 18h38"/><path d="M16.5 6 12.8 18M31.5 6 35.2 18"/><path d="M12.8 18 24 42M35.2 18 24 42"/><path d="M8 13 16.5 6M40 13 31.5 6"/><path d="M20 6v12M28 6v12"/><path d="M19.4 18 24 42M28.6 18 24 42"/></symbol>
@@ -325,6 +407,9 @@ body.pv-open{overflow:hidden;}
   <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-7.5-10.3A4.2 4.2 0 0 1 12 7.6a4.2 4.2 0 0 1 7.5 2.6c0 5.7-7.5 10.3-7.5 10.3Z"/></symbol>
   <symbol id="i-line" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3.2c-5.2 0-9.4 3.4-9.4 7.6 0 3.8 3.3 6.9 7.8 7.5.3.1.7.2.8.5.1.2.1.6 0 .8l-.1.8c0 .2-.2.9.8.5s5.4-3.2 7.4-5.5c1.4-1.5 2-3 2-4.6 0-4.2-4.2-7.6-9.3-7.6Zm-3.6 10H6.5a.5.5 0 0 1-.5-.5V9a.5.5 0 0 1 1 0v3.2h1.4a.5.5 0 0 1 0 1Zm1.9-.5a.5.5 0 0 1-1 0V9a.5.5 0 0 1 1 0Zm4.5 0a.5.5 0 0 1-.9.3l-1.9-2.6v2.3a.5.5 0 0 1-1 0V9a.5.5 0 0 1 .9-.3l1.9 2.6V9a.5.5 0 0 1 1 0Zm3-2.3a.5.5 0 0 1 0 1h-1.4v.8h1.4a.5.5 0 0 1 0 1h-1.9a.5.5 0 0 1-.5-.5V9a.5.5 0 0 1 .5-.5h1.9a.5.5 0 0 1 0 1h-1.4v.8Z"/></symbol>
   <symbol id="i-replay" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></symbol>
+  <symbol id="i-ext" viewBox="0 0 24 24"><path d="M8 16 17 7"/><path d="M9 7h8v8"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15"/><path d="M14 7l5 5-5 5"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5v.01"/></symbol>
 </svg>
 
 <div class="wrap">
@@ -334,54 +419,32 @@ body.pv-open{overflow:hidden;}
     <h1>讓籌備少一點整理，<br>讓婚禮多一點享受。</h1>
     <p>芯玖的婚禮網站不只是一頁比較漂亮的電子喜帖。<br>從賓客收到邀請、回覆出席、開席前的互動小遊戲，到婚禮當天找到自己的座位、收禮金的小工具，都是為了減輕新人的負擔，讓籌備好看又輕鬆。</p>
     <div class="hero-cta" id="heroCta">
-      <a class="btn" href="https://lin.ee/8DlfH2K" target="_blank" rel="noopener" data-line="hero"><svg class="ic-line" aria-hidden="true"><use href="#i-line"/></svg>LINE 詢問</a>
+      <a class="btn" href="https://lin.ee/8DlfH2K" target="_blank" rel="noopener" data-line="hero"><svg class="ic-line" aria-hidden="true"><use href="#i-line"/></svg>LINE 詢問<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       <a class="btn ghost" href="#templates">先看看版型</a>
       <small>想先聊聊也沒關係，有任何問題都歡迎問我們</small>
     </div>
 
         <ul class="why">
-      <li class="glass">
-        <svg class="ic"><use href="#i-rsvp"/></svg>
-        <div><h3>回覆填完，名單就整理好了</h3><p>人數、素食、兒童椅，賓客自己填，你們不用再對著 Excel 一筆一筆核對。</p></div>
+      <li class="glass why-flow">
+        <h3><svg class="ic" aria-hidden="true"><use href="#i-rsvp"/></svg>回覆、排桌、查桌次，一條龍串好</h3>
+        <ol class="flow">
+          <li><span class="no">01</span><b>賓客回填</b><span>人數、素食、兒童椅，賓客自己填</span></li>
+          <svg class="arr" aria-hidden="true"><use href="#i-arrow"/></svg>
+          <li><span class="no">02</span><b>排桌</b><span>回覆直接匯入，拖曳就排好</span><span class="badge">典藏方案</span></li>
+          <svg class="arr" aria-hidden="true"><use href="#i-arrow"/></svg>
+          <li><span class="no">03</span><b>賓客自己查</b><span>婚禮當天輸入名字，就看得到桌號</span></li>
+        </ol>
       </li>
       <li class="glass">
-        <svg class="ic"><use href="#i-findseat"/></svg>
-        <div><h3>婚禮當天，賓客自己查桌次</h3><p>輸入名字就看得到桌號，不用擠在門口找名單。</p></div>
+        <svg class="ic" aria-hidden="true"><use href="#i-url"/></svg>
+        <div><h3>13 款版型，各有自己的開場動畫</h3><p>拆信、推門、點蠟燭、氣球飛走……賓客一打開，就先看到屬於你們的開場。</p></div>
       </li>
       <li class="glass">
-        <svg class="ic"><use href="#i-storywall"/></svg>
+        <svg class="ic" aria-hidden="true"><use href="#i-storywall"/></svg>
         <div><h3>等開席的時候，有事可以做</h3><p>故事牆、祝福牆、抽卡，讓早到的賓客也參與你們的故事。</p></div>
       </li>
     </ul>
   </header>
-
-    <section class="sec" id="guest" aria-labelledby="guestTitle">
-    <div class="sec-head">
-      <div class="kicker">For your guests</div>
-      <h2 id="guestTitle">賓客會看到什麼</h2>
-      <p>從收到連結那一刻，到婚禮當天找位子，賓客會依序經過這些地方。</p>
-    </div>
-    <ol class="gflow">
-      <li><div class="gcard glass">
-        <h3>收到連結</h3><p>LINE 裡出現你們的專屬預覽圖</p>
-        <div class="gcard-line" aria-hidden="true">
-          <img src="/samples/thumbs/white-church.jpg" alt="" loading="lazy" width="600" height="314">
-          <div><b>Ethan &amp; Claire 的婚禮邀請函</b><span>2027.05.22・星光花園酒店</span></div>
-        </div>
-      </div></li>
-      <li><div class="gcard glass"><h3>開場動畫</h3><p>拆信、推門、點蠟燭…依版型不同</p></div></li>
-      <li><div class="gcard glass"><h3>婚禮資訊</h3><p>日期、時間、地點</p></div></li>
-      <li><div class="gcard glass"><h3>開啟地圖・加入行事曆</h3><p>一鍵導航，一鍵存進行事曆</p></div></li>
-      <li><div class="gcard glass"><h3>交通資訊</h3><p>大眾運輸怎麼到、停車場在哪裡</p></div></li>
-      <li><div class="gcard glass"><h3>尋找我的座位</h3><p>輸入名字就看得到桌號</p></div></li>
-      <li><div class="gcard glass"><h3>當日流程</h3><p>幾點入席、幾點開席</p></div></li>
-      <li><div class="gcard glass"><h3>倒數計時</h3><p>離婚禮還有幾天，打開就看得到</p></div></li>
-      <li><div class="gcard glass"><h3>Dress code</h3><p>用示範圖或是顏色告訴親朋好友</p></div></li>
-      <li><div class="gcard glass"><h3>出席回覆</h3><p>出不出席、幾位、餐點需求，用手機就能填好</p></div></li>
-      <li><div class="gcard glass"><h3>Explore</h3><p>祝福牆、給你的一封信、我們的故事、小測驗、抽卡</p></div></li>
-      <li><div class="gcard glass"><h3>自訂內容</h3><p>雲端相簿連結、現場小活動資訊，連結或文字都能放</p></div></li>
-    </ol>
-  </section>
 
     <section class="sec" id="flex" aria-labelledby="flexTitle">
     <div class="sec-head">
@@ -391,49 +454,47 @@ body.pv-open{overflow:hidden;}
     </div>
     <div class="flex-rail" tabindex="0" aria-label="新人後台的三個畫面，可以左右滑動">
       <figure class="flex-item">
+        <figcaption class="flex-cap"><h3>自訂表單</h3><p>證婚不問餐點，晚宴才問。<br>用不到的題目，關掉就好。</p></figcaption>
         <div class="phone"><div class="phone-screen"><div class="adm">
           <div class="adm-bar"><i></i><b>出席表單設定</b><span>Ethan &amp; Claire</span></div>
           <div class="adm-body">
             <div class="adm-note">每一場活動要問什麼，分開決定。</div>
             <div class="adm-group">
-              <h4>證婚儀式 <small>11:30・一樓花園</small></h4>
+              <h4>證婚儀式 <small>11:30</small></h4>
               <label class="adm-row"><span>出席人數</span><span class="tg"><input type="checkbox" checked aria-label="證婚：出席人數"><i></i></span></label>
               <label class="adm-row"><span>餐點（葷／素）</span><span class="tg"><input type="checkbox" aria-label="證婚：餐點"><i></i></span></label>
               <label class="adm-row"><span>兒童座椅</span><span class="tg"><input type="checkbox" aria-label="證婚：兒童座椅"><i></i></span></label>
-              <label class="adm-row"><span>飲食習慣</span><span class="tg"><input type="checkbox" aria-label="證婚：飲食習慣"><i></i></span></label>
             </div>
             <div class="adm-group">
-              <h4>晚宴 <small>12:00・二樓宴會廳</small></h4>
+              <h4>晚宴 <small>12:00</small></h4>
               <label class="adm-row"><span>出席人數</span><span class="tg"><input type="checkbox" checked aria-label="晚宴：出席人數"><i></i></span></label>
               <label class="adm-row"><span>餐點（葷／素）</span><span class="tg"><input type="checkbox" checked aria-label="晚宴：餐點"><i></i></span></label>
               <label class="adm-row"><span>兒童座椅</span><span class="tg"><input type="checkbox" checked aria-label="晚宴：兒童座椅"><i></i></span></label>
-              <label class="adm-row"><span>飲食習慣</span><span class="tg"><input type="checkbox" checked aria-label="晚宴：飲食習慣"><i></i></span></label>
             </div>
           </div>
         </div></div></div>
-        <figcaption class="flex-cap"><h3>自訂表單</h3><p>證婚不問餐點，晚宴才問。<br>用不到的題目，關掉就好。</p></figcaption>
       </figure>
       <figure class="flex-item">
+        <figcaption class="flex-cap"><h3>自訂內容</h3><p>想讓賓客知道什麼，就放什麼。</p></figcaption>
         <div class="phone"><div class="phone-screen"><div class="adm">
           <div class="adm-bar"><i></i><b>自訂內容</b><span>Ethan &amp; Claire</span></div>
           <div class="adm-body">
             <div class="adm-note">我們準備好的內容以外，你們想告訴賓客的事都放這裡。</div>
             <div class="adm-group">
-              <div class="adm-item"><span class="adm-kind">跳出說明</span><div><b>停車資訊</b><span>酒店 B1–B3 有停車場，憑喜帖免費停車四小時。</span></div></div>
+              <div class="adm-item"><span class="adm-kind">跳出說明</span><div><b>停車資訊</b><span>酒店 B1–B3，憑喜帖免費停四小時。</span></div></div>
               <div class="adm-item"><span class="adm-kind">開啟連結</span><div><b>婚紗照相簿</b><span>雲端相簿的連結</span></div></div>
-              <div class="adm-item"><span class="adm-kind">跳出說明</span><div><b>現場拍立得簽名牆</b><span>入口左手邊，拍一張貼上去，寫一句話給我們。</span></div></div>
-              <div class="adm-item"><span class="adm-kind">開啟連結</span><div><b>當天照片上傳</b><span>大家拍的照片，丟到這個資料夾</span></div></div>
+              <div class="adm-item"><span class="adm-kind">跳出說明</span><div><b>拍立得簽名牆</b><span>入口左手邊，拍一張寫一句話。</span></div></div>
             </div>
             <span class="adm-add" aria-hidden="true">＋ 新增自訂內容</span>
           </div>
         </div></div></div>
-        <figcaption class="flex-cap"><h3>自訂內容</h3><p>想讓賓客知道什麼，就放什麼。</p></figcaption>
       </figure>
       <figure class="flex-item">
+        <figcaption class="flex-cap"><h3>自訂顯示</h3><p>不想要的區塊，關掉就不會出現。</p></figcaption>
         <div class="phone"><div class="phone-screen"><div class="adm">
           <div class="adm-bar"><i></i><b>頁面設定</b><span>Ethan &amp; Claire</span></div>
           <div class="adm-body">
-            <div class="adm-note">決定賓客看得到哪些區塊；收起來的只是先不給看，內容都還在。</div>
+            <div class="adm-note">收起來的只是先不給看，內容都還在。</div>
             <div class="adm-group">
               <label class="adm-row"><span>倒數計時</span><span class="tg"><input type="checkbox" checked aria-label="倒數計時"><i></i></span></label>
               <label class="adm-row"><span>我們的故事</span><span class="tg"><input type="checkbox" checked aria-label="我們的故事"><i></i></span></label>
@@ -441,14 +502,218 @@ body.pv-open{overflow:hidden;}
               <label class="adm-row"><span>抽卡</span><span class="tg"><input type="checkbox" aria-label="抽卡"><i></i></span></label>
               <label class="adm-row"><span>小測驗</span><span class="tg"><input type="checkbox" checked aria-label="小測驗"><i></i></span></label>
               <label class="adm-row"><span>給你的一封信</span><span class="tg"><input type="checkbox" checked aria-label="給你的一封信"><i></i></span></label>
-              <label class="adm-row"><span>尋找我的座位</span><span class="tg"><input type="checkbox" aria-label="尋找我的座位"><i></i></span></label>
             </div>
           </div>
         </div></div></div>
-        <figcaption class="flex-cap"><h3>自訂顯示</h3><p>不想要的區塊，關掉就不會出現。</p></figcaption>
       </figure>
     </div>
     <p class="flex-hint" aria-hidden="true">← 左右滑動看更多 →</p>
+  </section>
+
+    <section class="sec" id="templates" aria-labelledby="tplTitle">
+    <div class="sec-head">
+      <div class="kicker">Templates</div>
+      <h2 id="tplTitle">網站版型</h2>
+      <p>按「預覽」可以直接看開場動畫；「看完整範例」會另開一頁，是賓客實際會看到的婚禮網站，可以盡量點點看，填的內容不會被送出去。新人與地點都是虛構的，照片為示範用圖，正式網站會換成你們的照片與內容。</p>
+      <p class="tip">想試查桌次，輸入 <b>王小安</b><br>想拆專屬信件，輸入 <b>小安</b></p>
+    </div>
+
+    <div class="tier">
+      <svg class="ic"><use href="#i-plan-classic"/></svg>
+      <h3>經典方案</h3><span>Classic</span><span class="n">3 款</span>
+    </div>
+    <div class="grid">
+    <article class="card glass" data-template="classic">
+      <div class="shot" style="background:#fbfaf7"><img src="/samples/thumbs/classic.jpg" alt="芯玖典雅版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/classic.jpg"
+          data-webm="/samples/videos/classic.webm" data-mp4="/samples/videos/classic.mp4" aria-hidden="true"></video></div>
+      <div class="body">
+        <h3><span class="en">Ivory White</span><span class="cn">芯玖典雅</span></h3>
+        <p class="mood">一張滿版的婚紗照當背景，資訊安靜地疊在上面。最不挑照片。</p>
+        <span class="swatches" aria-hidden="true"><i style="background:#fbfaf7"></i><i style="background:#b39a6d"></i><i style="background:#c0a87e"></i><i style="background:#b3a884"></i></span>
+        <div class="acts">
+          <button type="button" class="btn btn-pv" data-preview="classic" data-name="芯玖典雅" aria-label="預覽芯玖典雅的開場">預覽</button>
+          <a class="btn ghost" href="/samples/classic/" target="_blank" rel="noopener" data-demo="card">看完整範例<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E8%8A%AF%E7%8E%96%E5%85%B8%E9%9B%85%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我想用這款<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+        </div>
+      </div>
+    </article>
+    <article class="card glass" data-template="korean">
+      <div class="shot" style="background:#fbfaf8"><img src="/samples/thumbs/korean.jpg" alt="韓系簡約版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/korean.jpg"
+          data-webm="/samples/videos/korean.webm" data-mp4="/samples/videos/korean.mp4" aria-hidden="true"></video></div>
+      <div class="body">
+        <h3><span class="en">Korean Modern</span><span class="cn">韓系簡約</span></h3>
+        <p class="mood">大量留白、細線條，照片像雜誌內頁一樣被排進版面裡。</p>
+        <span class="swatches" aria-hidden="true"><i style="background:#fbfaf8"></i><i style="background:#a8b8c5"></i><i style="background:#93a3b1"></i><i style="background:#21284f"></i></span>
+        <div class="acts">
+          <button type="button" class="btn btn-pv" data-preview="korean" data-name="韓系簡約" aria-label="預覽韓系簡約的開場">預覽</button>
+          <a class="btn ghost" href="/samples/korean/" target="_blank" rel="noopener" data-demo="card">看完整範例<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E9%9F%93%E7%B3%BB%E7%B0%A1%E7%B4%84%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我想用這款<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+        </div>
+      </div>
+    </article>
+    <article class="card glass" data-template="forest">
+      <div class="shot" style="background:#f2efe5"><img src="/samples/thumbs/forest.jpg" alt="森林系版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/forest.jpg"
+          data-webm="/samples/videos/forest.webm" data-mp4="/samples/videos/forest.mp4" aria-hidden="true"></video></div>
+      <div class="body">
+        <h3><span class="en">Forest Botanical</span><span class="cn">森林系</span></h3>
+        <p class="mood">滿版照片，四周是可愛的手繪森林小物：橡實、香菇、小熊與兔子。</p>
+        <span class="swatches" aria-hidden="true"><i style="background:#f2efe5"></i><i style="background:#a5ad94"></i><i style="background:#806f5c"></i><i style="background:#26382d"></i></span>
+        <div class="acts">
+          <button type="button" class="btn btn-pv" data-preview="forest" data-name="森林系" aria-label="預覽森林系的開場">預覽</button>
+          <a class="btn ghost" href="/samples/forest/" target="_blank" rel="noopener" data-demo="card">看完整範例<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E6%A3%AE%E6%9E%97%E7%B3%BB%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我想用這款<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+        </div>
+      </div>
+    </article>
+    </div>
+
+    <div class="tier">
+      <svg class="ic"><use href="#i-plan-premium"/></svg>
+      <h3>典藏方案</h3><span>Premium</span><span class="n">10 款</span>
+    </div>
+    <p class="tier-note">選典藏方案，上面經典的 3 款也都能用，一共 13 款可以挑。</p>
+    <div class="grid">
+    <article class="card glass" data-template="tapestry">
+      <div class="shot" style="background:#f1e8d5"><img src="/samples/thumbs/tapestry.jpg" alt="中古刺繡版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/tapestry.jpg"
+          data-webm="/samples/videos/tapestry.webm" data-mp4="/samples/videos/tapestry.mp4" aria-hidden="true"></video></div>
+      <div class="body">
+        <h3><span class="en">Tapestry</span><span class="cn">中古刺繡</span></h3>
+        <p class="mood">拆開一封蓋著封蠟的信，走進中世紀的刺繡掛毯。</p>
+        <span class="swatches" aria-hidden="true"><i style="background:#f1e8d5"></i><i style="background:#b08a3e"></i><i style="background:#5d6b3a"></i><i style="background:#7a1f2b"></i></span>
+        <div class="acts">
+          <button type="button" class="btn btn-pv" data-preview="tapestry" data-name="中古刺繡" aria-label="預覽中古刺繡的開場">預覽</button>
+          <a class="btn ghost" href="/samples/tapestry/" target="_blank" rel="noopener" data-demo="card">看完整範例<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E4%B8%AD%E5%8F%A4%E5%88%BA%E7%B9%A1%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我想用這款<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+        </div>
+      </div>
+    </article>
+    <article class="card glass" data-template="botanical-letter">
+      <div class="shot" style="background:#f6f2e9"><img src="/samples/thumbs/botanical-letter.jpg" alt="植物信箋版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/botanical-letter.jpg"
+          data-webm="/samples/videos/botanical-letter.webm" data-mp4="/samples/videos/botanical-letter.mp4" aria-hidden="true"></video></div>
+      <div class="body">
+        <h3><span class="en">Botanical Letter</span><span class="cn">植物信箋</span></h3>
+        <p class="mood">一本植物標本冊：壓花、棉紙、郵票，每張照片旁邊都壓著一枝乾燥花。</p>
+        <span class="swatches" aria-hidden="true"><i style="background:#f6f2e9"></i><i style="background:#8a9a6b"></i><i style="background:#b88a7a"></i><i style="background:#3a4031"></i></span>
+        <div class="acts">
+          <button type="button" class="btn btn-pv" data-preview="botanical-letter" data-name="植物信箋" aria-label="預覽植物信箋的開場">預覽</button>
+          <a class="btn ghost" href="/samples/botanical-letter/" target="_blank" rel="noopener" data-demo="card">看完整範例<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E6%A4%8D%E7%89%A9%E4%BF%A1%E7%AE%8B%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我想用這款<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+        </div>
+      </div>
+    </article>
+    <article class="card glass" data-template="secret-garden">
+      <div class="shot" style="background:#f3f1e8"><img src="/samples/thumbs/secret-garden.jpg" alt="秘密花園版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/secret-garden.jpg"
+          data-webm="/samples/videos/secret-garden.webm" data-mp4="/samples/videos/secret-garden.mp4" aria-hidden="true"></video></div>
+      <div class="body">
+        <h3><span class="en">Secret Garden</span><span class="cn">秘密花園</span></h3>
+        <p class="mood">推開常春藤牆上的玻璃門，走進玫瑰拱門與水彩花朵的花園。</p>
+        <span class="swatches" aria-hidden="true"><i style="background:#f3f1e8"></i><i style="background:#7a9a6a"></i><i style="background:#9b8ab8"></i><i style="background:#2f3b2b"></i></span>
+        <div class="acts">
+          <button type="button" class="btn btn-pv" data-preview="secret-garden" data-name="秘密花園" aria-label="預覽秘密花園的開場">預覽</button>
+          <a class="btn ghost" href="/samples/secret-garden/" target="_blank" rel="noopener" data-demo="card">看完整範例<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E7%A7%98%E5%AF%86%E8%8A%B1%E5%9C%92%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我想用這款<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+        </div>
+      </div>
+    </article>
+    <article class="card glass" data-template="spring-orangerie">
+      <div class="shot" style="background:#f7f7f1"><img src="/samples/thumbs/spring-orangerie.jpg" alt="春日溫室版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/spring-orangerie.jpg"
+          data-webm="/samples/videos/spring-orangerie.webm" data-mp4="/samples/videos/spring-orangerie.mp4" aria-hidden="true"></video></div>
+      <div class="body">
+        <h3><span class="en">Spring Orangerie</span><span class="cn">春日溫室</span></h3>
+        <p class="mood">明亮的玻璃溫室，白玫瑰、檸檬枝與斜射進來的陽光。</p>
+        <span class="swatches" aria-hidden="true"><i style="background:#f7f7f1"></i><i style="background:#9fbfa8"></i><i style="background:#e7b18a"></i><i style="background:#2e3a36"></i></span>
+        <div class="acts">
+          <button type="button" class="btn btn-pv" data-preview="spring-orangerie" data-name="春日溫室" aria-label="預覽春日溫室的開場">預覽</button>
+          <a class="btn ghost" href="/samples/spring-orangerie/" target="_blank" rel="noopener" data-demo="card">看完整範例<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E6%98%A5%E6%97%A5%E6%BA%AB%E5%AE%A4%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我想用這款<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+        </div>
+      </div>
+    </article>
+    <article class="card glass" data-template="night-sky">
+      <div class="shot" style="background:#141a33"><img src="/samples/thumbs/night-sky.jpg" alt="現代星空版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/night-sky.jpg"
+          data-webm="/samples/videos/night-sky.webm" data-mp4="/samples/videos/night-sky.mp4" aria-hidden="true"></video></div>
+      <div class="body">
+        <h3><span class="en">Night Sky</span><span class="cn">現代星空</span></h3>
+        <p class="mood">深藍夜空、會轉的星圖與越捲越圓的月亮。唯一一個深色的版型。</p>
+        <span class="swatches" aria-hidden="true"><i style="background:#141a33"></i><i style="background:#1f2440"></i><i style="background:#b9a46a"></i><i style="background:#8a93c7"></i></span>
+        <div class="acts">
+          <button type="button" class="btn btn-pv" data-preview="night-sky" data-name="現代星空" aria-label="預覽現代星空的開場">預覽</button>
+          <a class="btn ghost" href="/samples/night-sky/" target="_blank" rel="noopener" data-demo="card">看完整範例<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E7%8F%BE%E4%BB%A3%E6%98%9F%E7%A9%BA%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我想用這款<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+        </div>
+      </div>
+    </article>
+    <article class="card glass" data-template="french-manor">
+      <div class="shot" style="background:#f6efe4"><img src="/samples/thumbs/french-manor.jpg" alt="南法莊園版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/french-manor.jpg"
+          data-webm="/samples/videos/french-manor.webm" data-mp4="/samples/videos/french-manor.mp4" aria-hidden="true"></video></div>
+      <div class="body">
+        <h3><span class="en">French Manor</span><span class="cn">南法莊園</span></h3>
+        <p class="mood">南法金色的午後，山坡上的莊園露台、灑滿樹影的牆，一張鋪好亞麻的長桌等著你。</p>
+        <span class="swatches" aria-hidden="true"><i style="background:#f6efe4"></i><i style="background:#b07a4c"></i><i style="background:#7a8f6b"></i><i style="background:#8fafcb"></i></span>
+        <div class="acts">
+          <button type="button" class="btn btn-pv" data-preview="french-manor" data-name="南法莊園" aria-label="預覽南法莊園的開場">預覽</button>
+          <a class="btn ghost" href="/samples/french-manor/" target="_blank" rel="noopener" data-demo="card">看完整範例<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E5%8D%97%E6%B3%95%E8%8E%8A%E5%9C%92%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我想用這款<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+        </div>
+      </div>
+    </article>
+    <article class="card glass" data-template="monet-garden">
+      <div class="shot" style="background:#f7f3ea"><img src="/samples/thumbs/monet-garden.jpg" alt="莫內花園版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/monet-garden.jpg"
+          data-webm="/samples/videos/monet-garden.webm" data-mp4="/samples/videos/monet-garden.mp4" aria-hidden="true"></video></div>
+      <div class="body">
+        <h3><span class="en">Monet Garden</span><span class="cn">莫內花園</span></h3>
+        <p class="mood">走進一幅會流動的莫內油畫：日本橋、睡蓮與花園小徑。</p>
+        <span class="swatches" aria-hidden="true"><i style="background:#f7f3ea"></i><i style="background:#8fae96"></i><i style="background:#a99cc4"></i><i style="background:#c9748a"></i></span>
+        <div class="acts">
+          <button type="button" class="btn btn-pv" data-preview="monet-garden" data-name="莫內花園" aria-label="預覽莫內花園的開場">預覽</button>
+          <a class="btn ghost" href="/samples/monet-garden/" target="_blank" rel="noopener" data-demo="card">看完整範例<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E8%8E%AB%E5%85%A7%E8%8A%B1%E5%9C%92%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我想用這款<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+        </div>
+      </div>
+    </article>
+    <article class="card glass" data-template="outdoor-party">
+      <div class="shot" style="background:#f8fbfd"><img src="/samples/thumbs/outdoor-party.jpg" alt="美式戶外派對版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/outdoor-party.jpg"
+          data-webm="/samples/videos/outdoor-party.webm" data-mp4="/samples/videos/outdoor-party.mp4" aria-hidden="true"></video></div>
+      <div class="body">
+        <h3><span class="en">Outdoor Party</span><span class="cn">美式戶外派對</span></h3>
+        <p class="mood">藍天、草地、野餐籃和一顆顆飄走的粉彩氣球，輕鬆又熱鬧。</p>
+        <span class="swatches" aria-hidden="true"><i style="background:#f8fbfd"></i><i style="background:#7fbfe3"></i><i style="background:#f6c85f"></i><i style="background:#f07a5a"></i></span>
+        <div class="acts">
+          <button type="button" class="btn btn-pv" data-preview="outdoor-party" data-name="美式戶外派對" aria-label="預覽美式戶外派對的開場">預覽</button>
+          <a class="btn ghost" href="/samples/outdoor-party/" target="_blank" rel="noopener" data-demo="card">看完整範例<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E7%BE%8E%E5%BC%8F%E6%88%B6%E5%A4%96%E6%B4%BE%E5%B0%8D%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我想用這款<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+        </div>
+      </div>
+    </article>
+    <article class="card glass" data-template="morning-window">
+      <div class="shot" style="background:#faf6ef"><img src="/samples/thumbs/morning-window.jpg" alt="晨光房間版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/morning-window.jpg"
+          data-webm="/samples/videos/morning-window.webm" data-mp4="/samples/videos/morning-window.mp4" aria-hidden="true"></video></div>
+      <div class="body">
+        <h3><span class="en">Morning Window</span><span class="cn">晨光房間</span></h3>
+        <p class="mood">侘寂風的早晨：窗前的鬱金香、亞麻布與牆上的窗格陽光。</p>
+        <span class="swatches" aria-hidden="true"><i style="background:#faf6ef"></i><i style="background:#d9c3a5"></i><i style="background:#c9d6db"></i><i style="background:#9a7b5b"></i></span>
+        <div class="acts">
+          <button type="button" class="btn btn-pv" data-preview="morning-window" data-name="晨光房間" aria-label="預覽晨光房間的開場">預覽</button>
+          <a class="btn ghost" href="/samples/morning-window/" target="_blank" rel="noopener" data-demo="card">看完整範例<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E6%99%A8%E5%85%89%E6%88%BF%E9%96%93%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我想用這款<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+        </div>
+      </div>
+    </article>
+    <article class="card glass" data-template="white-church">
+      <div class="shot" style="background:#f6f2ea"><img src="/samples/thumbs/white-church.jpg" alt="白色教堂版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/white-church.jpg"
+          data-webm="/samples/videos/white-church.webm" data-mp4="/samples/videos/white-church.mp4" aria-hidden="true"></video></div>
+      <div class="body">
+        <h3><span class="en">White Church</span><span class="cn">白色教堂</span></h3>
+        <p class="mood">午夜點亮三根蠟燭，天一亮，是一座純白的哥德式教堂。透光白紗、彩繪玻璃的光暈，與滿滿的鮮花。</p>
+        <span class="swatches" aria-hidden="true"><i style="background:#f6f2ea"></i><i style="background:#a88d5f"></i><i style="background:#837b86"></i><i style="background:#3b3540"></i></span>
+        <div class="acts">
+          <button type="button" class="btn btn-pv" data-preview="white-church" data-name="白色教堂" aria-label="預覽白色教堂的開場">預覽</button>
+          <a class="btn ghost" href="/samples/white-church/" target="_blank" rel="noopener" data-demo="card">看完整範例<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E7%99%BD%E8%89%B2%E6%95%99%E5%A0%82%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我想用這款<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+        </div>
+      </div>
+    </article>
+    </div>
   </section>
 
     <section class="sec" id="plans" aria-labelledby="plansTitle">
@@ -456,6 +721,7 @@ body.pv-open{overflow:hidden;}
       <div class="kicker">Compare</div>
       <h2 id="plansTitle">兩個方案怎麼選</h2>
     </div>
+    <p class="plan-tip">點功能名稱，看看它是做什麼的</p>
     <div class="plans glass">
       <table class="pt">
         <colgroup><col class="c-feat"><col class="c-plan"><col class="c-plan"></colgroup>
@@ -477,13 +743,13 @@ body.pv-open{overflow:hidden;}
         <tbody>
           <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-url"/></svg>版型</span></th><td>3 款可選</td><td class="p2">13 款可選</td></tr>
           <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-rsvp"/></svg>可自訂問題 RSVP</span></th><td><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
-          <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-rsvp-multi"/></svg>多場活動連動</span></th><td><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
-          <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-storywall"/></svg>故事牆・祝福牆・抽卡</span></th><td><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
-          <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-findseat"/></svg>賓客現場查詢</span></th><td><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
-          <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-seating"/></svg>排桌管理</span></th><td><span class="no" role="img" aria-label="無"></span></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
-          <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-gift-desk"/></svg>收禮小幫手</span></th><td><span class="no" role="img" aria-label="無"></span></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
-          <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-quiz"/></svg>自訂互動測驗</span></th><td><span class="no" role="img" aria-label="無"></span></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
-          <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-letter"/></svg>專屬信件</span></th><td><span class="no" role="img" aria-label="無"></span></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row"><button type="button" class="feat" data-feature="multi" aria-haspopup="dialog"><svg class="ic"><use href="#i-rsvp-multi"/></svg><span class="lab">多場活動連動</span><svg class="more" aria-hidden="true"><use href="#i-more"/></svg></button></th><td><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row"><button type="button" class="feat" data-feature="stories" aria-haspopup="dialog"><svg class="ic"><use href="#i-storywall"/></svg><span class="lab">故事牆・祝福牆・抽卡</span><svg class="more" aria-hidden="true"><use href="#i-more"/></svg></button></th><td><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row"><button type="button" class="feat" data-feature="seat" aria-haspopup="dialog"><svg class="ic"><use href="#i-findseat"/></svg><span class="lab">賓客現場查詢</span><svg class="more" aria-hidden="true"><use href="#i-more"/></svg></button></th><td><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row"><button type="button" class="feat" data-feature="seating" aria-haspopup="dialog"><svg class="ic"><use href="#i-seating"/></svg><span class="lab">排桌管理</span><svg class="more" aria-hidden="true"><use href="#i-more"/></svg></button></th><td><span class="no" role="img" aria-label="無"></span></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row"><button type="button" class="feat" data-feature="butler" aria-haspopup="dialog"><svg class="ic"><use href="#i-gift-desk"/></svg><span class="lab">收禮小幫手</span><svg class="more" aria-hidden="true"><use href="#i-more"/></svg></button></th><td><span class="no" role="img" aria-label="無"></span></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row"><button type="button" class="feat" data-feature="quiz" aria-haspopup="dialog"><svg class="ic"><use href="#i-quiz"/></svg><span class="lab">自訂互動測驗</span><svg class="more" aria-hidden="true"><use href="#i-more"/></svg></button></th><td><span class="no" role="img" aria-label="無"></span></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row"><button type="button" class="feat" data-feature="letter" aria-haspopup="dialog"><svg class="ic"><use href="#i-letter"/></svg><span class="lab">專屬信件</span><svg class="more" aria-hidden="true"><use href="#i-more"/></svg></button></th><td><span class="no" role="img" aria-label="無"></span></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
           <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-archive"/></svg>資料保存</span></th><td>1 年</td><td class="p2">1 年</td></tr>
         </tbody>
       </table>
@@ -492,225 +758,6 @@ body.pv-open{overflow:hidden;}
       <li>經典方案之後想用典藏功能，可以補差額升級。</li>
       <li>兩個方案都保存一年；想永久保存，可以加購 NT$799。</li>
     </ul>
-  </section>
-
-    <section class="sec" id="templates" aria-labelledby="tplTitle">
-    <div class="sec-head">
-      <div class="kicker">Templates</div>
-      <h2 id="tplTitle">網站版型</h2>
-      <p>按「預覽」可以直接看開場動畫；「看完整範例」就是賓客實際會看到的婚禮網站，可以盡量點點看，填的內容不會被送出去。新人與地點都是虛構的，照片為示範用圖，正式網站會換成你們的照片與內容。</p>
-      <p class="tip">想試查桌次，輸入 <b>王小安</b><br>想拆專屬信件，輸入 <b>小安</b></p>
-    </div>
-
-    <div class="tier">
-      <svg class="ic"><use href="#i-plan-classic"/></svg>
-      <h3>經典方案</h3><span>Classic</span><span class="n">3 款</span>
-    </div>
-    <div class="grid">
-    <article class="card glass" data-template="classic">
-      <div class="shot" style="background:#fbfaf7"><img src="/samples/thumbs/classic.jpg" alt="芯玖典雅版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/classic.jpg"
-          data-webm="/samples/videos/classic.webm" data-mp4="/samples/videos/classic.mp4" aria-hidden="true"></video></div>
-      <div class="body">
-        <h3><span class="en">Ivory White</span><span class="cn">芯玖典雅</span></h3>
-        <p class="mood">一張滿版的婚紗照當背景，資訊安靜地疊在上面。最不挑照片。</p>
-        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">簡約緞面</span><span class="chip">一字領</span><span class="chip">棚拍或戶外都適合</span></div>
-        <span class="swatches" aria-hidden="true"><i style="background:#fbfaf7"></i><i style="background:#b39a6d"></i><i style="background:#c0a87e"></i><i style="background:#b3a884"></i></span>
-        <div class="acts">
-          <button type="button" class="btn btn-pv" data-preview="classic" data-name="芯玖典雅" aria-label="預覽芯玖典雅的開場">預覽</button>
-          <a class="btn ghost" href="/samples/classic/" target="_blank" rel="noopener" data-demo="card">看完整範例</a>
-          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E8%8A%AF%E7%8E%96%E5%85%B8%E9%9B%85%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我喜歡這款</a>
-        </div>
-      </div>
-    </article>
-    <article class="card glass" data-template="korean">
-      <div class="shot" style="background:#fbfaf8"><img src="/samples/thumbs/korean.jpg" alt="韓系簡約版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/korean.jpg"
-          data-webm="/samples/videos/korean.webm" data-mp4="/samples/videos/korean.mp4" aria-hidden="true"></video></div>
-      <div class="body">
-        <h3><span class="en">Korean Modern</span><span class="cn">韓系簡約</span></h3>
-        <p class="mood">大量留白、細線條，照片像雜誌內頁一樣被排進版面裡。</p>
-        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">韓系棚拍</span><span class="chip">極簡緞面</span><span class="chip">俐落直筒</span></div>
-        <span class="swatches" aria-hidden="true"><i style="background:#fbfaf8"></i><i style="background:#a8b8c5"></i><i style="background:#93a3b1"></i><i style="background:#21284f"></i></span>
-        <div class="acts">
-          <button type="button" class="btn btn-pv" data-preview="korean" data-name="韓系簡約" aria-label="預覽韓系簡約的開場">預覽</button>
-          <a class="btn ghost" href="/samples/korean/" target="_blank" rel="noopener" data-demo="card">看完整範例</a>
-          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E9%9F%93%E7%B3%BB%E7%B0%A1%E7%B4%84%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我喜歡這款</a>
-        </div>
-      </div>
-    </article>
-    <article class="card glass" data-template="forest">
-      <div class="shot" style="background:#f2efe5"><img src="/samples/thumbs/forest.jpg" alt="森林系版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/forest.jpg"
-          data-webm="/samples/videos/forest.webm" data-mp4="/samples/videos/forest.mp4" aria-hidden="true"></video></div>
-      <div class="body">
-        <h3><span class="en">Forest Botanical</span><span class="cn">森林系</span></h3>
-        <p class="mood">滿版照片，四周是可愛的手繪森林小物：橡實、香菇、小熊與兔子。</p>
-        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">森林戶外</span><span class="chip">輕紗</span><span class="chip">花環頭飾</span></div>
-        <span class="swatches" aria-hidden="true"><i style="background:#f2efe5"></i><i style="background:#a5ad94"></i><i style="background:#806f5c"></i><i style="background:#26382d"></i></span>
-        <div class="acts">
-          <button type="button" class="btn btn-pv" data-preview="forest" data-name="森林系" aria-label="預覽森林系的開場">預覽</button>
-          <a class="btn ghost" href="/samples/forest/" target="_blank" rel="noopener" data-demo="card">看完整範例</a>
-          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E6%A3%AE%E6%9E%97%E7%B3%BB%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我喜歡這款</a>
-        </div>
-      </div>
-    </article>
-    </div>
-
-    <div class="tier">
-      <svg class="ic"><use href="#i-plan-premium"/></svg>
-      <h3>典藏方案</h3><span>Premium</span><span class="n">10 款</span>
-    </div>
-    <p class="tier-note">選典藏方案，上面經典的 3 款也都能用，一共 13 款可以挑。</p>
-    <div class="grid">
-    <article class="card glass" data-template="tapestry">
-      <div class="shot" style="background:#f1e8d5"><img src="/samples/thumbs/tapestry.jpg" alt="中古刺繡版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/tapestry.jpg"
-          data-webm="/samples/videos/tapestry.webm" data-mp4="/samples/videos/tapestry.mp4" aria-hidden="true"></video></div>
-      <div class="body">
-        <h3><span class="en">Tapestry</span><span class="cn">中古刺繡</span></h3>
-        <p class="mood">拆開一封蓋著封蠟的信，走進中世紀的刺繡掛毯。</p>
-        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">復古蕾絲</span><span class="chip">長袖</span><span class="chip">宮廷風</span></div>
-        <span class="swatches" aria-hidden="true"><i style="background:#f1e8d5"></i><i style="background:#b08a3e"></i><i style="background:#5d6b3a"></i><i style="background:#7a1f2b"></i></span>
-        <div class="acts">
-          <button type="button" class="btn btn-pv" data-preview="tapestry" data-name="中古刺繡" aria-label="預覽中古刺繡的開場">預覽</button>
-          <a class="btn ghost" href="/samples/tapestry/" target="_blank" rel="noopener" data-demo="card">看完整範例</a>
-          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E4%B8%AD%E5%8F%A4%E5%88%BA%E7%B9%A1%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我喜歡這款</a>
-        </div>
-      </div>
-    </article>
-    <article class="card glass" data-template="botanical-letter">
-      <div class="shot" style="background:#f6f2e9"><img src="/samples/thumbs/botanical-letter.jpg" alt="植物信箋版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/botanical-letter.jpg"
-          data-webm="/samples/videos/botanical-letter.webm" data-mp4="/samples/videos/botanical-letter.mp4" aria-hidden="true"></video></div>
-      <div class="body">
-        <h3><span class="en">Botanical Letter</span><span class="cn">植物信箋</span></h3>
-        <p class="mood">一本植物標本冊：壓花、棉紙、郵票，每張照片旁邊都壓著一枝乾燥花。</p>
-        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">細肩帶雪紡</span><span class="chip">乾燥花捧花</span><span class="chip">自然光</span></div>
-        <span class="swatches" aria-hidden="true"><i style="background:#f6f2e9"></i><i style="background:#8a9a6b"></i><i style="background:#b88a7a"></i><i style="background:#3a4031"></i></span>
-        <div class="acts">
-          <button type="button" class="btn btn-pv" data-preview="botanical-letter" data-name="植物信箋" aria-label="預覽植物信箋的開場">預覽</button>
-          <a class="btn ghost" href="/samples/botanical-letter/" target="_blank" rel="noopener" data-demo="card">看完整範例</a>
-          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E6%A4%8D%E7%89%A9%E4%BF%A1%E7%AE%8B%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我喜歡這款</a>
-        </div>
-      </div>
-    </article>
-    <article class="card glass" data-template="secret-garden">
-      <div class="shot" style="background:#f3f1e8"><img src="/samples/thumbs/secret-garden.jpg" alt="秘密花園版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/secret-garden.jpg"
-          data-webm="/samples/videos/secret-garden.webm" data-mp4="/samples/videos/secret-garden.mp4" aria-hidden="true"></video></div>
-      <div class="body">
-        <h3><span class="en">Secret Garden</span><span class="cn">秘密花園</span></h3>
-        <p class="mood">推開常春藤牆上的玻璃門，走進玫瑰拱門與水彩花朵的花園。</p>
-        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">花園戶外</span><span class="chip">蕾絲刺繡</span><span class="chip">立體花朵</span></div>
-        <span class="swatches" aria-hidden="true"><i style="background:#f3f1e8"></i><i style="background:#7a9a6a"></i><i style="background:#9b8ab8"></i><i style="background:#2f3b2b"></i></span>
-        <div class="acts">
-          <button type="button" class="btn btn-pv" data-preview="secret-garden" data-name="秘密花園" aria-label="預覽秘密花園的開場">預覽</button>
-          <a class="btn ghost" href="/samples/secret-garden/" target="_blank" rel="noopener" data-demo="card">看完整範例</a>
-          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E7%A7%98%E5%AF%86%E8%8A%B1%E5%9C%92%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我喜歡這款</a>
-        </div>
-      </div>
-    </article>
-    <article class="card glass" data-template="spring-orangerie">
-      <div class="shot" style="background:#f7f7f1"><img src="/samples/thumbs/spring-orangerie.jpg" alt="春日溫室版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/spring-orangerie.jpg"
-          data-webm="/samples/videos/spring-orangerie.webm" data-mp4="/samples/videos/spring-orangerie.mp4" aria-hidden="true"></video></div>
-      <div class="body">
-        <h3><span class="en">Spring Orangerie</span><span class="cn">春日溫室</span></h3>
-        <p class="mood">明亮的玻璃溫室，白玫瑰、檸檬枝與斜射進來的陽光。</p>
-        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">玻璃屋</span><span class="chip">輕盈 A-line</span><span class="chip">薄紗</span></div>
-        <span class="swatches" aria-hidden="true"><i style="background:#f7f7f1"></i><i style="background:#9fbfa8"></i><i style="background:#e7b18a"></i><i style="background:#2e3a36"></i></span>
-        <div class="acts">
-          <button type="button" class="btn btn-pv" data-preview="spring-orangerie" data-name="春日溫室" aria-label="預覽春日溫室的開場">預覽</button>
-          <a class="btn ghost" href="/samples/spring-orangerie/" target="_blank" rel="noopener" data-demo="card">看完整範例</a>
-          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E6%98%A5%E6%97%A5%E6%BA%AB%E5%AE%A4%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我喜歡這款</a>
-        </div>
-      </div>
-    </article>
-    <article class="card glass" data-template="night-sky">
-      <div class="shot" style="background:#141a33"><img src="/samples/thumbs/night-sky.jpg" alt="現代星空版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/night-sky.jpg"
-          data-webm="/samples/videos/night-sky.webm" data-mp4="/samples/videos/night-sky.mp4" aria-hidden="true"></video></div>
-      <div class="body">
-        <h3><span class="en">Night Sky</span><span class="cn">現代星空</span></h3>
-        <p class="mood">深藍夜空、會轉的星圖與越捲越圓的月亮。唯一一個深色的版型。</p>
-        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">夜景</span><span class="chip">亮片</span><span class="chip">深色西裝</span></div>
-        <span class="swatches" aria-hidden="true"><i style="background:#141a33"></i><i style="background:#1f2440"></i><i style="background:#b9a46a"></i><i style="background:#8a93c7"></i></span>
-        <div class="acts">
-          <button type="button" class="btn btn-pv" data-preview="night-sky" data-name="現代星空" aria-label="預覽現代星空的開場">預覽</button>
-          <a class="btn ghost" href="/samples/night-sky/" target="_blank" rel="noopener" data-demo="card">看完整範例</a>
-          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E7%8F%BE%E4%BB%A3%E6%98%9F%E7%A9%BA%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我喜歡這款</a>
-        </div>
-      </div>
-    </article>
-    <article class="card glass" data-template="french-manor">
-      <div class="shot" style="background:#f6efe4"><img src="/samples/thumbs/french-manor.jpg" alt="南法莊園版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/french-manor.jpg"
-          data-webm="/samples/videos/french-manor.webm" data-mp4="/samples/videos/french-manor.mp4" aria-hidden="true"></video></div>
-      <div class="body">
-        <h3><span class="en">French Manor</span><span class="cn">南法莊園</span></h3>
-        <p class="mood">南法金色的午後，山坡上的莊園露台、灑滿樹影的牆，一張鋪好亞麻的長桌等著你。</p>
-        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">法式鄉村</span><span class="chip">亞麻與蕾絲</span><span class="chip">暖米白與橄欖綠</span></div>
-        <span class="swatches" aria-hidden="true"><i style="background:#f6efe4"></i><i style="background:#b07a4c"></i><i style="background:#7a8f6b"></i><i style="background:#8fafcb"></i></span>
-        <div class="acts">
-          <button type="button" class="btn btn-pv" data-preview="french-manor" data-name="南法莊園" aria-label="預覽南法莊園的開場">預覽</button>
-          <a class="btn ghost" href="/samples/french-manor/" target="_blank" rel="noopener" data-demo="card">看完整範例</a>
-          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E5%8D%97%E6%B3%95%E8%8E%8A%E5%9C%92%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我喜歡這款</a>
-        </div>
-      </div>
-    </article>
-    <article class="card glass" data-template="monet-garden">
-      <div class="shot" style="background:#f7f3ea"><img src="/samples/thumbs/monet-garden.jpg" alt="莫內花園版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/monet-garden.jpg"
-          data-webm="/samples/videos/monet-garden.webm" data-mp4="/samples/videos/monet-garden.mp4" aria-hidden="true"></video></div>
-      <div class="body">
-        <h3><span class="en">Monet Garden</span><span class="cn">莫內花園</span></h3>
-        <p class="mood">走進一幅會流動的莫內油畫：日本橋、睡蓮與花園小徑。</p>
-        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">印象派油畫感</span><span class="chip">粉彩</span><span class="chip">輕紗</span></div>
-        <span class="swatches" aria-hidden="true"><i style="background:#f7f3ea"></i><i style="background:#8fae96"></i><i style="background:#a99cc4"></i><i style="background:#c9748a"></i></span>
-        <div class="acts">
-          <button type="button" class="btn btn-pv" data-preview="monet-garden" data-name="莫內花園" aria-label="預覽莫內花園的開場">預覽</button>
-          <a class="btn ghost" href="/samples/monet-garden/" target="_blank" rel="noopener" data-demo="card">看完整範例</a>
-          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E8%8E%AB%E5%85%A7%E8%8A%B1%E5%9C%92%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我喜歡這款</a>
-        </div>
-      </div>
-    </article>
-    <article class="card glass" data-template="outdoor-party">
-      <div class="shot" style="background:#f8fbfd"><img src="/samples/thumbs/outdoor-party.jpg" alt="美式戶外派對版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/outdoor-party.jpg"
-          data-webm="/samples/videos/outdoor-party.webm" data-mp4="/samples/videos/outdoor-party.mp4" aria-hidden="true"></video></div>
-      <div class="body">
-        <h3><span class="en">Outdoor Party</span><span class="cn">美式戶外派對</span></h3>
-        <p class="mood">藍天、草地、野餐籃和一顆顆飄走的粉彩氣球，輕鬆又熱鬧。</p>
-        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">戶外派對</span><span class="chip">短紗</span><span class="chip">輕便禮服</span></div>
-        <span class="swatches" aria-hidden="true"><i style="background:#f8fbfd"></i><i style="background:#7fbfe3"></i><i style="background:#f6c85f"></i><i style="background:#f07a5a"></i></span>
-        <div class="acts">
-          <button type="button" class="btn btn-pv" data-preview="outdoor-party" data-name="美式戶外派對" aria-label="預覽美式戶外派對的開場">預覽</button>
-          <a class="btn ghost" href="/samples/outdoor-party/" target="_blank" rel="noopener" data-demo="card">看完整範例</a>
-          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E7%BE%8E%E5%BC%8F%E6%88%B6%E5%A4%96%E6%B4%BE%E5%B0%8D%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我喜歡這款</a>
-        </div>
-      </div>
-    </article>
-    <article class="card glass" data-template="morning-window">
-      <div class="shot" style="background:#faf6ef"><img src="/samples/thumbs/morning-window.jpg" alt="晨光房間版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/morning-window.jpg"
-          data-webm="/samples/videos/morning-window.webm" data-mp4="/samples/videos/morning-window.mp4" aria-hidden="true"></video></div>
-      <div class="body">
-        <h3><span class="en">Morning Window</span><span class="cn">晨光房間</span></h3>
-        <p class="mood">侘寂風的早晨：窗前的鬱金香、亞麻布與牆上的窗格陽光。</p>
-        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">日系自然光</span><span class="chip">居家婚紗</span><span class="chip">素面簡約</span></div>
-        <span class="swatches" aria-hidden="true"><i style="background:#faf6ef"></i><i style="background:#d9c3a5"></i><i style="background:#c9d6db"></i><i style="background:#9a7b5b"></i></span>
-        <div class="acts">
-          <button type="button" class="btn btn-pv" data-preview="morning-window" data-name="晨光房間" aria-label="預覽晨光房間的開場">預覽</button>
-          <a class="btn ghost" href="/samples/morning-window/" target="_blank" rel="noopener" data-demo="card">看完整範例</a>
-          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E6%99%A8%E5%85%89%E6%88%BF%E9%96%93%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我喜歡這款</a>
-        </div>
-      </div>
-    </article>
-    <article class="card glass" data-template="white-church">
-      <div class="shot" style="background:#f6f2ea"><img src="/samples/thumbs/white-church.jpg" alt="白色教堂版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/white-church.jpg"
-          data-webm="/samples/videos/white-church.webm" data-mp4="/samples/videos/white-church.mp4" aria-hidden="true"></video></div>
-      <div class="body">
-        <h3><span class="en">White Church</span><span class="cn">白色教堂</span></h3>
-        <p class="mood">午夜點亮三根蠟燭，天一亮，是一座純白的哥德式教堂。透光白紗、彩繪玻璃的光暈，與滿滿的鮮花。</p>
-        <div class="dress"><span class="lab">適合的婚紗</span><span class="chip">教堂證婚</span><span class="chip">長頭紗</span><span class="chip">蕾絲拖尾</span></div>
-        <span class="swatches" aria-hidden="true"><i style="background:#f6f2ea"></i><i style="background:#a88d5f"></i><i style="background:#837b86"></i><i style="background:#3b3540"></i></span>
-        <div class="acts">
-          <button type="button" class="btn btn-pv" data-preview="white-church" data-name="白色教堂" aria-label="預覽白色教堂的開場">預覽</button>
-          <a class="btn ghost" href="/samples/white-church/" target="_blank" rel="noopener" data-demo="card">看完整範例</a>
-          <a class="btn ghost btn-like" href="https://line.me/R/oaMessage/%40381tboky/?%E6%88%91%E6%83%B3%E8%A9%A2%E5%95%8F%E3%80%8E%E7%99%BD%E8%89%B2%E6%95%99%E5%A0%82%E3%80%8F%E7%89%88%E5%9E%8B" target="_blank" rel="noopener" data-line="template_card"><svg class="ic-heart" aria-hidden="true"><use href="#i-heart"/></svg>我喜歡這款</a>
-        </div>
-      </div>
-    </article>
-    </div>
   </section>
 
     <section class="sec" id="flow" aria-labelledby="flowTitle">
@@ -726,7 +773,7 @@ body.pv-open{overflow:hidden;}
     </ol>
     <p class="flow-need">需要準備：<b>婚宴日期</b>、<b>雙方中英文名字</b>、<b>主要照片</b></p>
     <div class="flow-cta">
-      <a class="btn" href="https://lin.ee/8DlfH2K" target="_blank" rel="noopener" data-line="flow"><svg class="ic-line" aria-hidden="true"><use href="#i-line"/></svg>用 LINE 問問看</a>
+      <a class="btn" href="https://lin.ee/8DlfH2K" target="_blank" rel="noopener" data-line="flow"><svg class="ic-line" aria-hidden="true"><use href="#i-line"/></svg>用 LINE 問問看<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
     </div>
   </section>
 
@@ -791,25 +838,119 @@ body.pv-open{overflow:hidden;}
 </div>
 
 <div class="sticky" id="sticky">
-  <a class="btn" href="https://lin.ee/8DlfH2K" target="_blank" rel="noopener" data-line="sticky" tabindex="-1"><svg class="ic-line" aria-hidden="true"><use href="#i-line"/></svg>LINE 詢問</a>
+  <a class="btn" href="https://lin.ee/8DlfH2K" target="_blank" rel="noopener" data-line="sticky" tabindex="-1"><svg class="ic-line" aria-hidden="true"><use href="#i-line"/></svg>LINE 詢問<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
 </div>
 
-<div class="pv" id="pv" hidden>
-  <div class="pv-scrim" data-close></div>
-  <div class="pv-box" role="dialog" aria-modal="true" aria-labelledby="pvTitle" tabindex="-1">
-    <div class="pv-head"><h2 id="pvTitle"></h2></div>
-    <button type="button" class="pv-replay" id="pvReplay" aria-label="重播開場"><svg aria-hidden="true"><use href="#i-replay"/></svg></button>
-    <button type="button" class="pv-x" data-close aria-label="關閉預覽">×</button>
-    <div class="phone"><div class="phone-screen" id="pvScreen">
-      <iframe id="pvFrame" title="版型預覽" loading="eager"></iframe>
-    </div></div>
-    <div class="pv-acts" id="pvActs" hidden>
-      <button type="button" class="btn ghost" data-close>關閉</button>
-      <a class="btn" id="pvDemo" href="/samples/" target="_blank" rel="noopener">查看完整示範網站</a>
+<div class="dlg pv" id="pv" hidden>
+  <div class="dlg-scrim" data-close></div>
+  <div class="dlg-box" role="dialog" aria-modal="true" aria-labelledby="pvTitle" tabindex="-1">
+    <div class="dlg-top">
+      <button type="button" class="pv-replay" id="pvReplay" aria-label="重播開場"><svg aria-hidden="true"><use href="#i-replay"/></svg></button>
+      <h2 id="pvTitle"></h2>
+      <button type="button" class="dlg-x" data-close aria-label="關閉預覽">×</button>
     </div>
-    <p class="pv-wait" id="pvWait">開場播放中…</p>
+    <div class="pv-grid">
+      <div class="pv-stage">
+        <div class="phone"><div class="phone-screen" id="pvScreen">
+          <iframe id="pvFrame" title="版型預覽" tabindex="-1"></iframe>
+        </div></div>
+        <p class="pv-wait" id="pvWait" aria-live="polite">開場播放中…</p>
+      </div>
+      <div class="pv-info">
+        <p class="pv-mood" id="pvMood"></p>
+        <div class="pv-acts">
+          <a class="btn ghost" id="pvDemo" href="/samples/" target="_blank" rel="noopener">看完整範例<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+          <a class="btn" id="pvStart" href="https://lin.ee/8DlfH2K" target="_blank" rel="noopener">開始製作<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+        </div>
+        <div class="pv-card glass">
+          <h3>網站裡有什麼</h3>
+          <p>從收到連結到婚禮當天，賓客會用到這些：</p>
+          <ul class="tags">
+            <li class="first"><img src="/samples/thumbs/white-church.jpg" alt="" width="44" height="23" loading="lazy">LINE 專屬預覽圖</li>
+            <li>開場動畫</li><li>婚禮資訊</li><li>開啟地圖・加入行事曆</li><li>交通資訊</li><li>尋找我的座位</li>
+            <li>當日流程</li><li>倒數計時</li><li>Dress code</li><li>出席回覆</li>
+            <li>祝福牆</li><li>給你的一封信</li><li>我們的故事</li><li>小測驗</li><li>抽卡</li>
+            <li class="plus">＋ 自訂內容：雲端相簿、現場小活動…</li>
+          </ul>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
+
+<div class="dlg fx" id="fx" hidden>
+  <div class="dlg-scrim" data-close></div>
+  <div class="dlg-box" role="dialog" aria-modal="true" aria-labelledby="fxTitle" tabindex="-1">
+    <div class="dlg-top">
+      <span class="dlg-spacer"></span>
+      <h2 id="fxTitle"></h2>
+      <button type="button" class="dlg-x" data-close aria-label="關閉說明">×</button>
+    </div>
+    <div class="fx-body" id="fxBody"></div>
+  </div>
+</div>
+
+<template id="fx-multi">
+  <span class="fx-plan">兩個方案都有</span>
+  <p>證婚、婚宴、文訂、迎娶、After Party……一個網站放進當天所有的活動。賓客一次回覆每一場出不出席。</p>
+  <p>每一場要問什麼也分開決定，例如證婚不問餐點、晚宴才問。</p>
+  <div class="fx-pic"><div class="mock" aria-hidden="true">
+    <div class="mock-ev"><b>證婚儀式</b><small>11:30・一樓花園</small><div class="mock-pick"><span class="on">會出席</span><span>不克前往</span></div></div>
+    <div class="mock-ev"><b>晚宴</b><small>12:00・二樓宴會廳</small><div class="mock-pick"><span class="on">會出席</span><span>不克前往</span></div>
+      <div class="mock-pick"><span>葷食 2</span><span>素食 1</span><span>兒童椅 1</span></div></div>
+  </div></div>
+</template>
+<template id="fx-stories">
+  <span class="fx-plan">兩個方案都有</span>
+  <p><b>故事牆</b>用一條時間軸說你們的故事；<b>祝福牆</b>讓賓客留言給你們；<b>抽卡</b>是賓客抽一張你們的照片小卡收藏起來。</p>
+  <p>等開席的時候，早到的賓客也有事可以做。</p>
+  <div class="fx-pic"><img src="/samples/features/stories.jpg" alt="示範網站的故事牆、祝福牆與抽卡畫面" width="1128" height="665" loading="lazy"></div>
+</template>
+<template id="fx-seat">
+  <span class="fx-plan">兩個方案都有</span>
+  <p>婚禮當天，賓客輸入名字就看到自己坐第幾桌，下面再附上桌次圖，不用擠在門口找名單。</p>
+  <p>只會顯示自己的桌號，不會連帶看到別人的名字。</p>
+  <div class="fx-pic"><img src="/samples/features/seating.jpg" alt="示範網站的查桌次畫面：輸入王小安，顯示第 3 桌" width="600" height="1108" loading="lazy"></div>
+</template>
+<template id="fx-seating">
+  <span class="fx-plan">典藏方案</span>
+  <p>原本用 Excel 排桌的那件事，整套搬進後台：左邊是還沒坐下的人，右邊是桌子，拖曳就能排。</p>
+  <p>出席回覆可以直接匯入，還有幾位沒排一眼就看得到；排好之後，賓客就查得到自己的桌號。</p>
+  <div class="fx-pic"><div class="mock" aria-hidden="true">
+    <div class="mock-stat"><div><b>3</b><span>待安排</span></div><div><b>86</b><span>總人數</span></div><div><b>9</b><span>總桌數</span></div></div>
+    <div class="mock-cols">
+      <div class="mock-box"><h4>待安排</h4><span class="mock-chip">陳美亞 ×2</span><span class="mock-chip">林佳穎</span><span class="mock-chip">張家豪 ×3</span></div>
+      <div class="mock-box"><h4>我的桌位</h4>
+        <div class="mock-table"><b>第 2 桌</b><small>8／10</small><br><span class="mock-chip">黃怡君</span><span class="mock-chip">…</span></div>
+        <div class="mock-table"><b>第 3 桌</b><small>10／10</small><br><span class="mock-chip">王小安</span><span class="mock-chip">李哲宇</span><span class="mock-chip">…</span></div>
+      </div>
+    </div>
+  </div></div>
+</template>
+<template id="fx-butler">
+  <span class="fx-plan">典藏方案</span>
+  <p>婚宴當天收禮台用的工具。幫忙收禮的親友點連結、輸入六位數通行碼就能用，不用辦帳號，也看不到出席回覆。</p>
+  <p>記下禮金與禮餅，總額、還有幾位沒收到、誰記了多少，都會自動算好，事後對帳很輕鬆。</p>
+  <div class="fx-pic"><div class="mock" aria-hidden="true">
+    <div class="mock-stat"><div><b>58</b><span>已收</span></div><div><b>6</b><span>還沒收到</span></div><div><b>42</b><span>禮餅盒數</span></div></div>
+    <div class="mock-box">
+      <div class="mock-row"><b>王小安</b><span>第 3 桌</span><span class="mock-tag">已收</span></div>
+      <div class="mock-row"><b>李哲宇</b><span>第 3 桌</span><span class="mock-tag">已收</span></div>
+      <div class="mock-row"><b>陳美亞</b><span>第 5 桌</span><span>點一下記帳</span></div>
+    </div>
+  </div></div>
+</template>
+<template id="fx-quiz">
+  <span class="fx-plan">典藏方案</span>
+  <p>「看你多了解我們」：題目和答案由你們出。賓客作答完，看到自己的分數，還有每一題大家都選了什麼。</p>
+  <div class="fx-pic"><img src="/samples/features/quiz.jpg" alt="示範網站的小測驗畫面" width="600" height="1108" loading="lazy"></div>
+</template>
+<template id="fx-letter">
+  <span class="fx-plan">典藏方案</span>
+  <p>為賓客寫一封封信。賓客輸入名字或你們之間的暗號，封蠟消失、信紙滑出來，還能把信存成圖片留念。</p>
+  <p>沒有指定信的賓客，會收到你們寫給大家的那一封。</p>
+  <div class="fx-pic"><img src="/samples/features/letter.jpg" alt="示範網站拆開的專屬信件：給小安" width="600" height="1108" loading="lazy"></div>
+</template>
 
 <script type="module" src="/samples/samples.js"></script>
 </body>

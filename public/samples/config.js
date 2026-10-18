@@ -6,7 +6,7 @@
    scripts/build-samples.js 也讀這一份，產生卡片上的 LINE 連結。
 
      LINE_URL      一般的 LINE 按鈕（首屏、開站流程、底部固定列）
-     LINE_OA_ID    官方帳號 ID，「♡ 我喜歡這款」預填訊息用
+     LINE_OA_ID    官方帳號 ID，「♡ 我想用這款」與預覽裡的「開始製作」預填訊息用
      POSTHOG_KEY   PostHog 的 Project API Key（phc_ 開頭）
      POSTHOG_HOST  PostHog 的 host，例如 https://us.i.posthog.com
                    兩個都填了才會載入 PostHog；空字串就完全不載入
@@ -23,7 +23,7 @@ export function lineMessageUrl(text) {
   return `https://line.me/R/oaMessage/${encodeURIComponent(LINE_OA_ID)}/?${encodeURIComponent(text)}`;
 }
 
-/* 「♡ 我喜歡這款」的預填訊息；版型中文名來自 scripts/sample-catalog.js 的 name[1] */
+/* 「♡ 我想用這款」的預填訊息；版型中文名來自 scripts/sample-catalog.js 的 name[1] */
 export function likeMessage(cnName) {
   return `我想詢問『${cnName}』版型`;
 }

@@ -143,6 +143,7 @@
 │   │   ├─ index.html                # ⚙️ 總覽，由 build-samples 產出
 │   │   ├─ thumbs/{版型}.jpg         # ⚙️ 由 build-sample-thumbs 截圖
 │   │   ├─ videos/{版型}.webm／.mp4  # ⚙️ 卡片上的開場循環影片，由 build-sample-videos 錄
+│   │   ├─ features/*.jpg            # ⚙️ 方案說明的示意圖，由 build-sample-features 截圖
 │   │   ├─ samples.js                # 總覽頁的互動：預覽 popup、影片、底部 LINE 按鈕、PostHog 事件
 │   │   ├─ config.js                 # LINE 連結、PostHog 的設定常數
 │   │   ├─ analytics.js              # PostHog 載入器（沒填 key 就不載入）
@@ -178,6 +179,7 @@
 │   ├─ build-samples.js       # 產出 /samples 總覽（卡片文案 sample-catalog.js、模板 sample-index.html）
 │   ├─ build-sample-thumbs.js # 幫 /samples 每個版型截一張手機首屏當縮圖
 │   ├─ build-sample-videos.js # 幫 /samples 每個版型錄一支開場循環影片（WebM＋MP4）
+│   ├─ build-sample-features.js # 方案說明的示意圖（截示範網站的畫面）
 │   ├─ build-sample-shield.js # 示範網站專用的壓縮／混淆副本（predeploy 會跑）
 │   ├─ sample-server.js       # 截圖、錄影用的小型靜態伺服器
 │   ├─ check-site.js          # 檢查某站台為什麼打不開
@@ -486,11 +488,16 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 
 給還在挑版型的客人看的公開頁面，用 LINE 傳 `https://<網域>/samples/` 就能開：
 
-- **總覽** `/samples/`：由上到下是首屏（標語＋「LINE 詢問」）→ 三個賣點 → 賓客會看到什麼（流程卡片）
-  → 新人後台：高度彈性（三支手機的後台畫面，假資料重建，不是真實帳號）→ 方案表 → 網站版型 → 開站流程 → 常見問題；
-  手機版底部另有固定的「LINE 詢問」。整頁用白色教堂婚禮資訊那一段的灰泥牆、分隔線與毛玻璃卡，按鈕維持芯玖的主色。
-  每個版型一張卡片 —— 開場的循環影片（沒有影片時是首屏縮圖）、一句氣質、**適合的婚紗**、色票，
-  以及三顆按鈕：**預覽**（同一頁打開手機外框，裡面是真的示範網站在演開場）、**看完整範例**、**♡ 我喜歡這款**（開 LINE、預填「我想詢問『版型名』版型」）。
+- **總覽** `/samples/`：由上到下是首屏（標語＋「LINE 詢問」）→ 三大特色（第一張是「回覆 → 排桌 → 查桌次」的流程圖）
+  → 新人後台：高度彈性（三支手機的後台畫面，假資料重建，不是真實帳號）→ 網站版型 → 方案比較 → 開站流程 → 常見問題；
+  手機版底部另有固定的「LINE 詢問」。整頁用白色教堂的灰泥牆、兩旁被風吹動的白紗、牆上偶爾清楚起來的橄欖枝影子、
+  分隔線與毛玻璃卡，按鈕是白色教堂的深色按鈕；減少動態時白紗與影子都不動。
+  每個版型一張卡片 —— 開場的循環影片（沒有影片時是首屏縮圖）、一句氣質、色票，
+  以及三顆按鈕：**預覽**、**看完整範例 ↗**（另開分頁）、**♡ 我想用這款 ↗**（開 LINE、預填「我想詢問『版型名』版型」）。
+  **預覽**在同一頁打開：手機外框裡是真的示範網站在演開場，旁邊（手機上是下面）是這一款的介紹、
+  「看完整範例 ↗」「開始製作 ↗」（和我想用這款同一個 LINE 連結），以及「網站裡有什麼」的標籤卡。
+  方案比較的功能名稱（多場活動連動、故事牆・祝福牆・抽卡、賓客現場查詢、排桌管理、收禮小幫手、自訂互動測驗、專屬信件）
+  點了會跳出說明與示意圖；示意圖的內容放在 `scripts/sample-index.html` 的 `<template id="fx-…">`。
 - **示範站台** `/samples/{版型}/`（例如 `/samples/white-church/`）：**正式網站同一套頁面**，
   大廳、出席回覆（`/samples/{版型}/invitation`）、祝福牆、抽卡、故事、測驗、桌次、給你的信都點得進去、填得了。
   左下角的示範列有「← 版型總覽」，大廳另外有「重播開場動畫」；開場不給客人挑，每個版型照它自己的預設開場演。
@@ -517,7 +524,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 外層也會檢查 `origin` 與來源 iframe，才顯示「關閉／查看完整示範網站」。
 
 **LINE 與 PostHog 的設定**都在 `public/samples/config.js`：
-`LINE_URL`（一般的 LINE 按鈕）、`LINE_OA_ID`（`@381tboky`，「我喜歡這款」用 `line.me/R/oaMessage/` 預填訊息，ID 與訊息都用 `encodeURIComponent`）、
+`LINE_URL`（一般的 LINE 按鈕）、`LINE_OA_ID`（`@381tboky`，「我想用這款」與預覽裡的「開始製作」用 `line.me/R/oaMessage/` 預填訊息，ID 與訊息都用 `encodeURIComponent`）、
 `POSTHOG_KEY`、`POSTHOG_HOST`（**兩個都填了才會載入 PostHog**，空字串就完全不載入）。
 PostHog 只在總覽頁與示範模式載入（autocapture、heatmaps 開著），預覽 iframe 裡不載入，不會重複算 pageview。自訂事件：
 
@@ -525,8 +532,9 @@ PostHog 只在總覽頁與示範模式載入（autocapture、heatmaps 開著）�
 |---|---|---|
 | `template_preview_open` | `template` | 總覽頁按卡片的「預覽」（`samples.js` 的 `openPreview`） |
 | `template_preview_complete` | `template` | 預覽裡的開場演完，收到示範網站的 `postMessage` |
-| `template_demo_open` | `template`, `position`（`card`／`popup`） | 卡片的「看完整範例」、popup 的「查看完整示範網站」 |
-| `line_click` | `position`（`hero`／`template_card`／`flow`／`sticky`）、`template`（卡片上才有） | 任何 `a[data-line]` |
+| `template_demo_open` | `template`, `position`（`card`／`popup`） | 卡片與預覽裡的「看完整範例」 |
+| `line_click` | `position`（`hero`／`template_card`／`preview`／`flow`／`sticky`）、`template`（卡片與預覽裡才有） | 任何 `a[data-line]`，以及預覽裡的「開始製作」 |
+| `feature_info_open` | `feature` | 方案比較點開功能說明 |
 
 漏斗：`$pageview`（`/samples/`）→ `template_preview_open` → `template_demo_open` → `line_click`。
 
@@ -559,6 +567,7 @@ JS 用 terser 壓縮與混淆變數名，開場（`js/openers/`）與 `lobby-mot
 | 卡片文案 `scripts/sample-catalog.js`、總覽模板 `scripts/sample-index.html` | `npm run build-samples` |
 | 大廳的長相（CSS、照片、開場、骨架）——縮圖要跟著換 | `npm run build-sample-thumbs`（截圖後會自己再跑一次 build-samples） |
 | 開場的長相——卡片上的循環影片要跟著換 | `npm run build-sample-videos`（用預覽模式錄、ffmpeg 轉 WebM＋MP4，每支 300KB 以內，印出大小表，最後會自己再跑一次 build-samples；需要 ffmpeg） |
+| 方案說明的示意圖（示範網站的故事、桌次、測驗、信的畫面改了） | `npm run build-sample-features`（截白色教堂示範網站的畫面，存到 `public/samples/features/`；排桌、收禮、多場活動那三張是 HTML 畫的示意，不用重跑） |
 | 新增一個版型 | 先在 `scripts/sample-catalog.js` 補一筆（沒補 build 會直接報錯），再跑 `npm run build-sample-thumbs` 與 `npm run build-sample-videos` |
 | 總覽頁的中文字（任何文案改動之後） | `npm run build-samples` 之後再跑 `python3 scripts/build-sample-font.py <源樣明體 otf 資料夾>`：總覽頁的中文是源樣明體，只切了頁面用到的字（`public/samples/fonts/`）；漏跑的話新字會退回思源宋體 |
 
