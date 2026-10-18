@@ -26,6 +26,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { chromium } from 'playwright';
+import sharp from 'sharp';
 import { SAMPLE_CATALOG } from './sample-catalog.js';
 import { startSampleServer, routeFirebaseSdk, chromiumLaunchOptions } from './sample-server.js';
 
@@ -73,7 +74,7 @@ async function record(key, dir) {
         if (e.data.type === 'done') ok();
       });
     });
-  }, VIEW);
+  }, { w: VIEW.width, h: VIEW.height });
 
   const cdp = await page.context().newCDPSession(page);
   const frames = [];
@@ -150,6 +151,10 @@ try {
     const dir = await mkdtemp(join(tmpdir(), `sample-video-${key}-`));
     try {
       const { frames, readyAt, doneAt } = await record(key, dir);
+      /* 錄到的必須是整個手機畫面：iframe 要是沒撐滿（例如尺寸沒設到，退回瀏覽器預設的 300×150），
+         影片裡的開場就只剩左上角一小塊 —— 先檢查最後一張畫面的中下方不是空白 */
+      const last = await sharp(frames[frames.length - 1].file).extract({ left: 0, top: 500, width: 390, height: 200 }).stats();
+      if (last.channels.every((c) => c.stdev < 2)) throw new Error(`${key}：畫面下半部一片空白，iframe 可能沒有撐滿手機畫面`);
       if (frames.length < 2) throw new Error(`${key}：沒有錄到畫面`);
       const end = Math.min(doneAt + 0.3, frames[frames.length - 1].t + 0.2);
       /* 開場太長：取最後一段（開門、拆信那一下到首屏出現），最多加速 1.6 倍 */

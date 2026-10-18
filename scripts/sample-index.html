@@ -101,10 +101,11 @@ body{position:relative;color:var(--ink);font-family:var(--f-ui);font-weight:300;
   border-radius:999px;border:1px solid var(--ink);background:var(--ink);color:#fff;
   font:500 14.5px/1.3 var(--f-ui);letter-spacing:.14em;text-decoration:none;cursor:pointer;
   transition:background .2s ease,border-color .2s ease,color .2s ease;}
-.btn:hover{background:var(--mc-gold);border-color:var(--mc-gold);}
+/* 滑過才變色：只給有滑鼠的裝置，手機點完不會一直停在香檳金 */
+@media (hover:hover){.btn:hover{background:var(--mc-gold);border-color:var(--mc-gold);}}
 .btn:focus-visible{outline:2px solid var(--ink);outline-offset:3px;}
 .btn.ghost{background:rgba(255,255,255,.55);border-color:var(--mc-gold-soft);color:var(--ink);}
-.btn.ghost:hover{background:rgba(255,255,255,.85);border-color:var(--mc-gold);color:var(--mc-gold);}
+@media (hover:hover){.btn.ghost:hover{background:rgba(255,255,255,.85);border-color:var(--mc-gold);color:var(--mc-gold);}}
 .btn .ic-line{width:20px;height:20px;flex:0 0 auto;}
 /* 另開分頁／外連：文字右上角一個小箭頭 */
 .ext{width:16px;height:16px;flex:0 0 auto;align-self:center;
@@ -135,15 +136,15 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
   fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
 
 /* ---------- 三大特色 ---------- */
-.why{display:grid;gap:14px;max-width:980px;margin:clamp(32px,5vw,48px) auto 0;grid-template-columns:1fr;}
-@media (min-width:760px){.why{grid-template-columns:repeat(2,1fr);gap:20px;}.why .why-flow{grid-column:1/-1;}}
-.why > li{list-style:none;display:flex;gap:14px;align-items:flex-start;text-align:left;padding:20px 20px 22px;}
+/* 電腦：三張橫排、由左到右；手機：由上到下 */
+.why{display:grid;gap:14px;max-width:1040px;margin:clamp(32px,5vw,48px) auto 0;grid-template-columns:1fr;}
+@media (min-width:760px){.why{grid-template-columns:repeat(3,1fr);gap:20px;}}
+.why > li{list-style:none;display:flex;flex-direction:column;gap:10px;align-items:flex-start;text-align:left;padding:22px 22px 24px;}
 .why .ic{width:32px;height:32px;stroke-width:2;margin-top:2px;}
 .why h3{font-family:var(--f-cn);font-weight:500;font-size:15.5px;letter-spacing:.08em;line-height:1.6;}
 .why p{margin-top:4px;font-size:13.5px;color:#5c5560;line-height:1.8;}
 /* 第一張：回覆 → 排桌 → 入座，一條細線串起三個圈 */
-.why .why-flow{flex-direction:column;gap:16px;padding:22px 20px 24px;}
-.why-flow > h3{display:flex;align-items:center;gap:12px;}
+.why-flow .flow{margin-top:8px;}
 .flow{position:relative;display:grid;grid-template-columns:repeat(3,1fr);width:100%;max-width:520px;list-style:none;
   font-family:var(--f-cn);font-size:14.5px;letter-spacing:.12em;color:var(--ink);text-align:center;}
 .flow::before{content:'';position:absolute;left:16.67%;right:16.67%;top:6px;height:1px;background:rgba(201,149,132,.55);}
@@ -164,14 +165,14 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
 @media (min-width:900px){.flex-hint{display:none;}}
 
 /* 手機外框（後台 mockup 與預覽 popup 共用） */
-.phone{position:relative;width:100%;max-width:280px;aspect-ratio:9/18.5;border-radius:38px;padding:10px;
-  background:#2b272e;box-shadow:0 30px 60px -30px rgba(40,30,30,.55),inset 0 0 0 1.5px #4a4450;}
-.phone::before{content:'';position:absolute;top:16px;left:50%;width:76px;height:20px;margin-left:-38px;border-radius:12px;background:#151316;z-index:3;}
-.phone-screen{position:relative;width:100%;height:100%;border-radius:29px;overflow:hidden;background:#fbfaf8;}
+.phone{position:relative;width:100%;max-width:280px;aspect-ratio:9/16;border-radius:34px;padding:9px;
+  background:#fff;border:1px solid #e2dbd0;}
+.phone::before{content:'';position:absolute;top:15px;left:50%;width:64px;height:17px;margin-left:-32px;border-radius:10px;background:#1d1b1f;z-index:3;}
+.phone-screen{position:relative;width:100%;height:100%;border-radius:26px;overflow:hidden;background:#fbfaf8;border:1px solid #efe9df;}
 /* 高度彈性的三支：小一號、矮一點（內容都在上半），外框跟著縮 */
-.flex-item .phone{max-width:230px;aspect-ratio:9/15.5;border-radius:32px;padding:8px;}
-.flex-item .phone::before{top:13px;width:62px;height:17px;margin-left:-31px;}
-.flex-item .phone-screen{border-radius:25px;}
+.flex-item .phone{max-width:230px;border-radius:30px;padding:7px;}
+.flex-item .phone::before{top:12px;width:56px;height:15px;margin-left:-28px;}
+.flex-item .phone-screen{border-radius:23px;}
 
 /* 後台的樣子（重建自 css/admin.css 的元件：區塊卡、開關軌道、清單）——假資料，不連任何帳號 */
 .adm{height:100%;overflow:hidden;font-size:10.5px;line-height:1.55;color:#2b2a2e;}
@@ -377,16 +378,41 @@ body.dlg-open{overflow:hidden;}
 .pv .dlg-box{max-width:940px;}
 .pv-grid{display:grid;grid-template-columns:auto 1fr;gap:clamp(20px,4vw,40px);align-items:start;padding:22px clamp(18px,3vw,32px) 28px;}
 .pv-stage{display:flex;flex-direction:column;align-items:center;gap:10px;}
-.pv .phone{width:min(320px,calc((100svh - 170px) * 9 / 18.5));max-width:none;}
+.pv .phone{width:min(340px,calc((100svh - 170px) * 9 / 16));max-width:none;}
 .pv iframe{position:absolute;left:0;top:0;border:0;width:390px;transform-origin:0 0;background:#fbfaf8;}
 .pv-wait{min-height:1.6em;color:var(--muted);font-size:12.5px;letter-spacing:.1em;}
 .pv-info{display:flex;flex-direction:column;gap:16px;min-width:0;}
 .pv-mood{font-size:14.5px;line-height:1.9;color:#4d4650;}
 .pv-acts{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .pv-acts .btn{padding:10px 12px;}
-.pv-card{padding:20px 20px 22px;}
-.pv-card h3{font-family:var(--f-cn);font-weight:500;font-size:15.5px;letter-spacing:.12em;}
-.pv-card > p{margin-top:4px;font-size:13px;color:#5c5560;line-height:1.75;}
+.pv-card{padding:16px 16px 20px;}
+/* 分段切換（網站裡有什麼／包含的內容／怎麼合作） */
+.seg{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:999px;background:rgba(168,141,95,.12);}
+.seg button{min-height:40px;padding:6px 8px;border:0;border-radius:999px;background:none;cursor:pointer;
+  font:500 13px/1.3 var(--f-ui);letter-spacing:.08em;color:var(--muted);transition:background .2s ease,color .2s ease;}
+.seg button[aria-selected="true"]{background:#fff;color:var(--ink);box-shadow:0 2px 8px -4px rgba(60,40,30,.35);}
+.seg button:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
+.seg-panel{padding:14px 4px 0;}
+.seg-panel > p{font-size:13px;color:#5c5560;line-height:1.75;}
+.feats{list-style:none;display:grid;gap:14px;}
+.feats li{display:flex;gap:12px;align-items:flex-start;}
+.feats .fi{flex:0 0 auto;width:36px;height:36px;border-radius:50%;background:rgba(201,149,132,.16);display:flex;align-items:center;justify-content:center;color:var(--accent-ink);}
+.feats .fi svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+.feats b{display:block;font-family:var(--f-cn);font-weight:500;font-size:15px;letter-spacing:.08em;line-height:1.5;}
+.feats p{margin-top:2px;font-size:13px;color:#7a7179;line-height:1.7;}
+/* 開場演完蓋在手機畫面上的那一層 */
+.pv-end{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;
+  background:linear-gradient(rgba(35,30,38,.18),rgba(35,30,38,.58));-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
+  animation:pv-end-in .35s ease;}
+.pv-end[hidden]{display:none;}
+.pv-end .btn{width:min(220px,100%);}
+.pv-end .btn.ghost{background:rgba(255,255,255,.92);}
+.pv-again{display:inline-flex;align-items:center;gap:6px;margin-top:4px;padding:6px 10px;border:0;background:none;cursor:pointer;
+  font:400 12.5px/1.3 var(--f-ui);letter-spacing:.1em;color:#fff;}
+.pv-again svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.pv-again:focus-visible{outline:2px solid #fff;outline-offset:2px;border-radius:6px;}
+@keyframes pv-end-in{from{opacity:0;}to{opacity:1;}}
+@media (prefers-reduced-motion:reduce){.pv-end{animation:none;}}
 .tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px;list-style:none;}
 .tags li{padding:5px 12px;border-radius:99px;border:1px solid var(--line);background:rgba(255,255,255,.7);font-size:13px;line-height:1.5;color:#4d4650;}
 .tags li.plus{border-style:dashed;border-color:var(--mc-gold-soft);color:var(--mc-gold);}
@@ -396,7 +422,7 @@ body.dlg-open{overflow:hidden;}
   .dlg{padding:0;align-items:flex-end;}
   .dlg-box{max-height:100%;height:100%;border-radius:0;}
   .pv-grid{grid-template-columns:1fr;padding:16px 16px calc(28px + env(safe-area-inset-bottom));}
-  .pv .phone{width:min(300px,78vw,calc((100svh - 150px) * 9 / 18.5));}
+  .pv .phone{width:min(320px,84vw,calc((100svh - 150px) * 9 / 16));}
 }
 
 /* 功能說明 */
@@ -456,6 +482,13 @@ body.dlg-open{overflow:hidden;}
   <symbol id="i-replay" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></symbol>
   <symbol id="i-ext" viewBox="0 0 24 24"><path d="M6.5 17.5 17.5 6.5"/><path d="M8.5 6.5h9v9"/></symbol>
   <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15"/><path d="M14 7l5 5-5 5"/></symbol>
+  <symbol id="i-f-story" viewBox="0 0 24 24"><path d="M12 6.5c-1.8-1.3-4.3-2-7-2v13c2.7 0 5.2.7 7 2 1.8-1.3 4.3-2 7-2v-13c-2.7 0-5.2.7-7 2Z"/><path d="M12 6.5v13"/></symbol>
+  <symbol id="i-f-photo" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m20.5 15.5-4.5-4.5-7.5 7.5"/></symbol>
+  <symbol id="i-f-check" viewBox="0 0 24 24"><path d="M5 12.5 10 17.5 19.5 7"/></symbol>
+  <symbol id="i-f-music" viewBox="0 0 24 24"><path d="M9 17.5V6l10-2v11.5"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></symbol>
+  <symbol id="i-f-pay" viewBox="0 0 24 24"><rect x="3.5" y="6" width="17" height="12" rx="2"/><path d="M3.5 10h17"/><path d="M7 14.5h3"/></symbol>
+  <symbol id="i-f-pen" viewBox="0 0 24 24"><path d="M15 5.5 18.5 9 9 18.5H5.5V15L15 5.5Z"/><path d="M13 7.5 16.5 11"/></symbol>
+  <symbol id="i-f-pace" viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h14"/><circle cx="9" cy="7" r="1.8" fill="#fff"/><circle cx="15" cy="12" r="1.8" fill="#fff"/><circle cx="11" cy="17" r="1.8" fill="#fff"/></symbol>
   <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5v.01"/></symbol>
 </svg>
 
@@ -475,16 +508,19 @@ body.dlg-open{overflow:hidden;}
     <!-- ===== 1. 三大特色 ===== -->
     <ul class="why">
       <li class="glass why-flow">
-        <h3><svg class="ic" aria-hidden="true"><use href="#i-rsvp"/></svg>回覆、排桌、入座，一條龍串好</h3>
+        <svg class="ic" aria-hidden="true"><use href="#i-rsvp"/></svg>
+        <h3>回覆、排桌、入座，一條龍串好</h3>
         <ol class="flow"><li>回覆</li><li>排桌</li><li>入座</li></ol>
       </li>
       <li class="glass">
         <svg class="ic" aria-hidden="true"><use href="#i-url"/></svg>
-        <div><h3>{{N_ALL}} 款版型，各有自己的開場動畫</h3><p>拆信、推門、點蠟燭、氣球飛走……賓客一打開，就先看到屬於你們的開場。</p></div>
+        <h3>{{N_ALL}} 款版型，各有自己的開場動畫</h3>
+        <p>拆信、推門、點蠟燭、氣球飛走……賓客一打開，就先看到屬於你們的開場。</p>
       </li>
       <li class="glass">
         <svg class="ic" aria-hidden="true"><use href="#i-storywall"/></svg>
-        <div><h3>等開席的時候，有事可以做</h3><p>故事牆、祝福牆、抽卡，讓早到的賓客也參與你們的故事。</p></div>
+        <h3>等開席的時候，有事可以做</h3>
+        <p>故事牆、祝福牆、抽卡，讓早到的賓客也參與你們的故事。</p>
       </li>
     </ul>
   </header>
@@ -721,25 +757,52 @@ body.dlg-open{overflow:hidden;}
       <div class="pv-stage">
         <div class="phone"><div class="phone-screen" id="pvScreen">
           <iframe id="pvFrame" title="版型預覽" tabindex="-1"></iframe>
+          <!-- 開場演完才蓋上來：看完整範例、開始製作、再看一次 -->
+          <div class="pv-end" id="pvEnd" hidden>
+            <a class="btn ghost" data-pv="demo" href="/samples/" target="_blank" rel="noopener">看完整範例<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+            <a class="btn" data-pv="start" href="{{LINE_URL}}" target="_blank" rel="noopener">開始製作<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+            <button type="button" class="pv-again" data-pv="replay"><svg aria-hidden="true"><use href="#i-replay"/></svg>再看一次開場</button>
+          </div>
         </div></div>
         <p class="pv-wait" id="pvWait" aria-live="polite">開場播放中…</p>
       </div>
       <div class="pv-info">
         <p class="pv-mood" id="pvMood"></p>
         <div class="pv-acts">
-          <a class="btn ghost" id="pvDemo" href="/samples/" target="_blank" rel="noopener">看完整範例<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
-          <a class="btn" id="pvStart" href="{{LINE_URL}}" target="_blank" rel="noopener">開始製作<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+          <a class="btn ghost" data-pv="demo" href="/samples/" target="_blank" rel="noopener">看完整範例<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+          <a class="btn" data-pv="start" href="{{LINE_URL}}" target="_blank" rel="noopener">開始製作<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
         </div>
         <div class="pv-card glass">
-          <h3>網站裡有什麼</h3>
-          <p>從收到連結到婚禮當天，賓客會用到這些：</p>
-          <ul class="tags">
-            <li class="first"><img src="{{OG_THUMB}}" alt="" width="44" height="23" loading="lazy">LINE 專屬預覽圖</li>
-            <li>開場動畫</li><li>婚禮資訊</li><li>開啟地圖・加入行事曆</li><li>交通資訊</li><li>尋找我的座位</li>
-            <li>當日流程</li><li>倒數計時</li><li>Dress code</li><li>出席回覆</li>
-            <li>祝福牆</li><li>給你的一封信</li><li>我們的故事</li><li>小測驗</li><li>抽卡</li>
-            <li class="plus">＋ 自訂內容：雲端相簿、現場小活動…</li>
-          </ul>
+          <div class="seg" role="tablist" aria-label="這個網站">
+            <button type="button" role="tab" id="segT1" aria-controls="segP1" aria-selected="true">網站內容</button>
+            <button type="button" role="tab" id="segT2" aria-controls="segP2" aria-selected="false" tabindex="-1">包含項目</button>
+            <button type="button" role="tab" id="segT3" aria-controls="segP3" aria-selected="false" tabindex="-1">合作方式</button>
+          </div>
+          <div class="seg-panel" role="tabpanel" id="segP1" aria-labelledby="segT1">
+            <p>從收到連結到婚禮當天，賓客會用到這些：</p>
+            <ul class="tags">
+              <li class="first"><img src="{{OG_THUMB}}" alt="" width="44" height="23" loading="lazy">LINE 專屬預覽圖</li>
+              <li>開場動畫</li><li>婚禮資訊</li><li>開啟地圖・加入行事曆</li><li>交通資訊</li><li>尋找我的座位</li>
+              <li>當日流程</li><li>倒數計時</li><li>Dress code</li><li>出席回覆</li>
+              <li>祝福牆</li><li>給你的一封信</li><li>我們的故事</li><li>小測驗</li><li>抽卡</li>
+              <li class="plus">＋ 自訂內容：雲端相簿、現場小活動…</li>
+            </ul>
+          </div>
+          <div class="seg-panel" role="tabpanel" id="segP2" aria-labelledby="segT2" hidden>
+            <ul class="feats">
+              <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-story"/></svg></span><div><b>你們的故事</b><p>用一條時間軸，說你們怎麼走到今天。</p></div></li>
+              <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-photo"/></svg></span><div><b>相片集</b><p>婚紗照放進網站，賓客隨時都能翻。</p></div></li>
+              <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-check"/></svg></span><div><b>即時的出席回覆</b><p>賓客用手機回覆出席與餐點，你們的後台馬上看得到。</p></div></li>
+              <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-music"/></svg></span><div><b>背景音樂</b><p>可以選自己喜歡的音樂跟我們說，或是不要有。</p></div></li>
+            </ul>
+          </div>
+          <div class="seg-panel" role="tabpanel" id="segP3" aria-labelledby="segT3" hidden>
+            <ul class="feats">
+              <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-pay"/></svg></span><div><b>一次付清</b><p>沒有月費，也不用續約。</p></div></li>
+              <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-pen"/></svg></span><div><b>真人設計師</b><p>由我們的設計師幫你們做，有想法直接跟我們溝通。</p></div></li>
+              <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-pace"/></svg></span><div><b>照自己的步調</b><p>個人後台可以自由操作，想改就改。</p></div></li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>

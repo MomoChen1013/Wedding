@@ -211,8 +211,10 @@ const pv = document.getElementById('pv');
 const frame = document.getElementById('pvFrame');
 const screen = document.getElementById('pvScreen');
 const wait = document.getElementById('pvWait');
-const demoLink = document.getElementById('pvDemo');
-const startLink = document.getElementById('pvStart');
+const endLayer = document.getElementById('pvEnd');
+/* 「看完整範例」「開始製作」各有兩顆：手機畫面上的遮罩（開場演完才出現）與旁邊的說明 */
+const demoLinks = pv.querySelectorAll('[data-pv="demo"]');
+const startLinks = pv.querySelectorAll('[data-pv="start"]');
 let current = null;      /* { key } */
 
 /* 外框裡的網站一律用 390 寬去排（一般手機的寬度），再整個等比縮進外框 */
@@ -230,6 +232,7 @@ const PREVIEW_STUCK_MS = 12000;
 let stuckTimer = 0;
 function loadPreview() {
   wait.textContent = '開場播放中…';
+  endLayer.hidden = true;
   clearTimeout(stuckTimer);
   stuckTimer = setTimeout(() => {
     wait.textContent = '預覽載入不出來，可以按「看完整範例」另開一頁看看';
@@ -245,9 +248,10 @@ function openPreview(btn) {
   document.getElementById('pvTitle').innerHTML =
     `${card.querySelector('.cn').textContent}<small>${card.querySelector('.en').textContent}</small>`;
   document.getElementById('pvMood').textContent = card.querySelector('.mood').textContent;
-  demoLink.href = `/samples/${current.key}/`;
+  demoLinks.forEach((a) => { a.href = `/samples/${current.key}/`; });
   /* 開始製作：和卡片上「我想用這款」同一個 LINE 連結（預填這一款的名字） */
-  startLink.href = card.querySelector('.btn-like').href;
+  startLinks.forEach((a) => { a.href = card.querySelector('.btn-like').href; });
+  selectSeg(document.getElementById('segT1'), false);
   showDialog(pv, btn, () => {
     clearTimeout(stuckTimer);
     frame.src = 'about:blank';          /* 停掉 iframe 裡的動畫與音樂 */
@@ -264,13 +268,36 @@ document.addEventListener('click', (e) => {
   if (btn) openPreview(btn);
 });
 document.getElementById('pvReplay').addEventListener('click', () => { if (current) loadPreview(); });
-demoLink.addEventListener('click', () => {
-  if (current) track('template_demo_open', { template: current.key, position: 'popup' });
+pv.addEventListener('click', (e) => {
+  const el = e.target.closest && e.target.closest('[data-pv]');
+  if (!el || !current) return;
+  if (el.dataset.pv === 'replay') { loadPreview(); document.getElementById('pvReplay').focus(); }
+  else if (el.dataset.pv === 'demo') track('template_demo_open', { template: current.key, position: 'popup' });
+  else if (el.dataset.pv === 'start') {
+    track('line_click', { position: 'preview', template: current.key });
+    like(current.key, 'start');
+  }
 });
-startLink.addEventListener('click', () => {
-  if (!current) return;
-  track('line_click', { position: 'preview', template: current.key });
-  like(current.key, 'start');
+
+/* 說明卡的分段切換：點一下或用左右鍵換 */
+const segTabs = Array.from(pv.querySelectorAll('.seg [role="tab"]'));
+function selectSeg(tab, focus) {
+  for (const t of segTabs) {
+    const on = t === tab;
+    t.setAttribute('aria-selected', on ? 'true' : 'false');
+    t.tabIndex = on ? 0 : -1;
+    document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+  }
+  if (focus) tab.focus();
+}
+segTabs.forEach((t, i) => {
+  t.addEventListener('click', () => selectSeg(t, false));
+  t.addEventListener('keydown', (e) => {
+    const step = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+    if (!step) return;
+    e.preventDefault();
+    selectSeg(segTabs[(i + step + segTabs.length) % segTabs.length], true);
+  });
 });
 window.addEventListener('resize', () => { if (current) fitFrame(); });
 
@@ -282,7 +309,8 @@ window.addEventListener('message', (e) => {
   if (d.type === 'ready') clearTimeout(stuckTimer);
   if (d.type === 'done') {
     clearTimeout(stuckTimer);
-    wait.textContent = '開場播完了，可以按左上角重播';
+    wait.textContent = '';
+    endLayer.hidden = false;
     track('template_preview_complete', { template: current.key });
   }
 });
