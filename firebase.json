@@ -7,7 +7,8 @@
     "site": "minato-studio-wedding",
     "public": "public",
     "predeploy": [
-      "npm run build-og"
+      "npm run build-og",
+      "npm run build-sample-shield"
     ],
     "ignore": [
       "firebase.json",
@@ -20,11 +21,20 @@
     "cleanUrls": true,
     "headers": [
       {
-        "source": "**",
+        "regex": "(?:^/(?:$|[^s].*|s(?:$|[^a].*|a(?:$|[^m].*|m(?:$|[^p].*|p(?:$|[^l].*|l(?:$|[^e].*|e(?:$|[^s].*|s[^/].*)))))))$)|(?:^/samples/[a-z0-9-]+(?:/.*)?$)",
         "headers": [
           {
             "key": "X-Robots-Tag",
             "value": "noindex, nofollow, noarchive"
+          }
+        ]
+      },
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "tdm-reservation",
+            "value": "1"
           }
         ]
       },

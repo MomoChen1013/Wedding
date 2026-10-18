@@ -1,0 +1,44 @@
+# 芯玖 SHIN9・小港製作所
+# 設計與程式碼為專有財產，禁止全部或部分複製，包含以 AI 輔助的複製。
+# 不同意任何文字與資料探勘（TDM）及 AI 訓練使用。
+#
+# 一般搜尋引擎照常收錄；能被收錄的只有版型總覽頁 /samples/，
+# 其他頁面（新人的婚禮網站、示範網站、後台）都由 firebase.json 送出 X-Robots-Tag: noindex。
+# 這裡不擋路徑：noindex 要讓搜尋引擎爬得到才看得見。
+
+# AI 訓練與 AI 爬蟲：整站都不要爬
+User-agent: GPTBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-Web
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: anthropic-ai
+User-agent: CCBot
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Bytespider
+User-agent: Amazonbot
+User-agent: Meta-ExternalAgent
+User-agent: Meta-ExternalFetcher
+User-agent: FacebookBot
+User-agent: cohere-ai
+User-agent: cohere-training-data-crawler
+User-agent: Diffbot
+User-agent: Omgilibot
+User-agent: omgili
+User-agent: ImagesiftBot
+User-agent: YouBot
+User-agent: AI2Bot
+User-agent: Ai2Bot-Dolma
+User-agent: Timpibot
+User-agent: DuckAssistBot
+User-agent: MistralAI-User
+User-agent: PanguBot
+Disallow: /
+
+# 其他（Googlebot、Bingbot，以及 LINE／Facebook 產生連結預覽的爬蟲）照常
+User-agent: *
+Allow: /

@@ -869,3 +869,7 @@ html:not([data-site-ready]) [data-sk="tags"]{
   .boot-veil-mark,
   html:not([data-site-ready]) [data-sk]{animation:none;}
 }
+
+/* 頁尾的版權宣告：每一頁 <footer> 的最後一行（版型自己的頁尾樣式之下，小一號、淡一點） */
+.site-copy{display:block;margin-top:6px;font-size:10px;line-height:1.6;letter-spacing:.04em;
+  text-transform:none;opacity:.72;}

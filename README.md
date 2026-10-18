@@ -142,8 +142,15 @@
 │   ├─ samples/               # 版型展示頁 /samples（給客人挑版型，見〈版型展示頁〉）
 │   │   ├─ index.html                # ⚙️ 總覽，由 build-samples 產出
 │   │   ├─ thumbs/{版型}.jpg         # ⚙️ 由 build-sample-thumbs 截圖
+│   │   ├─ videos/{版型}.webm／.mp4  # ⚙️ 卡片上的開場循環影片，由 build-sample-videos 錄
+│   │   ├─ samples.js                # 總覽頁的互動：預覽 popup、影片、底部 LINE 按鈕、PostHog 事件
+│   │   ├─ config.js                 # LINE 連結、PostHog 的設定常數
+│   │   ├─ analytics.js              # PostHog 載入器（沒填 key 就不載入）
 │   │   ├─ sample-site.js  photos/   # 虛構的新人（站台資料＋示範內容）與示範照片
-│   │   └─ demo-bar.css              # 示範頁左下角那一條
+│   │   ├─ demo-extras.js            # 示範模式才載入：示範列、預覽模式、PostHog
+│   │   ├─ demo-bar.css              # 示範頁左下角那一條
+│   │   └─ _r/  {版型}/              # ⚙️ 示範網站的壓縮／混淆副本（build-sample-shield，不進版控）
+│   ├─ robots.txt             # 擋 AI 爬蟲；一般搜尋引擎照常
 │   ├─ audio/bgm.mp3          # 全站共用的預設背景音樂（新人沒放自己的就播這首）
 │   ├─ css/
 │   └─ js/
@@ -170,6 +177,11 @@
 │   ├─ build-previews.js      # 從正式的大廳骨架產出 preview/ 底下各版型的示範頁
 │   ├─ build-samples.js       # 產出 /samples 總覽（卡片文案 sample-catalog.js、模板 sample-index.html）
 │   ├─ build-sample-thumbs.js # 幫 /samples 每個版型截一張手機首屏當縮圖
+│   ├─ build-sample-videos.js # 幫 /samples 每個版型錄一支開場循環影片（WebM＋MP4）
+│   ├─ build-sample-shield.js # 示範網站專用的壓縮／混淆副本（predeploy 會跑）
+│   ├─ sample-server.js       # 截圖、錄影用的小型靜態伺服器
+│   ├─ site-owners.js         # 新人白名單 siteOwners/{siteId} 的讀寫（Admin SDK 腳本共用）
+│   ├─ migrate-site-owners.js # 一次性：把 sites.ownerEmails 搬到 siteOwners
 │   ├─ check-site.js          # 檢查某站台為什麼打不開
 │   ├─ export-rsvps.js        # 匯出某站台的 RSVP 成 CSV
 │   └─ create-short-link.js
@@ -476,11 +488,15 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 
 給還在挑版型的客人看的公開頁面，用 LINE 傳 `https://<網域>/samples/` 就能開：
 
-- **總覽** `/samples/`：每個版型一張卡片 —— 手機首屏的縮圖、一句氣質、**適合的婚紗**（禮服款式與婚紗照的拍法）、色票。
-  不寫預設開場：開場是獨立的一軸，任何版型都能配。
+- **總覽** `/samples/`：由上到下是首屏（標語＋「LINE 詢問」）→ 三個賣點 → 賓客會看到什麼（流程卡片）
+  → 新人後台：高度彈性（三支手機的後台畫面，假資料重建，不是真實帳號）→ 方案表 → 網站版型 → 開站流程 → 常見問題；
+  手機版底部另有固定的「LINE 詢問」。整頁用白色教堂婚禮資訊那一段的灰泥牆、分隔線與毛玻璃卡，按鈕維持芯玖的主色。
+  每個版型一張卡片 —— 開場的循環影片（沒有影片時是首屏縮圖）、一句氣質、**適合的婚紗**、色票，
+  以及三顆按鈕：**預覽**（同一頁打開手機外框，裡面是真的示範網站在演開場）、**看完整範例**、**♡ 我喜歡這款**（開 LINE、預填「我想詢問『版型名』版型」）。
 - **示範站台** `/samples/{版型}/`（例如 `/samples/white-church/`）：**正式網站同一套頁面**，
   大廳、出席回覆（`/samples/{版型}/invitation`）、祝福牆、抽卡、故事、測驗、桌次、給你的信都點得進去、填得了。
   左下角的示範列有「← 版型總覽」，大廳另外有「重播開場動畫」；開場不給客人挑，每個版型照它自己的預設開場演。
+  示範列、預覽模式、PostHog 都在 `public/samples/demo-extras.js`，只有示範模式才載入，正式網站一個位元組都不會抓。
   Classic 示範的是香檳金（其他三種配色的網址 `/samples/classic-blush/` 這些仍然打得開，但沒有入口）。
   新人後台不開放，集氣送祝福還沒開賣所以不放。
 
@@ -494,7 +510,36 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
   新人是虛構的（Ethan & Claire、2027.05.22、星光花園酒店），這是公開連結，**不要換成任何一位客人的資料**。
   想讓客人試查桌次，可以輸入「王小安」；給你的信輸入「小安」會拆到專屬的那一封，其他名字拿到通用信。
 - **網址**由 `firebase.json` 的 `/samples/*/{頁面}` 改寫到各頁的 HTML，其餘 `/samples/**` 都到 `index.html`；
-  總覽、照片、縮圖是真的檔案，優先於改寫規則。
+  總覽、照片、縮圖是真的檔案，優先於改寫規則。部署前跑過 `build-sample-shield` 的話，
+  `/samples/{版型}/` 也有實體檔案（保護過的副本，見下面），一樣優先於改寫規則。
+
+**預覽模式**（`?preview=1`，給總覽頁的「預覽」popup 用）：只有網址帶 `?preview=1`、是大廳、**而且被同網域的 `/samples/` 用 iframe 嵌著**時才生效，
+直接開網址加參數沒有任何作用。生效時跳過「在進場前，先報上名來」、開場每次從頭演（要動手的開場自動按下去）、
+畫面停在第一屏不能捲、連結不跟、示範列與音樂鈕不出現、不載入 PostHog；開場演完用 `postMessage`（只送給同網域）通知外層，
+外層也會檢查 `origin` 與來源 iframe，才顯示「關閉／查看完整示範網站」。
+
+**LINE 與 PostHog 的設定**都在 `public/samples/config.js`：
+`LINE_URL`（一般的 LINE 按鈕）、`LINE_OA_ID`（`@381tboky`，「我喜歡這款」用 `line.me/R/oaMessage/` 預填訊息，ID 與訊息都用 `encodeURIComponent`）、
+`POSTHOG_KEY`、`POSTHOG_HOST`（**兩個都填了才會載入 PostHog**，空字串就完全不載入）。
+PostHog 只在總覽頁與示範模式載入（autocapture、heatmaps 開著），預覽 iframe 裡不載入，不會重複算 pageview。自訂事件：
+
+| 事件 | 屬性 | 在哪裡觸發 |
+|---|---|---|
+| `template_preview_open` | `template` | 總覽頁按卡片的「預覽」（`samples.js` 的 `openPreview`） |
+| `template_preview_complete` | `template` | 預覽裡的開場演完，收到示範網站的 `postMessage` |
+| `template_demo_open` | `template`, `position`（`card`／`popup`） | 卡片的「看完整範例」、popup 的「查看完整示範網站」 |
+| `line_click` | `position`（`hero`／`template_card`／`flow`／`sticky`）、`template`（卡片上才有） | 任何 `a[data-line]` |
+
+漏斗：`$pageview`（`/samples/`）→ `template_preview_open` → `template_demo_open` → `line_click`。
+
+**示範網站的保護**（`scripts/build-sample-shield.js`，`firebase.json` 的 predeploy 會跑）：
+前端程式碼只要瀏覽器執行得了就一定看得到，這裡做的是提高抄的成本。示範網站用的是正式網站同一套檔案，
+直接壓縮那一套會連正式網站一起改到，所以另外產一份副本到 `public/samples/_r/`（不進版控）：
+JS 用 terser 壓縮與混淆變數名，開場（`js/openers/`）與 `lobby-motion.js` 再用 javascript-obfuscator 輕度混淆
+（只做字串陣列與改名，不做控制流程攤平 —— 量過開場的幀率，和原始檔在誤差範圍內）；CSS、HTML 壓縮並拿掉註解；
+`public/img/` 的圖檔全部改成雜湊檔名；不輸出 source map。執行期組出來的路徑（開場的圖檔、版面 CSS）用路徑的雜湊查表換成新檔名。
+開場的寫法改了、副本改不到的時候，這支會直接報錯，不會默默壞掉。
+不擋右鍵、不偵測開發者工具、不擋選取 —— 那些對同行沒用，只會讓長輩和讀螢幕軟體不好用。
 
 **照片**：Unsplash 上 [Vino Li](https://unsplash.com/@vinomamba24) 拍的同一對新人，
 [Unsplash License](https://unsplash.com/license)（可商用、可修改、不必標示；總覽頁尾仍有標示）。
@@ -515,10 +560,12 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 |---|---|
 | 卡片文案 `scripts/sample-catalog.js`、總覽模板 `scripts/sample-index.html` | `npm run build-samples` |
 | 大廳的長相（CSS、照片、開場、骨架）——縮圖要跟著換 | `npm run build-sample-thumbs`（截圖後會自己再跑一次 build-samples） |
-| 新增一個版型 | 先在 `scripts/sample-catalog.js` 補一筆（沒補 build 會直接報錯），再跑 `npm run build-sample-thumbs` |
+| 開場的長相——卡片上的循環影片要跟著換 | `npm run build-sample-videos`（用預覽模式錄、ffmpeg 轉 WebM＋MP4，每支 300KB 以內，印出大小表，最後會自己再跑一次 build-samples；需要 ffmpeg） |
+| 新增一個版型 | 先在 `scripts/sample-catalog.js` 補一筆（沒補 build 會直接報錯），再跑 `npm run build-sample-thumbs` 與 `npm run build-sample-videos` |
 | 總覽頁的中文字（任何文案改動之後） | `npm run build-samples` 之後再跑 `python3 scripts/build-sample-font.py <源樣明體 otf 資料夾>`：總覽頁的中文是源樣明體，只切了頁面用到的字（`public/samples/fonts/`）；漏跑的話新字會退回思源宋體 |
 
-示範站台本身不用重產：它就是正式的頁面，改了就生效。總覽與縮圖是產出的檔案，要 commit，`firebase deploy` 不會幫你產。
+示範站台本身不用重產：它就是正式的頁面，改了就生效（保護過的副本由 predeploy 在部署前重產）。
+總覽、縮圖與循環影片是產出的檔案，要 commit，`firebase deploy` 不會幫你產。
 
 > **莫內花園的畫怎麼來的**：`js/openers/painting.js` 同時是開場與一具「油畫繪製器」（`window.MonetPaint`）。
 > 大廳與開場掛的都是莫內真跡的掃描（見上面〈莫內花園的素材〉），掛在 `<canvas data-monet="場景">` 上；
@@ -570,7 +617,7 @@ sites/{siteId}
                         # 「頁面設定」開關／排程：key → { on(bool), at(number|null) }
                         # 沒有這個欄位、或某一頁沒有那一筆＝公開；
                         # on:false ＋ at（epoch ms）＝時間到了自動公開
-  ownerEmails(string[]) # 新人的 Google 信箱；決定誰進得了後台（RSVP 與悄悄話都靠它）
+  # 新人的 Google 信箱**不在這裡**（這份文件任何人都讀得到），在 siteOwners/{siteId}
   createdAt, updatedAt
 
   # ↓ 各功能的資料都掛在這組新人底下，站台之間完全看不到彼此
@@ -597,7 +644,7 @@ sites/{siteId}
   meta/hearts          count                           # 愛心計數器
   meta/letterCount     count                           # 公開的信件數量
 
-  # ↓ 這九個集合由新人在 /w/{slug}/admin 自己維護（規則只認 ownerEmails 名單）
+  # ↓ 這九個集合由新人在 /w/{slug}/admin 自己維護（規則只認 siteOwners 名單）
   rsvpTags/{回覆 id}     tags(string[]), updatedAt   # 新人幫賓客掛的標籤
                                                      # 只有新人讀得到；文件 id ＝ 那筆回覆的 id
   seatingPlan/draft      tables(map[] ≤60)     # 桌位 { id, no, name, cap, type, order }
@@ -691,6 +738,22 @@ short/{code}                # 6 碼短連結
 > 改過 `public/*.html`、換過照片、或新增站台之後，
 > deploy 之前要先重跑 **`npm run build-og`**（見〈社群分享縮圖〉），
 > 否則分享出去的縮圖與標題會停在舊的那一版。
+
+> ### 一次性：新人白名單搬家（`sites.ownerEmails` → `siteOwners/{siteId}`）
+> 規則改成只認 `siteOwners` 之後，**一定要照這個順序**，不然所有新人都會進不了後台：
+>
+> ```bash
+> npm run migrate-site-owners -- --dry-run   # 先看會搬哪些
+> npm run migrate-site-owners                # 1. 複製名單（舊欄位先留著）
+> npx firebase deploy --only firestore:rules,hosting   # 2. 新規則＋新前端
+> npm run migrate-site-owners -- --strip     # 3. 確認新人登得進後台後，刪掉公開文件裡的信箱
+> ```
+>
+> 之後 `create-site` 與 `set-pages --owner-email` 都直接寫 `siteOwners`。
+
+> **搜尋引擎**：全站送 `X-Robots-Tag: noindex`，唯一的例外是版型總覽 `/samples/`（`firebase.json` 的 headers 用正規表示式排除它）；
+> `public/robots.txt` 擋 GPTBot、ClaudeBot、CCBot、Google-Extended 這些 AI 爬蟲，一般搜尋引擎照常。
+> 每一頁的 `<head>` 都有版權宣告與 `tdm-reservation`，Hosting 也送 `tdm-reservation: 1` 標頭。
 
 ```bash
 # 部署安全規則（改完 firestore.rules 一定要跑）
@@ -961,7 +1024,7 @@ npm run set-pages -- --slug ginny-one-20260919 --entry-login off
 https://{網域}/w/{slug}/admin
 ```
 
-**進得去的條件**：用 **Google 帳號登入**，而且信箱要在 `sites.ownerEmails` 名單內。
+**進得去的條件**：用 **Google 帳號登入**，而且信箱要在新人白名單 `siteOwners/{siteId}` 內。
 還沒設定的話先跑：
 
 ```bash
@@ -1237,7 +1300,7 @@ Excel 開中文不會亂碼；匯出的是「目前篩選出來的那些」，�
 > 重複送出的那幾筆可以整筆刪掉（「回覆資訊」那一頁，要連按兩次確認），
 > 留下來的每一筆都還是賓客當初寫的原文。
 
-> **誰讀得到**：只有 `ownerEmails` 名單內、信箱已驗證的 Google 帳號。
+> **誰讀得到**：只有 新人白名單（`siteOwners`）內、信箱已驗證的 Google 帳號。
 > 賓客彼此看不到誰要來、留了什麼話、有什麼飲食禁忌。
 
 ---
@@ -1254,7 +1317,7 @@ Excel 開中文不會亂碼；匯出的是「目前篩選出來的那些」，�
 > 所以整個併進後台。舊網址（含書籤）會自動導到 `/w/{slug}/admin`。
 
 > **後台只能看與匯出，不能修改。**
-> 規則對 `letters` 只開 `read`（限 `ownerEmails`）與 `create`（賓客投信），
+> 規則對 `letters` 只開 `read`（限新人白名單）與 `create`（賓客投信），
 > `update`／`delete` 都是 `false`。
 
 ---
@@ -1281,7 +1344,7 @@ Excel 開中文不會亂碼；匯出的是「目前篩選出來的那些」，�
 （最長邊 1800px、轉 JPEG），再存進這場婚禮自己的 Firestore。
 
 > **為什麼不用 Firebase Storage**：Storage 的安全規則讀不到 Firestore，
-> 沒辦法用 `ownerEmails` 白名單判斷「是不是新人本人」。
+> 沒辦法用新人白名單判斷「是不是新人本人」。
 > 存成 data URL 就能沿用同一套身分判斷，也不必多設一份規則與 CORS。
 > 代價是單張上限約 900KB（Firestore 文件上限 1MB），縮圖流程會自動處理。
 
@@ -1927,7 +1990,7 @@ Dress Code 的三樣（文字、顏色、參考圖）**任何一樣有設定，�
 > 都沒有時才退回 `assets/{slug}/exhibition/` → 內建範例。
 
 > **照片為什麼要存成 data URL**：和桌次圖同一個理由 ——
-> Firebase Storage 的規則讀不到 Firestore，沒辦法用 `ownerEmails`
+> Firebase Storage 的規則讀不到 Firestore，沒辦法用新人白名單
 > 判斷「是不是新人本人」。存進文件就能沿用同一套身分判斷。
 > 代價是有大小上限，裁切器會自動把畫質與尺寸壓到符合。
 
@@ -2405,7 +2468,7 @@ node scripts/check-site.js --slug ginny-one-20260919
 node scripts/check-site.js                    # 不加參數 = 列出全部站台
 ```
 
-會一路檢查 `slugs` → `sites` → `status` → `pages` → RSVP → `ownerEmails`，
+會一路檢查 `slugs` → `sites` → `status` → `pages` → RSVP → 新人白名單（`siteOwners`），
 把問題直接指出來，並印出所有可用的網址。
 
 ### 兩種「找不到」長得不一樣，先分清楚
@@ -2439,7 +2502,7 @@ https://wedding-22b94.web.app/w/{slug}/
 | 後台「出席回覆」分頁 | 新人的 Google 帳號 | 平常查看、隨手匯出，新人自己就能做 |
 | `npm run export-rsvps` | 管理端金鑰 | 排程、批次，或新人的帳號還沒設好 |
 
-**賓客彼此永遠讀不到別人的回覆** —— 規則只放行 `ownerEmails` 名單內的帳號。
+**賓客彼此永遠讀不到別人的回覆** —— 規則只放行 新人白名單（`siteOwners`）內的帳號。
 
 CLI 走 Admin SDK，以服務帳戶連線會略過 Security Rules，不需要任何登入：
 
@@ -2674,11 +2737,12 @@ http://127.0.0.1:5000/w/你的slug/cake?live=1
 
 | 路徑 | read | create | update | delete |
 |---|---|---|---|---|
-| `sites/{siteId}` | ✅ | ❌ | ❌ | ❌ |
+| `sites/{siteId}` | ✅ 單筆讀取・**不准列出集合** | ❌ | 只有新人（大廳文案） | ❌ |
+| `siteOwners/{siteId}` | 只有名單裡的人讀得到自己那一份・不准列出 | ❌ | ❌ | ❌ |
 | `sites/{siteId}/rsvps` | ❌ | ✅（需通過驗證） | ❌ | ❌ |
 | `sites/{siteId}/rsvpTags` | 只有新人 | 只有新人 | 只有新人 | 只有新人 |
 | `sites/{siteId}/wishes` | ✅ | ✅（需通過驗證） | ❌ | ❌ |
-| `sites/{siteId}/letters` | 只有 `ownerEmails` 名單內的已驗證 Google 帳號 | ✅（需通過驗證） | ❌ | ❌ |
+| `sites/{siteId}/letters` | 只有 新人白名單（`siteOwners`）內的已驗證 Google 帳號 | ✅（需通過驗證） | ❌ | ❌ |
 | `sites/{siteId}/cakes` | ✅ | ✅（需通過驗證） | ❌ | ❌ |
 | `sites/{siteId}/quiz` | ✅ | 只有新人 | 只有新人 | 只有新人 |
 | `sites/{siteId}/quizVotes` | ✅ | ✅（需通過驗證） | ❌ | 只有新人（重置票數） |
@@ -2703,7 +2767,9 @@ http://127.0.0.1:5000/w/你的slug/cake?live=1
 ### 悄悄話信箱：用 Google 帳號保護
 
 `letters` 的讀取由規則檢查 **Google 帳號的已驗證信箱**是否在
-`sites.ownerEmails` 名單內。這是伺服器端驗證，前端偽造不了。
+新人白名單 `siteOwners/{siteId}` 內。這是伺服器端驗證，前端偽造不了。
+名單不放在 `sites` 文件裡：那份是公開的，信箱放在那裡等於公開。
+後台判斷「是不是新人本人」也是靠規則：讀得到自己那一份名單就是（`js/common.js` 的 `checkSiteOwner`）。
 
 ```bash
 node scripts/create-site.js --slug chen-lin-0315 … \
@@ -2717,7 +2783,7 @@ node scripts/create-site.js --slug chen-lin-0315 … \
 - 賓客**寫得進去、讀不出來**
 - 祝福牆上的「已有 N 封信」用另一個公開計數器 `meta/letterCount`，
   只看得到數量、看不到內容
-- 沒設定 `--owner-email` 的站台，後台會直接說「還沒設定新人的 Google 信箱」
+- 沒設定 `--owner-email` 的站台，誰登入都會看到「不在這場婚禮的新人名單裡」；`npm run check-site -- --slug …` 會指出來
 
 > **為什麼不用密碼？**
 > Firestore 的讀取請求不帶 payload，規則無法驗證「使用者輸入的密碼」。
