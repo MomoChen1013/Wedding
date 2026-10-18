@@ -224,8 +224,16 @@ function fitFrame() {
   frame.style.height = `${Math.ceil(h / k)}px`;
 }
 
+/* 示範網站一載好就會送 ready；等太久沒消息（網路很慢、被瀏覽器擋下、本機伺服器沒照 firebase.json 改寫網址）
+   就直接講，不讓「開場播放中…」一直掛著 */
+const PREVIEW_STUCK_MS = 12000;
+let stuckTimer = 0;
 function loadPreview() {
   wait.textContent = '開場播放中…';
+  clearTimeout(stuckTimer);
+  stuckTimer = setTimeout(() => {
+    wait.textContent = '預覽載入不出來，可以按「看完整範例」另開一頁看看';
+  }, PREVIEW_STUCK_MS);
   frame.src = 'about:blank';
   /* 每次都重新載入：示範網站在預覽模式會把「看過開場」的記號清掉，從頭演 */
   requestAnimationFrame(() => { frame.src = `/samples/${current.key}/?preview=1`; });
@@ -241,6 +249,7 @@ function openPreview(btn) {
   /* 開始製作：和卡片上「我想用這款」同一個 LINE 連結（預填這一款的名字） */
   startLink.href = card.querySelector('.btn-like').href;
   showDialog(pv, btn, () => {
+    clearTimeout(stuckTimer);
     frame.src = 'about:blank';          /* 停掉 iframe 裡的動畫與音樂 */
     frame.removeAttribute('src');
     current = null;
@@ -270,7 +279,9 @@ window.addEventListener('message', (e) => {
   if (e.origin !== location.origin || e.source !== frame.contentWindow) return;
   const d = e.data;
   if (!d || d.source !== 'shin9-preview' || !current || d.template !== current.key) return;
+  if (d.type === 'ready') clearTimeout(stuckTimer);
   if (d.type === 'done') {
+    clearTimeout(stuckTimer);
     wait.textContent = '開場播完了，可以按左上角重播';
     track('template_preview_complete', { template: current.key });
   }
