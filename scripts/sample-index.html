@@ -484,11 +484,11 @@ body.dlg-open{overflow:hidden;}
   <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15"/><path d="M14 7l5 5-5 5"/></symbol>
   <symbol id="i-f-story" viewBox="0 0 24 24"><path d="M12 6.5c-1.8-1.3-4.3-2-7-2v13c2.7 0 5.2.7 7 2 1.8-1.3 4.3-2 7-2v-13c-2.7 0-5.2.7-7 2Z"/><path d="M12 6.5v13"/></symbol>
   <symbol id="i-f-photo" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m20.5 15.5-4.5-4.5-7.5 7.5"/></symbol>
-  <symbol id="i-f-check" viewBox="0 0 24 24"><path d="M5 12.5 10 17.5 19.5 7"/></symbol>
+  <symbol id="i-f-sync" viewBox="0 0 24 24"><path d="M19 8.5A7.5 7.5 0 0 0 5.6 7.4"/><path d="M5 4v3.8h3.8"/><path d="M5 15.5a7.5 7.5 0 0 0 13.4 1.1"/><path d="M19 20v-3.8h-3.8"/></symbol>
   <symbol id="i-f-music" viewBox="0 0 24 24"><path d="M9 17.5V6l10-2v11.5"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></symbol>
-  <symbol id="i-f-pay" viewBox="0 0 24 24"><rect x="3.5" y="6" width="17" height="12" rx="2"/><path d="M3.5 10h17"/><path d="M7 14.5h3"/></symbol>
+  <symbol id="i-f-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M8.2 12.3 10.8 14.9 15.9 9.5"/></symbol>
   <symbol id="i-f-pen" viewBox="0 0 24 24"><path d="M15 5.5 18.5 9 9 18.5H5.5V15L15 5.5Z"/><path d="M13 7.5 16.5 11"/></symbol>
-  <symbol id="i-f-pace" viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h14"/><circle cx="9" cy="7" r="1.8" fill="#fff"/><circle cx="15" cy="12" r="1.8" fill="#fff"/><circle cx="11" cy="17" r="1.8" fill="#fff"/></symbol>
+  <symbol id="i-f-steps" viewBox="0 0 24 24"><g fill="currentColor" stroke="none"><path d="M7.4 3.6c1.7 0 2.7 1.8 2.6 4.4-.1 1.8-.5 3.3-.9 4.6-.2.6-.7.9-1.3.9h-.8c-.6 0-1.1-.4-1.2-1-.4-1.5-.8-3.1-.8-4.7 0-2.4 1-4.2 2.4-4.2Z"/><path d="M6.6 15.6h2.6l-.2 1.9c-.1 1-.9 1.6-1.7 1.4-.8-.2-1.2-1-1-1.8l.3-1.5Z"/><path d="M16.6 7.1c1.4 0 2.4 1.8 2.4 4.2 0 1.6-.4 3.2-.8 4.7-.1.6-.6 1-1.2 1h-.8c-.6 0-1.1-.3-1.3-.9-.4-1.3-.8-2.8-.9-4.6-.1-2.6.9-4.4 2.6-4.4Z"/><path d="M14.8 19.1h2.6l.3 1.5c.2.8-.2 1.6-1 1.8-.8.2-1.6-.4-1.7-1.4l-.2-1.9Z"/></g></symbol>
   <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5v.01"/></symbol>
 </svg>
 
@@ -595,8 +595,7 @@ body.dlg-open{overflow:hidden;}
     <div class="sec-head">
       <div class="kicker">Templates</div>
       <h2 id="tplTitle">網站版型</h2>
-      <p>按「預覽」可以直接看開場動畫；「看完整範例」會另開一頁，是賓客實際會看到的婚禮網站，可以盡量點點看，填的內容不會被送出去。新人與地點都是虛構的，照片為示範用圖，正式網站會換成你們的照片與內容。</p>
-      <p class="tip">想試查桌次，輸入 <b>王小安</b><br>想拆專屬信件，輸入 <b>小安</b></p>
+      <p>經典方案 {{N_CLASSIC}} 款，典藏有更多的 {{N_PREMIUM}} 款，共 {{N_ALL}} 款可選</p>
     </div>
 
     <div class="tier">
@@ -674,7 +673,7 @@ body.dlg-open{overflow:hidden;}
     </ol>
     <p class="flow-need">需要準備：<b>婚宴日期</b>、<b>雙方中英文名字</b>、<b>主要照片</b></p>
     <div class="flow-cta">
-      <a class="btn" href="{{LINE_URL}}" target="_blank" rel="noopener" data-line="flow"><svg class="ic-line" aria-hidden="true"><use href="#i-line"/></svg>用 LINE 問問看<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+      <a class="btn" href="{{LINE_URL}}" target="_blank" rel="noopener" data-line="flow"><svg class="ic-line" aria-hidden="true"><use href="#i-line"/></svg>LINE 瞭解更多<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
     </div>
   </section>
 
@@ -790,17 +789,17 @@ body.dlg-open{overflow:hidden;}
           </div>
           <div class="seg-panel" role="tabpanel" id="segP2" aria-labelledby="segT2" hidden>
             <ul class="feats">
-              <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-story"/></svg></span><div><b>你們的故事</b><p>用一條時間軸，說你們怎麼走到今天。</p></div></li>
+              <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-story"/></svg></span><div><b>你們的故事</b><p>可選擇放或不放，簡單說明你們的故事吧。</p></div></li>
               <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-photo"/></svg></span><div><b>相片集</b><p>婚紗照放進網站，賓客隨時都能翻。</p></div></li>
-              <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-check"/></svg></span><div><b>即時的出席回覆</b><p>賓客用手機回覆出席與餐點，你們的後台馬上看得到。</p></div></li>
+              <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-sync"/></svg></span><div><b>即時的資訊更新</b><p>有賓客回覆，後台立即顯示；後台調整資訊，網頁立即更新。</p></div></li>
               <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-music"/></svg></span><div><b>背景音樂</b><p>可以選自己喜歡的音樂跟我們說，或是不要有。</p></div></li>
             </ul>
           </div>
           <div class="seg-panel" role="tabpanel" id="segP3" aria-labelledby="segT3" hidden>
             <ul class="feats">
-              <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-pay"/></svg></span><div><b>一次付清</b><p>沒有月費，也不用續約。</p></div></li>
-              <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-pen"/></svg></span><div><b>真人設計師</b><p>由我們的設計師幫你們做，有想法直接跟我們溝通。</p></div></li>
-              <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-pace"/></svg></span><div><b>照自己的步調</b><p>個人後台可以自由操作，想改就改。</p></div></li>
+              <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-ok"/></svg></span><div><b>一次付清</b><p>沒有月費，也不用續約。</p></div></li>
+              <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-pen"/></svg></span><div><b>真人設計師</b><p>由芯玖自己的設計師製作，有想法直接跟我們溝通。</p></div></li>
+              <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-steps"/></svg></span><div><b>照自己的步調</b><p>新人後台可以自由調整資訊，想改就改。</p></div></li>
             </ul>
           </div>
         </div>

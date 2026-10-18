@@ -161,7 +161,7 @@ if ('IntersectionObserver' in window) {
     stickyState.pastHero = !e.isIntersecting && e.boundingClientRect.top < 0;
     syncSticky();
   }).observe(document.getElementById('heroCta'));
-  /* 開站流程那一區有自己的「用 LINE 問問看」：捲到那裡就收起來，捲過頭（到常見問題）再出來 */
+  /* 開站流程那一區有自己的「LINE 瞭解更多」：捲到那裡就收起來，捲過頭（到常見問題）再出來 */
   new IntersectionObserver(([e]) => {
     stickyState.atFlow = e.isIntersecting;
     syncSticky();

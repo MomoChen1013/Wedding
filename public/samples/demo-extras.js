@@ -17,7 +17,8 @@
      ・要賓客動手的開場（拆信、推門…）自動按下去；自己會演的開場（花開、星圖、氣球）照演（減少動態時也幫忙點一下）
      ・畫面停在第一屏，不能往下捲，也不會被連結帶走
      ・開場演完用 postMessage 通知外層（只送給同網域）
-     ・示範列、背景音樂按鈕、跳過鈕都不顯示；不載入 PostHog（外層會記一筆預覽事件）
+     ・不放背景音樂：示範列、背景音樂按鈕、跳過鈕都不顯示，開場的那一下也不會把音樂打開
+     ・不載入 PostHog（外層會記一筆預覽事件）
 ============================================================ */
 import { initAnalytics } from './analytics.js';
 
@@ -80,6 +81,8 @@ export function mountDemo({ pageKey }) {
 }
 
 function runPreview() {
+  /* 預覽不放背景音樂：開場自動按下去的那一下會叫 js/common.js 的 startBGM()（全域函式），這裡換成什麼都不做 */
+  window.startBGM = () => {};
   const post = (type) => {
     try { window.parent.postMessage({ source: 'shin9-preview', type, template }, location.origin); } catch {}
   };
