@@ -70,6 +70,7 @@
         會自動改寫入 emulator，不會動到正式資料。
 ============================================================ */
 
+import { normalizeOwners, writeOwners } from './site-owners.js';
 import { parseArgs } from 'node:util';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
@@ -208,15 +209,9 @@ async function createSite(values) {
   const rsvpEnabled = values['rsvp-enabled'] !== 'false';
   const pages = resolvePages(values);
 
-  /* 新人的 Google 信箱：規則會拿它比對，決定誰進得了後台、讀得到悄悄話 */
-  const ownerEmails = (values['owner-email'] || [])
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
-  ownerEmails.forEach((e) => {
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
-      throw new Error(`--owner-email 「${e}」看起來不是有效的信箱`);
-    }
-  });
+  /* 新人的 Google 信箱：規則會拿它比對，決定誰進得了後台、讀得到悄悄話。
+     存在 siteOwners/{siteId}（不公開），不放進 sites 文件，見 scripts/site-owners.js */
+  const ownerEmails = normalizeOwners(values['owner-email']);
 
   const db = getFirestore();
   const siteRef = db.collection('sites').doc();
@@ -224,7 +219,6 @@ async function createSite(values) {
 
   const siteData = {
     slug,
-    ownerEmails,
     status: values.status,
     groomName,
     brideName,
@@ -261,6 +255,7 @@ async function createSite(values) {
       throw new Error(`slug 「${slug}」已經被使用了，請換一個網址代稱`);
     }
     tx.set(siteRef, siteData);
+    writeOwners(db, siteRef.id, ownerEmails, tx);
     tx.set(slugRef, {
       siteId: siteRef.id,
       createdAt: FieldValue.serverTimestamp(),

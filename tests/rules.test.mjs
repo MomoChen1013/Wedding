@@ -37,9 +37,16 @@ function baseSite(overrides = {}) {
   };
 }
 
+/* overrides.ownerEmails 是新人白名單：寫到 siteOwners/{siteId}（規則只認那裡），
+   不寫進公開的 sites 文件 */
 async function seedSite(siteId, overrides = {}) {
+  const { ownerEmails, ...site } = overrides;
   await testEnv.withSecurityRulesDisabled(async (context) => {
-    await setDoc(doc(context.firestore(), `sites/${siteId}`), baseSite(overrides));
+    await setDoc(doc(context.firestore(), `sites/${siteId}`), baseSite(site));
+    /* 跟 sites 文件一樣整份換掉：沒給名單就是沒有名單 */
+    const owners = doc(context.firestore(), `siteOwners/${siteId}`);
+    if (ownerEmails) await setDoc(owners, { emails: ownerEmails });
+    else await deleteDoc(owners);
   });
 }
 
@@ -94,6 +101,51 @@ describe('sites/{siteId}', () => {
   it('拒絕未登入使用者刪除 site', async () => {
     const db = testEnv.unauthenticatedContext().firestore();
     await assertFails(deleteDoc(doc(db, `sites/${SITE_ID}`)));
+  });
+
+  it('不能把整個 sites 集合列出來（不論有沒有登入）', async () => {
+    await assertFails(getDocs(collection(testEnv.unauthenticatedContext().firestore(), 'sites')));
+    const owner = testEnv.authenticatedContext('owner-uid', { email: 'couple@example.com', email_verified: true });
+    await assertFails(getDocs(collection(owner.firestore(), 'sites')));
+  });
+});
+
+describe('siteOwners/{siteId}：新人白名單', () => {
+  const OWNER = 'couple@example.com';
+  const ctx = (email, verified = true) =>
+    testEnv.authenticatedContext(`uid-${email}`, { email, email_verified: verified }).firestore();
+
+  beforeEach(async () => {
+    await seedSite(SITE_ID, { ownerEmails: [OWNER] });
+  });
+
+  it('名單裡的人讀得到自己這一份（後台靠這個判斷是不是新人本人）', async () => {
+    await assertSucceeds(getDoc(doc(ctx(OWNER), `siteOwners/${SITE_ID}`)));
+  });
+
+  it('信箱帶大寫也認得', async () => {
+    await assertSucceeds(getDoc(doc(ctx('Couple@Example.com'), `siteOwners/${SITE_ID}`)));
+  });
+
+  it('不在名單裡、沒驗證信箱、沒登入的都讀不到', async () => {
+    await assertFails(getDoc(doc(ctx('guest@example.com'), `siteOwners/${SITE_ID}`)));
+    await assertFails(getDoc(doc(ctx(OWNER, false), `siteOwners/${SITE_ID}`)));
+    await assertFails(getDoc(doc(testEnv.unauthenticatedContext().firestore(), `siteOwners/${SITE_ID}`)));
+  });
+
+  it('列不出來、前端也寫不進去（連新人本人都不行）', async () => {
+    await assertFails(getDocs(collection(ctx(OWNER), 'siteOwners')));
+    await assertFails(setDoc(doc(ctx(OWNER), `siteOwners/${SITE_ID}`), { emails: [OWNER, 'evil@example.com'] }));
+    await assertFails(setDoc(doc(ctx('evil@example.com'), 'siteOwners/other-site'), { emails: ['evil@example.com'] }));
+  });
+
+  it('舊欄位 sites.ownerEmails 不再有效：只放在那裡的信箱進不了後台', async () => {
+    await seedSite('legacy-site');
+    await testEnv.withSecurityRulesDisabled(async (c) => {
+      await updateDoc(doc(c.firestore(), 'sites/legacy-site'), { ownerEmails: ['legacy@example.com'] });
+      await setDoc(doc(c.firestore(), 'sites/legacy-site/letters/l1'), { text: 'hi', time: 1 });
+    });
+    await assertFails(getDoc(doc(ctx('legacy@example.com'), 'sites/legacy-site/letters/l1')));
   });
 });
 
@@ -274,7 +326,7 @@ describe('sites/{siteId}/rsvps/{rsvpId}', () => {
       );
     });
 
-    it('不在 ownerEmails 名單內的帳號刪不掉', async () => {
+    it('不在新人白名單內的帳號刪不掉', async () => {
       const id = await seedRsvp();
       const db = testEnv
         .authenticatedContext('nosy', { email: 'nosy@example.com', email_verified: true })
@@ -505,7 +557,7 @@ describe('rsvps 的完整表單欄位', () => {
 });
 
 /* ============================================================
-   悄悄話信箱：只有站台 ownerEmails 名單內的帳號讀得到
+   悄悄話信箱：只有站台新人白名單內的帳號讀得到
 ============================================================ */
 describe('letters 的擁有者權限', () => {
   const OWNER = 'couple@example.com';
@@ -565,7 +617,7 @@ describe('letters 的擁有者權限', () => {
     await assertSucceeds(getDocs(collection(db, `sites/${SITE_ID}/letters`)));
   });
 
-  it('站台沒設定 ownerEmails 時，誰都讀不到', async () => {
+  it('站台沒設定新人白名單時，誰都讀不到', async () => {
     await seedSite(SITE_ID);
     const db = testEnv
       .authenticatedContext('couple', { email: OWNER, email_verified: true })
@@ -1313,7 +1365,7 @@ describe('sites 的大廳文案更新', () => {
     await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { dressCode: '隨便穿' }));
   });
 
-  it('不在 ownerEmails 名單內的帳號改不動', async () => {
+  it('不在新人白名單內的帳號改不動', async () => {
     await assertFails(updateDoc(doc(ownerDb('nosy@example.com'), `sites/${SITE_ID}`),
       { dressCode: '隨便穿' }));
   });
@@ -1407,7 +1459,7 @@ describe('rsvps 的擁有者權限', () => {
     await assertFails(getDocs(collection(db, `sites/${SITE_ID}/rsvps`)));
   });
 
-  it('不在 ownerEmails 名單內的登入帳號讀不到', async () => {
+  it('不在新人白名單內的登入帳號讀不到', async () => {
     await assertFails(getDocs(collection(ownerDb('nosy@example.com'), `sites/${SITE_ID}/rsvps`)));
   });
 
@@ -1442,8 +1494,8 @@ describe('rsvps 的擁有者權限', () => {
     await assertSucceeds(deleteDoc(doc(db, `sites/${SITE_ID}/rsvps/${rsvpId}`)));
   });
 
-  it('站台沒有設定 ownerEmails 時，誰都讀不到', async () => {
-    await seedSite(SITE_ID);      // 不帶 ownerEmails
+  it('站台沒有設定新人白名單時，誰都讀不到', async () => {
+    await seedSite(SITE_ID);      // 不帶新人白名單
     await assertFails(getDocs(collection(ownerDb(), `sites/${SITE_ID}/rsvps`)));
   });
 });

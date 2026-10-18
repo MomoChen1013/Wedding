@@ -65,9 +65,10 @@ async function seed(){
     rsvpDeadline: TS.fromMillis(Date.now() + 86400000),
     rsvpEnabled: true,
     pages: { butler: true, rsvp: true },
-    ownerEmails: ['couple@example.com'],
     createdAt: TS.now(), updatedAt: TS.now(),
   });
+  /* 新人白名單在 siteOwners/{siteId}（不在公開的 sites 文件裡） */
+  await adb.collection('siteOwners').doc(siteRef.id).set({ emails: ['couple@example.com'] });
   await adb.collection('slugs').doc('butler-test').set({
     siteId: siteRef.id, createdAt: TS.now(),
   });

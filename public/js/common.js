@@ -881,7 +881,7 @@ const DataStore = {
   subscribeQuiz(){      this._lazySub('quiz',      'quiz',      'order'); },
   subscribeQuizVotes(){ this._lazySub('quizVotes', 'quizVotes', 'time'); },
   /* 新人幫賓客掛的標籤：文件 id 就是那筆回覆的 id，沒有排序欄位。
-     只有後台讀得到（規則和 rsvps 一樣只開給 ownerEmails）。 */
+     只有後台讀得到（規則和 rsvps 一樣只開給新人白名單）。 */
   subscribeRsvpTags(){ this._lazySub('rsvpTags', 'rsvpTags'); },
 
   getSeating()       { return this._seating; },
@@ -915,7 +915,7 @@ const DataStore = {
     return list;
   },
 
-  /* ===== 新人專用的寫入（規則只認 ownerEmails 名單內的 Google 帳號） =====
+  /* ===== 新人專用的寫入（規則只認 新人白名單內的 Google 帳號） =====
      沒有 id 就新增，有 id 就覆寫同一份文件。 */
   async saveDoc(colName, id, data){
     const { addDoc, setDoc, doc, db } = window.fb;
@@ -932,7 +932,7 @@ const DataStore = {
   },
 
   /* 站台文件本身的大廳文案（地點、dress code、流程…）。
-     規則只放行白名單內的欄位，其他欄位（status、ownerEmails…）寫不進去。
+     規則只放行白名單內的欄位，其他欄位（status、pages…）寫不進去。
      寫完順手更新 window.SITE.data，後台不用重新整理就看得到最新值。 */
   async saveSiteFields(patch){
     const { updateDoc, doc, db, serverTimestamp } = window.fb;
@@ -979,7 +979,7 @@ const DataStore = {
   getCollected()  { return this._collected.slice().sort((a,b)=>(a.time||0)-(b.time||0)); },
   getCakes()      { return this._cakes; },
   /* ===== RSVP 出席回覆 =====
-     規則只讓 ownerEmails 名單內的帳號讀，所以不放進 _subscribe()，
+     規則只讓 新人白名單內的帳號讀，所以不放進 _subscribe()，
      由新人後台登入成功後才呼叫。
      欄位以 js/rsvp-form.js 實際寫入的為準：
        attending  bool   只有「熱情出席」是 true
@@ -1763,23 +1763,37 @@ function stopBGM(){
 
 /* ============================================================
    站台擁有者（新人本人）
-   ・以 Google 帳號登入，信箱要在 sites.ownerEmails 白名單內
-   ・這是規則層真正認得的身分，不是畫面上的遮罩
+   ・以 Google 帳號登入，信箱要在新人白名單 siteOwners/{siteId} 內
+   ・白名單不放在公開的 sites 文件裡，前端看不到名單本身：
+     規則只讓名單內的人讀得到自己那一份（firestore.rules 的 match /siteOwners），
+     所以「讀得到」就是新人本人 —— 判斷完全交給規則，這裡不再自己比對信箱
+   ・同一個帳號只問一次；換帳號（uid 不同）才重問
 ============================================================ */
-function ownerEmails(){
-  const list = window.SITE && window.SITE.data && window.SITE.data.ownerEmails;
-  return Array.isArray(list) ? list.map(e => String(e).toLowerCase()) : [];
+let ownerCheck = { uid: null, ok: false };
+
+async function checkSiteOwner(){
+  const user = window.fb && window.fb.auth && window.fb.auth.currentUser;
+  if(!user || !user.email || !user.emailVerified){
+    ownerCheck = { uid: null, ok: false };
+    return false;
+  }
+  if(ownerCheck.uid === user.uid) return ownerCheck.ok;
+  let ok = false;
+  try{
+    const { db, doc, getDoc } = window.fb;
+    const snap = await getDoc(doc(db, 'siteOwners', window.SITE.siteId));
+    ok = snap.exists();
+  }catch{
+    ok = false;                      /* permission-denied：不在名單裡 */
+  }
+  ownerCheck = { uid: user.uid, ok };
+  return ok;
 }
 
-/* 目前登入的帳號是不是這組新人。
-   比對方式要和 firestore.rules 的 isSiteOwner() 一模一樣（信箱原樣或轉小寫，
-   名單本身不轉）—— 這裡比規則寬鬆的話，新人會進得了後台、卻每一份資料都讀不到 */
+/* 目前登入的帳號是不是這組新人（用上一次 checkSiteOwner() 的結果；還沒問過就是 false） */
 function isSiteOwner(){
   const user = window.fb && window.fb.auth && window.fb.auth.currentUser;
-  if(!user || !user.email || !user.emailVerified) return false;
-  const list = window.SITE && window.SITE.data && window.SITE.data.ownerEmails;
-  if(!Array.isArray(list)) return false;
-  return list.includes(user.email) || list.includes(user.email.toLowerCase());
+  return !!user && ownerCheck.uid === user.uid && ownerCheck.ok;
 }
 
 /* 跳出 Google 登入視窗，回傳登入後的 email（失敗回 null） */
