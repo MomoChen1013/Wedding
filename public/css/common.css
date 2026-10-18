@@ -228,7 +228,7 @@ body[data-template="night-sky"]{
   --font-display:'Cormorant Garamond','Noto Serif TC',serif;
   --font-body:'Noto Sans TC','Noto Sans',sans-serif; --font-hand:'Cormorant Garamond','Noto Serif TC',serif; --font-ui:'Noto Sans TC','Noto Sans',sans-serif;
 }
-/* 法式莊園 —— 南法金色午後的莊園：暖米白、亞麻、蜂蜜色的陶土、橄欖綠、一點天空藍 */
+/* 南法莊園 —— 南法金色午後的莊園：暖米白、亞麻、蜂蜜色的陶土、橄欖綠、一點天空藍 */
 body[data-template="french-manor"]{
   --ink-rgb:61,52,43; --surface-rgb:252,248,241;
   --ink:#3d342b; --ink-soft:#867664; --line:#e3d7c5; --line-soft:#efe7da;

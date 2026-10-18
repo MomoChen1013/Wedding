@@ -72,7 +72,7 @@ export const SAMPLE_CATALOG = {
   },
   'french-manor': {
     plan: 'premium',
-    name: ['French Manor', '法式莊園'],
+    name: ['French Manor', '南法莊園'],
     mood: '南法金色的午後，山坡上的莊園露台、灑滿樹影的牆，一張鋪好亞麻的長桌等著你。',
     dress: ['法式鄉村', '亞麻與蕾絲', '暖米白與橄欖綠'],
     colors: ['#f6efe4', '#b07a4c', '#7a8f6b', '#8fafcb'],

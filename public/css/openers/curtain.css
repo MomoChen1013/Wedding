@@ -17,7 +17,7 @@
   --ct-panel-alpha:1;
   background:var(--ct-bg);
 }
-/* 白色教堂、法式莊園：更深的布、更冷的光 */
+/* 白色教堂、南法莊園：更深的布、更冷的光 */
 .ct-host[data-variant="white-church"]{--ct-a:#1d1a2e;--ct-b:#3a3456;--ct-c:#110f1c;--ct-light:rgba(210,200,255,.45);}
 .ct-host[data-variant="french-manor"]{--ct-a:#3e4a3b;--ct-b:#62735c;--ct-c:#2a3328;}
 

@@ -1,5 +1,5 @@
 /* ============================================================
-   lobby-manor.css — French Manor 法式莊園 的大廳（lobby-manor.html 專用）
+   lobby-manor.css — French Manor 南法莊園 的大廳（lobby-manor.html 專用）
    ------------------------------------------------------------
    疊在 common.css ＋ index.css 之後。結構主張：**南法金色的午後，山坡上的莊園**。
 
@@ -35,7 +35,7 @@ body[data-lobby="french-manor"] .bg-decor::after{content:'';position:absolute;in
   background:linear-gradient(160deg,rgba(255,206,140,.75),rgba(255,222,170,.6) 55%,rgba(250,210,150,.7));}
 @keyframes fm-sway{from{transform:translate(-1%,-.6%) scale(1);}to{transform:translate(1%,.6%) scale(1.025);}}
 @media (prefers-reduced-motion:reduce){body[data-lobby="french-manor"] .bg-decor::before{animation:none;}}
-.fm-lobby{position:relative;}
+.fm-lobby{position:relative;overflow-x:clip;}      /* 相片旁邊的橄欖枝、香草伸出去，不撐開手機的頁寬 */
 
 /* ============================================================
    捲動進場
