@@ -257,6 +257,24 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
 .acts .btn{min-height:42px;padding:8px 10px;font-size:13.5px;letter-spacing:.08em;}
 .acts .btn-pv{grid-column:1/-1;}
 .ic-heart{width:16px;height:16px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;}
+.card{position:relative;}
+.like{position:absolute;top:12px;right:12px;z-index:4;width:40px;height:40px;border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;color:var(--ink);
+  border:1px solid rgba(255,255,255,.9);background:rgba(255,253,249,.82);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  box-shadow:0 6px 16px -8px rgba(40,30,40,.45);transition:color .2s ease,transform .2s ease;}
+.like svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;}
+.like:hover{color:#b5566a;}
+.like[aria-pressed="true"]{color:#b5566a;}
+.like[aria-pressed="true"] svg{fill:currentColor;}
+.like.is-pop{animation:like-pop .4s ease;}
+@keyframes like-pop{40%{transform:scale(1.22);}100%{transform:scale(1);}}
+@media (prefers-reduced-motion:reduce){.like.is-pop{animation:none;}}
+.like:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
+.likes{display:flex;align-items:center;gap:6px;font-size:13px;letter-spacing:.06em;color:var(--muted);}
+.likes::before{content:'';width:13px;height:13px;flex:0 0 auto;background:#b5566a;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 20.5s-7.5-4.6-7.5-10.3A4.2 4.2 0 0 1 12 7.6a4.2 4.2 0 0 1 7.5 2.6c0 5.7-7.5 10.3-7.5 10.3Z'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 20.5s-7.5-4.6-7.5-10.3A4.2 4.2 0 0 1 12 7.6a4.2 4.2 0 0 1 7.5 2.6c0 5.7-7.5 10.3-7.5 10.3Z'/%3E%3C/svg%3E") center/contain no-repeat;}
+.likes[hidden]{display:none;}
 .btn-like:hover .ic-heart{fill:currentColor;}
 
 @media (max-width:599px){
@@ -264,6 +282,8 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
   .shot{flex:0 0 40%;aspect-ratio:auto;min-height:100%;border-bottom:0;border-right:1px solid var(--line);border-radius:19px 0 0 19px;}
   .body{padding:14px 14px 15px;gap:8px;min-width:0;}
   .card h3 .en{font-size:17px;}
+  .card h3{padding-right:40px;}
+  .like{top:10px;right:10px;width:36px;height:36px;}
   .mood{font-size:13px;line-height:1.75;}
   .swatches i{width:13px;height:13px;}
   .acts{grid-template-columns:1fr;gap:6px;padding-top:10px;}
@@ -524,11 +544,13 @@ body.dlg-open{overflow:hidden;}
     </div>
     <div class="grid">
     <article class="card glass" data-template="classic">
+      <button type="button" class="like" data-like aria-pressed="false" aria-label="喜歡芯玖典雅"><svg aria-hidden="true"><use href="#i-heart"/></svg></button>
       <div class="shot" style="background:#fbfaf7"><img src="/samples/thumbs/classic.jpg" alt="芯玖典雅版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/classic.jpg"
           data-webm="/samples/videos/classic.webm" data-mp4="/samples/videos/classic.mp4" aria-hidden="true"></video></div>
       <div class="body">
         <h3><span class="en">Ivory White</span><span class="cn">芯玖典雅</span></h3>
         <p class="mood">一張滿版的婚紗照當背景，資訊安靜地疊在上面。最不挑照片。</p>
+        <p class="likes" data-likes hidden></p>
         <span class="swatches" aria-hidden="true"><i style="background:#fbfaf7"></i><i style="background:#b39a6d"></i><i style="background:#c0a87e"></i><i style="background:#b3a884"></i></span>
         <div class="acts">
           <button type="button" class="btn btn-pv" data-preview="classic" data-name="芯玖典雅" aria-label="預覽芯玖典雅的開場">預覽</button>
@@ -538,11 +560,13 @@ body.dlg-open{overflow:hidden;}
       </div>
     </article>
     <article class="card glass" data-template="korean">
+      <button type="button" class="like" data-like aria-pressed="false" aria-label="喜歡韓系簡約"><svg aria-hidden="true"><use href="#i-heart"/></svg></button>
       <div class="shot" style="background:#fbfaf8"><img src="/samples/thumbs/korean.jpg" alt="韓系簡約版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/korean.jpg"
           data-webm="/samples/videos/korean.webm" data-mp4="/samples/videos/korean.mp4" aria-hidden="true"></video></div>
       <div class="body">
         <h3><span class="en">Korean Modern</span><span class="cn">韓系簡約</span></h3>
         <p class="mood">大量留白、細線條，照片像雜誌內頁一樣被排進版面裡。</p>
+        <p class="likes" data-likes hidden></p>
         <span class="swatches" aria-hidden="true"><i style="background:#fbfaf8"></i><i style="background:#a8b8c5"></i><i style="background:#93a3b1"></i><i style="background:#21284f"></i></span>
         <div class="acts">
           <button type="button" class="btn btn-pv" data-preview="korean" data-name="韓系簡約" aria-label="預覽韓系簡約的開場">預覽</button>
@@ -552,11 +576,13 @@ body.dlg-open{overflow:hidden;}
       </div>
     </article>
     <article class="card glass" data-template="forest">
+      <button type="button" class="like" data-like aria-pressed="false" aria-label="喜歡森林系"><svg aria-hidden="true"><use href="#i-heart"/></svg></button>
       <div class="shot" style="background:#f2efe5"><img src="/samples/thumbs/forest.jpg" alt="森林系版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/forest.jpg"
           data-webm="/samples/videos/forest.webm" data-mp4="/samples/videos/forest.mp4" aria-hidden="true"></video></div>
       <div class="body">
         <h3><span class="en">Forest Botanical</span><span class="cn">森林系</span></h3>
         <p class="mood">滿版照片，四周是可愛的手繪森林小物：橡實、香菇、小熊與兔子。</p>
+        <p class="likes" data-likes hidden></p>
         <span class="swatches" aria-hidden="true"><i style="background:#f2efe5"></i><i style="background:#a5ad94"></i><i style="background:#806f5c"></i><i style="background:#26382d"></i></span>
         <div class="acts">
           <button type="button" class="btn btn-pv" data-preview="forest" data-name="森林系" aria-label="預覽森林系的開場">預覽</button>
@@ -574,11 +600,13 @@ body.dlg-open{overflow:hidden;}
     <p class="tier-note">選典藏方案，上面經典的 3 款也都能用，一共 13 款可以挑。</p>
     <div class="grid">
     <article class="card glass" data-template="tapestry">
+      <button type="button" class="like" data-like aria-pressed="false" aria-label="喜歡中古刺繡"><svg aria-hidden="true"><use href="#i-heart"/></svg></button>
       <div class="shot" style="background:#f1e8d5"><img src="/samples/thumbs/tapestry.jpg" alt="中古刺繡版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/tapestry.jpg"
           data-webm="/samples/videos/tapestry.webm" data-mp4="/samples/videos/tapestry.mp4" aria-hidden="true"></video></div>
       <div class="body">
         <h3><span class="en">Tapestry</span><span class="cn">中古刺繡</span></h3>
         <p class="mood">拆開一封蓋著封蠟的信，走進中世紀的刺繡掛毯。</p>
+        <p class="likes" data-likes hidden></p>
         <span class="swatches" aria-hidden="true"><i style="background:#f1e8d5"></i><i style="background:#b08a3e"></i><i style="background:#5d6b3a"></i><i style="background:#7a1f2b"></i></span>
         <div class="acts">
           <button type="button" class="btn btn-pv" data-preview="tapestry" data-name="中古刺繡" aria-label="預覽中古刺繡的開場">預覽</button>
@@ -588,11 +616,13 @@ body.dlg-open{overflow:hidden;}
       </div>
     </article>
     <article class="card glass" data-template="botanical-letter">
+      <button type="button" class="like" data-like aria-pressed="false" aria-label="喜歡植物信箋"><svg aria-hidden="true"><use href="#i-heart"/></svg></button>
       <div class="shot" style="background:#f6f2e9"><img src="/samples/thumbs/botanical-letter.jpg" alt="植物信箋版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/botanical-letter.jpg"
           data-webm="/samples/videos/botanical-letter.webm" data-mp4="/samples/videos/botanical-letter.mp4" aria-hidden="true"></video></div>
       <div class="body">
         <h3><span class="en">Botanical Letter</span><span class="cn">植物信箋</span></h3>
         <p class="mood">一本植物標本冊：壓花、棉紙、郵票，每張照片旁邊都壓著一枝乾燥花。</p>
+        <p class="likes" data-likes hidden></p>
         <span class="swatches" aria-hidden="true"><i style="background:#f6f2e9"></i><i style="background:#8a9a6b"></i><i style="background:#b88a7a"></i><i style="background:#3a4031"></i></span>
         <div class="acts">
           <button type="button" class="btn btn-pv" data-preview="botanical-letter" data-name="植物信箋" aria-label="預覽植物信箋的開場">預覽</button>
@@ -602,11 +632,13 @@ body.dlg-open{overflow:hidden;}
       </div>
     </article>
     <article class="card glass" data-template="secret-garden">
+      <button type="button" class="like" data-like aria-pressed="false" aria-label="喜歡秘密花園"><svg aria-hidden="true"><use href="#i-heart"/></svg></button>
       <div class="shot" style="background:#f3f1e8"><img src="/samples/thumbs/secret-garden.jpg" alt="秘密花園版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/secret-garden.jpg"
           data-webm="/samples/videos/secret-garden.webm" data-mp4="/samples/videos/secret-garden.mp4" aria-hidden="true"></video></div>
       <div class="body">
         <h3><span class="en">Secret Garden</span><span class="cn">秘密花園</span></h3>
         <p class="mood">推開常春藤牆上的玻璃門，走進玫瑰拱門與水彩花朵的花園。</p>
+        <p class="likes" data-likes hidden></p>
         <span class="swatches" aria-hidden="true"><i style="background:#f3f1e8"></i><i style="background:#7a9a6a"></i><i style="background:#9b8ab8"></i><i style="background:#2f3b2b"></i></span>
         <div class="acts">
           <button type="button" class="btn btn-pv" data-preview="secret-garden" data-name="秘密花園" aria-label="預覽秘密花園的開場">預覽</button>
@@ -616,11 +648,13 @@ body.dlg-open{overflow:hidden;}
       </div>
     </article>
     <article class="card glass" data-template="spring-orangerie">
+      <button type="button" class="like" data-like aria-pressed="false" aria-label="喜歡春日溫室"><svg aria-hidden="true"><use href="#i-heart"/></svg></button>
       <div class="shot" style="background:#f7f7f1"><img src="/samples/thumbs/spring-orangerie.jpg" alt="春日溫室版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/spring-orangerie.jpg"
           data-webm="/samples/videos/spring-orangerie.webm" data-mp4="/samples/videos/spring-orangerie.mp4" aria-hidden="true"></video></div>
       <div class="body">
         <h3><span class="en">Spring Orangerie</span><span class="cn">春日溫室</span></h3>
         <p class="mood">明亮的玻璃溫室，白玫瑰、檸檬枝與斜射進來的陽光。</p>
+        <p class="likes" data-likes hidden></p>
         <span class="swatches" aria-hidden="true"><i style="background:#f7f7f1"></i><i style="background:#9fbfa8"></i><i style="background:#e7b18a"></i><i style="background:#2e3a36"></i></span>
         <div class="acts">
           <button type="button" class="btn btn-pv" data-preview="spring-orangerie" data-name="春日溫室" aria-label="預覽春日溫室的開場">預覽</button>
@@ -630,11 +664,13 @@ body.dlg-open{overflow:hidden;}
       </div>
     </article>
     <article class="card glass" data-template="night-sky">
+      <button type="button" class="like" data-like aria-pressed="false" aria-label="喜歡現代星空"><svg aria-hidden="true"><use href="#i-heart"/></svg></button>
       <div class="shot" style="background:#141a33"><img src="/samples/thumbs/night-sky.jpg" alt="現代星空版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/night-sky.jpg"
           data-webm="/samples/videos/night-sky.webm" data-mp4="/samples/videos/night-sky.mp4" aria-hidden="true"></video></div>
       <div class="body">
         <h3><span class="en">Night Sky</span><span class="cn">現代星空</span></h3>
         <p class="mood">深藍夜空、會轉的星圖與越捲越圓的月亮。唯一一個深色的版型。</p>
+        <p class="likes" data-likes hidden></p>
         <span class="swatches" aria-hidden="true"><i style="background:#141a33"></i><i style="background:#1f2440"></i><i style="background:#b9a46a"></i><i style="background:#8a93c7"></i></span>
         <div class="acts">
           <button type="button" class="btn btn-pv" data-preview="night-sky" data-name="現代星空" aria-label="預覽現代星空的開場">預覽</button>
@@ -644,11 +680,13 @@ body.dlg-open{overflow:hidden;}
       </div>
     </article>
     <article class="card glass" data-template="french-manor">
+      <button type="button" class="like" data-like aria-pressed="false" aria-label="喜歡南法莊園"><svg aria-hidden="true"><use href="#i-heart"/></svg></button>
       <div class="shot" style="background:#f6efe4"><img src="/samples/thumbs/french-manor.jpg" alt="南法莊園版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/french-manor.jpg"
           data-webm="/samples/videos/french-manor.webm" data-mp4="/samples/videos/french-manor.mp4" aria-hidden="true"></video></div>
       <div class="body">
         <h3><span class="en">French Manor</span><span class="cn">南法莊園</span></h3>
         <p class="mood">南法金色的午後，山坡上的莊園露台、灑滿樹影的牆，一張鋪好亞麻的長桌等著你。</p>
+        <p class="likes" data-likes hidden></p>
         <span class="swatches" aria-hidden="true"><i style="background:#f6efe4"></i><i style="background:#b07a4c"></i><i style="background:#7a8f6b"></i><i style="background:#8fafcb"></i></span>
         <div class="acts">
           <button type="button" class="btn btn-pv" data-preview="french-manor" data-name="南法莊園" aria-label="預覽南法莊園的開場">預覽</button>
@@ -658,11 +696,13 @@ body.dlg-open{overflow:hidden;}
       </div>
     </article>
     <article class="card glass" data-template="monet-garden">
+      <button type="button" class="like" data-like aria-pressed="false" aria-label="喜歡莫內花園"><svg aria-hidden="true"><use href="#i-heart"/></svg></button>
       <div class="shot" style="background:#f7f3ea"><img src="/samples/thumbs/monet-garden.jpg" alt="莫內花園版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/monet-garden.jpg"
           data-webm="/samples/videos/monet-garden.webm" data-mp4="/samples/videos/monet-garden.mp4" aria-hidden="true"></video></div>
       <div class="body">
         <h3><span class="en">Monet Garden</span><span class="cn">莫內花園</span></h3>
         <p class="mood">走進一幅會流動的莫內油畫：日本橋、睡蓮與花園小徑。</p>
+        <p class="likes" data-likes hidden></p>
         <span class="swatches" aria-hidden="true"><i style="background:#f7f3ea"></i><i style="background:#8fae96"></i><i style="background:#a99cc4"></i><i style="background:#c9748a"></i></span>
         <div class="acts">
           <button type="button" class="btn btn-pv" data-preview="monet-garden" data-name="莫內花園" aria-label="預覽莫內花園的開場">預覽</button>
@@ -672,11 +712,13 @@ body.dlg-open{overflow:hidden;}
       </div>
     </article>
     <article class="card glass" data-template="outdoor-party">
+      <button type="button" class="like" data-like aria-pressed="false" aria-label="喜歡美式戶外派對"><svg aria-hidden="true"><use href="#i-heart"/></svg></button>
       <div class="shot" style="background:#f8fbfd"><img src="/samples/thumbs/outdoor-party.jpg" alt="美式戶外派對版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/outdoor-party.jpg"
           data-webm="/samples/videos/outdoor-party.webm" data-mp4="/samples/videos/outdoor-party.mp4" aria-hidden="true"></video></div>
       <div class="body">
         <h3><span class="en">Outdoor Party</span><span class="cn">美式戶外派對</span></h3>
         <p class="mood">藍天、草地、野餐籃和一顆顆飄走的粉彩氣球，輕鬆又熱鬧。</p>
+        <p class="likes" data-likes hidden></p>
         <span class="swatches" aria-hidden="true"><i style="background:#f8fbfd"></i><i style="background:#7fbfe3"></i><i style="background:#f6c85f"></i><i style="background:#f07a5a"></i></span>
         <div class="acts">
           <button type="button" class="btn btn-pv" data-preview="outdoor-party" data-name="美式戶外派對" aria-label="預覽美式戶外派對的開場">預覽</button>
@@ -686,11 +728,13 @@ body.dlg-open{overflow:hidden;}
       </div>
     </article>
     <article class="card glass" data-template="morning-window">
+      <button type="button" class="like" data-like aria-pressed="false" aria-label="喜歡晨光房間"><svg aria-hidden="true"><use href="#i-heart"/></svg></button>
       <div class="shot" style="background:#faf6ef"><img src="/samples/thumbs/morning-window.jpg" alt="晨光房間版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/morning-window.jpg"
           data-webm="/samples/videos/morning-window.webm" data-mp4="/samples/videos/morning-window.mp4" aria-hidden="true"></video></div>
       <div class="body">
         <h3><span class="en">Morning Window</span><span class="cn">晨光房間</span></h3>
         <p class="mood">侘寂風的早晨：窗前的鬱金香、亞麻布與牆上的窗格陽光。</p>
+        <p class="likes" data-likes hidden></p>
         <span class="swatches" aria-hidden="true"><i style="background:#faf6ef"></i><i style="background:#d9c3a5"></i><i style="background:#c9d6db"></i><i style="background:#9a7b5b"></i></span>
         <div class="acts">
           <button type="button" class="btn btn-pv" data-preview="morning-window" data-name="晨光房間" aria-label="預覽晨光房間的開場">預覽</button>
@@ -700,11 +744,13 @@ body.dlg-open{overflow:hidden;}
       </div>
     </article>
     <article class="card glass" data-template="white-church">
+      <button type="button" class="like" data-like aria-pressed="false" aria-label="喜歡白色教堂"><svg aria-hidden="true"><use href="#i-heart"/></svg></button>
       <div class="shot" style="background:#f6f2ea"><img src="/samples/thumbs/white-church.jpg" alt="白色教堂版型的首頁" loading="lazy" width="390" height="760"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/white-church.jpg"
           data-webm="/samples/videos/white-church.webm" data-mp4="/samples/videos/white-church.mp4" aria-hidden="true"></video></div>
       <div class="body">
         <h3><span class="en">White Church</span><span class="cn">白色教堂</span></h3>
         <p class="mood">午夜點亮三根蠟燭，天一亮，是一座純白的哥德式教堂。透光白紗、彩繪玻璃的光暈，與滿滿的鮮花。</p>
+        <p class="likes" data-likes hidden></p>
         <span class="swatches" aria-hidden="true"><i style="background:#f6f2ea"></i><i style="background:#a88d5f"></i><i style="background:#837b86"></i><i style="background:#3b3540"></i></span>
         <div class="acts">
           <button type="button" class="btn btn-pv" data-preview="white-church" data-name="白色教堂" aria-label="預覽白色教堂的開場">預覽</button>

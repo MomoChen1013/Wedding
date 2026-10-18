@@ -52,10 +52,12 @@ const EXT = '<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg>';
 
 const card = ([key, c]) => `
     <article class="card glass" data-template="${esc(key)}">
+      <button type="button" class="like" data-like aria-pressed="false" aria-label="喜歡${esc(c.name[1])}"><svg aria-hidden="true"><use href="#i-heart"/></svg></button>
       <div class="shot" style="background:${esc(c.colors[0])}">${shot(key, c)}</div>
       <div class="body">
         <h3><span class="en">${esc(c.name[0])}</span><span class="cn">${esc(c.name[1])}</span></h3>
         <p class="mood">${esc(c.mood)}</p>
+        <p class="likes" data-likes hidden></p>
         <span class="swatches" aria-hidden="true">${c.colors.map((col) => `<i style="background:${esc(col)}"></i>`).join('')}</span>
         <div class="acts">
           <button type="button" class="btn btn-pv" data-preview="${esc(key)}" data-name="${esc(c.name[1])}" aria-label="預覽${esc(c.name[1])}的開場">預覽</button>

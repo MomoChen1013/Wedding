@@ -122,7 +122,7 @@ function concatList(frames, from, to) {
 const sizeOf = async (f) => (await stat(f)).size;
 
 function encode(list, speed, out, kind, q) {
-  const vf = `setpts=PTS/${speed.toFixed(3)},fps=${FPS},crop=iw:iw*5/4:0:0,scale=${OUT_W}:${OUT_H}:flags=lanczos,format=yuv420p`;
+  const vf = `setpts=PTS/${speed.toFixed(3)},fps=${FPS},crop=iw:iw*5/4:0:0,scale=${OUT_W}:${OUT_H}:flags=lanczos,setsar=1,format=yuv420p`;
   const common = ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', list, '-vf', vf, '-an'];
   if (kind === 'webm') {
     execFileSync(FFMPEG, [...common, '-c:v', 'libvpx-vp9', '-crf', String(q), '-b:v', '0', '-row-mt', '1',

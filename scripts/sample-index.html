@@ -284,6 +284,25 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
 .acts .btn{min-height:42px;padding:8px 10px;font-size:13.5px;letter-spacing:.08em;}
 .acts .btn-pv{grid-column:1/-1;}
 .ic-heart{width:16px;height:16px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;}
+/* 右上角的愛心：按一下就算一個「喜歡」（同一個瀏覽器同一款只算一次）；按過就是實心 */
+.card{position:relative;}
+.like{position:absolute;top:12px;right:12px;z-index:4;width:40px;height:40px;border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;color:var(--ink);
+  border:1px solid rgba(255,255,255,.9);background:rgba(255,253,249,.82);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  box-shadow:0 6px 16px -8px rgba(40,30,40,.45);transition:color .2s ease,transform .2s ease;}
+.like svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;}
+.like:hover{color:#b5566a;}
+.like[aria-pressed="true"]{color:#b5566a;}
+.like[aria-pressed="true"] svg{fill:currentColor;}
+.like.is-pop{animation:like-pop .4s ease;}
+@keyframes like-pop{40%{transform:scale(1.22);}100%{transform:scale(1);}}
+@media (prefers-reduced-motion:reduce){.like.is-pop{animation:none;}}
+.like:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
+.likes{display:flex;align-items:center;gap:6px;font-size:13px;letter-spacing:.06em;color:var(--muted);}
+.likes::before{content:'';width:13px;height:13px;flex:0 0 auto;background:#b5566a;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 20.5s-7.5-4.6-7.5-10.3A4.2 4.2 0 0 1 12 7.6a4.2 4.2 0 0 1 7.5 2.6c0 5.7-7.5 10.3-7.5 10.3Z'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 20.5s-7.5-4.6-7.5-10.3A4.2 4.2 0 0 1 12 7.6a4.2 4.2 0 0 1 7.5 2.6c0 5.7-7.5 10.3-7.5 10.3Z'/%3E%3C/svg%3E") center/contain no-repeat;}
+.likes[hidden]{display:none;}
 .btn-like:hover .ic-heart{fill:currentColor;}
 
 /* 手機：縮圖放左邊，一張卡不要高過一個螢幕 */
@@ -292,6 +311,8 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
   .shot{flex:0 0 40%;aspect-ratio:auto;min-height:100%;border-bottom:0;border-right:1px solid var(--line);border-radius:19px 0 0 19px;}
   .body{padding:14px 14px 15px;gap:8px;min-width:0;}
   .card h3 .en{font-size:17px;}
+  .card h3{padding-right:40px;}
+  .like{top:10px;right:10px;width:36px;height:36px;}
   .mood{font-size:13px;line-height:1.75;}
   .swatches i{width:13px;height:13px;}
   .acts{grid-template-columns:1fr;gap:6px;padding-top:10px;}

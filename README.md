@@ -492,7 +492,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
   → 新人後台：高度彈性（三支手機的後台畫面，假資料重建，不是真實帳號）→ 網站版型 → 方案比較 → 開站流程 → 常見問題；
   手機版底部另有固定的「LINE 詢問」。整頁用白色教堂的灰泥牆、兩旁被風吹動的白紗、牆上偶爾清楚起來的橄欖枝影子、
   分隔線與毛玻璃卡，按鈕是白色教堂的深色按鈕；減少動態時白紗與影子都不動。
-  每個版型一張卡片 —— 開場的循環影片（沒有影片時是首屏縮圖）、一句氣質、色票，
+  每個版型一張卡片 —— 開場的循環影片（沒有影片時是首屏縮圖）、一句氣質、「X 人喜歡這個版型」、色票、右上角一顆愛心，
   以及三顆按鈕：**預覽**、**看完整範例 ↗**（另開分頁）、**♡ 我想用這款 ↗**（開 LINE、預填「我想詢問『版型名』版型」）。
   **預覽**在同一頁打開：手機外框裡是真的示範網站在演開場，旁邊（手機上是下面）是這一款的介紹、
   「看完整範例 ↗」「開始製作 ↗」（和我想用這款同一個 LINE 連結），以及「網站裡有什麼」的標籤卡。
@@ -537,6 +537,15 @@ PostHog 只在總覽頁與示範模式載入（autocapture、heatmaps 開著）�
 | `feature_info_open` | `feature` | 方案比較點開功能說明 |
 
 漏斗：`$pageview`（`/samples/`）→ `template_preview_open` → `template_demo_open` → `line_click`。
+另外還有 `template_like`（`template`、`source`：`heart`／`want`／`start`），是這個瀏覽器第一次喜歡這一款的時候。
+
+**「X 人喜歡這個版型」**：卡片右上的愛心、「我想用這款」、預覽裡的「開始製作」都算一次，
+同一個瀏覽器、同一款只算一次（記在瀏覽器的 localStorage）。數字存在 Firestore 的 `sampleLikes/{版型}`（`{ count }`），
+規則只准沒登入的人每次 +1、不能刪、不能多帶欄位（見〈安全性設計〉）。總覽頁用 Firestore 的 REST API 讀寫，不載入 Firebase SDK。
+沒登入就能按，有心人寫程式還是灌得了票 —— 這個數字是氣氛，不是可以對帳的資料。
+本機 `npm run samples` 只開 Hosting 模擬器，讀不到數字，那一行就不顯示（愛心照樣按得下去）；
+要在本機試，改開 `npx firebase emulators:start --only hosting,firestore`（需要 Java）。
+想歸零某一款，到 Firebase Console 刪掉 `sampleLikes` 裡那一份文件。
 
 **示範網站的保護**（`scripts/build-sample-shield.js`，`firebase.json` 的 predeploy 會跑）：
 前端程式碼只要瀏覽器執行得了就一定看得到，這裡做的是提高抄的成本。示範網站用的是正式網站同一套檔案，
@@ -2747,6 +2756,7 @@ http://127.0.0.1:5000/w/你的slug/cake?live=1
 | `butlers/{bookId}` | ✅ 單筆讀取・**不准列出集合** | 只有新人 | 只有新人 | 只有新人 |
 | `butlers/{bookId}/entries` | ✅ | 拿著連結與通行碼的小幫手 | 同左 | 同左／新人 |
 | `slugs/{slug}` | ✅ | ❌ | ❌ | ❌ |
+| `sampleLikes/{版型}` | ✅ | 任何人，只能是 1 | 任何人，每次只能 +1 | ❌ |
 | `short/{code}` | ✅ | ❌ | ❌ | ❌ |
 
 所有寫入都會再檢查：**站台必須是 `published`**，且**該頁面必須是開啟的**。
