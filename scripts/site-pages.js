@@ -10,7 +10,7 @@
      ・安全規則      firestore.rules 的 pageOn(siteId, key)
 
    大廳（首頁）與新人後台（/w/{slug}/admin）永遠存在，不列在這裡。
-   後台的門檻是新人白名單 siteOwners（Security Rules），不是頁面開關。
+   後台的門檻是 ownerEmails 白名單（Security Rules），不是頁面開關。
    悄悄話信箱也不在這裡 —— 它已經是後台的一個分頁，
    賓客投信的入口在祝福牆（wall），跟著祝福牆的開關走。
 ============================================================ */

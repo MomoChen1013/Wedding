@@ -15,7 +15,7 @@
      9. 熟悉測驗   — 「看你多了解我們」的題目、選項與正確答案
 
    門檻是 Google 登入，不是密碼：
-   Security Rules 只讓 新人白名單（siteOwners）內、信箱已驗證的帳號讀寫，
+   Security Rules 只讓 sites.ownerEmails 名單內、信箱已驗證的帳號讀寫，
    所以這裡沒有任何「純前端遮罩」——改了 DOM 也讀不到、寫不進去。
 ============================================================ */
 
@@ -1502,7 +1502,7 @@ async function reloginOwner(){
   reloginBusy = true;
   try{
     const email = await signInAsOwner();
-    if(await checkSiteOwner()){
+    if(isSiteOwner()){
       location.reload();
     }else{
       sessionLost = true;
@@ -1523,7 +1523,7 @@ loginBtn.addEventListener('click', async ()=>{
   loginBtn.disabled = true;
   try{
     const email = await signInAsOwner();
-    if(await checkSiteOwner()){
+    if(isSiteOwner()){
       ownerReady();
     }else{
       showError(`${email || '這個帳號'} 不在這場婚禮的新人名單裡`);
@@ -1584,20 +1584,23 @@ document.getElementById('adLockMobile').addEventListener('click', ownerLogout);
   pop.addEventListener('click', (e)=>{ if(e.target.closest('.ad-acct-item')) close(); });
 })();
 
-/* 名單在 siteOwners/{siteId}，前端讀不到別人的名單：
-   沒登入、或登入的帳號不在名單裡，看起來都一樣是「讀不到」，所以一律先顯示登入畫面 */
-window.fb.onAuthStateChanged(window.fb.auth, async (user)=>{
-  if(await checkSiteOwner()){ ownerReady(); return; }
-  if(opened){
-    /* 已經在後台裡了，身分卻被換掉（別的分頁登出／換帳號） */
-    if(!sessionLost){
-      sessionLost = true;
-      showGate('登入狀態改變了（可能在別的分頁登出或換了帳號），請重新登入。');
+if(!ownerEmails().length){
+  loginBtn.disabled = true;
+  pwErr.textContent = '看起來還沒設定新人登入帳號，跟我們說一聲吧！';
+}else{
+  window.fb.onAuthStateChanged(window.fb.auth, (user)=>{
+    if(isSiteOwner()){ ownerReady(); return; }
+    if(opened){
+      /* 已經在後台裡了，身分卻被換掉（別的分頁登出／換帳號） */
+      if(!sessionLost){
+        sessionLost = true;
+        showGate('登入狀態改變了（可能在別的分頁登出或換了帳號），請重新登入。');
+      }
+      return;
     }
-    return;
-  }
-  gateHint(user);
-});
+    gateHint(user);
+  });
+}
 
 /* ============================================================
    分頁路由
@@ -1929,7 +1932,7 @@ document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeDrawer()
 /* ============================================================
    0. 出席回覆
    ------------------------------------------------------------
-   規則只讓 新人白名單內的帳號讀得到，賓客彼此看不到。
+   規則只讓 ownerEmails 名單內的帳號讀得到，賓客彼此看不到。
    這裡只看與匯出，不提供修改 —— 回覆是賓客送出的紀錄。
 ============================================================ */
 const RSVP_LABEL = { yes:'熱情出席', maybe:'視情況而定', no:'無法出席' };
@@ -2882,7 +2885,7 @@ document.getElementById('adRsvpChips').addEventListener('click', (e)=>{
   renderRsvps();
 });
 
-/* 規則拒絕讀取時（例如帳號被移出新人白名單）講清楚，不要留一個空名單。
+/* 規則拒絕讀取時（例如帳號被移出 ownerEmails）講清楚，不要留一個空名單。
    統計也一起收起來 —— 一排 0 和五個空圓圈看起來像「真的沒人回覆」，
    但實際上是讀不到，兩件事不能長得一樣。 */
 /* 空狀態變成下一步的入口：把邀請函連結複製起來去發給還沒回的人 */
@@ -4500,7 +4503,7 @@ document.addEventListener('data:rsvpTags', ()=>{
    門檻同樣是 Google 登入，等於後台的一個分頁多開一次登入 ——
    所以整個併進來，新人只要進後台就看得到。
 
-   規則只讓 新人白名單內的帳號讀，所以訂閱寫在 openAdmin()：
+   規則只讓 ownerEmails 名單內的帳號讀，所以訂閱寫在 openAdmin()：
    登入成功之後才會開始接收。
 ============================================================ */
 const inboxListEl   = document.getElementById('adInboxList');
@@ -4565,7 +4568,7 @@ document.addEventListener('data:letters', renderInbox);
 inboxFilterEl.addEventListener('input', ()=>{ inboxPager.page = 1; renderInbox(); });
 inboxFilterEl.addEventListener('search', ()=>{ inboxPager.page = 1; renderInbox(); });
 
-/* 規則拒絕讀取時（例如帳號被移出新人白名單）講清楚，不要留一個空信箱 */
+/* 規則拒絕讀取時（例如帳號被移出 ownerEmails）講清楚，不要留一個空信箱 */
 document.addEventListener('data:letters:denied', ()=>{
   loadedOnce.add('letters');
   inboxListEl.innerHTML =
@@ -4629,7 +4632,7 @@ seatSearchEl.addEventListener('change', async ()=>{
    Firestore 單一文件上限 1MB，所以上傳前先在瀏覽器縮圖：
    最長邊縮到 1800px、轉成 JPEG，還是太大就降畫質、再不行就再縮一輪。
    （不用 Firebase Storage：Storage 規則讀不到 Firestore，
-     沒辦法用 新人白名單判斷是不是新人本人。）
+     沒辦法用 ownerEmails 白名單判斷是不是新人本人。）
 ============================================================ */
 const MAX_DATAURL = 900000;
 
@@ -5649,7 +5652,7 @@ document.addEventListener('data:dressImages', ()=> renderDressImages());
    ------------------------------------------------------------
    這一頁改的不是子集合，而是站台文件本身。
    規則只放行白名單內的欄位（地點、dress code、流程…），
-   status／pages 這些「規則自己拿來判斷的欄位」寫不進去 ——
+   status／ownerEmails／pages 這些「規則自己拿來判斷的欄位」寫不進去 ——
    否則等於讓新人自己開後門。
 ============================================================ */
 const sf = {
@@ -7341,7 +7344,7 @@ document.getElementById('adWzDoneClose')?.addEventListener('click', ()=> closeWz
    ------------------------------------------------------------
    照片先讓新人自己裁成 2:3（cropper.js），再以 data URL 存進文件，
    理由與桌次圖相同：Firebase Storage 的規則讀不到 Firestore，
-   沒辦法用 新人白名單判斷是不是新人本人。
+   沒辦法用 ownerEmails 白名單判斷是不是新人本人。
 ============================================================ */
 const CARD_ASPECT   = 2/3;      /* 卡片是直式 2:3 */
 const CARD_OUTWIDTH = 700;      /* 700×1050，手機上顯示寬度約 300px，這個解析度綽綽有餘 */
@@ -8947,7 +8950,7 @@ document.getElementById('adHomeBtn')?.addEventListener('click', ()=>{
    ------------------------------------------------------------
    收禮台在婚宴當天要的是「現在這一版」名單。如果直接讀排桌草稿，
    新人在休息室調一下桌次，收禮台的畫面就會跟著跳 ——
-   而且排桌草稿與出席回覆都是新人白名單才讀得到的資料，
+   而且排桌草稿與出席回覆都是 ownerEmails 才讀得到的資料，
    拿著連結的親友本來就不該讀得到整份 RSVP。
    所以匯入是「複製一份必要欄位過去」，兩件事因此都成立。
 

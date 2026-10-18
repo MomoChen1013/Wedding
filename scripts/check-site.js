@@ -11,7 +11,7 @@
      ・sites/{siteId} 存不存在
      ・status 是不是 published（draft 會被當成不存在）
      ・pages 開了哪些頁
-     ・新人白名單 siteOwners/{siteId} 有沒有設（沒設的話新人後台沒人進得去）
+     ・ownerEmails 有沒有設（沒設的話新人後台沒人進得去）
      ・rsvpDeadline 是不是已經過了
 
    連線方式與 create-site.js 相同（Admin SDK ／ emulator）。
@@ -21,7 +21,6 @@ import { parseArgs } from 'node:util';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { resolveBaseUrl } from './site-url.js';
-import { readOwners } from './site-owners.js';
 import { OPTIONAL_PAGES, ADMIN_PAGES, ALL_PAGE_KEYS, PAGE_LABELS,
          isUnreleased } from './site-pages.js';
 
@@ -173,16 +172,12 @@ async function checkOne(db, slug, base) {
   }
 
   /* 7. 新人後台的可用帳號 */
-  const { emails: owners, legacy } = await readOwners(db, siteId, s);
-  if (legacy) {
-    console.log(`⚠️  新人白名單還在舊位置 sites.ownerEmails（公開文件）：${owners.join('、')}`);
-    console.log('    跑一次 node scripts/migrate-site-owners.js 搬到 siteOwners；搬之前規則認不得，後台進不去');
-    problems.push('新人白名單還沒搬到 siteOwners');
-  } else if (owners.length) {
+  const owners = Array.isArray(s.ownerEmails) ? s.ownerEmails : [];
+  if (owners.length) {
     console.log(`✅ 後台可用帳號 : ${owners.join('、')}`);
   } else {
-    console.log('⚠️  沒有設定新人白名單（siteOwners）→ 新人後台沒有人進得去（出席回覆與悄悄話也讀不到）');
-    problems.push('未設定新人白名單');
+    console.log('⚠️  沒有設定 ownerEmails → 新人後台沒有人進得去（出席回覆與悄悄話也讀不到）');
+    problems.push('未設定 ownerEmails');
   }
 
   /* 8. 網址 */

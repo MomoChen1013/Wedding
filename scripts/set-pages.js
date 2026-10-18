@@ -69,7 +69,6 @@ import { parseArgs } from 'node:util';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { resolveBaseUrl } from './site-url.js';
-import { normalizeOwners, readOwners, writeOwners } from './site-owners.js';
 import { OPTIONAL_PAGES, ADMIN_PAGES, ALL_PAGE_KEYS, resolvePages, labelOf,
          isUnreleased } from './site-pages.js';
 
@@ -136,9 +135,14 @@ async function main() {
   const before = currentPages(site);
   const hadPagesField = site.pages && typeof site.pages === 'object';
 
-  const owners = values['owner-email'] ? normalizeOwners(values['owner-email']) : null;
-  /* 目前的名單在 siteOwners/{siteId}（不公開）；還沒搬家的站台退回舊欄位 sites.ownerEmails */
-  const current = await readOwners(db, siteId, site);
+  const owners = values['owner-email']
+    ? values['owner-email'].map((e) => e.trim().toLowerCase()).filter(Boolean)
+    : null;
+  owners?.forEach((e) => {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
+      throw new Error(`--owner-email 「${e}」看起來不是有效的信箱`);
+    }
+  });
 
   /* 賓客標籤、入場登入與多活動：新人在後台都改不動（規則的白名單裡沒有
      這三個欄位），所以要開要關都從這裡下指令 */
@@ -181,12 +185,12 @@ async function main() {
   if (owners) {
     console.log('');
     console.log(`   後台可用 : ${owners.length ? owners.join('、') : '（清空，將沒有人進得去）'}`);
-    if (current.emails.length) {
-      console.log(`   （原本   : ${current.emails.join('、')}）`);
+    if (Array.isArray(site.ownerEmails) && site.ownerEmails.length) {
+      console.log(`   （原本   : ${site.ownerEmails.join('、')}）`);
     }
-  } else if (!current.emails.length) {
+  } else if (!Array.isArray(site.ownerEmails) || !site.ownerEmails.length) {
     console.log('');
-    console.log('⚠️ 這個站台沒有新人白名單，新人後台目前沒有人進得去。');
+    console.log('⚠️ 這個站台沒有 ownerEmails，新人後台目前沒有人進得去。');
     console.log('   要修的話加上 --owner-email 新人的Gmail');
   }
 
@@ -232,11 +236,7 @@ async function main() {
 
   const patch = { updatedAt: FieldValue.serverTimestamp() };
   if (touchesPages) patch.pages = after;
-  /* 白名單寫到 siteOwners；順手把舊位置的那一份拿掉（公開文件裡不該有信箱） */
-  if (owners) {
-    await writeOwners(db, siteId, owners);
-    patch.ownerEmails = FieldValue.delete();
-  }
+  if (owners) patch.ownerEmails = owners;
   if (guestTags !== null) patch.guestTagsEnabled = guestTags;
   if (entryLogin !== null) patch.entryLoginEnabled = entryLogin;
   if (multiEvent !== null) patch.multiEventEnabled = multiEvent;

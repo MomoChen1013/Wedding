@@ -27,21 +27,17 @@ service cloud.firestore {
 
     /* 是不是這組新人本人：用已驗證的 Google 信箱比對站台的白名單。
        信箱由 Firebase Auth 簽發，前端偽造不了，才是真正的保護。
-
-       白名單放在 siteOwners/{siteId}（{ emails: [...] }），**不在 sites 文件裡**：
-       sites 是任何人都讀得到的公開文件，新人的信箱放在那裡等於公開。
-       siteOwners 只有名單裡的人自己讀得到（見下面的 match /siteOwners），寫入只走 Admin SDK。
-
-       白名單一律存小寫（scripts/site-owners.js），
-       這裡要跟著不分大小寫，不然信箱帶大寫的帳號會「進得了後台、卻什麼都讀不到」。 */
+       白名單一律存小寫（scripts/create-site.js、set-pages.js），
+       後台畫面的判斷也是不分大小寫（common.js 的 isSiteOwner）——
+       這裡要跟著不分，不然信箱帶大寫的帳號會「進得了後台、卻什麼都讀不到」。 */
     function isSiteOwner(siteId) {
+      let s = site(siteId);
       return request.auth != null
         && request.auth.token.email_verified == true
-        && (request.auth.token.email in ownerEmailsOf(siteId)
-            || request.auth.token.email.lower() in ownerEmailsOf(siteId));
-    }
-    function ownerEmailsOf(siteId) {
-      return get(/databases/$(database)/documents/siteOwners/$(siteId)).data.emails;
+        && 'ownerEmails' in s
+        && s.ownerEmails is list
+        && (request.auth.token.email in s.ownerEmails
+            || request.auth.token.email.lower() in s.ownerEmails);
     }
 
     /* 賓客留下的內容共用的基本欄位：暱稱、icon、時間 */
@@ -183,10 +179,7 @@ service cloud.firestore {
 
     /* ---------- sites ---------- */
     match /sites/{siteId} {
-      /* 單一站台公開（賓客要讀得到婚禮資訊），但不能整個集合列出來 ——
-         列得出來就等於拿到所有新人的名字、日期與場地 */
-      allow get: if true;
-      allow list: if false;
+      allow read: if true;
       /* 新人只改得動大廳文案，其餘欄位（含站台本身的建立與刪除）走 Admin SDK */
       allow update: if isValidSiteContentUpdate(siteId);
       allow create, delete: if false;
@@ -213,7 +206,7 @@ service cloud.firestore {
          刻意不寫回 rsvps —— 回覆是賓客送出的紀錄，仍然一個字都不能改；
          新人自己整理的分類另外存一份，文件 id 就用那筆回覆的 id，
          兩邊對得起來，之後排桌次也是讀這一份。
-         賓客讀不到（和 rsvps 一樣只有新人白名單（siteOwners）讀得到）。 */
+         賓客讀不到（和 rsvps 一樣只有 ownerEmails 讀得到）。 */
       match /rsvpTags/{rsvpId} {
         allow read: if isSiteOwner(siteId);
         allow create, update: if isSiteOwner(siteId)
@@ -237,7 +230,7 @@ service cloud.firestore {
         allow update, delete: if false;
       }
 
-      /* 悄悄話信箱：只有站台新人白名單（siteOwners）內、且信箱已驗證的
+      /* 悄悄話信箱：只有站台 ownerEmails 名單內、且信箱已驗證的
          Google 帳號讀得到。賓客寫得進去、讀不出來。 */
       match /letters/{letterId} {
         allow read: if isSiteOwner(siteId);
@@ -361,7 +354,7 @@ service cloud.firestore {
       /* ---------- 婚禮當天：桌次查詢 ----------
          名單必須公開讀取，賓客才查得到自己的位子
          （等同於會場門口那張貼出來的座位表）。
-         寫入只有新人本人（siteOwners 白名單）做得到。 */
+         寫入只有新人本人（ownerEmails 白名單）做得到。 */
       match /seating/{seatId} {
         allow read: if true;
         allow create, update: if isSiteOwner(siteId)
@@ -377,7 +370,7 @@ service cloud.firestore {
 
       /* 桌次圖：新人在後台上傳，前端先縮圖再以 data URL 存進文件。
          不開 Firebase Storage —— Storage 規則讀不到 Firestore，
-         沒辦法用新人白名單（siteOwners）判斷身分。 */
+         沒辦法用 ownerEmails 白名單判斷身分。 */
       match /seatingImages/{imageId} {
         allow read: if true;
         allow create, update: if isSiteOwner(siteId)
@@ -751,15 +744,6 @@ service cloud.firestore {
         allow delete: if butlerOpen(bookId)
           || isSiteOwner(butlerBook(bookId).siteId);
       }
-    }
-
-    /* 新人白名單：siteOwners/{siteId} = { emails: [小寫信箱…] }
-       只有名單裡的人 get 得到自己這一份 —— 後台用「讀不讀得到」判斷登入的是不是新人本人
-       （js/common.js 的 checkSiteOwner）。不能列出、前端不能寫，一律走 Admin SDK
-       （scripts/create-site.js、set-pages.js、migrate-site-owners.js）。 */
-    match /siteOwners/{siteId} {
-      allow get: if isSiteOwner(siteId);
-      allow list, write: if false;
     }
 
     /* slugs：前端要查 slug → siteId，寫入走 Admin SDK */

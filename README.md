@@ -180,8 +180,6 @@
 │   ├─ build-sample-videos.js # 幫 /samples 每個版型錄一支開場循環影片（WebM＋MP4）
 │   ├─ build-sample-shield.js # 示範網站專用的壓縮／混淆副本（predeploy 會跑）
 │   ├─ sample-server.js       # 截圖、錄影用的小型靜態伺服器
-│   ├─ site-owners.js         # 新人白名單 siteOwners/{siteId} 的讀寫（Admin SDK 腳本共用）
-│   ├─ migrate-site-owners.js # 一次性：把 sites.ownerEmails 搬到 siteOwners
 │   ├─ check-site.js          # 檢查某站台為什麼打不開
 │   ├─ export-rsvps.js        # 匯出某站台的 RSVP 成 CSV
 │   └─ create-short-link.js
@@ -617,7 +615,7 @@ sites/{siteId}
                         # 「頁面設定」開關／排程：key → { on(bool), at(number|null) }
                         # 沒有這個欄位、或某一頁沒有那一筆＝公開；
                         # on:false ＋ at（epoch ms）＝時間到了自動公開
-  # 新人的 Google 信箱**不在這裡**（這份文件任何人都讀得到），在 siteOwners/{siteId}
+  ownerEmails(string[]) # 新人的 Google 信箱；決定誰進得了後台（RSVP 與悄悄話都靠它）
   createdAt, updatedAt
 
   # ↓ 各功能的資料都掛在這組新人底下，站台之間完全看不到彼此
@@ -644,7 +642,7 @@ sites/{siteId}
   meta/hearts          count                           # 愛心計數器
   meta/letterCount     count                           # 公開的信件數量
 
-  # ↓ 這九個集合由新人在 /w/{slug}/admin 自己維護（規則只認 siteOwners 名單）
+  # ↓ 這九個集合由新人在 /w/{slug}/admin 自己維護（規則只認 ownerEmails 名單）
   rsvpTags/{回覆 id}     tags(string[]), updatedAt   # 新人幫賓客掛的標籤
                                                      # 只有新人讀得到；文件 id ＝ 那筆回覆的 id
   seatingPlan/draft      tables(map[] ≤60)     # 桌位 { id, no, name, cap, type, order }
@@ -738,18 +736,6 @@ short/{code}                # 6 碼短連結
 > 改過 `public/*.html`、換過照片、或新增站台之後，
 > deploy 之前要先重跑 **`npm run build-og`**（見〈社群分享縮圖〉），
 > 否則分享出去的縮圖與標題會停在舊的那一版。
-
-> ### 一次性：新人白名單搬家（`sites.ownerEmails` → `siteOwners/{siteId}`）
-> 規則改成只認 `siteOwners` 之後，**一定要照這個順序**，不然所有新人都會進不了後台：
->
-> ```bash
-> npm run migrate-site-owners -- --dry-run   # 先看會搬哪些
-> npm run migrate-site-owners                # 1. 複製名單（舊欄位先留著）
-> npx firebase deploy --only firestore:rules,hosting   # 2. 新規則＋新前端
-> npm run migrate-site-owners -- --strip     # 3. 確認新人登得進後台後，刪掉公開文件裡的信箱
-> ```
->
-> 之後 `create-site` 與 `set-pages --owner-email` 都直接寫 `siteOwners`。
 
 > **搜尋引擎**：全站送 `X-Robots-Tag: noindex`，唯一的例外是版型總覽 `/samples/`（`firebase.json` 的 headers 用正規表示式排除它）；
 > `public/robots.txt` 擋 GPTBot、ClaudeBot、CCBot、Google-Extended 這些 AI 爬蟲，一般搜尋引擎照常。
@@ -1024,7 +1010,7 @@ npm run set-pages -- --slug ginny-one-20260919 --entry-login off
 https://{網域}/w/{slug}/admin
 ```
 
-**進得去的條件**：用 **Google 帳號登入**，而且信箱要在新人白名單 `siteOwners/{siteId}` 內。
+**進得去的條件**：用 **Google 帳號登入**，而且信箱要在 `sites.ownerEmails` 名單內。
 還沒設定的話先跑：
 
 ```bash
@@ -1300,7 +1286,7 @@ Excel 開中文不會亂碼；匯出的是「目前篩選出來的那些」，�
 > 重複送出的那幾筆可以整筆刪掉（「回覆資訊」那一頁，要連按兩次確認），
 > 留下來的每一筆都還是賓客當初寫的原文。
 
-> **誰讀得到**：只有 新人白名單（`siteOwners`）內、信箱已驗證的 Google 帳號。
+> **誰讀得到**：只有 `ownerEmails` 名單內、信箱已驗證的 Google 帳號。
 > 賓客彼此看不到誰要來、留了什麼話、有什麼飲食禁忌。
 
 ---
@@ -1317,7 +1303,7 @@ Excel 開中文不會亂碼；匯出的是「目前篩選出來的那些」，�
 > 所以整個併進後台。舊網址（含書籤）會自動導到 `/w/{slug}/admin`。
 
 > **後台只能看與匯出，不能修改。**
-> 規則對 `letters` 只開 `read`（限新人白名單）與 `create`（賓客投信），
+> 規則對 `letters` 只開 `read`（限 `ownerEmails`）與 `create`（賓客投信），
 > `update`／`delete` 都是 `false`。
 
 ---
@@ -1344,7 +1330,7 @@ Excel 開中文不會亂碼；匯出的是「目前篩選出來的那些」，�
 （最長邊 1800px、轉 JPEG），再存進這場婚禮自己的 Firestore。
 
 > **為什麼不用 Firebase Storage**：Storage 的安全規則讀不到 Firestore，
-> 沒辦法用新人白名單判斷「是不是新人本人」。
+> 沒辦法用 `ownerEmails` 白名單判斷「是不是新人本人」。
 > 存成 data URL 就能沿用同一套身分判斷，也不必多設一份規則與 CORS。
 > 代價是單張上限約 900KB（Firestore 文件上限 1MB），縮圖流程會自動處理。
 
@@ -1990,7 +1976,7 @@ Dress Code 的三樣（文字、顏色、參考圖）**任何一樣有設定，�
 > 都沒有時才退回 `assets/{slug}/exhibition/` → 內建範例。
 
 > **照片為什麼要存成 data URL**：和桌次圖同一個理由 ——
-> Firebase Storage 的規則讀不到 Firestore，沒辦法用新人白名單
+> Firebase Storage 的規則讀不到 Firestore，沒辦法用 `ownerEmails`
 > 判斷「是不是新人本人」。存進文件就能沿用同一套身分判斷。
 > 代價是有大小上限，裁切器會自動把畫質與尺寸壓到符合。
 
@@ -2468,7 +2454,7 @@ node scripts/check-site.js --slug ginny-one-20260919
 node scripts/check-site.js                    # 不加參數 = 列出全部站台
 ```
 
-會一路檢查 `slugs` → `sites` → `status` → `pages` → RSVP → 新人白名單（`siteOwners`），
+會一路檢查 `slugs` → `sites` → `status` → `pages` → RSVP → `ownerEmails`，
 把問題直接指出來，並印出所有可用的網址。
 
 ### 兩種「找不到」長得不一樣，先分清楚
@@ -2502,7 +2488,7 @@ https://wedding-22b94.web.app/w/{slug}/
 | 後台「出席回覆」分頁 | 新人的 Google 帳號 | 平常查看、隨手匯出，新人自己就能做 |
 | `npm run export-rsvps` | 管理端金鑰 | 排程、批次，或新人的帳號還沒設好 |
 
-**賓客彼此永遠讀不到別人的回覆** —— 規則只放行 新人白名單（`siteOwners`）內的帳號。
+**賓客彼此永遠讀不到別人的回覆** —— 規則只放行 `ownerEmails` 名單內的帳號。
 
 CLI 走 Admin SDK，以服務帳戶連線會略過 Security Rules，不需要任何登入：
 
@@ -2737,12 +2723,11 @@ http://127.0.0.1:5000/w/你的slug/cake?live=1
 
 | 路徑 | read | create | update | delete |
 |---|---|---|---|---|
-| `sites/{siteId}` | ✅ 單筆讀取・**不准列出集合** | ❌ | 只有新人（大廳文案） | ❌ |
-| `siteOwners/{siteId}` | 只有名單裡的人讀得到自己那一份・不准列出 | ❌ | ❌ | ❌ |
+| `sites/{siteId}` | ✅ | ❌ | ❌ | ❌ |
 | `sites/{siteId}/rsvps` | ❌ | ✅（需通過驗證） | ❌ | ❌ |
 | `sites/{siteId}/rsvpTags` | 只有新人 | 只有新人 | 只有新人 | 只有新人 |
 | `sites/{siteId}/wishes` | ✅ | ✅（需通過驗證） | ❌ | ❌ |
-| `sites/{siteId}/letters` | 只有 新人白名單（`siteOwners`）內的已驗證 Google 帳號 | ✅（需通過驗證） | ❌ | ❌ |
+| `sites/{siteId}/letters` | 只有 `ownerEmails` 名單內的已驗證 Google 帳號 | ✅（需通過驗證） | ❌ | ❌ |
 | `sites/{siteId}/cakes` | ✅ | ✅（需通過驗證） | ❌ | ❌ |
 | `sites/{siteId}/quiz` | ✅ | 只有新人 | 只有新人 | 只有新人 |
 | `sites/{siteId}/quizVotes` | ✅ | ✅（需通過驗證） | ❌ | 只有新人（重置票數） |
@@ -2767,9 +2752,7 @@ http://127.0.0.1:5000/w/你的slug/cake?live=1
 ### 悄悄話信箱：用 Google 帳號保護
 
 `letters` 的讀取由規則檢查 **Google 帳號的已驗證信箱**是否在
-新人白名單 `siteOwners/{siteId}` 內。這是伺服器端驗證，前端偽造不了。
-名單不放在 `sites` 文件裡：那份是公開的，信箱放在那裡等於公開。
-後台判斷「是不是新人本人」也是靠規則：讀得到自己那一份名單就是（`js/common.js` 的 `checkSiteOwner`）。
+`sites.ownerEmails` 名單內。這是伺服器端驗證，前端偽造不了。
 
 ```bash
 node scripts/create-site.js --slug chen-lin-0315 … \
@@ -2783,7 +2766,7 @@ node scripts/create-site.js --slug chen-lin-0315 … \
 - 賓客**寫得進去、讀不出來**
 - 祝福牆上的「已有 N 封信」用另一個公開計數器 `meta/letterCount`，
   只看得到數量、看不到內容
-- 沒設定 `--owner-email` 的站台，誰登入都會看到「不在這場婚禮的新人名單裡」；`npm run check-site -- --slug …` 會指出來
+- 沒設定 `--owner-email` 的站台，後台會直接說「還沒設定新人的 Google 信箱」
 
 > **為什麼不用密碼？**
 > Firestore 的讀取請求不帶 payload，規則無法驗證「使用者輸入的密碼」。

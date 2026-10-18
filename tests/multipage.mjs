@@ -126,12 +126,12 @@ const SEED = {
 };
 
 async function seed(){
-  for(const col of ['sites','slugs','siteOwners']){
+  for(const col of ['sites','slugs']){
     const snap = await adb.collection(col).get();
     await Promise.all(snap.docs.map((d) => adb.recursiveDelete(d.ref)));
   }
   const ids = {};
-  for(const [slug, { ownerEmails, ...data }] of Object.entries(SEED)){
+  for(const [slug, data] of Object.entries(SEED)){
     const ref = adb.collection('sites').doc();
     await ref.set({
       slug, status:'published',
@@ -141,8 +141,6 @@ async function seed(){
       createdAt: TS.now(), updatedAt: TS.now(),
       ...data,
     });
-    /* 新人白名單不在公開的 sites 文件裡，在 siteOwners/{siteId}（見 scripts/site-owners.js） */
-    if(ownerEmails && ownerEmails.length) await adb.collection('siteOwners').doc(ref.id).set({ emails: ownerEmails });
     await adb.collection('slugs').doc(slug).set({ siteId: ref.id, createdAt: TS.now() });
     ids[slug] = ref.id;
   }
@@ -1375,7 +1373,7 @@ console.log('\n[10] 信箱權限');
   await page.close();
 }
 {
-  /* 不在新人白名單內的帳號，登入了也讀不到信 */
+  /* 不在 ownerEmails 名單內的帳號，登入了也讀不到信 */
   const { page } = await visit(`/w/${SLUG}/admin`);
   await signInAsOwner(page, 'nosy@example.com');
   await page.waitForTimeout(1200);
@@ -1830,7 +1828,7 @@ console.log('\n[14b] 後台看得到出席回覆');
   await page.close();
 }
 {
-  /* 不在新人白名單內的帳號：登入了也進不去、也讀不到 */
+  /* 不在 ownerEmails 名單內的帳號：登入了也進不去、也讀不到 */
   const { page } = await visit(`/w/${SLUG}/admin`);
   await signInAsOwner(page, 'nosy@example.com');
   await page.waitForTimeout(1200);
@@ -1901,10 +1899,9 @@ console.log('\n[15] 後台改得動大廳文案');
   const site = (await adb.collection('sites').doc(siteIds[SLUG]).get()).data();
   ok('地點寫回 sites 文件', site.venueName === '晶華酒店・三樓宴會廳', site.venueName);
   ok('Dress Code 寫回 sites 文件', site.dressCode === '請穿得舒服就好', site.dressCode);
-  const owners = (await adb.collection('siteOwners').doc(siteIds[SLUG]).get()).data();
   ok('沒有動到站台狀態與名單',
-    site.status === 'published' && owners.emails.join() === 'couple@example.com' && !('ownerEmails' in site),
-    `${site.status} / ${owners.emails.join()}`);
+    site.status === 'published' && site.ownerEmails.join() === 'couple@example.com',
+    `${site.status} / ${site.ownerEmails.join()}`);
 
   /* 04 婚禮流程：時間軸 ＋ inline form（新增與編輯共用同一組） */
   await wzStep(page, '04');

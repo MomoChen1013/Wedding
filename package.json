@@ -25,8 +25,7 @@
     "build-samples": "node scripts/build-samples.js",
     "build-sample-thumbs": "node scripts/build-sample-thumbs.js && node scripts/build-samples.js",
     "build-sample-videos": "node scripts/build-sample-videos.js && node scripts/build-samples.js",
-    "build-sample-shield": "node scripts/build-sample-shield.js",
-    "migrate-site-owners": "node scripts/migrate-site-owners.js"
+    "build-sample-shield": "node scripts/build-sample-shield.js"
   },
   "repository": {
     "type": "git",
