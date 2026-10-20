@@ -139,11 +139,9 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
   border-radius:18px 18px 18px 5px;border:1px solid var(--mc-gold-soft);background:rgba(255,253,249,.88);
   box-shadow:0 10px 22px -16px rgba(90,70,55,.55);color:var(--ink);text-decoration:none;
   font:400 14px/1.4 var(--f-ui);letter-spacing:.06em;transition:border-color .2s ease,color .2s ease,transform .2s ease;}
-.ask::after{content:'';width:7px;height:7px;margin-left:2px;border-right:1.5px solid var(--mc-gold);border-bottom:1.5px solid var(--mc-gold);transform:rotate(45deg) translate(-2px,-2px);}
 @media (hover:hover){.ask:hover{border-color:var(--mc-gold);color:var(--accent-ink);transform:translateY(-1px);}}
 .ask:focus-visible{outline:2px solid var(--ink);outline-offset:3px;}
 .ask-line{border-color:var(--ink);background:var(--ink);color:#fff;}
-.ask-line::after{display:none;}
 .ask-line .ic-line{width:18px;height:18px;}
 @media (hover:hover){.ask-line:hover{border-color:var(--mc-gold);background:var(--mc-gold);color:#fff;}}
 @media (max-width:599px){.asks{flex-direction:column;align-items:center;}}
@@ -248,8 +246,6 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
 .st-row span{font-size:8.5px;color:#8a8590;}
 .st-row em{margin-left:auto;font-style:normal;font-size:8px;color:#b3adb3;white-space:nowrap;}
 .st-row .by{padding:0 5px;border-radius:99px;background:var(--tint);color:var(--accent-ink);font-size:8px;}
-.st-sync{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;}
-.st-sync span{padding:2px 7px;border-radius:99px;border:1px solid #d9e3d6;background:#f3f7f1;color:#5b7a55;font-size:8.5px;}
 
 .sp-status{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:6px 8px;border-radius:8px;background:#fff;border:1px solid #e6e1d9;font-size:9.5px;}
 .sp-status b{font-family:var(--f-en);font-weight:400;font-size:13px;margin:0 2px;}
@@ -296,14 +292,23 @@ button.sp-chip:focus-visible{outline:1.5px solid var(--ink);outline-offset:1px;}
 .bt-row:focus-visible{outline:1.5px solid var(--ink);outline-offset:-1px;border-radius:6px;}
 
 
-.play-grid{display:grid;gap:12px;grid-template-columns:1fr;max-width:980px;margin:0 auto;}
-@media (min-width:520px){.play-grid{grid-template-columns:repeat(2,1fr);gap:14px;}}
+.play-grid{display:grid;gap:10px;grid-template-columns:repeat(2,1fr);max-width:980px;margin:0 auto;}
+@media (min-width:520px){.play-grid{gap:14px;}}
 @media (min-width:900px){.play-grid{grid-template-columns:repeat(3,1fr);gap:18px;}}
 .play{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:18px 18px 18px;}
 .play h3{font-family:var(--f-cn);font-weight:500;font-size:17px;letter-spacing:.1em;line-height:1.5;margin-top:2px;}
 .play-need{font-size:13px;color:#7a7179;}
 .play-need b{font-weight:500;color:var(--ink);margin-right:6px;}
-.play .btn{position:relative;z-index:1;align-self:stretch;margin-top:8px;min-height:40px;padding:8px 12px;font-size:13.5px;letter-spacing:.08em;}
+.play .btn{position:relative;z-index:1;align-self:stretch;margin-top:auto;min-height:40px;padding:8px 12px;font-size:13.5px;letter-spacing:.08em;}
+.play-need{margin-bottom:8px;}
+@media (max-width:519px){
+  .play{padding:14px 12px 13px;gap:5px;}
+  .play h3{font-size:15.5px;letter-spacing:.06em;}
+  .play-need{font-size:12px;line-height:1.6;}
+  .play-need b{display:block;margin:0;}
+  .play .btn{min-height:38px;padding:6px 6px;font-size:12px;letter-spacing:0;line-height:1.35;gap:3px;white-space:nowrap;}
+  .play .btn .ext{width:12px;height:12px;}
+}
 
 .plans{max-width:860px;margin:0 auto;overflow:hidden;}
 .pt{position:relative;width:100%;border-collapse:collapse;table-layout:fixed;}
@@ -926,7 +931,6 @@ body.dlg-open{overflow:hidden;}
               <div class="st-row"><b>李哲宇</b><span>1 位・葷 1</span><em>5 分鐘前</em></div>
               <div class="st-row"><b>陳美亞</b><span>2 位・葷 2・兒童椅</span><em>1 小時前</em></div>
             </div>
-            <div class="st-sync"><span>✓ 已帶進排桌名單</span><span>✓ 已同步收禮名單</span></div>
           </div>
         </div></div></div>
       </li>
@@ -1060,16 +1064,16 @@ body.dlg-open{overflow:hidden;}
           <div class="adm-bar"><i></i><b>頁面設定</b><span>Ethan &amp; Claire</span></div>
           <div class="adm-body adm-scroll">
             <div class="adm-group">
-              <label class="adm-row"><span>倒數計時</span><span class="tg"><input type="checkbox" checked data-page="countdown"><i></i></span></label>
-              <label class="adm-row"><span>我們的故事</span><span class="tg"><input type="checkbox" checked data-page="story"><i></i></span></label>
               <label class="adm-row"><span>祝福牆</span><span class="tg"><input type="checkbox" checked data-page="wall"><i></i></span></label>
               <label class="adm-row"><span>抽卡</span><span class="tg"><input type="checkbox" data-page="draw"><i></i></span></label>
-              <label class="adm-row"><span>小測驗</span><span class="tg"><input type="checkbox" checked data-page="quiz"><i></i></span></label>
-              <label class="adm-row"><span>給你的一封信</span><span class="tg"><input type="checkbox" checked data-page="letter"><i></i></span></label>
+              <label class="adm-row"><span>我們的故事</span><span class="tg"><input type="checkbox" checked data-page="exhibition"><i></i></span></label>
+              <label class="adm-row"><span>新人小測驗</span><span class="tg"><input type="checkbox" checked data-page="quiz"><i></i></span></label>
+              <label class="adm-row"><span>我的桌次</span><span class="tg"><input type="checkbox" checked data-page="seating"><i></i></span></label>
+              <label class="adm-row"><span>給你的信</span><span class="tg"><input type="checkbox" checked data-page="letter"><i></i></span></label>
             </div>
             <div class="pg-see" aria-live="polite">
               <h4>賓客看到的</h4>
-              <span data-see="countdown">倒數計時</span><span data-see="story">我們的故事</span><span data-see="wall">祝福牆</span><span data-see="draw" hidden>抽卡</span><span data-see="quiz">小測驗</span><span data-see="letter">給你的一封信</span>
+              <span data-see="wall">祝福牆</span><span data-see="draw" hidden>抽卡</span><span data-see="exhibition">我們的故事</span><span data-see="quiz">新人小測驗</span><span data-see="seating">我的桌次</span><span data-see="letter">給你的信</span>
             </div>
           </div>
         </div></div></div>
