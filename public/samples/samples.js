@@ -9,6 +9,7 @@
        同一個瀏覽器同一款只算一次（localStorage）；數字存在 Firestore 的 sampleLikes/{版型}，用 REST 讀寫
      ・卡片的循環影片：進到畫面才掛上 src 開始播，離開就暫停；系統要求減少動態時只顯示縮圖
      ・手機版底部固定的 LINE 按鈕：捲過首屏才出現，捲到開站流程、預覽打開時收起來
+     ・可以操作的後台示範（賓客名單三步驟、後台三支手機）：samples/demos.js
      ・PostHog 事件（見 samples/analytics.js；沒填 key 時 track() 什麼都不做）
 
    事件（PostHog 漏斗：$pageview → template_preview_open → template_demo_open → line_click）：
@@ -18,17 +19,23 @@
      line_click                 { position, template? }       hero／template_card／preview（預覽裡的開始製作）／flow／sticky
      feature_info_open          { feature }                   方案比較點開功能說明
      template_like              { template, source }          第一次喜歡這一款：heart／want（我想用這款）／start（開始製作）
+     ask_click                  { ask }                       首屏「你可能想問」的對話框：design／admin／play
+     play_demo_open             { game }                      「看看賓客怎麼玩」連到示範網站：seating／letter／quiz／draw／wall／exhibition
+     demo_try                   { demo }                      第一次操作某一支後台示範：form／stats／seat／content／pages／butler
 ============================================================ */
 import { initAnalytics } from './analytics.js';
 import { FIREBASE_PROJECT_ID, FIREBASE_API_KEY } from './config.js';
+import { initDemos } from './demos.js';
 
 const track = initAnalytics({ props: { page: 'samples' } });
 const reduceMotion = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
-/* ---------- 點擊事件：LINE、看完整範例 ---------- */
+/* ---------- 點擊事件：LINE、看完整範例、首屏的對話框、賓客怎麼玩 ---------- */
 document.addEventListener('click', (e) => {
-  const a = e.target.closest && e.target.closest('a[data-line], a[data-demo]');
+  const a = e.target.closest && e.target.closest('a[data-line], a[data-demo], a[data-ask], a[data-play]');
   if (!a) return;
+  if (a.dataset.ask) { track('ask_click', { ask: a.dataset.ask }); return; }
+  if (a.dataset.play) { track('play_demo_open', { game: a.dataset.play }); return; }
   const card = a.closest('[data-template]');
   const template = card ? card.dataset.template : undefined;
   if (a.dataset.line) track('line_click', template ? { position: a.dataset.line, template } : { position: a.dataset.line });
@@ -116,7 +123,9 @@ document.addEventListener('click', (e) => {
 renderAllLikes();
 loadLikes();
 
-/* ---------- 卡片的循環影片 ---------- */
+initDemos(track);
+
+/* ---------- 卡片（與首屏手機）的循環影片 ---------- */
 (function loopVideos() {
   const videos = Array.from(document.querySelectorAll('video.loop'));
   if (!videos.length || reduceMotion() || !('IntersectionObserver' in window)) return;

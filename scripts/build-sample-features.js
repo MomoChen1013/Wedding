@@ -8,6 +8,8 @@
    用手機的尺寸截賓客實際會看到的畫面，存成 public/samples/features/{名稱}.jpg：
 
      stories.jpg   故事牆・祝福牆・抽卡（三張並排）
+     exhibition.jpg、wall.jpg、draw.jpg
+                   同樣三張，各自一張（總覽頁「看看賓客怎麼玩」的卡片用）
      seating.jpg   賓客現場查詢（輸入「王小安」之後）
      quiz.jpg      自訂互動測驗
      letter.jpg    專屬信件（輸入「小安」拆開之後）
@@ -48,14 +50,17 @@ async function shot(sub, act) {
 const save = (buf, name) => sharp(buf).resize({ width: 600 }).jpeg({ quality: 76, mozjpeg: true }).toFile(join(OUT, name));
 
 try {
-  /* 故事牆・祝福牆・抽卡：三張手機畫面並排成一張 */
+  /* 故事牆・祝福牆・抽卡：各存一張，再把三張手機畫面並排成一張 */
   const parts = [];
   for (const [sub, act] of [
     ['exhibition', (p) => p.mouse.wheel(0, 260)],
     ['wall', (p) => p.mouse.wheel(0, 420)],
     ['draw', async (p) => { await p.click('#drawBtn').catch(() => {}); await p.waitForTimeout(2200); }],
   ]) {
-    parts.push(await sharp(await shot(sub, act)).resize({ width: 360 }).png().toBuffer());
+    const png = await shot(sub, act);
+    await save(png, `${sub}.jpg`);
+    console.log(`✅ public/samples/features/${sub}.jpg`);
+    parts.push(await sharp(png).resize({ width: 360 }).png().toBuffer());
   }
   const meta = await sharp(parts[0]).metadata();
   const gap = 24;
