@@ -496,7 +496,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
   → 04 手機隨時都能改（`#easy`：自訂內容、自訂顯示、收禮小幫手三支可以操作的手機）
   → 05 方案（`#plans`：方案表、買了以後的協助）→ 開站流程（「查看方案並開始製作」）→ 常見問題。
   每個功能都標灰色的方案小標籤：經典方案有就一個「經典」、典藏方案有就一個「典藏」，兩個都有就兩個都出現；
-  可以操作的手機上面有手寫字的「動手操作看看」（芫荽 Iansui，Google Fonts 只切那幾個字）。
+  可以操作的按鈕（或手機）正上方有一行手寫的「動手操作看看」（辰宇落雁體 Thin，只切那幾個字，見下面〈總覽頁的中文字〉）。
   後台示範全是假資料、不連任何帳號，互動在 `public/samples/demos.js`。
   手機版底部另有固定的「LINE 詢問」。整頁用白色教堂的灰泥牆、兩旁被風吹動的白紗、牆上偶爾清楚起來的橄欖枝影子、
   分隔線與毛玻璃卡，按鈕是白色教堂的深色按鈕；減少動態時白紗與影子都不動。
@@ -591,7 +591,7 @@ JS 用 terser 壓縮與混淆變數名，開場（`js/openers/`）與 `lobby-mot
 | 開場的長相——卡片上的循環影片要跟著換 | `npm run build-sample-videos`（用預覽模式錄、ffmpeg 轉 WebM＋MP4，每支 300KB 以內，印出大小表，最後會自己再跑一次 build-samples；需要 ffmpeg） |
 | 方案說明裡專屬信件的截圖（示範網站的信改了） | `npm run build-sample-features`（截白色教堂示範網站拆開的信，存到 `public/samples/features/letter.jpg`；其他功能說明都是 `scripts/sample-index.html` 裡用 HTML 畫的示意，不用重跑） |
 | 新增一個版型 | 先在 `scripts/sample-catalog.js` 補一筆（沒補 build 會直接報錯），再跑 `npm run build-sample-thumbs` 與 `npm run build-sample-videos` |
-| 總覽頁的中文字（任何文案改動之後） | `npm run build-samples` 之後再跑 `python3 scripts/build-sample-font.py <源樣明體 otf 資料夾>`：總覽頁的中文是源樣明體，只切了頁面用到的字（`public/samples/fonts/`）；漏跑的話新字會退回思源宋體 |
+| 總覽頁的中文字（任何文案改動之後） | `npm run build-samples` 之後再跑 `python3 scripts/build-sample-font.py <源樣明體 otf 資料夾> [ChenYuluoyan-2.0-Thin.ttf]`：總覽頁的中文是源樣明體，只切了頁面用到的字（`public/samples/fonts/`）；漏跑的話新字會退回思源宋體。第二個參數順便切手寫字 `hand.woff2`（辰宇落雁體，只有「動手操作看看」，改了那行字才需要） |
 
 示範站台本身不用重產：它就是正式的頁面，改了就生效（保護過的副本由 predeploy 在部署前重產）。
 總覽、縮圖與循環影片是產出的檔案，要 commit，`firebase deploy` 不會幫你產。

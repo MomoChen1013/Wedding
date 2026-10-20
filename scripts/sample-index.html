@@ -24,13 +24,15 @@
 <!-- Google Fonts 不擋住第一次畫面：先用系統字畫出來，字型到了再換（display=swap） -->
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400&family=Noto+Serif+TC:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400&family=Noto+Serif+TC:wght@400;500&display=swap"></noscript>
-<!-- 手寫字（芫荽 Iansui）只用在「動手操作看看」，text= 只切這五個字，幾 KB 而已 -->
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Iansui&display=swap&text=%E5%8B%95%E6%89%8B%E6%93%8D%E4%BD%9C%E7%9C%8B" onload="this.onload=null;this.rel='stylesheet'">
 <style>
 @font-face{font-family:'GenYoMin Samples';font-weight:400;font-display:swap;
   src:url('/samples/fonts/genyomin-r.woff2') format('woff2');}
 @font-face{font-family:'GenYoMin Samples';font-weight:500;font-display:swap;
   src:url('/samples/fonts/genyomin-m.woff2') format('woff2');}
+/* 手寫字：辰宇落雁體 Thin 只切「動手操作看看」那幾個字（見 scripts/build-sample-font.py；
+   「辰宇落雁」是 OFL 的保留字型名稱，子集算改作，所以換一個字族名稱） */
+@font-face{font-family:'Shin9 Samples Hand';font-weight:400;font-display:swap;
+  src:url('/samples/fonts/hand.woff2') format('woff2');}
 :root{
   --ink:#3b3540; --muted:#7d7480; --surface:#fffdf9;
   --line:rgba(59,53,64,.12); --line-soft:rgba(59,53,64,.08); --chip:rgba(168,141,95,.1);
@@ -194,14 +196,12 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
 .plan-tags{display:inline-flex;gap:4px;}
 .plan-tag{display:inline-block;padding:0 6px;border-radius:2px;background:#ebe7e1;color:#6f6870;
   font-size:11.5px;letter-spacing:.08em;line-height:1.75;white-space:nowrap;}
-/* 手寫的「動手操作看看」：左邊一支往下的箭頭，整組逆時針轉 20 度 */
-.try-note{display:flex;align-items:flex-end;gap:2px;align-self:flex-start;margin:20px 0 -4px 6px;
-  font-family:'Iansui',var(--f-cn);font-size:17px;letter-spacing:.06em;color:var(--accent-ink);
-  transform:rotate(-20deg);transform-origin:left bottom;}
-.try-arrow{width:20px;height:31px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+/* 手寫的「動手操作看看」：灰色、置中，在要操作的按鈕（或手機）正上方，左邊一支往下的箭頭 */
+.try-note{flex-basis:100%;display:flex;justify-content:center;align-items:flex-end;gap:3px;margin-bottom:4px;
+  font-family:'Shin9 Samples Hand',var(--f-cn);font-size:19px;letter-spacing:.08em;line-height:1.3;color:#5c5560;}
+.try-arrow{width:16px;height:25px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
 /* 按鈕列吃掉多出來的高度、貼著手機：三欄的手寫字對齊在標籤下面，手機底部也對齊 */
 .demo-ctrl{flex:1;display:flex;flex-wrap:wrap;justify-content:center;align-content:flex-end;gap:6px;width:100%;min-height:36px;margin:6px 0 12px;}
-.try-note + .phone{margin-top:auto;}
 .pill{display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:5px 12px;border-radius:99px;cursor:pointer;
   border:1px solid var(--line);background:rgba(255,255,255,.75);color:#7a7179;font:400 12.5px/1.3 var(--f-ui);letter-spacing:.06em;
   transition:background .2s ease,border-color .2s ease,color .2s ease;}
@@ -742,8 +742,8 @@ body.dlg-open{overflow:hidden;}
           <h3>不必再自己設計出席表單</h3>
           <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
         </div>
-        <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
         <div class="demo-ctrl" role="group" aria-label="試試看：調整表單題目">
+          <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
           <button type="button" class="pill" aria-pressed="true" data-q="meal">餐點</button>
           <button type="button" class="pill" aria-pressed="true" data-q="kids">兒童座椅</button>
           <button type="button" class="pill" aria-pressed="false" data-q="diet">飲食習慣</button>
@@ -770,8 +770,8 @@ body.dlg-open{overflow:hidden;}
           <h3>只需要一份名單，皆可同步</h3>
           <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
         </div>
-        <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
         <div class="demo-ctrl">
+          <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
           <button type="button" class="pill add" data-elder>＋ 幫長輩新增一筆</button>
         </div>
         <div class="phone"><div class="phone-screen"><div class="adm">
@@ -801,8 +801,8 @@ body.dlg-open{overflow:hidden;}
           <h3>拖進桌位，就排好了</h3>
           <span class="plan-tags"><span class="plan-tag">典藏</span></span>
         </div>
-        <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
         <div class="demo-ctrl">
+          <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
           <span class="demo-hint" data-seat-hint>把名字拖進桌子</span>
           <button type="button" class="pill" data-seat-reset hidden>↺ 再排一次</button>
         </div>
@@ -900,8 +900,8 @@ body.dlg-open{overflow:hidden;}
           <h3>想告訴賓客的事，自己加</h3>
           <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
         </div>
-        <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
         <div class="demo-ctrl">
+          <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
           <button type="button" class="pill add" data-content-add>＋ 新增一則</button>
         </div>
         <div class="phone"><div class="phone-screen"><div class="adm">
@@ -923,7 +923,7 @@ body.dlg-open{overflow:hidden;}
           <h3>用不到的區塊，關掉就好</h3>
           <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
         </div>
-        <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
+        <div class="demo-ctrl"><p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p></div>
         <div class="phone"><div class="phone-screen"><div class="adm">
           <div class="adm-bar"><i></i><b>頁面設定</b><span>Ethan &amp; Claire</span></div>
           <div class="adm-body adm-scroll">
@@ -949,7 +949,7 @@ body.dlg-open{overflow:hidden;}
           <h3>收禮台，點一下就記好</h3>
           <span class="plan-tags"><span class="plan-tag">典藏</span></span>
         </div>
-        <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
+        <div class="demo-ctrl"><p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p></div>
         <div class="phone"><div class="phone-screen"><div class="adm">
           <div class="adm-bar"><i></i><b>收禮台</b><span>收禮小幫手</span></div>
           <div class="adm-body adm-scroll">
