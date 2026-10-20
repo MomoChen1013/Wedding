@@ -143,7 +143,7 @@
 │   │   ├─ index.html                # ⚙️ 總覽，由 build-samples 產出
 │   │   ├─ thumbs/{版型}.jpg         # ⚙️ 由 build-sample-thumbs 截圖
 │   │   ├─ videos/{版型}.webm／.mp4  # ⚙️ 卡片上的開場循環影片，由 build-sample-videos 錄
-│   │   ├─ features/*.jpg            # ⚙️ 方案說明的示意圖，由 build-sample-features 截圖
+│   │   ├─ features/letter.jpg       # ⚙️ 方案說明裡專屬信件的截圖，由 build-sample-features 截
 │   │   ├─ samples.js                # 總覽頁的互動：預覽 popup、影片、底部 LINE 按鈕、PostHog 事件
 │   │   ├─ demos.js                  # 總覽頁裡可以操作的後台示範（出席表單、統計、排桌、自訂內容／顯示、收禮）
 │   │   ├─ config.js                 # LINE 連結、PostHog 的設定常數
@@ -490,12 +490,14 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
 給還在挑版型的客人看的公開頁面，用 LINE 傳 `https://<網域>/samples/` 就能開：
 
 - **總覽** `/samples/`：每一段只回答新人的一個疑慮，由上到下是
-  首屏（「13 種風格，找到最像你們的婚禮。」、三支手機播典藏版型的開場、三個「你可能想問」的對話框連到 01／02／03、「瀏覽喜帖設計」＋「LINE 詢問」）
+  首屏（「從這些風格，找到最像你們的婚禮。」、三支手機播典藏版型的開場、「你可能想問」的對話框：三個連到 01／02／03，最後一個「LINE 真人聊聊」）
   → 01 網站版型（`#templates`）→ 02 賓客名單（`#admin`：出席表單 → 出席統計 → 排桌，三支**可以操作**的後台手機）
-  → 03 賓客怎麼玩（`#play`：查座位、專屬信件、小測驗、抽卡、祝福牆、故事牆，每張都連到白色教堂的示範網站）
-  → 04 手機能看、自己設定（`#easy`：三個步驟＋自訂內容、自訂顯示、收禮小幫手三支可以操作的手機）
-  → 05 方案（`#plans`：原價、方案表、買了以後的協助）→ 開站流程（「查看方案並開始製作」）→ 常見問題；
-  典藏方案才有的功能都標實心的「典藏方案」小標籤。後台示範全是假資料、不連任何帳號，互動在 `public/samples/demos.js`。
+  → 03 賓客怎麼玩（`#play`：查座位、專屬信件、小測驗、抽卡、祝福牆、故事牆的小卡片，每張都連到白色教堂的示範網站）
+  → 04 手機隨時都能改（`#easy`：自訂內容、自訂顯示、收禮小幫手三支可以操作的手機）
+  → 05 方案（`#plans`：方案表、買了以後的協助）→ 開站流程（「查看方案並開始製作」）→ 常見問題。
+  每個功能都標灰色的方案小標籤：經典方案有就一個「經典」、典藏方案有就一個「典藏」，兩個都有就兩個都出現；
+  可以操作的手機上面有手寫字的「動手操作看看」（芫荽 Iansui，Google Fonts 只切那幾個字）。
+  後台示範全是假資料、不連任何帳號，互動在 `public/samples/demos.js`。
   手機版底部另有固定的「LINE 詢問」。整頁用白色教堂的灰泥牆、兩旁被風吹動的白紗、牆上偶爾清楚起來的橄欖枝影子、
   分隔線與毛玻璃卡，按鈕是白色教堂的深色按鈕；減少動態時白紗與影子都不動。
   每個版型一張卡片 —— 典藏方案是開場的循環影片、經典方案是首屏縮圖（開場太短，按預覽再看）、一句氣質、「X 人喜歡這個版型」、色票、右上角一顆愛心，
@@ -587,7 +589,7 @@ JS 用 terser 壓縮與混淆變數名，開場（`js/openers/`）與 `lobby-mot
 | 卡片文案 `scripts/sample-catalog.js`、總覽模板 `scripts/sample-index.html` | `npm run build-samples` |
 | 大廳的長相（CSS、照片、開場、骨架）——縮圖要跟著換 | `npm run build-sample-thumbs`（截圖後會自己再跑一次 build-samples） |
 | 開場的長相——卡片上的循環影片要跟著換 | `npm run build-sample-videos`（用預覽模式錄、ffmpeg 轉 WebM＋MP4，每支 300KB 以內，印出大小表，最後會自己再跑一次 build-samples；需要 ffmpeg） |
-| 方案說明的示意圖（示範網站的故事、桌次、測驗、信的畫面改了） | `npm run build-sample-features`（截白色教堂示範網站的畫面，存到 `public/samples/features/`（「看看賓客怎麼玩」的六張卡片也用這幾張）；排桌、收禮、多場活動那三張是 HTML 畫的示意，不用重跑） |
+| 方案說明裡專屬信件的截圖（示範網站的信改了） | `npm run build-sample-features`（截白色教堂示範網站拆開的信，存到 `public/samples/features/letter.jpg`；其他功能說明都是 `scripts/sample-index.html` 裡用 HTML 畫的示意，不用重跑） |
 | 新增一個版型 | 先在 `scripts/sample-catalog.js` 補一筆（沒補 build 會直接報錯），再跑 `npm run build-sample-thumbs` 與 `npm run build-sample-videos` |
 | 總覽頁的中文字（任何文案改動之後） | `npm run build-samples` 之後再跑 `python3 scripts/build-sample-font.py <源樣明體 otf 資料夾>`：總覽頁的中文是源樣明體，只切了頁面用到的字（`public/samples/fonts/`）；漏跑的話新字會退回思源宋體 |
 

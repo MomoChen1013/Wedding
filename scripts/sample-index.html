@@ -24,6 +24,8 @@
 <!-- Google Fonts 不擋住第一次畫面：先用系統字畫出來，字型到了再換（display=swap） -->
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400&family=Noto+Serif+TC:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400&family=Noto+Serif+TC:wght@400;500&display=swap"></noscript>
+<!-- 手寫字（芫荽 Iansui）只用在「動手操作看看」，text= 只切這五個字，幾 KB 而已 -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Iansui&display=swap&text=%E5%8B%95%E6%89%8B%E6%93%8D%E4%BD%9C%E7%9C%8B" onload="this.onload=null;this.rel='stylesheet'">
 <style>
 @font-face{font-family:'GenYoMin Samples';font-weight:400;font-display:swap;
   src:url('/samples/fonts/genyomin-r.woff2') format('woff2');}
@@ -118,8 +120,6 @@ header{text-align:center;}
 @media (max-width:420px){.kicker{font-size:10.5px;letter-spacing:.16em;}}
 h1{font-family:var(--f-cn);font-weight:500;font-size:clamp(24px,4.4vw,36px);letter-spacing:.14em;line-height:1.5;margin:14px 0 16px;}
 header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
-.hero-cta{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:26px;}
-.hero-cta small{flex-basis:100%;color:var(--muted);font-size:12.5px;letter-spacing:.08em;}
 
 /* ---------- 共用：每一區的標題（白色教堂的分隔線：兩條細線、一顆菱形、兩小枝橄欖葉） ---------- */
 .sec{margin-top:clamp(72px,10vw,120px);}
@@ -165,7 +165,11 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
 .ask::after{content:'';width:7px;height:7px;margin-left:2px;border-right:1.5px solid var(--mc-gold);border-bottom:1.5px solid var(--mc-gold);transform:rotate(45deg) translate(-2px,-2px);}
 @media (hover:hover){.ask:hover{border-color:var(--mc-gold);color:var(--accent-ink);transform:translateY(-1px);}}
 .ask:focus-visible{outline:2px solid var(--ink);outline-offset:3px;}
-.hero-act .hero-cta{margin-top:20px;}
+/* 最後一個對話框開 LINE：箭頭換成另開分頁的小箭頭 */
+.ask-line{border-color:var(--ink);background:var(--ink);color:#fff;}
+.ask-line::after{display:none;}
+.ask-line .ic-line{width:18px;height:18px;}
+@media (hover:hover){.ask-line:hover{border-color:var(--mc-gold);background:var(--mc-gold);color:#fff;}}
 @media (max-width:599px){.asks{flex-direction:column;align-items:center;}}
 /* 電腦：左右兩欄，文案靠左（放在最後，蓋過上面置中的設定） */
 @media (min-width:900px){
@@ -174,29 +178,30 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
   .hero-act{align-self:start;padding-top:20px;}
   .hero .kicker.brand{justify-content:flex-start;}
   .hero-copy > p{margin:0;}
-  .hero-cta,.asks{justify-content:flex-start;}
-  .hero-act .hero-cta small{text-align:left;}
+  .asks{justify-content:flex-start;}
 }
 
 /* ---------- 可以操作的示範（賓客名單三步驟、後台三支手機）：說明 → 試試看的按鈕 → 手機；手機上橫向滑動 ---------- */
-.demo-lead{display:flex;flex-direction:column;align-items:center;gap:2px;margin:-6px auto 22px;text-align:center;}
-.demo-lead b{font-family:var(--f-cn);font-weight:500;font-size:16.5px;letter-spacing:.12em;}
-.demo-lead span{color:var(--muted);font-size:13px;letter-spacing:.06em;}
 .demo-rail{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(240px,300px);gap:28px;justify-content:center;list-style:none;
   overflow-x:auto;scroll-snap-type:x mandatory;padding:6px 16px 18px;margin:0 -16px;
   -webkit-overflow-scrolling:touch;scrollbar-width:thin;}
 @media (max-width:959px){.demo-rail{justify-content:start;grid-auto-columns:min(76vw,270px);gap:20px;}}
 .demo{scroll-snap-align:center;display:flex;flex-direction:column;align-items:center;}
-.demo-cap{flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:6px;width:100%;padding:0 2px;}
+.demo-cap{display:flex;flex-direction:column;align-items:flex-start;gap:6px;width:100%;padding:0 2px;}
 .demo-cap .step{font-family:var(--f-en);font-size:12px;letter-spacing:.24em;color:var(--mc-gold);}
 .demo-cap h3{font-family:var(--f-cn);font-weight:500;font-size:16.5px;letter-spacing:.1em;line-height:1.5;}
-.demo-cap p{font-size:13.5px;color:#5c5560;line-height:1.8;}
-/* 方案標籤：兩個方案都有＝細框；典藏方案＝實心，一眼看得出要選哪個方案 */
-.plan-tag{display:inline-flex;align-items:center;padding:1px 10px;border-radius:99px;border:1px solid var(--mc-gold-soft);
-  background:rgba(255,255,255,.7);font-size:11.5px;letter-spacing:.1em;line-height:1.7;color:var(--mc-gold);white-space:nowrap;}
-.plan-tag.pro{border-color:var(--accent-ink);background:var(--accent-ink);color:#fff;}
-.demo-cap p .plan-tag{margin:0 2px;padding:0 7px;font-size:10.5px;vertical-align:1px;}
-.demo-ctrl{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;width:100%;min-height:36px;margin:14px 0 12px;}
+/* 方案標籤：灰色小方塊，經典一個、典藏一個；兩個方案都有就兩個都出現 */
+.plan-tags{display:inline-flex;gap:4px;}
+.plan-tag{display:inline-block;padding:0 6px;border-radius:2px;background:#ebe7e1;color:#6f6870;
+  font-size:11.5px;letter-spacing:.08em;line-height:1.75;white-space:nowrap;}
+/* 手寫的「動手操作看看」：左邊一支往下的箭頭，整組逆時針轉 20 度 */
+.try-note{display:flex;align-items:flex-end;gap:2px;align-self:flex-start;margin:20px 0 -4px 6px;
+  font-family:'Iansui',var(--f-cn);font-size:17px;letter-spacing:.06em;color:var(--accent-ink);
+  transform:rotate(-20deg);transform-origin:left bottom;}
+.try-arrow{width:20px;height:31px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+/* 按鈕列吃掉多出來的高度、貼著手機：三欄的手寫字對齊在標籤下面，手機底部也對齊 */
+.demo-ctrl{flex:1;display:flex;flex-wrap:wrap;justify-content:center;align-content:flex-end;gap:6px;width:100%;min-height:36px;margin:6px 0 12px;}
+.try-note + .phone{margin-top:auto;}
 .pill{display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:5px 12px;border-radius:99px;cursor:pointer;
   border:1px solid var(--line);background:rgba(255,255,255,.75);color:#7a7179;font:400 12.5px/1.3 var(--f-ui);letter-spacing:.06em;
   transition:background .2s ease,border-color .2s ease,color .2s ease;}
@@ -332,27 +337,16 @@ button.sp-chip:focus-visible{outline:1.5px solid var(--ink);outline-offset:1px;}
 .bt-row:disabled{cursor:default;}
 .bt-row:focus-visible{outline:1.5px solid var(--ink);outline-offset:-1px;border-radius:6px;}
 
-/* ---------- 賓客怎麼玩：每一個都連到真的示範網站 ---------- */
-.play-grid{display:grid;gap:16px;grid-template-columns:1fr;}
-@media (min-width:600px){.play-grid{grid-template-columns:repeat(2,1fr);gap:22px;}}
-@media (min-width:1000px){.play-grid{grid-template-columns:repeat(3,1fr);gap:26px;}}
-.play{display:flex;flex-direction:column;overflow:hidden;}
-.play::before{z-index:2;}
-.play-shot{position:relative;aspect-ratio:5/4;overflow:hidden;border-bottom:1px solid var(--line);border-radius:19px 19px 0 0;background:#fbfaf8;}
-.play-shot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;display:block;}
-.play-body{position:relative;z-index:3;display:flex;flex-direction:column;align-items:flex-start;gap:8px;flex:1;padding:16px 18px 20px;}
-.play h3{font-family:var(--f-cn);font-weight:500;font-size:17px;letter-spacing:.1em;}
-.play-body > p{font-size:13.5px;line-height:1.8;color:#4d4650;}
-.play-need{font-size:12.5px !important;color:#7a7179 !important;}
+
+/* ---------- 賓客怎麼玩：小卡片，每一張都連到真的示範網站 ---------- */
+.play-grid{display:grid;gap:12px;grid-template-columns:1fr;max-width:980px;margin:0 auto;}
+@media (min-width:520px){.play-grid{grid-template-columns:repeat(2,1fr);gap:14px;}}
+@media (min-width:900px){.play-grid{grid-template-columns:repeat(3,1fr);gap:18px;}}
+.play{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:18px 18px 18px;}
+.play h3{font-family:var(--f-cn);font-weight:500;font-size:17px;letter-spacing:.1em;line-height:1.5;margin-top:2px;}
+.play-need{font-size:13px;color:#7a7179;}
 .play-need b{font-weight:500;color:var(--ink);margin-right:6px;}
-.play .btn{align-self:stretch;margin-top:auto;min-height:42px;padding:8px 12px;font-size:13.5px;letter-spacing:.08em;}
-@media (max-width:599px){
-  .play{flex-direction:row;}
-  .play-shot{flex:0 0 36%;aspect-ratio:auto;border-bottom:0;border-right:1px solid var(--line);border-radius:19px 0 0 19px;}
-  .play-body{padding:14px 14px 15px;gap:6px;min-width:0;}
-  .play h3{font-size:16px;}
-  .play-body > p{font-size:13px;line-height:1.7;}
-}
+.play .btn{position:relative;z-index:1;align-self:stretch;margin-top:8px;min-height:40px;padding:8px 12px;font-size:13.5px;letter-spacing:.08em;}
 
 /* ---------- 方案比較（表格內容不動，只換成白色教堂的卡；功能名稱點了看說明） ---------- */
 .plans{max-width:860px;margin:0 auto;overflow:hidden;}
@@ -394,15 +388,6 @@ button.sp-chip:focus-visible{outline:1.5px solid var(--ink);outline-offset:1px;}
 .plan-notes li{list-style:none;padding-left:1.1em;text-indent:-1.1em;}
 .plan-notes li::before{content:'・';}
 .plan-tip{max-width:860px;margin:0 auto 12px;text-align:right;color:var(--muted);font-size:12.5px;letter-spacing:.06em;}
-/* 方案表上面：兩個方案的價格先擺出來（原價；早鳥價在下面一行） */
-.price-strip{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:860px;margin:0 auto 26px;}
-.ps{display:flex;flex-direction:column;align-items:center;gap:2px;padding:20px 12px 18px;text-align:center;}
-.ps.p2{background:rgba(247,237,231,.82);}
-.ps .pname{font-family:var(--f-cn);font-weight:500;font-size:clamp(15px,3vw,18px);letter-spacing:.12em;}
-.ps .pen{font-family:var(--f-en);font-size:10.5px;letter-spacing:.2em;color:var(--muted);}
-.ps strong{margin-top:6px;font-family:var(--f-en);font-weight:400;font-size:clamp(26px,5.6vw,36px);line-height:1.2;letter-spacing:0;}
-.ps strong small{font-size:.42em;letter-spacing:.06em;margin-right:3px;}
-.ps .eb{margin-top:4px;font-size:12.5px;color:var(--accent-ink);letter-spacing:.04em;}
 /* 買了以後的協助 */
 .support{max-width:860px;margin:30px auto 0;padding:22px clamp(18px,4vw,30px) 20px;}
 .support h3{font-family:var(--f-cn);font-weight:500;font-size:16.5px;letter-spacing:.12em;text-align:center;margin-bottom:10px;}
@@ -485,11 +470,6 @@ button.sp-chip:focus-visible{outline:1.5px solid var(--ink);outline-offset:1px;}
   display:flex;align-items:center;justify-content:center;border:1px solid var(--mc-gold-soft);
   font:400 14px/1 var(--f-en);color:var(--mc-gold);background:var(--surface);}
 .steps b{font-family:var(--f-cn);font-weight:500;font-size:15.5px;letter-spacing:.08em;line-height:1.6;}
-/* 三步驟（手機能看、自己設定）：每一步多一行說明 */
-@media (min-width:760px){.steps.steps-3{grid-template-columns:repeat(3,1fr);margin-bottom:clamp(34px,5vw,48px);}}
-.steps.steps-3{margin-bottom:30px;}
-.steps-3 li > div{display:flex;flex-direction:column;gap:3px;}
-.steps-3 li span{font-size:13px;color:#5c5560;line-height:1.75;}
 .flow-cta{flex-direction:column;align-items:center;gap:12px;}
 .flow-cta p{font-family:var(--f-cn);font-weight:500;font-size:17px;letter-spacing:.12em;}
 .flow-need{max-width:980px;margin:18px auto 0;text-align:center;color:#5c5560;font-size:14px;line-height:1.9;}
@@ -606,7 +586,7 @@ body.dlg-open{overflow:hidden;}
 .fx-body > p + p{margin-top:8px;}
 .fx-pic{margin-top:18px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#fff;}
 .fx-pic img{display:block;width:100%;height:auto;max-height:52vh;object-fit:cover;object-position:top center;}
-.fx-plan{display:inline-block;margin-bottom:10px;padding:2px 10px;border-radius:99px;border:1px solid var(--mc-gold-soft);font-size:12px;letter-spacing:.1em;color:var(--mc-gold);background:#fff;}
+.fx-body > .plan-tags{margin-bottom:10px;}
 /* 後台與收禮台的示意（假資料畫的，不是截圖） */
 .mock{padding:14px;font-size:12.5px;line-height:1.6;color:#2b2a2e;background:#fbfaf8;}
 .mock-cols{display:grid;grid-template-columns:1fr 1.3fr;gap:10px;}
@@ -629,6 +609,35 @@ body.dlg-open{overflow:hidden;}
 .mock-pick{display:flex;gap:6px;margin-top:7px;}
 .mock-pick span{flex:1;text-align:center;padding:5px;border:1px solid #e0d6cc;border-radius:8px;font-size:11.5px;}
 .mock-pick span.on{background:#2b2a2e;border-color:#2b2a2e;color:#fff;}
+/* 故事牆・祝福牆・抽卡 */
+.mock-cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.mock-photo{aspect-ratio:3/2;border-radius:6px;background:#eee center/cover no-repeat;}
+.mock-photo.tall{aspect-ratio:2/3;width:72%;margin:0 auto;}
+.mock-cap{display:block;margin-top:6px;font-family:var(--f-cn);font-weight:500;font-size:12px;letter-spacing:.06em;text-align:center;}
+.mock-sub{display:block;text-align:center;color:#8a8590;font-size:10.5px;}
+.mock-wish{margin-bottom:6px;padding:6px 7px;border-radius:7px;background:#fbfaf8;border:1px solid #efeae3;font-size:11px;line-height:1.55;}
+.mock-wish b{display:block;font-weight:500;font-size:10.5px;color:var(--accent-ink);}
+.mock-btn{display:block;margin-top:7px;padding:4px 6px;border-radius:4px;background:#2b2a2e;color:#fff;font-size:10.5px;text-align:center;}
+@media (max-width:440px){.mock-cols3{grid-template-columns:1fr 1fr;}.mock-cols3 > :first-child{grid-column:1/-1;}}
+/* 賓客現場查詢 */
+.mock-search{display:flex;gap:6px;}
+.mock-search span{flex:1;padding:7px 10px;border:1px solid #e6e1d9;border-radius:6px;background:#fff;}
+.mock-search b{padding:7px 14px;border-radius:6px;background:#2b2a2e;color:#fff;font-weight:500;}
+.mock-result{display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:10px;padding:16px 10px 14px;border:1px solid #e6e1d9;border-radius:10px;background:#fff;}
+.mock-result small{color:#8a8590;font-size:11.5px;letter-spacing:.1em;}
+.mock-result span{font-size:11px;color:#8a8590;letter-spacing:.2em;}
+.mock-result strong{font-family:var(--f-cn);font-weight:500;font-size:30px;letter-spacing:.18em;color:#7a2a35;line-height:1.4;}
+/* 自訂互動測驗：每一個選項後面一條「大家選了什麼」 */
+.mock-q small{display:block;color:#8a8590;font-size:11px;letter-spacing:.08em;}
+.mock-q b{display:block;margin:2px 0 8px;font-weight:500;font-size:13px;}
+.mock-opt{position:relative;display:flex;justify-content:space-between;gap:8px;margin-bottom:5px;padding:6px 9px;border:1px solid #e6e1d9;border-radius:7px;overflow:hidden;}
+.mock-opt span,.mock-opt em{position:relative;z-index:1;font-style:normal;}
+.mock-opt em{color:#8a8590;font-size:11.5px;}
+.mock-opt i{position:absolute;left:0;top:0;bottom:0;background:rgba(201,149,132,.16);}
+.mock-opt.on{border-color:#2b2a2e;}
+.mock-opt.on i{background:rgba(43,42,46,.12);}
+.mock-score{margin-top:10px;text-align:center;font-size:12.5px;color:#5c5560;}
+.mock-score b{font-family:var(--f-en);font-weight:400;font-size:18px;color:var(--ink);}
 </style>
 </head>
 <body>
@@ -668,11 +677,11 @@ body.dlg-open{overflow:hidden;}
 
 <div class="wrap">
 
-  <!-- ===== 首屏：先讓她想要這張喜帖（三支手機在播版型的開場；三個「你可能想問」連到回答它的那一段） ===== -->
+  <!-- ===== 首屏：先讓她想要這張喜帖（三支手機在播版型的開場；「你可能想問」的對話框連到回答它的那一段，最後一個開 LINE） ===== -->
   <header class="hero">
     <div class="hero-copy">
       <div class="kicker brand"><span>芯玖 · 婚禮體驗網站</span><span>Shin9 · Wedding Experience</span></div>
-      <h1>{{N_ALL}} 種風格，<br>找到最像你們的婚禮。</h1>
+      <h1>從這些風格，<br>找到最像你們的婚禮。</h1>
       <p>從賓客收到邀請、回覆出席，到婚宴排桌、開席前的互動小遊戲，一個網站一次準備好。</p>
     </div>
     <div class="hero-phones" aria-hidden="true">
@@ -684,16 +693,12 @@ body.dlg-open{overflow:hidden;}
           data-webm="/samples/videos/night-sky.webm" data-mp4="/samples/videos/night-sky.mp4"></video></div></div>
     </div>
     <div class="hero-act">
-      <ul class="asks" aria-label="你可能想問">
+      <ul class="asks" id="heroCta" aria-label="你可能想問">
         <li><a class="ask" href="#templates" data-ask="design">有哪些設計？</a></li>
         <li><a class="ask" href="#admin" data-ask="admin">可以幫我解決什麼行政？</a></li>
         <li><a class="ask" href="#play" data-ask="play">有什麼互動小遊戲？</a></li>
+        <li><a class="ask ask-line" href="{{LINE_URL}}" target="_blank" rel="noopener" data-line="hero"><svg class="ic-line" aria-hidden="true"><use href="#i-line"/></svg>LINE 真人聊聊<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a></li>
       </ul>
-      <div class="hero-cta" id="heroCta">
-        <a class="btn" href="#templates">瀏覽喜帖設計</a>
-        <a class="btn ghost" href="{{LINE_URL}}" target="_blank" rel="noopener" data-line="hero"><svg class="ic-line" aria-hidden="true"><use href="#i-line"/></svg>LINE 詢問<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
-        <small>想先聊聊也沒關係，有任何問題都歡迎問我們</small>
-      </div>
     </div>
   </header>
 
@@ -702,7 +707,6 @@ body.dlg-open{overflow:hidden;}
     <div class="sec-head">
       <div class="kicker">Templates</div>
       <h2 id="tplTitle">先看看哪種風格適合你們</h2>
-      <p>每一款都有自己的開場：拆信、推門、點蠟燭、氣球飛走……<br>按「預覽」在手機畫面裡看一次，點「看完整範例」就是完整的婚禮網站。</p>
       <p class="tip">經典方案 {{N_CLASSIC}} 款，典藏有更多的 {{N_PREMIUM}} 款，共 {{N_ALL}} 款可選</p>
     </div>
 
@@ -729,17 +733,16 @@ body.dlg-open{overflow:hidden;}
       <h2 id="adminTitle">賓客名單，<br class="br-m">不必再靠訊息一筆一筆整理。</h2>
       <p>賓客用手機回覆，資料直接進到後台；人數統計、排桌、收禮名單，都從同一份名單接下去。</p>
     </div>
-    <p class="demo-lead"><b>看後台怎麼幫你整理賓客</b><span>下面三支手機都可以點、可以拖</span></p>
     <ol class="demo-rail" tabindex="0" aria-label="賓客名單的三個步驟，可以左右滑動">
 
       <!-- 01 出席表單：預設題目開開關關、加自由發問的題目（最多 3 題） -->
       <li class="demo" data-try="form">
         <div class="demo-cap">
           <span class="step">STEP 01</span>
-          <h3>出席表單，幫你想好了</h3>
-          <p>不必再自己設計、製作 Google 表單。出席人數、餐點、兒童座椅這些預設問題都幫你想好了，可以自己調整；另外再給你 3 題自由發問。</p>
-          <span class="plan-tag">兩個方案都有</span>
+          <h3>不必再自己設計出席表單</h3>
+          <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
         </div>
+        <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
         <div class="demo-ctrl" role="group" aria-label="試試看：調整表單題目">
           <button type="button" class="pill" aria-pressed="true" data-q="meal">餐點</button>
           <button type="button" class="pill" aria-pressed="true" data-q="kids">兒童座椅</button>
@@ -764,10 +767,10 @@ body.dlg-open{overflow:hidden;}
       <li class="demo" data-try="stats">
         <div class="demo-cap">
           <span class="step">STEP 02</span>
-          <h3>回覆一進來，人數就算好了</h3>
-          <p>出席人數、葷素、兒童座椅自動算好，可以直接匯入排桌<span class="plan-tag pro">典藏方案</span>；名單也連動收禮小幫手<span class="plan-tag pro">典藏方案</span>，不用再另外匯出、列印。長輩不會填表單？在後台幫他新增一筆就好。</p>
-          <span class="plan-tag">出席統計：兩個方案都有</span>
+          <h3>只需要一份名單，皆可同步</h3>
+          <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
         </div>
+        <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
         <div class="demo-ctrl">
           <button type="button" class="pill add" data-elder>＋ 幫長輩新增一筆</button>
         </div>
@@ -796,11 +799,11 @@ body.dlg-open{overflow:hidden;}
         <div class="demo-cap">
           <span class="step">STEP 03</span>
           <h3>拖進桌位，就排好了</h3>
-          <p>回覆名單直接拖曳進桌位，排好之後馬上同步賓客查詢的資料！系統負責算人數、抓重複的名字、提醒超過人數或是誰還沒排。</p>
-          <span class="plan-tag pro">典藏方案</span>
+          <span class="plan-tags"><span class="plan-tag">典藏</span></span>
         </div>
+        <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
         <div class="demo-ctrl">
-          <span class="demo-hint" data-seat-hint>按住名字拖進桌子，或點名字再點桌子</span>
+          <span class="demo-hint" data-seat-hint>把名字拖進桌子</span>
           <button type="button" class="pill" data-seat-reset hidden>↺ 再排一次</button>
         </div>
         <div class="phone"><div class="phone-screen"><div class="adm">
@@ -835,100 +838,69 @@ body.dlg-open{overflow:hidden;}
     <p class="demo-swipe" aria-hidden="true">← 左右滑動看下一步 →</p>
   </section>
 
-  <!-- ===== 03 賓客怎麼玩：每一張都連到真的示範網站（白色教堂；截圖由 scripts/build-sample-features.js 產生） ===== -->
+  <!-- ===== 03 賓客怎麼玩：小卡片，每一張都連到真的示範網站（白色教堂） ===== -->
   <section class="sec" id="play" aria-labelledby="playTitle">
     <div class="sec-head">
       <div class="kicker">For your guests</div>
       <h2 id="playTitle">等待開席的時間，<br class="br-m">也能成為婚禮的一部分。</h2>
       <p>早到的人不用滑手機發呆，你們也多一份大家參與過的回憶。</p>
     </div>
-    <p class="demo-lead"><b>看看賓客怎麼玩</b><span>每一個都是真的示範網站，點進去就能玩</span></p>
     <div class="play-grid">
       <article class="play glass">
-        <div class="play-shot"><img src="/samples/features/seating.jpg" style="object-position:50% 19%" alt="示範網站的查座位：輸入王小安，顯示第 3 桌" width="600" height="1108" loading="lazy"></div>
-        <div class="play-body">
-          <span class="plan-tag">兩個方案都有</span>
-          <h3>查座位</h3>
-          <p>婚禮當天輸入名字，就看到自己坐第幾桌、桌次圖在哪，不用擠在門口找名單。</p>
-          <p class="play-need"><b>新人準備</b>排好的桌次</p>
-          <a class="btn ghost" href="/samples/white-church/seating" target="_blank" rel="noopener" data-play="seating">輸入「小安」查座位<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
-        </div>
+        <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
+        <h3>查座位</h3>
+        <p class="play-need"><b>新人準備</b>排好的桌次</p>
+        <a class="btn ghost" href="/samples/white-church/seating" target="_blank" rel="noopener" data-play="seating">輸入「小安」查座位<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
-        <div class="play-shot"><img src="/samples/features/letter.jpg" style="object-position:50% 10%" alt="示範網站拆開的專屬信件：給小安" width="600" height="1108" loading="lazy"></div>
-        <div class="play-body">
-          <span class="plan-tag pro">典藏方案</span>
-          <h3>專屬信件</h3>
-          <p>輸入名字或你們之間的暗號，封蠟消失、信紙滑出來，還能存成圖片留念。</p>
-          <p class="play-need"><b>新人準備</b>想寫給賓客的信</p>
-          <a class="btn ghost" href="/samples/white-church/letter" target="_blank" rel="noopener" data-play="letter">輸入「小安」拆信<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
-        </div>
+        <span class="plan-tags"><span class="plan-tag">典藏</span></span>
+        <h3>專屬信件</h3>
+        <p class="play-need"><b>新人準備</b>想寫給賓客的信</p>
+        <a class="btn ghost" href="/samples/white-church/letter" target="_blank" rel="noopener" data-play="letter">輸入「小安」拆信<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
-        <div class="play-shot"><img src="/samples/features/quiz.jpg" style="object-position:50% 70%" alt="示範網站的小測驗畫面" width="600" height="1108" loading="lazy"></div>
-        <div class="play-body">
-          <span class="plan-tag pro">典藏方案</span>
-          <h3>小測驗</h3>
-          <p>「看你多了解我們」：答完看到自己的分數，還有每一題大家都選了什麼。</p>
-          <p class="play-need"><b>新人準備</b>題目和答案</p>
-          <a class="btn ghost" href="/samples/white-church/quiz" target="_blank" rel="noopener" data-play="quiz">開始做小測驗<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
-        </div>
+        <span class="plan-tags"><span class="plan-tag">典藏</span></span>
+        <h3>小測驗</h3>
+        <p class="play-need"><b>新人準備</b>題目和答案</p>
+        <a class="btn ghost" href="/samples/white-church/quiz" target="_blank" rel="noopener" data-play="quiz">開始做小測驗<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
-        <div class="play-shot"><img src="/samples/features/draw.jpg" style="object-position:50% 10%" alt="示範網站的抽卡畫面" width="600" height="1108" loading="lazy"></div>
-        <div class="play-body">
-          <span class="plan-tag">兩個方案都有</span>
-          <h3>抽卡</h3>
-          <p>抽一張你們的照片小卡，收藏起來。</p>
-          <p class="play-need"><b>新人準備</b>幾張照片</p>
-          <a class="btn ghost" href="/samples/white-church/draw" target="_blank" rel="noopener" data-play="draw">抽一張新人卡片<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
-        </div>
+        <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
+        <h3>抽卡</h3>
+        <p class="play-need"><b>新人準備</b>幾張照片</p>
+        <a class="btn ghost" href="/samples/white-church/draw" target="_blank" rel="noopener" data-play="draw">抽一張新人卡片<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
-        <div class="play-shot"><img src="/samples/features/wall.jpg" style="object-position:50% 83%" alt="示範網站的祝福牆畫面" width="600" height="1108" loading="lazy"></div>
-        <div class="play-body">
-          <span class="plan-tag">兩個方案都有</span>
-          <h3>祝福牆</h3>
-          <p>賓客留一句話給你們，大家的祝福都集中在同一面牆上。</p>
-          <p class="play-need"><b>新人準備</b>不用準備</p>
-          <a class="btn ghost" href="/samples/white-church/wall" target="_blank" rel="noopener" data-play="wall">看新人收到的祝福牆<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
-        </div>
+        <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
+        <h3>祝福牆</h3>
+        <p class="play-need"><b>新人準備</b>不用準備</p>
+        <a class="btn ghost" href="/samples/white-church/wall" target="_blank" rel="noopener" data-play="wall">看新人收到的祝福牆<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
-        <div class="play-shot"><img src="/samples/features/exhibition.jpg" style="object-position:50% 51%" alt="示範網站的故事牆畫面" width="600" height="1108" loading="lazy"></div>
-        <div class="play-body">
-          <span class="plan-tag">兩個方案都有</span>
-          <h3>故事牆</h3>
-          <p>用一條時間軸，看你們從認識到走進婚禮。</p>
-          <p class="play-need"><b>新人準備</b>幾張照片和一句話</p>
-          <a class="btn ghost" href="/samples/white-church/exhibition" target="_blank" rel="noopener" data-play="exhibition">看新人的認識過程<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
-        </div>
+        <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
+        <h3>故事牆</h3>
+        <p class="play-need"><b>新人準備</b>幾張照片和一句話</p>
+        <a class="btn ghost" href="/samples/white-church/exhibition" target="_blank" rel="noopener" data-play="exhibition">看新人的認識過程<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
     </div>
   </section>
 
-  <!-- ===== 04 手機能看、自己設定：三個步驟 ＋ 三支可以點的後台手機（假資料，互動在 samples/demos.js） ===== -->
+  <!-- ===== 04 手機隨時都能改：三支可以點的後台手機（假資料，互動在 samples/demos.js） ===== -->
   <section class="sec" id="easy" aria-labelledby="easyTitle">
     <div class="sec-head">
       <div class="kicker">Easy to use</div>
-      <h2 id="easyTitle">手機能看，<br class="br-m">設定也能自己完成。</h2>
+      <h2 id="easyTitle">手機隨時都能改，<br class="br-m">幫助新人減少超多麻煩</h2>
       <p>後台就是一個網頁，不用下載 App、不用開電腦，手機打開就能改。</p>
     </div>
-    <ol class="steps steps-3">
-      <li class="glass"><div><b>用 Google 帳號登入</b><span>開站後給你後台連結，不用另外記一組密碼。</span></div></li>
-      <li class="glass"><div><b>想改什麼就改</b><span>文字、交通資訊、表單題目、要顯示哪些區塊，存檔後賓客那邊馬上看到。</span></div></li>
-      <li class="glass"><div><b>把連結傳給賓客</b><span>貼到 LINE 就有專屬預覽圖，賓客的回覆會自己出現在後台。</span></div></li>
-    </ol>
-    <p class="demo-lead"><b>點點看後台</b><span>每一支手機都是一個功能，可以直接操作</span></p>
     <ol class="demo-rail" tabindex="0" aria-label="新人後台的三個功能，可以左右滑動">
 
       <!-- 自訂內容：按一下多一則 -->
       <li class="demo" data-try="content">
         <div class="demo-cap">
           <h3>想告訴賓客的事，自己加</h3>
-          <p>停車資訊、婚紗照相簿、現場小活動……我們準備好的內容以外，想放什麼就放什麼。</p>
-          <span class="plan-tag">兩個方案都有</span>
+          <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
         </div>
+        <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
         <div class="demo-ctrl">
           <button type="button" class="pill add" data-content-add>＋ 新增一則</button>
         </div>
@@ -949,10 +921,9 @@ body.dlg-open{overflow:hidden;}
       <li class="demo" data-try="pages">
         <div class="demo-cap">
           <h3>用不到的區塊，關掉就好</h3>
-          <p>關掉的區塊賓客就看不到，內容都還在，隨時可以再打開。</p>
-          <span class="plan-tag">兩個方案都有</span>
+          <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
         </div>
-        <div class="demo-ctrl"><span class="demo-hint">點手機裡的開關試試看</span></div>
+        <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
         <div class="phone"><div class="phone-screen"><div class="adm">
           <div class="adm-bar"><i></i><b>頁面設定</b><span>Ethan &amp; Claire</span></div>
           <div class="adm-body adm-scroll">
@@ -976,10 +947,9 @@ body.dlg-open{overflow:hidden;}
       <li class="demo" data-try="butler">
         <div class="demo-cap">
           <h3>收禮台，點一下就記好</h3>
-          <p>婚宴當天幫忙收禮的親友，點連結、輸入通行碼就能用。點一下就記好，已收幾位、還有誰沒收到都自動算。</p>
-          <span class="plan-tag pro">典藏方案</span>
+          <span class="plan-tags"><span class="plan-tag">典藏</span></span>
         </div>
-        <div class="demo-ctrl"><span class="demo-hint">點名字試試看</span></div>
+        <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
         <div class="phone"><div class="phone-screen"><div class="adm">
           <div class="adm-bar"><i></i><b>收禮台</b><span>收禮小幫手</span></div>
           <div class="adm-body adm-scroll">
@@ -1001,16 +971,12 @@ body.dlg-open{overflow:hidden;}
     <p class="demo-swipe" aria-hidden="true">← 左右滑動看更多 →</p>
   </section>
 
-  <!-- ===== 05 方案與價格：/samples/#plans（上面先擺原價；表格內容不要動，功能名稱點了看說明；下面是買了以後的協助） ===== -->
+  <!-- ===== 05 方案與價格：/samples/#plans（表格內容不要動，功能名稱點了看說明；下面是買了以後的協助） ===== -->
   <section class="sec" id="plans" aria-labelledby="plansTitle">
     <div class="sec-head">
       <div class="kicker">Plans</div>
-      <h2 id="plansTitle">一份喜帖，從邀請到婚宴安排，<br class="br-m">一次準備好。</h2>
+      <h2 id="plansTitle">新人會有的麻煩，<br class="br-m">芯玖一次解決</h2>
       <p>一次付清，沒有月費，也不用續約。</p>
-    </div>
-    <div class="price-strip">
-      <div class="ps glass"><span class="pname">經典方案</span><span class="pen">CLASSIC</span><strong><small>NT$</small>2,580</strong><span class="eb">11/30 前早鳥價 NT$1,280</span></div>
-      <div class="ps glass p2"><span class="pname">典藏方案</span><span class="pen">PREMIUM</span><strong><small>NT$</small>3,290</strong><span class="eb">11/30 前早鳥價 NT$1,999</span></div>
     </div>
     <p class="plan-tip">點功能名稱，看看它是做什麼的</p>
     <div class="plans glass">
@@ -1225,7 +1191,7 @@ body.dlg-open{overflow:hidden;}
 
 <!-- 功能說明的內容：samples.js 依 data-feature 搬進上面的彈窗 -->
 <template id="fx-multi">
-  <span class="fx-plan">兩個方案都有</span>
+  <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
   <p>證婚、婚宴、文訂、迎娶、After Party……一個網站放進當天所有的活動。賓客一次回覆每一場出不出席。</p>
   <p>每一場要問什麼也分開決定，例如證婚不問餐點、晚宴才問。</p>
   <div class="fx-pic"><div class="mock" aria-hidden="true">
@@ -1235,19 +1201,34 @@ body.dlg-open{overflow:hidden;}
   </div></div>
 </template>
 <template id="fx-stories">
-  <span class="fx-plan">兩個方案都有</span>
+  <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
   <p><b>故事牆</b>用一條時間軸說你們的故事；<b>祝福牆</b>讓賓客留言給你們；<b>抽卡</b>是賓客抽一張你們的照片小卡收藏起來。</p>
   <p>等開席的時候，早到的賓客也有事可以做。</p>
-  <div class="fx-pic"><img src="/samples/features/stories.jpg" alt="示範網站的故事牆、祝福牆與抽卡畫面" width="1128" height="665" loading="lazy"></div>
+  <div class="fx-pic"><div class="mock" aria-hidden="true">
+    <div class="mock-cols3">
+      <div class="mock-box"><h4>故事牆</h4>
+        <div class="mock-photo" style="background-image:url(/samples/photos/02.webp)"></div>
+        <b class="mock-cap">誤點兩小時的高鐵</b><small class="mock-sub">2021</small></div>
+      <div class="mock-box"><h4>祝福牆</h4>
+        <div class="mock-wish"><b>小安</b>從大學看你們走到今天，真的好替你們開心！</div>
+        <div class="mock-wish"><b>阿哲</b>恭喜你們，婚禮那天見！</div></div>
+      <div class="mock-box"><h4>抽卡</h4>
+        <div class="mock-photo tall" style="background-image:url(/samples/photos/01.webp)"></div>
+        <span class="mock-btn">抽一張婚禮小卡</span></div>
+    </div>
+  </div></div>
 </template>
 <template id="fx-seat">
-  <span class="fx-plan">兩個方案都有</span>
+  <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
   <p>婚禮當天，賓客輸入名字就看到自己坐第幾桌，下面再附上桌次圖，不用擠在門口找名單。</p>
   <p>只會顯示自己的桌號，不會連帶看到別人的名字。</p>
-  <div class="fx-pic"><img src="/samples/features/seating.jpg" alt="示範網站的查桌次畫面：輸入王小安，顯示第 3 桌" width="600" height="1108" loading="lazy"></div>
+  <div class="fx-pic"><div class="mock" aria-hidden="true">
+    <div class="mock-search"><span>王小安</span><b>查詢</b></div>
+    <div class="mock-result"><small>王小安</small><span>你的桌次</span><strong>第 3 桌</strong><small>大學同學</small></div>
+  </div></div>
 </template>
 <template id="fx-seating">
-  <span class="fx-plan">典藏方案</span>
+  <span class="plan-tags"><span class="plan-tag">典藏</span></span>
   <p>原本用 Excel 排桌的那件事，整套搬進後台：左邊是還沒坐下的人，右邊是桌子，拖曳就能排。</p>
   <p>出席回覆可以直接匯入，還有幾位沒排一眼就看得到；排好之後，賓客就查得到自己的桌號。</p>
   <div class="fx-pic"><div class="mock" aria-hidden="true">
@@ -1262,7 +1243,7 @@ body.dlg-open{overflow:hidden;}
   </div></div>
 </template>
 <template id="fx-butler">
-  <span class="fx-plan">典藏方案</span>
+  <span class="plan-tags"><span class="plan-tag">典藏</span></span>
   <p>婚宴當天收禮台用的工具。幫忙收禮的親友點連結、輸入六位數通行碼就能用，不用辦帳號，也看不到出席回覆。</p>
   <p>記下禮金與禮餅，總額、還有幾位沒收到、誰記了多少，都會自動算好，事後對帳很輕鬆。</p>
   <div class="fx-pic"><div class="mock" aria-hidden="true">
@@ -1275,12 +1256,21 @@ body.dlg-open{overflow:hidden;}
   </div></div>
 </template>
 <template id="fx-quiz">
-  <span class="fx-plan">典藏方案</span>
+  <span class="plan-tags"><span class="plan-tag">典藏</span></span>
   <p>「看你多了解我們」：題目和答案由你們出。賓客作答完，看到自己的分數，還有每一題大家都選了什麼。</p>
-  <div class="fx-pic"><img src="/samples/features/quiz.jpg" alt="示範網站的小測驗畫面" width="600" height="1108" loading="lazy"></div>
+  <div class="fx-pic"><div class="mock" aria-hidden="true">
+    <div class="mock-box">
+      <div class="mock-q"><small>01・單選</small><b>我們是怎麼認識的？</b></div>
+      <div class="mock-opt on"><span>A　朋友介紹</span><em>58%</em><i style="width:58%"></i></div>
+      <div class="mock-opt"><span>B　同學或同事</span><em>21%</em><i style="width:21%"></i></div>
+      <div class="mock-opt"><span>C　在網路上聊起來</span><em>13%</em><i style="width:13%"></i></div>
+      <div class="mock-opt"><span>D　旅行的路上</span><em>8%</em><i style="width:8%"></i></div>
+    </div>
+    <div class="mock-score">你答對了 <b>2</b>／3 題</div>
+  </div></div>
 </template>
 <template id="fx-letter">
-  <span class="fx-plan">典藏方案</span>
+  <span class="plan-tags"><span class="plan-tag">典藏</span></span>
   <p>為賓客寫一封封信。賓客輸入名字或你們之間的暗號，封蠟消失、信紙滑出來，還能把信存成圖片留念。</p>
   <p>沒有指定信的賓客，會收到你們寫給大家的那一封。</p>
   <div class="fx-pic"><img src="/samples/features/letter.jpg" alt="示範網站拆開的專屬信件：給小安" width="600" height="1108" loading="lazy"></div>
