@@ -331,9 +331,13 @@ document.addEventListener('click', (e) => {
   if (!btn) return;
   const tpl = document.getElementById(`fx-${btn.dataset.feature}`);
   if (!tpl) return;
-  document.getElementById('fxTitle').textContent = btn.querySelector('.lab').textContent;
+  const title = document.getElementById('fxTitle');
+  title.textContent = btn.querySelector('.lab').textContent;
   const body = document.getElementById('fxBody');
   body.replaceChildren(tpl.content.cloneNode(true));
+  /* 只有典藏方案才有的功能，「典藏」標籤接在標題後面（和頁面上的寫法一樣） */
+  const tag = body.querySelector(':scope > .plan-tag');
+  if (tag) title.append(tag);
   showDialog(fx, btn);
   track('feature_info_open', { feature: btn.dataset.feature });
 });

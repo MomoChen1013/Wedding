@@ -190,8 +190,7 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
 .demo-cap{display:flex;flex-direction:column;align-items:flex-start;gap:6px;width:100%;padding:0 2px;}
 .demo-cap .step{font-family:var(--f-en);font-size:12px;letter-spacing:.24em;color:var(--mc-gold);}
 .demo-cap h3{font-family:var(--f-cn);font-weight:500;font-size:16.5px;letter-spacing:.1em;line-height:1.5;}
-/* 方案標籤：灰色小方塊，經典一個、典藏一個；兩個方案都有就兩個都出現 */
-.plan-tags{display:inline-flex;gap:4px;}
+/* 方案標籤：只有典藏方案才有的功能才標，灰色小方塊，接在標題後面 */
 .plan-tag{display:inline-block;padding:0 6px;border-radius:2px;background:#ebe7e1;color:#6f6870;
   font-size:11.5px;letter-spacing:.08em;line-height:1.75;white-space:nowrap;}
 /* 手寫的「動手操作看看」：灰色、置中，在要操作的按鈕（或手機）正上方，左邊一支往下的箭頭 */
@@ -338,19 +337,19 @@ button.sp-chip:focus-visible{outline:1.5px solid var(--ink);outline-offset:1px;}
 .play-grid{display:grid;gap:10px;grid-template-columns:repeat(2,1fr);max-width:980px;margin:0 auto;}
 @media (min-width:520px){.play-grid{gap:14px;}}
 @media (min-width:900px){.play-grid{grid-template-columns:repeat(3,1fr);gap:18px;}}
-.play{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:18px 18px 18px;}
+.play{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:24px 28px 26px;}
 .play h3{font-family:var(--f-cn);font-weight:500;font-size:17px;letter-spacing:.1em;line-height:1.5;margin-top:2px;}
 .play-need{font-size:13px;color:#7a7179;}
 .play-need b{font-weight:500;color:var(--ink);margin-right:6px;}
 .play .btn{position:relative;z-index:1;align-self:stretch;margin-top:auto;min-height:40px;padding:8px 12px;font-size:13.5px;letter-spacing:.08em;}
 .play-need{margin-bottom:8px;}
-/* 手機兩欄：卡片窄，字和按鈕縮一號，按鈕的字一行放得下 */
+/* 手機兩欄：卡片窄，字和按鈕縮一號；按鈕的字放不下一行就拆成兩行，只在「」前後或 <wbr> 斷，不會把名字切開 */
 @media (max-width:519px){
-  .play{padding:14px 12px 13px;gap:5px;}
+  .play{padding:20px 17px 19px;gap:5px;}
   .play h3{font-size:15.5px;letter-spacing:.06em;}
   .play-need{font-size:12px;line-height:1.6;}
   .play-need b{display:block;margin:0;}
-  .play .btn{min-height:38px;padding:6px 6px;font-size:12px;letter-spacing:0;line-height:1.35;gap:3px;white-space:nowrap;}
+  .play .btn{min-height:40px;padding:6px 8px;font-size:12px;letter-spacing:0;line-height:1.4;gap:3px;text-align:center;text-wrap:balance;word-break:keep-all;}
   .play .btn .ext{width:12px;height:12px;}
 }
 
@@ -592,7 +591,7 @@ body.dlg-open{overflow:hidden;}
 .fx-body > p + p{margin-top:8px;}
 .fx-pic{margin-top:18px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#fff;}
 .fx-pic img{display:block;width:100%;height:auto;max-height:52vh;object-fit:cover;object-position:top center;}
-.fx-body > .plan-tags{margin-bottom:10px;}
+h3 > .plan-tag,h2 > .plan-tag{margin-left:8px;vertical-align:2px;font-family:var(--f-ui);font-weight:400;}
 /* 後台與收禮台的示意（假資料畫的，不是截圖） */
 .mock{padding:14px;font-size:12.5px;line-height:1.6;color:#2b2a2e;background:#fbfaf8;}
 .mock-cols{display:grid;grid-template-columns:1fr 1.3fr;gap:10px;}
@@ -746,7 +745,6 @@ body.dlg-open{overflow:hidden;}
         <div class="demo-cap">
           <span class="step">STEP 01</span>
           <h3>不必再自己設計出席表單</h3>
-          <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
         </div>
         <div class="demo-ctrl" role="group" aria-label="試試看：調整表單題目">
           <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
@@ -774,7 +772,6 @@ body.dlg-open{overflow:hidden;}
         <div class="demo-cap">
           <span class="step">STEP 02</span>
           <h3>只需要一份名單，皆可同步</h3>
-          <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
         </div>
         <div class="demo-ctrl">
           <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
@@ -803,8 +800,7 @@ body.dlg-open{overflow:hidden;}
       <li class="demo" data-try="seat">
         <div class="demo-cap">
           <span class="step">STEP 03</span>
-          <h3>拖進桌位，就排好了</h3>
-          <span class="plan-tags"><span class="plan-tag">典藏</span></span>
+          <h3>拖進桌位，就排好了<span class="plan-tag">典藏</span></h3>
         </div>
         <div class="demo-ctrl">
           <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
@@ -852,40 +848,34 @@ body.dlg-open{overflow:hidden;}
     </div>
     <div class="play-grid">
       <article class="play glass">
-        <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
         <h3>查座位</h3>
         <p class="play-need"><b>新人準備</b>排好的桌次</p>
         <a class="btn ghost" href="/samples/white-church/seating" target="_blank" rel="noopener" data-play="seating">輸入「小安」查座位<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
-        <span class="plan-tags"><span class="plan-tag">典藏</span></span>
-        <h3>專屬信件</h3>
+        <h3>專屬信件<span class="plan-tag">典藏</span></h3>
         <p class="play-need"><b>新人準備</b>想寫給賓客的信</p>
         <a class="btn ghost" href="/samples/white-church/letter" target="_blank" rel="noopener" data-play="letter">輸入「小安」拆信<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
-        <span class="plan-tags"><span class="plan-tag">典藏</span></span>
-        <h3>小測驗</h3>
+        <h3>小測驗<span class="plan-tag">典藏</span></h3>
         <p class="play-need"><b>新人準備</b>題目和答案</p>
-        <a class="btn ghost" href="/samples/white-church/quiz" target="_blank" rel="noopener" data-play="quiz">開始做小測驗<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+        <a class="btn ghost" href="/samples/white-church/quiz" target="_blank" rel="noopener" data-play="quiz">開始做<wbr>小測驗<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
-        <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
         <h3>抽卡</h3>
         <p class="play-need"><b>新人準備</b>幾張照片</p>
-        <a class="btn ghost" href="/samples/white-church/draw" target="_blank" rel="noopener" data-play="draw">抽一張新人卡片<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+        <a class="btn ghost" href="/samples/white-church/draw" target="_blank" rel="noopener" data-play="draw">抽一張<wbr>新人卡片<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
-        <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
         <h3>祝福牆</h3>
         <p class="play-need"><b>新人準備</b>不用準備</p>
-        <a class="btn ghost" href="/samples/white-church/wall" target="_blank" rel="noopener" data-play="wall">看新人收到的祝福牆<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+        <a class="btn ghost" href="/samples/white-church/wall" target="_blank" rel="noopener" data-play="wall">看新人收到的<wbr>祝福牆<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
-        <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
         <h3>故事牆</h3>
         <p class="play-need"><b>新人準備</b>幾張照片和一句話</p>
-        <a class="btn ghost" href="/samples/white-church/exhibition" target="_blank" rel="noopener" data-play="exhibition">看新人的認識過程<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+        <a class="btn ghost" href="/samples/white-church/exhibition" target="_blank" rel="noopener" data-play="exhibition">看新人的<wbr>認識過程<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
     </div>
   </section>
@@ -903,7 +893,6 @@ body.dlg-open{overflow:hidden;}
       <li class="demo" data-try="content">
         <div class="demo-cap">
           <h3>想告訴賓客的事，自己加</h3>
-          <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
         </div>
         <div class="demo-ctrl">
           <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
@@ -926,7 +915,6 @@ body.dlg-open{overflow:hidden;}
       <li class="demo" data-try="pages">
         <div class="demo-cap">
           <h3>用不到的區塊，關掉就好</h3>
-          <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
         </div>
         <div class="demo-ctrl"><p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p></div>
         <div class="phone"><div class="phone-screen"><div class="adm">
@@ -951,8 +939,7 @@ body.dlg-open{overflow:hidden;}
       <!-- 收禮小幫手：點名字就記好 -->
       <li class="demo" data-try="butler">
         <div class="demo-cap">
-          <h3>收禮台，點一下就記好</h3>
-          <span class="plan-tags"><span class="plan-tag">典藏</span></span>
+          <h3>收禮台，點一下就記好<span class="plan-tag">典藏</span></h3>
         </div>
         <div class="demo-ctrl"><p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p></div>
         <div class="phone"><div class="phone-screen"><div class="adm">
@@ -1196,7 +1183,6 @@ body.dlg-open{overflow:hidden;}
 
 <!-- 功能說明的內容：samples.js 依 data-feature 搬進上面的彈窗 -->
 <template id="fx-multi">
-  <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
   <p>證婚、婚宴、文訂、迎娶、After Party……一個網站放進當天所有的活動。賓客一次回覆每一場出不出席。</p>
   <p>每一場要問什麼也分開決定，例如證婚不問餐點、晚宴才問。</p>
   <div class="fx-pic"><div class="mock" aria-hidden="true">
@@ -1206,7 +1192,6 @@ body.dlg-open{overflow:hidden;}
   </div></div>
 </template>
 <template id="fx-stories">
-  <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
   <p><b>故事牆</b>用一條時間軸說你們的故事；<b>祝福牆</b>讓賓客留言給你們；<b>抽卡</b>是賓客抽一張你們的照片小卡收藏起來。</p>
   <p>等開席的時候，早到的賓客也有事可以做。</p>
   <div class="fx-pic"><div class="mock" aria-hidden="true">
@@ -1224,7 +1209,6 @@ body.dlg-open{overflow:hidden;}
   </div></div>
 </template>
 <template id="fx-seat">
-  <span class="plan-tags"><span class="plan-tag">經典</span><span class="plan-tag">典藏</span></span>
   <p>婚禮當天，賓客輸入名字就看到自己坐第幾桌，下面再附上桌次圖，不用擠在門口找名單。</p>
   <p>只會顯示自己的桌號，不會連帶看到別人的名字。</p>
   <div class="fx-pic"><div class="mock" aria-hidden="true">
@@ -1233,7 +1217,7 @@ body.dlg-open{overflow:hidden;}
   </div></div>
 </template>
 <template id="fx-seating">
-  <span class="plan-tags"><span class="plan-tag">典藏</span></span>
+  <span class="plan-tag">典藏</span>
   <p>原本用 Excel 排桌的那件事，整套搬進後台：左邊是還沒坐下的人，右邊是桌子，拖曳就能排。</p>
   <p>出席回覆可以直接匯入，還有幾位沒排一眼就看得到；排好之後，賓客就查得到自己的桌號。</p>
   <div class="fx-pic"><div class="mock" aria-hidden="true">
@@ -1248,7 +1232,7 @@ body.dlg-open{overflow:hidden;}
   </div></div>
 </template>
 <template id="fx-butler">
-  <span class="plan-tags"><span class="plan-tag">典藏</span></span>
+  <span class="plan-tag">典藏</span>
   <p>婚宴當天收禮台用的工具。幫忙收禮的親友點連結、輸入六位數通行碼就能用，不用辦帳號，也看不到出席回覆。</p>
   <p>記下禮金與禮餅，總額、還有幾位沒收到、誰記了多少，都會自動算好，事後對帳很輕鬆。</p>
   <div class="fx-pic"><div class="mock" aria-hidden="true">
@@ -1261,7 +1245,7 @@ body.dlg-open{overflow:hidden;}
   </div></div>
 </template>
 <template id="fx-quiz">
-  <span class="plan-tags"><span class="plan-tag">典藏</span></span>
+  <span class="plan-tag">典藏</span>
   <p>「看你多了解我們」：題目和答案由你們出。賓客作答完，看到自己的分數，還有每一題大家都選了什麼。</p>
   <div class="fx-pic"><div class="mock" aria-hidden="true">
     <div class="mock-box">
@@ -1275,7 +1259,7 @@ body.dlg-open{overflow:hidden;}
   </div></div>
 </template>
 <template id="fx-letter">
-  <span class="plan-tags"><span class="plan-tag">典藏</span></span>
+  <span class="plan-tag">典藏</span>
   <p>為賓客寫一封封信。賓客輸入名字或你們之間的暗號，封蠟消失、信紙滑出來，還能把信存成圖片留念。</p>
   <p>沒有指定信的賓客，會收到你們寫給大家的那一封。</p>
   <div class="fx-pic"><img src="/samples/features/letter.jpg" alt="示範網站拆開的專屬信件：給小安" width="600" height="1108" loading="lazy"></div>
