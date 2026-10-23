@@ -549,7 +549,7 @@ PostHog 只在總覽頁與示範模式載入（autocapture、heatmaps 開著）�
 | `feature_info_open` | `feature` | 方案比較點開功能說明 |
 | `ask_click` | `ask`（`design`／`admin`／`play`） | 首屏「你可能想問」的對話框 |
 | `play_demo_open` | `game`（`seating`／`letter`／`quiz`／`draw`／`wall`／`exhibition`） | 「看看賓客怎麼玩」連到示範網站 |
-| `play_more_open` | `game`（同上） | 「等待開席」小卡片按「展開說明」 |
+| `play_more_open` | `game`（同上） | 「等待開席」小卡片點開隱藏的說明（閃爍光點蓋著的那段；看過的記在 localStorage，下次直接顯示） |
 | `demo_try` | `demo`（`form`／`stats`／`seat`／`content`／`pages`／`butler`） | 第一次操作某一支後台示範 |
 
 漏斗：`$pageview`（`/samples/`）→ `template_preview_open` → `template_demo_open` → `line_click`。

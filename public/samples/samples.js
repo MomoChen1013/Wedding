@@ -21,7 +21,7 @@
      template_like              { template, source }          第一次喜歡這一款：heart／want（我想用這款）／start（開始製作）
      ask_click                  { ask }                       首屏「你可能想問」的對話框：design／admin／play
      play_demo_open             { game }                      「看看賓客怎麼玩」連到示範網站：seating／letter／quiz／draw／wall／exhibition
-     play_more_open             { game }                      「等待開席」小卡片按「展開說明」（同一個 game 代號）
+     play_more_open             { game }                      「等待開席」小卡片點開隱藏的說明（同一個 game 代號；這個瀏覽器第一次點開才算）
      demo_try                   { demo }                      第一次操作某一支後台示範：form／stats／seat／content／pages／butler
 ============================================================ */
 import { initAnalytics } from './analytics.js';
@@ -126,11 +126,36 @@ loadLikes();
 
 initDemos(track);
 
-/* 小卡片的「展開說明」：toggle 不會往上冒泡，用捕獲階段在 document 上一次接住 */
-document.addEventListener('toggle', (e) => {
-  const d = e.target;
-  if (d.matches && d.matches('details[data-more]') && d.open) track('play_more_open', { game: d.dataset.more });
-}, true);
+/* 小卡片的隱藏說明（像 Threads 的隱藏文字）：點一下就顯示，不再收回。
+   看過哪幾張記在這個瀏覽器（localStorage），下次打開直接顯示；無痕視窗記不住也沒關係，照樣點得開 */
+const SEEN_KEY = 'shin9.samples.spoilers';
+const seenSpoilers = (() => {
+  try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || '[]')); } catch { return new Set(); }
+})();
+function showSpoiler(el, remember) {
+  el.classList.add('is-shown');
+  el.removeAttribute('role');
+  el.removeAttribute('tabindex');
+  el.removeAttribute('aria-label');
+  if (!remember) return;
+  seenSpoilers.add(el.dataset.spoiler);
+  try { localStorage.setItem(SEEN_KEY, JSON.stringify([...seenSpoilers])); } catch { /* 無痕視窗：這次照樣顯示，只是記不住 */ }
+  track('play_more_open', { game: el.dataset.spoiler });
+}
+document.querySelectorAll('.spoiler[data-spoiler]').forEach((el) => {
+  if (seenSpoilers.has(el.dataset.spoiler)) showSpoiler(el, false);
+});
+document.addEventListener('click', (e) => {
+  const el = e.target.closest && e.target.closest('.spoiler:not(.is-shown)');
+  if (el) showSpoiler(el, true);
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const el = e.target.closest && e.target.closest('.spoiler:not(.is-shown)');
+  if (!el) return;
+  e.preventDefault();
+  showSpoiler(el, true);
+});
 
 /* ---------- 卡片（與首屏手機）的循環影片 ---------- */
 (function loopVideos() {

@@ -299,17 +299,24 @@ button.sp-chip:focus-visible{outline:1.5px solid var(--ink);outline-offset:1px;}
 .play h3{font-family:var(--f-cn);font-weight:500;font-size:17px;letter-spacing:.1em;line-height:1.5;margin-top:2px;}
 .play-need{font-size:13px;color:#7a7179;}
 .play-line{font-size:13px;color:#5c5560;line-height:1.75;}
-.play-more{align-self:stretch;margin-bottom:10px;}
-.play-more summary{display:inline-flex;align-items:center;gap:5px;list-style:none;cursor:pointer;
-  font-size:12.5px;letter-spacing:.06em;color:#5c5560;border-bottom:1px dashed var(--mc-gold-soft);}
-.play-more summary::-webkit-details-marker{display:none;}
-.play-more summary::after{content:'';width:6px;height:6px;margin:0 2px 3px;border-right:1.4px solid currentColor;border-bottom:1.4px solid currentColor;transform:rotate(45deg);transition:transform .2s ease;}
-.play-more[open] summary::after{transform:rotate(-135deg);margin-bottom:-2px;}
-.play-more summary:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:3px;}
-.play-more .when-open,.play-more[open] .when-shut{display:none;}
-.play-more[open] .when-open{display:inline;}
-.play-more p{margin-top:8px;font-size:13px;line-height:1.8;color:#4d4650;}
-@media (prefers-reduced-motion:reduce){.play-more summary::after{transition:none;}}
+.play-more{align-self:stretch;margin-bottom:10px;font-size:13px;line-height:1.8;color:#4d4650;}
+.spoiler{color:transparent;cursor:pointer;border-radius:4px;-webkit-user-select:none;user-select:none;
+  -webkit-box-decoration-break:clone;box-decoration-break:clone;
+  background-color:rgba(92,85,96,.07);
+  background-image:
+    radial-gradient(circle,rgba(92,85,96,.7) .7px,transparent 1.2px),
+    radial-gradient(circle,rgba(92,85,96,.42) .6px,transparent 1.1px),
+    radial-gradient(circle,rgba(168,141,95,.75) .8px,transparent 1.4px);
+  background-size:7px 6px,11px 9px,17px 13px;
+  animation:spoiler-twinkle 1.8s linear infinite;
+  transition:color .45s ease,background-color .45s ease;}
+@keyframes spoiler-twinkle{
+  0%{background-position:0 0,0 0,0 0;}
+  50%{background-position:4px -3px,-6px 5px,8px 7px;}
+  100%{background-position:7px -6px,-11px 9px,17px 13px;}}
+.spoiler:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
+.spoiler.is-shown{color:inherit;background:none;animation:none;cursor:auto;-webkit-user-select:auto;user-select:auto;}
+@media (prefers-reduced-motion:reduce){.spoiler{animation:none;transition:none;}}
 .play-need b{font-weight:500;color:var(--ink);margin-right:6px;}
 .play .btn{position:relative;z-index:1;align-self:stretch;margin-top:auto;min-height:40px;padding:8px 12px;font-size:13.5px;letter-spacing:.08em;}
 .play-need{margin-bottom:8px;}
@@ -996,40 +1003,45 @@ h3 > .plan-tag,h2 > .plan-tag{margin-left:8px;vertical-align:2px;font-family:var
     <div class="play-grid">
       <article class="play glass">
         <h3>找座位</h3>
+        <p class="play-line">被好好安排，本身就是一種在乎。</p>
         <p class="play-need"><b>新人準備</b>排好的桌次</p>
-        <details class="play-more" data-more="seating"><summary><span class="when-shut">展開說明</span><span class="when-open">收起說明</span></summary><p>可以放上多張現場座位圖；也可以打開找座位功能，讓賓客輸入名字，就找到自己的位子。</p></details>
+        <p class="play-more"><span class="spoiler" data-spoiler="seating" role="button" tabindex="0" aria-label="點一下看說明">可以放上多張現場座位圖；也可以打開找座位功能，讓賓客輸入名字，就找到自己的位子。</span></p>
         <a class="btn ghost" href="/samples/white-church/seating" target="_blank" rel="noopener" data-play="seating">輸入「小安」找座位<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
         <h3>給你的信<span class="plan-tag">完整版</span></h3>
         <p class="play-line">這年頭願意為一個人寫一封信，就是最貴的禮物。</p>
         <p class="play-need"><b>新人準備</b>想寫給賓客的信</p>
-        <details class="play-more" data-more="letter"><summary><span class="when-shut">展開說明</span><span class="when-open">收起說明</span></summary><p>除了一人一封的專屬信，還可以準備好幾封公版信，讓沒有專屬信的賓客，也能感受到收到信的快樂。</p></details>
+        <p class="play-more"><span class="spoiler" data-spoiler="letter" role="button" tabindex="0" aria-label="點一下看說明">除了一人一封的專屬信，還可以準備好幾封公版信，讓沒有專屬信的賓客，也能感受到收到信的快樂。</span></p>
         <a class="btn ghost" href="/samples/white-church/letter" target="_blank" rel="noopener" data-play="letter">輸入「小安」拆信<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
-        <h3>新人隨堂考<span class="plan-tag">完整版</span></h3>
+        <h3>隨堂考<span class="plan-tag">完整版</span></h3>
+        <p class="play-line">答錯也沒關係，你來了就滿分。</p>
         <p class="play-need"><b>新人準備</b>題目和答案</p>
-        <details class="play-more" data-more="quiz"><summary><span class="when-shut">展開說明</span><span class="when-open">收起說明</span></summary><p>題目有單選和複選，最多 50 題。賓客答完，還能看到其他人都選了什麼，非常有趣！</p></details>
+        <p class="play-more"><span class="spoiler" data-spoiler="quiz" role="button" tabindex="0" aria-label="點一下看說明">有單選和複選，答完之後還能看到其他人都選了什麼，非常有趣！</span></p>
         <a class="btn ghost" href="/samples/white-church/quiz" target="_blank" rel="noopener" data-play="quiz">開始作答<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
         <h3>抽小卡</h3>
+        <p class="play-line">抽到哪一張，都是這段感情選了你。</p>
         <p class="play-need"><b>新人準備</b>幾張想做成小卡的照片</p>
-        <details class="play-more" data-more="draw"><summary><span class="when-shut">展開說明</span><span class="when-open">收起說明</span></summary><p>追星族必玩的小遊戲！新人準備婚紗照或生活照，賓客隨機抽一張，抽到哪一張就成了大家聊天的話題。</p></details>
+        <p class="play-more"><span class="spoiler" data-spoiler="draw" role="button" tabindex="0" aria-label="點一下看說明">追星族必玩的小遊戲！新人準備婚紗照或生活照，賓客隨機抽一張，抽到哪一張就成了大家聊天的話題。</span></p>
         <a class="btn ghost" href="/samples/white-church/draw" target="_blank" rel="noopener" data-play="draw">抽一張<wbr>新人小卡<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
         <h3>祝福牆</h3>
+        <p class="play-line">有些話當面說會害羞，寫下來剛剛好。</p>
         <p class="play-need"><b>新人準備</b>不用準備</p>
-        <details class="play-more" data-more="wall"><summary><span class="when-shut">展開說明</span><span class="when-open">收起說明</span></summary><p>賓客把祝福留在網頁上，大家都看得到；想私下說的話，也能寫成悄悄話，只有新人在後台看得到。</p></details>
-        <a class="btn ghost" href="/samples/white-church/wall" target="_blank" rel="noopener" data-play="wall">看新人收到的<wbr>祝福牆<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+        <p class="play-more"><span class="spoiler" data-spoiler="wall" role="button" tabindex="0" aria-label="點一下看說明">把祝福貼上，讓大家都看得到；也能寫成悄悄話，只有新人看得到。</span></p>
+        <a class="btn ghost" href="/samples/white-church/wall" target="_blank" rel="noopener" data-play="wall">看看祝福牆<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
         <h3>時光展</h3>
+        <p class="play-line">從陌生人走到今天，請慢慢看。</p>
         <p class="play-need"><b>新人準備</b>幾張照片和一句話</p>
-        <details class="play-more" data-more="exhibition"><summary><span class="when-shut">展開說明</span><span class="when-open">收起說明</span></summary><p>把你們從認識、一起出去玩，到一路經歷的事放上來，讓賓客更認識你們之間的故事。</p></details>
-        <a class="btn ghost" href="/samples/white-church/exhibition" target="_blank" rel="noopener" data-play="exhibition">看新人的<wbr>認識過程<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+        <p class="play-more"><span class="spoiler" data-spoiler="exhibition" role="button" tabindex="0" aria-label="點一下看說明">把你們從認識、一起出去玩，到一路經歷的事放上來，讓賓客更認識你們之間的故事。</span></p>
+        <a class="btn ghost" href="/samples/white-church/exhibition" target="_blank" rel="noopener" data-play="exhibition">進入時光展<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
     </div>
   </section>
