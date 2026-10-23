@@ -498,7 +498,7 @@ HTML 裡直接寫 `{{couple}}`、`{{date}}`、`{{hashtag}}` 這類 token，
   兩個方案叫「經典方案」「完整方案」（英文 CLASSIC／PREMIUM）；只有完整方案才有的功能，標題後面接一個灰色的「完整版」小標籤（兩個方案都有的不標）。
   功能名稱統一成：出席回覆、找座位、祝福牆、抽小卡（卡片叫新人小卡）、時光展（大廳那一段文字才叫我們的故事）、新人隨堂考、給你的信、排桌管理、收禮小幫手
   （目前只有總覽頁改了，示範網站、正式網站與後台還是舊名稱）；
-  可以操作的按鈕（或手機）正上方有一行手寫的「動手操作看看」（辰宇落雁體 Thin，只切那幾個字，見下面〈總覽頁的中文字〉）。
+  可以操作的按鈕（或手機）正上方有一行手寫的「動手操作看看」（辰宇落雁體 Thin；「等待開席」小卡片最上面那一句寫給新人的話也用它，只切這兩處用到的字，見下面〈總覽頁的中文字〉）。
   後台示範全是假資料、不連任何帳號，互動在 `public/samples/demos.js`。
   手機版底部另有固定的「LINE 詢問」。整頁用白色教堂的灰泥牆、兩旁被風吹動的白紗、牆上偶爾清楚起來的橄欖枝影子、
   分隔線與毛玻璃卡，按鈕是白色教堂的深色按鈕；減少動態時白紗與影子都不動。
@@ -594,7 +594,7 @@ JS 用 terser 壓縮與混淆變數名，開場（`js/openers/`）與 `lobby-mot
 | 開場的長相——卡片上的循環影片要跟著換 | `npm run build-sample-videos`（用預覽模式錄、ffmpeg 轉 WebM＋MP4，每支 300KB 以內，印出大小表，最後會自己再跑一次 build-samples；需要 ffmpeg） |
 | 方案說明裡專屬信件的截圖（示範網站的信改了） | `npm run build-sample-features`（截白色教堂示範網站拆開的信，存到 `public/samples/features/letter.jpg`；其他功能說明都是 `scripts/sample-index.html` 裡用 HTML 畫的示意，不用重跑） |
 | 新增一個版型 | 先在 `scripts/sample-catalog.js` 補一筆（沒補 build 會直接報錯），再跑 `npm run build-sample-thumbs` 與 `npm run build-sample-videos` |
-| 總覽頁的中文字（任何文案改動之後） | `npm run build-samples` 之後再跑 `python3 scripts/build-sample-font.py <源樣明體 otf 資料夾> [ChenYuluoyan-2.0-Thin.ttf]`：總覽頁的中文是源樣明體，只切了頁面用到的字（`public/samples/fonts/`）；漏跑的話新字會退回思源宋體。第二個參數順便切手寫字 `hand.woff2`（辰宇落雁體，只有「動手操作看看」，改了那行字才需要） |
+| 總覽頁的中文字（任何文案改動之後） | `npm run build-samples` 之後再跑 `python3 scripts/build-sample-font.py <源樣明體 otf 資料夾> [ChenYuluoyan-2.0-Thin.ttf]`：總覽頁的中文是源樣明體，只切了頁面用到的字（`public/samples/fonts/`）；漏跑的話新字會退回思源宋體。第二個參數順便切手寫字 `hand.woff2`（辰宇落雁體，只有「動手操作看看」與小卡片最上面那一句，改了這兩處的字才需要） |
 
 示範站台本身不用重產：它就是正式的頁面，改了就生效（保護過的副本由 predeploy 在部署前重產）。
 總覽、縮圖與循環影片是產出的檔案，要 commit，`firebase deploy` 不會幫你產。

@@ -12,7 +12,8 @@ build-sample-font.py — 版型總覽頁（/samples）的中文字體：源樣�
   需要的套件  pip install fonttools brotli
 
   第二個參數（選填）給辰宇落雁體，順便切手寫字 public/samples/fonts/hand.woff2：
-  只用在可以操作的示範上面那行「動手操作看看」（class="try-note"），只切那幾個字。
+  只用在可以操作的示範上面那行「動手操作看看」（class="try-note"）
+  與「等待開席」小卡片最上面那一句（class="play-line"），只切那幾個字。
   需要的檔案  ChenYuluoyan-2.0-Thin.ttf
               https://github.com/Chenyu-otf/chenyuluoyan_thin（SIL OFL 1.1）
   「辰宇落雁」是 OFL 的保留字型名稱（Reserved Font Name），切過的子集算改作，
@@ -63,15 +64,15 @@ for key, name in WEIGHTS.items():
     font.save(dest)
     print(f'✅ {dest.relative_to(ROOT)}（{len(chars)} 字，{dest.stat().st_size // 1024} KB）')
 
-# ---- 手寫字：辰宇落雁體 Thin，只切「動手操作看看」 ----
+# ---- 手寫字：辰宇落雁體 Thin，只切「動手操作看看」與小卡片最上面那一句 ----
 if len(sys.argv) > 2:
     hand_src = Path(sys.argv[2])
     if not hand_src.exists():
         sys.exit(f'找不到 {hand_src}（第二個參數給 ChenYuluoyan-2.0-Thin.ttf）')
-    notes = re.findall(r'class="try-note"[^>]*>(.*?)</p>', PAGE.read_text(encoding='utf8'), flags=re.S)
+    notes = re.findall(r'class="(?:try-note|play-line)"[^>]*>(.*?)</p>', PAGE.read_text(encoding='utf8'), flags=re.S)
     hand_chars = sorted(set(unescape(re.sub(r'<[^>]+>', '', ''.join(notes)))) - set(' \n\r\t'))
     if not hand_chars:
-        sys.exit('頁面上找不到 class="try-note" 的字')
+        sys.exit('頁面上找不到 class="try-note"／"play-line" 的字')
     font = TTFont(hand_src)
     opts = subset.Options()
     opts.flavor = 'woff2'

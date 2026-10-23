@@ -29,7 +29,7 @@
   src:url('/samples/fonts/genyomin-r.woff2') format('woff2');}
 @font-face{font-family:'GenYoMin Samples';font-weight:500;font-display:swap;
   src:url('/samples/fonts/genyomin-m.woff2') format('woff2');}
-/* 手寫字：辰宇落雁體 Thin 只切「動手操作看看」那幾個字（見 scripts/build-sample-font.py；
+/* 手寫字：辰宇落雁體 Thin 只切「動手操作看看」與小卡片最上面那一句用到的字（見 scripts/build-sample-font.py；
    「辰宇落雁」是 OFL 的保留字型名稱，子集算改作，所以換一個字族名稱） */
 @font-face{font-family:'Shin9 Samples Hand';font-weight:400;font-display:swap;
   src:url('/samples/fonts/hand.woff2') format('woff2');}
@@ -335,13 +335,23 @@ button.sp-chip:focus-visible{outline:1.5px solid var(--ink);outline-offset:1px;}
 
 
 /* ---------- 賓客怎麼玩：小卡片，每一張都連到真的示範網站 ---------- */
-.play-grid{display:grid;gap:10px;grid-template-columns:repeat(2,1fr);max-width:980px;margin:0 auto;}
-@media (min-width:520px){.play-grid{gap:14px;}}
+.play-grid{display:grid;gap:14px;grid-template-columns:repeat(2,1fr);max-width:980px;margin:0 auto;}
 @media (min-width:900px){.play-grid{grid-template-columns:repeat(3,1fr);gap:18px;}}
+/* 手機：上面三張、下面三張，左右滑動；一欄比螢幕窄一點，看得到旁邊那一欄的邊 */
+@media (max-width:599px){
+  .play-grid{grid-template-columns:repeat(3,min(82vw,340px));grid-template-rows:auto auto;gap:12px;
+    overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 16px 14px;margin:0 -16px;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  .play-grid::-webkit-scrollbar{display:none;}
+  .play{scroll-snap-align:center;}
+}
+.play-swipe{display:none;text-align:center;color:var(--muted);font-size:12.5px;letter-spacing:.1em;margin-top:2px;}
+@media (max-width:599px){.play-swipe{display:block;}}
 .play{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:24px 28px 26px;}
 .play h3{font-family:var(--f-cn);font-weight:500;font-size:17px;letter-spacing:.1em;line-height:1.5;margin-top:2px;}
 .play-need{font-size:13px;color:#7a7179;}
-.play-line{font-size:13px;color:#5c5560;line-height:1.75;}
+/* 卡片最上面那一句：寫給新人看的，用手寫字（辰宇落雁體，和「動手操作看看」同一套子集） */
+.play-line{font-family:'Shin9 Samples Hand',var(--f-cn);font-size:17px;letter-spacing:.06em;line-height:1.45;color:#5c5560;margin-bottom:2px;text-wrap:balance;word-break:keep-all;}
 /* 說明先藏起來（像 Threads 的隱藏文字）：字是透明的，上面一層會閃的小光點；
    點一下就顯示，不再收回；看過的這個瀏覽器會記住（samples.js），下次直接顯示 */
 .play-more{align-self:stretch;margin-bottom:10px;font-size:13px;line-height:1.8;color:#4d4650;}
@@ -366,14 +376,6 @@ button.sp-chip:focus-visible{outline:1.5px solid var(--ink);outline-offset:1px;}
 .play .btn{position:relative;z-index:1;align-self:stretch;margin-top:auto;min-height:40px;padding:8px 12px;font-size:13.5px;letter-spacing:.08em;}
 .play-need{margin-bottom:8px;}
 /* 手機兩欄：卡片窄，字和按鈕縮一號；按鈕的字放不下一行就拆成兩行，只在「」前後或 <wbr> 斷，不會把名字切開 */
-@media (max-width:519px){
-  .play{padding:20px 17px 19px;gap:5px;}
-  .play h3{font-size:15.5px;letter-spacing:.06em;}
-  .play-need{font-size:12px;line-height:1.6;}
-  .play-need b{display:block;margin:0;}
-  .play .btn{min-height:40px;padding:6px 8px;font-size:12px;letter-spacing:0;line-height:1.4;gap:3px;text-align:center;text-wrap:balance;word-break:keep-all;}
-  .play .btn .ext{width:12px;height:12px;}
-}
 
 /* ---------- 方案比較（表格內容不動，只換成白色教堂的卡；功能名稱點了看說明） ---------- */
 .plans{max-width:860px;margin:0 auto;overflow:hidden;}
@@ -870,48 +872,49 @@ h3 > .plan-tag,h2 > .plan-tag{margin-left:8px;vertical-align:2px;font-family:var
     </div>
     <div class="play-grid">
       <article class="play glass">
+        <p class="play-line">你替他想好的位子，他會記得。</p>
         <h3>找座位</h3>
-        <p class="play-line">被好好安排，本身就是一種在乎。</p>
         <p class="play-need"><b>新人準備</b>排好的桌次</p>
         <p class="play-more"><span class="spoiler" data-spoiler="seating" role="button" tabindex="0" aria-label="點一下看說明">可以放上多張現場座位圖；也可以打開找座位功能，讓賓客輸入名字，就找到自己的位子。</span></p>
         <a class="btn ghost" href="/samples/white-church/seating" target="_blank" rel="noopener" data-play="seating">輸入「小安」找座位<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
-        <h3>給你的信<span class="plan-tag">完整版</span></h3>
         <p class="play-line">這年頭願意為一個人寫一封信，就是最貴的禮物。</p>
+        <h3>給你的信<span class="plan-tag">完整版</span></h3>
         <p class="play-need"><b>新人準備</b>想寫給賓客的信</p>
         <p class="play-more"><span class="spoiler" data-spoiler="letter" role="button" tabindex="0" aria-label="點一下看說明">除了一人一封的專屬信，還可以準備好幾封公版信，讓沒有專屬信的賓客，也能感受到收到信的快樂。</span></p>
         <a class="btn ghost" href="/samples/white-church/letter" target="_blank" rel="noopener" data-play="letter">輸入「小安」拆信<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
+        <p class="play-line">原來大家，比你想的更懂你們。</p>
         <h3>隨堂考<span class="plan-tag">完整版</span></h3>
-        <p class="play-line">答錯也沒關係，你來了就滿分。</p>
         <p class="play-need"><b>新人準備</b>題目和答案</p>
         <p class="play-more"><span class="spoiler" data-spoiler="quiz" role="button" tabindex="0" aria-label="點一下看說明">有單選和複選，答完之後還能看到其他人都選了什麼，非常有趣！</span></p>
         <a class="btn ghost" href="/samples/white-church/quiz" target="_blank" rel="noopener" data-play="quiz">開始作答<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
+        <p class="play-line">把你們的笑，分成好多份送出去。</p>
         <h3>抽小卡</h3>
-        <p class="play-line">抽到哪一張，都是這段感情選了你。</p>
         <p class="play-need"><b>新人準備</b>幾張想做成小卡的照片</p>
         <p class="play-more"><span class="spoiler" data-spoiler="draw" role="button" tabindex="0" aria-label="點一下看說明">追星族必玩的小遊戲！新人準備婚紗照或生活照，賓客隨機抽一張，抽到哪一張就成了大家聊天的話題。</span></p>
         <a class="btn ghost" href="/samples/white-church/draw" target="_blank" rel="noopener" data-play="draw">抽一張<wbr>新人小卡<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
+        <p class="play-line">讓不好意思說的話，有地方放。</p>
         <h3>祝福牆</h3>
-        <p class="play-line">有些話當面說會害羞，寫下來剛剛好。</p>
         <p class="play-need"><b>新人準備</b>不用準備</p>
         <p class="play-more"><span class="spoiler" data-spoiler="wall" role="button" tabindex="0" aria-label="點一下看說明">把祝福貼上，讓大家都看得到；也能寫成悄悄話，只有新人看得到。</span></p>
         <a class="btn ghost" href="/samples/white-church/wall" target="_blank" rel="noopener" data-play="wall">看看祝福牆<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
+        <p class="play-line">你們走過的路，值得被好好看一次。</p>
         <h3>時光展</h3>
-        <p class="play-line">從陌生人走到今天，請慢慢看。</p>
         <p class="play-need"><b>新人準備</b>幾張照片和一句話</p>
         <p class="play-more"><span class="spoiler" data-spoiler="exhibition" role="button" tabindex="0" aria-label="點一下看說明">把你們從認識、一起出去玩，到一路經歷的事放上來，讓賓客更認識你們之間的故事。</span></p>
         <a class="btn ghost" href="/samples/white-church/exhibition" target="_blank" rel="noopener" data-play="exhibition">進入時光展<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
     </div>
+    <p class="play-swipe" aria-hidden="true">← 左右滑動看更多 →</p>
   </section>
 
   <!-- ===== 04 手機隨時都能改：三支可以點的後台手機（假資料，互動在 samples/demos.js） ===== -->
