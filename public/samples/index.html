@@ -299,6 +299,17 @@ button.sp-chip:focus-visible{outline:1.5px solid var(--ink);outline-offset:1px;}
 .play h3{font-family:var(--f-cn);font-weight:500;font-size:17px;letter-spacing:.1em;line-height:1.5;margin-top:2px;}
 .play-need{font-size:13px;color:#7a7179;}
 .play-line{font-size:13px;color:#5c5560;line-height:1.75;}
+.play-more{align-self:stretch;margin-bottom:10px;}
+.play-more summary{display:inline-flex;align-items:center;gap:5px;list-style:none;cursor:pointer;
+  font-size:12.5px;letter-spacing:.06em;color:#5c5560;border-bottom:1px dashed var(--mc-gold-soft);}
+.play-more summary::-webkit-details-marker{display:none;}
+.play-more summary::after{content:'';width:6px;height:6px;margin:0 2px 3px;border-right:1.4px solid currentColor;border-bottom:1.4px solid currentColor;transform:rotate(45deg);transition:transform .2s ease;}
+.play-more[open] summary::after{transform:rotate(-135deg);margin-bottom:-2px;}
+.play-more summary:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:3px;}
+.play-more .when-open,.play-more[open] .when-shut{display:none;}
+.play-more[open] .when-open{display:inline;}
+.play-more p{margin-top:8px;font-size:13px;line-height:1.8;color:#4d4650;}
+@media (prefers-reduced-motion:reduce){.play-more summary::after{transition:none;}}
 .play-need b{font-weight:500;color:var(--ink);margin-right:6px;}
 .play .btn{position:relative;z-index:1;align-self:stretch;margin-top:auto;min-height:40px;padding:8px 12px;font-size:13.5px;letter-spacing:.08em;}
 .play-need{margin-bottom:8px;}
@@ -624,7 +635,7 @@ h3 > .plan-tag,h2 > .plan-tag{margin-left:8px;vertical-align:2px;font-family:var
     <div class="hero-copy">
       <div class="kicker brand"><span>芯玖 · 婚禮體驗網站</span><span>Shin9 · Wedding Experience</span></div>
       <h1>從這些風格，<br>找到最像你們的婚禮。</h1>
-      <p>好吃好拍之外，也讓每一個來的人，都覺得自己被在乎。</p>
+      <p>好看之餘，也讓每一個來的人，都覺得自己被在乎。</p>
     </div>
     <div class="hero-phones" aria-hidden="true">
       <div class="phone side"><div class="phone-screen"><img src="/samples/thumbs/secret-garden.jpg" alt="" width="600" height="1169"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/secret-garden.jpg"
@@ -648,12 +659,12 @@ h3 > .plan-tag,h2 > .plan-tag{margin-left:8px;vertical-align:2px;font-family:var
     <div class="sec-head">
       <div class="kicker">Templates</div>
       <h2 id="tplTitle">先看看哪種風格適合你們</h2>
-      <p class="tip">經典喜帖方案 3 款，完整婚禮方案再多 10 款，共 13 款可選</p>
+      <p class="tip">經典方案 3 款，完整方案再多 10 款，共 13 款可選</p>
     </div>
 
     <div class="tier">
       <svg class="ic"><use href="#i-plan-classic"/></svg>
-      <h3>經典喜帖方案</h3><span>Classic</span><span class="n">3 款</span>
+      <h3>經典方案</h3><span>Classic</span><span class="n">3 款</span>
     </div>
     <div class="grid">
     <article class="card glass" data-template="classic">
@@ -705,9 +716,9 @@ h3 > .plan-tag,h2 > .plan-tag{margin-left:8px;vertical-align:2px;font-family:var
 
     <div class="tier">
       <svg class="ic"><use href="#i-plan-premium"/></svg>
-      <h3>完整婚禮方案</h3><span>Complete</span><span class="n">10 款</span>
+      <h3>完整方案</h3><span>Premium</span><span class="n">10 款</span>
     </div>
-    <p class="tier-note">選完整婚禮方案，上面經典喜帖的 3 款也都能用，一共 13 款可以挑。</p>
+    <p class="tier-note">選完整方案，上面經典方案的 3 款也都能用，一共 13 款可以挑。</p>
     <div class="grid">
     <article class="card glass" data-template="tapestry">
       <button type="button" class="like" data-like aria-pressed="false" aria-label="喜歡中古刺繡"><svg aria-hidden="true"><use href="#i-heart"/></svg></button>
@@ -876,7 +887,7 @@ h3 > .plan-tag,h2 > .plan-tag{margin-left:8px;vertical-align:2px;font-family:var
     <div class="sec-head">
       <div class="kicker">Guest list</div>
       <h2 id="adminTitle">賓客名單，<br class="br-m">不必再靠訊息一筆一筆整理。</h2>
-      <p>賓客用手機回覆，資料直接進到後台；人數統計、排桌、收禮名單，都從同一份名單接下去。</p>
+      <p>賓客用手機回覆，資料直接進到後台；人數統計、排桌、收禮名單，都從同一份名單接下去。你的腦袋留給更重要的事，比如婚後誰洗碗。</p>
     </div>
     <ol class="demo-rail" tabindex="0" aria-label="賓客名單的三個步驟，可以左右滑動">
 
@@ -937,8 +948,7 @@ h3 > .plan-tag,h2 > .plan-tag{margin-left:8px;vertical-align:2px;font-family:var
             <li class="demo" data-try="seat">
         <div class="demo-cap">
           <span class="step">STEP 03</span>
-          <h3>拖進桌位，就排好了<span class="plan-tag">完整婚禮</span></h3>
-          <p>把人拖進桌子，系統幫你算人數。你的腦袋留給更重要的事，比如婚後誰洗碗。</p>
+          <h3>拖進桌位，就排好了<span class="plan-tag">完整版</span></h3>
         </div>
         <div class="demo-ctrl">
           <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
@@ -987,32 +997,38 @@ h3 > .plan-tag,h2 > .plan-tag{margin-left:8px;vertical-align:2px;font-family:var
       <article class="play glass">
         <h3>找座位</h3>
         <p class="play-need"><b>新人準備</b>排好的桌次</p>
+        <details class="play-more" data-more="seating"><summary><span class="when-shut">展開說明</span><span class="when-open">收起說明</span></summary><p>可以放上多張現場座位圖；也可以打開找座位功能，讓賓客輸入名字，就找到自己的位子。</p></details>
         <a class="btn ghost" href="/samples/white-church/seating" target="_blank" rel="noopener" data-play="seating">輸入「小安」找座位<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
-        <h3>給你的信<span class="plan-tag">完整婚禮</span></h3>
+        <h3>給你的信<span class="plan-tag">完整版</span></h3>
         <p class="play-line">這年頭願意為一個人寫一封信，就是最貴的禮物。</p>
         <p class="play-need"><b>新人準備</b>想寫給賓客的信</p>
+        <details class="play-more" data-more="letter"><summary><span class="when-shut">展開說明</span><span class="when-open">收起說明</span></summary><p>除了一人一封的專屬信，還可以準備好幾封公版信，讓沒有專屬信的賓客，也能感受到收到信的快樂。</p></details>
         <a class="btn ghost" href="/samples/white-church/letter" target="_blank" rel="noopener" data-play="letter">輸入「小安」拆信<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
-        <h3>新人隨堂考<span class="plan-tag">完整婚禮</span></h3>
+        <h3>新人隨堂考<span class="plan-tag">完整版</span></h3>
         <p class="play-need"><b>新人準備</b>題目和答案</p>
+        <details class="play-more" data-more="quiz"><summary><span class="when-shut">展開說明</span><span class="when-open">收起說明</span></summary><p>題目有單選和複選，最多 50 題。賓客答完，還能看到其他人都選了什麼，非常有趣！</p></details>
         <a class="btn ghost" href="/samples/white-church/quiz" target="_blank" rel="noopener" data-play="quiz">開始作答<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
         <h3>抽小卡</h3>
         <p class="play-need"><b>新人準備</b>幾張想做成小卡的照片</p>
+        <details class="play-more" data-more="draw"><summary><span class="when-shut">展開說明</span><span class="when-open">收起說明</span></summary><p>追星族必玩的小遊戲！新人準備婚紗照或生活照，賓客隨機抽一張，抽到哪一張就成了大家聊天的話題。</p></details>
         <a class="btn ghost" href="/samples/white-church/draw" target="_blank" rel="noopener" data-play="draw">抽一張<wbr>新人小卡<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
         <h3>祝福牆</h3>
         <p class="play-need"><b>新人準備</b>不用準備</p>
+        <details class="play-more" data-more="wall"><summary><span class="when-shut">展開說明</span><span class="when-open">收起說明</span></summary><p>賓客把祝福留在網頁上，大家都看得到；想私下說的話，也能寫成悄悄話，只有新人在後台看得到。</p></details>
         <a class="btn ghost" href="/samples/white-church/wall" target="_blank" rel="noopener" data-play="wall">看新人收到的<wbr>祝福牆<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
       <article class="play glass">
         <h3>時光展</h3>
         <p class="play-need"><b>新人準備</b>幾張照片和一句話</p>
+        <details class="play-more" data-more="exhibition"><summary><span class="when-shut">展開說明</span><span class="when-open">收起說明</span></summary><p>把你們從認識、一起出去玩，到一路經歷的事放上來，讓賓客更認識你們之間的故事。</p></details>
         <a class="btn ghost" href="/samples/white-church/exhibition" target="_blank" rel="noopener" data-play="exhibition">看新人的<wbr>認識過程<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
       </article>
     </div>
@@ -1073,7 +1089,7 @@ h3 > .plan-tag,h2 > .plan-tag{margin-left:8px;vertical-align:2px;font-family:var
 
             <li class="demo" data-try="butler">
         <div class="demo-cap">
-          <h3>收禮台，點一下就記好<span class="plan-tag">完整婚禮</span></h3>
+          <h3>收禮台，點一下就記好<span class="plan-tag">完整版</span></h3>
         </div>
         <div class="demo-ctrl"><p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p></div>
         <div class="phone"><div class="phone-screen"><div class="adm">
@@ -1112,12 +1128,12 @@ h3 > .plan-tag,h2 > .plan-tag{margin-left:8px;vertical-align:2px;font-family:var
             <th><span class="vh">功能</span></th>
             <th scope="col">
               <svg class="ic"><use href="#i-plan-classic"/></svg>
-              <span class="pname">經典喜帖方案</span><span class="pen">CLASSIC</span>
+              <span class="pname">經典方案</span><span class="pen">CLASSIC</span>
               <span class="price"><span class="was">定價 <s>NT$2,580</s></span><em>早鳥價・至 11/30</em><strong><small>NT$</small>1,280</strong></span>
             </th>
             <th scope="col" class="p2">
               <svg class="ic"><use href="#i-plan-premium"/></svg>
-              <span class="pname">完整婚禮方案</span><span class="pen">COMPLETE</span>
+              <span class="pname">完整方案</span><span class="pen">PREMIUM</span>
               <span class="price"><span class="was">原價 <s>NT$3,290</s></span><em>早鳥價・至 11/30</em><strong><small>NT$</small>1,999</strong></span>
             </th>
           </tr>
@@ -1137,7 +1153,7 @@ h3 > .plan-tag,h2 > .plan-tag{margin-left:8px;vertical-align:2px;font-family:var
       </table>
     </div>
     <ul class="plan-notes">
-      <li>經典喜帖方案之後想用完整婚禮方案的功能，可以補差額升級。</li>
+      <li>經典方案之後想用完整方案的功能，可以補差額升級。</li>
       <li>兩個方案都保存一年；想永久保存，可以加購 NT$799。</li>
     </ul>
     <div class="support glass">
@@ -1181,11 +1197,11 @@ h3 > .plan-tag,h2 > .plan-tag{margin-left:8px;vertical-align:2px;font-family:var
       </details>
       <details>
         <summary>兩個方案差在哪裡？</summary>
-        <div class="a">完整婚禮方案多了排桌管理、收禮小幫手、新人隨堂考和給你的信；版型除了經典喜帖的 3 款，還多了 10 款可以選。完整比較在上面的 <a href="#plans">方案表</a>。</div>
+        <div class="a">完整方案多了排桌管理、收禮小幫手、新人隨堂考和給你的信；版型除了經典方案的 3 款，還多了 10 款可以選。完整比較在上面的 <a href="#plans">方案表</a>。</div>
       </details>
       <details>
         <summary>之後可以升級方案嗎？</summary>
-        <div class="a">可以。選了經典喜帖方案，之後想用收禮小幫手這些完整婚禮方案的功能，補差額就能升級，詳情跟我們聯繫。</div>
+        <div class="a">可以。選了經典方案，之後想用收禮小幫手這些完整方案的功能，補差額就能升級，詳情跟我們聯繫。</div>
       </details>
       <details>
         <summary>版型跟開場動畫可以分開挑嗎？</summary>
@@ -1343,10 +1359,9 @@ h3 > .plan-tag,h2 > .plan-tag{margin-left:8px;vertical-align:2px;font-family:var
   </div></div>
 </template>
 <template id="fx-seating">
-  <span class="plan-tag">完整婚禮</span>
-  <p>把人拖進桌子，系統幫你算人數。你的腦袋留給更重要的事，比如婚後誰洗碗。</p>
+  <span class="plan-tag">完整版</span>
   <p>原本用 Excel 排桌的那件事，整套搬進後台：左邊是還沒坐下的人，右邊是桌子，拖曳就能排。</p>
-  <p>出席回覆可以直接匯入，還有幾位沒排一眼就看得到；排好之後，賓客就查得到自己的桌號。</p>
+  <p>出席回覆可以直接匯入，還有幾位沒排一眼就看得到；排好之後，賓客就查得到自己的桌號。你的腦袋留給更重要的事，比如婚後誰洗碗。</p>
   <div class="fx-pic"><div class="mock" aria-hidden="true">
     <div class="mock-stat"><div><b>3</b><span>待安排</span></div><div><b>86</b><span>總人數</span></div><div><b>9</b><span>總桌數</span></div></div>
     <div class="mock-cols">
@@ -1359,7 +1374,7 @@ h3 > .plan-tag,h2 > .plan-tag{margin-left:8px;vertical-align:2px;font-family:var
   </div></div>
 </template>
 <template id="fx-butler">
-  <span class="plan-tag">完整婚禮</span>
+  <span class="plan-tag">完整版</span>
   <p>婚宴當天收禮台用的工具。幫忙收禮的親友點連結、輸入六位數通行碼就能用，不用辦帳號，也看不到出席回覆。</p>
   <p>記下禮金與禮餅，總額、還有幾位沒收到、誰記了多少，都會自動算好，事後對帳很輕鬆。</p>
   <div class="fx-pic"><div class="mock" aria-hidden="true">
@@ -1372,7 +1387,7 @@ h3 > .plan-tag,h2 > .plan-tag{margin-left:8px;vertical-align:2px;font-family:var
   </div></div>
 </template>
 <template id="fx-quiz">
-  <span class="plan-tag">完整婚禮</span>
+  <span class="plan-tag">完整版</span>
   <p>「看你多了解我們」：題目和答案由你們出，誰最懂新人，考一下就知道。賓客作答完，看到自己的分數，還有每一題大家都選了什麼。</p>
   <div class="fx-pic"><div class="mock" aria-hidden="true">
     <div class="mock-box">
@@ -1386,7 +1401,7 @@ h3 > .plan-tag,h2 > .plan-tag{margin-left:8px;vertical-align:2px;font-family:var
   </div></div>
 </template>
 <template id="fx-letter">
-  <span class="plan-tag">完整婚禮</span>
+  <span class="plan-tag">完整版</span>
   <p>寫給每位賓客的信。賓客輸入名字或你們之間的暗號，封蠟消失、信紙滑出來，還能把信存成圖片留念。</p>
   <p>沒有指定信的賓客，會收到你們寫給大家的那一封。</p>
   <div class="fx-pic"><img src="/samples/features/letter.jpg" alt="示範網站拆開的給你的信：給小安" width="600" height="1108" loading="lazy"></div>

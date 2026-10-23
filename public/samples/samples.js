@@ -21,6 +21,7 @@
      template_like              { template, source }          第一次喜歡這一款：heart／want（我想用這款）／start（開始製作）
      ask_click                  { ask }                       首屏「你可能想問」的對話框：design／admin／play
      play_demo_open             { game }                      「看看賓客怎麼玩」連到示範網站：seating／letter／quiz／draw／wall／exhibition
+     play_more_open             { game }                      「等待開席」小卡片按「展開說明」（同一個 game 代號）
      demo_try                   { demo }                      第一次操作某一支後台示範：form／stats／seat／content／pages／butler
 ============================================================ */
 import { initAnalytics } from './analytics.js';
@@ -124,6 +125,12 @@ renderAllLikes();
 loadLikes();
 
 initDemos(track);
+
+/* 小卡片的「展開說明」：toggle 不會往上冒泡，用捕獲階段在 document 上一次接住 */
+document.addEventListener('toggle', (e) => {
+  const d = e.target;
+  if (d.matches && d.matches('details[data-more]') && d.open) track('play_more_open', { game: d.dataset.more });
+}, true);
 
 /* ---------- 卡片（與首屏手機）的循環影片 ---------- */
 (function loopVideos() {
@@ -335,7 +342,7 @@ document.addEventListener('click', (e) => {
   title.textContent = btn.querySelector('.lab').textContent;
   const body = document.getElementById('fxBody');
   body.replaceChildren(tpl.content.cloneNode(true));
-  /* 只有完整婚禮方案才有的功能，「完整婚禮」標籤接在標題後面（和頁面上的寫法一樣） */
+  /* 只有完整方案才有的功能，「完整版」標籤接在標題後面（和頁面上的寫法一樣） */
   const tag = body.querySelector(':scope > .plan-tag');
   if (tag) title.append(tag);
   showDialog(fx, btn);
