@@ -335,7 +335,7 @@ document.addEventListener('click', (e) => {
   title.textContent = btn.querySelector('.lab').textContent;
   const body = document.getElementById('fxBody');
   body.replaceChildren(tpl.content.cloneNode(true));
-  /* 只有典藏方案才有的功能，「典藏」標籤接在標題後面（和頁面上的寫法一樣） */
+  /* 只有完整婚禮方案才有的功能，「完整婚禮」標籤接在標題後面（和頁面上的寫法一樣） */
   const tag = body.querySelector(':scope > .plan-tag');
   if (tag) title.append(tag);
   showDialog(fx, btn);
