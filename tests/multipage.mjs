@@ -28,13 +28,20 @@ async function wzStep(page, no){
   await page.evaluate((n) => { location.hash = `lobby/${n}`; }, no);
   await page.waitForTimeout(350);
 }
-/* 05 賓客指南：勾了才展開對應那一段 */
+/* 05 賓客指南：勾了才展開對應那一段。
+   勾了不只一項時一次只顯示一項（docs/UI-SPEC.md「05 的提醒切換」），
+   本來就勾著的那一項可能收在切換列後面 —— 像新人一樣用「上一項／下一項」翻過去 */
 async function wzGuide(page, key){
   await page.evaluate((k) => {
     const box = document.querySelector(`[data-wz-guide="${k}"]`);
     if(box && !box.checked){ box.checked = true; box.dispatchEvent(new Event('change', { bubbles:true })); }
   }, key);
   await page.waitForTimeout(200);
+  const order = await page.$$eval('[data-wz-guide]:checked', (els) => els.map((el) => el.dataset.wzGuide));
+  for(let i = 0; i < order.length && await page.isHidden(`[data-guide="${key}"]`); i++){
+    const at = Number(/第 (\d+)/.exec(await page.textContent('#adWzGuideCount'))?.[1] || 1) - 1;
+    await page.click(`#adWzGuideSwitch [data-wzg-nav="${order.indexOf(key) > at ? 'next' : 'prev'}"]`);
+  }
 }
 /* 階段底部那顆「儲存並繼續」 */
 async function wzSave(page, no){
@@ -1892,7 +1899,18 @@ console.log('\n[15] 後台改得動大廳文案');
     await page.evaluate(() => document.activeElement?.dataset?.wzGuide === 'transit'),
     await page.evaluate(() => document.activeElement?.dataset?.wzGuide || '(none)'));
   await page.fill('#adTransportPublic', '捷運中山站 2 號出口步行 5 分鐘');
+  /* 勾了不只一項時一次只顯示一項（docs/UI-SPEC.md「05 的提醒切換」）：
+     剛勾的大眾運輸是現在這一項，Dress Code 與禮金要用切換列翻過去 */
+  ok('勾了三項時切換列出現、停在剛勾的那一項',
+    (await page.isVisible('#adWzGuideSwitch'))
+      && (await page.textContent('#adWzGuideCount')).trim() === '共 3 項提醒・第 1 / 3 項',
+    await page.textContent('#adWzGuideCount'));
+  ok('一次只顯示一項（Dress Code 收在切換列後面）', await page.isHidden('#adDressCode'));
+  await wzGuide(page, 'dress');
   await page.fill('#adDressCode', '請穿得舒服就好');
+  await wzGuide(page, 'gift');
+  ok('翻到最後一項時「下一項」不能再按',
+    await page.isDisabled('#adWzGuideSwitch [data-wzg-nav="next"]'));
   await page.fill('#adGiftNote', '人到就好，禮金真的不用');
   await wzSave(page, 5);
 
@@ -3999,15 +4017,21 @@ console.log('\n[21] 後台排桌管理');
 
   const tableCard = (no) => `.sp-table:has(.sp-table-no:text-is("${no}"))`;
   const t1 = await page.innerText(tableCard('01'));
-  ok('桌位以「人數」計算容量（2 人）', t1.includes('2 / 10 人'), t1.replace(/\n/g, ' ').slice(0, 60));
-  ok('顯示剩餘座位', t1.includes('剩餘 8 位'), t1.replace(/\n/g, ' ').slice(0, 60));
+  /* 桌卡第二行講的是「容量・還剩幾位」（10 人・剩 8 位），不是「2 / 10 人」——
+     新人要知道的是放不放得下，不用自己再減一次。
+     一筆 2 位的回覆坐進去剩 8 位（不是 9 位），證明容量算的是人數不是筆數。 */
+  ok('桌位以「人數」計算容量（2 人）', t1.includes('剩 8 位'), t1.replace(/\n/g, ' ').slice(0, 60));
+  ok('顯示容量與剩餘座位', /10 人\s*・剩 8 位/.test(t1), t1.replace(/\n/g, ' ').slice(0, 60));
 
   /* ---- 超過容量：3 人排進容量 2 的桌子，提醒但不擋 ---- */
   await moveGuest('排桌小美', '02｜女方親友');
   await page.waitForTimeout(200);
   const t2 = await page.innerText(tableCard('02'));
-  ok('超過容量仍然排得進去', t2.includes('3 / 2 人'), t2.replace(/\n/g, ' ').slice(0, 60));
-  ok('超過容量有明確提醒', t2.includes('超過容量 1 位'), t2.replace(/\n/g, ' ').slice(0, 60));
+  ok('超過容量仍然排得進去', t2.includes('排桌小美'), t2.replace(/\n/g, ' ').slice(0, 60));
+  ok('超過容量有明確提醒',
+    /2 人\s*・超過 1 位/.test(t2)
+      && await page.locator(tableCard('02')).evaluate((el) => el.classList.contains('is-over')),
+    t2.replace(/\n/g, ' ').slice(0, 60));
   /* 提醒預設只露出前幾條，先展開再看 */
   if (await page.locator('#spWarnToggle').count()) await page.click('#spWarnToggle');
   await page.waitForTimeout(200);
@@ -4025,13 +4049,11 @@ console.log('\n[21] 後台排桌管理');
   ok('重做又把她排回去',
     (await page.innerText(tableCard('02'))).includes('排桌小美'));
 
-  /* ---- 儲存：存完先問要不要同步，選「稍後再說」 ---- */
+  /* ---- 儲存：「儲存」與「發布給賓客」是兩顆按鈕，存完不會自己發布，
+     也不會跳彈窗擋人 —— 只用一句 toast 講清楚賓客還看不到 ---- */
   await page.click('#spSaveBtn');
-  await page.waitForSelector('#adModalMask:not([hidden])', { timeout:8000 });
-  ok('存完會先問要不要同步',
-    (await page.textContent('#adModalTitle')).includes('排桌已儲存'),
-    await page.textContent('#adModalTitle'));
-  await page.click('#adModalCancel');
+  await page.waitForSelector('.ad-toast:has-text("已儲存，尚未發布給賓客")', { timeout:8000 });
+  ok('存完提醒還沒發布（不跳彈窗）', await page.isHidden('#adModalMask'));
   await page.waitForTimeout(600);
 
   const draft = (await adb.collection('sites').doc(siteId)
@@ -4047,13 +4069,16 @@ console.log('\n[21] 後台排桌管理');
   ok('沒同步就不會動到賓客的桌次查詢',
     before.docs.every((d) => !String(d.data().name).startsWith('排桌')),
     `${before.size} 筆`);
-  ok('狀態顯示還沒送出',
-    (await page.textContent('#spSyncState')).includes('還沒送出'),
+  ok('狀態顯示尚未發布',
+    (await page.textContent('#spSyncState')).includes('尚未發布'),
     await page.textContent('#spSyncState'));
 
-  /* ---- 同步 ---- */
+  /* ---- 發布給賓客 ---- */
   await page.click('#spSyncBtn');
   await page.waitForSelector('#adModalMask:not([hidden])', { timeout:8000 });
+  ok('發布前先確認一次',
+    (await page.textContent('#adModalTitle')).includes('發布給賓客'),
+    await page.textContent('#adModalTitle'));
   await page.click('#adModalConfirm');
   await page.waitForTimeout(1500);
 
@@ -4065,8 +4090,8 @@ console.log('\n[21] 後台排桌管理');
   ok('同步是整份換掉（舊名單不會殘留）',
     !rows.some((r) => r.name === '王小明' && r.table === '第 3 桌'),
     `${rows.length} 筆`);
-  ok('狀態變成已送出',
-    (await page.textContent('#spSyncState')).includes('已送出'),
+  ok('狀態變成已發布',
+    (await page.textContent('#spSyncState')).includes('已發布'),
     await page.textContent('#spSyncState'));
 
   /* ---- 從出席表單匯入：講清楚現在接進來的是誰 ---- */
@@ -4353,15 +4378,18 @@ console.log('\n[21] 後台排桌管理');
   await page.evaluate(() => { location.hash = 'seatingPlan/board'; });
   await page.waitForTimeout(900);
   ok('排桌在手機有固定底列', await page.isVisible('#spMobileBar'));
-  ok('底列上就是「儲存排桌」',
-    (await page.textContent('#spMbSave')).includes('儲存排桌'));
+  ok('底列上就是「儲存」',
+    (await page.textContent('#spMbSave')).trim() === '儲存',
+    await page.textContent('#spMbSave'));
   ok('toast 會讓開底列',
     await page.evaluate(() => document.body.dataset.stickybar === '1'));
   await page.click('#spMbMore');
   await page.waitForSelector('#spMoreMask:not([hidden])', { timeout:5000 });
-  ok('「⋮ 更多」裡有送出、復原、重做與統計',
+  /* 統計是待安排、總人數、總桌數三格（「平均一桌人數」已經拿掉，見 SPEC 13.8） */
+  ok('「⋮ 更多」裡有發布、復原、重做與統計',
     await page.isVisible('#spMbSync') && await page.isVisible('#spMbUndo')
-      && await page.$eval('#spMoreStats', (el) => el.children.length === 4));
+      && await page.isVisible('#spMbRedo')
+      && await page.$eval('#spMoreStats', (el) => el.children.length === 3));
   await page.click('#spMoreClose');
   await page.waitForTimeout(300);
 
