@@ -133,7 +133,7 @@ export const DEFAULT_TEMPLATE = 'classic';
 
      template     站台長什麼樣子
      opening      進站那一刻怎麼演（拆信、翻書、推門、點燭……）
-     storyLayout  「我們的故事」那一頁怎麼說
+     storyLayout  「時光展」那一頁怎麼說
 
    ・版型可以宣告自己的預設開場（TEMPLATES[x].opening）；
      sites.opening 有填而且認得就用它，否則用版型的預設，
@@ -244,13 +244,13 @@ export function templateKey(name) {
    和版型（sites.template）**是兩軸**，不是同一件事的兩半：
 
      template     這組新人的站台長什麼樣子 —— 顏色、字體、線與留白
-     storyLayout  「我們的故事」那一頁怎麼說 —— 照片與文字的編排節奏
+     storyLayout  「時光展」那一頁怎麼說 —— 照片與文字的編排節奏
 
    所以 korean ＋ chapters、forest ＋ chapters 都成立，不必為了換一種
    說故事的方式再寫一整套版型；反過來也一樣，換了敘事模組不會動到
    站台其他任何一頁的樣子。
 
-   ・**吃的是同一份 exhibits**：後台「新人故事牆」那一份資料不動，
+   ・**吃的是同一份 exhibits**：後台「時光展」那一份資料不動，
      每個模組只是把同樣的 kind／title／sub／desc／year／act／img
      畫成不同的樣子。換模組不會要新人重填任何東西。
    ・**新開的站台一律是 timeline**（現在的橫向時間軸）：沒有欄位、
@@ -258,7 +258,7 @@ export function templateKey(name) {
    ・和 template 同一個權限層級：不在 firestore.rules 的可更新白名單裡，
      新人自己改不動，只有我們用 Admin SDK 改得動。
 
-   ▸ css：這個模組自己的版面。**只有「我們的故事」那一頁要**，
+   ▸ css：這個模組自己的版面。**只有「時光展」那一頁要**，
      和 TEMPLATES.lobbyCss 是同一個道理 —— 每一條規則都收在模組自己的
      前綴底下（.sc-* …），其他頁面載它只是白白多擋一次首次繪製。
    ▸ js ：頁面腳本的檔名。site-context.js 載入頁面 JS 時用它取代預設的

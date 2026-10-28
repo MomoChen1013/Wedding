@@ -910,9 +910,9 @@ describe('explore（首頁自訂卡片）', () => {
 });
 
 /* ============================================================
-   囍卡卡池：新人在後台裁切上傳，賓客只讀得到
+   婚禮小卡卡池：新人在後台裁切上傳，賓客只讀得到
 ============================================================ */
-describe('cards（囍卡卡池）', () => {
+describe('cards（婚禮小卡卡池）', () => {
   const OWNER = 'couple@example.com';
 
   function ownerDb() {
@@ -943,7 +943,7 @@ describe('cards（囍卡卡池）', () => {
     await assertFails(addDoc(collection(db, `sites/${SITE_ID}/cards`), card()));
   });
 
-  it('新人可以新增、修改、刪除囍卡', async () => {
+  it('新人可以新增、修改、刪除婚禮小卡', async () => {
     const db = ownerDb();
     const ref = doc(db, `sites/${SITE_ID}/cards/c1`);
     await assertSucceeds(setDoc(ref, card()));

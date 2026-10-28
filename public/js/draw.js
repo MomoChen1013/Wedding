@@ -47,7 +47,7 @@ const CARDS = [];
 const ASSET_CARDS = ((window.SITE && window.SITE.assets && window.SITE.assets.cards) || [])
   .map((item, i) => ({
     art:    item.src,
-    name:   item.name   || `囍卡 ${i + 1}`,
+    name:   item.name   || `小卡 ${i + 1}`,
     rarity: item.rarity || 'N',
     desc:   item.desc   || '',
   }));
@@ -71,7 +71,7 @@ function applyOwnerCards(){
       CARDS.push({
         cardId: c.id,
         art:    c.img,
-        name:   c.name   || `囍卡 ${i + 1}`,
+        name:   c.name   || `小卡 ${i + 1}`,
         rarity: RANK[c.rarity] ? c.rarity : 'N',
         desc:   c.desc   || '',
       });

@@ -465,8 +465,8 @@ console.log('\n[5] RSVP 送出流程');
   /* 回覆完是這一頁的終點，要有下一步可以走 */
   const next = await page.$$eval('#tkNext a',
     (els) => els.map((e) => `${e.textContent.trim()}＝${new URL(e.href).pathname}`));
-  ok('結果卡有「看我們的故事」',
-    next.some((t) => t === '看我們的故事＝/w/chen-lin-0315/exhibition'), next.join('、'));
+  ok('結果卡有「進入時光展」',
+    next.some((t) => t === '進入時光展＝/w/chen-lin-0315/exhibition'), next.join('、'));
   ok('結果卡有「回婚禮大廳」',
     next.some((t) => t === '回婚禮大廳＝/w/chen-lin-0315/'), next.join('、'));
   ok('無 console 錯誤', realErrors(consoleErrors).length === 0,
