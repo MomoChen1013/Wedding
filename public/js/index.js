@@ -324,8 +324,8 @@ setText('infoAddr',  W.address || '');
 /* ---------- 主婚人 ----------
    一列「主婚人」，男方、女方各一行；稱謂是新人自己寫的（陳大明 先生・林美麗 女士）。
    沒填的那一邊不出現，兩邊都沒填就整列收起來。
-   位置在「時間」與「地點」之間；多活動時那兩列會被換成活動列（插在時間那一列的位置），
-   這一列不分活動，就接在所有活動列後面 */
+   位置在「時間」與「地點」之間；多活動時那兩列會被換成活動列（插在地點那一列的位置），
+   這一列不分活動，排在所有活動列前面 */
 (function renderHosts(){
   const row = document.getElementById('infoHostRow');
   const box = document.getElementById('infoHosts');
@@ -380,11 +380,11 @@ if(lobbyMulti){
   }).join('');
 
   /* 直接插成 .info-rows 的兄弟，不另外包一層容器 ——
-     包起來的話 .info-row:first-child 的 border-top 判斷會跑掉 */
-  if(timeRow){
-    timeRow.insertAdjacentHTML('beforebegin', html);
-    timeRow.remove();
-  }
+     包起來的話 .info-row:first-child 的 border-top 判斷會跑掉。
+     插在地點那一列的位置：主婚人（時間與地點之間）才會排在所有活動列前面 */
+  const anchor = venueRow || timeRow;
+  if(anchor) anchor.insertAdjacentHTML('beforebegin', html);
+  if(timeRow) timeRow.remove();
   if(venueRow) venueRow.remove();
 }
 
