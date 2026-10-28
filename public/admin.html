@@ -142,7 +142,7 @@
       <rect x="27" y="26" width="15" height="13" rx="2"/>
     </symbol>
 
-    <!-- 新人測驗：一列打勾、一列打叉，右邊是題目。
+    <!-- 新人隨堂考：一列打勾、一列打叉，右邊是題目。
          刻意不放外框 —— 有框的版本在 24px 會把兩個記號擠成一團 -->
     <symbol id="shin9-quiz" viewBox="0 0 48 48">
       <path d="M7.5 17 11.5 21 19 12.5"/>
@@ -308,7 +308,7 @@
       <path d="m29.2 11.4 6.4 6.4"/>
     </symbol>
 
-    <!-- 進階方案的鎖頭：只掛在「這組新人沒開的功能」上，見 admin.js 的 applyTabVisibility -->
+    <!-- 完整方案的鎖頭：只掛在「這組新人沒開的功能」上，見 admin.js 的 applyTabVisibility -->
     <symbol id="shin9-lock" viewBox="0 0 48 48">
       <rect x="10" y="21" width="28" height="19" rx="2"/>
       <path d="M16 21v-5a8 8 0 0 1 16 0v5"/>
@@ -403,7 +403,7 @@
            分成三組之後才讀得出後台在做什麼：
              婚禮內容 —— 賓客會看到什麼（婚禮資訊、自訂內容、出席表單、賓客標籤）
              婚宴管理 —— 賓客名單怎麼安排（回覆、桌次圖、排桌、收禮）
-             賓客互動 —— 新人與賓客互相留下的東西（信、小卡、故事牆、悄悄話、測驗）
+             賓客互動 —— 新人與賓客互相留下的東西（信、小卡、時光展、悄悄話、隨堂考）
 
            分組是「多包一層 <div>」，.ad-tab 本身完全沒動 ——
            點擊是委派的（closest('.ad-tab')）、tabButtons() 是後代選擇器，
@@ -411,7 +411,7 @@
       ============================================================ -->
       <!-- 首頁與頁面設定都不屬於任何一組：
              首頁     回到起點
-             頁面設定 現在讓賓客看到哪幾頁（婚禮當天要把抽卡打開，得先找得到它）
+             頁面設定 現在讓賓客看到哪幾頁（婚禮當天要把抽小卡打開，得先找得到它）
            兩件事都不是「在編輯某一塊內容」，所以擺在三個工作分組之上。 -->
       <div class="ad-navtop">
         <button class="ad-tab is-on" type="button" data-tab="home"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-home"/></svg>首頁</button>
@@ -444,7 +444,7 @@
         <div class="ad-navgroup-body" id="adNavManage">
           <div class="ad-navgroup-items">
             <button class="ad-tab" type="button" data-tab="rsvp"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-rsvp"/></svg>出席回覆</button>
-            <button class="ad-tab" type="button" data-tab="seating"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-findseat"/></svg>桌次圖</button>
+            <button class="ad-tab" type="button" data-tab="seating"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-findseat"/></svg>找座位</button>
             <!-- 排桌管理是「桌次圖」的工作區（桌次名單的同步鈕也依賴它有沒有開），
                  縮排一階，從屬關係就看得出來 -->
             <button class="ad-tab is-sub" type="button" data-tab="seatingPlan"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-seating"/></svg>排桌管理</button>
@@ -460,18 +460,18 @@
         </button>
         <div class="ad-navgroup-body" id="adNavGuests">
           <div class="ad-navgroup-items">
-            <button class="ad-tab" type="button" data-tab="letters"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-letter"/></svg>感謝信</button>
+            <button class="ad-tab" type="button" data-tab="letters"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-letter"/></svg>給你的信</button>
             <button class="ad-tab" type="button" data-tab="cards"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-carddraw"/></svg>婚禮小卡</button>
-            <button class="ad-tab" type="button" data-tab="exhibits"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-storywall"/></svg>新人故事牆</button>
+            <button class="ad-tab" type="button" data-tab="exhibits"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-storywall"/></svg>時光展</button>
             <button class="ad-tab" type="button" data-tab="inbox"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-message"/></svg>悄悄話</button>
-            <button class="ad-tab" type="button" data-tab="quiz"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-quiz"/></svg>新人測驗</button>
+            <button class="ad-tab" type="button" data-tab="quiz"><svg class="ad-ic ad-ic-tab" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-quiz"/></svg>新人隨堂考</button>
           </div>
         </div>
       </div>
 
       <!-- 「頁面設定」與「常見問題」原本埋在首頁最下面，要捲過「開始製作」那幾步才看得到。
            兩件事都是「隨時會回來用一下」——
-             頁面設定：婚禮當天要把抽卡打開，得先找得到它
+             頁面設定：婚禮當天要把抽小卡打開，得先找得到它
              常見問題：卡住的時候才會想找，找不到就等於沒有
            它們和三個工作分組不是同一層（不是在編輯某一塊賓客內容），
            所以跟「首頁」一樣不進任何一組，擺在側欄最底下自成一區。 -->
@@ -551,10 +551,10 @@
             <h3 class="ad-note-hd">有空的時候慢慢做</h3>
             <ul class="ad-note-list">
               <li>「當日流程」</li>
-              <li>「兩人的故事」跟「新人故事牆」</li>
-              <li>「新人熟悉測驗」的題目</li>
+              <li>「兩人的故事」跟「時光展」</li>
+              <li>「新人隨堂考」的題目</li>
               <li>「婚禮小卡」挑照片（30 張以內）</li>
-              <li>「感謝信」寫給重要的人</li>
+              <li>「給你的信」寫給重要的人</li>
             </ul>
           </div>
 
@@ -627,7 +627,7 @@
        ------------------------------------------------------------
        哪幾頁「現在」讓賓客看得到，由新人自己決定：
        內容還沒寫完的先收起來，婚禮當天再打開；
-       也可以排一個時間，到了自己開（例如喜宴當天中午開放抽卡）。
+       也可以排一個時間，到了自己開（例如喜宴當天中午開放抽小卡）。
 
        ・沒開通的功能是灰的、掛一顆鎖頭 —— 那是我們這一層的開關，
          按下去會展開一張說明卡，告訴他要找誰才開得起來
@@ -736,7 +736,7 @@
             <summary>可以排一個時間，讓某一頁自己打開嗎？</summary>
             <p>
               可以。「頁面設定」每一列都有「<b>設定自動打開</b>」——
-              例如把抽卡排在喜宴當天中午，時間到了它自己出現，你不用回來按任何東西。
+              例如把抽小卡排在喜宴當天中午，時間到了它自己出現，你不用回來按任何東西。
               時間以你設定當下那台裝置的時間為準。
             </p>
           </details>
@@ -749,7 +749,7 @@
           <details class="ad-faq-item">
             <summary>照片可以自己上傳嗎？</summary>
             <p>
-              交通圖、桌次圖、婚禮小卡、故事牆、Dress Code 參考圖都可以自己上傳。
+              交通圖、桌次圖、婚禮小卡、時光展、Dress Code 參考圖都可以自己上傳。
               首頁的封面照與「相遇之間」的照片由我們這邊放，要換的話把檔案給我們。
             </p>
           </details>
@@ -1267,6 +1267,16 @@
           <div class="ad-hint">賓客打開邀請函，最上面看到的就是這一行。</div>
           <input class="ad-input" id="adCoupleTitle" type="text" maxlength="20"
                  placeholder="陳家與林家午宴">
+
+          <label class="ad-label" for="adGroomHost">男方主婚人（選填）</label>
+          <div class="ad-hint">顯示在婚禮資訊卡的「主婚人」那一列。</div>
+          <input class="ad-input" id="adGroomHost" type="text" maxlength="40"
+                 placeholder="陳大明 先生・林美麗 女士">
+
+          <label class="ad-label" for="adBrideHost">女方主婚人（選填）</label>
+          <div class="ad-hint">顯示在婚禮資訊卡的「主婚人」那一列。</div>
+          <input class="ad-input" id="adBrideHost" type="text" maxlength="40"
+                 placeholder="陳大明 先生・林美麗 女士">
 
           <label class="ad-label" for="adHashtags">婚禮 Hashtag<small>最多 3 個</small></label>
           <div class="ad-hint">用空格或逗號分開。留白也可以，會用 #我們結婚了、#Married。</div>
@@ -2095,13 +2105,13 @@
 
 
   <!-- ============================================================
-       分頁 4：感謝信
+       分頁 4：給你的信
   ============================================================ -->
   <div class="ad-panel" data-panel="letters">
     <section class="ad-sec">
       <div class="ad-sec-head">
         <div class="ad-sec-head-main">
-          <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-letter"/></svg>新人的感謝與祝福</h2>
+          <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-letter"/></svg>給你的信</h2>
           <p class="ad-page-sub" id="adLetterPageSub"></p>
         </div>
         <div class="ad-sec-head-actions">
@@ -2127,7 +2137,7 @@
         </div>
         <input class="ad-filter" id="adLetterFilter" type="search"
                inputmode="search" enterkeyhint="search" autocomplete="off"
-               placeholder="搜尋標題、詞彙、內容…" aria-label="搜尋感謝信">
+               placeholder="搜尋標題、詞彙、內容…" aria-label="搜尋給你的信">
       </div>
 
       <div class="ad-letter-cards" id="adLetterList"></div>
@@ -2135,7 +2145,7 @@
   </div>
 
   <!-- ============================================================
-       分頁 5：婚禮小卡（抽卡頁的卡池）
+       分頁 5：婚禮小卡（抽小卡頁的卡池）
   ============================================================ -->
   <div class="ad-panel" data-panel="cards">
     <section class="ad-sec">
@@ -2170,13 +2180,13 @@
   </div>
 
   <!-- ============================================================
-       分頁 6：新人故事牆（戀愛時光的故事與章節）
+       分頁 6：時光展（故事與章節）
   ============================================================ -->
   <div class="ad-panel" data-panel="exhibits">
     <section class="ad-sec">
       <div class="ad-sec-head">
         <div class="ad-sec-head-main">
-          <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-storywall"/></svg>新人故事牆</h2>
+          <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-storywall"/></svg>時光展</h2>
           <p class="ad-page-sub" id="adExhPageSub"></p>
         </div>
         <div class="ad-sec-head-actions">
@@ -2198,7 +2208,7 @@
   </div>
 
   <!-- ============================================================
-       分頁 7：新人熟悉測驗（賓客那一頁的題目與選項）
+       分頁 7：新人隨堂考（賓客那一頁的題目與選項）
   ============================================================ -->
   <div class="ad-panel" data-panel="quiz">
 
@@ -2211,7 +2221,7 @@
     <section class="ad-sec">
       <div class="ad-sec-head">
         <div class="ad-sec-head-main">
-          <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-quiz"/></svg>新人熟悉測驗</h2>
+          <h2 class="ad-sec-title ad-page-title"><svg class="ad-ic ad-ic-title" viewBox="0 0 48 48" aria-hidden="true"><use href="#shin9-quiz"/></svg>新人隨堂考</h2>
           <p class="ad-page-sub" id="adQuizPageSub"></p>
         </div>
         <div class="ad-sec-head-actions">
@@ -2475,7 +2485,7 @@
   </div>
 </div>
 
-<!-- 感謝信：新增／編輯用同一個彈窗 -->
+<!-- 給你的信：新增／編輯用同一個彈窗 -->
 <div class="ad-modal-mask" id="adLetterModalMask" hidden>
   <div class="ad-modal-card ad-modal-card-form">
     <div class="ad-modal-title" id="adLetterModalTitle">寫一封信</div>
@@ -2522,7 +2532,7 @@
   </div>
 </div>
 
-<!-- 新人故事牆：新增故事／新增章節／編輯都用同一個彈窗 -->
+<!-- 時光展：新增故事／新增章節／編輯都用同一個彈窗 -->
 <div class="ad-modal-mask" id="adExhModalMask" hidden>
   <div class="ad-modal-card ad-modal-card-form">
     <div class="ad-modal-title" id="adExhModalTitle">新增故事</div>
@@ -2729,7 +2739,7 @@
 
       <div class="ad-modal-actions">
         <button class="btn small ghost" id="adActCancel" type="button">取消</button>
-        <!-- 刪除收在彈窗裡（清單上只留「編輯」，和自訂內容、感謝信同一套）。
+        <!-- 刪除收在彈窗裡（清單上只留「編輯」，和自訂內容、給你的信同一套）。
              只剩一個活動時、以及合成出來的那一個（站台還沒有 events）看不到它 -->
         <button class="btn small ghost" id="adActDelete" type="button" hidden>刪除活動</button>
         <button class="btn small" type="submit">儲存</button>
@@ -3137,7 +3147,7 @@
 <!-- 測驗的預設題目與欄位上限（與賓客那一頁共用同一份） -->
 <script defer src="/js/quiz-defaults.js"></script>
 
-<!-- 故事牆的預設故事與章節（與戀愛時光那一頁共用同一份） -->
+<!-- 時光展的預設故事與章節（與賓客那一頁共用同一份） -->
 <script defer src="/js/exhibit-defaults.js"></script>
 
 <!-- 排桌管理：Excel 讀寫器與工作台本體。

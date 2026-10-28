@@ -8,11 +8,11 @@
      4. 桌次       — 上傳桌次圖、匯入賓客名單
      4b. 排桌管理  — 把賓客排進桌位（js/seating-plan.js），存好之後
                      再由新人自己決定要不要同步到賓客的桌次查詢
-     5. 感謝信     — 寫給特定賓客的電子信
+     5. 給你的信   — 寫給特定賓客的電子信
      6. 首頁卡片   — Explore 區的自訂模組（連結型／彈窗型）
-     7. 婚禮小卡   — 抽卡頁的卡池：裁切上傳照片、設等級與說明
-     8. 新人故事牆 — 戀愛時光的故事與章節分隔卡
-     9. 熟悉測驗   — 「看你多了解我們」的題目、選項與正確答案
+     7. 婚禮小卡   — 抽小卡頁的卡池：裁切上傳照片、設等級與說明
+     8. 時光展     — 時光展的故事與章節分隔卡
+     9. 新人隨堂考 — 「看你多了解我們」的題目、選項與正確答案
 
    門檻是 Google 登入，不是密碼：
    Security Rules 只讓 sites.ownerEmails 名單內、信箱已驗證的帳號讀寫，
@@ -1122,7 +1122,7 @@ function promptModal({ title, message, placeholder, maxLength, value, confirmTex
 }
 
 /* ============================================================
-   表單彈窗（桌次名單、感謝信、故事牆、測驗題目、自訂內容共用）
+   表單彈窗（桌次名單、給你的信、時光展、隨堂考題目、自訂內容共用）
    ------------------------------------------------------------
    點灰底、按 Esc 都等於「取消」。要先問一句再關的彈窗（例如
    貼了一半的桌次名單）就自己傳 requestClose 進來接手。
@@ -1192,7 +1192,7 @@ function showError(msg){
    哪一個分頁對應到哪一個頁面開關
    ------------------------------------------------------------
    這組新人沒開的頁面，後台就不該出現那一區的編輯內容 ——
-   關掉「抽卡」卻還在後台傳婚禮小卡，傳完賓客也看不到。
+   關掉「抽小卡」卻還在後台傳婚禮小卡，傳完賓客也看不到。
    值是 null 代表「永遠都在」：大廳是必開的頁面。
 ============================================================ */
 const TAB_PAGE = {
@@ -1254,7 +1254,7 @@ function tabEnabled(tab){
 }
 
 /* ============================================================
-   沒開的功能＝進階方案（鎖起來，但看得見）
+   沒開的功能＝完整方案才有（鎖起來，但看得見）
    ------------------------------------------------------------
    原本沒開的分頁是整顆 hidden 掉的：新人只看得到自己買到的那幾件事，
    也就永遠不知道還有什麼可以加開。改成留在側欄、右邊掛一顆鎖頭，
@@ -1264,7 +1264,7 @@ function tabEnabled(tab){
    鎖起來的分頁不訂閱、也讀不到（Security Rules 那邊本來就不放行），
    所以遮罩底下看到的是空的骨架，那正好就是「這個功能長什麼樣子」。
 ============================================================ */
-const LOCK_NOTE = '這是進階方案的功能。想開通再告訴我們，我們幫你打開，現有的資料都不會動。';
+const LOCK_NOTE = '這是完整方案的功能。想開通再告訴我們，我們幫你打開，現有的資料都不會動。';
 
 /* 官方帳號：要開通功能、改日期或網址，新人都從這裡找得到人。
    ★ 全站只有這一個地方寫這個網址 —— 常見問題最下面那顆按鈕、
@@ -1286,7 +1286,7 @@ function markTabLocked(btn, locked){
   if(!locked && ic) ic.remove();
   /* 讀螢幕的人看不到那顆鎖頭，所以名字要自己說清楚 */
   const label = btn.textContent.trim();
-  if(locked) btn.setAttribute('aria-label', `${label}（進階方案）`);
+  if(locked) btn.setAttribute('aria-label', `${label}（完整方案）`);
   else btn.removeAttribute('aria-label');
 }
 
@@ -1672,7 +1672,7 @@ function activateSubtab(tab, subtab){
    但用 replaceState 不佔用歷史紀錄，不會讓使用者按「上一頁」卡住。
 
    鎖起來的分頁指得到（那是刻意的，#seatingPlan 就是要看得到那張說明卡），
-   但不能當退路 —— 一進後台就看到一張「這是進階方案」，那是最差的開場。 */
+   但不能當退路 —— 一進後台就看到一張「這是完整方案的功能」，那是最差的開場。 */
 function activateTab(tab, subtab){
   const btns = tabButtons();
   const target = btns.find(b => b.dataset.tab === tab && !b.hidden)
@@ -1815,15 +1815,15 @@ const NAV_TIPS = {
   guestTags:   '分類賓客用的標籤（行動不便、大學同學…），排桌與篩名單都用得上。',
   rsvp:        '賓客填的出席回覆都在這裡，也可以篩選、貼標籤、匯出 CSV。',
   seating:     '婚宴當天貼在門口的那張桌次圖，加上賓客查自己坐哪一桌的名單。',
-  seatingPlan: '把人拖到桌上的工作區，排完再一次送到賓客的查座位頁。',
+  seatingPlan: '把人拖到桌上的工作區，排完再一次送到賓客的找座位頁。',
   butler:      '產生連結交給幫忙收禮的親友，他們記的每一筆都會即時回到這裡。',
   lobby:       '賓客在首頁看見的婚禮資訊：時間地點、流程、交通、Dress Code、你們的故事。',
   explore:     '我們準備好的內容以外，你們自己想告訴賓客的事。',
-  letters:     '寫給賓客的感謝信，賓客輸入名字就會領到你們寫給他的那一封。',
-  cards:       '賓客抽卡時會抽到的婚禮小卡。',
+  letters:     '寫給每位賓客的信，賓客輸入名字就會領到你們寫給他的那一封。',
+  cards:       '賓客抽小卡時會抽到的婚禮小卡。',
   exhibits:    '一張照片配一段文字，賓客可以慢慢看完你們的故事。',
   inbox:       '賓客留給你們的悄悄話，只有你們讀得到。',
-  quiz:        '「你有多認識新人」的小測驗，也看得到大家答了什麼。',
+  quiz:        '「看你多了解我們」的隨堂考，也看得到大家答了什麼。',
   pages:       '現在讓賓客看到哪幾頁，也可以排一個時間讓它自己開。',
   help:        '大家最常問到的幾件事，照類別分好了。',
 };
@@ -1858,7 +1858,7 @@ const NAV_TIPS = {
       `<div class="ad-nav-tip-title">${escapeHtml(btn.textContent.trim())}</div>` +
       `<div class="ad-nav-tip-body">${escapeHtml(text)}</div>` +
       /* 鎖著的分頁多一行，滑過去就知道為什麼點進去是一張說明卡 */
-      (tabLocked(btn) ? '<div class="ad-nav-tip-lock">進階方案功能</div>' : '');
+      (tabLocked(btn) ? '<div class="ad-nav-tip-lock">完整方案功能</div>' : '');
     tip.hidden = false;
 
     /* 貼著側欄右緣放；下面塞不下就往上收，永遠不要跑出畫面 */
@@ -2796,7 +2796,7 @@ async function deleteRsvp(id){
 
 /* 常駐的「刪除」改成 ⋯ row menu：
    預設狀態乾淨，滑到那一列（或鍵盤 Tab 進去）才長出操作。
-   婚禮小卡、故事牆、桌次名單早就是這一套，這裡只是換掉入口 —— 
+   婚禮小卡、時光展、桌次名單早就是這一套，這裡只是換掉入口 —— 
    registerRowMenu／rowMenuBtn 都是現成的。 */
 registerRowMenu('rsvp', (id)=>{
   const r = DataStore.getRSVPs().find(x => x.id === id);
@@ -5046,7 +5046,7 @@ seatListEl.addEventListener('click', async (e)=>{
 });
 
 /* ============================================================
-   2. 感謝信
+   2. 給你的信
    ------------------------------------------------------------
    畫面上只看得到已經寫好的信；「寫一封信」與「編輯」都開同一個彈窗。
 ============================================================ */
@@ -5163,7 +5163,7 @@ function renderLetters(){
   if(!all.length){
     setPageSub('adLetterPageSub', '賓客領到的那一封信，寫在這裡');
     lf.list.innerHTML = emptyState({
-      title: '還沒有寫任何一封感謝信',
+      title: '還沒有寫任何一封信',
       body: '賓客輸入自己的名字或專屬詞彙，就會領到你們留給他的那一封。'
           + '先寫一封通用信，沒對到詞彙的人也接得住。',
       action: { label:'寫一封信', id:'adLetterEmptyAddBtn' },
@@ -5271,7 +5271,7 @@ lf.list.addEventListener('click', async (e)=>{
   }
 
   if(delId){
-    const ok = await confirmModal({ title:'刪除感謝信', message:'確定要刪掉這封信嗎？' });
+    const ok = await confirmModal({ title:'刪除這封信', message:'確定要刪掉這封信嗎？' });
     if(!ok) return;
     if(lf.id.value === delId){ closeLetterModal(); resetLetterForm(); }
     scheduleUndoDelete('blessings', delId, '這封信', renderLetters);
@@ -5659,6 +5659,8 @@ const sf = {
   form:      document.getElementById('adSiteForm'),
   title:     document.getElementById('adCoupleTitle'),
   titleLen:  document.getElementById('adCoupleTitleLen'),
+  groomHost: document.getElementById('adGroomHost'),
+  brideHost: document.getElementById('adBrideHost'),
   venue:     document.getElementById('adVenueName'),
   addr:      document.getElementById('adVenueAddress'),
   map:       document.getElementById('adVenueMapUrl'),
@@ -5778,6 +5780,8 @@ function fillSiteForm(){
   const d = siteData();
   sf.title.value = d.coupleTitle || defaultCoupleTitle();
   sf.titleLen.textContent = [...sf.title.value].length;
+  sf.groomHost.value = d.groomHost || '';
+  sf.brideHost.value = d.brideHost || '';
   sf.venue.value = d.venueName    || '';
   sf.addr.value  = d.venueAddress || '';
   sf.map.value   = d.venueMapUrl  || '';
@@ -5832,7 +5836,7 @@ function fillSiteForm(){
 const SITE_DRAFT_KEY = 'siteForm.draft';
 /* 多活動時，時間與地點是活動卡的（那幾欄整段收起來、只當鏡像），
    所以它們不進這張表單的未儲存追蹤，也不會被這張表單存回去 */
-const siteFields = ()=> [sf.title,
+const siteFields = ()=> [sf.title, sf.groomHost, sf.brideHost,
   ...(multiEventOn() ? [] : [sf.venue, sf.addr, sf.map, sf.eventTime]),
   sf.transitPub, sf.transitPark, sf.dress, sf.gift, sf.story, sf.tags];
 
@@ -5942,6 +5946,8 @@ async function saveSiteForm(btn){
 
   const patch = {
     coupleTitle:      clampTitle(sf.title.value),
+    groomHost:        sf.groomHost.value.trim().slice(0, 40),
+    brideHost:        sf.brideHost.value.trim().slice(0, 40),
     transportPublic:  sf.transitPub.value.trim().slice(0, 500),
     transportParking: sf.transitPark.value.trim().slice(0, 500),
     dressCode:        sf.dress.value.trim().slice(0, 500),
@@ -5992,7 +5998,7 @@ sf.form.addEventListener('submit', async (e)=>{
 
    現在畫面上是**讀得懂的時間軸**（10:00 賓客入場），要改內容才長出
    一組 inline form —— 新增與編輯共用同一組，所以同一時間最多一組輸入框。
-   刪除收進 ⋯ 裡（和婚禮小卡、故事牆同一套 rowMenu）。
+   刪除收進 ⋯ 裡（和婚禮小卡、時光展同一套 rowMenu）。
 
    草稿仍然是「按了儲存並繼續才算數」：schDraft 是畫面上的那一份，
    siteSchedule() 是資料庫裡的那一份，兩份不一樣就是有未儲存的變更。 */
@@ -6372,7 +6378,7 @@ if(evListEl){
     }
   });
 
-  /* 拖曳排序：放開就存（和故事牆、測驗題同一套） */
+  /* 拖曳排序：放開就存（和時光展、隨堂考題目同一套） */
   setupDragSort(evListEl, '.ad-ev', (order)=> saveEventOrder(order));
 }
 
@@ -6420,7 +6426,7 @@ document.getElementById('adEvAdd')?.addEventListener('click', async ()=>{
 });
 
 /* ---------- 刪除一個活動 ----------
-   刪除鈕在活動資訊彈窗裡（清單上只留「編輯」，和自訂內容、感謝信同一套）。 */
+   刪除鈕在活動資訊彈窗裡（清單上只留「編輯」，和自訂內容、給你的信同一套）。 */
 async function deleteEvent(id){
   const rows = materializedEvents();
   const ev = rows.find(e => e.id === id);
@@ -7340,7 +7346,7 @@ function wzOpenDone(){
 document.getElementById('adWzDoneClose')?.addEventListener('click', ()=> closeWzDone());
 
 /* ============================================================
-   5. 婚禮小卡（抽卡頁的卡池）
+   5. 婚禮小卡（抽小卡頁的卡池）
    ------------------------------------------------------------
    照片先讓新人自己裁成 2:3（cropper.js），再以 data URL 存進文件，
    理由與桌次圖相同：Firebase Storage 的規則讀不到 Firestore，
@@ -7348,7 +7354,7 @@ document.getElementById('adWzDoneClose')?.addEventListener('click', ()=> closeWz
 ============================================================ */
 const CARD_ASPECT   = 2/3;      /* 卡片是直式 2:3 */
 const CARD_OUTWIDTH = 700;      /* 700×1050，手機上顯示寬度約 300px，這個解析度綽綽有餘 */
-/* 抽卡頁會一次載入整個卡池（要隨機抽，沒辦法只載一張），
+/* 抽小卡頁會一次載入整個卡池（要隨機抽，沒辦法只載一張），
    所以每張卡壓得比桌次圖更小 —— 30 張大約 4MB，手機用行動網路也還行。
    規則的上限仍是 950000，這裡是自我約束。 */
 const CARD_MAX_BYTES = 200000;
@@ -7461,7 +7467,7 @@ function renderCards(){
 }
 document.addEventListener('data:cards', ()=> guardedRender(cardListEl, renderCards));
 
-/* 小卡原本的 #order 是唯讀的，完全沒辦法重排。抽卡頁看的就是這個順序。 */
+/* 小卡原本的 #order 是唯讀的，完全沒辦法重排。抽小卡頁看的就是這個順序。 */
 registerRowMenu('card', (id)=>{
   const list = DataStore.getCards().filter(c => !isPendingDelete('cards', c.id));
   return [
@@ -7529,7 +7535,7 @@ cardListEl.addEventListener('change', async (e)=>{
 });
 
 /* ============================================================
-   6. 新人故事牆（戀愛時光）
+   6. 時光展
    ------------------------------------------------------------
    兩種型態，用同一個彈窗填：
      kind='photo' → 時間軸上的一則故事（照片可留空，只放文字）
@@ -7539,7 +7545,7 @@ cardListEl.addEventListener('change', async (e)=>{
    整份寫進來當起點（做法與測驗題目相同），之後改／刪都可以。
 ============================================================ */
 const EXH_OUTWIDTH = 900;
-/* 故事牆也是整頁一次載完，同樣壓小一點（理由見婚禮小卡） */
+/* 時光展也是整頁一次載完，同樣壓小一點（理由見婚禮小卡） */
 const EXH_MAX_BYTES = 250000;
 
 const xf = {
@@ -7688,7 +7694,7 @@ function renderExhibits(){
   const list = DataStore.getExhibits().filter(it => !isPendingDelete('exhibits', it.id));
   if(!list.length){
     xf.list.innerHTML = emptyState({
-      title: '還沒有故事牆內容',
+      title: '時光展還沒有內容',
       body: '一張照片配一段文字，賓客可以慢慢看完你們的故事。'
           + '先放著也沒關係 —— 賓客那一頁會先用我們準備好的範例。',
       action: { label:'載入預設內容來改', id:'adExhSeed' },
@@ -7740,7 +7746,7 @@ registerRowMenu('exh', (id)=>{
       if(it) openExhModal(it.kind, it);
     } },
     { label:'刪除這一則', danger:true, run: async ()=>{
-      const ok = await confirmModal({ title:'刪除故事牆內容', message:'確定要刪掉這一則嗎？' });
+      const ok = await confirmModal({ title:'刪除時光展內容', message:'確定要刪掉這一則嗎？' });
       if(!ok) return;
       if(xf.id.value === id){ closeExhModal(); resetExhForm(); }
       scheduleUndoDelete('exhibits', id, '這一則', renderExhibits);
@@ -7794,7 +7800,7 @@ function exhibitFields(it, order){
   };
 }
 
-/* 第一次打開、故事牆還空著 → 把預設內容寫進來當起點。
+/* 第一次打開、時光展還空著 → 把預設內容寫進來當起點。
    exhibitSeeded 記在 localStorage（以 siteId 分隔）：
    新人自己把內容全刪掉之後，不會又被我們補回來。 */
 let exhSeeding = false;
@@ -7832,7 +7838,7 @@ xf.list.addEventListener('click', async (e)=>{
   }
 
   if(delId){
-    const ok = await confirmModal({ title:'刪除故事牆內容', message:'確定要刪掉這一筆嗎？' });
+    const ok = await confirmModal({ title:'刪除時光展內容', message:'確定要刪掉這一筆嗎？' });
     if(!ok) return;
     if(xf.id.value === delId){ closeExhModal(); resetExhForm(); }
     scheduleUndoDelete('exhibits', delId, '這一筆', renderExhibits);
@@ -7840,7 +7846,7 @@ xf.list.addEventListener('click', async (e)=>{
 });
 
 /* ============================================================
-   7. 新人熟悉測驗（「看你多了解我們」的題目）
+   7. 新人隨堂考（「看你多了解我們」的題目）
    ------------------------------------------------------------
    一題一份文件：type（單選／複選）、q（題目）、opts（固定四個選項）、
    answer（正確答案的索引陣列）、order（題號順序）。
@@ -8059,7 +8065,7 @@ async function saveQuizOrder(idsInOrder){
 }
 
 /* ---------- 拖曳排序（Pointer Events，滑鼠與觸控通用） ----------
-   測驗題目與故事牆共用同一套。呼叫時給三樣東西：
+   隨堂考題目與時光展共用同一套。呼叫時給三樣東西：
    清單容器、一列的選擇器、放開時要做什麼（新順序、有沒有真的變）。 */
 function setupDragSort(listEl, itemSel, onDrop){
   let dragEl = null, startY = 0;
@@ -8286,7 +8292,7 @@ const HOME_PIN_GUIDE = `
 /* 「婚禮前有空可以慢慢做」那一步涵蓋的四個功能。
    沒開通的不算在裡面（分母只數他真的有的東西），
    按鈕指向第一個還空著的那一頁 —— 「還沒做的下一件事」才是他要去的地方。
-   感謝信存在 blessings（letters 是賓客投進來的悄悄話，不是同一份東西）。 */
+   給你的信存在 blessings（letters 是賓客投進來的悄悄話，不是同一份東西）。 */
 const HOME_EXTRAS = [
   { tab:'letters',  hash:'letters',        has: () => DataStore.getBlessings().length > 0 },
   { tab:'quiz',     hash:'quiz/questions', has: () => DataStore.getQuiz().length      > 0 },
@@ -8348,7 +8354,7 @@ const HOME_STEPS = [
     tabs: ['letters', 'quiz', 'exhibits', 'cards'],
     hash: homeExtrasHash,
     title: '婚禮前有空可以慢慢做',
-    note: '感謝信、新人測驗、故事牆、婚禮小卡，有空再一樣一樣來。',
+    note: '給你的信、新人隨堂考、時光展、婚禮小卡，有空再一樣一樣來。',
     done: () => homeExtrasCount() > 0,
     doneText: () => `已經完成 ${homeExtrasCount()} 項`,
   },
@@ -8928,7 +8934,7 @@ homeStepsEl?.addEventListener('click', (e)=>{
 });
 
 /* 資料進來之後，「這一步做完了沒」的答案會變，重畫一次。
-   感謝信是 blessings，letters 是悄悄話（首頁不看它） */
+   給你的信是 blessings，letters 是悄悄話（首頁不看它） */
 ['rsvps', 'blessings', 'cards', 'exhibits', 'quiz', 'explore']
   .forEach(key => document.addEventListener(`data:${key}`, renderHome));
 

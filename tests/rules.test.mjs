@@ -910,9 +910,9 @@ describe('explore（首頁自訂卡片）', () => {
 });
 
 /* ============================================================
-   囍卡卡池：新人在後台裁切上傳，賓客只讀得到
+   婚禮小卡卡池：新人在後台裁切上傳，賓客只讀得到
 ============================================================ */
-describe('cards（囍卡卡池）', () => {
+describe('cards（婚禮小卡卡池）', () => {
   const OWNER = 'couple@example.com';
 
   function ownerDb() {
@@ -943,7 +943,7 @@ describe('cards（囍卡卡池）', () => {
     await assertFails(addDoc(collection(db, `sites/${SITE_ID}/cards`), card()));
   });
 
-  it('新人可以新增、修改、刪除囍卡', async () => {
+  it('新人可以新增、修改、刪除婚禮小卡', async () => {
     const db = ownerDb();
     const ref = doc(db, `sites/${SITE_ID}/cards/c1`);
     await assertSucceeds(setDoc(ref, card()));
@@ -1158,6 +1158,8 @@ describe('sites 的大廳文案更新', () => {
     const db = ownerDb();
     await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
       coupleTitle: '彥廷與佳蓉',
+      groomHost: '陳大明 先生・林美麗 女士',
+      brideHost: '王小華 先生・張惠如 女士',
       venueName: '晶華酒店・三樓宴會廳',
       venueAddress: '台北市中山區中山北路二段 39 巷 3 號',
       venueMapUrl: 'https://maps.app.goo.gl/abc',
@@ -1373,6 +1375,11 @@ describe('sites 的大廳文案更新', () => {
     /* 大廳上的稱呼只給 20 個字 */
     await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), { coupleTitle: '字'.repeat(20) }));
     await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { coupleTitle: '字'.repeat(21) }));
+    /* 主婚人一邊 40 個字 */
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), { groomHost: '字'.repeat(40) }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { groomHost: '字'.repeat(41) }));
+    await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), { brideHost: '字'.repeat(40) }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { brideHost: '字'.repeat(41) }));
     await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
       transportPublic: '車'.repeat(501),
     }));

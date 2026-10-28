@@ -10,7 +10,7 @@
      這組新人有設定開場（sites.opening）→ 用那一套取代字幕＋簾幕，見 runOpening()
 
    內容（原本的 info 頁已併進本頁）：
-     置中開場 → 婚禮資訊卡（含尋找我的座位）→ 當日流程 → 出席前的小提醒
+     置中開場 → 婚禮資訊卡（含找我的座位）→ 當日流程 → 出席前的小提醒
      → 日期倒數 → RSVP
      → 卡片連結（兩欄）
 ============================================================ */
@@ -321,6 +321,24 @@ setText('infoTime',  W.time || '');
 setText('infoVenue', [W.city, W.venue].filter(Boolean).join('　'));
 setText('infoAddr',  W.address || '');
 
+/* ---------- 主婚人 ----------
+   一列「主婚人」，男方、女方各一行；稱謂是新人自己寫的（陳大明 先生・林美麗 女士）。
+   沒填的那一邊不出現，兩邊都沒填就整列收起來。
+   位置在「時間」與「地點」之間；多活動時那兩列會被換成活動列（插在地點那一列的位置），
+   這一列不分活動，排在所有活動列前面 */
+(function renderHosts(){
+  const row = document.getElementById('infoHostRow');
+  const box = document.getElementById('infoHosts');
+  if(!row || !box) return;
+  const hosts = [['男方', W.groomHost], ['女方', W.brideHost]]
+    .map(([side, name]) => [side, (name || '').trim()])
+    .filter(([, name]) => name);
+  box.innerHTML = hosts.map(([side, name]) =>
+    `<div class="ir-val ir-host"><span class="ir-host-side">${side}</span><span>${escapeHtml(name)}</span></div>`
+  ).join('');
+  row.hidden = !hosts.length;
+})();
+
 /* ---------- 多活動：時間與地點兩列換成一組活動列 ----------
    一個活動一列、各自的地點與地圖連結，這就是「不限制地址數量」
    在大廳的長相。單一活動（＝目前全部的站台）走的還是上面那兩列。
@@ -362,11 +380,11 @@ if(lobbyMulti){
   }).join('');
 
   /* 直接插成 .info-rows 的兄弟，不另外包一層容器 ——
-     包起來的話 .info-row:first-child 的 border-top 判斷會跑掉 */
-  if(timeRow){
-    timeRow.insertAdjacentHTML('beforebegin', html);
-    timeRow.remove();
-  }
+     包起來的話 .info-row:first-child 的 border-top 判斷會跑掉。
+     插在地點那一列的位置：主婚人（時間與地點之間）才會排在所有活動列前面 */
+  const anchor = venueRow || timeRow;
+  if(anchor) anchor.insertAdjacentHTML('beforebegin', html);
+  if(timeRow) timeRow.remove();
   if(venueRow) venueRow.remove();
 }
 

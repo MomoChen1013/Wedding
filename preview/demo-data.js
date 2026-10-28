@@ -29,6 +29,10 @@ window.DEMO = {
   address: '台北市中山區樂群二路 199 號',
   mapUrl:  'https://www.google.com/maps/search/?api=1&query=台北萬豪酒店',
 
+  /* 主婚人（資訊卡「主婚人」那一列） */
+  groomHost: '王志明 先生・陳美玲 女士',
+  brideHost: '林建國 先生・張淑芬 女士',
+
   hashtags: ['#Ginny和One結婚了', '#TheOneForGinny'],
 
   /* ---------- 資訊卡的列 ---------- */
