@@ -153,7 +153,7 @@
 .info-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:30px;}
 .info-actions .btn{text-decoration:none;text-align:center;}
 
-/* ---- 尋找我的座位（資訊區最下方的主要按鈕） ----
+/* ---- 找我的座位（資訊區最下方的主要按鈕） ----
    桌次功能關著的時候，裡面那條連結會被 rewriteNavLinks() 移除，
    剩下的空外框由 js/index.js 收起來 */
 .info-seat{margin-top:30px;padding-top:26px;border-top:1px solid var(--line-soft);
@@ -231,7 +231,10 @@
   .info-block{padding:32px 20px;}
   .note-grid{grid-template-columns:1fr;}
   .note-item{border-left:none;padding:0;}
-  .note-item + .note-item{margin-top:28px;padding-top:24px;border-top:1px solid var(--line-soft);}
+  /* 分隔線只畫在「前面那格真的有顯示」的時候：沒填的那格是 [hidden]，
+     單純的 + 一樣會選到後面那格，手機版就會在卡片頂端多一條線和一段空白。
+     各版型的 lobby-*.css 也是同一個寫法。 */
+  .note-item:not([hidden]) + .note-item{margin-top:28px;padding-top:24px;border-top:1px solid var(--line-soft);}
 }
 
 /* ---- 日期倒數 ---- */

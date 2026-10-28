@@ -155,8 +155,8 @@ body[data-hero-name="cn"] .so-hero .so-names{font-family:'Noto Serif TC',serif;f
 .so-glass .info-row:first-child{border-top:none;}
 .so-glass .info-couple{font-family:'Marcellus','Noto Serif TC',serif;}
 .so-sec .ir-label,.so-sec .note-label{color:var(--so-green);}
-.so-sec .note-item + .note-item{border-left:1px solid var(--so-line);}
-@media (max-width:640px){.so-sec .note-item + .note-item{border-left:none;border-top:1px solid var(--so-line);}}
+.so-sec .note-item:not([hidden]) + .note-item{border-left:1px solid var(--so-line);}
+@media (max-width:640px){.so-sec .note-item:not([hidden]) + .note-item{border-left:none;border-top:1px solid var(--so-line);}}
 .so-sec .timeline{text-align:left;--tl-line:rgba(79,122,102,.25);}
 .so-sec .tl-time{font-family:'Marcellus',serif;font-size:15px;color:var(--so-green);}
 .so-sec .tl-dot::before{width:10px;height:10px;background:radial-gradient(circle at 35% 30%,#ffe2a6,#f6a445 60%,#dc7a22);}

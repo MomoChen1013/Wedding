@@ -183,8 +183,8 @@ body[data-hero-name="cn"] .mw-hero .mw-names{font-family:'Noto Serif TC',serif;f
 .mw-card .info-row:first-child{border-top:none;}
 .mw-card .info-couple{font-family:'EB Garamond','Noto Serif TC',serif;}
 .mw-sec .ir-label,.mw-sec .note-label{color:var(--mw-wood);}
-.mw-sec .note-item + .note-item{border-left:1px solid var(--mw-line);}
-@media (max-width:640px){.mw-sec .note-item + .note-item{border-left:none;border-top:1px solid var(--mw-line);}}
+.mw-sec .note-item:not([hidden]) + .note-item{border-left:1px solid var(--mw-line);}
+@media (max-width:640px){.mw-sec .note-item:not([hidden]) + .note-item{border-left:none;border-top:1px solid var(--mw-line);}}
 .mw-sec .timeline{text-align:left;--tl-line:rgba(154,123,91,.3);}
 .mw-sec .tl-time{font-family:'EB Garamond',serif;font-size:16px;color:var(--mw-wood);}
 .mw-sec .tl-dot::before{width:7px;height:7px;background:var(--mw-sun);box-shadow:0 0 0 3px rgba(232,201,142,.3);}

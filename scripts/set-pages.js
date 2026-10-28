@@ -7,7 +7,7 @@
    但 pages 是一個 map，手動一格一格點很容易打錯字）。
 
    用法範例：
-     # 只留抽卡，其他全關（--pages 是整組覆蓋）
+     # 只留抽小卡，其他全關（--pages 是整組覆蓋）
      node scripts/set-pages.js --slug ginny-one-20260919 --pages draw
 
      # 在現有設定上加減

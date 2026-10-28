@@ -163,8 +163,8 @@ body[data-hero-name="cn"] .sg-hero .sg-names{font-family:'Noto Serif TC',serif;f
 .sg-card .info-row:first-child{border-top:none;}
 .sg-card .info-couple{font-family:'Italiana','Cormorant Garamond',serif;}
 .sg-sec .ir-label,.sg-sec .note-label{color:var(--sg-leaf);}
-.sg-sec .note-item + .note-item{border-left:1px dashed var(--sg-line);}
-@media (max-width:640px){.sg-sec .note-item + .note-item{border-left:none;border-top:1px dashed var(--sg-line);}}
+.sg-sec .note-item:not([hidden]) + .note-item{border-left:1px dashed var(--sg-line);}
+@media (max-width:640px){.sg-sec .note-item:not([hidden]) + .note-item{border-left:none;border-top:1px dashed var(--sg-line);}}
 .sg-sec .timeline{text-align:left;--tl-line:#c9d6b5;}
 .sg-sec .tl-time{font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--sg-leaf);}
 .sg-sec .tl-dot::before{width:10px;height:10px;background:var(--sg-rose);border-radius:50% 0;transform:translate(-50%,-50%) rotate(45deg);}

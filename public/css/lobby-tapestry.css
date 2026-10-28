@@ -250,8 +250,8 @@ body[data-hero-name="cn"] .tp-hero .tp-names{font-family:'Noto Serif TC',serif;f
   .tp-side .note-grid{margin:0;}
 }
 .tp-sec .note-label{font-family:'Cinzel','Noto Serif TC',serif;color:var(--tp-wine);letter-spacing:.2em;}
-.tp-sec .note-item + .note-item{border-left:1px dashed var(--line);}
-@media (max-width:640px){.tp-sec .note-item + .note-item{border-left:none;border-top:1px dashed var(--line);}}
+.tp-sec .note-item:not([hidden]) + .note-item{border-left:1px dashed var(--line);}
+@media (max-width:640px){.tp-sec .note-item:not([hidden]) + .note-item{border-left:none;border-top:1px dashed var(--line);}}
 
 /* 分隔：一朵鳶尾花，兩邊縫出去 */
 .tp-seam{display:flex;align-items:center;justify-content:center;gap:16px;

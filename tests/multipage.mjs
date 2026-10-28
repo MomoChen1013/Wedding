@@ -350,12 +350,12 @@ console.log('\n[2b] 新人名字有套進畫面');
     text.includes('Ginny & One') && text.includes('台北國賓大飯店'),
     text.slice(0, 80).replace(/\n/g, ' '));
   /* 內建 6 張（wall/exhibition/quiz/draw/cake/letter 都開著；桌次已經改成
-     資訊區最下面的「尋找我的座位」按鈕，不再是 Explore 的卡片）
+     資訊區最下面的「找我的座位」按鈕，不再是 Explore 的卡片）
      ＋ 新人自訂的 2 張。自訂卡是非同步讀進來的，等它出現再數 */
   await page.waitForSelector('.link-card.is-custom', { timeout: 10000 }).catch(() => {});
   const cardCount = await page.locator('.link-card').count();
   ok('首頁卡片＝內建 6 張＋自訂 2 張', cardCount === 8, String(cardCount));
-  ok('資訊區最下面有「尋找我的座位」',
+  ok('資訊區最下面有「找我的座位」',
     await page.isVisible('#infoSeatCta a'));
   ok('每頁都有頂部導覽列', await page.isVisible('#siteNav'));
   await page.close();
@@ -1220,7 +1220,7 @@ console.log('\n[9] 素材資料夾自動載入');
 {
   const { page } = await visit(`/w/${ASSET_SLUG}/draw`);
   const cards = await page.evaluate(() => CARDS.map((c) => `${c.name}(${c.rarity})`));
-  ok('囍卡用客戶的卡片',
+  ok('婚禮小卡用客戶的卡片',
     cards.join('、') === '戀愛中的新娘(SSR)、認真工作的新郎(N)', cards.join('、'));
   ok('有卡片時抽卡按鈕是打開的', !(await page.isDisabled('#drawBtn')));
   await page.close();
@@ -1528,7 +1528,7 @@ console.log('\n[12] 電子祝福信');
     page.waitForEvent('download', { timeout:15000 }),
     page.click('#wlSave'),
   ]).then(([d]) => d).catch(() => null);
-  ok('感謝信存得下來，而且是 JPG',
+  ok('給你的信存得下來，而且是 JPG',
     !!letterDl && /^letter-.*\.jpg$/.test(letterDl.suggestedFilename()),
     letterDl ? letterDl.suggestedFilename() : '(沒有下載)');
 
@@ -1973,7 +1973,7 @@ console.log('\n[15] 後台改得動大廳文案');
 }
 
 /* ---------- 後台上傳婚禮小卡（含裁切器） ---------- */
-console.log('\n[16] 後台上傳婚禮小卡與故事牆內容');
+console.log('\n[16] 後台上傳婚禮小卡與時光展內容');
 
 /* 測試用的小圖：60×90 的單色 PNG，直接餵給 <input type="file"> */
 const TEST_PNG = {
@@ -2031,7 +2031,7 @@ const TEST_PNG = {
   ok('等級改得動', after.rarity === 'SSR', after.rarity);
   ok('說明改得動', after.desc === '那天風很大', after.desc);
 
-  /* --- 新人故事牆：故事與章節 --- */
+  /* --- 時光展：故事與章節 --- */
   const exhCol = adb.collection('sites').doc(siteIds[SLUG]).collection('exhibits');
   await page.click('.ad-tab[data-tab="exhibits"]');
 
@@ -2044,7 +2044,7 @@ const TEST_PNG = {
     null, { timeout:20000 });
   /* 瀏覽器端的 snapshot 會先反映還沒送達的寫入，等伺服器真的收齊再查 */
   const seededExh = (await waitForColSize(exhCol, defCount, 'order')).docs.map((d) => d.data());
-  ok('第一次打開就寫進預設的故事牆內容', seededExh.length === defCount,
+  ok('第一次打開就寫進預設的時光展內容', seededExh.length === defCount,
     `${seededExh.length} / ${defCount} 筆`);
   ok('預設內容有故事也有章節',
     seededExh.some((it) => it.kind === 'photo') && seededExh.some((it) => it.kind === 'act'),
@@ -2085,7 +2085,7 @@ const TEST_PNG = {
   await page.waitForTimeout(1500);
 
   const exhibits = await waitForColSize(exhCol, 2, 'order');
-  ok('故事牆存了兩筆', exhibits.size === 2, `${exhibits.size} 筆`);
+  ok('時光展存了兩筆', exhibits.size === 2, `${exhibits.size} 筆`);
   const [act, photo] = exhibits.docs.map((d) => d.data());
   ok('第一筆是章節卡', act.kind === 'act' && act.title === '第一幕', JSON.stringify(act));
   ok('第二筆是故事', photo.kind === 'photo' && photo.title === '第一次一起旅行');
@@ -2093,7 +2093,7 @@ const TEST_PNG = {
     String(photo.img || '').startsWith('data:image/jpeg;base64,'),
     String(photo.img || '').slice(0, 24));
 
-  ok('婚禮小卡與故事牆分頁無 console 錯誤', realErrors(errors).length === 0,
+  ok('婚禮小卡與時光展分頁無 console 錯誤', realErrors(errors).length === 0,
     realErrors(errors).slice(0, 2).join(' | '));
   await page.close();
 }
@@ -2171,7 +2171,7 @@ const TEST_PNG = {
   await page.waitForTimeout(800);
   ok('重新整理之後仍然不能再抽', await page.isVisible('#drawLimit'));
 
-  ok('抽卡頁無 console 錯誤', realErrors(errors).length === 0,
+  ok('抽小卡頁無 console 錯誤', realErrors(errors).length === 0,
     realErrors(errors).slice(0, 2).join(' | '));
   await page.close();
 }
@@ -2197,7 +2197,7 @@ const TEST_PNG = {
 /* ---------- 後台分頁跟著頁面開關 ---------- */
 console.log('\n[17] 後台只顯示有開的頁面');
 {
-  /* minimal-site 只開了 rsvp：桌次、感謝信、婚禮小卡、故事牆的分頁都不該出現 */
+  /* minimal-site 只開了 rsvp：找座位、給你的信、婚禮小卡、時光展的分頁都不該出現 */
   const { page, errors } = await visit('/w/minimal-site-2027/admin');
   await signInAsOwner(page, 'couple@example.com');
   await page.waitForSelector('#adPage:not([hidden])', { timeout:15000 });
@@ -2215,7 +2215,7 @@ console.log('\n[17] 後台只顯示有開的頁面');
      minimal-site 只開 rsvp（出席表單設定跟著同一個開關），
      加上永遠都在的 home、lobby、explore 與沒有開關的 inbox，
      再加上不分方案的 pages（頁面設定）與 help（常見問題）。
-     其餘的不再收起來，而是鎖著留在側欄（進階方案）——
+     其餘的不再收起來，而是鎖著留在側欄（完整方案）——
      設定賓客標籤看的是站台的 guestTagsEnabled，沒開也是鎖著。 */
   ok('有開的頁面正常可用',
     open.join(',') === 'home,pages,lobby,explore,rsvpForm,rsvp,inbox,help', open.join(','));
@@ -2403,7 +2403,7 @@ console.log('\n[18c] 新人自己收起某一頁');
     !(await page.evaluate(() =>
       document.querySelector('#adSide .ad-tab[data-tab="inbox"]').hidden)));
 
-  /* 排程：小測驗排在一小時後才開 */
+  /* 排程：隨堂考排在一小時後才開 */
   await page.click('#adPageList [data-page-row="quiz"] [data-page-when]');
   const at = new Date(Date.now() + 3600000);
   const p2 = (n) => String(n).padStart(2, '0');
@@ -2504,7 +2504,7 @@ console.log('\n[18c] 新人自己收起某一頁');
   const links = await page.$$eval('.link-grid .link-card',
     (els) => els.map((e) => e.getAttribute('href') || ''));
   ok('大廳沒有祝福牆的入口', !links.some((h) => h.endsWith('/wall')), links.join(','));
-  ok('排程還沒到的小測驗也沒有入口',
+  ok('排程還沒到的隨堂考也沒有入口',
     !links.some((h) => h.endsWith('/quiz')), links.join(','));
   await page.close();
 
@@ -2523,7 +2523,7 @@ console.log('\n[18c] 新人自己收起某一頁');
   const { page } = await visit(`/w/${SLUG}/`);
   const links = await page.$$eval('.link-grid .link-card',
     (els) => els.map((e) => e.getAttribute('href') || ''));
-  ok('時間過了之後小測驗自己出現',
+  ok('時間過了之後隨堂考自己出現',
     links.some((h) => h.endsWith('/quiz')), links.join(','));
   await page.close();
 
@@ -2592,13 +2592,13 @@ console.log('\n[18b] 桌次功能可以整個關掉');
   await page.close();
 }
 {
-  /* 賓客那一側：大廳沒有按鈕、導覽列沒有桌次、直接打網址會被導回大廳 */
+  /* 賓客那一側：大廳沒有按鈕、導覽列沒有找座位、直接打網址會被導回大廳 */
   const { page } = await visit(`/w/${SLUG}/`);
-  ok('關掉後大廳沒有「尋找我的座位」',
+  ok('關掉後大廳沒有「找我的座位」',
     await page.evaluate(() => document.getElementById('infoSeatCta').hidden));
-  ok('關掉後導覽列也沒有桌次',
+  ok('關掉後導覽列也沒有找座位',
     await page.evaluate(() => !Array.from(document.querySelectorAll('#siteNav .nav-link'))
-      .some((a) => a.textContent.includes('桌次'))));
+      .some((a) => a.textContent.includes('找座位'))));
   await page.close();
 
   const direct = await newPage();
@@ -2723,7 +2723,7 @@ const LONG_OPT = '這是一個故意寫得非常長的選項內容，長到一�
   const left = await waitForColSize(quizCol, 3, null, 20000);
   ok('刪得掉題目', left.size === 3, `${left.size} 題`);
 
-  ok('測驗分頁無 console 錯誤', realErrors(errors).length === 0,
+  ok('隨堂考分頁無 console 錯誤', realErrors(errors).length === 0,
     realErrors(errors).slice(0, 2).join(' | '));
   await page.close();
 }
@@ -2823,7 +2823,7 @@ console.log('\n[20b] 賓客做測驗');
   });
   ok('長選項只在長條裡截斷，不會壓到「你」', overflow.length === 0, overflow.slice(0, 2).join(' | '));
 
-  ok('測驗頁無 console 錯誤', realErrors(errors).length === 0,
+  ok('隨堂考頁無 console 錯誤', realErrors(errors).length === 0,
     realErrors(errors).slice(0, 2).join(' | '));
   await page.close();
 }
@@ -3747,8 +3747,8 @@ console.log('\n[14d] 後台賓客標籤');
   await guest.page.close();
 }
 
-/* ---------- 後台感謝信 ---------- */
-console.log('\n[14e] 後台感謝信（通用信／指定信）');
+/* ---------- 後台給你的信 ---------- */
+console.log('\n[14e] 後台給你的信（通用信／指定信）');
 {
   const site = adb.collection('sites').doc(siteIds[SLUG]);
   await site.collection('blessings').doc('b3').set({
@@ -3805,7 +3805,7 @@ console.log('\n[14e] 後台感謝信（通用信／指定信）');
   ok('通用信存得了第三封（沒有專屬詞彙也過得了驗證）',
     saved.length === 3, `${saved.length} 封`);
 
-  ok('後台感謝信無 console 錯誤', realErrors(errors).length === 0,
+  ok('後台給你的信無 console 錯誤', realErrors(errors).length === 0,
     realErrors(errors).slice(0, 2).join(' | '));
   await page.close();
 
@@ -3832,9 +3832,9 @@ for(const key of ['', 'wall', 'invitation', 'quiz', 'seating', 'letter', 'exhibi
 }
 
 /* ---------- 手機導覽列：功能多的時候收成漢堡 ----------
-   為什麼是 4：見 js/common.js 的 NAV_DRAWER_MIN。這裡守住兩件事 ——
+   為什麼是 3：見 js/common.js 的 NAV_DRAWER_MIN。這裡守住兩件事 ——
    超過門檻要真的收起來（而不是又變回一列點不到的橫捲），
-   沒超過的站台不能被波及（3 項以內橫排看得完，漢堡只是多一次點擊）。 */
+   沒超過的站台不能被波及（2 項橫排看得完，漢堡只是多一次點擊）。 */
 console.log('\n[8b] 手機導覽列的漢堡選單');
 {
   const PHONE = { viewport:{ width:375, height:812 } };
@@ -4197,7 +4197,7 @@ console.log('\n[21] 後台排桌管理');
   await page.close();
 }
 {
-  /* 沒開這個開關的站台，「排桌管理」是鎖著的（進階方案）：
+  /* 沒開這個開關的站台，「排桌管理」是鎖著的（完整方案）：
      按鈕還在、掛著鎖頭，點進去只有那張說明卡，工作區進不去 */
   const { page } = await visit('/w/minimal-site-2027/admin');
   await signInAsOwner(page, 'couple@example.com');
