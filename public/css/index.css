@@ -225,7 +225,10 @@
   .info-block{padding:32px 20px;}
   .note-grid{grid-template-columns:1fr;}
   .note-item{border-left:none;padding:0;}
-  .note-item + .note-item{margin-top:28px;padding-top:24px;border-top:1px solid var(--line-soft);}
+  /* 分隔線只畫在「前面那格真的有顯示」的時候：沒填的那格是 [hidden]，
+     單純的 + 一樣會選到後面那格，手機版就會在卡片頂端多一條線和一段空白。
+     各版型的 lobby-*.css 也是同一個寫法。 */
+  .note-item:not([hidden]) + .note-item{margin-top:28px;padding-top:24px;border-top:1px solid var(--line-soft);}
 }
 
 /* ---- 日期倒數 ---- */

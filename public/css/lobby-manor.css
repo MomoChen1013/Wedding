@@ -204,8 +204,8 @@ body[data-hero-name="cn"] .fm-hero .fm-names{font-family:'Noto Serif TC',serif;f
 .fm-card .info-row:first-child{border-top:none;}
 .fm-card .info-couple{font:500 clamp(22px,2.6vw,26px)/1.2 var(--fm-serif);letter-spacing:.04em;}
 .fm-sec .ir-label,.fm-sec .note-label{color:var(--fm-honey);letter-spacing:.2em;}
-.fm-sec .note-item + .note-item{border-left:1px solid var(--fm-line);}
-@media (max-width:640px){.fm-sec .note-item + .note-item{border-left:none;border-top:1px solid var(--fm-line);}}
+.fm-sec .note-item:not([hidden]) + .note-item{border-left:1px solid var(--fm-line);}
+@media (max-width:640px){.fm-sec .note-item:not([hidden]) + .note-item{border-left:none;border-top:1px solid var(--fm-line);}}
 .fm-sec .timeline{text-align:left;--tl-line:rgba(122,143,107,.4);}
 .fm-sec .tl-time{font:500 16px var(--fm-serif);color:var(--fm-honey);}
 .fm-sec .tl-dot::before{background:var(--fm-olive);}

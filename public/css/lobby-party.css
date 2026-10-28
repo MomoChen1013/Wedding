@@ -236,8 +236,8 @@ body[data-hero-name="cn"] .yp-hero .yp-names{font-family:'Noto Sans TC',sans-ser
 .yp-card .info-row:first-child{border-top:none;}
 .yp-card .info-couple{font:400 clamp(36px,5vw,46px)/1.1 'Yellowtail','Noto Serif TC',cursive;color:var(--yp-ink);letter-spacing:.02em;}
 .yp-sec .ir-label,.yp-sec .note-label{color:var(--yp-coral);font-weight:500;}
-.yp-sec .note-item + .note-item{border-left:1px dashed var(--yp-line);}
-@media (max-width:640px){.yp-sec .note-item + .note-item{border-left:none;border-top:1px dashed var(--yp-line);}}
+.yp-sec .note-item:not([hidden]) + .note-item{border-left:1px dashed var(--yp-line);}
+@media (max-width:640px){.yp-sec .note-item:not([hidden]) + .note-item{border-left:none;border-top:1px dashed var(--yp-line);}}
 .yp-sec .btn{border-radius:999px;font-weight:500;}
 .yp-sec .btn.ghost{border-color:rgba(31,48,73,.25);color:var(--yp-ink);background:transparent;}
 .yp-sec .btn:not(.ghost){background:var(--yp-coral);border-color:var(--yp-coral);color:#fff;}

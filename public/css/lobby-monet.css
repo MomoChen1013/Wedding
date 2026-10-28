@@ -158,8 +158,8 @@ body[data-hero-name="cn"] .mg-hero .mg-names{font-family:'Noto Serif TC',serif;f
 .mg-card .info-row:first-child{border-top:none;}
 .mg-card .info-couple{font-family:'Cormorant Garamond','Noto Serif TC',serif;font-weight:400;font-size:clamp(26px,3.6vw,34px);}
 .mg-sec .ir-label,.mg-sec .note-label{color:var(--mg-green);}
-.mg-sec .note-item + .note-item{border-left:1px solid var(--mg-line);}
-@media (max-width:640px){.mg-sec .note-item + .note-item{border-left:none;border-top:1px solid var(--mg-line);}}
+.mg-sec .note-item:not([hidden]) + .note-item{border-left:1px solid var(--mg-line);}
+@media (max-width:640px){.mg-sec .note-item:not([hidden]) + .note-item{border-left:none;border-top:1px solid var(--mg-line);}}
 .mg-sec .timeline{text-align:left;--tl-line:rgba(63,106,90,.22);}
 .mg-sec .tl-time{font:italic 400 17px 'Cormorant Garamond',serif;color:var(--mg-green);}
 .mg-sec .tl-dot::before{width:11px;height:11px;background:radial-gradient(circle at 40% 35%,#f7d6dc,#e77d8e 60%,#c9546a);}

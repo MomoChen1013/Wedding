@@ -214,8 +214,8 @@ body[data-hero-name="cn"] .bt-hero .bt-names{font-family:'Noto Serif TC',serif;f
 .bt-card .info-actions{justify-content:flex-start;}
 .bt-card .info-seat{border-top:1px dashed var(--bt-line);justify-content:flex-start;}
 .bt-sec .ir-label,.bt-sec .note-label{font-family:var(--bt-mono);letter-spacing:.14em;color:var(--bt-label);}
-.bt-sec .note-item + .note-item{border-left:1px dashed var(--bt-line);}
-@media (max-width:640px){.bt-sec .note-item + .note-item{border-left:none;border-top:1px dashed var(--bt-line);}}
+.bt-sec .note-item:not([hidden]) + .note-item{border-left:1px dashed var(--bt-line);}
+@media (max-width:640px){.bt-sec .note-item:not([hidden]) + .note-item{border-left:none;border-top:1px dashed var(--bt-line);}}
 .bt-sec .btn.ghost{border-color:var(--bt-ink);color:var(--bt-ink);}
 .bt-sec .timeline{margin:0;--tl-line:var(--bt-line);}
 .bt-sec .tl-time{font:400 13px/24px var(--bt-mono);color:var(--bt-label);letter-spacing:.06em;}
