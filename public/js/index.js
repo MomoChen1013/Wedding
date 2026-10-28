@@ -324,7 +324,8 @@ setText('infoAddr',  W.address || '');
 /* ---------- 主婚人 ----------
    一列「主婚人」，男方、女方各一行；稱謂是新人自己寫的（陳大明 先生・林美麗 女士）。
    沒填的那一邊不出現，兩邊都沒填就整列收起來。
-   多活動時時間與地點兩列會被換掉，這一列不分活動，照樣留在最下面 */
+   位置在「時間」與「地點」之間；多活動時那兩列會被換成活動列（插在時間那一列的位置），
+   這一列不分活動，就接在所有活動列後面 */
 (function renderHosts(){
   const row = document.getElementById('infoHostRow');
   const box = document.getElementById('infoHosts');
