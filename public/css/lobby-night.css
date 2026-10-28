@@ -202,8 +202,8 @@ body[data-hero-name="cn"] .ns-hero .ns-names{font-family:'Noto Serif TC',serif;f
 .ns-sec .ir-val{color:var(--ns-ink);}
 .ns-sec .ir-sub,.ns-sec .info-note,.ns-sec .tl-desc{color:var(--ns-soft);}
 .ns-sec .ir-jump{color:var(--ns-gold);}
-.ns-sec .note-item + .note-item{border-left:1px solid var(--ns-line);}
-@media (max-width:640px){.ns-sec .note-item + .note-item{border-left:none;border-top:1px solid var(--ns-line);}}
+.ns-sec .note-item:not([hidden]) + .note-item{border-left:1px solid var(--ns-line);}
+@media (max-width:640px){.ns-sec .note-item:not([hidden]) + .note-item{border-left:none;border-top:1px solid var(--ns-line);}}
 .ns-sec .timeline{text-align:left;--tl-line:rgba(var(--ns-gold-rgb),.25);}
 .ns-sec .tl-time{font:300 15px 'Josefin Sans',sans-serif;letter-spacing:.1em;color:var(--ns-gold);}
 .ns-sec .tl-dot::before{width:9px;height:9px;background:#fff6d8;box-shadow:0 0 8px rgba(255,236,170,.9);}

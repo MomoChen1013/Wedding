@@ -415,8 +415,8 @@ body[data-hero-name="cn"] .mc-hero .mc-names{font-family:'Noto Serif TC',serif;f
 .mc-card .info-row:first-child{border-top:none;}
 .mc-card .info-couple{font-family:'Cinzel','Noto Serif TC',serif;letter-spacing:.08em;}
 .mc-sec .ir-label,.mc-sec .note-label{color:var(--mc-gold);}
-.mc-sec .note-item + .note-item{border-left:1px solid var(--mc-line);}
-@media (max-width:640px){.mc-sec .note-item + .note-item{border-left:none;border-top:1px solid var(--mc-line);}}
+.mc-sec .note-item:not([hidden]) + .note-item{border-left:1px solid var(--mc-line);}
+@media (max-width:640px){.mc-sec .note-item:not([hidden]) + .note-item{border-left:none;border-top:1px solid var(--mc-line);}}
 .mc-sec .timeline{text-align:left;--tl-line:rgba(168,141,95,.35);}
 .mc-sec .tl-time{font-family:'Cinzel',serif;font-size:14px;color:var(--mc-gold);}
 /* 時間軸上的點：一顆小小的香檳金菱形 */
