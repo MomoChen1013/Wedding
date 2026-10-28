@@ -130,6 +130,12 @@
 .info-row{display:grid;grid-template-columns:4.5em 1fr;gap:16px;align-items:baseline;
   padding:16px 0;border-top:1px solid var(--line-soft);}
 .info-row:first-child{border-top:none;}
+/* 上面的 display:grid 會蓋掉瀏覽器預設的 [hidden]，主婚人沒填時要自己收起來 */
+#infoHostRow[hidden]{display:none;}
+/* 主婚人：「男方／女方」一小欄，名字太長換行時對齊名字那一欄 */
+.ir-host{display:grid;grid-template-columns:auto 1fr;gap:.9em;align-items:baseline;}
+.ir-host + .ir-host{margin-top:4px;}
+.ir-host-side{font-size:12.5px;color:var(--ink-soft);letter-spacing:.14em;}
 .info-row .ir-ic{display:none;}
 .ir-label{font-size:11.5px;color:var(--ink-soft);letter-spacing:.24em;}
 .ir-val{color:var(--ink);font-size:15px;}

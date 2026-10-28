@@ -321,6 +321,23 @@ setText('infoTime',  W.time || '');
 setText('infoVenue', [W.city, W.venue].filter(Boolean).join('　'));
 setText('infoAddr',  W.address || '');
 
+/* ---------- 主婚人 ----------
+   一列「主婚人」，男方、女方各一行；稱謂是新人自己寫的（陳大明 先生・林美麗 女士）。
+   沒填的那一邊不出現，兩邊都沒填就整列收起來。
+   多活動時時間與地點兩列會被換掉，這一列不分活動，照樣留在最下面 */
+(function renderHosts(){
+  const row = document.getElementById('infoHostRow');
+  const box = document.getElementById('infoHosts');
+  if(!row || !box) return;
+  const hosts = [['男方', W.groomHost], ['女方', W.brideHost]]
+    .map(([side, name]) => [side, (name || '').trim()])
+    .filter(([, name]) => name);
+  box.innerHTML = hosts.map(([side, name]) =>
+    `<div class="ir-val ir-host"><span class="ir-host-side">${side}</span><span>${escapeHtml(name)}</span></div>`
+  ).join('');
+  row.hidden = !hosts.length;
+})();
+
 /* ---------- 多活動：時間與地點兩列換成一組活動列 ----------
    一個活動一列、各自的地點與地圖連結，這就是「不限制地址數量」
    在大廳的長相。單一活動（＝目前全部的站台）走的還是上面那兩列。

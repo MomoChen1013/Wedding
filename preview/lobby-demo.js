@@ -45,6 +45,10 @@
   $('infoTime').textContent = D.time;
   $('infoVenue').textContent = D.venue;
   $('infoAddr').textContent = D.address;
+  const hosts = [['男方', D.groomHost], ['女方', D.brideHost]].filter(([, n]) => n);
+  if ($('infoHosts')) $('infoHosts').innerHTML = hosts.map(([side, n]) =>
+    `<div class="ir-val ir-host"><span class="ir-host-side">${side}</span><span>${esc(n)}</span></div>`).join('');
+  if ($('infoHostRow')) $('infoHostRow').hidden = !hosts.length;
   $('infoTimeJump').hidden = false;
   $('infoVenueJump').hidden = false;
   $('mapBtn').href = D.mapUrl;

@@ -5659,6 +5659,8 @@ const sf = {
   form:      document.getElementById('adSiteForm'),
   title:     document.getElementById('adCoupleTitle'),
   titleLen:  document.getElementById('adCoupleTitleLen'),
+  groomHost: document.getElementById('adGroomHost'),
+  brideHost: document.getElementById('adBrideHost'),
   venue:     document.getElementById('adVenueName'),
   addr:      document.getElementById('adVenueAddress'),
   map:       document.getElementById('adVenueMapUrl'),
@@ -5778,6 +5780,8 @@ function fillSiteForm(){
   const d = siteData();
   sf.title.value = d.coupleTitle || defaultCoupleTitle();
   sf.titleLen.textContent = [...sf.title.value].length;
+  sf.groomHost.value = d.groomHost || '';
+  sf.brideHost.value = d.brideHost || '';
   sf.venue.value = d.venueName    || '';
   sf.addr.value  = d.venueAddress || '';
   sf.map.value   = d.venueMapUrl  || '';
@@ -5832,7 +5836,7 @@ function fillSiteForm(){
 const SITE_DRAFT_KEY = 'siteForm.draft';
 /* 多活動時，時間與地點是活動卡的（那幾欄整段收起來、只當鏡像），
    所以它們不進這張表單的未儲存追蹤，也不會被這張表單存回去 */
-const siteFields = ()=> [sf.title,
+const siteFields = ()=> [sf.title, sf.groomHost, sf.brideHost,
   ...(multiEventOn() ? [] : [sf.venue, sf.addr, sf.map, sf.eventTime]),
   sf.transitPub, sf.transitPark, sf.dress, sf.gift, sf.story, sf.tags];
 
@@ -5942,6 +5946,8 @@ async function saveSiteForm(btn){
 
   const patch = {
     coupleTitle:      clampTitle(sf.title.value),
+    groomHost:        sf.groomHost.value.trim().slice(0, 40),
+    brideHost:        sf.brideHost.value.trim().slice(0, 40),
     transportPublic:  sf.transitPub.value.trim().slice(0, 500),
     transportParking: sf.transitPark.value.trim().slice(0, 500),
     dressCode:        sf.dress.value.trim().slice(0, 500),

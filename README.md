@@ -605,6 +605,8 @@ sites/{siteId}
   groomNameEn, brideNameEn  # 選填，英文名；只有 hero 用得到，兩個都填才生效
                             # 沒填就退回中文名，新人後台改不動（見 create-site.js）
   coupleTitle           # 選填，大廳資訊卡上的稱呼（≤20 字），留白就用兩人的名字
+  groomHost, brideHost  # 選填，男方／女方主婚人（各 ≤40 字，稱謂由新人自己寫）
+                        # 大廳資訊卡「主婚人」那一列；兩邊都沒填就不出現
   eventDate(timestamp), eventEndDate(timestamp|null)
   timezone(IANA，預設 Asia/Taipei)
   venueName, venueAddress, venueMapUrl
@@ -711,7 +713,7 @@ short/{code}                # 6 碼短連結
 
 這個欄位**沒有對應的 CLI 參數**（`create-site.js` 不會寫入），
 但新人可以在後台「大廳內容」分頁自己編（見下面的〈新人後台〉）。
-`coupleTitle`、`dressCode`、`giftNote`、`venueName`、`venueAddress`、
+`coupleTitle`、`groomHost`、`brideHost`、`dressCode`、`giftNote`、`venueName`、`venueAddress`、
 `transportPublic`、`transportParking`、`story`、`hashtags` 也一樣 ——
 `create-site.js` 的參數只在建站當下有效，之後要改文案就進後台。
 改完重新整理網頁就生效，不需要重新 deploy，也不用進 Firebase Console。

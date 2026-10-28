@@ -377,6 +377,9 @@ export function buildWed(site) {
     heroNameLang,
     /* 新人自己寫的稱呼（後台限 20 個字），沒填就沿用上面的 couple */
     coupleTitle: site.coupleTitle || '',
+    /* 主婚人（後台限 40 個字，稱謂由新人自己寫），沒填的那一邊不顯示 */
+    groomHost: site.groomHost || '',
+    brideHost: site.brideHost || '',
 
     date: ev ? `${parts.year}.${parts.month}.${parts.day}` : '',
     dateISO: ev ? `${parts.year}-${parts.month}-${parts.day}T${hour}:${parts.minute}:00${isoOffset}` : '',
