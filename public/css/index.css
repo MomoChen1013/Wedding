@@ -147,7 +147,7 @@
 .info-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:30px;}
 .info-actions .btn{text-decoration:none;text-align:center;}
 
-/* ---- 尋找我的座位（資訊區最下方的主要按鈕） ----
+/* ---- 找我的座位（資訊區最下方的主要按鈕） ----
    桌次功能關著的時候，裡面那條連結會被 rewriteNavLinks() 移除，
    剩下的空外框由 js/index.js 收起來 */
 .info-seat{margin-top:30px;padding-top:26px;border-top:1px solid var(--line-soft);

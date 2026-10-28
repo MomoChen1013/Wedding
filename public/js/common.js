@@ -869,12 +869,12 @@ const DataStore = {
   /* 新人關掉桌次搜尋時，賓客那一頁只需要桌次圖，不必讀整份名單 */
   subscribeSeatingImages(){ this._lazySub('seatingImages', 'seatingImages', 'order'); },
   /* Dress Code 的參考圖（整段 data URL）。只有大廳與後台需要，
-     所以和囍卡、展品一樣不放進 _subscribe()，各頁自己叫用 */
+     所以和婚禮小卡、時光展一樣不放進 _subscribe()，各頁自己叫用 */
   subscribeDressImages(){ this._lazySub('dressImages', 'dressImages', 'order'); },
   subscribeBlessings(){ this._lazySub('blessings', 'blessings', 'time'); },
   subscribeExplore(){   this._lazySub('explore',   'explore',   'order'); },
-  /* 囍卡與展品：新人自己上傳的圖是整段 data URL，資料量大，
-     所以只有抽卡頁、戀愛時光頁與後台才訂閱 */
+  /* 婚禮小卡與時光展：新人自己上傳的圖是整段 data URL，資料量大，
+     所以只有抽小卡頁、時光展與後台才訂閱 */
   subscribeCards(){    this._lazySub('cards',    'cards',    'order'); },
   subscribeExhibits(){ this._lazySub('exhibits', 'exhibits', 'order'); },
   /* 測驗：題目由新人維護（order 決定題號），作答紀錄是賓客送上來的票 */
@@ -1842,20 +1842,20 @@ function startCountdown(el, iso, mode){
 }
 /* ============================================================
    頂部導覽列（每一頁共用，由這裡注入，各頁 HTML 不用重複寫）
-   顯示順序：新人名稱(lobby) → 桌次(seating) → 祝福(wall)
-             → 給你的信(letter) → 故事(exhibition) → 測驗(quiz)
-             → 抽卡(draw) → 集氣(cake) → User
+   顯示順序：新人名稱(lobby) → 找座位(seating) → 祝福牆(wall)
+             → 給你的信(letter) → 時光展(exhibition) → 隨堂考(quiz)
+             → 抽小卡(draw) → 集氣(cake) → User
    ・站台沒開的頁面不會出現在列上
    ・出席回覆（邀請函）不放進導覽列：它是單獨分享出去的一頁，
      大廳本來就有一塊 RSVP 的入口，不需要在每一頁都再擺一次
 ============================================================ */
 const NAV_ITEMS = [
-  { key:'seating',    label:'桌次' },
-  { key:'wall',       label:'祝福' },
+  { key:'seating',    label:'找座位' },
+  { key:'wall',       label:'祝福牆' },
   { key:'letter',     label:'給你的信' },
-  { key:'exhibition', label:'故事' },
-  { key:'quiz',       label:'測驗' },
-  { key:'draw',       label:'抽卡' },
+  { key:'exhibition', label:'時光展' },
+  { key:'quiz',       label:'隨堂考' },
+  { key:'draw',       label:'抽小卡' },
   { key:'cake',       label:'集氣' },
 ];
 
@@ -1872,9 +1872,12 @@ const NO_NAV_PAGES = new Set(['admin', 'rsvp']);
    橫捲在這裡撐不住：捲軸是藏起來的（見 common.css 的 .nav-links），
    看不到的那幾項賓客不知道存在；連結熱區也只有 31.5px 高，放在橫捲容器裡，
    手指斜一點就被判成捲動而不是點擊。
-   所以 4 項起改漢堡；3 項以內照舊橫排 —— 那時候全部看得到，漢堡只是
-   多要一次點擊。桌機不受影響，永遠是橫排。 */
-const NAV_DRAWER_MIN = 4;
+   所以 3 項起改漢堡；2 項照舊橫排 —— 那時候全部看得到，漢堡只是
+   多要一次點擊。桌機不受影響，永遠是橫排。
+   原本是 4 項起：功能名稱改成「找座位、祝福牆、時光展、隨堂考、抽小卡」之後，
+   三項最寬那組（給你的信＋時光展＋隨堂考）從 140px 變成 167px，
+   超過手機最窄時分到的 135px，第三項會被藏進看不到的橫捲裡；兩項是 97px，放得下。 */
+const NAV_DRAWER_MIN = 3;
 
 /* 入場前（大廳的 gate、信箱的登入畫面）先不顯示導覽列 */
 function setNavVisible(on){

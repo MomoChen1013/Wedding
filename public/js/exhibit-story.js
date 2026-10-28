@@ -1,5 +1,5 @@
 /* ============================================================
-   exhibit-story.js — 「我們的故事」的共用資料層
+   exhibit-story.js — 「時光展」的共用資料層
    ------------------------------------------------------------
    exhibition.html 用 <script defer> 直接載入，全域只留 EXHIBIT_STORY
    一個常數（和 exhibit-defaults.js、quiz-defaults.js 同一套做法）。

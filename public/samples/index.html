@@ -25,6 +25,8 @@
   src:url('/samples/fonts/genyomin-r.woff2') format('woff2');}
 @font-face{font-family:'GenYoMin Samples';font-weight:500;font-display:swap;
   src:url('/samples/fonts/genyomin-m.woff2') format('woff2');}
+@font-face{font-family:'Shin9 Samples Hand';font-weight:400;font-display:swap;
+  src:url('/samples/fonts/hand.woff2') format('woff2');}
 :root{
   --ink:#3b3540; --muted:#7d7480; --surface:#fffdf9;
   --line:rgba(59,53,64,.12); --line-soft:rgba(59,53,64,.08); --chip:rgba(168,141,95,.1);
@@ -101,8 +103,6 @@ header{text-align:center;}
 @media (max-width:420px){.kicker{font-size:10.5px;letter-spacing:.16em;}}
 h1{font-family:var(--f-cn);font-weight:500;font-size:clamp(24px,4.4vw,36px);letter-spacing:.14em;line-height:1.5;margin:14px 0 16px;}
 header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
-.hero-cta{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:26px;}
-.hero-cta small{flex-basis:100%;color:var(--muted);font-size:12.5px;letter-spacing:.08em;}
 
 .sec{margin-top:clamp(72px,10vw,120px);}
 .sec-head{display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:clamp(24px,4vw,40px);}
@@ -116,38 +116,79 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
 .ic{display:block;flex:0 0 auto;width:24px;height:24px;color:var(--mc-gold);
   fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
 
-.why{display:grid;gap:14px;max-width:1040px;margin:clamp(32px,5vw,48px) auto 0;grid-template-columns:1fr;}
-@media (min-width:760px){.why{grid-template-columns:repeat(3,1fr);gap:20px;}}
-.why > li{list-style:none;display:flex;flex-direction:column;gap:10px;align-items:flex-start;text-align:left;padding:22px 22px 24px;}
-.why .ic{width:32px;height:32px;stroke-width:2;margin-top:2px;}
-.why h3{font-family:var(--f-cn);font-weight:500;font-size:15.5px;letter-spacing:.08em;line-height:1.6;}
-.why p{margin-top:4px;font-size:13.5px;color:#5c5560;line-height:1.8;}
-.why-flow .flow{margin-top:8px;}
-.flow{position:relative;display:grid;grid-template-columns:repeat(3,1fr);width:100%;max-width:520px;list-style:none;
-  font-family:var(--f-cn);font-size:14.5px;letter-spacing:.12em;color:var(--ink);text-align:center;}
-.flow::before{content:'';position:absolute;left:16.67%;right:16.67%;top:6px;height:1px;background:rgba(201,149,132,.55);}
-.flow li{position:relative;padding-top:22px;}
-.flow li::before{content:'';position:absolute;top:0;left:50%;width:13px;height:13px;margin-left:-6.5px;border-radius:50%;
-  border:1.5px solid rgba(201,149,132,.9);background:var(--surface);box-sizing:border-box;}
+@media (min-width:600px){.br-m{display:none;}}
 
-.flex-rail{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(220px,250px);gap:22px;justify-content:center;
+.hero{display:grid;gap:clamp(22px,4vw,40px);grid-template-areas:"copy" "phones" "act";align-items:center;}
+.hero-copy{grid-area:copy;}
+.hero-act{grid-area:act;}
+.hero-phones{grid-area:phones;}
+.hero-copy > p{max-width:30em;margin:0 auto;color:var(--muted);font-size:14.5px;}
+.hero-phones{position:relative;display:flex;justify-content:center;align-items:center;padding:6px 0 10px;}
+.hero-phones .phone{flex:0 0 auto;width:clamp(112px,30vw,220px);max-width:none;border-radius:clamp(22px,4vw,32px);padding:clamp(5px,1vw,8px);
+  box-shadow:0 28px 50px -30px rgba(70,55,45,.5);}
+.hero-phones .phone::before{top:clamp(10px,1.8vw,14px);width:clamp(30px,6vw,52px);height:clamp(9px,1.6vw,14px);margin-left:calc(clamp(30px,6vw,52px) / -2);}
+.hero-phones .phone-screen{border-radius:clamp(17px,3.2vw,25px);}
+.hero-phones .side{width:clamp(96px,25vw,186px);opacity:.96;z-index:1;}
+.hero-phones .side:first-child{margin-right:clamp(-34px,-4vw,-22px);transform:rotate(-4deg) translateY(10px);}
+.hero-phones .side:last-child{margin-left:clamp(-34px,-4vw,-22px);transform:rotate(4deg) translateY(10px);}
+.hero-phones .mid{z-index:2;}
+.hero-phones img,.hero-phones video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;display:block;}
+
+.asks{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;list-style:none;}
+.ask{position:relative;display:inline-flex;align-items:center;gap:6px;min-height:42px;padding:9px 16px;
+  border-radius:18px 18px 18px 5px;border:1px solid var(--mc-gold-soft);background:rgba(255,253,249,.88);
+  box-shadow:0 10px 22px -16px rgba(90,70,55,.55);color:var(--ink);text-decoration:none;
+  font:400 14px/1.4 var(--f-ui);letter-spacing:.06em;transition:border-color .2s ease,color .2s ease,transform .2s ease;}
+@media (hover:hover){.ask:hover{border-color:var(--mc-gold);color:var(--accent-ink);transform:translateY(-1px);}}
+.ask:focus-visible{outline:2px solid var(--ink);outline-offset:3px;}
+.ask-line{border-color:var(--ink);background:var(--ink);color:#fff;}
+.ask-line .ic-line{width:18px;height:18px;}
+@media (hover:hover){.ask-line:hover{border-color:var(--mc-gold);background:var(--mc-gold);color:#fff;}}
+@media (max-width:599px){.asks{flex-direction:column;align-items:center;}}
+@media (min-width:900px){
+  .hero{grid-template-columns:1.05fr 1fr;grid-template-areas:"copy phones" "act phones";text-align:left;column-gap:clamp(28px,4vw,56px);row-gap:0;}
+  .hero-copy{align-self:end;}
+  .hero-act{align-self:start;padding-top:20px;}
+  .hero .kicker.brand{justify-content:flex-start;}
+  .hero-copy > p{margin:0;}
+  .asks{justify-content:flex-start;}
+}
+
+.demo-rail{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(240px,300px);gap:28px;justify-content:center;list-style:none;
   overflow-x:auto;scroll-snap-type:x mandatory;padding:6px 16px 18px;margin:0 -16px;
   -webkit-overflow-scrolling:touch;scrollbar-width:thin;}
-@media (max-width:899px){.flex-rail{justify-content:start;grid-auto-columns:min(66vw,240px);}}
-.flex-item{scroll-snap-align:center;display:flex;flex-direction:column;align-items:center;}
-.flex-cap{margin-bottom:14px;text-align:center;padding:0 4px;min-height:5.4em;}
-.flex-cap h3{font-family:var(--f-cn);font-weight:500;font-size:16px;letter-spacing:.1em;}
-.flex-cap p{margin-top:4px;font-size:13px;color:#5c5560;line-height:1.75;}
-.flex-hint{text-align:center;color:var(--muted);font-size:12.5px;letter-spacing:.1em;margin-top:2px;}
-@media (min-width:900px){.flex-hint{display:none;}}
+@media (max-width:959px){.demo-rail{justify-content:start;grid-auto-columns:min(76vw,270px);gap:20px;}}
+.demo{scroll-snap-align:center;display:flex;flex-direction:column;align-items:center;}
+.demo-cap{display:flex;flex-direction:column;align-items:flex-start;gap:6px;width:100%;padding:0 2px;}
+.demo-cap .step{font-family:var(--f-en);font-size:12px;letter-spacing:.24em;color:var(--mc-gold);}
+.demo-cap h3{font-family:var(--f-cn);font-weight:500;font-size:16.5px;letter-spacing:.1em;line-height:1.5;}
+.demo-cap p{font-size:13.5px;color:#5c5560;line-height:1.8;}
+.plan-tag{display:inline-block;padding:0 6px;border-radius:2px;background:#ebe7e1;color:#6f6870;
+  font-size:11.5px;letter-spacing:.08em;line-height:1.75;white-space:nowrap;}
+.try-note{flex-basis:100%;display:flex;justify-content:center;align-items:flex-end;gap:3px;margin-bottom:4px;
+  font-family:'Shin9 Samples Hand',var(--f-cn);font-size:20px;letter-spacing:.08em;line-height:1.3;color:#5c5560;}
+.try-arrow{width:16px;height:25px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.demo-ctrl{flex:1;display:flex;flex-wrap:wrap;justify-content:center;align-content:flex-end;gap:6px;width:100%;min-height:36px;margin:6px 0 12px;}
+.pill{display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:5px 12px;border-radius:99px;cursor:pointer;
+  border:1px solid var(--line);background:rgba(255,255,255,.75);color:#7a7179;font:400 12.5px/1.3 var(--f-ui);letter-spacing:.06em;
+  transition:background .2s ease,border-color .2s ease,color .2s ease;}
+.pill[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:#fff;}
+.pill[aria-pressed="true"]::before{content:'✓';font-size:11px;}
+.pill.add{border-style:dashed;border-color:var(--mc-gold);color:var(--accent-ink);}
+.pill:disabled{opacity:.45;cursor:default;}
+.pill[hidden],.demo-hint[hidden]{display:none;}
+.pill:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
+.demo-hint{align-self:center;color:var(--muted);font-size:12.5px;letter-spacing:.06em;text-align:center;}
+.demo-swipe{text-align:center;color:var(--muted);font-size:12.5px;letter-spacing:.1em;margin-top:2px;}
+@media (min-width:960px){.demo-swipe{display:none;}}
 
 .phone{position:relative;width:100%;max-width:280px;aspect-ratio:9/16;border-radius:34px;padding:9px;
   background:#fff;border:1px solid #e2dbd0;}
 .phone::before{content:'';position:absolute;top:15px;left:50%;width:64px;height:17px;margin-left:-32px;border-radius:10px;background:#1d1b1f;z-index:3;}
 .phone-screen{position:relative;width:100%;height:100%;border-radius:26px;overflow:hidden;background:#fbfaf8;border:1px solid #efe9df;}
-.flex-item .phone{max-width:230px;border-radius:30px;padding:7px;}
-.flex-item .phone::before{top:12px;width:56px;height:15px;margin-left:-28px;}
-.flex-item .phone-screen{border-radius:23px;}
+.demo .phone{max-width:236px;border-radius:30px;padding:7px;}
+.demo .phone::before{top:12px;width:56px;height:15px;margin-left:-28px;}
+.demo .phone-screen{border-radius:23px;}
 
 .adm{height:100%;overflow:hidden;font-size:10.5px;line-height:1.55;color:#2b2a2e;}
 .adm-bar{display:flex;align-items:center;gap:7px;padding:34px 12px 8px;border-bottom:1px solid #ece8e2;background:#fff;}
@@ -176,6 +217,117 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
 .adm-item span{display:block;font-size:9px;color:#8a8590;line-height:1.55;}
 .adm-add{display:block;width:100%;margin-top:8px;padding:6px;border:1px dashed #d4c5b8;border-radius:8px;
   font-size:10px;color:var(--accent-ink);letter-spacing:.08em;text-align:center;}
+.adm-scroll{height:calc(100% - 60px);overflow-y:auto;scrollbar-width:none;}
+.adm-scroll::-webkit-scrollbar{display:none;}
+.is-new{animation:is-new 1.6s ease;}
+@keyframes is-new{0%{background:rgba(201,149,132,.32);}100%{background:transparent;}}
+@media (prefers-reduced-motion:reduce){.is-new{animation:none;}}
+
+.gf-f{padding:6px 0 7px;border-top:1px solid #f1ede7;}
+.gf-f:first-child{border-top:0;padding-top:2px;}
+.gf-f > label,.gf-f > .lb{display:flex;align-items:center;gap:5px;font-size:9.5px;font-weight:500;letter-spacing:.06em;color:#2b2a2e;margin-bottom:4px;}
+.gf-f .own{padding:0 5px;border-radius:99px;background:var(--tint);color:var(--accent-ink);font-size:8px;font-weight:400;}
+.gf-in{display:block;padding:4px 7px;border:1px solid #e6e1d9;border-radius:6px;background:#fff;font-size:10px;}
+.gf-in.ph{color:#b3adb3;}
+.gf-pick{display:flex;gap:4px;}
+.gf-pick span{flex:1;text-align:center;padding:3px 4px;border:1px solid #e0d6cc;border-radius:6px;font-size:9.5px;background:#fff;}
+.gf-pick span.on{background:#2b2a2e;border-color:#2b2a2e;color:#fff;}
+.gf-step{display:inline-flex;align-items:center;gap:10px;padding:2px 9px;border:1px solid #e6e1d9;border-radius:99px;background:#fff;font-size:10px;}
+.gf-f[hidden]{display:none;}
+
+.st-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.st-grid div{padding:6px 7px;border:1px solid #e6e1d9;border-radius:8px;background:#fff;}
+.st-grid b{display:block;font-family:var(--f-en);font-weight:400;font-size:17px;line-height:1.2;}
+.st-grid span{font-size:8.5px;color:#8a8590;letter-spacing:.06em;}
+.st-list{margin-top:8px;border:1px solid #e6e1d9;border-radius:9px;background:#fff;padding:2px 8px;}
+.st-list h4{padding:5px 0 3px;font-size:9px;font-weight:500;color:#8a8590;letter-spacing:.1em;}
+.st-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-top:1px solid #f1ede7;}
+.st-row b{font-weight:500;font-size:10px;white-space:nowrap;}
+.st-row span{font-size:8.5px;color:#8a8590;}
+.st-row em{margin-left:auto;font-style:normal;font-size:8px;color:#b3adb3;white-space:nowrap;}
+.st-row .by{padding:0 5px;border-radius:99px;background:var(--tint);color:var(--accent-ink);font-size:8px;}
+
+.sp-status{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:6px 8px;border-radius:8px;background:#fff;border:1px solid #e6e1d9;font-size:9.5px;}
+.sp-status b{font-family:var(--f-en);font-weight:400;font-size:13px;margin:0 2px;}
+.sp-status.done{border-color:#cfe0ca;background:#f3f7f1;color:#4f6e49;}
+.sp-pool{margin-top:7px;padding:6px 7px 3px;border:1px dashed #d4c5b8;border-radius:9px;background:#fffaf6;min-height:38px;}
+.sp-pool h4,.sp-table h4{display:flex;align-items:center;justify-content:space-between;font-size:9px;font-weight:500;letter-spacing:.08em;color:#8a8590;margin-bottom:4px;}
+.sp-chip{position:relative;display:inline-flex;align-items:center;gap:3px;margin:0 3px 4px 0;padding:2px 7px;border-radius:99px;
+  border:1px solid #e0d6cc;background:#fff;font:400 9.5px/1.5 var(--f-ui);color:#2b2a2e;}
+button.sp-chip{cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;}
+button.sp-chip:focus-visible{outline:1.5px solid var(--ink);outline-offset:1px;}
+.sp-chip small{font-size:8.5px;color:#8a8590;}
+.sp-chip.sel{border-color:#2b2a2e;background:#2b2a2e;color:#fff;}
+.sp-chip.sel small{color:#ddd;}
+.sp-chip.dup{border-color:#e7b4a6;background:#fff4f0;}
+.sp-chip .dup-tag{padding:0 4px;border-radius:99px;background:#c96f5b;color:#fff;font-size:7.5px;}
+.sp-dup{display:inline-flex;align-items:center;margin:0 3px 4px 0;}
+.sp-dup .sp-chip{margin:0;}
+.dup-x{width:20px;height:20px;margin-left:1px;padding:0;border:0;border-radius:50%;background:none;color:#c96f5b;font-size:12px;line-height:1;cursor:pointer;}
+.dup-x:focus-visible{outline:1.5px solid var(--ink);}
+.sp-tables{display:grid;gap:5px;margin-top:7px;}
+.sp-table{padding:5px 7px 2px;border:1px solid #e6e1d9;border-radius:9px;background:#fff;transition:border-color .15s ease,background .15s ease;}
+.sp-table h4{color:#2b2a2e;}
+.sp-table h4 span{font-family:var(--f-en);font-weight:400;font-size:9.5px;color:#8a8590;letter-spacing:.02em;}
+.sp-table.over h4 span{color:#c0392b;}
+.sp-table.hot{border-color:#2b2a2e;background:#faf6f1;}
+.sp-table:focus-visible{outline:1.5px solid var(--ink);outline-offset:1px;}
+.sp-table .sp-chip{background:#fbfaf8;}
+.sp-more{display:inline-block;margin:0 0 4px;font-size:9px;color:#b3adb3;}
+.sp-ghost{position:fixed;z-index:200;pointer-events:none;transform:translate(-50%,-60%) scale(1.15);box-shadow:0 8px 18px -6px rgba(40,30,40,.45);}
+
+.pg-see{margin-top:8px;padding:7px 8px 4px;border:1px solid #e6e1d9;border-radius:9px;background:#fff;}
+.pg-see h4{font-size:9px;font-weight:500;color:#8a8590;letter-spacing:.1em;margin-bottom:5px;}
+.pg-see span{display:inline-block;margin:0 3px 4px 0;padding:1px 7px;border-radius:99px;border:1px solid #e0d6cc;background:#fffaf6;font-size:9px;transition:opacity .25s ease;}
+.pg-see span[hidden]{display:none;}
+
+.bt-row{display:flex;align-items:center;gap:6px;width:100%;padding:7px 2px;border:0;border-top:1px solid #f1ede7;background:none;cursor:pointer;
+  font:inherit;color:inherit;text-align:left;}
+.bt-row:first-of-type{border-top:0;}
+.bt-row b{font-weight:500;font-size:10.5px;}
+.bt-row span{font-size:9px;color:#8a8590;}
+.bt-row em{margin-left:auto;padding:1px 7px;border-radius:99px;border:1px solid #e0d6cc;font-style:normal;font-size:8.5px;color:var(--accent-ink);white-space:nowrap;}
+.bt-row.got em{border-color:#2b2a2e;background:#2b2a2e;color:#fff;}
+.bt-row:disabled{cursor:default;}
+.bt-row:focus-visible{outline:1.5px solid var(--ink);outline-offset:-1px;border-radius:6px;}
+
+
+.play-grid{display:grid;gap:14px;grid-template-columns:repeat(2,1fr);max-width:980px;margin:0 auto;}
+@media (min-width:900px){.play-grid{grid-template-columns:repeat(3,1fr);gap:18px;}}
+@media (max-width:599px){
+  .play-grid{grid-template-columns:repeat(3,min(82vw,340px));grid-template-rows:auto auto;gap:12px;
+    overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 16px 14px;margin:0 -16px;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  .play-grid::-webkit-scrollbar{display:none;}
+  .play{scroll-snap-align:center;}
+}
+.play-swipe{display:none;text-align:center;color:var(--muted);font-size:12.5px;letter-spacing:.1em;margin-top:2px;}
+@media (max-width:599px){.play-swipe{display:block;}}
+.play{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:24px 28px 26px;}
+.play h3{font-family:var(--f-cn);font-weight:500;font-size:17px;letter-spacing:.1em;line-height:1.5;margin-top:2px;}
+.play-need{font-size:13px;color:#7a7179;}
+.play-line{font-family:'Shin9 Samples Hand',var(--f-cn);font-size:20px;letter-spacing:.05em;line-height:1.45;color:#5c5560;margin-bottom:2px;text-wrap:balance;word-break:keep-all;}
+.play-more{align-self:stretch;margin-bottom:10px;font-size:13px;line-height:1.8;color:#4d4650;}
+.spoiler{color:transparent;cursor:pointer;border-radius:4px;-webkit-user-select:none;user-select:none;
+  -webkit-box-decoration-break:clone;box-decoration-break:clone;
+  background-color:rgba(92,85,96,.07);
+  background-image:
+    radial-gradient(circle,rgba(92,85,96,.7) .7px,transparent 1.2px),
+    radial-gradient(circle,rgba(92,85,96,.42) .6px,transparent 1.1px),
+    radial-gradient(circle,rgba(168,141,95,.75) .8px,transparent 1.4px);
+  background-size:7px 6px,11px 9px,17px 13px;
+  animation:spoiler-twinkle 1.8s linear infinite;
+  transition:color .45s ease,background-color .45s ease;}
+@keyframes spoiler-twinkle{
+  0%{background-position:0 0,0 0,0 0;}
+  50%{background-position:4px -3px,-6px 5px,8px 7px;}
+  100%{background-position:7px -6px,-11px 9px,17px 13px;}}
+.spoiler:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
+.spoiler.is-shown{color:inherit;background:none;animation:none;cursor:auto;-webkit-user-select:auto;user-select:auto;}
+@media (prefers-reduced-motion:reduce){.spoiler{animation:none;transition:none;}}
+.play-need b{font-weight:500;color:var(--ink);margin-right:6px;}
+.play .btn{position:relative;z-index:1;align-self:stretch;margin-top:auto;min-height:40px;padding:8px 12px;font-size:13.5px;letter-spacing:.08em;}
+.play-need{margin-bottom:8px;}
 
 .plans{max-width:860px;margin:0 auto;overflow:hidden;}
 .pt{position:relative;width:100%;border-collapse:collapse;table-layout:fixed;}
@@ -216,6 +368,13 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
 .plan-notes li{list-style:none;padding-left:1.1em;text-indent:-1.1em;}
 .plan-notes li::before{content:'・';}
 .plan-tip{max-width:860px;margin:0 auto 12px;text-align:right;color:var(--muted);font-size:12.5px;letter-spacing:.06em;}
+.support{max-width:860px;margin:30px auto 0;padding:22px clamp(18px,4vw,30px) 20px;}
+.support h3{font-family:var(--f-cn);font-weight:500;font-size:16.5px;letter-spacing:.12em;text-align:center;margin-bottom:10px;}
+.support dl{display:grid;gap:0;}
+.support dl > div{display:grid;grid-template-columns:6.5em 1fr;gap:12px;padding:11px 2px;border-top:1px solid var(--line-soft);}
+.support dl > div:first-child{border-top:0;}
+.support dt{font-family:var(--f-cn);font-weight:500;font-size:14.5px;letter-spacing:.08em;color:var(--ink);}
+.support dd{font-size:14px;color:#4d4650;line-height:1.8;}
 
 .tier{display:flex;align-items:center;gap:10px;margin-top:clamp(40px,6vw,60px);padding-bottom:12px;border-bottom:1px solid var(--line);}
 .sec-head + .tier{margin-top:0;}
@@ -285,11 +444,13 @@ header > p{max-width:34em;margin:0 auto;color:var(--muted);font-size:14.5px;}
   display:flex;align-items:center;justify-content:center;border:1px solid var(--mc-gold-soft);
   font:400 14px/1 var(--f-en);color:var(--mc-gold);background:var(--surface);}
 .steps b{font-family:var(--f-cn);font-weight:500;font-size:15.5px;letter-spacing:.08em;line-height:1.6;}
+.flow-cta{flex-direction:column;align-items:center;gap:12px;}
+.flow-cta p{font-family:var(--f-cn);font-weight:500;font-size:17px;letter-spacing:.12em;}
 .flow-need{max-width:980px;margin:18px auto 0;text-align:center;color:#5c5560;font-size:14px;line-height:1.9;}
 .flow-need b{font-weight:500;color:var(--ink);}
 .flow-cta{display:flex;justify-content:center;margin-top:22px;}
 
-#flex,#plans,#templates,#flow,#faq{scroll-margin-top:24px;}
+#templates,#admin,#play,#easy,#plans,#flow,#faq{scroll-margin-top:24px;}
 
 .faq-list{max-width:760px;margin:0 auto;padding:6px 22px;}
 .faq details{border-top:1px solid var(--line);}
@@ -390,7 +551,7 @@ body.dlg-open{overflow:hidden;}
 .fx-body > p + p{margin-top:8px;}
 .fx-pic{margin-top:18px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#fff;}
 .fx-pic img{display:block;width:100%;height:auto;max-height:52vh;object-fit:cover;object-position:top center;}
-.fx-plan{display:inline-block;margin-bottom:10px;padding:2px 10px;border-radius:99px;border:1px solid var(--mc-gold-soft);font-size:12px;letter-spacing:.1em;color:var(--mc-gold);background:#fff;}
+h3 > .plan-tag,h2 > .plan-tag{margin-left:8px;vertical-align:2px;font-family:var(--f-ui);font-weight:400;}
 .mock{padding:14px;font-size:12.5px;line-height:1.6;color:#2b2a2e;background:#fbfaf8;}
 .mock-cols{display:grid;grid-template-columns:1fr 1.3fr;gap:10px;}
 .mock-box{border:1px solid #e6e1d9;border-radius:10px;background:#fff;padding:9px 10px;}
@@ -412,6 +573,32 @@ body.dlg-open{overflow:hidden;}
 .mock-pick{display:flex;gap:6px;margin-top:7px;}
 .mock-pick span{flex:1;text-align:center;padding:5px;border:1px solid #e0d6cc;border-radius:8px;font-size:11.5px;}
 .mock-pick span.on{background:#2b2a2e;border-color:#2b2a2e;color:#fff;}
+.mock-cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.mock-photo{aspect-ratio:3/2;border-radius:6px;background:#eee center/cover no-repeat;}
+.mock-photo.tall{aspect-ratio:2/3;width:72%;margin:0 auto;}
+.mock-cap{display:block;margin-top:6px;font-family:var(--f-cn);font-weight:500;font-size:12px;letter-spacing:.06em;text-align:center;}
+.mock-sub{display:block;text-align:center;color:#8a8590;font-size:10.5px;}
+.mock-wish{margin-bottom:6px;padding:6px 7px;border-radius:7px;background:#fbfaf8;border:1px solid #efeae3;font-size:11px;line-height:1.55;}
+.mock-wish b{display:block;font-weight:500;font-size:10.5px;color:var(--accent-ink);}
+.mock-btn{display:block;margin-top:7px;padding:4px 6px;border-radius:4px;background:#2b2a2e;color:#fff;font-size:10.5px;text-align:center;}
+@media (max-width:440px){.mock-cols3{grid-template-columns:1fr 1fr;}.mock-cols3 > :first-child{grid-column:1/-1;}}
+.mock-search{display:flex;gap:6px;}
+.mock-search span{flex:1;padding:7px 10px;border:1px solid #e6e1d9;border-radius:6px;background:#fff;}
+.mock-search b{padding:7px 14px;border-radius:6px;background:#2b2a2e;color:#fff;font-weight:500;}
+.mock-result{display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:10px;padding:16px 10px 14px;border:1px solid #e6e1d9;border-radius:10px;background:#fff;}
+.mock-result small{color:#8a8590;font-size:11.5px;letter-spacing:.1em;}
+.mock-result span{font-size:11px;color:#8a8590;letter-spacing:.2em;}
+.mock-result strong{font-family:var(--f-cn);font-weight:500;font-size:30px;letter-spacing:.18em;color:#7a2a35;line-height:1.4;}
+.mock-q small{display:block;color:#8a8590;font-size:11px;letter-spacing:.08em;}
+.mock-q b{display:block;margin:2px 0 8px;font-weight:500;font-size:13px;}
+.mock-opt{position:relative;display:flex;justify-content:space-between;gap:8px;margin-bottom:5px;padding:6px 9px;border:1px solid #e6e1d9;border-radius:7px;overflow:hidden;}
+.mock-opt span,.mock-opt em{position:relative;z-index:1;font-style:normal;}
+.mock-opt em{color:#8a8590;font-size:11.5px;}
+.mock-opt i{position:absolute;left:0;top:0;bottom:0;background:rgba(201,149,132,.16);}
+.mock-opt.on{border-color:#2b2a2e;}
+.mock-opt.on i{background:rgba(43,42,46,.12);}
+.mock-score{margin-top:10px;text-align:center;font-size:12.5px;color:#5c5560;}
+.mock-score b{font-family:var(--f-en);font-weight:400;font-size:18px;color:var(--ink);}
 </style>
 </head>
 <body>
@@ -451,104 +638,35 @@ body.dlg-open{overflow:hidden;}
 
 <div class="wrap">
 
-    <header>
-    <div class="kicker brand"><span>芯玖 · 婚禮體驗網站</span><span>Shin9 · Wedding Experience</span></div>
-    <h1>讓籌備少一點整理，<br>讓婚禮多一點享受。</h1>
-    <p>芯玖的婚禮網站不只是一頁比較漂亮的電子喜帖。<br>從賓客收到邀請、回覆出席、開席前的互動小遊戲，到婚禮當天找到自己的座位、收禮金的小工具，都是為了減輕新人的負擔，讓籌備好看又輕鬆。</p>
-    <div class="hero-cta" id="heroCta">
-      <a class="btn" href="https://lin.ee/8DlfH2K" target="_blank" rel="noopener" data-line="hero"><svg class="ic-line" aria-hidden="true"><use href="#i-line"/></svg>LINE 詢問<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
-      <a class="btn ghost" href="#templates">先看看版型</a>
-      <small>想先聊聊也沒關係，有任何問題都歡迎問我們</small>
+    <header class="hero">
+    <div class="hero-copy">
+      <div class="kicker brand"><span>芯玖 · 婚禮體驗網站</span><span>Shin9 · Wedding Experience</span></div>
+      <h1>從這些風格，<br>找到最像你們的婚禮。</h1>
+      <p>好看之餘，也讓每一個來的人，都覺得自己被在乎。</p>
     </div>
-
-        <ul class="why">
-      <li class="glass why-flow">
-        <svg class="ic" aria-hidden="true"><use href="#i-rsvp"/></svg>
-        <h3>回覆、排桌、入座，一條龍串好</h3>
-        <ol class="flow"><li>回覆</li><li>排桌</li><li>入座</li></ol>
-      </li>
-      <li class="glass">
-        <svg class="ic" aria-hidden="true"><use href="#i-url"/></svg>
-        <h3>13 款版型，各有自己的開場動畫</h3>
-        <p>拆信、推門、點蠟燭、氣球飛走……賓客一打開，就先看到屬於你們的開場。</p>
-      </li>
-      <li class="glass">
-        <svg class="ic" aria-hidden="true"><use href="#i-storywall"/></svg>
-        <h3>等開席的時候，有事可以做</h3>
-        <p>故事牆、祝福牆、抽卡，讓早到的賓客也參與你們的故事。</p>
-      </li>
-    </ul>
+    <div class="hero-phones" aria-hidden="true">
+      <div class="phone side"><div class="phone-screen"><img src="/samples/thumbs/secret-garden.jpg" alt="" width="600" height="1169"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/secret-garden.jpg"
+          data-webm="/samples/videos/secret-garden.webm" data-mp4="/samples/videos/secret-garden.mp4"></video></div></div>
+      <div class="phone mid"><div class="phone-screen"><img src="/samples/thumbs/tapestry.jpg" alt="" width="600" height="1169" fetchpriority="high"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/tapestry.jpg"
+          data-webm="/samples/videos/tapestry.webm" data-mp4="/samples/videos/tapestry.mp4"></video></div></div>
+      <div class="phone side"><div class="phone-screen"><img src="/samples/thumbs/night-sky.jpg" alt="" width="600" height="1169"><video class="loop" muted loop playsinline autoplay preload="none" data-poster="/samples/thumbs/night-sky.jpg"
+          data-webm="/samples/videos/night-sky.webm" data-mp4="/samples/videos/night-sky.mp4"></video></div></div>
+    </div>
+    <div class="hero-act">
+      <ul class="asks" id="heroCta" aria-label="你可能想問">
+        <li><a class="ask" href="#templates" data-ask="design">有哪些設計？</a></li>
+        <li><a class="ask" href="#admin" data-ask="admin">可以幫我解決什麼行政？</a></li>
+        <li><a class="ask" href="#play" data-ask="play">有什麼互動小遊戲？</a></li>
+        <li><a class="ask ask-line" href="https://lin.ee/8DlfH2K" target="_blank" rel="noopener" data-line="hero"><svg class="ic-line" aria-hidden="true"><use href="#i-line"/></svg>LINE 真人聊聊<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a></li>
+      </ul>
+    </div>
   </header>
-
-    <section class="sec" id="flex" aria-labelledby="flexTitle">
-    <div class="sec-head">
-      <div class="kicker">Your dashboard</div>
-      <h2 id="flexTitle">高度彈性</h2>
-      <p>我知道每個新娘都有不同喜好，所以把操控權交給你。</p>
-    </div>
-    <div class="flex-rail" tabindex="0" aria-label="新人後台的三個畫面，可以左右滑動">
-      <figure class="flex-item">
-        <figcaption class="flex-cap"><h3>自訂表單</h3><p>證婚不問餐點，晚宴才問。<br>用不到的題目，關掉就好。</p></figcaption>
-        <div class="phone"><div class="phone-screen"><div class="adm">
-          <div class="adm-bar"><i></i><b>出席表單設定</b><span>Ethan &amp; Claire</span></div>
-          <div class="adm-body">
-            <div class="adm-note">每一場活動要問什麼，分開決定。</div>
-            <div class="adm-group">
-              <h4>證婚儀式 <small>11:30</small></h4>
-              <label class="adm-row"><span>出席人數</span><span class="tg"><input type="checkbox" checked aria-label="證婚：出席人數"><i></i></span></label>
-              <label class="adm-row"><span>餐點（葷／素）</span><span class="tg"><input type="checkbox" aria-label="證婚：餐點"><i></i></span></label>
-              <label class="adm-row"><span>兒童座椅</span><span class="tg"><input type="checkbox" aria-label="證婚：兒童座椅"><i></i></span></label>
-            </div>
-            <div class="adm-group">
-              <h4>晚宴 <small>12:00</small></h4>
-              <label class="adm-row"><span>出席人數</span><span class="tg"><input type="checkbox" checked aria-label="晚宴：出席人數"><i></i></span></label>
-              <label class="adm-row"><span>餐點（葷／素）</span><span class="tg"><input type="checkbox" checked aria-label="晚宴：餐點"><i></i></span></label>
-              <label class="adm-row"><span>兒童座椅</span><span class="tg"><input type="checkbox" checked aria-label="晚宴：兒童座椅"><i></i></span></label>
-            </div>
-          </div>
-        </div></div></div>
-      </figure>
-      <figure class="flex-item">
-        <figcaption class="flex-cap"><h3>自訂內容</h3><p>想讓賓客知道什麼，就放什麼。</p></figcaption>
-        <div class="phone"><div class="phone-screen"><div class="adm">
-          <div class="adm-bar"><i></i><b>自訂內容</b><span>Ethan &amp; Claire</span></div>
-          <div class="adm-body">
-            <div class="adm-note">我們準備好的內容以外，你們想告訴賓客的事都放這裡。</div>
-            <div class="adm-group">
-              <div class="adm-item"><span class="adm-kind">跳出說明</span><div><b>停車資訊</b><span>酒店 B1–B3，憑喜帖免費停四小時。</span></div></div>
-              <div class="adm-item"><span class="adm-kind">開啟連結</span><div><b>婚紗照相簿</b><span>雲端相簿的連結</span></div></div>
-              <div class="adm-item"><span class="adm-kind">跳出說明</span><div><b>拍立得簽名牆</b><span>入口左手邊，拍一張寫一句話。</span></div></div>
-            </div>
-            <span class="adm-add" aria-hidden="true">＋ 新增自訂內容</span>
-          </div>
-        </div></div></div>
-      </figure>
-      <figure class="flex-item">
-        <figcaption class="flex-cap"><h3>自訂顯示</h3><p>不想要的區塊，關掉就不會出現。</p></figcaption>
-        <div class="phone"><div class="phone-screen"><div class="adm">
-          <div class="adm-bar"><i></i><b>頁面設定</b><span>Ethan &amp; Claire</span></div>
-          <div class="adm-body">
-            <div class="adm-note">收起來的只是先不給看，內容都還在。</div>
-            <div class="adm-group">
-              <label class="adm-row"><span>倒數計時</span><span class="tg"><input type="checkbox" checked aria-label="倒數計時"><i></i></span></label>
-              <label class="adm-row"><span>我們的故事</span><span class="tg"><input type="checkbox" checked aria-label="我們的故事"><i></i></span></label>
-              <label class="adm-row"><span>祝福牆</span><span class="tg"><input type="checkbox" checked aria-label="祝福牆"><i></i></span></label>
-              <label class="adm-row"><span>抽卡</span><span class="tg"><input type="checkbox" aria-label="抽卡"><i></i></span></label>
-              <label class="adm-row"><span>小測驗</span><span class="tg"><input type="checkbox" checked aria-label="小測驗"><i></i></span></label>
-              <label class="adm-row"><span>給你的一封信</span><span class="tg"><input type="checkbox" checked aria-label="給你的一封信"><i></i></span></label>
-            </div>
-          </div>
-        </div></div></div>
-      </figure>
-    </div>
-    <p class="flex-hint" aria-hidden="true">← 左右滑動看更多 →</p>
-  </section>
 
     <section class="sec" id="templates" aria-labelledby="tplTitle">
     <div class="sec-head">
       <div class="kicker">Templates</div>
-      <h2 id="tplTitle">網站版型</h2>
-      <p>經典方案 3 款，典藏有更多的 10 款，共 13 款可選</p>
+      <h2 id="tplTitle">先看看哪種風格適合你們</h2>
+      <p class="tip">經典方案 3 款，完整方案再多 10 款，共 13 款可選</p>
     </div>
 
     <div class="tier">
@@ -605,9 +723,9 @@ body.dlg-open{overflow:hidden;}
 
     <div class="tier">
       <svg class="ic"><use href="#i-plan-premium"/></svg>
-      <h3>典藏方案</h3><span>Premium</span><span class="n">10 款</span>
+      <h3>完整方案</h3><span>Premium</span><span class="n">10 款</span>
     </div>
-    <p class="tier-note">選典藏方案，上面經典的 3 款也都能用，一共 13 款可以挑。</p>
+    <p class="tier-note">選完整方案，上面經典方案的 3 款也都能用，一共 13 款可以挑。</p>
     <div class="grid">
     <article class="card glass" data-template="tapestry">
       <button type="button" class="like" data-like aria-pressed="false" aria-label="喜歡中古刺繡"><svg aria-hidden="true"><use href="#i-heart"/></svg></button>
@@ -772,10 +890,247 @@ body.dlg-open{overflow:hidden;}
     </div>
   </section>
 
+    <section class="sec" id="admin" aria-labelledby="adminTitle">
+    <div class="sec-head">
+      <div class="kicker">Guest list</div>
+      <h2 id="adminTitle">賓客名單，<br class="br-m">不必再靠訊息一筆一筆整理。</h2>
+      <p>賓客用手機回覆，資料直接進到後台；人數統計、排桌、收禮名單，都從同一份名單接下去。你的腦袋留給更重要的事，比如婚後誰洗碗。</p>
+    </div>
+    <ol class="demo-rail" tabindex="0" aria-label="賓客名單的三個步驟，可以左右滑動">
+
+            <li class="demo" data-try="form">
+        <div class="demo-cap">
+          <span class="step">STEP 01</span>
+          <h3>不必再自己設計出席表單</h3>
+        </div>
+        <div class="demo-ctrl" role="group" aria-label="試試看：調整表單題目">
+          <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
+          <button type="button" class="pill" aria-pressed="true" data-q="meal">餐點</button>
+          <button type="button" class="pill" aria-pressed="true" data-q="kids">兒童座椅</button>
+          <button type="button" class="pill" aria-pressed="false" data-q="diet">飲食習慣</button>
+          <button type="button" class="pill add" data-q-add>＋ 自由發問</button>
+        </div>
+        <div class="phone"><div class="phone-screen"><div class="adm">
+          <div class="adm-bar"><i></i><b>出席回覆</b><span>賓客看到的表單</span></div>
+          <div class="adm-body adm-scroll" data-form-body>
+            <div class="gf-f"><span class="lb">怎麼稱呼你？</span><span class="gf-in">王小安</span></div>
+            <div class="gf-f"><span class="lb">能來參加嗎？</span><div class="gf-pick"><span class="on">會出席</span><span>不克前往</span></div></div>
+            <div class="gf-f"><span class="lb">包含你，共幾位出席？</span><span class="gf-step">−<b>2</b>＋</span></div>
+            <div class="gf-f" data-f="meal"><span class="lb">餐點分配</span><div class="gf-pick"><span class="on">葷食 1</span><span class="on">素食 1</span></div></div>
+            <div class="gf-f" data-f="kids"><span class="lb">兒童座椅</span><div class="gf-pick"><span>需要</span><span class="on">不需要</span></div></div>
+            <div class="gf-f" data-f="diet" hidden><span class="lb">飲食習慣補充</span><span class="gf-in ph">例如：不吃牛、海鮮過敏</span></div>
+            <div data-custom></div>
+          </div>
+        </div></div></div>
+      </li>
+
+            <li class="demo" data-try="stats">
+        <div class="demo-cap">
+          <span class="step">STEP 02</span>
+          <h3>只需要一份名單，皆可同步</h3>
+        </div>
+        <div class="demo-ctrl">
+          <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
+          <button type="button" class="pill add" data-elder>＋ 幫長輩新增一筆</button>
+        </div>
+        <div class="phone"><div class="phone-screen"><div class="adm">
+          <div class="adm-bar"><i></i><b>出席回覆</b><span>Ethan &amp; Claire</span></div>
+          <div class="adm-body adm-scroll">
+            <div class="st-grid" aria-live="polite">
+              <div><b data-stat="replies">52</b><span>回覆筆數</span></div>
+              <div><b data-stat="guests">86</b><span>出席人數</span></div>
+              <div><b data-stat="veg">12</b><span>素食</span></div>
+              <div><b data-stat="kids">4</b><span>兒童座椅</span></div>
+            </div>
+            <div class="st-list" data-list>
+              <h4>最新回覆</h4>
+              <div class="st-row"><b>王小安</b><span>2 位・葷 1 素 1</span><em>剛剛</em></div>
+              <div class="st-row"><b>李哲宇</b><span>1 位・葷 1</span><em>5 分鐘前</em></div>
+              <div class="st-row"><b>陳美亞</b><span>2 位・葷 2・兒童椅</span><em>1 小時前</em></div>
+            </div>
+          </div>
+        </div></div></div>
+      </li>
+
+            <li class="demo" data-try="seat">
+        <div class="demo-cap">
+          <span class="step">STEP 03</span>
+          <h3>拖進桌位，就排好了<span class="plan-tag">完整版</span></h3>
+        </div>
+        <div class="demo-ctrl">
+          <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
+          <span class="demo-hint" data-seat-hint>把名字拖進桌子</span>
+          <button type="button" class="pill" data-seat-reset hidden>↺ 再排一次</button>
+        </div>
+        <div class="phone"><div class="phone-screen"><div class="adm">
+          <div class="adm-bar"><i></i><b>排桌管理</b><span>Ethan &amp; Claire</span></div>
+          <div class="adm-body adm-scroll" data-seat>
+            <div class="sp-status" aria-live="polite" data-seat-status>還沒排<span><b data-left>7</b>位</span></div>
+            <div class="sp-pool" data-pool>
+              <h4>待安排</h4>
+              <button type="button" class="sp-chip" data-n="2">陳美亞<small>×2</small></button>
+              <button type="button" class="sp-chip" data-n="3">張家豪<small>×3</small></button>
+              <button type="button" class="sp-chip" data-n="1">李宛真</button>
+              <span class="sp-dup"><button type="button" class="sp-chip dup" data-n="1">林佳穎<span class="dup-tag">重複</span></button><button type="button" class="dup-x" aria-label="清掉重複的林佳穎" data-dup-x>×</button></span>
+            </div>
+            <div class="sp-tables">
+              <div class="sp-table" tabindex="0" role="button" aria-label="第 2 桌" data-cap="10" data-base="8">
+                <h4>第 2 桌<span data-cnt>8／10</span></h4>
+                <span class="sp-chip">黃怡君<small>×2</small></span><span class="sp-more">＋6 位</span>
+              </div>
+              <div class="sp-table" tabindex="0" role="button" aria-label="第 3 桌" data-cap="10" data-base="9">
+                <h4>第 3 桌<span data-cnt>9／10</span></h4>
+                <span class="sp-chip">王小安<small>×2</small></span><span class="sp-chip">李哲宇</span><span class="sp-more">＋6 位</span>
+              </div>
+              <div class="sp-table" tabindex="0" role="button" aria-label="第 5 桌" data-cap="10" data-base="6">
+                <h4>第 5 桌<span data-cnt>6／10</span></h4>
+                <span class="sp-chip">林佳穎</span><span class="sp-chip">吳冠廷<small>×2</small></span><span class="sp-more">＋3 位</span>
+              </div>
+            </div>
+          </div>
+        </div></div></div>
+      </li>
+    </ol>
+    <p class="demo-swipe" aria-hidden="true">← 左右滑動看下一步 →</p>
+  </section>
+
+    <section class="sec" id="play" aria-labelledby="playTitle">
+    <div class="sec-head">
+      <div class="kicker">For your guests</div>
+      <h2 id="playTitle">等待開席的時間，<br class="br-m">也能成為婚禮的一部分。</h2>
+      <p>早到的人不用滑手機發呆，你們也多一份大家參與過的回憶。</p>
+    </div>
+    <div class="play-grid">
+      <article class="play glass">
+        <p class="play-line">這年頭願意為一個人寫一封信，就是最貴的禮物。</p>
+        <h3>給你的信<span class="plan-tag">完整版</span></h3>
+        <p class="play-need"><b>新人準備</b>想寫給賓客的信</p>
+        <p class="play-more"><span class="spoiler" data-spoiler="letter" role="button" tabindex="0" aria-label="點一下看說明">除了一人一封的專屬信，還可以準備好幾封公版信，讓沒有專屬信的賓客，也能感受到收到信的快樂。</span></p>
+        <a class="btn ghost" href="/samples/white-church/letter" target="_blank" rel="noopener" data-play="letter">輸入「小安」拆信<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+      </article>
+      <article class="play glass">
+        <p class="play-line">把你們的甜蜜與笑容，分成好多份送出去。</p>
+        <h3>抽小卡</h3>
+        <p class="play-need"><b>新人準備</b>幾張想做成小卡的照片</p>
+        <p class="play-more"><span class="spoiler" data-spoiler="draw" role="button" tabindex="0" aria-label="點一下看說明">追星族必玩的小遊戲！新人準備婚紗照或生活照，賓客隨機抽一張，抽到哪一張就成了大家聊天的話題。</span></p>
+        <a class="btn ghost" href="/samples/white-church/draw" target="_blank" rel="noopener" data-play="draw">抽一張<wbr>婚禮小卡<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+      </article>
+      <article class="play glass">
+        <p class="play-line">讓平常聽不到的真心話，有機會放在這牆上。</p>
+        <h3>祝福牆</h3>
+        <p class="play-need"><b>新人準備</b>不用準備</p>
+        <p class="play-more"><span class="spoiler" data-spoiler="wall" role="button" tabindex="0" aria-label="點一下看說明">把祝福貼上，讓大家都看得到；也能寫成悄悄話，只有新人看得到。</span></p>
+        <a class="btn ghost" href="/samples/white-church/wall" target="_blank" rel="noopener" data-play="wall">看看祝福牆<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+      </article>
+      <article class="play glass">
+        <p class="play-line">你會發現原來大家，比你想的更懂你們。</p>
+        <h3>隨堂考<span class="plan-tag">完整版</span></h3>
+        <p class="play-need"><b>新人準備</b>題目和答案</p>
+        <p class="play-more"><span class="spoiler" data-spoiler="quiz" role="button" tabindex="0" aria-label="點一下看說明">有單選和複選，答完之後還能看到其他人都選了什麼，非常有趣！</span></p>
+        <a class="btn ghost" href="/samples/white-church/quiz" target="_blank" rel="noopener" data-play="quiz">開始作答<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+      </article>
+      <article class="play glass">
+        <p class="play-line">你們走過的路，值得被好好看一次。</p>
+        <h3>時光展</h3>
+        <p class="play-need"><b>新人準備</b>幾張照片和一句話</p>
+        <p class="play-more"><span class="spoiler" data-spoiler="exhibition" role="button" tabindex="0" aria-label="點一下看說明">把你們從認識、一起出去玩，到一路經歷的事放上來，讓賓客更認識你們之間的故事。</span></p>
+        <a class="btn ghost" href="/samples/white-church/exhibition" target="_blank" rel="noopener" data-play="exhibition">進入時光展<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+      </article>
+      <article class="play glass">
+        <p class="play-line">從入場的那刻起，就感受到你們的用心。</p>
+        <h3>找座位</h3>
+        <p class="play-need"><b>新人準備</b>排好的桌次</p>
+        <p class="play-more"><span class="spoiler" data-spoiler="seating" role="button" tabindex="0" aria-label="點一下看說明">可以放上多張現場座位圖；也可以打開找座位功能，讓賓客輸入名字，就找到自己的位子。</span></p>
+        <a class="btn ghost" href="/samples/white-church/seating" target="_blank" rel="noopener" data-play="seating">輸入「小安」找座位<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+      </article>
+    </div>
+    <p class="play-swipe" aria-hidden="true">← 左右滑動看更多 →</p>
+  </section>
+
+    <section class="sec" id="easy" aria-labelledby="easyTitle">
+    <div class="sec-head">
+      <div class="kicker">Easy to use</div>
+      <h2 id="easyTitle">手機隨時都能改，<br class="br-m">幫助新人減少超多麻煩</h2>
+      <p>後台就是一個網頁，不用下載 App、不用開電腦，手機打開就能改。</p>
+    </div>
+    <ol class="demo-rail" tabindex="0" aria-label="新人後台的三個功能，可以左右滑動">
+
+            <li class="demo" data-try="content">
+        <div class="demo-cap">
+          <h3>想告訴賓客的事，自己加</h3>
+        </div>
+        <div class="demo-ctrl">
+          <p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p>
+          <button type="button" class="pill add" data-content-add>＋ 新增一則</button>
+        </div>
+        <div class="phone"><div class="phone-screen"><div class="adm">
+          <div class="adm-bar"><i></i><b>自訂內容</b><span>Ethan &amp; Claire</span></div>
+          <div class="adm-body adm-scroll">
+            <div class="adm-note">我們準備好的內容以外，你們想告訴賓客的事都放這裡。</div>
+            <div class="adm-group" data-content-list>
+              <div class="adm-item"><span class="adm-kind">跳出說明</span><div><b>停車資訊</b><span>酒店 B1–B3，憑喜帖免費停四小時。</span></div></div>
+              <div class="adm-item"><span class="adm-kind">開啟連結</span><div><b>婚紗照相簿</b><span>雲端相簿的連結</span></div></div>
+              <div class="adm-item"><span class="adm-kind">跳出說明</span><div><b>拍立得簽名牆</b><span>入口左手邊，拍一張寫一句話。</span></div></div>
+            </div>
+          </div>
+        </div></div></div>
+      </li>
+
+            <li class="demo" data-try="pages">
+        <div class="demo-cap">
+          <h3>用不到的區塊，關掉就好</h3>
+        </div>
+        <div class="demo-ctrl"><p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p></div>
+        <div class="phone"><div class="phone-screen"><div class="adm">
+          <div class="adm-bar"><i></i><b>頁面設定</b><span>Ethan &amp; Claire</span></div>
+          <div class="adm-body adm-scroll">
+            <div class="adm-group">
+              <label class="adm-row"><span>祝福牆</span><span class="tg"><input type="checkbox" checked data-page="wall"><i></i></span></label>
+              <label class="adm-row"><span>抽小卡</span><span class="tg"><input type="checkbox" data-page="draw"><i></i></span></label>
+              <label class="adm-row"><span>時光展</span><span class="tg"><input type="checkbox" checked data-page="exhibition"><i></i></span></label>
+              <label class="adm-row"><span>隨堂考</span><span class="tg"><input type="checkbox" checked data-page="quiz"><i></i></span></label>
+              <label class="adm-row"><span>找座位</span><span class="tg"><input type="checkbox" checked data-page="seating"><i></i></span></label>
+              <label class="adm-row"><span>給你的信</span><span class="tg"><input type="checkbox" checked data-page="letter"><i></i></span></label>
+            </div>
+            <div class="pg-see" aria-live="polite">
+              <h4>賓客看到的</h4>
+              <span data-see="wall">祝福牆</span><span data-see="draw" hidden>抽小卡</span><span data-see="exhibition">時光展</span><span data-see="quiz">隨堂考</span><span data-see="seating">找座位</span><span data-see="letter">給你的信</span>
+            </div>
+          </div>
+        </div></div></div>
+      </li>
+
+            <li class="demo" data-try="butler">
+        <div class="demo-cap">
+          <h3>收禮台，點一下就記好<span class="plan-tag">完整版</span></h3>
+        </div>
+        <div class="demo-ctrl"><p class="try-note"><svg class="try-arrow" viewBox="0 0 28 44" aria-hidden="true"><path d="M17 3c-10 7 7 16-3 30"/><path d="M7 27l7 8 6-8"/></svg>動手操作看看</p></div>
+        <div class="phone"><div class="phone-screen"><div class="adm">
+          <div class="adm-bar"><i></i><b>收禮台</b><span>收禮小幫手</span></div>
+          <div class="adm-body adm-scroll">
+            <div class="st-grid" aria-live="polite">
+              <div><b data-bt="got">58</b><span>已收</span></div>
+              <div><b data-bt="left">6</b><span>還沒收到</span></div>
+            </div>
+            <div class="st-list">
+              <h4>第 5 桌</h4>
+              <button type="button" class="bt-row"><b>陳美亞</b><span>2 位</span><em>點一下收禮</em></button>
+              <button type="button" class="bt-row"><b>林佳穎</b><span>1 位</span><em>點一下收禮</em></button>
+              <button type="button" class="bt-row"><b>吳冠廷</b><span>2 位</span><em>點一下收禮</em></button>
+              <button type="button" class="bt-row got" disabled><b>李宛真</b><span>1 位</span><em>已收</em></button>
+            </div>
+          </div>
+        </div></div></div>
+      </li>
+    </ol>
+    <p class="demo-swipe" aria-hidden="true">← 左右滑動看更多 →</p>
+  </section>
+
     <section class="sec" id="plans" aria-labelledby="plansTitle">
     <div class="sec-head">
-      <div class="kicker">Compare</div>
-      <h2 id="plansTitle">兩個方案怎麼選</h2>
+      <div class="kicker">Plans</div>
+      <h2 id="plansTitle">新人會有的麻煩，<br class="br-m">芯玖一次解決</h2>
+      <p>一次付清，沒有月費，也不用續約。</p>
     </div>
     <p class="plan-tip">點功能名稱，看看它是做什麼的</p>
     <div class="plans glass">
@@ -787,33 +1142,42 @@ body.dlg-open{overflow:hidden;}
             <th scope="col">
               <svg class="ic"><use href="#i-plan-classic"/></svg>
               <span class="pname">經典方案</span><span class="pen">CLASSIC</span>
-              <span class="price"><span class="was">定價 <s>NT$2,580</s></span><em>早鳥價</em><strong><small>NT$</small>1,280</strong></span>
+              <span class="price"><span class="was">定價 <s>NT$2,580</s></span><em>早鳥價・至 11/30</em><strong><small>NT$</small>1,280</strong></span>
             </th>
             <th scope="col" class="p2">
               <svg class="ic"><use href="#i-plan-premium"/></svg>
-              <span class="pname">典藏方案</span><span class="pen">PREMIUM</span>
-              <span class="price"><span class="was">原價 <s>NT$3,290</s></span><em>早鳥價</em><strong><small>NT$</small>1,999</strong></span>
+              <span class="pname">完整方案</span><span class="pen">PREMIUM</span>
+              <span class="price"><span class="was">原價 <s>NT$3,290</s></span><em>早鳥價・至 11/30</em><strong><small>NT$</small>1,999</strong></span>
             </th>
           </tr>
         </thead>
         <tbody>
           <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-url"/></svg>版型</span></th><td>3 款可選</td><td class="p2">13 款可選</td></tr>
-          <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-rsvp"/></svg>可自訂問題 RSVP</span></th><td><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-rsvp"/></svg>出席回覆（題目可自訂）</span></th><td><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
           <tr><th scope="row"><button type="button" class="feat" data-feature="multi" aria-haspopup="dialog"><svg class="ic"><use href="#i-rsvp-multi"/></svg><span class="lab">多場活動連動</span><svg class="more" aria-hidden="true"><use href="#i-more"/></svg></button></th><td><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
-          <tr><th scope="row"><button type="button" class="feat" data-feature="stories" aria-haspopup="dialog"><svg class="ic"><use href="#i-storywall"/></svg><span class="lab">故事牆・祝福牆・抽卡</span><svg class="more" aria-hidden="true"><use href="#i-more"/></svg></button></th><td><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
-          <tr><th scope="row"><button type="button" class="feat" data-feature="seat" aria-haspopup="dialog"><svg class="ic"><use href="#i-findseat"/></svg><span class="lab">賓客現場查詢</span><svg class="more" aria-hidden="true"><use href="#i-more"/></svg></button></th><td><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row"><button type="button" class="feat" data-feature="stories" aria-haspopup="dialog"><svg class="ic"><use href="#i-storywall"/></svg><span class="lab">時光展・祝福牆・抽小卡</span><svg class="more" aria-hidden="true"><use href="#i-more"/></svg></button></th><td><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row"><button type="button" class="feat" data-feature="seat" aria-haspopup="dialog"><svg class="ic"><use href="#i-findseat"/></svg><span class="lab">找座位</span><svg class="more" aria-hidden="true"><use href="#i-more"/></svg></button></th><td><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
           <tr><th scope="row"><button type="button" class="feat" data-feature="seating" aria-haspopup="dialog"><svg class="ic"><use href="#i-seating"/></svg><span class="lab">排桌管理</span><svg class="more" aria-hidden="true"><use href="#i-more"/></svg></button></th><td><span class="no" role="img" aria-label="無"></span></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
           <tr><th scope="row"><button type="button" class="feat" data-feature="butler" aria-haspopup="dialog"><svg class="ic"><use href="#i-gift-desk"/></svg><span class="lab">收禮小幫手</span><svg class="more" aria-hidden="true"><use href="#i-more"/></svg></button></th><td><span class="no" role="img" aria-label="無"></span></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
-          <tr><th scope="row"><button type="button" class="feat" data-feature="quiz" aria-haspopup="dialog"><svg class="ic"><use href="#i-quiz"/></svg><span class="lab">自訂互動測驗</span><svg class="more" aria-hidden="true"><use href="#i-more"/></svg></button></th><td><span class="no" role="img" aria-label="無"></span></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
-          <tr><th scope="row"><button type="button" class="feat" data-feature="letter" aria-haspopup="dialog"><svg class="ic"><use href="#i-letter"/></svg><span class="lab">專屬信件</span><svg class="more" aria-hidden="true"><use href="#i-more"/></svg></button></th><td><span class="no" role="img" aria-label="無"></span></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row"><button type="button" class="feat" data-feature="quiz" aria-haspopup="dialog"><svg class="ic"><use href="#i-quiz"/></svg><span class="lab">新人隨堂考</span><svg class="more" aria-hidden="true"><use href="#i-more"/></svg></button></th><td><span class="no" role="img" aria-label="無"></span></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row"><button type="button" class="feat" data-feature="letter" aria-haspopup="dialog"><svg class="ic"><use href="#i-letter"/></svg><span class="lab">給你的信</span><svg class="more" aria-hidden="true"><use href="#i-more"/></svg></button></th><td><span class="no" role="img" aria-label="無"></span></td><td class="p2"><svg class="ok" aria-label="有"><use href="#i-ok"/></svg></td></tr>
           <tr><th scope="row"><span class="feat"><svg class="ic"><use href="#i-archive"/></svg>資料保存</span></th><td>1 年</td><td class="p2">1 年</td></tr>
         </tbody>
       </table>
     </div>
     <ul class="plan-notes">
-      <li>經典方案之後想用典藏功能，可以補差額升級。</li>
+      <li>經典方案之後想用完整方案的功能，可以補差額升級。</li>
       <li>兩個方案都保存一年；想永久保存，可以加購 NT$799。</li>
     </ul>
+    <div class="support glass">
+      <h3>買了以後，有人協助嗎？</h3>
+      <dl>
+        <div><dt>開站</dt><dd>付款後 3 個工作天內交付預覽，確認沒問題就上線。</dd></div>
+        <div><dt>LINE 回覆</dt><dd>由真人設計師製作，上班日都會回覆訊息。</dd></div>
+        <div><dt>婚禮當天</dt><dd>原則上沒有現場支援。</dd></div>
+        <div><dt>客製化</dt><dd>需要客製化的服務，請另外跟我們諮詢。</dd></div>
+      </dl>
+    </div>
   </section>
 
     <section class="sec" id="flow" aria-labelledby="flowTitle">
@@ -829,7 +1193,8 @@ body.dlg-open{overflow:hidden;}
     </ol>
     <p class="flow-need">需要準備：<b>婚宴日期</b>、<b>雙方中英文名字</b>、<b>主要照片</b></p>
     <div class="flow-cta">
-      <a class="btn" href="https://lin.ee/8DlfH2K" target="_blank" rel="noopener" data-line="flow"><svg class="ic-line" aria-hidden="true"><use href="#i-line"/></svg>LINE 瞭解更多<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
+      <p>準備好你們的婚禮網站了嗎？</p>
+      <a class="btn" href="https://lin.ee/8DlfH2K" target="_blank" rel="noopener" data-line="flow"><svg class="ic-line" aria-hidden="true"><use href="#i-line"/></svg>查看方案並開始製作<svg class="ext" aria-hidden="true"><use href="#i-ext"/></svg></a>
     </div>
   </section>
 
@@ -841,15 +1206,15 @@ body.dlg-open{overflow:hidden;}
     <div class="faq-list glass">
       <details>
         <summary>跟自己用免費工具做喜帖，有什麼不同？</summary>
-        <div class="a">免費工具很方便，很多新人也是從這裡開始的。只是用到後來，常常是表單一份、Excel 一份、LINE 群組再一份，資料要自己來回對。<br>芯玖做的不只是電子喜帖：喜帖網站、出席回覆、排桌都在同一個地方，賓客資料填一次就連在一起，還內建故事牆、祝福牆、抽卡這些賓客玩得到的互動。我們把能想到的細節都先想進去，你們只要專心辦婚禮。</div>
+        <div class="a">免費工具很方便，很多新人也是從這裡開始的。只是用到後來，常常是表單一份、Excel 一份、LINE 群組再一份，資料要自己來回對。<br>芯玖做的不只是電子喜帖：喜帖網站、出席回覆、排桌都在同一個地方，賓客資料填一次就連在一起，還內建時光展、祝福牆、抽小卡這些賓客玩得到的互動。我們把能想到的細節都先想進去，你們只要專心辦婚禮。</div>
       </details>
       <details>
         <summary>兩個方案差在哪裡？</summary>
-        <div class="a">典藏方案多了排桌管理、收禮小幫手、自訂互動測驗和專屬信件；版型除了經典的 3 款，還多了 10 款可以選。完整比較在上面的 <a href="#plans">兩個方案怎麼選</a>。</div>
+        <div class="a">完整方案多了排桌管理、收禮小幫手、新人隨堂考和給你的信；版型除了經典方案的 3 款，還多了 10 款可以選。完整比較在上面的 <a href="#plans">方案表</a>。</div>
       </details>
       <details>
         <summary>之後可以升級方案嗎？</summary>
-        <div class="a">可以。選了經典方案，之後想用收禮小幫手這些典藏功能，補差額就能升級，詳情跟我們聯繫。</div>
+        <div class="a">可以。選了經典方案，之後想用收禮小幫手這些完整方案的功能，補差額就能升級，詳情跟我們聯繫。</div>
       </details>
       <details>
         <summary>版型跟開場動畫可以分開挑嗎？</summary>
@@ -933,15 +1298,15 @@ body.dlg-open{overflow:hidden;}
             <p>從收到連結到婚禮當天，賓客會用到這些：</p>
             <ul class="tags">
               <li class="first"><img src="/samples/thumbs/white-church.jpg" alt="" width="44" height="23" loading="lazy">LINE 專屬預覽圖</li>
-              <li>開場動畫</li><li>婚禮資訊</li><li>開啟地圖・加入行事曆</li><li>交通資訊</li><li>尋找我的座位</li>
+              <li>開場動畫</li><li>婚禮資訊</li><li>開啟地圖・加入行事曆</li><li>交通資訊</li><li>找座位</li>
               <li>當日流程</li><li>倒數計時</li><li>Dress code</li><li>出席回覆</li>
-              <li>祝福牆</li><li>給你的一封信</li><li>我們的故事</li><li>小測驗</li><li>抽卡</li>
+              <li>祝福牆</li><li>給你的信</li><li>我們的故事</li><li>時光展</li><li>新人隨堂考</li><li>抽小卡</li>
               <li class="plus">＋ 自訂內容：雲端相簿、現場小活動…</li>
             </ul>
           </div>
           <div class="seg-panel" role="tabpanel" id="segP2" aria-labelledby="segT2" hidden>
             <ul class="feats">
-              <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-story"/></svg></span><div><b>你們的故事</b><p>可選擇放或不放，簡單說明你們的故事吧。</p></div></li>
+              <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-story"/></svg></span><div><b>我們的故事</b><p>首頁上的一小段，可選擇放或不放，簡單說說你們的故事吧。</p></div></li>
               <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-photo"/></svg></span><div><b>相片集</b><p>婚紗照放進網站，賓客隨時都能翻。</p></div></li>
               <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-sync"/></svg></span><div><b>即時的資訊更新</b><p>有賓客回覆，後台立即顯示；後台調整資訊，網頁立即更新。</p></div></li>
               <li><span class="fi"><svg aria-hidden="true"><use href="#i-f-music"/></svg></span><div><b>背景音樂</b><p>可以選自己喜歡的音樂跟我們說，或是不要有。</p></div></li>
@@ -973,7 +1338,6 @@ body.dlg-open{overflow:hidden;}
 </div>
 
 <template id="fx-multi">
-  <span class="fx-plan">兩個方案都有</span>
   <p>證婚、婚宴、文訂、迎娶、After Party……一個網站放進當天所有的活動。賓客一次回覆每一場出不出席。</p>
   <p>每一場要問什麼也分開決定，例如證婚不問餐點、晚宴才問。</p>
   <div class="fx-pic"><div class="mock" aria-hidden="true">
@@ -983,21 +1347,34 @@ body.dlg-open{overflow:hidden;}
   </div></div>
 </template>
 <template id="fx-stories">
-  <span class="fx-plan">兩個方案都有</span>
-  <p><b>故事牆</b>用一條時間軸說你們的故事；<b>祝福牆</b>讓賓客留言給你們；<b>抽卡</b>是賓客抽一張你們的照片小卡收藏起來。</p>
+  <p><b>時光展</b>用一條時間軸展出你們的故事；<b>祝福牆</b>讓賓客貼上想對你們說的話；<b>抽小卡</b>是賓客抽一張婚禮小卡收藏起來。</p>
   <p>等開席的時候，早到的賓客也有事可以做。</p>
-  <div class="fx-pic"><img src="/samples/features/stories.jpg" alt="示範網站的故事牆、祝福牆與抽卡畫面" width="1128" height="665" loading="lazy"></div>
+  <div class="fx-pic"><div class="mock" aria-hidden="true">
+    <div class="mock-cols3">
+      <div class="mock-box"><h4>時光展</h4>
+        <div class="mock-photo" style="background-image:url(/samples/photos/02.webp)"></div>
+        <b class="mock-cap">誤點兩小時的高鐵</b><small class="mock-sub">2021</small></div>
+      <div class="mock-box"><h4>祝福牆</h4>
+        <div class="mock-wish"><b>小安</b>從大學看你們走到今天，真的好替你們開心！</div>
+        <div class="mock-wish"><b>阿哲</b>恭喜你們，婚禮那天見！</div></div>
+      <div class="mock-box"><h4>抽小卡</h4>
+        <div class="mock-photo tall" style="background-image:url(/samples/photos/01.webp)"></div>
+        <span class="mock-btn">抽一張婚禮小卡</span></div>
+    </div>
+  </div></div>
 </template>
 <template id="fx-seat">
-  <span class="fx-plan">兩個方案都有</span>
   <p>婚禮當天，賓客輸入名字就看到自己坐第幾桌，下面再附上桌次圖，不用擠在門口找名單。</p>
   <p>只會顯示自己的桌號，不會連帶看到別人的名字。</p>
-  <div class="fx-pic"><img src="/samples/features/seating.jpg" alt="示範網站的查桌次畫面：輸入王小安，顯示第 3 桌" width="600" height="1108" loading="lazy"></div>
+  <div class="fx-pic"><div class="mock" aria-hidden="true">
+    <div class="mock-search"><span>王小安</span><b>查詢</b></div>
+    <div class="mock-result"><small>王小安</small><span>你的桌次</span><strong>第 3 桌</strong><small>大學同學</small></div>
+  </div></div>
 </template>
 <template id="fx-seating">
-  <span class="fx-plan">典藏方案</span>
+  <span class="plan-tag">完整版</span>
   <p>原本用 Excel 排桌的那件事，整套搬進後台：左邊是還沒坐下的人，右邊是桌子，拖曳就能排。</p>
-  <p>出席回覆可以直接匯入，還有幾位沒排一眼就看得到；排好之後，賓客就查得到自己的桌號。</p>
+  <p>出席回覆可以直接匯入，還有幾位沒排一眼就看得到；排好之後，賓客就查得到自己的桌號。你的腦袋留給更重要的事，比如婚後誰洗碗。</p>
   <div class="fx-pic"><div class="mock" aria-hidden="true">
     <div class="mock-stat"><div><b>3</b><span>待安排</span></div><div><b>86</b><span>總人數</span></div><div><b>9</b><span>總桌數</span></div></div>
     <div class="mock-cols">
@@ -1010,7 +1387,7 @@ body.dlg-open{overflow:hidden;}
   </div></div>
 </template>
 <template id="fx-butler">
-  <span class="fx-plan">典藏方案</span>
+  <span class="plan-tag">完整版</span>
   <p>婚宴當天收禮台用的工具。幫忙收禮的親友點連結、輸入六位數通行碼就能用，不用辦帳號，也看不到出席回覆。</p>
   <p>記下禮金與禮餅，總額、還有幾位沒收到、誰記了多少，都會自動算好，事後對帳很輕鬆。</p>
   <div class="fx-pic"><div class="mock" aria-hidden="true">
@@ -1023,15 +1400,24 @@ body.dlg-open{overflow:hidden;}
   </div></div>
 </template>
 <template id="fx-quiz">
-  <span class="fx-plan">典藏方案</span>
-  <p>「看你多了解我們」：題目和答案由你們出。賓客作答完，看到自己的分數，還有每一題大家都選了什麼。</p>
-  <div class="fx-pic"><img src="/samples/features/quiz.jpg" alt="示範網站的小測驗畫面" width="600" height="1108" loading="lazy"></div>
+  <span class="plan-tag">完整版</span>
+  <p>「看你多了解我們」：題目和答案由你們出，誰最懂新人，考一下就知道。賓客作答完，看到自己的分數，還有每一題大家都選了什麼。</p>
+  <div class="fx-pic"><div class="mock" aria-hidden="true">
+    <div class="mock-box">
+      <div class="mock-q"><small>01・單選</small><b>我們是怎麼認識的？</b></div>
+      <div class="mock-opt on"><span>A　朋友介紹</span><em>58%</em><i style="width:58%"></i></div>
+      <div class="mock-opt"><span>B　同學或同事</span><em>21%</em><i style="width:21%"></i></div>
+      <div class="mock-opt"><span>C　在網路上聊起來</span><em>13%</em><i style="width:13%"></i></div>
+      <div class="mock-opt"><span>D　旅行的路上</span><em>8%</em><i style="width:8%"></i></div>
+    </div>
+    <div class="mock-score">你答對了 <b>2</b>／3 題</div>
+  </div></div>
 </template>
 <template id="fx-letter">
-  <span class="fx-plan">典藏方案</span>
-  <p>為賓客寫一封封信。賓客輸入名字或你們之間的暗號，封蠟消失、信紙滑出來，還能把信存成圖片留念。</p>
+  <span class="plan-tag">完整版</span>
+  <p>寫給每位賓客的信。賓客輸入名字或你們之間的暗號，封蠟消失、信紙滑出來，還能把信存成圖片留念。</p>
   <p>沒有指定信的賓客，會收到你們寫給大家的那一封。</p>
-  <div class="fx-pic"><img src="/samples/features/letter.jpg" alt="示範網站拆開的專屬信件：給小安" width="600" height="1108" loading="lazy"></div>
+  <div class="fx-pic"><img src="/samples/features/letter.jpg" alt="示範網站拆開的給你的信：給小安" width="600" height="1108" loading="lazy"></div>
 </template>
 
 <script type="module" src="/samples/samples.js"></script>

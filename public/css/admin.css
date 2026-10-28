@@ -80,7 +80,7 @@ body:is([data-page="admin"],[data-page="butler"]){padding-top:0;}
      --shadow-panel  從邊緣滑進來的面（抽屜、側邊選單）：
                      方向交給各自的第一個值，模糊與濃度同一份 */
   --shadow-pop:0 4px 14px rgba(35,32,32,.10);
-  /* --shadow-drag  正被拖著走的那一列（故事牆、測驗題）：
+  /* --shadow-drag  正被拖著走的那一列（時光展、隨堂考題目）：
      比 pop 淺一階，因為它同時已經 opacity:.55 了 */
   --shadow-drag:0 4px 12px rgba(35,32,32,.09);
   --shadow-panel-blur:14px;
@@ -681,7 +681,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
   flex-wrap:wrap;}
 /* ---------- 搜尋框（.ad-filter）----------
    後台只有這一種搜尋框。八個地方都在用它：出席回覆、悄悄話、桌次名單、
-   感謝信、收禮明細（後台）、排桌的待安排名單，以及收禮台的名單與紀錄。
+   給你的信、收禮明細（後台）、排桌的待安排名單，以及收禮台的名單與紀錄。
 
    同一個元件就要同一份規格，HTML 那邊也一樣（缺一個就長得不一樣）：
      type="search"          右邊有原生清除鈕，語意也對
@@ -1516,7 +1516,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 .ad-wz-done .ad-modal-actions .btn{text-decoration:none;}
 
 /* ============================================================
-   感謝信
+   給你的信
    ------------------------------------------------------------
    一封一張卡、桌機兩張並排。信是要讀的東西，
    排成一列一行的清單時每一封都只剩前半句，認不出來是給誰的。
@@ -1588,7 +1588,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
   font-size:var(--fs-label);letter-spacing:.06em;color:var(--ink-soft);
   border-style:dashed;}
 
-/* ---------- 故事牆的清單：章節是帶子，故事縮一格掛在底下 ----------
+/* ---------- 時光展的清單：章節是帶子，故事縮一格掛在底下 ----------
    賓客那一頁的結構就是「章節 → 底下幾則故事」。後台改版前
    兩種都畫成同一條 .ad-item，只有一顆小標籤寫著「章節／故事」，
    十幾則排下來完全看不出分段。現在：
@@ -1671,7 +1671,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
 /* ============================================================
    照片裁切器（cropper.js 動態插入）
 ============================================================ */
-/* 裁切器是從表單彈窗裡叫出來的（故事牆的照片就是這樣選的），
+/* 裁切器是從表單彈窗裡叫出來的（時光展的照片就是這樣選的），
    所以要壓在所有彈窗與 toast 上面，不然按不到「用這個範圍」 */
 .cr-mask{position:fixed;inset:0;z-index:1600;background:var(--scrim-modal);
   display:flex;align-items:center;justify-content:center;padding:20px;
@@ -2836,7 +2836,7 @@ select.ad-input{appearance:none;cursor:pointer;padding-right:22px;
     display:inline-flex;align-items:center;justify-content:center;
   }
   /* 「編輯」與「刪除」原本只隔 10px，拇指一按很容易點錯。
-     還沒收進「⋮」的那幾份清單（感謝信、故事牆、自訂內容、桌次名單、標籤庫）
+     還沒收進「⋮」的那幾份清單（給你的信、時光展、自訂內容、桌次名單、標籤庫）
      至少要把兩者拉開，並讓刪除自己是危險色、站在最右邊。 */
   .ad-item-actions{gap:16px;}
   /* 已經有「⋮」的那幾份反而要收緊：那一顆自己就是 44px 的熱區 */
@@ -4083,7 +4083,7 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-rowmenu-item:active{backgr
 }
 
 /* ============================================================
-   還沒開通的功能（進階方案）
+   還沒開通的功能（完整方案才有）
    ------------------------------------------------------------
    側欄：按鈕留著，右邊一顆鎖頭，字與圖示再淡一階 —— 看得到、
    讀得懂，但一眼就分得出它跟「現在用得到的那幾件事」不同層。
@@ -4765,7 +4765,7 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:var(--f
    一張卡一個活動，永遠只有一行 —— 五個活動也只有五行。
    內容在彈窗裡改（活動資訊彈窗），順序拖左邊的握把。
 
-   沿用既有語彙：1px 線、無陰影、4px 圓角、握把和故事牆／測驗題同一顆。
+   沿用既有語彙：1px 線、無陰影、4px 圓角、握把和時光展／隨堂考題目同一顆。
    沒有新的顏色，狀態全部靠線條與字重。
 ============================================================ */
 .ad-evlist{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}

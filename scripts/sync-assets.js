@@ -23,7 +23,7 @@
        exhibition/            戀愛時光的展品
          01.jpg …
          meta.json            選填，每張的年份／標題／說明
-       cards/                 囍卡
+       cards/                 婚禮小卡（抽小卡的卡池）
          01.png …
          meta.json            選填，卡片名稱／稀有度／描述
        cakes/                 甜點桌
@@ -229,7 +229,7 @@ function describe(manifest) {
   }
   for (const [key, label] of [
     ['gallery', '照片牆'], ['exhibition', '戀愛時光'],
-    ['cards', '囍卡'], ['cakes', '甜點桌'], ['seating', '桌次圖'],
+    ['cards', '婚禮小卡'], ['cakes', '甜點桌'], ['seating', '桌次圖'],
   ]) {
     if (manifest[key]) bits.push(`${label} ${manifest[key].length} 張`);
   }
@@ -278,7 +278,7 @@ function initFolder(slug) {
 |---|---|
 | \`gallery/\` | 照片牆 |
 | \`exhibition/\` | 戀愛時光的展品 |
-| \`cards/\` | 囍卡 |
+| \`cards/\` | 婚禮小卡（抽小卡） |
 | \`cakes/\` | 甜點桌 |
 | \`seating/\` | 桌次圖 |
 
@@ -290,7 +290,7 @@ function initFolder(slug) {
 
 沒放的部分會用內建預設，不會壞掉。
 
-## 抽卡小卡（\`cards/\`）
+## 抽小卡的婚禮小卡（\`cards/\`）
 
 ### 1. 卡圖放哪裡
 
@@ -305,8 +305,8 @@ function initFolder(slug) {
 ・副檔名可用 \`.jpg\` \`.jpeg\` \`.png\` \`.webp\` \`.gif\` \`.avif\` \`.svg\`
 ・建議直式 2:3、800×1200 以上
 ・\`meta.json\` 不是圖片，不會被當成一張卡
-・**只要 \`cards/\` 裡有任何一張圖，抽卡頁就整批用它**（全有或全無，不會混在一起）
-・這裡與後台都沒有卡片時，抽卡頁的按鈕會停用，底下寫「等待新人上傳照片」（沒有內建的範例卡）
+・**只要 \`cards/\` 裡有任何一張圖，抽小卡頁就整批用它**（全有或全無，不會混在一起）
+・這裡與後台都沒有卡片時，抽小卡頁的按鈕會停用，底下寫「等待新人上傳照片」（沒有內建的範例卡）
 
 ### 2. 改文字說明與星級
 
@@ -322,7 +322,7 @@ function initFolder(slug) {
 
 | 欄位 | 說明 | 沒填的話 |
 |---|---|---|
-| \`name\` | 卡名，顯示在卡片下方 | 變成「囍卡 1」「囍卡 2」… |
+| \`name\` | 卡名，顯示在卡片下方 | 變成「小卡 1」「小卡 2」… |
 | \`rarity\` | 星級：\`SSR\` / \`SR\` / \`R\` / \`N\` | 當作 \`N\` |
 | \`desc\` | 一句話說明，顯示在大卡下方的小紙條 | 不顯示小紙條 |
 

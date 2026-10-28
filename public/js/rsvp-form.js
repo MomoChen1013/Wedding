@@ -1344,7 +1344,7 @@ ${memoBlock}
     /* ---------- 結果卡的下一步 ----------
        這一頁只剩表單，所以回覆完之後得有出口：大廳（婚禮資訊、
        當日流程、「相遇之間」都在那裡）與兩人的故事。
-       「我們的故事」沒開給這組新人時就只留大廳那一顆。 */
+       「時光展」沒開給這組新人時就只留大廳那一顆。 */
     function buildNext(){
       const box = $('tkNext');
       const S = window.SITE;
@@ -1352,7 +1352,7 @@ ${memoBlock}
 
       const acts = [];
       if (typeof S.isEnabled !== 'function' || S.isEnabled('exhibition')) {
-        acts.push({ href: S.pathFor('exhibition'), label: '看我們的故事', ghost: true });
+        acts.push({ href: S.pathFor('exhibition'), label: '進入時光展', ghost: true });
       }
       acts.push({ href: S.pathFor('lobby'), label: '回婚禮大廳', ghost: false });
       if (!acts.length) return;

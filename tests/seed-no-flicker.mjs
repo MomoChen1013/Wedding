@@ -36,7 +36,7 @@ const SITES = {
   'flicker-korean': {
     template: 'korean',
     /* 敘事模組和版型是兩軸：這一組同時換了兩軸，
-       驗「chapters 只動得到『我們的故事』那一頁，其他頁一條都不受影響」 */
+       驗「chapters 只動得到『時光展』那一頁，其他頁一條都不受影響」 */
     storyLayout: 'chapters',
     groomName: '宇辰', brideName: '宜庭',
     groomNameEn: 'Ethan', brideNameEn: 'Ginny',

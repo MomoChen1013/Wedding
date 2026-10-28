@@ -58,7 +58,7 @@ function closeLetter(){ letterModal.classList.remove('open'); }
 async function submitLetter(){
   const t=letterText.value.trim();
   if(!t){ letterText.focus(); return; }
-  const u = await ensureUser('這封信只有新人讀得到，讓他們知道是誰寫的');
+  const u = await ensureUser('這則悄悄話只有新人讀得到，讓他們知道是誰寫的');
   if(!u) return;
   DataStore.addLetter({name:u.name, icon:u.icon, text:t});
   letterText.value='';

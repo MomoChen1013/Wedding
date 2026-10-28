@@ -72,10 +72,10 @@ const PAGES = {
                 label:'邀請函',     optional:true  },
   wall:       { file:'wall.html',       label:'祝福牆',     optional:true  },
   cake:       { file:'cake.html',       label:'集氣送祝福', optional:true  },
-  draw:       { file:'draw.html',       label:'抽卡',       optional:true  },
-  exhibition: { file:'exhibition.html', label:'我們的故事', optional:true  },
-  quiz:       { file:'quiz.html',       label:'新人小測驗', optional:true  },
-  seating:    { file:'seating.html',    label:'我的桌次',   optional:true  },
+  draw:       { file:'draw.html',       label:'抽小卡',     optional:true  },
+  exhibition: { file:'exhibition.html', label:'時光展',     optional:true  },
+  quiz:       { file:'quiz.html',       label:'隨堂考',     optional:true  },
+  seating:    { file:'seating.html',    label:'找座位',     optional:true  },
   letter:     { file:'letter.html',     label:'給你的信',   optional:true  },
   /* 新人後台：不放進導覽列、不對外連結，但永遠開著，
      這樣新人不必先「打開某一頁」才能進去設定內容。
@@ -91,7 +91,7 @@ const PAGES = {
    長出那一個分頁（firestore.rules 的 pageOn() 用的是同一個 key）。
 
    seatingPlan（排桌管理）＝把 Excel 排桌搬上線的工作台，
-   排完之後由新人自己按「同步」寫進 seating（我的桌次）那一份公開名單。
+   排完之後由新人自己按「同步」寫進 seating（找座位）那一份公開名單。
 
    butler（收禮小幫手）比較特別：它有自己的網址（/butler#{token}），
    但那個網址不在 /w/{slug}/ 底下、也不吃 site-context ——
@@ -115,7 +115,7 @@ const ADMIN_FEATURES = {
    放進來的代號代表「這個功能本身還沒好、還沒開賣」，
    跟某一組新人買了什麼無關 —— 所以它是寫死在程式裡的一份清單，
    不是每個站台各自的設定（那種是 sites.pages）。
-   把還在做的功能掛上「進階方案」的鎖頭，等於在賣一個賣不了的東西：
+   把還在做的功能掛上「完整方案」的鎖頭，等於在賣一個賣不了的東西：
    新人問了、我們也開不了。
 
    開賣的那一天就把代號從這裡刪掉，一個站台的資料都不用動。
@@ -160,10 +160,10 @@ function applyTemplate(name, isLobby) {
 /* 套上敘事模組：寫 <body data-story-layout>，需要的話再補這個模組的版面 CSS。
 
    和 applyTemplate() 是**兩軸**（見 js/wed-model.js 的 STORY_LAYOUTS）：
-   版型決定整個站台長什麼樣子，敘事模組只決定「我們的故事」那一頁
+   版型決定整個站台長什麼樣子，敘事模組只決定「時光展」那一頁
    怎麼說。所以這裡不碰字體、不碰色票，只掛一個屬性和一份版面 CSS。
 
-   ▸ 只有「我們的故事」那一頁要掛：模組的 CSS 每一條都收在自己的前綴底下
+   ▸ 只有「時光展」那一頁要掛：模組的 CSS 每一條都收在自己的前綴底下
      （.sc-* …），其他頁面載它只是白白多擋一次首次繪製；那些頁面也不寫
      data-story-layout，因為沒有任何一條規則在讀它。
      但**回傳值每一頁都算**，window.SITE.storyLayout 要講的是這組新人的
@@ -596,7 +596,7 @@ async function boot() {
       }
     }
     /* 開關代號 → 頁面 JS 檔名（檔名跟著 HTML 走，不是跟著代號）。
-       「我們的故事」是唯一由敘事模組決定的一頁：不同的編排是不同的 DOM
+       「時光展」是唯一由敘事模組決定的一頁：不同的編排是不同的 DOM
        與不同的捲動行為，不是同一支腳本加一堆 if，所以各載各的。 */
     const pageScript = pageKey === 'exhibition'
       ? STORY_LAYOUTS[storyLayout].js

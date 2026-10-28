@@ -407,7 +407,7 @@ console.log('\n【⑦ 首屏只載真的用得到的東西】');
 }
 
 /* ============================================================
-   8. 敘事模組：只動得到「我們的故事」那一頁
+   8. 敘事模組：只動得到「時光展」那一頁
    ------------------------------------------------------------
    sites.storyLayout 和 sites.template 是**兩軸**（見 js/wed-model.js 的
    STORY_LAYOUTS）。這一段守的就是那條界線：
@@ -422,7 +422,7 @@ console.log('\n【⑦ 首屏只載真的用得到的東西】');
 
    flicker-korean 設了 chapters，ginny-one-… 刻意沒設（驗落回 timeline）。
 ============================================================ */
-console.log('\n【⑧ 敘事模組：只有「我們的故事」那一頁換】');
+console.log('\n【⑧ 敘事模組：只有「時光展」那一頁換】');
 {
   const read = (slug, file) => {
     const u = new URL(`../public/w/${slug}/${file}`, import.meta.url);
@@ -430,7 +430,7 @@ console.log('\n【⑧ 敘事模組：只有「我們的故事」那一頁換】'
   };
 
   const story = read(KOREAN, 'exhibition.html');
-  ok('chapters 站台有產出「我們的故事」', !!story);
+  ok('chapters 站台有產出「時光展」', !!story);
 
   ok('它的 <body> 第一格就是 chapters',
      !!story && /<body[^>]*data-story-layout="chapters"/.test(story),
