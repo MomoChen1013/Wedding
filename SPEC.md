@@ -78,6 +78,8 @@ sites/{siteId}
   groomNameEn     : string   # 選填，新郎英文名；只有大廳 hero 用得到
   brideNameEn     : string   # 選填，新娘英文名；兩個都填才生效，否則 hero 維持中文名
   coupleTitle     : string   # 選填，大廳資訊卡上的稱呼（≤20 字）；留白就用兩人的名字
+  groomHost       : string   # 選填，男方主婚人（≤40 字，稱謂由新人自己寫）；大廳資訊卡「主婚人」那一列
+  brideHost       : string   # 選填，女方主婚人（≤40 字）；兩邊都沒填，那一列就不出現
   eventDate       : timestamp
   eventEndDate    : timestamp | null   # 婚宴結束時間，加入行事曆用；null 則抓開始後 3 小時
   timezone        : string   # IANA 時區，如 "Asia/Taipei"（見下方說明）
@@ -487,7 +489,8 @@ Firestore 的讀取請求不帶條件，規則沒有辦法「只讓對得上的�
 但只認白名單裡的欄位：
 
 ```
-coupleTitle venueName venueAddress venueMapUrl transportPublic transportParking
+coupleTitle groomHost brideHost
+venueName venueAddress venueMapUrl transportPublic transportParking
 dressCode dressCodeColors giftNote story schedule hashtags updatedAt
 seatingSearchEnabled seatingFeatureEnabled
 rsvpAskCard rsvpAskGift rsvpAskMessage rsvpMailEnabled rsvpContactMethods
