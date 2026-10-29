@@ -640,6 +640,10 @@ sites/{siteId}
                                # false 時大廳不出現「找我的座位」、導覽列也沒有找座位
   rsvpAskCard / rsvpAskGift / rsvpAskMessage(bool)   # 出席回覆要問哪些題目
   rsvpMailEnabled(bool)         # 要不要提供「郵寄」（喜帖怎麼給、喜餅怎麼領）
+  rsvpPaperCardEnabled(bool)    # 喜帖要不要有「需要紙本喜帖」這個選項
+  rsvpDigitalCardEnabled(bool)  # 喜帖要不要有「需要電子喜帖」這個選項
+  rsvpGiftRelations(string[])   # 喜餅開放給哪幾種關係（groom/bride/both/other）；
+                               # 例外：沒設定過＝女方親友＋雙方親友
   rsvpContactMethods(string[])  # 要問哪幾種聯絡方式（phone/line/email）
   rsvpShowGallery(bool)         # 首頁要不要放「Moments 相遇之間」
   rsvpShowStory(bool)           # 舊欄位，前端已不再讀

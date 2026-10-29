@@ -47,6 +47,9 @@
 .rf-detail{margin-top:4px;padding-top:6px;}
 .rf-sub{margin-top:12px;padding-left:16px;border-left:1px solid var(--line);}
 .rf-sub .rf-label:first-child{margin-top:0;}
+/* 喜餅整題包在一層裡（依關係決定要不要出現），標題的間距照一般題目走，
+   不要被上面的 :first-of-type 吃成 4px */
+.rf-gift > .rf-label:first-of-type{margin-top:26px;}
 
 /* ---- 數量 stepper ---- */
 .stepper{display:flex;align-items:center;gap:14px;}

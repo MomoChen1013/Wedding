@@ -279,15 +279,15 @@
     ).join('')}</div>
     <div class="rf-hint">選一個最接近的就好，方便我們安排座位；選錯再點一次可以取消</div>`;
 
-    /* 喜帖：紙本要問怎麼給、郵寄要問地址；電子要問寄到哪個 Email */
-    const cardBlock = !cfg.askCard ? '' : `
-    <label class="rf-label">喜帖發送方式<i class="rf-req">必填</i></label>
-    ${choiceRow('cardRow', 'card', 'sm')}
+    /* 喜帖：紙本要問怎麼給、郵寄要問地址；電子要問寄到哪個 Email
+       （新人不提供的那一種，連選項帶追問的欄位一起不出現） */
+    const paperBox = !cfg.allowPaperCard ? '' : `
     <div class="rf-sub" id="cardPaperBox" hidden>
       <label class="rf-label rf-label-sub">紙本喜帖要怎麼給你？</label>
       ${choiceRow('cardDeliveryRow', 'cardDelivery', 'sm')}
       ${addressBox('cardAddrBox', 'rCardZip', 'rCardAddr')}
-    </div>
+    </div>`;
+    const digitalBox = !cfg.allowDigitalCard ? '' : `
     <div class="rf-sub" id="cardDigitalBox" hidden>
       <label class="rf-label rf-label-sub" for="rCardEmail">電子喜帖要寄到哪個 Email？</label>
       ${hasEmail ? sameAs('cardEmailSame', '同上（與聯絡方式的 Email 相同）') : ''}
@@ -296,14 +296,21 @@
                autocomplete="email" placeholder="name@example.com">
       </div>
     </div>`;
+    const cardBlock = !cfg.askCard ? '' : `
+    <label class="rf-label">喜帖發送方式<i class="rf-req">必填</i></label>
+    ${choiceRow('cardRow', 'card', 'sm')}${paperBox}${digitalBox}`;
 
-    /* 喜餅：郵寄要問地址，可以直接沿用喜帖的地址 */
+    /* 喜餅：郵寄要問地址，可以直接沿用喜帖的地址。
+       只有新人開放的那幾種關係才問（rsvpGiftRelations），所以整塊先藏著，
+       賓客選了「與新人的關係」才決定要不要出現（見 syncGift）。 */
     const giftBlock = !cfg.askGift ? '' : `
-    <label class="rf-label">喜餅領取方式<i class="rf-req">必填</i></label>
-    ${choiceRow('giftRow', 'gift', 'sm')}
-    <div class="rf-sub" id="giftMailBox" hidden>
-      ${cfg.askCard ? sameAs('giftAddrSame', '同上（與喜帖的郵寄地址相同）') : ''}
-      ${addressBox('giftAddrBox', 'rGiftZip', 'rGiftAddr')}
+    <div class="rf-gift" id="giftBox" hidden>
+      <label class="rf-label">喜餅領取方式<i class="rf-req">必填</i></label>
+      ${choiceRow('giftRow', 'gift', 'sm')}
+      <div class="rf-sub" id="giftMailBox" hidden>
+        ${cfg.askCard && cfg.allowPaperCard ? sameAs('giftAddrSame', '同上（與喜帖的郵寄地址相同）') : ''}
+        ${addressBox('giftAddrBox', 'rGiftZip', 'rGiftAddr')}
+      </div>
     </div>`;
 
     const messageBlock = !cfg.askMessage ? '' : `
@@ -481,9 +488,14 @@ ${memoBlock}
       childSeat: 0,
       card: null,           // paper | digital | none
       cardDelivery: null,   // pickup | mail
-      gift: null,           // pickup | mail
+      gift: null,           // pickup | self | mail
       answers: {},          // 單一活動的自訂選擇題：題目 id → 選項 id（多選用逗號串起來）
     };
+
+    /* 這位賓客要不要問喜餅：看新人開放給哪幾種關係（common.js 的 rsvpGiftOpenTo）。
+       改選成不能領的關係時，喜餅那一題收起來，但選過的答案先留著 ——
+       改回來不用重選；送出時只要看不到這一題，一律存空字串。 */
+    const giftOpen = () => rsvpGiftOpenTo(state.relation, cfg);
 
     /* ---------- 選項 chip ---------- */
     function pick(rowId, val) {
@@ -612,22 +624,25 @@ ${memoBlock}
     function syncCard() {
       if (!cfg.askCard) return;
       const paper = state.card === 'paper';
-      $('cardPaperBox').hidden = !paper;
-      $('cardAddrBox').hidden = !(paper && state.cardDelivery === 'mail');
-      $('cardDigitalBox').hidden = state.card !== 'digital';
+      if ($('cardPaperBox')) {
+        $('cardPaperBox').hidden = !paper;
+        $('cardAddrBox').hidden = !(paper && state.cardDelivery === 'mail');
+      }
+      if ($('cardDigitalBox')) $('cardDigitalBox').hidden = state.card !== 'digital';
       if (refreshCardEmailSame) refreshCardEmailSame();
       /* 喜帖不是紙本郵寄時，喜餅就沒有地址可以「同上」 */
       if (refreshGiftAddrSame) refreshGiftAddrSame();
     }
     function syncGift() {
       if (!cfg.askGift) return;
+      $('giftBox').hidden = !giftOpen();
       $('giftMailBox').hidden = state.gift !== 'mail';
       $('giftAddrBox').hidden = state.gift !== 'mail';
       if (refreshGiftAddrSame) refreshGiftAddrSame();
     }
 
     wireRow('attendRow', (v) => { state.attending = v; syncAttend(); });
-    wireRow('relationRow', (v) => { state.relation = v; });
+    wireRow('relationRow', (v) => { state.relation = v; syncGift(); });
     wireRow('cardRow', (v) => { state.card = v; syncCard(); });
     wireRow('cardDeliveryRow', (v) => { state.cardDelivery = v; syncCard(); });
     wireRow('giftRow', (v) => { state.gift = v; syncGift(); });
@@ -954,7 +969,7 @@ ${memoBlock}
         }
       }
 
-      if (cfg.askGift) {
+      if (giftOpen()) {
         if (!state.gift) return showErr('請選擇喜餅的領取方式');
         if (state.gift === 'mail') {
           if (!ZIP_RE.test(val('rGiftZip'))) {
@@ -1005,7 +1020,7 @@ ${memoBlock}
         const contact0 = (key) => (cfg.contacts.includes(key)
           ? val(CONTACT_FIELDS[key].id).slice(0, CONTACT_FIELDS[key].max) : '');
         const paperMail0 = cfg.askCard && state.card === 'paper' && state.cardDelivery === 'mail';
-        const giftMail0 = cfg.askGift && state.gift === 'mail';
+        const giftMail0 = giftOpen() && state.gift === 'mail';
 
         return {
           name: val('rName').slice(0, MAX.name),
@@ -1028,7 +1043,7 @@ ${memoBlock}
           cardAddress: paperMail0 ? val('rCardAddr').slice(0, MAX.address) : '',
           cardEmail: cfg.askCard && state.card === 'digital'
             ? val('rCardEmail').slice(0, MAX.email) : '',
-          giftDelivery: cfg.askGift ? state.gift : '',
+          giftDelivery: giftOpen() ? state.gift : '',
           giftZip: giftMail0 ? val('rGiftZip').slice(0, MAX.zip) : '',
           giftAddress: giftMail0 ? val('rGiftAddr').slice(0, MAX.address) : '',
           message: cfg.askMessage ? val('rNote').slice(0, MAX.message) : '',
@@ -1041,7 +1056,7 @@ ${memoBlock}
 
       const going = state.attending === 'yes';
       const paperMail = cfg.askCard && state.card === 'paper' && state.cardDelivery === 'mail';
-      const giftMail = cfg.askGift && state.gift === 'mail';
+      const giftMail = giftOpen() && state.gift === 'mail';
       const user = (typeof me_user !== 'undefined' && me_user) || {};
       /* 新人沒問的那幾種一律存空字串，不留上一版填過的殘值 */
       const contact = (key) => (cfg.contacts.includes(key)
@@ -1070,7 +1085,7 @@ ${memoBlock}
         cardAddress: paperMail ? val('rCardAddr').slice(0, MAX.address) : '',
         cardEmail: cfg.askCard && state.card === 'digital'
           ? val('rCardEmail').slice(0, MAX.email) : '',
-        giftDelivery: cfg.askGift ? state.gift : '',
+        giftDelivery: giftOpen() ? state.gift : '',
         giftZip: giftMail ? val('rGiftZip').slice(0, MAX.zip) : '',
         giftAddress: giftMail ? val('rGiftAddr').slice(0, MAX.address) : '',
         message: cfg.askMessage ? val('rNote').slice(0, MAX.message) : '',
@@ -1263,10 +1278,10 @@ ${memoBlock}
       state.relation = mine.relation || null;
       /* 新人事後把標籤拿掉或改成不當選項時，本機記的那個就當作沒選過 */
       state.tag = cfg.tagOptions.some((t) => t.id === mine.tag) ? mine.tag : null;
-      state.card = mine.card || null;
-      /* 新人事後把郵寄關掉時，上一次選的「郵寄」就當作沒選過 ——
+      /* 新人事後把郵寄（或電子喜帖）關掉時，上一次選的那一個就當作沒選過 ——
          留著的話畫面上沒有任何按鈕是亮的，卻會展開地址欄 */
       const stillThere = (group, v) => opts(group).some(([k]) => k === v);
+      state.card = stillThere('card', mine.card) ? mine.card : null;
       state.cardDelivery = stillThere('cardDelivery', mine.cardDelivery)
         ? mine.cardDelivery : null;
       state.gift = stillThere('gift', mine.gift) ? mine.gift : null;

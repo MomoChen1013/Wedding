@@ -132,13 +132,27 @@ const MAIL_OPTION_GROUPS = ['cardDelivery', 'gift'];
 window.RSVP_OPTIONS = RSVP_OPTIONS;
 
 /* 某一題現在真正要給賓客看的選項。
-   目前只有一條規則：新人關掉郵寄時，兩題各少一個「郵寄」。
+   兩條規則：
+     ・新人關掉郵寄時，喜帖「紙本要怎麼給」與喜餅各少一個「郵寄」
+     ・喜帖提供哪幾種由新人決定：沒有紙本喜帖（rsvpPaperCardEnabled）就少
+       「需要紙本喜帖」，沒有另外做電子喜帖（rsvpDigitalCardEnabled）就少
+       「需要電子喜帖」—— 有些新人只做電子喜帖，有些把這個網站本身當電子喜帖
    表單（rsvp-form.js）讀這一份而不是 RSVP_OPTIONS，
    已經送出的回覆仍然靠 rsvpLabel() 翻譯得回來（選項只是不再出現）。 */
 function rsvpOptions(group){
   const all = RSVP_OPTIONS[group] || [];
+  const cfg = rsvpConfig();
+  if(group === 'card') return all.filter(([v]) =>
+    (v !== 'paper' || cfg.allowPaperCard) && (v !== 'digital' || cfg.allowDigitalCard));
   if(!MAIL_OPTION_GROUPS.includes(group)) return all;
-  return rsvpConfig().allowMail ? all : all.filter(([v]) => v !== 'mail');
+  return cfg.allowMail ? all : all.filter(([v]) => v !== 'mail');
+}
+
+/* 這位賓客（依「與新人的關係」）要不要問喜餅。
+   還沒選關係時一律不問 —— 表單上喜餅那一題要等關係選了才出現。 */
+function rsvpGiftOpenTo(relation, cfg){
+  const c = cfg || rsvpConfig();
+  return c.askGift && !!relation && c.giftRelations.includes(relation);
 }
 
 /* 代號 → 中文（找不到就原樣回傳，舊資料才不會變成空白） */
@@ -156,6 +170,11 @@ function rsvpLabel(group, value){
    讀的是同一份，三邊才不會各自解讀。
 ============================================================ */
 const CONTACT_KEYS = RSVP_OPTIONS.contact.map(([k]) => k);
+const RELATION_KEYS = RSVP_OPTIONS.relation.map(([k]) => k);
+/* 喜餅：哪幾種關係的賓客可以領。台灣習俗多半是女方準備喜餅，
+   所以沒設定過就是「女方親友＋雙方親友」—— 這一條和其他開關不同，
+   舊站台也一律照這個預設走，不是「沒設定過就全開」。 */
+const GIFT_RELATIONS_DEFAULT = ['bride', 'both'];
 
 function rsvpConfig(){
   const d = (window.SITE && window.SITE.data) || {};
@@ -166,9 +185,20 @@ function rsvpConfig(){
     ? d.rsvpContactMethods.filter(m => CONTACT_KEYS.includes(m))
     : CONTACT_KEYS.slice();
 
+  /* 後台最後一個勾選項關不掉，所以不會存成空陣列；
+     真的遇到空的（手動改資料）就退回預設，不讓喜餅這一題沒有人看得到 */
+  const giftPicked = Array.isArray(d.rsvpGiftRelations)
+    ? d.rsvpGiftRelations.filter(r => RELATION_KEYS.includes(r)) : [];
+  const giftRelations = giftPicked.length ? giftPicked : GIFT_RELATIONS_DEFAULT.slice();
+
   return {
     askCard:     on(d.rsvpAskCard),      // 喜帖
+    /* 喜帖的「需要紙本喜帖」「需要電子喜帖」兩個選項（沒設定過就視為有）。
+       後台最後一個關不掉，兩個都是 false 的資料只會來自手動改資料 */
+    allowPaperCard:   on(d.rsvpPaperCardEnabled),
+    allowDigitalCard: on(d.rsvpDigitalCardEnabled),
     askGift:     on(d.rsvpAskGift),      // 喜餅
+    giftRelations,                       // 哪幾種關係的賓客可以領喜餅
     /* ---------- 基本問題（站台這一份）----------
        「出席人數／餐點分配／兒童座椅／飲食習慣補充」原則上是**每個活動自己**
        的設定（events[].ask*）。但站台還沒有 events[] 時，活動卡是
@@ -1070,10 +1100,10 @@ const DataStore = {
     const NA = { key:'na', label:'未填' };
 
     /* 依 key 累加成 slices，順序照 RSVP_OPTIONS 走，最後補上「未填」 */
-    const tally = (group, pickKey) => {
+    const tally = (group, pickKey, list = rows) => {
       const counts = new Map((RSVP_OPTIONS[group] || []).map(([k]) => [k, 0]));
       let na = 0;
-      rows.forEach(r => {
+      list.forEach(r => {
         const k = pickKey(r);
         if(k != null && counts.has(k)) counts.set(k, counts.get(k) + 1);
         else na++;
@@ -1081,7 +1111,7 @@ const DataStore = {
       const slices = (RSVP_OPTIONS[group] || [])
         .map(([k, label]) => ({ key:k, label, value: counts.get(k) }));
       if(na) slices.push({ ...NA, value: na });
-      return { total: rows.length, slices };
+      return { total: list.length, slices };
     };
 
     /* 出席：三選一，用同一個 rsvpStatus() 判斷，和名單上的標籤一致 */
@@ -1143,8 +1173,13 @@ const DataStore = {
     if(cardCounts.na) cardSlices.push({ ...NA, value: cardCounts.na });
     const card = { total: rows.length, slices: cardSlices };
 
-    /* 喜餅：現場領取／郵寄 */
-    const gift = tally('gift', r => r.giftDelivery || null);
+    /* 喜餅：現場領取／自行領取／郵寄。
+       只算「問得到喜餅」的賓客 —— 新人只開給女方親友時，男方親友本來就
+       沒有這一題，算進來只會堆成一大塊「未填」。已經答過的（設定改之前
+       送出的）照樣算，不讓真實的答案消失。 */
+    const giftCfg = rsvpConfig();
+    const gift = tally('gift', r => r.giftDelivery || null,
+      rows.filter(r => r.giftDelivery || rsvpGiftOpenTo(r.relation, giftCfg)));
 
     return { attend, meal, child, card, gift };
   },

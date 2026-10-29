@@ -68,6 +68,7 @@ service cloud.firestore {
                 rsvpEnabled／rsvpDeadline，那兩個依舊改不動）。 */
              'rsvpAskCard', 'rsvpAskGift', 'rsvpAskMessage', 'rsvpMailEnabled',
              'rsvpContactMethods', 'rsvpShowStory', 'rsvpShowGallery',
+             'rsvpPaperCardEnabled', 'rsvpDigitalCardEnabled', 'rsvpGiftRelations',
              /* 基本問題（出席人數／餐點分配／兒童座椅／飲食習慣補充／其他備註）。
                 前四題原則上存在 events[].ask*（那是「這一場要不要問」）；
                 站台還沒有 events[] 時活動卡是合成出來的、存不回去，
@@ -158,6 +159,13 @@ service cloud.firestore {
             || (d.rsvpQuestions is list && d.rsvpQuestions.size() <= 3))
         /* 有沒有「郵寄」這個選項（喜帖怎麼給、喜餅怎麼領） */
         && (!('rsvpMailEnabled' in d) || d.rsvpMailEnabled is bool)
+        /* 喜帖有沒有「需要紙本喜帖」「需要電子喜帖」這兩個選項 */
+        && (!('rsvpPaperCardEnabled'   in d) || d.rsvpPaperCardEnabled is bool)
+        && (!('rsvpDigitalCardEnabled' in d) || d.rsvpDigitalCardEnabled is bool)
+        /* 喜餅開放給哪幾種關係（groom／bride／both／other），同 rsvpContactMethods：
+           只擋筆數與型別，內容在後台送出前先切好 */
+        && (!('rsvpGiftRelations' in d)
+            || (d.rsvpGiftRelations is list && d.rsvpGiftRelations.size() <= 4))
         && (!('rsvpShowStory'   in d) || d.rsvpShowStory is bool)
         && (!('rsvpShowGallery' in d) || d.rsvpShowGallery is bool)
         /* 要問哪幾種聯絡方式；最多就那三種，規則語言檢查不了每個元素的值，

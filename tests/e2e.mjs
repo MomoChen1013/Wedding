@@ -68,9 +68,12 @@ const SEED = {
     venueName: '目黒雅叙園', venueAddress: '東京都目黒区下目黒1-8-1',
     venueMapUrl: '', themeColor: '#B5838D', coverImageUrl: '', story: '',
     photos: [], hashtags: [], dressCode: '', giftNote: '',
+    /* 只做電子喜帖的新人：喜帖沒有「需要紙本喜帖」 */
+    rsvpPaperCardEnabled: false,
     rsvpDeadline: future(120), rsvpEnabled: true, ownerEmail: '',
   },
-  /* 不寄送喜帖喜餅的新人：兩題都不該出現「郵寄」 */
+  /* 不寄送喜帖喜餅的新人：兩題都不該出現「郵寄」。
+     順便也是「沒有另外做電子喜帖」、喜餅開放給男方親友的那一組 */
   'no-mail': {
     slug: 'no-mail', status: 'published',
     groomName: '不寄', brideName: '測試',
@@ -78,6 +81,8 @@ const SEED = {
     venueName: '', venueAddress: '', venueMapUrl: '',
     themeColor: '#3D9AD1', coverImageUrl: '', story: '',
     rsvpMailEnabled: false,
+    rsvpDigitalCardEnabled: false,
+    rsvpGiftRelations: ['groom'],
     rsvpDeadline: future(30), rsvpEnabled: true, ownerEmail: '',
   },
   'draft-site-test': {
@@ -204,8 +209,9 @@ function ok(label, cond, extra = '') {
 
 /* 出席回覆表單：把必填的題目一次填完（能來參加、關係、喜帖、喜餅） */
 /* 預設用「不需要喜帖」＋「現場領取」：這兩個選項不會再追問地址或 Email，
-   讓每個測試只需要填自己真正要驗的欄位 */
-async function fillRsvp(page, { name, attend = 'yes', relation = 'groom',
+   讓每個測試只需要填自己真正要驗的欄位。
+   關係預設「女方親友」—— 沒設定過時喜餅只開給女方與雙方親友，選男方就沒有喜餅可以點 */
+async function fillRsvp(page, { name, attend = 'yes', relation = 'bride',
                                 card = 'none', gift = 'pickup',
                                 phone = '0912345678' } = {}) {
   await page.fill('#rName', name);
@@ -323,6 +329,17 @@ console.log('\n[1a] 出席回覆的題目');
   await page.click('#cardDeliveryRow .choice[data-val="mail"]');
   ok('選了郵寄才問地址', await page.isVisible('#cardAddrBox'));
 
+  /* 喜餅：沒設定過時只有女方親友與雙方親友看得到，還沒選關係前整題收著 */
+  ok('還沒選關係時不問喜餅', !(await page.isVisible('#giftBox')));
+  await page.click('#relationRow .choice[data-val="groom"]');
+  ok('男方親友預設不問喜餅', !(await page.isVisible('#giftBox')));
+  await page.click('#relationRow .choice[data-val="other"]');
+  ok('其他預設不問喜餅', !(await page.isVisible('#giftBox')));
+  await page.click('#relationRow .choice[data-val="bride"]');
+  ok('女方親友問喜餅', await page.isVisible('#giftBox'));
+  await page.click('#relationRow .choice[data-val="both"]');
+  ok('雙方親友問喜餅', await page.isVisible('#giftBox'));
+
   /* 喜餅：郵寄才問地址 */
   ok('喜餅預設不問地址', !(await page.isVisible('#giftAddrBox')));
   await page.click('#giftRow .choice[data-val="mail"]');
@@ -387,6 +404,14 @@ console.log('\n[2] /w/wu-yang-1220/invitation');
   const tags = await page.locator('#hashtags span').allTextContents();
   ok('沒設 hashtag 時用預設兩個',
     tags.join(',') === '#我們結婚了,#Married', tags.join(','));
+
+  /* 只做電子喜帖：喜帖少了紙本，追問怎麼給、地址的那一段也不存在 */
+  const card = await page.locator('#cardRow .choice').allTextContents();
+  ok('只做電子喜帖時，喜帖只剩電子與不需要',
+    card.join('／') === '需要電子喜帖／不需要喜帖', card.join('／'));
+  ok('紙本喜帖的追問整塊不存在', (await page.locator('#cardPaperBox').count()) === 0);
+  await page.click('#cardRow .choice[data-val="digital"]');
+  ok('選電子喜帖照樣問 Email', await page.isVisible('#rCardEmail'));
   ok('無 console 錯誤', realErrors(consoleErrors).length === 0,
     realErrors(consoleErrors).join(' | '));
   await page.close();
@@ -435,7 +460,7 @@ console.log('\n[4b] RSVP 截止與關閉');
 console.log('\n[5] RSVP 送出流程');
 {
   const { page, consoleErrors } = await visit('/w/chen-lin-0315/invitation');
-  await fillRsvp(page, { name: '王小明', relation: 'groom', card: 'paper', gift: 'mail' });
+  await fillRsvp(page, { name: '王小明', relation: 'bride', card: 'paper', gift: 'mail' });
 
   /* 出席細節 */
   await page.click('#headPlus');
@@ -485,6 +510,18 @@ console.log('\n[5b] 新人關掉郵寄');
   await page.click('#cardRow .choice[data-val="paper"]');
   const deliver = await page.locator('#cardDeliveryRow .choice').allTextContents();
   ok('紙本喜帖只剩自行領取', deliver.join('／') === '自行領取', deliver.join('／'));
+
+  /* 沒有另外做電子喜帖：喜帖少一個選項，Email 欄也不存在 */
+  const card = await page.locator('#cardRow .choice').allTextContents();
+  ok('沒有另外做電子喜帖時，喜帖只剩紙本與不需要',
+    card.join('／') === '需要紙本喜帖／不需要喜帖', card.join('／'));
+  ok('電子喜帖的 Email 欄整塊不存在', (await page.locator('#rCardEmail').count()) === 0);
+
+  /* 喜餅只開放給男方親友 */
+  await page.click('#relationRow .choice[data-val="bride"]');
+  ok('喜餅只開給男方時，女方親友看不到', !(await page.isVisible('#giftBox')));
+  await page.click('#relationRow .choice[data-val="groom"]');
+  ok('喜餅只開給男方時，男方親友看得到', await page.isVisible('#giftBox'));
   await page.close();
 }
 
@@ -515,7 +552,7 @@ console.log('\n[6] honeypot 擋機器人');
   const saved = rsvps.docs[0].data();
   ok('attending 為 boolean true', saved.attending === true);
   ok('guestCount 正確', saved.guestCount === 3, String(saved.guestCount));
-  ok('與新人關係正確', saved.relation === 'groom', saved.relation);
+  ok('與新人關係正確', saved.relation === 'bride', saved.relation);
   ok('葷素分配加起來等於人數',
     saved.mealMeat === 2 && saved.mealVeg === 1,
     `葷 ${saved.mealMeat} / 素 ${saved.mealVeg}`);
