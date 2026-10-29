@@ -4892,6 +4892,12 @@ body:is([data-page="admin"],[data-page="butler"]) .ad-stat-lab{font-size:var(--f
 /* 純粹在說「賓客會看到這幾個選項」的那幾排：它是背景資訊不是重點，
    所以字色收到 --ink-soft，不跟旁邊的設定搶 */
 .ad-chips-soft .ad-tag{color:var(--ink-soft);}
+/* 掛在某一題底下的追加設定（有另外做電子喜帖、哪些賓客可以領喜餅）：
+   左邊內縮表示「這是上一題的」，間距收緊，不要看起來像下一題 */
+.ad-reveal > .ad-sub-sec:first-child{margin-top:8px;}
+.ad-reveal > .ad-sub-sec > .ad-check:first-child{margin-top:6px;}
+.ad-gift-who{margin-top:6px;}
+.ad-gift-who + .ad-check{margin-top:8px;}
 
 /* ============================================================
    表單設定：活動卡

@@ -629,13 +629,16 @@ console.log('\n[6] 視情況而定的回覆');
   await page.click('#relationRow .choice[data-val="other"]');
   await page.fill('#rEmail', 'zhang@example.com');
   await page.click('#cardRow .choice[data-val="none"]');
-  await page.click('#giftRow .choice[data-val="pickup"]');
+  /* 喜餅預設只開給女方親友與雙方親友，選「其他」就沒有這一題 */
+  ok('「其他」預設看不到喜餅', !(await page.isVisible('#giftBox')));
   await page.click('#submitBtn');
   await page.waitForTimeout(2500);
 
   const snap = await adb.collection('sites').doc(siteIds[SLUG]).collection('rsvps').get();
   const maybe = snap.docs.map((d) => d.data()).find((d) => d.name === '張三');
   ok('未定回覆有寫入', !!maybe);
+  ok('看不到喜餅的賓客存成空字串', maybe && maybe.giftDelivery === '',
+    maybe ? JSON.stringify(maybe.giftDelivery) : '');
   ok('未定 → attending false + tentative true',
     maybe && maybe.attending === false && maybe.tentative === true,
     maybe ? `${maybe.attending}/${maybe.tentative}` : '');
@@ -1011,7 +1014,8 @@ const MULTI_EVENTS = [
   await page.click('#relationRow .choice[data-val="groom"]');
   await page.fill('#rPhone', '0912345678');
   await page.click('#cardRow .choice[data-val="none"]');
-  await page.click('#giftRow .choice[data-val="pickup"]');
+  /* 男方親友預設沒有喜餅（多活動也一樣，喜餅是共用的那幾題） */
+  ok('多活動：男方親友預設看不到喜餅', !(await page.isVisible('#giftBox')));
   await page.click('#submitBtn');
   await page.waitForTimeout(2000);
 
@@ -1044,8 +1048,8 @@ const MULTI_EVENTS = [
   ok('頂層飲食補充也是婚宴那一場的', d.dietaryNote === '不吃牛', d.dietaryNote);
   ok('共用的那幾題照舊存進去',
     d.name === '林多場' && d.relation === 'groom'
-      && d.contactPhone === '0912345678' && d.cardType === 'none',
-    JSON.stringify({ n:d.name, r:d.relation, p:d.contactPhone, c:d.cardType }));
+      && d.contactPhone === '0912345678' && d.cardType === 'none' && d.giftDelivery === '',
+    JSON.stringify({ n:d.name, r:d.relation, p:d.contactPhone, c:d.cardType, g:d.giftDelivery }));
 
   /* 感謝畫面逐條列出 */
   ok('感謝畫面列出每一場的答案',
@@ -3376,6 +3380,32 @@ console.log('\n[14c] 後台開關表單題目');
   ok('預覽用的膠囊不是按鈕（看起來不能點）',
     (await page.locator('#adPreviewRelation button').count()) === 0);
 
+  /* ---- 電子喜帖：沒有另外做的話，賓客的喜帖選項少一個 ---- */
+  ok('「有另外做電子喜帖」預設勾著', await page.isChecked('#adAskDigital'));
+  ok('喜帖預覽含電子喜帖',
+    (await page.locator('#adPreviewCard .ad-tag').allInnerTexts()).includes('需要電子喜帖'));
+  await page.uncheck('#adAskDigital');
+  await page.waitForTimeout(200);
+  ok('取消勾選後，喜帖預覽跟著少一顆',
+    (await page.locator('#adPreviewCard .ad-tag').allInnerTexts()).join('／')
+      === '需要紙本喜帖／不需要喜帖',
+    (await page.locator('#adPreviewCard .ad-tag').allInnerTexts()).join('／'));
+
+  /* ---- 喜餅開放給哪些賓客：預設女方親友＋雙方親友，至少要留一種 ---- */
+  ok('喜餅預設開放給女方親友與雙方親友',
+    !(await page.isChecked('#adGiftGroom')) && (await page.isChecked('#adGiftBride'))
+      && (await page.isChecked('#adGiftBoth')) && !(await page.isChecked('#adGiftOther')));
+  await page.check('#adGiftOther');
+  await page.uncheck('#adGiftBride');
+  await page.uncheck('#adGiftBoth');
+  await page.waitForTimeout(200);
+  ok('只剩一種關係時，那一顆自己變成關不掉的',
+    await page.locator('#adGiftOther').isDisabled());
+  await page.check('#adGiftGroom');
+  await page.waitForTimeout(200);
+  ok('勾了第二種之後就解開了',
+    !(await page.locator('#adGiftOther').isDisabled()));
+
   /* ---- Conditional reveal ---- */
   ok('喜餅選項預覽含郵寄',
     (await page.locator('#adPreviewGift .ad-tag').allInnerTexts()).includes('郵寄'));
@@ -3442,6 +3472,11 @@ console.log('\n[14c] 後台開關表單題目');
   ok('聯絡方式只留 Email',
     (site.rsvpContactMethods || []).join(',') === 'email',
     (site.rsvpContactMethods || []).join(','));
+  ok('「沒有另外做電子喜帖」存得進去',
+    site.rsvpDigitalCardEnabled === false, String(site.rsvpDigitalCardEnabled));
+  ok('喜餅開放的關係照 RSVP_OPTIONS 的順序存',
+    (site.rsvpGiftRelations || []).join(',') === 'groom,other',
+    (site.rsvpGiftRelations || []).join(','));
   ok('沒有動到出席回覆的開關與截止時間',
     site.rsvpEnabled === true && !!site.rsvpDeadline);
 
@@ -3467,6 +3502,10 @@ console.log('\n[14c] 後台開關表單題目');
   await page.waitForFunction(() => !!document.getElementById('rsvpForm'), null, { timeout:20000 });
 
   ok('喜帖還在', (await page.locator('#cardRow').count()) === 1);
+  ok('沒有另外做電子喜帖：喜帖只剩紙本與不需要',
+    (await page.locator('#cardRow .choice').allTextContents()).join('／')
+      === '需要紙本喜帖／不需要喜帖',
+    (await page.locator('#cardRow .choice').allTextContents()).join('／'));
   ok('喜餅整題不見了', (await page.locator('#giftRow').count()) === 0);
   /* 新人在後台關掉郵寄之後，賓客那一側的選項真的少一個 */
   await page.click('#cardRow .choice[data-val="paper"]');
@@ -3535,6 +3574,7 @@ console.log('\n[14c] 後台開關表單題目');
     rsvpAskCard: true, rsvpAskGift: true, rsvpAskMessage: true,
     rsvpMailEnabled: true, rsvpShowStory: true, rsvpShowGallery: true,
     rsvpContactMethods: ['phone', 'line', 'email'],
+    rsvpDigitalCardEnabled: true, rsvpGiftRelations: ['bride', 'both'],
     rsvpQuestions: [],
   });
 }
