@@ -1259,14 +1259,16 @@ describe('sites 的大廳文案更新', () => {
     await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { rsvpMailEnabled: 'no' }));
   });
 
-  it('新人可以設定電子喜帖選項與喜餅開放給哪些賓客', async () => {
+  it('新人可以設定喜帖提供哪幾種與喜餅開放給哪些賓客', async () => {
     const db = ownerDb();
     await assertSucceeds(updateDoc(doc(db, `sites/${SITE_ID}`), {
+      rsvpPaperCardEnabled: true,
       rsvpDigitalCardEnabled: false,
       rsvpGiftRelations: ['bride', 'both'],
       updatedAt: Timestamp.now(),
     }));
     await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { rsvpDigitalCardEnabled: 'no' }));
+    await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { rsvpPaperCardEnabled: 'no' }));
     await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), { rsvpGiftRelations: 'bride' }));
     await assertFails(updateDoc(doc(db, `sites/${SITE_ID}`), {
       rsvpGiftRelations: ['groom', 'bride', 'both', 'other', 'x'],

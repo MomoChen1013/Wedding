@@ -134,14 +134,16 @@ window.RSVP_OPTIONS = RSVP_OPTIONS;
 /* 某一題現在真正要給賓客看的選項。
    兩條規則：
      ・新人關掉郵寄時，喜帖「紙本要怎麼給」與喜餅各少一個「郵寄」
-     ・新人沒有另外做電子喜帖時（rsvpDigitalCardEnabled），喜帖少一個「電子喜帖」
-       —— 有些新人把這個網站本身當電子喜帖，再問一次只會讓賓客困惑
+     ・喜帖提供哪幾種由新人決定：沒有紙本喜帖（rsvpPaperCardEnabled）就少
+       「需要紙本喜帖」，沒有另外做電子喜帖（rsvpDigitalCardEnabled）就少
+       「需要電子喜帖」—— 有些新人只做電子喜帖，有些把這個網站本身當電子喜帖
    表單（rsvp-form.js）讀這一份而不是 RSVP_OPTIONS，
    已經送出的回覆仍然靠 rsvpLabel() 翻譯得回來（選項只是不再出現）。 */
 function rsvpOptions(group){
   const all = RSVP_OPTIONS[group] || [];
   const cfg = rsvpConfig();
-  if(group === 'card') return cfg.allowDigitalCard ? all : all.filter(([v]) => v !== 'digital');
+  if(group === 'card') return all.filter(([v]) =>
+    (v !== 'paper' || cfg.allowPaperCard) && (v !== 'digital' || cfg.allowDigitalCard));
   if(!MAIL_OPTION_GROUPS.includes(group)) return all;
   return cfg.allowMail ? all : all.filter(([v]) => v !== 'mail');
 }
@@ -191,7 +193,9 @@ function rsvpConfig(){
 
   return {
     askCard:     on(d.rsvpAskCard),      // 喜帖
-    /* 喜帖的「需要電子喜帖」這個選項（沒設定過就視為有） */
+    /* 喜帖的「需要紙本喜帖」「需要電子喜帖」兩個選項（沒設定過就視為有）。
+       後台最後一個關不掉，兩個都是 false 的資料只會來自手動改資料 */
+    allowPaperCard:   on(d.rsvpPaperCardEnabled),
     allowDigitalCard: on(d.rsvpDigitalCardEnabled),
     askGift:     on(d.rsvpAskGift),      // 喜餅
     giftRelations,                       // 哪幾種關係的賓客可以領喜餅

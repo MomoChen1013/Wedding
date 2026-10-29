@@ -280,7 +280,13 @@
     <div class="rf-hint">選一個最接近的就好，方便我們安排座位；選錯再點一次可以取消</div>`;
 
     /* 喜帖：紙本要問怎麼給、郵寄要問地址；電子要問寄到哪個 Email
-       （新人沒有另外做電子喜帖時，連選項帶 Email 欄一起不出現） */
+       （新人不提供的那一種，連選項帶追問的欄位一起不出現） */
+    const paperBox = !cfg.allowPaperCard ? '' : `
+    <div class="rf-sub" id="cardPaperBox" hidden>
+      <label class="rf-label rf-label-sub">紙本喜帖要怎麼給你？</label>
+      ${choiceRow('cardDeliveryRow', 'cardDelivery', 'sm')}
+      ${addressBox('cardAddrBox', 'rCardZip', 'rCardAddr')}
+    </div>`;
     const digitalBox = !cfg.allowDigitalCard ? '' : `
     <div class="rf-sub" id="cardDigitalBox" hidden>
       <label class="rf-label rf-label-sub" for="rCardEmail">電子喜帖要寄到哪個 Email？</label>
@@ -292,12 +298,7 @@
     </div>`;
     const cardBlock = !cfg.askCard ? '' : `
     <label class="rf-label">喜帖發送方式<i class="rf-req">必填</i></label>
-    ${choiceRow('cardRow', 'card', 'sm')}
-    <div class="rf-sub" id="cardPaperBox" hidden>
-      <label class="rf-label rf-label-sub">紙本喜帖要怎麼給你？</label>
-      ${choiceRow('cardDeliveryRow', 'cardDelivery', 'sm')}
-      ${addressBox('cardAddrBox', 'rCardZip', 'rCardAddr')}
-    </div>${digitalBox}`;
+    ${choiceRow('cardRow', 'card', 'sm')}${paperBox}${digitalBox}`;
 
     /* 喜餅：郵寄要問地址，可以直接沿用喜帖的地址。
        只有新人開放的那幾種關係才問（rsvpGiftRelations），所以整塊先藏著，
@@ -307,7 +308,7 @@
       <label class="rf-label">喜餅領取方式<i class="rf-req">必填</i></label>
       ${choiceRow('giftRow', 'gift', 'sm')}
       <div class="rf-sub" id="giftMailBox" hidden>
-        ${cfg.askCard ? sameAs('giftAddrSame', '同上（與喜帖的郵寄地址相同）') : ''}
+        ${cfg.askCard && cfg.allowPaperCard ? sameAs('giftAddrSame', '同上（與喜帖的郵寄地址相同）') : ''}
         ${addressBox('giftAddrBox', 'rGiftZip', 'rGiftAddr')}
       </div>
     </div>`;
@@ -623,8 +624,10 @@ ${memoBlock}
     function syncCard() {
       if (!cfg.askCard) return;
       const paper = state.card === 'paper';
-      $('cardPaperBox').hidden = !paper;
-      $('cardAddrBox').hidden = !(paper && state.cardDelivery === 'mail');
+      if ($('cardPaperBox')) {
+        $('cardPaperBox').hidden = !paper;
+        $('cardAddrBox').hidden = !(paper && state.cardDelivery === 'mail');
+      }
       if ($('cardDigitalBox')) $('cardDigitalBox').hidden = state.card !== 'digital';
       if (refreshCardEmailSame) refreshCardEmailSame();
       /* 喜帖不是紙本郵寄時，喜餅就沒有地址可以「同上」 */

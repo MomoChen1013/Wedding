@@ -3380,16 +3380,26 @@ console.log('\n[14c] 後台開關表單題目');
   ok('預覽用的膠囊不是按鈕（看起來不能點）',
     (await page.locator('#adPreviewRelation button').count()) === 0);
 
-  /* ---- 電子喜帖：沒有另外做的話，賓客的喜帖選項少一個 ---- */
-  ok('「有另外做電子喜帖」預設勾著', await page.isChecked('#adAskDigital'));
-  ok('喜帖預覽含電子喜帖',
-    (await page.locator('#adPreviewCard .ad-tag').allInnerTexts()).includes('需要電子喜帖'));
+  /* ---- 喜帖提供哪幾種：沒勾的那一種，賓客的喜帖選項就少一個；至少留一種 ---- */
+  const cardPreview = async () =>
+    (await page.locator('#adPreviewCard .ad-tag').allInnerTexts()).join('／');
+  ok('紙本與電子喜帖預設都勾著',
+    (await page.isChecked('#adAskPaper')) && (await page.isChecked('#adAskDigital')));
+  ok('喜帖預覽三顆都在',
+    (await cardPreview()) === '需要紙本喜帖／需要電子喜帖／不需要喜帖', await cardPreview());
+  await page.uncheck('#adAskPaper');
+  await page.waitForTimeout(200);
+  ok('只做電子喜帖：預覽少了紙本', (await cardPreview()) === '需要電子喜帖／不需要喜帖',
+    await cardPreview());
+  ok('只剩電子喜帖時，那一顆自己變成關不掉的',
+    await page.locator('#adAskDigital').isDisabled());
+  await page.check('#adAskPaper');
   await page.uncheck('#adAskDigital');
   await page.waitForTimeout(200);
-  ok('取消勾選後，喜帖預覽跟著少一顆',
-    (await page.locator('#adPreviewCard .ad-tag').allInnerTexts()).join('／')
-      === '需要紙本喜帖／不需要喜帖',
-    (await page.locator('#adPreviewCard .ad-tag').allInnerTexts()).join('／'));
+  ok('沒有另外做電子喜帖：預覽少了電子', (await cardPreview()) === '需要紙本喜帖／不需要喜帖',
+    await cardPreview());
+  ok('只剩紙本喜帖時，那一顆自己變成關不掉的',
+    await page.locator('#adAskPaper').isDisabled());
 
   /* ---- 喜餅開放給哪些賓客：預設女方親友＋雙方親友，至少要留一種 ---- */
   ok('喜餅預設開放給女方親友與雙方親友',
@@ -3473,7 +3483,8 @@ console.log('\n[14c] 後台開關表單題目');
     (site.rsvpContactMethods || []).join(',') === 'email',
     (site.rsvpContactMethods || []).join(','));
   ok('「沒有另外做電子喜帖」存得進去',
-    site.rsvpDigitalCardEnabled === false, String(site.rsvpDigitalCardEnabled));
+    site.rsvpDigitalCardEnabled === false && site.rsvpPaperCardEnabled === true,
+    `${site.rsvpPaperCardEnabled}/${site.rsvpDigitalCardEnabled}`);
   ok('喜餅開放的關係照 RSVP_OPTIONS 的順序存',
     (site.rsvpGiftRelations || []).join(',') === 'groom,other',
     (site.rsvpGiftRelations || []).join(','));
@@ -3574,7 +3585,8 @@ console.log('\n[14c] 後台開關表單題目');
     rsvpAskCard: true, rsvpAskGift: true, rsvpAskMessage: true,
     rsvpMailEnabled: true, rsvpShowStory: true, rsvpShowGallery: true,
     rsvpContactMethods: ['phone', 'line', 'email'],
-    rsvpDigitalCardEnabled: true, rsvpGiftRelations: ['bride', 'both'],
+    rsvpPaperCardEnabled: true, rsvpDigitalCardEnabled: true,
+    rsvpGiftRelations: ['bride', 'both'],
     rsvpQuestions: [],
   });
 }

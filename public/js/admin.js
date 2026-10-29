@@ -3730,7 +3730,9 @@ function newQuestionId(){
 ============================================================ */
 const RSVP_FORM_TOGGLES = {
   adAskCard:      'rsvpAskCard',
-  /* 喜帖的「需要電子喜帖」選項；沒勾＝這個網站本身就是電子喜帖 */
+  /* 喜帖提供哪幾種：紙本（只做電子喜帖的新人關掉）、
+     電子（網站本身就是電子喜帖的新人關掉）。至少留一種，見 syncCardTypeBoxes() */
+  adAskPaper:     'rsvpPaperCardEnabled',
   adAskDigital:   'rsvpDigitalCardEnabled',
   adAskGift:      'rsvpAskGift',
   adAskMessage:   'rsvpAskMessage',
@@ -3762,7 +3764,7 @@ const giftBoxEls = ()=> Object.keys(RSVP_GIFT_BOXES)
 function fillRsvpFormSettings(){
   const cfg = rsvpConfig();
   const on = {
-    adAskCard: cfg.askCard, adAskDigital: cfg.allowDigitalCard,
+    adAskCard: cfg.askCard, adAskPaper: cfg.allowPaperCard, adAskDigital: cfg.allowDigitalCard,
     adAskGift: cfg.askGift, adAskMessage: cfg.askMessage,
     adAskNote: cfg.askNote, adAskMail: cfg.allowMail,
   };
@@ -3780,6 +3782,7 @@ function fillRsvpFormSettings(){
   });
   syncContactBoxes();
   syncGiftBoxes();
+  syncCardTypeBoxes();
   syncRsvpFormReveals();
   renderFormPreviews();
   markRsvpFormClean();
@@ -3791,6 +3794,16 @@ function fillRsvpFormSettings(){
    而是**最後一個勾選項自己變成關不掉的** —— 使用者不會先做錯再被罵。 */
 function syncContactBoxes(){
   const boxes = contactBoxEls();
+  const on = boxes.filter(b => b.checked);
+  boxes.forEach(b => { b.disabled = on.length <= 1 && b.checked; });
+}
+
+/* 喜帖的紙本／電子也至少留一種：兩種都不提供＝賓客只剩「不需要喜帖」，
+   那其實是「不問喜帖」，該關的是上面那一題 */
+const cardTypeBoxEls = ()=> ['adAskPaper', 'adAskDigital']
+  .map(id => document.getElementById(id)).filter(Boolean);
+function syncCardTypeBoxes(){
+  const boxes = cardTypeBoxEls();
   const on = boxes.filter(b => b.checked);
   boxes.forEach(b => { b.disabled = on.length <= 1 && b.checked; });
 }
@@ -3838,10 +3851,12 @@ function renderFormPreviews(){
   set('adPreviewRelation', RSVP_OPTIONS.relation.map(([, l]) => l));
   /* 喜帖只列第一層的選項 —— 紙本要怎麼給、要不要郵寄是下一層的事，
      由郵寄那顆 Switch 的說明負責，堆在同一排膠囊裡只會讓人以為是五選一。
-     「需要電子喜帖」同樣跟著畫面上的勾選走，不是跟著已經存好的設定 */
+     紙本／電子同樣跟著畫面上的勾選走，不是跟著已經存好的設定 */
+  const paperOn = !!document.getElementById('adAskPaper')?.checked;
   const digitalOn = !!document.getElementById('adAskDigital')?.checked;
   set('adPreviewCard', RSVP_OPTIONS.card
-    .filter(([v]) => digitalOn || v !== 'digital').map(([, l]) => l));
+    .filter(([v]) => (paperOn || v !== 'paper') && (digitalOn || v !== 'digital'))
+    .map(([, l]) => l));
   set('adPreviewGift', opts('gift'));
 
   renderFormTagPreview();
@@ -3906,6 +3921,7 @@ document.getElementById('adRsvpForm')?.addEventListener('change', (e)=>{
   if(e.target.closest('#adActList')) return;
   if(e.target.closest('[id^="adContact"]')) syncContactBoxes();
   if(e.target.closest('[id^="adGift"]')) syncGiftBoxes();
+  if(e.target.closest('#adAskPaper, #adAskDigital')) syncCardTypeBoxes();
   syncRsvpFormReveals();
   renderFormPreviews();
   syncRsvpFormDirty();

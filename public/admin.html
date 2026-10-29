@@ -1107,11 +1107,14 @@
             </h3>
           </div>
 
-          <label class="ad-check"><input type="checkbox" id="adAskCard"><span>喜帖領取方式</span></label>
+          <label class="ad-check"><input type="checkbox" id="adAskCard"><span>詢問是否需要喜帖以及領取方式</span></label>
           <div class="ad-reveal" id="adCardReveal">
-            <!-- 沒勾＝這個網站本身就是電子喜帖，賓客的選項少一個「需要電子喜帖」 -->
+            <!-- 新人提供哪幾種喜帖：沒勾的那一種，賓客的選項就少一個
+                 （只做電子喜帖的新人關掉紙本；網站本身就是電子喜帖的新人關掉電子）。
+                 至少要留一種，最後一個關不掉 —— 兩種都不提供的話，該關的是上面那一題 -->
             <div class="ad-sub-sec">
-              <label class="ad-check"><input type="checkbox" id="adAskDigital"><span>有另外做電子喜帖</span></label>
+              <label class="ad-check"><input type="checkbox" id="adAskPaper"><span>紙本喜帖(自取)</span></label>
+              <label class="ad-check"><input type="checkbox" id="adAskDigital"><span>電子喜帖(Email)</span></label>
             </div>
             <div class="ad-chips ad-chips-preview ad-chips-soft" id="adPreviewCard"
                  aria-label="喜帖領取方式的選項"></div>
@@ -1121,6 +1124,8 @@
           <div class="ad-reveal" id="adGiftReveal">
             <!-- 賓客選了「與新人的關係」之後，只有勾起來的那幾種才會看到喜餅這一題。
                  至少要留一種（最後一個關不掉），不想問就把上面整題關掉。 -->
+            <div class="ad-chips ad-chips-preview ad-chips-soft" id="adPreviewGift"
+                 aria-label="喜餅領取方式的選項"></div>
             <div class="ad-sub-sec">
               <div class="ad-hint ad-gift-who">哪些賓客可以領取喜餅</div>
               <label class="ad-check"><input type="checkbox" id="adGiftGroom"><span>男方親友</span></label>
@@ -1128,8 +1133,6 @@
               <label class="ad-check"><input type="checkbox" id="adGiftBoth"><span>雙方親友</span></label>
               <label class="ad-check"><input type="checkbox" id="adGiftOther"><span>其他</span></label>
             </div>
-            <div class="ad-chips ad-chips-preview ad-chips-soft" id="adPreviewGift"
-                 aria-label="喜餅領取方式的選項"></div>
           </div>
 
           <div class="ad-sub-sec ad-sub-sec-bare" id="adMailSec">

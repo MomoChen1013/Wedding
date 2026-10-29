@@ -68,6 +68,8 @@ const SEED = {
     venueName: '目黒雅叙園', venueAddress: '東京都目黒区下目黒1-8-1',
     venueMapUrl: '', themeColor: '#B5838D', coverImageUrl: '', story: '',
     photos: [], hashtags: [], dressCode: '', giftNote: '',
+    /* 只做電子喜帖的新人：喜帖沒有「需要紙本喜帖」 */
+    rsvpPaperCardEnabled: false,
     rsvpDeadline: future(120), rsvpEnabled: true, ownerEmail: '',
   },
   /* 不寄送喜帖喜餅的新人：兩題都不該出現「郵寄」。
@@ -402,6 +404,14 @@ console.log('\n[2] /w/wu-yang-1220/invitation');
   const tags = await page.locator('#hashtags span').allTextContents();
   ok('沒設 hashtag 時用預設兩個',
     tags.join(',') === '#我們結婚了,#Married', tags.join(','));
+
+  /* 只做電子喜帖：喜帖少了紙本，追問怎麼給、地址的那一段也不存在 */
+  const card = await page.locator('#cardRow .choice').allTextContents();
+  ok('只做電子喜帖時，喜帖只剩電子與不需要',
+    card.join('／') === '需要電子喜帖／不需要喜帖', card.join('／'));
+  ok('紙本喜帖的追問整塊不存在', (await page.locator('#cardPaperBox').count()) === 0);
+  await page.click('#cardRow .choice[data-val="digital"]');
+  ok('選電子喜帖照樣問 Email', await page.isVisible('#rCardEmail'));
   ok('無 console 錯誤', realErrors(consoleErrors).length === 0,
     realErrors(consoleErrors).join(' | '));
   await page.close();

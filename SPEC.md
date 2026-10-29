@@ -126,8 +126,11 @@ sites/{siteId}
                                 # ★ 例外：沒有這個欄位＝['bride','both']（女方親友＋雙方親友），
                                 #   舊站台也照這個走，不是「沒設定過就全開」。
                                 #   賓客選了「與新人的關係」才決定喜餅那一題要不要出現
+  rsvpPaperCardEnabled   : boolean  # 新人有沒有紙本喜帖；false 時喜帖少一個
+                                    # 「需要紙本喜帖」（只做電子喜帖的新人）
   rsvpDigitalCardEnabled : boolean  # 新人有沒有另外做電子喜帖；false 時喜帖少一個
-                                    # 「需要電子喜帖」（網站本身就是電子喜帖的新人）
+                                    # 「需要電子喜帖」（網站本身就是電子喜帖的新人）。
+                                    # 兩個至少留一個（後台最後一個關不掉）
   rsvpAskMessage  : boolean  # 要不要問「想對新人說的話」
   rsvpAskNote     : boolean  # 要不要問「其他備註」
   # ↓ 基本問題的開關。站台還沒有 events[] 時（合成出來的那一張活動卡）
@@ -500,7 +503,7 @@ venueName venueAddress venueMapUrl transportPublic transportParking
 dressCode dressCodeColors giftNote story schedule hashtags updatedAt
 seatingSearchEnabled seatingFeatureEnabled
 rsvpAskCard rsvpAskGift rsvpAskMessage rsvpMailEnabled rsvpContactMethods
-rsvpDigitalCardEnabled rsvpGiftRelations
+rsvpPaperCardEnabled rsvpDigitalCardEnabled rsvpGiftRelations
 rsvpAskCount rsvpAskMeal rsvpAskChildSeat rsvpAskDiet rsvpAskNote rsvpQuestions
 rsvpShowStory rsvpShowGallery guestTags events eventDate pagePublish
 ```
@@ -791,7 +794,7 @@ HTML 只放一個 `<div id="rsvpFormHost">` —— 題目會依新人在後台�
 | ★ 餐點分配（葷／素） | 兩個計數器，相加恆等於出席人數 | 同上 |
 | ★ 兒童座椅 | 勾選後才問張數 | 同上 |
 | ★ 飲食習慣補充 | 文字，選填 | 同上 |
-| ★ 喜帖發送方式 | 單選：紙本／電子／不需要 | always；「電子」由 `rsvpDigitalCardEnabled` 決定在不在 |
+| ★ 喜帖發送方式 | 單選：紙本／電子／不需要 | always；「紙本」由 `rsvpPaperCardEnabled`、「電子」由 `rsvpDigitalCardEnabled` 決定在不在 |
 | ★ 紙本要怎麼給 | 單選：自行領取／郵寄 | 選「紙本」才出現；「郵寄」由 `rsvpMailEnabled` 決定在不在 |
 | 喜帖郵寄地址 | 郵遞區號 ＋ 地址 | 選「郵寄」才出現 |
 | 電子喜帖的 Email | 文字，可勾「同上」帶入聯絡方式的 Email | 選「電子」才出現 |
