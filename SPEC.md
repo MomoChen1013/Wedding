@@ -126,6 +126,12 @@ sites/{siteId}
                                 # ★ 例外：沒有這個欄位＝['bride','both']（女方親友＋雙方親友），
                                 #   舊站台也照這個走，不是「沒設定過就全開」。
                                 #   賓客選了「與新人的關係」才決定喜餅那一題要不要出現
+  rsvpGiftAttendingOnly : boolean  # 出席的人才有喜餅：true 時賓客明確選「不出席」婚宴
+                                   # 就不問喜餅（「視情況而定」、還沒選都照樣問；
+                                   # 多活動只看婚宴那一場）。
+                                   # ★ 例外：明確存了 true 才算開，沒有這個欄位＝關。
+                                   # ★ 只能由我們在 Firebase Console 設定：後台沒有開關，
+                                   #   也不在規則的新人白名單內（和 guestTagsEnabled 同一層級）
   rsvpPaperCardEnabled   : boolean  # 新人有沒有紙本喜帖；false 時喜帖少一個
                                     # 「需要紙本喜帖」（只做電子喜帖的新人）
   rsvpDigitalCardEnabled : boolean  # 新人有沒有另外做電子喜帖；false 時喜帖少一個
@@ -512,6 +518,10 @@ rsvpShowStory rsvpShowGallery guestTags events eventDate pagePublish
 但**總開關 `guestTagsEnabled` 不在名單內** —— 和 `pages` 一樣，
 由我們決定哪一組新人要用這個功能（`npm run set-pages -- --guest-tags on`）。
 
+**`rsvpGiftAttendingOnly`（出席的人才有喜餅）也不在名單內**：後台沒有這個開關，
+由我們在 Firebase Console 直接設定。規則是比對「這次改了哪些欄位」，
+所以我們設好之後，新人照樣存得了其他欄位，只是改不動這一欄。
+
 **`entryLoginEnabled` 也不在名單內**，理由同上：它改變的是整站的入場方式
 （要不要請賓客先報上名來），由我們決定（`npm run set-pages -- --entry-login on`）。
 
@@ -798,7 +808,7 @@ HTML 只放一個 `<div id="rsvpFormHost">` —— 題目會依新人在後台�
 | ★ 紙本要怎麼給 | 單選：自行領取／郵寄 | 選「紙本」才出現；「郵寄」由 `rsvpMailEnabled` 決定在不在 |
 | 喜帖郵寄地址 | 郵遞區號 ＋ 地址 | 選「郵寄」才出現 |
 | 電子喜帖的 Email | 文字，可勾「同上」帶入聯絡方式的 Email | 選「電子」才出現 |
-| ★ 喜餅領取方式 | 單選：現場領取／自行領取／郵寄 | 選了「與新人的關係」、而且那個關係在 `rsvpGiftRelations` 裡才出現（預設女方親友＋雙方親友）；「郵寄」同樣由 `rsvpMailEnabled` 決定 |
+| ★ 喜餅領取方式 | 單選：現場領取／自行領取／郵寄 | 選了「與新人的關係」、而且那個關係在 `rsvpGiftRelations` 裡才出現（預設女方親友＋雙方親友）；`rsvpGiftAttendingOnly` 開著時，選「不出席」婚宴也不出現；「郵寄」同樣由 `rsvpMailEnabled` 決定 |
 | 喜餅郵寄地址 | 郵遞區號 ＋ 地址，可勾「同上」帶入喜帖的地址 | 選「郵寄」才出現 |
 | ★ 想對新人說的話 | 文字，選填 | always |
 | ★ 其他備註 | 文字，選填 | always |

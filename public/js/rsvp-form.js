@@ -494,8 +494,18 @@ ${memoBlock}
 
     /* 這位賓客要不要問喜餅：看新人開放給哪幾種關係（common.js 的 rsvpGiftOpenTo）。
        改選成不能領的關係時，喜餅那一題收起來，但選過的答案先留著 ——
-       改回來不用重選；送出時只要看不到這一題，一律存空字串。 */
-    const giftOpen = () => rsvpGiftOpenTo(state.relation, cfg);
+       改回來不用重選；送出時只要看不到這一題，一律存空字串。
+       新人開了「出席的人才有喜餅」（cfg.giftAttendingOnly）時，
+       明確選了婚宴不出席也一樣收起來；「視情況而定」、還沒選都照樣問。 */
+    const giftOpen = () => rsvpGiftOpenTo(state.relation, cfg, declinedReception());
+
+    /* 賓客是不是**明確**說了不來婚宴。多活動只看婚宴那一張卡（formPrimary），
+       證婚、派對來不來都不影響喜餅。evState／formPrimary 定義在後面，
+       但這支只在賓客點選之後才會被呼叫，那時都已經準備好了。 */
+    function declinedReception() {
+      if (multi) return evState[formPrimary().id].going === false;
+      return state.attending === 'no';
+    }
 
     /* ---------- 選項 chip ---------- */
     function pick(rowId, val) {
@@ -641,7 +651,7 @@ ${memoBlock}
       if (refreshGiftAddrSame) refreshGiftAddrSame();
     }
 
-    wireRow('attendRow', (v) => { state.attending = v; syncAttend(); });
+    wireRow('attendRow', (v) => { state.attending = v; syncAttend(); syncGift(); });
     wireRow('relationRow', (v) => { state.relation = v; syncGift(); });
     wireRow('cardRow', (v) => { state.card = v; syncCard(); });
     wireRow('cardDeliveryRow', (v) => { state.cardDelivery = v; syncCard(); });
@@ -811,6 +821,7 @@ ${memoBlock}
       /* 換了一張卡，之前那張答過的就收起來（手風琴） */
       evs.forEach(syncEvCard);
       syncEvProgress();
+      syncGift();          /* 婚宴那張改成不參加時，喜餅那一題可能要收起來 */
       clearErr();
     }
 
@@ -888,6 +899,7 @@ ${memoBlock}
           evs.forEach(ev => { evState[ev.id].going = true; });
           evs.forEach(syncEvCard);
           syncEvProgress();
+          syncGift();
           clearErr();
           toastAllYes();
         });
