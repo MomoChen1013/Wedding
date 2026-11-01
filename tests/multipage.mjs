@@ -1078,6 +1078,39 @@ const MULTI_EVENTS = [
   await page.close();
 }
 
+/* ---------- 多活動：出席的人才有喜餅，只看婚宴 ---------- */
+console.log('\n[6d-2] 多活動的「出席的人才有喜餅」只看婚宴');
+{
+  /* 只能在 Firebase 設定的開關；測完關回去，不影響後面共用這個站台的測試 */
+  await adb.collection('sites').doc(siteIds[SLUG]).update({ rsvpGiftAttendingOnly: true });
+
+  const { page, errors } = await visit(`/w/${SLUG}/invitation`);
+  await page.evaluate(() => LS.remove('rsvp.mine'));
+  await page.reload({ waitUntil:'domcontentloaded' });
+  await page.waitForFunction(() => !!document.getElementById('rsvpForm'),
+    null, { timeout:20000 });
+
+  const card = (i) => page.locator('.ev-card').nth(i);   /* 0 證婚、1 婚宴、2 派對 */
+  await page.click('#relationRow .choice[data-val="bride"]');
+  ok('多活動：還沒回答婚宴時照樣問喜餅', await page.isVisible('#giftBox'));
+  await card(0).locator('[data-ev-go="no"]').click();
+  await card(2).locator('[data-ev-go="no"]').click();
+  await page.waitForTimeout(200);
+  ok('多活動：證婚、派對不來不影響喜餅', await page.isVisible('#giftBox'));
+  await card(1).locator('[data-ev-go="no"]').click();
+  await page.waitForTimeout(200);
+  ok('多活動：婚宴不來就不問喜餅', !(await page.isVisible('#giftBox')));
+  await card(1).locator('[data-ev-unfold]').click().catch(() => {});
+  await card(1).locator('[data-ev-go="yes"]').click();
+  await page.waitForTimeout(200);
+  ok('多活動：婚宴改成會來，喜餅又出現', await page.isVisible('#giftBox'));
+
+  ok('無 console 錯誤', realErrors(errors).length === 0,
+    realErrors(errors).slice(0, 2).join(' | '));
+  await page.close();
+  await adb.collection('sites').doc(siteIds[SLUG]).update({ rsvpGiftAttendingOnly: false });
+}
+
 {
   /* ---- 出席回覆那一頁 ＋ 大廳 ----
      那一頁已經不放婚禮資訊了（見 js/invitation.js），

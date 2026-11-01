@@ -149,10 +149,21 @@ function rsvpOptions(group){
 }
 
 /* 這位賓客（依「與新人的關係」）要不要問喜餅。
-   還沒選關係時一律不問 —— 表單上喜餅那一題要等關係選了才出現。 */
-function rsvpGiftOpenTo(relation, cfg){
+   還沒選關係時一律不問 —— 表單上喜餅那一題要等關係選了才出現。
+   declined：這位賓客**明確選了婚宴不出席**。只有新人要求「出席的人才有喜餅」
+   （giftAttendingOnly）時才看它；選「視情況而定」或還沒選出席，都照樣問。 */
+function rsvpGiftOpenTo(relation, cfg, declined){
   const c = cfg || rsvpConfig();
+  if(c.giftAttendingOnly && declined) return false;
   return c.askGift && !!relation && c.giftRelations.includes(relation);
+}
+
+/* 一筆已經送出的回覆，算不算「明確不出席婚宴」。
+   頂層的 attending／tentative 永遠代表主要活動（婚宴）：
+   單一活動「視情況而定」存成 attending:false + tentative:true，不算不出席；
+   多活動只有會／不會，attending:false 就是不會來婚宴。 */
+function rsvpDeclined(r){
+  return !!r && r.attending === false && r.tentative !== true;
 }
 
 /* 代號 → 中文（找不到就原樣回傳，舊資料才不會變成空白） */
@@ -199,6 +210,11 @@ function rsvpConfig(){
     allowDigitalCard: on(d.rsvpDigitalCardEnabled),
     askGift:     on(d.rsvpAskGift),      // 喜餅
     giftRelations,                       // 哪幾種關係的賓客可以領喜餅
+    /* 喜餅只給出席婚宴的賓客：選「不出席」就不問喜餅（「視情況而定」照樣問）。
+       和其他開關相反，**明確存了 true 才算開**，沒設定過＝現在的行為。
+       後台沒有這個開關，由我們在 Firebase Console 設定 rsvpGiftAttendingOnly，
+       而且它不在 firestore.rules 新人可改的白名單內（和 guestTagsEnabled 同一層級）。 */
+    giftAttendingOnly: d.rsvpGiftAttendingOnly === true,
     /* ---------- 基本問題（站台這一份）----------
        「出席人數／餐點分配／兒童座椅／飲食習慣補充」原則上是**每個活動自己**
        的設定（events[].ask*）。但站台還沒有 events[] 時，活動卡是
@@ -1175,11 +1191,12 @@ const DataStore = {
 
     /* 喜餅：現場領取／自行領取／郵寄。
        只算「問得到喜餅」的賓客 —— 新人只開給女方親友時，男方親友本來就
-       沒有這一題，算進來只會堆成一大塊「未填」。已經答過的（設定改之前
+       沒有這一題，算進來只會堆成一大塊「未填」；開了「出席的人才有喜餅」時，
+       不出席婚宴的賓客也一樣。已經答過的（設定改之前
        送出的）照樣算，不讓真實的答案消失。 */
     const giftCfg = rsvpConfig();
     const gift = tally('gift', r => r.giftDelivery || null,
-      rows.filter(r => r.giftDelivery || rsvpGiftOpenTo(r.relation, giftCfg)));
+      rows.filter(r => r.giftDelivery || rsvpGiftOpenTo(r.relation, giftCfg, rsvpDeclined(r))));
 
     return { attend, meal, child, card, gift };
   },

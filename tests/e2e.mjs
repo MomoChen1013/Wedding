@@ -85,6 +85,17 @@ const SEED = {
     rsvpGiftRelations: ['groom'],
     rsvpDeadline: future(30), rsvpEnabled: true, ownerEmail: '',
   },
+  /* 出席的人才有喜餅（rsvpGiftAttendingOnly，只能在 Firebase 設定）：
+     明確選「不克出席」就不問喜餅，「視情況而定」照樣問 */
+  'gift-attending': {
+    slug: 'gift-attending', status: 'published',
+    groomName: '出席', brideName: '喜餅',
+    eventDate: TAIPEI_NOON, timezone: 'Asia/Taipei',
+    venueName: '', venueAddress: '', venueMapUrl: '',
+    themeColor: '#3D9AD1', coverImageUrl: '', story: '',
+    rsvpGiftAttendingOnly: true,
+    rsvpDeadline: future(30), rsvpEnabled: true, ownerEmail: '',
+  },
   'draft-site-test': {
     slug: 'draft-site-test', status: 'draft',
     groomName: '測', brideName: '試',
@@ -523,6 +534,37 @@ console.log('\n[5b] 新人關掉郵寄');
   await page.click('#relationRow .choice[data-val="groom"]');
   ok('喜餅只開給男方時，男方親友看得到', await page.isVisible('#giftBox'));
   await page.close();
+}
+
+/* ---------- 出席的人才有喜餅 ---------- */
+console.log('\n[5c] 出席的人才有喜餅（rsvpGiftAttendingOnly）');
+{
+  const { page } = await visit('/w/gift-attending/invitation');
+  await page.click('#relationRow .choice[data-val="bride"]');
+  ok('還沒選出席時照樣問喜餅', await page.isVisible('#giftBox'));
+  await page.click('#attendRow .choice[data-val="no"]');
+  ok('選「不出席」就不問喜餅', !(await page.isVisible('#giftBox')));
+  await page.click('#attendRow .choice[data-val="maybe"]');
+  ok('選「視情況而定」照樣問喜餅', await page.isVisible('#giftBox'));
+  await page.click('#attendRow .choice[data-val="yes"]');
+  ok('選「會出席」問喜餅', await page.isVisible('#giftBox'));
+
+  /* 先選了喜餅再改成不出席：送出的回覆不該帶著喜餅 */
+  await page.click('#giftRow .choice[data-val="pickup"]');
+  await page.click('#attendRow .choice[data-val="no"]');
+  await page.fill('#rName', '不來的人');
+  await page.fill('#rPhone', '0912345678');
+  await page.click('#cardRow .choice[data-val="none"]');
+  await page.click('#submitBtn');
+  await page.waitForSelector('#thanksCard:visible', { timeout: 8000 });
+  await page.close();
+
+  const siteId = (await adb.collection('slugs').doc('gift-attending').get()).data().siteId;
+  const rsvps = await adb.collection('sites').doc(siteId).collection('rsvps').get();
+  const saved = rsvps.docs[0] && rsvps.docs[0].data();
+  ok('不出席的回覆送得出去', rsvps.size === 1, String(rsvps.size));
+  ok('不出席的回覆不存喜餅', saved && saved.attending === false && saved.giftDelivery === '',
+    saved && `${saved.attending}/${saved.giftDelivery}`);
 }
 
 /* ---------- honeypot ---------- */

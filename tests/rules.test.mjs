@@ -1538,6 +1538,18 @@ describe('賓客標籤', () => {
     await assertFails(updateDoc(doc(ownerDb(), `sites/${SITE_ID}`), { guestTagsEnabled: false }));
   });
 
+  /* 不是標籤的事，但同一個層級：只能由我們在 Firebase Console 設定 */
+  it('新人改不動「出席的人才有喜餅」rsvpGiftAttendingOnly', async () => {
+    await assertFails(updateDoc(doc(ownerDb(), `sites/${SITE_ID}`), { rsvpGiftAttendingOnly: true }));
+  });
+
+  it('我們設了 rsvpGiftAttendingOnly 之後，新人照樣改得動其他欄位', async () => {
+    await seedSite(SITE_ID, {
+      ownerEmails: [OWNER], guestTagsEnabled: true, rsvpGiftAttendingOnly: true,
+    });
+    await assertSucceeds(updateDoc(doc(ownerDb(), `sites/${SITE_ID}`), { rsvpAskGift: false }));
+  });
+
   it('開了功能時，賓客可以在回覆裡帶一個標籤', async () => {
     const db = testEnv.unauthenticatedContext().firestore();
     await assertSucceeds(addDoc(collection(db, `sites/${SITE_ID}/rsvps`),
